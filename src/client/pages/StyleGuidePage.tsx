@@ -771,7 +771,7 @@ export function StyleGuidePage() {
               <ToggleGroup
                 type="single"
                 value={toggleGroupValue}
-                onValueChange={(value) => value && setToggleGroupValue(value)}
+                onValueChange={(value: string) => value && setToggleGroupValue(value)}
               >
                 <ToggleGroupItem value="left" aria-label="Align left">
                   <AlignLeft className="h-4 w-4" />
