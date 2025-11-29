@@ -1,0 +1,86 @@
+# Local Development Environment Variables
+# DO NOT COMMIT THIS FILE TO GIT (already in .gitignore)
+#
+# Copy this file to .dev.vars and fill in your actual values:
+# cp .dev.vars.example .dev.vars
+
+# ============================================
+# Authentication (better-auth) - REQUIRED
+# ============================================
+
+# Generate a secure secret (32+ characters):
+# Run: openssl rand -hex 32
+BETTER_AUTH_SECRET=your-generated-secret-here
+
+# Local development URL (must match exactly)
+# Use http://localhost:5173, NOT http://127.0.0.1:5173
+BETTER_AUTH_URL=http://localhost:5173
+
+# ============================================
+# Google OAuth - OPTIONAL
+# ============================================
+# Get credentials from: https://console.cloud.google.com/
+# 1. Create OAuth 2.0 Client ID
+# 2. Add authorized redirect URI: http://localhost:5173/api/auth/callback/google
+# 3. Copy Client ID and Secret below
+
+GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-client-secret
+
+# ============================================
+# Registration Control
+# ============================================
+# Set to 'true' to disable new user registration
+# Useful when you don't want any more users signing up
+
+DISABLE_REGISTRATION=false
+
+# ============================================
+# Email Configuration - OPTIONAL
+# ============================================
+# Only needed for email verification or password reset
+# Resend recommended: https://resend.com/
+
+EMAIL_FROM=noreply@yourdomain.com
+EMAIL_API_KEY=re_...
+
+# ============================================
+# Application Configuration
+# ============================================
+
+# Application name (displayed in UI)
+APP_NAME=Vite Flare Starter
+
+# Node environment (development | production)
+NODE_ENV=development
+
+# ============================================
+# Feature Flags
+# ============================================
+# Control which features are shown in the application.
+
+# Development Tools (auto-enabled in dev mode)
+# VITE_FEATURE_STYLE_GUIDE=true    # Enable style guide in production
+# VITE_FEATURE_COMPONENTS=false    # Disable components showcase
+
+# ============================================
+# PRODUCTION SECRETS
+# ============================================
+# For production, set secrets via Wrangler CLI:
+#
+# echo "your-production-secret" | npx wrangler secret put BETTER_AUTH_SECRET
+# echo "https://your-worker.workers.dev" | npx wrangler secret put BETTER_AUTH_URL
+# echo "your-google-client-id" | npx wrangler secret put GOOGLE_CLIENT_ID
+# echo "your-google-client-secret" | npx wrangler secret put GOOGLE_CLIENT_SECRET
+# echo "true" | npx wrangler secret put DISABLE_REGISTRATION
+#
+# Never commit production secrets to git!
+
+# ============================================
+# NOTES
+# ============================================
+# - .dev.vars is for LOCAL DEVELOPMENT ONLY
+# - Production uses Cloudflare Secrets (set via wrangler CLI)
+# - Never commit .dev.vars to git (it's in .gitignore)
+# - BETTER_AUTH_URL must match your actual URL exactly
+# - Google OAuth redirect URI must be added to Google Cloud Console

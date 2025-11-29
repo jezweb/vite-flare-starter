@@ -1,0 +1,68 @@
+// Cloudflare Workers Configuration
+// Documentation: https://developers.cloudflare.com/workers/configuration/
+{
+  "name": "vite-flare-starter",
+  // IMPORTANT: Remove account_id before committing to public repo
+  // Set via CLOUDFLARE_ACCOUNT_ID env var or wrangler will prompt
+  // "account_id": "your-account-id",
+  "compatibility_date": "2025-01-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Worker entry point (source file, NOT built file)
+  "main": "./src/server/index.ts",
+
+  // Static Assets Configuration (Workers with Static Assets)
+  // https://developers.cloudflare.com/workers/static-assets/
+  "assets": {
+    "directory": "./dist/client",
+    // SPA routing - serve index.html for all non-asset routes
+    "not_found_handling": "single-page-application",
+    // Only these paths invoke the Worker (everything else = FREE static serving)
+    "run_worker_first": ["/api/*"]
+  },
+
+  // Cloudflare Bindings
+  // These are automatically typed in .wrangler/types/
+
+  // D1 Database (SQLite at edge)
+  // Create with: wrangler d1 create vite-flare-starter-db
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "vite-flare-starter-db",
+      "database_id": "your-database-id",
+      "migrations_dir": "drizzle"
+    }
+  ],
+
+  // R2 Storage (S3-compatible object storage)
+  // Create with: wrangler r2 bucket create vite-flare-starter-avatars
+  "r2_buckets": [
+    {
+      "binding": "AVATARS",
+      "bucket_name": "vite-flare-starter-avatars"
+    }
+  ],
+
+  // KV Namespace (key-value storage)
+  // Create with: wrangler kv namespace create CACHE
+  // "kv_namespaces": [
+  //   {
+  //     "binding": "KV",
+  //     "id": "your-kv-id"
+  //   }
+  // ],
+
+  // Workers AI (optional - for AI features)
+  // "ai": {
+  //   "binding": "AI"
+  // },
+
+  // Observability
+  "observability": {
+    "enabled": true
+  }
+
+  // Build configuration is handled by Vite (vite.config.ts)
+  // Do not set "minify" here - use Vite's build.minify option instead
+}

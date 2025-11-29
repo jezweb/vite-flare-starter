@@ -1,0 +1,58 @@
+{
+  "compilerOptions": {
+    // Language and Environment
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "jsx": "react-jsx",
+
+    // Module Resolution
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+
+    // Type Checking
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noPropertyAccessFromIndexSignature": true,
+
+    // Emit
+    "noEmit": true,
+    "skipLibCheck": true,
+
+    // Interop
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+
+    // Path Aliases
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/client/*": ["./src/client/*"],
+      "@/server/*": ["./src/server/*"]
+    },
+
+    // Cloudflare Workers Types
+    "types": [
+      "@cloudflare/workers-types",
+      "vite/client"
+    ]
+  },
+
+  "include": [
+    "src/**/*",
+    "vite.config.ts",
+    "wrangler.jsonc"
+  ],
+
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".wrangler"
+  ]
+}
