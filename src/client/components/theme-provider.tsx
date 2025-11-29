@@ -3,6 +3,7 @@ import { useSession } from '@/client/lib/auth'
 import { usePreferences } from '@/client/modules/settings/hooks/useSettings'
 import { applyTheme } from '@/lib/themes'
 import { defaultPreferences } from '@/shared/schemas/preferences.schema'
+import { features, fixedTheme } from '@/shared/config/features'
 
 type Theme = 'dark' | 'light' | 'system'
 
@@ -40,13 +41,14 @@ export function ThemeProvider({
 
   // Apply theme whenever session or preferences change
   useEffect(() => {
-    if (session && preferences) {
-      // User is logged in: use database preferences
-      applyTheme(preferences.theme, preferences.mode)
-    } else {
-      // User is not logged in: use localStorage (legacy behavior)
-      applyTheme(defaultPreferences.theme, localTheme)
-    }
+    // When theme selector is disabled, always use the fixed theme
+    const effectiveTheme = features.themeSelector
+      ? (session && preferences ? preferences.theme : defaultPreferences.theme)
+      : fixedTheme
+
+    const effectiveMode = session && preferences ? preferences.mode : localTheme
+
+    applyTheme(effectiveTheme, effectiveMode)
   }, [session, preferences, localTheme])
 
   // For backwards compatibility with components that use setTheme directly

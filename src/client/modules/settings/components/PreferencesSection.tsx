@@ -28,6 +28,7 @@ import {
   getTimezoneAbbreviation,
   formatTimeInTimezone,
 } from '@/lib/timezones'
+import { features } from '@/shared/config/features'
 
 type ModeOption = {
   value: ThemeMode
@@ -221,7 +222,8 @@ export function PreferencesSection() {
 
   return (
     <div className="space-y-6">
-      {/* Color Scheme Selector */}
+      {/* Color Scheme Selector - only shown when theme selector feature is enabled */}
+      {features.themeSelector && (
       <Card>
         <CardHeader>
           <CardTitle>
@@ -281,6 +283,7 @@ export function PreferencesSection() {
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* Mode Selector (Light/Dark/System) */}
       <Card>
@@ -317,7 +320,9 @@ export function PreferencesSection() {
           </div>
 
           <p className="text-sm text-muted-foreground mt-4">
-            Current: <strong className="capitalize">{currentScheme}</strong> theme in{' '}
+            Current: {features.themeSelector && (
+              <><strong className="capitalize">{currentScheme}</strong> theme in{' '}</>
+            )}
             <strong className="capitalize">{currentMode}</strong> mode
           </p>
         </CardContent>

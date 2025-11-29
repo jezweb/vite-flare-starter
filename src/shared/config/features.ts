@@ -35,6 +35,31 @@ export const features = {
    * Useful for AI agents and human developers to reference available components
    */
   components: isEnabled('VITE_FEATURE_COMPONENTS'),
+
+  /**
+   * Theme Selector - Allow users to choose color schemes
+   * When disabled, the app uses the fixedTheme value below
+   * Set VITE_FEATURE_THEME_SELECTOR=false to disable
+   */
+  themeSelector: isEnabled('VITE_FEATURE_THEME_SELECTOR'),
 } as const
+
+/**
+ * Fixed Theme Configuration
+ *
+ * When features.themeSelector is false, this theme is used for all users.
+ * Valid values: 'default' | 'blue' | 'green' | 'orange' | 'red' | 'rose' | 'violet' | 'yellow'
+ *
+ * Set via VITE_FIXED_THEME env var, defaults to 'blue'
+ */
+export const fixedTheme = (import.meta.env['VITE_FIXED_THEME'] || 'blue') as
+  | 'default'
+  | 'blue'
+  | 'green'
+  | 'orange'
+  | 'red'
+  | 'rose'
+  | 'violet'
+  | 'yellow'
 
 export type Features = typeof features
