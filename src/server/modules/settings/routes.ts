@@ -12,6 +12,7 @@ import {
   deleteAccountSchema,
 } from '@/shared/schemas/settings.schema'
 import { userPreferencesSchema, defaultPreferences } from '@/shared/schemas/preferences.schema'
+import { AVATAR } from '@/shared/config/constants'
 
 // Create Hono app for settings routes with auth context
 const app = new Hono<AuthContext>()
@@ -150,19 +151,17 @@ app.post('/avatar', async (c) => {
       return c.json({ error: 'No file provided' }, 400)
     }
 
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
-    if (!allowedTypes.includes(file.type)) {
+    // Validate file type (from shared constants)
+    if (!AVATAR.ALLOWED_TYPES.includes(file.type as typeof AVATAR.ALLOWED_TYPES[number])) {
       return c.json({
-        error: `Invalid file type. Allowed: ${allowedTypes.join(', ')}`
+        error: `Invalid file type. Allowed: ${AVATAR.ALLOWED_TYPES.join(', ')}`
       }, 400)
     }
 
-    // Validate file size (5MB max)
-    const maxSize = 5 * 1024 * 1024 // 5MB
-    if (file.size > maxSize) {
+    // Validate file size (from shared constants)
+    if (file.size > AVATAR.MAX_SIZE_BYTES) {
       return c.json({
-        error: `File too large. Maximum size: ${maxSize / 1024 / 1024}MB`
+        error: `File too large. Maximum size: ${AVATAR.MAX_SIZE_DISPLAY}`
       }, 400)
     }
 

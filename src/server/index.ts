@@ -6,6 +6,7 @@ import { createAuth } from './modules/auth'
 import settingsRoutes from './modules/settings/routes'
 import apiTokensRoutes from './modules/api-tokens/routes'
 import organizationRoutes from './modules/organization/routes'
+import { AVATAR, APP_VERSION } from '@/shared/config/constants'
 
 // Define Cloudflare Workers environment bindings
 export interface Env {
@@ -27,6 +28,10 @@ export interface Env {
 
   // Email signup control (doesn't affect Google OAuth)
   DISABLE_EMAIL_SIGNUP?: string
+
+  // Trusted origins for auth (comma-separated list)
+  // Example: "http://localhost:5173,https://myapp.workers.dev,https://myapp.com"
+  TRUSTED_ORIGINS?: string
 }
 
 // Create Hono app with type-safe environment
@@ -37,12 +42,33 @@ app.use('*', logger())
 app.use('/api/*', cors())
 
 // Health check endpoint
-app.get('/api/health', (c) => {
+app.get('/api/health', async (c) => {
+  const checks: Record<string, 'ok' | 'error'> = {}
+
+  // Optional: Check D1 database connectivity
+  try {
+    await c.env.DB.prepare('SELECT 1').run()
+    checks['database'] = 'ok'
+  } catch {
+    checks['database'] = 'error'
+  }
+
+  // Optional: Check R2 bucket accessibility
+  try {
+    await c.env.AVATARS.list({ limit: 1 })
+    checks['storage'] = 'ok'
+  } catch {
+    checks['storage'] = 'error'
+  }
+
+  const allOk = Object.values(checks).every((v) => v === 'ok')
+
   return c.json({
-    status: 'ok',
-    message: 'Vite Flare Starter API is running',
+    status: allOk ? 'ok' : 'degraded',
+    version: APP_VERSION,
     timestamp: new Date().toISOString(),
     environment: c.env.NODE_ENV || 'development',
+    checks,
   })
 })
 
@@ -56,6 +82,7 @@ app.all('/api/auth/*', async (c) => {
     EMAIL_API_KEY: c.env.EMAIL_API_KEY,
     EMAIL_FROM: c.env.EMAIL_FROM,
     DISABLE_EMAIL_SIGNUP: c.env.DISABLE_EMAIL_SIGNUP,
+    TRUSTED_ORIGINS: c.env.TRUSTED_ORIGINS,
   })
   return auth.handler(c.req.raw)
 })
@@ -66,10 +93,8 @@ app.get('/api/avatar/:userId', async (c) => {
   const userId = c.req.param('userId')
 
   try {
-    // Try different image formats
-    const extensions = ['jpg', 'jpeg', 'png', 'webp']
-
-    for (const ext of extensions) {
+    // Try different image formats (from shared constants)
+    for (const ext of AVATAR.EXTENSIONS) {
       const key = `avatars/${userId}.${ext}`
       const object = await c.env.AVATARS.get(key)
 
@@ -84,11 +109,11 @@ app.get('/api/avatar/:userId', async (c) => {
 
         const contentType = contentTypeMap[ext] || 'image/jpeg'
 
-        // Return image with appropriate headers
+        // Return image with appropriate headers (cache duration from constants)
         return new Response(object.body, {
           headers: {
             'Content-Type': contentType,
-            'Cache-Control': 'public, max-age=31536000, immutable',
+            'Cache-Control': `public, max-age=${AVATAR.CACHE_MAX_AGE}, immutable`,
           },
         })
       }

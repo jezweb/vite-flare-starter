@@ -52,7 +52,10 @@ vite-flare-starter/
 │   │   └── db/schema.ts     # Central schema exports
 │   └── shared/
 │       ├── schemas/         # Zod validation schemas
-│       └── config/features.ts
+│       └── config/
+│           ├── features.ts  # Feature flags
+│           ├── app.ts       # App branding config
+│           └── constants.ts # Shared constants (limits, timeouts)
 ├── drizzle/                 # Database migrations
 ├── wrangler.jsonc           # Workers config
 ├── vite.config.ts           # Vite config
@@ -65,6 +68,7 @@ vite-flare-starter/
 
 ### Server Entry Point
 `src/server/index.ts` - Hono app with routes:
+- `/api/health` - Health check with DB/R2 status and version
 - `/api/auth/*` - better-auth handlers
 - `/api/settings/*` - User settings
 - `/api/api-tokens/*` - API token management
@@ -90,12 +94,9 @@ vite-flare-starter/
 
 **CRITICAL: When deploying to a new domain:**
 
-1. **Add domain to `trustedOrigins`** in `src/server/modules/auth/index.ts`:
-   ```typescript
-   trustedOrigins: [
-     'http://localhost:5173',
-     'https://your-domain.workers.dev',
-   ],
+1. **Set `TRUSTED_ORIGINS`** to include your production domain(s):
+   ```bash
+   echo "http://localhost:5173,https://your-domain.workers.dev" | npx wrangler secret put TRUSTED_ORIGINS
    ```
    Without this, auth will silently fail and redirect to homepage.
 
@@ -110,7 +111,7 @@ vite-flare-starter/
    ```
 
 **Symptoms of misconfiguration:**
-- User signs in but lands on homepage → `trustedOrigins` missing domain
+- User signs in but lands on homepage → `TRUSTED_ORIGINS` missing domain
 - OAuth callback 500 error → `BETTER_AUTH_URL` mismatch
 - Google "redirect_uri_mismatch" → URI not registered in Google Cloud
 

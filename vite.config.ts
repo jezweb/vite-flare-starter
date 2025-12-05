@@ -4,9 +4,17 @@ import tailwindcss from '@tailwindcss/vite';
 import { cloudflare } from '@cloudflare/vite-plugin';
 import path from 'path';
 
+// Read package.json for version injection
+import packageJson from './package.json';
+
 // Vite configuration for Vite-Flare-Stack
 // Documentation: https://vitejs.dev/config/
 export default defineConfig({
+  // Define global constants
+  define: {
+    __APP_VERSION__: JSON.stringify(packageJson.version),
+  },
+
   plugins: [
     // React plugin with Fast Refresh
     react(),

@@ -4,6 +4,30 @@ import { drizzle } from 'drizzle-orm/d1'
 import type { D1Database } from '@cloudflare/workers-types'
 import { Resend } from 'resend'
 import * as schema from './db/schema'
+import { SESSION } from '@/shared/config/constants'
+
+/** Default trusted origins (always included) */
+const DEFAULT_TRUSTED_ORIGINS = ['http://localhost:5173']
+
+/**
+ * Parse trusted origins from environment variable
+ * Accepts comma-separated list: "http://localhost:5173,https://myapp.workers.dev"
+ */
+function parseTrustedOrigins(envValue?: string): string[] {
+  if (!envValue) return DEFAULT_TRUSTED_ORIGINS
+
+  const origins = envValue
+    .split(',')
+    .map((o) => o.trim())
+    .filter((o) => o.length > 0)
+
+  // Always include localhost for development
+  if (!origins.includes('http://localhost:5173')) {
+    origins.unshift('http://localhost:5173')
+  }
+
+  return origins
+}
 
 /**
  * Create better-auth instance with Cloudflare D1
@@ -21,6 +45,7 @@ export function createAuth(
     EMAIL_API_KEY?: string
     EMAIL_FROM?: string
     DISABLE_EMAIL_SIGNUP?: string
+    TRUSTED_ORIGINS?: string
   }
 ) {
   // Initialize Drizzle with D1 binding
@@ -35,11 +60,10 @@ export function createAuth(
     baseURL: env.BETTER_AUTH_URL,
     secret: env.BETTER_AUTH_SECRET,
 
-    // Allow multiple domains (workers.dev and custom domain)
-    trustedOrigins: [
-      'http://localhost:5173',
-      'https://vite-flare-starter.webfonts.workers.dev',
-    ],
+    // Allow multiple domains - configurable via TRUSTED_ORIGINS env var
+    // Format: comma-separated list of URLs
+    // Example: "http://localhost:5173,https://myapp.workers.dev,https://myapp.com"
+    trustedOrigins: parseTrustedOrigins(env.TRUSTED_ORIGINS),
 
     // CRITICAL: Use drizzleAdapter with SQLite provider
     database: drizzleAdapter(db, {
@@ -61,10 +85,10 @@ export function createAuth(
       }),
     },
 
-    // Session configuration
+    // Session configuration (from shared constants)
     session: {
-      expiresIn: 60 * 60 * 24 * 7, // 7 days
-      updateAge: 60 * 60 * 24, // Update session every 24 hours
+      expiresIn: SESSION.EXPIRES_IN, // Default: 7 days
+      updateAge: SESSION.UPDATE_AGE, // Default: 24 hours
     },
 
     // Social providers (Google OAuth)

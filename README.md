@@ -99,12 +99,9 @@ pnpm deploy
 
 Before deploying to a new domain, ensure:
 
-1. **Add domain to `trustedOrigins`** in `src/server/modules/auth/index.ts`:
-   ```typescript
-   trustedOrigins: [
-     'http://localhost:5173',
-     'https://your-app.workers.dev',  // Add your domain
-   ],
+1. **Set `TRUSTED_ORIGINS`** to include your production domain(s):
+   ```bash
+   echo "http://localhost:5173,https://your-app.workers.dev" | npx wrangler secret put TRUSTED_ORIGINS
    ```
 
 2. **Set `BETTER_AUTH_URL` secret** to your exact production URL:
@@ -118,7 +115,7 @@ Before deploying to a new domain, ensure:
    ```
 
 **Common issues:**
-- Auth works but redirects to homepage → Check `trustedOrigins` includes your domain
+- Auth works but redirects to homepage → Check `TRUSTED_ORIGINS` includes your domain
 - OAuth callback fails → Check `BETTER_AUTH_URL` matches your domain exactly
 - Google sign-in fails → Check redirect URI is registered in Google Cloud Console
 
@@ -267,6 +264,17 @@ To hide the API Tokens tab from regular users (power user feature):
 # .dev.vars (local)
 VITE_FEATURE_API_TOKENS=false
 ```
+
+### Trusted Origins (Auth)
+
+Configure allowed origins for authentication (required for production):
+
+```bash
+# .dev.vars (local) - comma-separated list
+TRUSTED_ORIGINS=http://localhost:5173,https://myapp.workers.dev,https://myapp.com
+```
+
+**Note:** `http://localhost:5173` is always included automatically for development.
 
 ## License
 
