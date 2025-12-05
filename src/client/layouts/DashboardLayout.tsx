@@ -91,7 +91,7 @@ function Sidebar() {
       <div className="flex h-full flex-col">
         {/* Logo */}
         <div className="flex h-16 items-center border-b border-border px-6">
-          <Link to="/dashboard" className="flex items-center gap-2 font-semibold text-lg">
+          <Link to="/" className="flex items-center gap-2 font-semibold text-lg">
             <span className="text-primary">⚡</span>
             <span>Vite Flare Starter</span>
           </Link>
@@ -144,7 +144,7 @@ function MobileSidebar() {
         <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="flex h-16 items-center border-b border-border px-6">
-            <Link to="/dashboard" className="flex items-center gap-2 font-semibold text-lg">
+            <Link to="/" className="flex items-center gap-2 font-semibold text-lg">
               <span className="text-primary">⚡</span>
               <span>Vite Flare Starter</span>
             </Link>

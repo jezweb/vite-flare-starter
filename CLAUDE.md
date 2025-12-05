@@ -247,9 +247,13 @@ Defined in `wrangler.jsonc`:
 
 ## Feature Flags
 
-See `src/shared/config/features.ts`:
+See `src/shared/config/features.ts`. Control via `VITE_FEATURE_*` env vars:
+
 - `styleGuide` - Show style guide page (dev only by default)
 - `components` - Show components showcase
+- `themePicker` - Show color theme picker (set `VITE_FEATURE_THEME_PICKER=false` to hide for branded client sites)
+
+**Default theme**: Set in `src/shared/schemas/preferences.schema.ts` via `defaultPreferences`
 
 ---
 

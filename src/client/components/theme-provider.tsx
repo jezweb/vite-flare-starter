@@ -41,8 +41,8 @@ export function ThemeProvider({
   // Apply theme whenever session or preferences change
   useEffect(() => {
     if (session && preferences) {
-      // User is logged in: use database preferences
-      applyTheme(preferences.theme, preferences.mode)
+      // User is logged in: use database preferences (including custom theme colors)
+      applyTheme(preferences.theme, preferences.mode, preferences.customTheme)
     } else {
       // User is not logged in: use localStorage (legacy behavior)
       applyTheme(defaultPreferences.theme, localTheme)

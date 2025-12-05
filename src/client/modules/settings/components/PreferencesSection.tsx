@@ -52,6 +52,7 @@ import {
   getTimezoneAbbreviation,
   formatTimeInTimezone,
 } from '@/lib/timezones'
+import { features } from '@/shared/config/features'
 
 type ModeOption = {
   value: ThemeMode
@@ -218,14 +219,19 @@ export function PreferencesSection() {
     const parsed = parseThemeCSS(customCSSInput)
     if (!parsed) return
 
+    const customTheme = {
+      light: parsed.light as CustomThemeColors,
+      dark: parsed.dark as CustomThemeColors,
+    }
+
+    // Apply theme immediately for instant visual feedback
+    applyTheme('custom', currentMode, customTheme)
+
     try {
       await updatePreferences.mutateAsync({
         ...currentPrefs,
         theme: 'custom',
-        customTheme: {
-          light: parsed.light as CustomThemeColors,
-          dark: parsed.dark as CustomThemeColors,
-        },
+        customTheme,
       })
       setCustomThemeDialogOpen(false)
       setCustomCSSInput('')
@@ -233,6 +239,8 @@ export function PreferencesSection() {
       setParseSuccess(false)
     } catch (error) {
       console.error('Failed to apply custom theme:', error)
+      // Revert to previous theme on error
+      applyTheme(currentPrefs.theme, currentMode, currentPrefs.customTheme)
       setParseError('Failed to save custom theme. Please try again.')
     }
   }
@@ -313,7 +321,8 @@ export function PreferencesSection() {
 
   return (
     <div className="space-y-6">
-      {/* Color Scheme Selector */}
+      {/* Color Scheme Selector - hidden when themePicker feature is disabled */}
+      {features.themePicker && (
       <Card>
         <CardHeader>
           <CardTitle>
@@ -451,7 +460,7 @@ export function PreferencesSection() {
                       setParseError(null)
                       setParseSuccess(false)
                     }}
-                    className="font-mono text-sm min-h-[200px]"
+                    className="font-mono text-sm min-h-[200px] max-h-[300px] resize-y"
                   />
 
                   {/* Parse status */}
@@ -499,6 +508,7 @@ export function PreferencesSection() {
           )}
         </CardContent>
       </Card>
+      )}
 
       {/* Mode Selector (Light/Dark/System) */}
       <Card>

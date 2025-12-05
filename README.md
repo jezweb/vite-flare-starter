@@ -226,6 +226,29 @@ Claude will generate the CSS variables which you can paste into the Custom Theme
 }
 ```
 
+### Lock Theme for Client Sites
+
+To prevent users from changing the color theme (useful for branded client sites):
+
+```bash
+# .dev.vars (local)
+VITE_FEATURE_THEME_PICKER=false
+
+# Production
+echo "false" | npx wrangler secret put VITE_FEATURE_THEME_PICKER
+```
+
+To set the default theme, edit `src/shared/schemas/preferences.schema.ts`:
+
+```typescript
+export const defaultPreferences: UserPreferences = {
+  theme: 'blue',  // or 'green', 'violet', etc.
+  mode: 'dark',   // or 'light', 'system'
+}
+```
+
+**Note:** Users can still switch between light/dark/system mode - only the color theme picker is hidden.
+
 ## License
 
 MIT - see [LICENSE](./LICENSE)

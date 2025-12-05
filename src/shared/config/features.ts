@@ -35,6 +35,17 @@ export const features = {
    * Useful for AI agents and human developers to reference available components
    */
   components: isEnabled('VITE_FEATURE_COMPONENTS'),
+
+  /**
+   * User Preferences
+   */
+
+  /**
+   * Theme Picker - Allow users to change color theme
+   * Set to false to lock users to the default theme (for branded client sites)
+   * Default theme is set in src/shared/schemas/preferences.schema.ts
+   */
+  themePicker: isEnabled('VITE_FEATURE_THEME_PICKER'),
 } as const
 
 export type Features = typeof features

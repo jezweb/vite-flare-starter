@@ -478,10 +478,17 @@ export function applyTheme(
   }
 
   // Get theme colors for the effective mode
-  // For custom scheme, use provided colors or fall back to default
+  // For custom scheme, use provided colors if they have actual data
   let colors: Record<string, string>
-  if (scheme === 'custom' && customColors?.[effectiveMode]) {
-    colors = customColors[effectiveMode] as Record<string, string>
+  if (scheme === 'custom') {
+    const customModeColors = customColors?.[effectiveMode]
+    // Only use custom colors if they exist and have content
+    if (customModeColors && Object.keys(customModeColors).length > 0) {
+      colors = customModeColors as Record<string, string>
+    } else {
+      // Fall back to default theme if custom colors are empty
+      colors = themes['default'][effectiveMode]
+    }
   } else {
     colors = themes[scheme][effectiveMode]
   }
