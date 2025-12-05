@@ -29,6 +29,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { features } from '@/shared/config/features'
+import { appConfig } from '@/shared/config/app'
 
 /**
  * Navigation item type
@@ -93,7 +94,7 @@ function Sidebar() {
         <div className="flex h-16 items-center border-b border-border px-6">
           <Link to="/" className="flex items-center gap-2 font-semibold text-lg">
             <span className="text-primary">⚡</span>
-            <span>Vite Flare Starter</span>
+            <span>{appConfig.name}</span>
           </Link>
         </div>
 
@@ -146,7 +147,7 @@ function MobileSidebar() {
           <div className="flex h-16 items-center border-b border-border px-6">
             <Link to="/" className="flex items-center gap-2 font-semibold text-lg">
               <span className="text-primary">⚡</span>
-              <span>Vite Flare Starter</span>
+              <span>{appConfig.name}</span>
             </Link>
           </div>
 

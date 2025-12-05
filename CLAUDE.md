@@ -252,8 +252,14 @@ See `src/shared/config/features.ts`. Control via `VITE_FEATURE_*` env vars:
 - `styleGuide` - Show style guide page (dev only by default)
 - `components` - Show components showcase
 - `themePicker` - Show color theme picker (set `VITE_FEATURE_THEME_PICKER=false` to hide for branded client sites)
+- `apiTokens` - Show API Tokens tab in settings (set `VITE_FEATURE_API_TOKENS=false` to hide)
 
-**Default theme**: Set in `src/shared/schemas/preferences.schema.ts` via `defaultPreferences`
+## App Configuration
+
+See `src/shared/config/app.ts`. Control via env vars:
+
+- `VITE_APP_NAME` - Application name in sidebar (default: "Vite Flare Starter")
+- `VITE_DEFAULT_THEME` - Default color theme for new users (default: "default", options: default, blue, green, orange, red, rose, violet, yellow)
 
 ---
 

@@ -97,11 +97,23 @@ export type TimeFormat = (typeof timeFormats)[number]
 export type UserPreferences = z.infer<typeof userPreferencesSchema>
 
 /**
+ * Get default theme from environment variable or fallback to 'default'
+ */
+const getDefaultTheme = (): ThemeScheme => {
+  const envTheme = import.meta.env['VITE_DEFAULT_THEME']
+  if (envTheme && themeSchemes.includes(envTheme as ThemeScheme)) {
+    return envTheme as ThemeScheme
+  }
+  return 'default'
+}
+
+/**
  * Default preferences
+ * theme: can be set via VITE_DEFAULT_THEME environment variable
  * timezone: null means auto-detect from browser
  */
 export const defaultPreferences: UserPreferences = {
-  theme: 'default',
+  theme: getDefaultTheme(),
   mode: 'system',
   timezone: null,
   dateFormat: 'DD/MM/YYYY',

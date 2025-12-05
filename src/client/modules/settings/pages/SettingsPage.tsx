@@ -6,6 +6,7 @@ import { SecuritySection } from '../components/SecuritySection'
 import { PreferencesSection } from '../components/PreferencesSection'
 import { ApiTokensSection } from '../components/ApiTokensSection'
 import { OrganizationSection } from '@/client/modules/organization/components/OrganizationSection'
+import { features } from '@/shared/config/features'
 
 export function SettingsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -14,6 +15,10 @@ export function SettingsPage() {
   const handleTabChange = (value: string) => {
     setSearchParams({ tab: value })
   }
+
+  // Calculate grid columns based on visible tabs
+  const tabCount = features.apiTokens ? 5 : 4
+  const gridCols = tabCount === 5 ? 'grid-cols-3 sm:grid-cols-5' : 'grid-cols-2 sm:grid-cols-4'
 
   return (
     <div className="container max-w-4xl py-8">
@@ -30,11 +35,13 @@ export function SettingsPage() {
 
       {/* Tabs */}
       <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 mb-8">
+        <TabsList className={`grid w-full ${gridCols} mb-8`}>
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="organization">Organization</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="api-tokens">API Tokens</TabsTrigger>
+          {features.apiTokens && (
+            <TabsTrigger value="api-tokens">API Tokens</TabsTrigger>
+          )}
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
@@ -50,9 +57,11 @@ export function SettingsPage() {
           <SecuritySection />
         </TabsContent>
 
-        <TabsContent value="api-tokens">
-          <ApiTokensSection />
-        </TabsContent>
+        {features.apiTokens && (
+          <TabsContent value="api-tokens">
+            <ApiTokensSection />
+          </TabsContent>
+        )}
 
         <TabsContent value="settings">
           <PreferencesSection />

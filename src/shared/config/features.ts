@@ -46,6 +46,16 @@ export const features = {
    * Default theme is set in src/shared/schemas/preferences.schema.ts
    */
   themePicker: isEnabled('VITE_FEATURE_THEME_PICKER'),
+
+  /**
+   * Settings Tabs
+   */
+
+  /**
+   * API Tokens - Allow users to manage API tokens in settings
+   * Set to false to hide API token management (power user feature)
+   */
+  apiTokens: isEnabled('VITE_FEATURE_API_TOKENS'),
 } as const
 
 export type Features = typeof features
