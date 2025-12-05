@@ -4,7 +4,7 @@
   "name": "vite-flare-starter",
   // IMPORTANT: Remove account_id before committing to public repo
   // Set via CLOUDFLARE_ACCOUNT_ID env var or wrangler will prompt
-  // "account_id": "your-account-id",
+  "account_id": "0460574641fdbb98159c98ebf593e2bd",
   "compatibility_date": "2025-01-01",
   "compatibility_flags": ["nodejs_compat"],
 
@@ -30,7 +30,7 @@
     {
       "binding": "DB",
       "database_name": "vite-flare-starter-db",
-      "database_id": "your-database-id",
+      "database_id": "eb72fbdd-aafb-4a2f-ad9a-4b824b3dc700",
       "migrations_dir": "drizzle"
     }
   ],

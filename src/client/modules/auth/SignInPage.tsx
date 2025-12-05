@@ -35,8 +35,8 @@ export function SignInPage() {
         password,
       })
 
-      // Redirect to home on success
-      navigate('/')
+      // Redirect to dashboard on success
+      navigate('/dashboard')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to sign in')
     } finally {
@@ -49,7 +49,7 @@ export function SignInPage() {
     try {
       await authClient.signIn.social({
         provider: 'google',
-        callbackURL: '/',
+        callbackURL: '/dashboard',
       })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to sign in with Google')

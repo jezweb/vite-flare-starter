@@ -95,6 +95,33 @@ echo "https://your-app.workers.dev" | npx wrangler secret put BETTER_AUTH_URL
 pnpm deploy
 ```
 
+### Production Checklist
+
+Before deploying to a new domain, ensure:
+
+1. **Add domain to `trustedOrigins`** in `src/server/modules/auth/index.ts`:
+   ```typescript
+   trustedOrigins: [
+     'http://localhost:5173',
+     'https://your-app.workers.dev',  // Add your domain
+   ],
+   ```
+
+2. **Set `BETTER_AUTH_URL` secret** to your exact production URL:
+   ```bash
+   echo "https://your-app.workers.dev" | npx wrangler secret put BETTER_AUTH_URL
+   ```
+
+3. **For Google OAuth**, add redirect URI in Google Cloud Console:
+   ```
+   https://your-app.workers.dev/api/auth/callback/google
+   ```
+
+**Common issues:**
+- Auth works but redirects to homepage → Check `trustedOrigins` includes your domain
+- OAuth callback fails → Check `BETTER_AUTH_URL` matches your domain exactly
+- Google sign-in fails → Check redirect URI is registered in Google Cloud Console
+
 ## Project Structure
 
 ```
@@ -133,25 +160,71 @@ vite-flare-starter/
 
 ## Configuration
 
-### Disable New Registrations
+### Disable Email Signup
 
-Set `DISABLE_REGISTRATION=true` in your environment to prevent new sign-ups:
+Set `DISABLE_EMAIL_SIGNUP=true` to prevent new email/password registrations:
 
 ```bash
 # .dev.vars (local)
-DISABLE_REGISTRATION=true
+DISABLE_EMAIL_SIGNUP=true
 
 # Production
-echo "true" | npx wrangler secret put DISABLE_REGISTRATION
+echo "true" | npx wrangler secret put DISABLE_EMAIL_SIGNUP
 ```
 
-This disables email sign-up and Google OAuth registration.
+**Note:** This only affects email/password signup:
+- Existing email users can still log in
+- Google OAuth is NOT affected (domain restriction is handled at Google Cloud level)
 
 ### Google OAuth
 
 1. Create OAuth credentials at [Google Cloud Console](https://console.cloud.google.com)
 2. Set authorized redirect URI: `https://your-app.workers.dev/api/auth/callback/google`
 3. Add credentials to `.dev.vars` and production secrets
+
+**Domain Restriction:** To allow only your Google Workspace domain:
+- Go to OAuth consent screen → Set "User type" to **Internal**
+- Only users from your domain can sign in (e.g., @yourcompany.com)
+
+### Custom Themes
+
+The starter includes 8 built-in color themes plus support for custom themes.
+
+**Using Theme Generators:**
+1. Visit a theme generator:
+   - [tweakcn](https://tweakcn.com/) - Modern editor with OKLch support
+   - [shadcn/ui Themes](https://ui.shadcn.com/themes) - Official hand-picked themes
+   - [10000+ Themes](https://ui.jln.dev/) - Browse community themes
+2. Copy the generated CSS
+3. Go to Settings → Color Theme → Custom
+4. Paste the CSS and click "Apply Theme"
+
+**Using Claude Code:**
+
+Ask Claude Code to generate a theme based on your brand:
+
+```
+Create a custom theme for my app using brand colors:
+- Primary: #2563eb (blue)
+- Make it professional and clean
+```
+
+Claude will generate the CSS variables which you can paste into the Custom Theme dialog.
+
+**Theme CSS Format:**
+```css
+:root {
+  --background: 0 0% 100%;
+  --foreground: 240 10% 3.9%;
+  --primary: 220 90% 56%;
+  /* ... other variables */
+}
+
+.dark {
+  --background: 240 10% 3.9%;
+  /* ... dark mode variables */
+}
+```
 
 ## License
 

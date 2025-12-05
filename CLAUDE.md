@@ -80,9 +80,39 @@ vite-flare-starter/
 ### Auth Configuration
 `src/server/modules/auth/index.ts`:
 - Email/password authentication
-- Google OAuth (optional)
+- Google OAuth (optional, domain restriction via Google Cloud Console)
 - Session management (7-day expiry)
-- `DISABLE_REGISTRATION` env var support
+- `DISABLE_EMAIL_SIGNUP` - blocks new email accounts, Google OAuth unaffected
+
+---
+
+## Deployment Gotchas
+
+**CRITICAL: When deploying to a new domain:**
+
+1. **Add domain to `trustedOrigins`** in `src/server/modules/auth/index.ts`:
+   ```typescript
+   trustedOrigins: [
+     'http://localhost:5173',
+     'https://your-domain.workers.dev',
+   ],
+   ```
+   Without this, auth will silently fail and redirect to homepage.
+
+2. **Set `BETTER_AUTH_URL` secret** to exact production URL:
+   ```bash
+   echo "https://your-domain.workers.dev" | npx wrangler secret put BETTER_AUTH_URL
+   ```
+
+3. **Google OAuth redirect URI** must be registered in Google Cloud Console:
+   ```
+   https://your-domain.workers.dev/api/auth/callback/google
+   ```
+
+**Symptoms of misconfiguration:**
+- User signs in but lands on homepage → `trustedOrigins` missing domain
+- OAuth callback 500 error → `BETTER_AUTH_URL` mismatch
+- Google "redirect_uri_mismatch" → URI not registered in Google Cloud
 
 ---
 
@@ -181,7 +211,7 @@ BETTER_AUTH_SECRET=your-32-char-secret
 BETTER_AUTH_URL=http://localhost:5173
 GOOGLE_CLIENT_ID=optional
 GOOGLE_CLIENT_SECRET=optional
-DISABLE_REGISTRATION=false
+DISABLE_EMAIL_SIGNUP=false
 ```
 
 ### Production (Cloudflare Secrets)
@@ -220,6 +250,69 @@ Defined in `wrangler.jsonc`:
 See `src/shared/config/features.ts`:
 - `styleGuide` - Show style guide page (dev only by default)
 - `components` - Show components showcase
+
+---
+
+## Custom Theming
+
+The starter includes 8 built-in themes plus custom theme support via CSS import.
+
+### Theme Files
+
+- `src/lib/themes.ts` - Theme definitions and CSS parser
+- `src/shared/schemas/preferences.schema.ts` - Theme types including `CustomThemeColors`
+- `src/client/modules/settings/components/PreferencesSection.tsx` - Theme UI
+
+### Generating Custom Themes
+
+When asked to create a custom theme, generate CSS in this format:
+
+```css
+:root {
+  --background: 0 0% 100%;
+  --foreground: 240 10% 3.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 3.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 10% 3.9%;
+  --primary: 220 90% 56%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 240 4.8% 95.9%;
+  --secondary-foreground: 240 5.9% 10%;
+  --muted: 240 4.8% 95.9%;
+  --muted-foreground: 240 3.8% 46.1%;
+  --accent: 240 4.8% 95.9%;
+  --accent-foreground: 240 5.9% 10%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 5.9% 90%;
+  --input: 240 5.9% 90%;
+  --ring: 220 90% 56%;
+}
+
+.dark {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  /* ... dark variants */
+}
+```
+
+**Color format:** HSL values without `hsl()` wrapper: `H S% L%` (e.g., `220 90% 56%`)
+
+### Key Functions
+
+```typescript
+import { parseThemeCSS, validateThemeColors, applyTheme } from '@/lib/themes'
+
+// Parse CSS from theme generators
+const parsed = parseThemeCSS(cssString)
+
+// Validate theme has all required variables
+const { valid, missing } = validateThemeColors(parsed.light)
+
+// Apply theme (supports custom colors)
+applyTheme('custom', 'dark', customTheme)
+```
 
 ---
 

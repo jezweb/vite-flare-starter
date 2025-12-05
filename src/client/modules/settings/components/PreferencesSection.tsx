@@ -1,7 +1,21 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Moon, Sun, Monitor, Palette, Globe, Clock, Calendar } from 'lucide-react'
+import {
+  Moon,
+  Sun,
+  Monitor,
+  Palette,
+  Globe,
+  Clock,
+  Calendar,
+  ExternalLink,
+  Wand2,
+  AlertCircle,
+  Check,
+} from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Select,
   SelectContent,
@@ -11,15 +25,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import { usePreferences, useUpdatePreferences } from '../hooks/useSettings'
-import { applyTheme } from '@/lib/themes'
+import { applyTheme, parseThemeCSS, validateThemeColors } from '@/lib/themes'
 import {
   defaultPreferences,
   dateFormats,
   timeFormats,
   type DateFormat,
   type TimeFormat,
+  type CustomThemeColors,
 } from '@/shared/schemas/preferences.schema'
 import type { ThemeScheme, ThemeMode } from '@/shared/schemas/preferences.schema'
 import {
@@ -52,6 +76,7 @@ const modeOptions: ModeOption[] = [
   { value: 'system', label: 'System', icon: <Monitor className="h-5 w-5" /> },
 ]
 
+// Built-in theme options (excludes 'custom' which is handled separately)
 const schemeOptions: SchemeOption[] = [
   {
     value: 'default',
@@ -103,6 +128,13 @@ const schemeOptions: SchemeOption[] = [
   },
 ]
 
+// Theme generator links for custom themes
+const THEME_GENERATORS = [
+  { name: 'tweakcn', url: 'https://tweakcn.com/', description: 'Modern editor with OKLch support' },
+  { name: 'shadcn/ui Themes', url: 'https://ui.shadcn.com/themes', description: 'Official hand-picked themes' },
+  { name: '10000+ Themes', url: 'https://ui.jln.dev/', description: 'Browse community themes' },
+]
+
 export function PreferencesSection() {
   const { data: preferences, isLoading } = usePreferences()
   const updatePreferences = useUpdatePreferences()
@@ -117,6 +149,12 @@ export function PreferencesSection() {
 
   // Current time state for live preview
   const [currentTime, setCurrentTime] = useState(new Date())
+
+  // Custom theme dialog state
+  const [customThemeDialogOpen, setCustomThemeDialogOpen] = useState(false)
+  const [customCSSInput, setCustomCSSInput] = useState('')
+  const [parseError, setParseError] = useState<string | null>(null)
+  const [parseSuccess, setParseSuccess] = useState(false)
 
   // Update current time every minute for live preview
   useEffect(() => {
@@ -141,9 +179,63 @@ export function PreferencesSection() {
   // Apply theme on preferences change
   useEffect(() => {
     if (currentPrefs) {
-      applyTheme(currentPrefs.theme, currentPrefs.mode)
+      applyTheme(currentPrefs.theme, currentPrefs.mode, currentPrefs.customTheme)
     }
   }, [currentPrefs])
+
+  // Handle custom theme CSS parsing and application
+  const handleParseCustomCSS = () => {
+    setParseError(null)
+    setParseSuccess(false)
+
+    if (!customCSSInput.trim()) {
+      setParseError('Please paste some CSS')
+      return
+    }
+
+    const parsed = parseThemeCSS(customCSSInput)
+    if (!parsed) {
+      setParseError('Could not parse CSS. Make sure it contains :root or .dark blocks with --variable definitions.')
+      return
+    }
+
+    // Validate light mode colors
+    const lightValidation = validateThemeColors(parsed.light)
+    const darkValidation = validateThemeColors(parsed.dark)
+
+    if (!lightValidation.valid && !darkValidation.valid) {
+      setParseError(
+        `Missing required variables: ${lightValidation.missing.slice(0, 5).join(', ')}${lightValidation.missing.length > 5 ? '...' : ''}`
+      )
+      return
+    }
+
+    setParseSuccess(true)
+  }
+
+  // Apply the parsed custom theme
+  const handleApplyCustomTheme = async () => {
+    const parsed = parseThemeCSS(customCSSInput)
+    if (!parsed) return
+
+    try {
+      await updatePreferences.mutateAsync({
+        ...currentPrefs,
+        theme: 'custom',
+        customTheme: {
+          light: parsed.light as CustomThemeColors,
+          dark: parsed.dark as CustomThemeColors,
+        },
+      })
+      setCustomThemeDialogOpen(false)
+      setCustomCSSInput('')
+      setParseError(null)
+      setParseSuccess(false)
+    } catch (error) {
+      console.error('Failed to apply custom theme:', error)
+      setParseError('Failed to save custom theme. Please try again.')
+    }
+  }
 
   // Handle mode change
   const handleModeChange = async (mode: ThemeMode) => {
@@ -234,7 +326,7 @@ export function PreferencesSection() {
             Choose your preferred color scheme for the interface.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {schemeOptions.map((scheme) => (
               <button
@@ -278,7 +370,133 @@ export function PreferencesSection() {
                 )}
               </button>
             ))}
+
+            {/* Custom Theme Option */}
+            <Dialog open={customThemeDialogOpen} onOpenChange={setCustomThemeDialogOpen}>
+              <DialogTrigger asChild>
+                <button
+                  className={cn(
+                    'group relative flex flex-col items-start gap-2 rounded-lg border-2 p-4 text-left transition-all hover:bg-accent',
+                    currentScheme === 'custom'
+                      ? 'border-primary bg-accent'
+                      : 'border-dashed border-muted hover:border-muted-foreground/50'
+                  )}
+                >
+                  {/* Custom icon */}
+                  <div className="flex gap-1.5 items-center">
+                    <Wand2 className="h-5 w-5 text-muted-foreground" />
+                  </div>
+
+                  {/* Label and description */}
+                  <div className="flex-1">
+                    <div className="font-semibold">Custom</div>
+                    <div className="text-xs text-muted-foreground">
+                      {currentScheme === 'custom' ? 'Your custom theme' : 'Import from generator'}
+                    </div>
+                  </div>
+
+                  {/* Active indicator */}
+                  {currentScheme === 'custom' && (
+                    <div className="absolute right-3 top-3">
+                      <div className="h-2 w-2 rounded-full bg-primary" />
+                    </div>
+                  )}
+                </button>
+              </DialogTrigger>
+
+              <DialogContent className="sm:max-w-[600px]">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Wand2 className="h-5 w-5" />
+                    Import Custom Theme
+                  </DialogTitle>
+                  <DialogDescription>
+                    Paste CSS from a theme generator. Supports HSL, hsl(), and oklch() formats.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4 py-4">
+                  {/* Theme generator links */}
+                  <div className="flex flex-wrap gap-2">
+                    {THEME_GENERATORS.map((gen) => (
+                      <a
+                        key={gen.name}
+                        href={gen.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        {gen.name}
+                      </a>
+                    ))}
+                  </div>
+
+                  {/* CSS Input */}
+                  <Textarea
+                    placeholder={`:root {
+  --background: 0 0% 100%;
+  --foreground: 240 10% 3.9%;
+  --primary: 220 90% 56%;
+  /* ... more variables */
+}
+
+.dark {
+  --background: 240 10% 3.9%;
+  /* ... dark mode variables */
+}`}
+                    value={customCSSInput}
+                    onChange={(e) => {
+                      setCustomCSSInput(e.target.value)
+                      setParseError(null)
+                      setParseSuccess(false)
+                    }}
+                    className="font-mono text-sm min-h-[200px]"
+                  />
+
+                  {/* Parse status */}
+                  {parseError && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>{parseError}</AlertDescription>
+                    </Alert>
+                  )}
+
+                  {parseSuccess && (
+                    <Alert>
+                      <Check className="h-4 w-4 text-green-500" />
+                      <AlertDescription>
+                        Theme parsed successfully! Click "Apply Theme" to use it.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+
+                <DialogFooter className="gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={handleParseCustomCSS}
+                    disabled={!customCSSInput.trim()}
+                  >
+                    Validate CSS
+                  </Button>
+                  <Button
+                    onClick={handleApplyCustomTheme}
+                    disabled={!parseSuccess || updatePreferences.isPending}
+                  >
+                    {updatePreferences.isPending ? 'Applying...' : 'Apply Theme'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
+
+          {/* Show current custom theme info */}
+          {currentScheme === 'custom' && currentPrefs.customTheme && (
+            <p className="text-sm text-muted-foreground">
+              Using your custom theme. Click "Custom" above to modify.
+            </p>
+          )}
         </CardContent>
       </Card>
 

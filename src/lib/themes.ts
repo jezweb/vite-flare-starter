@@ -1,4 +1,8 @@
-import type { ThemeScheme, ThemeMode } from '@/shared/schemas/preferences.schema'
+import type {
+  ThemeScheme,
+  ThemeMode,
+  CustomThemeColors,
+} from '@/shared/schemas/preferences.schema'
 
 /**
  * shadcn/ui Theme Definitions
@@ -14,6 +18,31 @@ type ThemeColors = {
   light: Record<string, string>
   dark: Record<string, string>
 }
+
+/**
+ * Required CSS variable names for a complete theme
+ */
+export const THEME_CSS_VARIABLES = [
+  'background',
+  'foreground',
+  'card',
+  'card-foreground',
+  'popover',
+  'popover-foreground',
+  'primary',
+  'primary-foreground',
+  'secondary',
+  'secondary-foreground',
+  'muted',
+  'muted-foreground',
+  'accent',
+  'accent-foreground',
+  'destructive',
+  'destructive-foreground',
+  'border',
+  'input',
+  'ring',
+] as const
 
 const themes: Record<ThemeScheme, ThemeColors> = {
   default: {
@@ -368,6 +397,51 @@ const themes: Record<ThemeScheme, ThemeColors> = {
       ring: '35.5 91.7% 32.9%',
     },
   },
+  // Custom theme uses default as fallback, actual colors passed to applyTheme
+  custom: {
+    light: {
+      background: '0 0% 100%',
+      foreground: '240 10% 3.9%',
+      card: '0 0% 100%',
+      'card-foreground': '240 10% 3.9%',
+      popover: '0 0% 100%',
+      'popover-foreground': '240 10% 3.9%',
+      primary: '240 5.9% 10%',
+      'primary-foreground': '0 0% 98%',
+      secondary: '240 4.8% 95.9%',
+      'secondary-foreground': '240 5.9% 10%',
+      muted: '240 4.8% 95.9%',
+      'muted-foreground': '240 3.8% 46.1%',
+      accent: '240 4.8% 95.9%',
+      'accent-foreground': '240 5.9% 10%',
+      destructive: '0 84.2% 60.2%',
+      'destructive-foreground': '0 0% 98%',
+      border: '240 5.9% 90%',
+      input: '240 5.9% 90%',
+      ring: '240 5.9% 10%',
+    },
+    dark: {
+      background: '240 10% 3.9%',
+      foreground: '0 0% 98%',
+      card: '240 10% 3.9%',
+      'card-foreground': '0 0% 98%',
+      popover: '240 10% 3.9%',
+      'popover-foreground': '0 0% 98%',
+      primary: '0 0% 98%',
+      'primary-foreground': '240 5.9% 10%',
+      secondary: '240 3.7% 15.9%',
+      'secondary-foreground': '0 0% 98%',
+      muted: '240 3.7% 15.9%',
+      'muted-foreground': '240 5% 64.9%',
+      accent: '240 3.7% 15.9%',
+      'accent-foreground': '0 0% 98%',
+      destructive: '0 62.8% 30.6%',
+      'destructive-foreground': '0 0% 98%',
+      border: '240 3.7% 15.9%',
+      input: '240 3.7% 15.9%',
+      ring: '240 4.9% 83.9%',
+    },
+  },
 }
 
 /**
@@ -378,8 +452,13 @@ const themes: Record<ThemeScheme, ThemeColors> = {
  *
  * @param scheme - Theme color scheme (default, blue, green, etc.)
  * @param mode - Light/dark/system mode
+ * @param customColors - Optional custom theme colors (for 'custom' scheme)
  */
-export function applyTheme(scheme: ThemeScheme, mode: ThemeMode): void {
+export function applyTheme(
+  scheme: ThemeScheme,
+  mode: ThemeMode,
+  customColors?: { light?: CustomThemeColors; dark?: CustomThemeColors }
+): void {
   const root = document.documentElement
 
   // Determine effective mode (resolve 'system' to 'light' or 'dark')
@@ -399,7 +478,13 @@ export function applyTheme(scheme: ThemeScheme, mode: ThemeMode): void {
   }
 
   // Get theme colors for the effective mode
-  const colors = themes[scheme][effectiveMode]
+  // For custom scheme, use provided colors or fall back to default
+  let colors: Record<string, string>
+  if (scheme === 'custom' && customColors?.[effectiveMode]) {
+    colors = customColors[effectiveMode] as Record<string, string>
+  } else {
+    colors = themes[scheme][effectiveMode]
+  }
 
   // Update CSS variables on :root (wrap with hsl() for Tailwind v4)
   Object.entries(colors).forEach(([key, value]) => {
@@ -415,4 +500,223 @@ export function applyTheme(scheme: ThemeScheme, mode: ThemeMode): void {
  */
 export function getThemeColors(scheme: ThemeScheme, mode: 'light' | 'dark'): Record<string, string> {
   return themes[scheme][mode]
+}
+
+/**
+ * Parse CSS from theme generators into theme colors object
+ *
+ * Accepts CSS from generators like:
+ * - https://tweakcn.com/
+ * - https://ui.shadcn.com/themes
+ * - https://ui.jln.dev/
+ *
+ * Handles formats:
+ * - :root { --primary: 220 90% 56%; }
+ * - :root { --primary: hsl(220 90% 56%); }
+ * - :root { --primary: hsl(220, 90%, 56%); }
+ * - oklch() format (converted to HSL approximation)
+ *
+ * @returns Object with light and dark theme colors, or null if parsing failed
+ */
+export function parseThemeCSS(css: string): {
+  light: Partial<CustomThemeColors>
+  dark: Partial<CustomThemeColors>
+} | null {
+  try {
+    const result: {
+      light: Partial<CustomThemeColors>
+      dark: Partial<CustomThemeColors>
+    } = { light: {}, dark: {} }
+
+    // Normalize CSS: remove comments, normalize whitespace
+    const normalized = css
+      .replace(/\/\*[\s\S]*?\*\//g, '') // Remove comments
+      .replace(/\n/g, ' ') // Flatten newlines
+
+    // Extract :root block (light mode)
+    const rootMatch = normalized.match(/:root\s*\{([^}]+)\}/i)
+    if (rootMatch && rootMatch[1]) {
+      const vars = parseVariablesFromBlock(rootMatch[1])
+      Object.assign(result.light, vars)
+    }
+
+    // Extract .dark block
+    const darkMatch = normalized.match(/\.dark\s*\{([^}]+)\}/i)
+    if (darkMatch && darkMatch[1]) {
+      const vars = parseVariablesFromBlock(darkMatch[1])
+      Object.assign(result.dark, vars)
+    }
+
+    // Check if we got at least some required variables
+    const hasLight = Object.keys(result.light).length > 0
+    const hasDark = Object.keys(result.dark).length > 0
+
+    if (!hasLight && !hasDark) {
+      return null
+    }
+
+    // If only one mode provided, copy to the other (better than nothing)
+    if (hasLight && !hasDark) {
+      result.dark = { ...result.light }
+    } else if (hasDark && !hasLight) {
+      result.light = { ...result.dark }
+    }
+
+    return result
+  } catch (error) {
+    console.error('Failed to parse theme CSS:', error)
+    return null
+  }
+}
+
+/**
+ * Parse CSS variables from a block of CSS
+ */
+function parseVariablesFromBlock(block: string): Partial<CustomThemeColors> {
+  const result: Partial<CustomThemeColors> = {}
+
+  // Match --variable: value; patterns
+  const varRegex = /--([a-z-]+)\s*:\s*([^;]+);?/gi
+  let match
+
+  while ((match = varRegex.exec(block)) !== null) {
+    const name = match[1]
+    const rawValue = match[2]
+    if (!name || !rawValue) continue
+
+    const value = rawValue.trim()
+
+    // Skip non-theme variables (like --radius, --chart-*, etc.)
+    if (!THEME_CSS_VARIABLES.includes(name as (typeof THEME_CSS_VARIABLES)[number])) {
+      continue
+    }
+
+    // Parse the color value
+    const hslValue = parseColorValue(value)
+    if (hslValue) {
+      result[name as keyof CustomThemeColors] = hslValue
+    }
+  }
+
+  return result
+}
+
+/**
+ * Parse a color value to HSL format (H S% L%)
+ *
+ * Handles:
+ * - Raw HSL: "220 90% 56%"
+ * - hsl(): "hsl(220 90% 56%)" or "hsl(220, 90%, 56%)"
+ * - oklch(): "oklch(0.7 0.15 250)" (approximate conversion)
+ */
+function parseColorValue(value: string): string | null {
+  const trimmed = value.trim()
+
+  // Already raw HSL format: "220 90% 56%"
+  if (/^\d+\.?\d*\s+\d+\.?\d*%\s+\d+\.?\d*%$/.test(trimmed)) {
+    return trimmed
+  }
+
+  // hsl() format: "hsl(220 90% 56%)" or "hsl(220, 90%, 56%)"
+  const hslMatch = trimmed.match(/hsl\(\s*([^)]+)\s*\)/i)
+  if (hslMatch && hslMatch[1]) {
+    // Normalize commas to spaces and clean up
+    const inner = hslMatch[1].replace(/,/g, ' ').replace(/\s+/g, ' ').trim()
+    // Validate it looks like HSL values
+    if (/^\d+\.?\d*\s+\d+\.?\d*%?\s+\d+\.?\d*%?$/.test(inner)) {
+      // Ensure percentages have % symbol
+      const parts = inner.split(' ')
+      if (parts.length === 3 && parts[0] && parts[1] && parts[2]) {
+        const h = parts[0]
+        const s = parts[1].endsWith('%') ? parts[1] : `${parts[1]}%`
+        const l = parts[2].endsWith('%') ? parts[2] : `${parts[2]}%`
+        return `${h} ${s} ${l}`
+      }
+    }
+    return inner
+  }
+
+  // oklch() format: "oklch(0.7 0.15 250)" - approximate conversion to HSL
+  const oklchMatch = trimmed.match(/oklch\(\s*([^)]+)\s*\)/i)
+  if (oklchMatch && oklchMatch[1]) {
+    const parts = oklchMatch[1].replace(/,/g, ' ').replace(/\s+/g, ' ').trim().split(' ')
+    if (parts.length >= 3 && parts[0] && parts[1] && parts[2]) {
+      // Very rough oklch to HSL approximation
+      // L (lightness): 0-1 maps to 0-100%
+      // C (chroma): affects saturation (0-0.4 range typically)
+      // H (hue): same concept, 0-360
+      const l = parseFloat(parts[0]) * 100 // Lightness percentage
+      const c = parseFloat(parts[1])
+      const h = parseFloat(parts[2])
+      // Rough saturation estimate from chroma (chroma 0.15 ≈ 60% saturation)
+      const s = Math.min(100, c * 400)
+      return `${Math.round(h)} ${Math.round(s)}% ${Math.round(l)}%`
+    }
+  }
+
+  return null
+}
+
+/**
+ * Validate that parsed colors have all required variables
+ */
+export function validateThemeColors(colors: Partial<CustomThemeColors>): {
+  valid: boolean
+  missing: string[]
+} {
+  const missing = THEME_CSS_VARIABLES.filter((v) => !colors[v as keyof CustomThemeColors])
+  return {
+    valid: missing.length === 0,
+    missing,
+  }
+}
+
+/**
+ * Get template CSS for custom themes
+ * Useful for showing users what format to paste
+ */
+export function getThemeCSSTemplate(): string {
+  return `:root {
+  --background: 0 0% 100%;
+  --foreground: 240 10% 3.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 3.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 10% 3.9%;
+  --primary: 240 5.9% 10%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 240 4.8% 95.9%;
+  --secondary-foreground: 240 5.9% 10%;
+  --muted: 240 4.8% 95.9%;
+  --muted-foreground: 240 3.8% 46.1%;
+  --accent: 240 4.8% 95.9%;
+  --accent-foreground: 240 5.9% 10%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 5.9% 90%;
+  --input: 240 5.9% 90%;
+  --ring: 240 5.9% 10%;
+}
+
+.dark {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 0 0% 98%;
+  --primary-foreground: 240 5.9% 10%;
+  --secondary: 240 3.7% 15.9%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --accent: 240 3.7% 15.9%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --ring: 240 4.9% 83.9%;
+}`
 }

@@ -25,8 +25,8 @@ export interface Env {
   APP_NAME?: string
   NODE_ENV?: string
 
-  // Registration control
-  DISABLE_REGISTRATION?: string
+  // Email signup control (doesn't affect Google OAuth)
+  DISABLE_EMAIL_SIGNUP?: string
 }
 
 // Create Hono app with type-safe environment
@@ -55,7 +55,7 @@ app.all('/api/auth/*', async (c) => {
     GOOGLE_CLIENT_SECRET: c.env.GOOGLE_CLIENT_SECRET,
     EMAIL_API_KEY: c.env.EMAIL_API_KEY,
     EMAIL_FROM: c.env.EMAIL_FROM,
-    DISABLE_REGISTRATION: c.env.DISABLE_REGISTRATION,
+    DISABLE_EMAIL_SIGNUP: c.env.DISABLE_EMAIL_SIGNUP,
   })
   return auth.handler(c.req.raw)
 })

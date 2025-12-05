@@ -51,8 +51,8 @@ export function SignUpPage() {
         name,
       })
 
-      // Redirect to home on success
-      navigate('/')
+      // Redirect to dashboard on success
+      navigate('/dashboard')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create account')
     } finally {
@@ -65,7 +65,7 @@ export function SignUpPage() {
     try {
       await authClient.signIn.social({
         provider: 'google',
-        callbackURL: '/',
+        callbackURL: '/dashboard',
       })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to sign up with Google')

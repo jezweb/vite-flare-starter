@@ -155,8 +155,11 @@ export function useDeleteAccount() {
 
 /**
  * Fetch user preferences (theme, mode)
+ * Only fetches when user is authenticated to prevent 401s on public pages
  */
 export function usePreferences() {
+  const { data: session } = useSession()
+
   return useQuery({
     queryKey: ['preferences'],
     queryFn: async (): Promise<UserPreferences> => {
@@ -171,6 +174,7 @@ export function usePreferences() {
       const data: PreferencesResponse = await response.json()
       return data.preferences
     },
+    enabled: !!session?.user, // Only fetch when logged in
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
 }

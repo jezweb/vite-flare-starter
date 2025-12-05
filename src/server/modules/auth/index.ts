@@ -20,14 +20,16 @@ export function createAuth(
     GOOGLE_CLIENT_SECRET?: string
     EMAIL_API_KEY?: string
     EMAIL_FROM?: string
-    DISABLE_REGISTRATION?: string
+    DISABLE_EMAIL_SIGNUP?: string
   }
 ) {
   // Initialize Drizzle with D1 binding
   const db = drizzle(d1, { schema })
 
-  // Check if registration is disabled
-  const registrationDisabled = env.DISABLE_REGISTRATION === 'true'
+  // Check if email signup is disabled (doesn't affect Google OAuth)
+  // Google OAuth access is controlled at Google Cloud Console level:
+  // - Set OAuth consent screen "User type" to "Internal" for domain-only access
+  const emailSignupDisabled = env.DISABLE_EMAIL_SIGNUP === 'true'
 
   return betterAuth({
     baseURL: env.BETTER_AUTH_URL,
@@ -36,7 +38,7 @@ export function createAuth(
     // Allow multiple domains (workers.dev and custom domain)
     trustedOrigins: [
       'http://localhost:5173',
-      // Add your production domains here
+      'https://vite-flare-starter.webfonts.workers.dev',
     ],
 
     // CRITICAL: Use drizzleAdapter with SQLite provider
@@ -45,12 +47,14 @@ export function createAuth(
     }),
 
     // Email and password authentication
+    // NOTE: This only controls email/password signup - login for existing users always works
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: false, // Start simple, enable later if needed
 
-      // Disable sign-up if DISABLE_REGISTRATION is set
-      ...(registrationDisabled && {
+      // Disable email sign-up if DISABLE_EMAIL_SIGNUP is set
+      // Existing users can still log in with email/password
+      ...(emailSignupDisabled && {
         signUp: {
           enabled: false,
         },
@@ -64,12 +68,16 @@ export function createAuth(
     },
 
     // Social providers (Google OAuth)
+    // NOTE: Google OAuth is always enabled when credentials exist
+    // Domain restrictions are handled at Google Cloud Console level:
+    // - OAuth consent screen → User type = "Internal" restricts to your Workspace domain only
+    // - This allows existing users to login AND restricts new signups to your domain
     socialProviders: {
       google: {
         clientId: env.GOOGLE_CLIENT_ID || '',
         clientSecret: env.GOOGLE_CLIENT_SECRET || '',
-        // Disable Google OAuth if registration is disabled (to prevent new account creation)
-        enabled: !!(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET) && !registrationDisabled,
+        // Always enabled when credentials exist - domain restriction is at Google Cloud level
+        enabled: !!(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET),
         // Map Google profile to user fields with fallback for missing name
         mapProfileToUser: (profile) => ({
           name: profile.name || profile.email?.split('@')[0] || 'User',
