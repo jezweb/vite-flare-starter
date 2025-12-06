@@ -4,8 +4,11 @@ import { logger } from 'hono/logger'
 import type { D1Database } from '@cloudflare/workers-types'
 import { createAuth } from './modules/auth'
 import settingsRoutes from './modules/settings/routes'
+import sessionsRoutes from './modules/settings/sessions'
 import apiTokensRoutes from './modules/api-tokens/routes'
 import organizationRoutes from './modules/organization/routes'
+import { securityHeaders } from './middleware/security'
+import { rateLimiter } from './middleware/rate-limit'
 import { AVATAR, APP_VERSION } from '@/shared/config/constants'
 
 // Define Cloudflare Workers environment bindings
@@ -39,7 +42,9 @@ const app = new Hono<{ Bindings: Env }>()
 
 // Middleware
 app.use('*', logger())
+app.use('*', securityHeaders)
 app.use('/api/*', cors())
+app.use('/api/*', rateLimiter)
 
 // Health check endpoint
 app.get('/api/health', async (c) => {
@@ -129,6 +134,7 @@ app.get('/api/avatar/:userId', async (c) => {
 
 // API routes
 app.route('/api/settings', settingsRoutes)
+app.route('/api/settings/sessions', sessionsRoutes)
 app.route('/api/api-tokens', apiTokensRoutes)
 app.route('/api/organization', organizationRoutes)
 

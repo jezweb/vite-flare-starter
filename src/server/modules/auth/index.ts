@@ -83,6 +83,38 @@ export function createAuth(
           enabled: false,
         },
       }),
+
+      // Password reset flow
+      sendResetPassword: async ({ user, url }) => {
+        if (!env.EMAIL_API_KEY || !env.EMAIL_FROM) {
+          console.warn('Email credentials not configured - skipping password reset email')
+          return
+        }
+
+        const resend = new Resend(env.EMAIL_API_KEY)
+
+        try {
+          await resend.emails.send({
+            from: env.EMAIL_FROM,
+            to: user.email,
+            subject: 'Reset Your Password',
+            html: `
+              <h2>Password Reset Request</h2>
+              <p>Hi ${user.name || 'there'},</p>
+              <p>You requested to reset your password. Click the link below to set a new password:</p>
+              <p><a href="${url}" style="display: inline-block; padding: 12px 24px; background-color: #0f172a; color: white; text-decoration: none; border-radius: 6px;">Reset Password</a></p>
+              <p>This link will expire in 1 hour.</p>
+              <p>If you didn't request this, you can safely ignore this email.</p>
+              <hr>
+              <p><small>For security, this link can only be used once.</small></p>
+            `,
+          })
+          console.log(`Password reset email sent to ${user.email}`)
+        } catch (error) {
+          console.error('Failed to send password reset email:', error)
+          throw error
+        }
+      },
     },
 
     // Session configuration (from shared constants)

@@ -39,7 +39,9 @@ vite-flare-starter/
 │   │   │   ├── ComponentsPage.tsx
 │   │   │   └── StyleGuidePage.tsx
 │   │   └── lib/
-│   │       ├── auth.ts      # Auth client
+│   │       ├── auth.ts           # Auth client
+│   │       ├── api-client.ts     # Centralized fetch wrapper
+│   │       ├── error-reporting.ts# Error boundary utilities
 │   │       └── utils.ts
 │   ├── server/              # Backend (Hono API)
 │   │   ├── index.ts         # Main app + routes
@@ -69,11 +71,18 @@ vite-flare-starter/
 ### Server Entry Point
 `src/server/index.ts` - Hono app with routes:
 - `/api/health` - Health check with DB/R2 status and version
-- `/api/auth/*` - better-auth handlers
-- `/api/settings/*` - User settings
+- `/api/auth/*` - better-auth handlers (includes password reset)
+- `/api/settings/*` - User settings (profile, email, password, avatar, preferences)
+- `/api/settings/sessions` - Session management (list, revoke)
 - `/api/api-tokens/*` - API token management
 - `/api/organization/*` - Organization settings
 - `/api/avatar/:userId` - Avatar serving from R2
+
+### Middleware
+`src/server/middleware/`:
+- `auth.ts` - Session/API token authentication
+- `security.ts` - Security headers (CSP, X-Frame-Options, etc.)
+- `rate-limit.ts` - Rate limiting for sensitive endpoints
 
 ### Database Schema
 `src/server/db/schema.ts` - Exports all tables:
@@ -233,6 +242,9 @@ pnpm deploy                 # Deploy to Cloudflare
 pnpm db:generate:named "x"  # Generate migration
 pnpm db:migrate:local       # Apply migrations locally
 pnpm db:migrate:remote      # Apply migrations to production
+pnpm db:seed                # Seed local database with test data
+pnpm test                   # Run tests
+pnpm test:watch             # Run tests in watch mode
 pnpm type-check             # Run TypeScript check
 ```
 

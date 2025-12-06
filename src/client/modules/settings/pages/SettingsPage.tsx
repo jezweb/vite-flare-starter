@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ProfileSection } from '../components/ProfileSection'
 import { SecuritySection } from '../components/SecuritySection'
+import { SessionsSection } from '../components/SessionsSection'
 import { PreferencesSection } from '../components/PreferencesSection'
 import { ApiTokensSection } from '../components/ApiTokensSection'
 import { OrganizationSection } from '@/client/modules/organization/components/OrganizationSection'
@@ -17,8 +18,8 @@ export function SettingsPage() {
   }
 
   // Calculate grid columns based on visible tabs
-  const tabCount = features.apiTokens ? 5 : 4
-  const gridCols = tabCount === 5 ? 'grid-cols-3 sm:grid-cols-5' : 'grid-cols-2 sm:grid-cols-4'
+  const tabCount = features.apiTokens ? 6 : 5
+  const gridCols = tabCount === 6 ? 'grid-cols-3 sm:grid-cols-6' : 'grid-cols-3 sm:grid-cols-5'
 
   return (
     <div className="container max-w-4xl py-8">
@@ -39,6 +40,7 @@ export function SettingsPage() {
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="organization">Organization</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
+          <TabsTrigger value="sessions">Sessions</TabsTrigger>
           {features.apiTokens && (
             <TabsTrigger value="api-tokens">API Tokens</TabsTrigger>
           )}
@@ -55,6 +57,10 @@ export function SettingsPage() {
 
         <TabsContent value="security">
           <SecuritySection />
+        </TabsContent>
+
+        <TabsContent value="sessions">
+          <SessionsSection />
         </TabsContent>
 
         {features.apiTokens && (

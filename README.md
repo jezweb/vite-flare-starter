@@ -276,6 +276,97 @@ TRUSTED_ORIGINS=http://localhost:5173,https://myapp.workers.dev,https://myapp.co
 
 **Note:** `http://localhost:5173` is always included automatically for development.
 
+## Security Features
+
+### Rate Limiting
+
+Sensitive endpoints are rate-limited to prevent abuse:
+
+| Endpoint | Limit | Window |
+|----------|-------|--------|
+| Password change | 3 | 24 hours |
+| Email change | 5 | 24 hours |
+| Account deletion | 1 | 24 hours |
+| Avatar upload | 10 | 1 hour |
+| API token creation | 10 | 24 hours |
+
+Rate limit constants can be configured in `src/shared/config/constants.ts`.
+
+**Note:** Rate limiting uses in-memory storage per worker instance. For distributed rate limiting across workers, consider upgrading to KV storage.
+
+### Security Headers
+
+All responses include security headers:
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Permissions-Policy: camera=(), microphone=(), geolocation=()`
+- HSTS in production
+
+## Password Reset
+
+Users can reset their password via email. Requires email configuration:
+
+```bash
+# .dev.vars
+EMAIL_API_KEY=re_xxxxx          # Resend API key
+EMAIL_FROM=noreply@yourdomain.com
+```
+
+The flow:
+1. User visits `/forgot-password`
+2. Enter email → reset link sent
+3. Click link → `/reset-password?token=xxx`
+4. Set new password → redirect to sign-in
+
+## Session Management
+
+Users can view and revoke active sessions at Settings → Sessions:
+
+- View all logged-in devices/browsers
+- See IP address and last active time
+- Revoke individual sessions
+- "Log out everywhere" to revoke all other sessions
+
+## Development
+
+### Testing
+
+Run tests with Vitest:
+
+```bash
+pnpm test           # Run tests once
+pnpm test:watch     # Watch mode
+```
+
+Tests use `@cloudflare/vitest-pool-workers` to run against Miniflare for realistic D1/R2 simulation.
+
+### Database Seeding
+
+Populate development data:
+
+```bash
+pnpm db:seed
+```
+
+Creates test users:
+- `test@example.com` / `password123`
+- `admin@example.com` / `admin12345`
+
+Plus sample API tokens and organization settings.
+
+### API Client
+
+A centralized API client is available at `src/client/lib/api-client.ts`:
+
+```typescript
+import { apiClient } from '@/client/lib/api-client'
+
+// Type-safe requests with automatic credentials
+const data = await apiClient.get<User>('/api/user')
+const result = await apiClient.post<Result>('/api/items', { name: 'New Item' })
+```
+
 ## License
 
 MIT - see [LICENSE](./LICENSE)
