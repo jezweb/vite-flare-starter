@@ -1,0 +1,53 @@
+# Vite Flare Starter
+
+> Minimal authenticated starter kit for Cloudflare Workers
+
+## Overview
+
+This is a full-stack web application starter kit built for deployment on Cloudflare Workers. It provides authentication, user management, and a modern React frontend out of the box.
+
+## Tech Stack
+
+- **Platform**: Cloudflare Workers with Static Assets
+- **Frontend**: React 19 + Vite
+- **Backend**: Hono (lightweight web framework)
+- **Database**: Cloudflare D1 (SQLite) + Drizzle ORM
+- **Authentication**: better-auth (email/password + OAuth)
+- **UI**: Tailwind CSS v4 + shadcn/ui components
+- **Data Fetching**: TanStack Query
+- **Forms**: React Hook Form + Zod validation
+
+## Features
+
+- Email/password authentication with password reset
+- Google OAuth integration (optional)
+- User profile management
+- Session management (view and revoke sessions)
+- API token management for programmatic access
+- Organization settings
+- Theme customization (8 built-in themes + custom)
+- Avatar upload to Cloudflare R2
+
+## Public Pages
+
+- `/` - Landing page
+- `/sign-in` - User sign in
+- `/sign-up` - User registration
+- `/forgot-password` - Password recovery
+- `/reset-password` - Password reset
+
+## API Endpoints
+
+- `GET /api/health` - Health check (public)
+- `/api/auth/*` - Authentication endpoints
+- `/api/settings/*` - User settings (authenticated)
+- `/api/api-tokens/*` - API token management (authenticated)
+- `/api/organization/*` - Organization settings (authenticated)
+
+## Source Code
+
+This is an open-source starter kit. For implementation details, see the GitHub repository.
+
+## Contact
+
+For questions about this starter kit, visit the project repository.

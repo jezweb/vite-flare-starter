@@ -8,7 +8,8 @@
   "license": "MIT",
   "scripts": {
     "dev": "vite dev",
-    "build": "tsc && vite build",
+    "build": "tsc && npx tsx scripts/generate-sitemap.ts && vite build",
+    "generate:sitemap": "npx tsx scripts/generate-sitemap.ts",
     "preview": "wrangler dev",
     "deploy": "wrangler deploy",
     "cf:login": "wrangler login",

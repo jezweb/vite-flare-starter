@@ -1,0 +1,12 @@
+# Robots.txt for Vite Flare Starter
+# https://www.robotstxt.org/
+
+# Allow all crawlers
+User-agent: *
+Allow: /
+
+# Disallow API routes (not useful for search)
+Disallow: /api/
+
+# Sitemap location (update domain when deployed)
+Sitemap: /sitemap.xml

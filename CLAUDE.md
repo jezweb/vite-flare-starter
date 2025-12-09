@@ -57,6 +57,7 @@ vite-flare-starter/
 │       └── config/
 │           ├── features.ts  # Feature flags
 │           ├── app.ts       # App branding config
+│           ├── routes.ts    # Public routes for sitemap
 │           └── constants.ts # Shared constants (limits, timeouts)
 ├── drizzle/                 # Database migrations
 ├── wrangler.jsonc           # Workers config
@@ -237,8 +238,9 @@ echo "https://your-app.workers.dev" | npx wrangler secret put BETTER_AUTH_URL
 
 ```bash
 pnpm dev                    # Start development server
-pnpm build                  # Build for production
+pnpm build                  # Build for production (includes sitemap generation)
 pnpm deploy                 # Deploy to Cloudflare
+pnpm generate:sitemap       # Regenerate sitemap.xml manually
 pnpm db:generate:named "x"  # Generate migration
 pnpm db:migrate:local       # Apply migrations locally
 pnpm db:migrate:remote      # Apply migrations to production
@@ -335,6 +337,43 @@ const { valid, missing } = validateThemeColors(parsed.light)
 
 // Apply theme (supports custom colors)
 applyTheme('custom', 'dark', customTheme)
+```
+
+---
+
+## SEO & Discoverability
+
+The starter includes built-in SEO support with auto-generated sitemap.
+
+### Static Files (served free from edge)
+
+- `public/robots.txt` - Crawler directives
+- `public/llms.txt` - LLM crawler context (emerging standard)
+- `public/sitemap.xml` - Auto-generated from routes config
+
+### Adding New Public Routes to Sitemap
+
+When adding a new public page, update `src/shared/config/routes.ts`:
+
+```typescript
+export const publicRoutes: RouteConfig[] = [
+  // ... existing routes
+  {
+    path: '/your-new-page',
+    priority: 0.7,           // 0.0 to 1.0 (higher = more important)
+    changefreq: 'monthly',   // how often content changes
+  },
+]
+```
+
+The sitemap regenerates automatically during `pnpm build`, or manually with `pnpm generate:sitemap`.
+
+### Sitemap Base URL
+
+The sitemap uses `https://example.com` as a placeholder. Set `SITE_URL` or `BETTER_AUTH_URL` environment variable during build to customize:
+
+```bash
+SITE_URL=https://your-domain.com pnpm build
 ```
 
 ---
