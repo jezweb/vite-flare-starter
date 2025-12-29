@@ -3,11 +3,8 @@ import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
-import { drizzle } from 'drizzle-orm/d1'
-import { eq } from 'drizzle-orm'
 import type { D1Database } from '@cloudflare/workers-types'
 import { createAuth } from './modules/auth'
-import * as schema from './db/schema'
 import settingsRoutes from './modules/settings/routes'
 import sessionsRoutes from './modules/settings/sessions'
 import apiTokensRoutes from './modules/api-tokens/routes'
@@ -95,34 +92,6 @@ app.get('/api/health', async (c) => {
     timestamp: new Date().toISOString(),
     environment: c.env.NODE_ENV || 'development',
     checks,
-  })
-})
-
-// Admin health check endpoint - returns whether current user is admin
-app.get('/api/health/admin', authMiddleware, async (c) => {
-  const userId = c.get('userId')
-  const user = c.get('user')
-  const db = drizzle(c.env.DB, { schema })
-
-  // Parse admin emails from environment
-  const adminEmails = (c.env.ADMIN_EMAILS || '')
-    .split(',')
-    .map((email) => email.trim().toLowerCase())
-    .filter((email) => email.length > 0)
-
-  // Get current role from database
-  const dbUser = await db.query.user.findFirst({
-    where: eq(schema.user.id, userId),
-    columns: { role: true, email: true },
-  })
-
-  const isAdminEmail = adminEmails.includes(dbUser?.email?.toLowerCase() || '')
-  const isAdmin = isAdminEmail || dbUser?.role === 'admin'
-
-  return c.json({
-    isAdmin,
-    role: dbUser?.role || 'user',
-    email: user.email,
   })
 })
 

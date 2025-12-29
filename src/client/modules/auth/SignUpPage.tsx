@@ -40,7 +40,10 @@ export function SignUpPage() {
   // Fetch auth config on mount
   useEffect(() => {
     fetch('/api/auth/config')
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error('Config fetch failed')
+        return res.json()
+      })
       .then((data) => {
         setAuthConfig(data as AuthConfig)
         setConfigLoading(false)

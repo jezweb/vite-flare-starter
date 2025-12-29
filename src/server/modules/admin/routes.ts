@@ -34,6 +34,13 @@ function isAdminEmail(email: string, adminEmailsEnv: string | undefined): boolea
   return adminEmails.includes(email.toLowerCase())
 }
 
+/**
+ * Escape special characters in LIKE patterns to prevent pattern injection
+ */
+function escapeLikePattern(input: string): string {
+  return input.replace(/[%_\\]/g, '\\$&')
+}
+
 // =============================================================================
 // Public admin status check (only requires auth, not admin)
 // =============================================================================
@@ -134,9 +141,12 @@ adminRoutes.get('/users', zValidator('query', userListQuerySchema), async (c) =>
   const { page, limit, search, sortBy, sortOrder } = c.req.valid('query')
   const db = drizzle(c.env.DB, { schema })
 
-  // Build where clause for search
+  // Build where clause for search (escape LIKE special chars to prevent pattern injection)
   const searchCondition = search
-    ? or(like(schema.user.name, `%${search}%`), like(schema.user.email, `%${search}%`))
+    ? or(
+        like(schema.user.name, `%${escapeLikePattern(search)}%`),
+        like(schema.user.email, `%${escapeLikePattern(search)}%`)
+      )
     : undefined
 
   // Get total count
