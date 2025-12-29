@@ -21,6 +21,7 @@ export const user = sqliteTable('user', {
   email: text('email').notNull().unique(),
   emailVerified: integer('emailVerified', { mode: 'boolean' }).notNull().default(false),
   image: text('image'),
+  role: text('role', { enum: ['user', 'manager', 'admin'] }).notNull().default('user'),
   preferences: text('preferences', { mode: 'json' })
     .$type<UserPreferences>()
     .$defaultFn(() => ({ theme: 'default', mode: 'system' })),

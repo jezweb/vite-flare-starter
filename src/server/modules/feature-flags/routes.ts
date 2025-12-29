@@ -9,7 +9,8 @@ import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
-import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
+import { authMiddleware } from '@/server/middleware/auth'
+import { adminMiddleware, type AdminContext } from '@/server/middleware/admin'
 import * as schema from '@/server/db/schema'
 import {
   toggleFeatureSchema,
@@ -49,12 +50,13 @@ publicApp.get('/', async (c) => {
 })
 
 /**
- * Admin Features API (auth required)
+ * Admin Features API (auth + admin required)
  */
-const adminApp = new Hono<AuthContext>()
+const adminApp = new Hono<AdminContext>()
 
-// Apply auth middleware
+// Apply auth and admin middleware
 adminApp.use('*', authMiddleware)
+adminApp.use('*', adminMiddleware)
 
 // GET /api/admin/feature-flags - List all features with metadata
 adminApp.get('/', async (c) => {

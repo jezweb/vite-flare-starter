@@ -25,6 +25,7 @@ export type AuthContext = {
       email: string
       name: string
       image?: string | null
+      role: 'user' | 'manager' | 'admin'
     }
     authMethod: 'session' | 'api-token' // Track which auth method was used
   }
@@ -49,7 +50,7 @@ async function hashToken(token: string): Promise<string> {
 async function authenticateWithBearerToken(
   authHeader: string,
   db: D1Database
-): Promise<{ userId: string; user: { id: string; email: string; name: string; image?: string | null } } | null> {
+): Promise<{ userId: string; user: { id: string; email: string; name: string; image?: string | null; role: 'user' | 'manager' | 'admin' } } | null> {
   // Extract token from "Bearer <token>" format
   const token = authHeader.replace(/^Bearer\s+/i, '')
   if (!token) return null
@@ -92,6 +93,7 @@ async function authenticateWithBearerToken(
       email: user.email,
       name: user.name,
       image: user.image,
+      role: (user.role as 'user' | 'manager' | 'admin') || 'user',
     },
   }
 }
@@ -133,6 +135,13 @@ export const authMiddleware = createMiddleware<AuthContext>(async (c, next) => {
       return c.json({ error: 'Unauthorized' }, 401)
     }
 
+    // Get user role from database (session.user may not include custom fields)
+    const drizzleDb = drizzle(c.env.DB, { schema })
+    const dbUser = await drizzleDb.query.user.findFirst({
+      where: eq(schema.user.id, session.user.id),
+      columns: { role: true },
+    })
+
     // Attach user to context for use in route handlers
     c.set('userId', session.user.id)
     c.set('user', {
@@ -140,6 +149,7 @@ export const authMiddleware = createMiddleware<AuthContext>(async (c, next) => {
       email: session.user.email,
       name: session.user.name,
       image: session.user.image,
+      role: (dbUser?.role as 'user' | 'manager' | 'admin') || 'user',
     })
     c.set('authMethod', 'session')
 
