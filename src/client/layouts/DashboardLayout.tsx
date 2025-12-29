@@ -52,15 +52,10 @@ const navItems: NavItem[] = [
     icon: Home,
   },
 
-  // Settings is always visible
-  {
-    label: 'Settings',
-    href: '/dashboard/settings',
-    icon: Settings,
-  },
+  // Settings removed from sidebar - already in user dropdown menu
 
-  // Development tools
-  ...(features.components
+  // Development tools (only in dev or when explicitly enabled)
+  ...(features.devTools && features.components
     ? [
         {
           label: 'Components',
@@ -70,7 +65,7 @@ const navItems: NavItem[] = [
       ]
     : []),
 
-  ...(features.styleGuide
+  ...(features.devTools && features.styleGuide
     ? [
         {
           label: 'Style Guide',

@@ -1,6 +1,8 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
+import { zValidator } from '@hono/zod-validator'
+import { z } from 'zod'
 import type { D1Database } from '@cloudflare/workers-types'
 import { createAuth } from './modules/auth'
 import settingsRoutes from './modules/settings/routes'
@@ -9,7 +11,9 @@ import apiTokensRoutes from './modules/api-tokens/routes'
 import organizationRoutes from './modules/organization/routes'
 import { securityHeaders } from './middleware/security'
 import { rateLimiter } from './middleware/rate-limit'
+import { authMiddleware } from './middleware/auth'
 import { AVATAR, APP_VERSION } from '@/shared/config/constants'
+import { createAIClient, listModels, getRecommendedModel, resolveModelId } from './lib/ai'
 
 // Define Cloudflare Workers environment bindings
 export interface Env {
@@ -18,6 +22,9 @@ export interface Env {
 
   // R2 Storage
   AVATARS: R2Bucket
+
+  // Workers AI
+  AI: Ai
 
   // Environment variables
   BETTER_AUTH_SECRET: string
@@ -137,6 +144,68 @@ app.route('/api/settings', settingsRoutes)
 app.route('/api/settings/sessions', sessionsRoutes)
 app.route('/api/api-tokens', apiTokensRoutes)
 app.route('/api/organization', organizationRoutes)
+
+// =============================================================================
+// AI TEST ENDPOINT
+// =============================================================================
+
+// Schema for AI test request
+const aiTestSchema = z.object({
+  prompt: z.string().min(1).max(1000),
+  model: z.string().optional(),
+})
+
+// GET /api/ai/models - List available models
+app.get('/api/ai/models', authMiddleware, async (c) => {
+  const models = listModels()
+  const recommended = getRecommendedModel('general')
+
+  return c.json({
+    models: models.map((m) => ({
+      id: m.id,
+      name: m.displayName,
+      tier: m.tier,
+      contextWindow: m.contextWindow,
+      supportsTools: m.supportsTools,
+      isReasoning: m.isReasoning,
+    })),
+    recommended,
+  })
+})
+
+// POST /api/ai/test - Test AI generation
+app.post(
+  '/api/ai/test',
+  authMiddleware,
+  zValidator('json', aiTestSchema),
+  async (c) => {
+    const { prompt, model } = c.req.valid('json')
+
+    try {
+      const ai = createAIClient(c.env.AI)
+      // Resolve model alias to full ID if provided
+      const modelId = model ? resolveModelId(model) : undefined
+      const result = await ai.generate(prompt, { model: modelId })
+
+      return c.json({
+        success: true,
+        response: result.response,
+        model: result.model,
+        durationMs: result.durationMs,
+        usage: result.usage,
+      })
+    } catch (error) {
+      console.error('AI test error:', error)
+      return c.json(
+        {
+          success: false,
+          error: error instanceof Error ? error.message : 'AI generation failed',
+        },
+        500
+      )
+    }
+  }
+)
 
 // 404 handler for API routes
 app.notFound((c) => {

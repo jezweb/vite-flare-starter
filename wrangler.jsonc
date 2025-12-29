@@ -53,10 +53,10 @@
   //   }
   // ],
 
-  // Workers AI (optional - for AI features)
-  // "ai": {
-  //   "binding": "AI"
-  // },
+  // Workers AI (for AI features)
+  "ai": {
+    "binding": "AI"
+  },
 
   // Observability
   "observability": {

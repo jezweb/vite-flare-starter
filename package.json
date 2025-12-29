@@ -28,6 +28,7 @@
     "format": "biome format --write ."
   },
   "dependencies": {
+    "@cloudflare/ai-utils": "^1.0.1",
     "@hono/zod-validator": "^0.7.4",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "^1.2.12",
@@ -68,7 +69,8 @@
     "tailwind-merge": "^3.4.0",
     "tailwindcss": "^4.1.17",
     "ua-parser-js": "^2.0.6",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "zod-to-json-schema": "^3.25.1"
   },
   "packageManager": "pnpm@9.0.0",
   "devDependencies": {

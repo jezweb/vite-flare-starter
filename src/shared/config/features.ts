@@ -25,6 +25,13 @@ export const features = {
    */
 
   /**
+   * Dev Tools - Show development pages (Components, Style Guide) in sidebar
+   * Automatically enabled in dev mode, can be controlled in production
+   * Set VITE_FEATURE_DEV_TOOLS=false to hide in production
+   */
+  devTools: import.meta.env['VITE_FEATURE_DEV_TOOLS'] === 'true' || import.meta.env['DEV'] === true,
+
+  /**
    * Style Guide - Component showcase for development and client demos
    * Automatically enabled in dev mode, can be controlled in production
    */
