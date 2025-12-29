@@ -26,6 +26,7 @@ import {
   Shield,
   Palette,
   Component,
+  MessageSquare,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { features } from '@/shared/config/features'
@@ -50,6 +51,12 @@ const navItems: NavItem[] = [
     label: 'Home',
     href: '/dashboard',
     icon: Home,
+  },
+  // AI Chat
+  {
+    label: 'AI Chat',
+    href: '/dashboard/chat',
+    icon: MessageSquare,
   },
 
   // Settings removed from sidebar - already in user dropdown menu

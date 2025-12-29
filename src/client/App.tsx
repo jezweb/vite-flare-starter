@@ -12,6 +12,7 @@ import { PublicLayout } from './layouts/PublicLayout'
 import { DashboardPage } from './pages/DashboardPage'
 import { LandingPage } from './pages/LandingPage'
 import { SettingsPage } from './modules/settings/pages/SettingsPage'
+import { ChatPage } from './modules/chat'
 import { StyleGuidePage } from './pages/StyleGuidePage'
 import { ComponentsPage } from './pages/ComponentsPage'
 
@@ -46,6 +47,9 @@ function App() {
 
             {/* Settings module - profile, password, theme, etc. */}
             <Route path="settings" element={<SettingsPage />} />
+
+            {/* AI Chat */}
+            <Route path="chat" element={<ChatPage />} />
 
             {/* Profile redirects to Settings (Profile tab is default) */}
             <Route path="profile" element={<Navigate to="/dashboard/settings" replace />} />
