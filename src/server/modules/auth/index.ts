@@ -78,7 +78,7 @@ export function createAuth(
     // - DISABLE_EMAIL_SIGNUP=true: Blocks new signups but existing users can still login
     emailAndPassword: {
       enabled: !emailLoginDisabled,
-      requireEmailVerification: false, // Start simple, enable later if needed
+      requireEmailVerification: true, // Users must verify email before signing in
       disableSignUp: emailSignupDisabled,
 
       // Password reset flow
@@ -118,6 +118,43 @@ export function createAuth(
     session: {
       expiresIn: SESSION.EXPIRES_IN, // Default: 7 days
       updateAge: SESSION.UPDATE_AGE, // Default: 24 hours
+    },
+
+    // Email verification configuration
+    emailVerification: {
+      sendVerificationEmail: async ({ user, url }) => {
+        if (!env.EMAIL_API_KEY || !env.EMAIL_FROM) {
+          console.warn('Email credentials not configured - skipping verification email')
+          return
+        }
+
+        const resend = new Resend(env.EMAIL_API_KEY)
+
+        try {
+          await resend.emails.send({
+            from: env.EMAIL_FROM,
+            to: user.email,
+            subject: 'Verify Your Email Address',
+            html: `
+              <h2>Welcome!</h2>
+              <p>Hi ${user.name || 'there'},</p>
+              <p>Thanks for signing up. Please verify your email address by clicking the button below:</p>
+              <p><a href="${url}" style="display: inline-block; padding: 12px 24px; background-color: #0f172a; color: white; text-decoration: none; border-radius: 6px;">Verify Email</a></p>
+              <p>This link will expire in 24 hours.</p>
+              <p>If you didn't create an account, you can safely ignore this email.</p>
+              <hr>
+              <p><small>If the button doesn't work, copy and paste this link into your browser:</small></p>
+              <p><small>${url}</small></p>
+            `,
+          })
+          console.log(`Verification email sent to ${user.email}`)
+        } catch (error) {
+          console.error('Failed to send verification email:', error)
+          // Don't throw - avoid timing attacks and let user retry
+        }
+      },
+      sendOnSignUp: true, // Automatically send on signup
+      autoSignInAfterVerification: true, // Sign in user after they verify
     },
 
     // Social providers (Google OAuth)

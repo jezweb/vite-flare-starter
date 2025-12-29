@@ -6,6 +6,7 @@ import { SignInPage } from './modules/auth/SignInPage'
 import { SignUpPage } from './modules/auth/SignUpPage'
 import { ForgotPasswordPage } from './modules/auth/ForgotPasswordPage'
 import { ResetPasswordPage } from './modules/auth/ResetPasswordPage'
+import { VerifyEmailPage } from './modules/auth/VerifyEmailPage'
 import { ProtectedRoute } from './components/shared/ProtectedRoute'
 import { DashboardLayout } from './layouts/DashboardLayout'
 import { PublicLayout } from './layouts/PublicLayout'
@@ -34,6 +35,7 @@ function App() {
           <Route path="/sign-up" element={<SignUpPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
 
           {/* Protected dashboard routes */}
           <Route

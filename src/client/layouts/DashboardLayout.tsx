@@ -31,6 +31,7 @@ import {
   Activity,
 } from 'lucide-react'
 import { NotificationBell } from '@/client/components/NotificationBell'
+import { EmailVerificationBanner } from '@/client/components/EmailVerificationBanner'
 import { cn } from '@/lib/utils'
 import { features } from '@/shared/config/features'
 import { appConfig } from '@/shared/config/app'
@@ -319,6 +320,9 @@ export function DashboardLayout() {
       {/* Main content area */}
       <div className="flex flex-1 flex-col md:pl-64">
         <Header />
+
+        {/* Email verification banner - shown for unverified users */}
+        <EmailVerificationBanner />
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto bg-background p-4 md:p-6">
