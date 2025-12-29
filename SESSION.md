@@ -2,7 +2,7 @@
 
 **Current Phase**: Phase 5 (pending start)
 **Current Stage**: Phase 4 Complete
-**Last Checkpoint**: pending
+**Last Checkpoint**: b0fc0c4 (2025-12-30)
 **Planning Docs**: `docs/IMPROVEMENT_PLAN.md`
 
 ---
@@ -38,7 +38,7 @@
 **Summary**: Email verification with Resend, VerifyEmailPage, EmailVerificationBanner in dashboard
 
 ### Phase 4: Testing Infrastructure ✅
-**Completed**: 2025-12-30 | **Checkpoint**: pending
+**Completed**: 2025-12-30 | **Checkpoint**: b0fc0c4
 **Summary**: Coverage config, test factories, 74 tests for schemas/password/scopes/health
 
 ### Phase 5: Error Tracking ⏸️

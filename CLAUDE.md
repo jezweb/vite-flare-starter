@@ -103,6 +103,13 @@ vite-flare-starter/
 - `admin.ts` - Admin role authorization (requires authMiddleware first)
 - `security.ts` - Security headers (CSP, X-Frame-Options, etc.)
 - `rate-limit.ts` - Rate limiting for sensitive endpoints
+- `request-id.ts` - Request ID generation and tracking
+
+### Error Tracking
+`src/server/lib/sentry.ts` and `src/client/lib/sentry.ts`:
+- Sentry integration for error tracking (optional, requires SENTRY_DSN)
+- Request ID included in all error reports for correlation
+- X-Request-ID header returned in all API responses
 
 ### Database Schema
 `src/server/db/schema.ts` - Exports all tables:
@@ -273,6 +280,19 @@ GOOGLE_CLIENT_SECRET=optional
 DISABLE_EMAIL_LOGIN=false
 DISABLE_EMAIL_SIGNUP=false
 ADMIN_EMAILS=admin@example.com,jeremy@jezweb.net
+
+# Error tracking (optional)
+SENTRY_DSN=https://xxx@sentry.io/xxx
+SENTRY_ENVIRONMENT=development
+```
+
+### Client-side Environment Variables
+
+Add to `.env` or `.env.local` for Vite:
+```
+VITE_SENTRY_DSN=https://xxx@sentry.io/xxx
+VITE_SENTRY_ENVIRONMENT=development
+VITE_APP_VERSION=0.1.0
 ```
 
 ### Production (Cloudflare Secrets)
@@ -280,6 +300,10 @@ ADMIN_EMAILS=admin@example.com,jeremy@jezweb.net
 ```bash
 echo "secret" | npx wrangler secret put BETTER_AUTH_SECRET
 echo "https://your-app.workers.dev" | npx wrangler secret put BETTER_AUTH_URL
+
+# Optional: Sentry error tracking
+echo "https://xxx@sentry.io/xxx" | npx wrangler secret put SENTRY_DSN
+echo "production" | npx wrangler secret put SENTRY_ENVIRONMENT
 ```
 
 ---

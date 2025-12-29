@@ -3,8 +3,12 @@ import ReactDOM from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ThemeProvider } from '@/client/components/theme-provider'
 import { Toaster } from '@/components/ui/sonner'
+import { initSentry } from '@/client/lib/sentry'
 import App from './App'
 import '@/index.css'
+
+// Initialize Sentry for error tracking (must be done early)
+initSentry()
 
 // Create a query client for TanStack Query
 const queryClient = new QueryClient({

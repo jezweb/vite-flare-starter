@@ -17,6 +17,8 @@ import adminRoutes from './modules/admin/routes'
 import { securityHeaders } from './middleware/security'
 import { rateLimiter } from './middleware/rate-limit'
 import { authMiddleware, requireScopes } from './middleware/auth'
+import { requestIdMiddleware } from './middleware/request-id'
+import { captureServerException } from './lib/sentry'
 import { AVATAR, APP_VERSION } from '@/shared/config/constants'
 import { createAIClient, listModels, getRecommendedModel, resolveModelId } from './lib/ai'
 
@@ -53,12 +55,17 @@ export interface Env {
   // Users matching these emails are automatically promoted to admin role
   // Example: "admin@example.com,jeremy@jezweb.net"
   ADMIN_EMAILS?: string
+
+  // Sentry error tracking (optional)
+  SENTRY_DSN?: string
+  SENTRY_ENVIRONMENT?: string
 }
 
 // Create Hono app with type-safe environment
 const app = new Hono<{ Bindings: Env }>()
 
 // Middleware
+app.use('*', requestIdMiddleware)
 app.use('*', logger())
 app.use('*', securityHeaders)
 app.use('/api/*', cors())
@@ -254,10 +261,23 @@ app.notFound((c) => {
 
 // Error handler
 app.onError((err, c) => {
-  console.error('Error:', err)
+  const requestId = c.get('requestId') || 'unknown'
+
+  // Log error with request context
+  console.error(`[${requestId}] Error:`, err.message, err.stack)
+
+  // Capture in Sentry with request context
+  captureServerException(err, c, {
+    requestId,
+    path: c.req.path,
+    method: c.req.method,
+  })
+
+  // Return error response with request ID for support correlation
   return c.json(
     {
       error: c.env.NODE_ENV === 'production' ? 'Internal Server Error' : err.message,
+      requestId,
     },
     500
   )
