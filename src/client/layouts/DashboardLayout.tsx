@@ -28,7 +28,9 @@ import {
   Palette,
   Component,
   MessageSquare,
+  Activity,
 } from 'lucide-react'
+import { NotificationBell } from '@/client/components/NotificationBell'
 import { cn } from '@/lib/utils'
 import { features } from '@/shared/config/features'
 import { appConfig } from '@/shared/config/app'
@@ -58,6 +60,12 @@ const navItems: NavItem[] = [
     label: 'AI Chat',
     href: '/dashboard/chat',
     icon: MessageSquare,
+  },
+  // Activity log
+  {
+    label: 'Activity',
+    href: '/dashboard/activity',
+    icon: Activity,
   },
 
   // Settings removed from sidebar - already in user dropdown menu
@@ -230,6 +238,9 @@ function Header() {
 
       {/* Spacer */}
       <div className="flex-1" />
+
+      {/* Notifications */}
+      <NotificationBell />
 
       {/* Theme toggle */}
       <Button variant="ghost" size="icon" onClick={toggleTheme}>

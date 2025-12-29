@@ -16,6 +16,7 @@ import { AdminPage } from './modules/admin/pages/AdminPage'
 import { ChatPage } from './modules/chat'
 import { StyleGuidePage } from './pages/StyleGuidePage'
 import { ComponentsPage } from './pages/ComponentsPage'
+import { ActivityPage } from './modules/activity/pages/ActivityPage'
 
 function App() {
   return (
@@ -54,6 +55,9 @@ function App() {
 
             {/* AI Chat */}
             <Route path="chat" element={<ChatPage />} />
+
+            {/* Activity log */}
+            <Route path="activity" element={<ActivityPage />} />
 
             {/* Profile redirects to Settings (Profile tab is default) */}
             <Route path="profile" element={<Navigate to="/dashboard/settings" replace />} />
