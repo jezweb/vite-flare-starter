@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Download } from 'lucide-react'
 import {
   useSession,
   useUpdateProfile,
   useChangeEmail,
 } from '../hooks/useSettings'
+import { useExportData } from '../hooks/useExportData'
 import { updateNameSchema, changeEmailSchema } from '@/shared/schemas/settings.schema'
 import type { UpdateNameInput, ChangeEmailInput } from '@/shared/schemas/settings.schema'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -20,8 +21,18 @@ export function ProfileSection() {
   const { data: session } = useSession()
   const updateProfile = useUpdateProfile()
   const changeEmail = useChangeEmail()
+  const exportData = useExportData()
 
   const [isEditingEmail, setIsEditingEmail] = useState(false)
+
+  const handleExportData = async () => {
+    try {
+      await exportData.mutateAsync()
+      toast.success('Data export downloaded successfully')
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to export data')
+    }
+  }
 
   // Name form
   const nameForm = useForm<UpdateNameInput>({
@@ -178,6 +189,36 @@ export function ProfileSection() {
               </div>
             </form>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Data Export */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Export Your Data</CardTitle>
+          <CardDescription>
+            Download a copy of all your data in JSON format. This includes your profile, sessions,
+            API tokens, activity logs, and notifications.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button
+            variant="outline"
+            onClick={handleExportData}
+            disabled={exportData.isPending}
+          >
+            {exportData.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Exporting...
+              </>
+            ) : (
+              <>
+                <Download className="mr-2 h-4 w-4" />
+                Export My Data
+              </>
+            )}
+          </Button>
         </CardContent>
       </Card>
     </div>

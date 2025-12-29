@@ -7,6 +7,7 @@ import type { D1Database } from '@cloudflare/workers-types'
 import { createAuth } from './modules/auth'
 import settingsRoutes from './modules/settings/routes'
 import sessionsRoutes from './modules/settings/sessions'
+import exportRoutes from './modules/settings/export'
 import apiTokensRoutes from './modules/api-tokens/routes'
 import organizationRoutes from './modules/organization/routes'
 import activityRoutes from './modules/activity/routes'
@@ -174,6 +175,7 @@ app.get('/api/avatar/:userId', async (c) => {
 // API routes
 app.route('/api/settings', settingsRoutes)
 app.route('/api/settings/sessions', sessionsRoutes)
+app.route('/api/settings/export', exportRoutes)
 app.route('/api/api-tokens', apiTokensRoutes)
 app.route('/api/organization', organizationRoutes)
 app.route('/api/activity', activityRoutes)

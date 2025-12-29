@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { ConfirmDialog, useConfirmDialog } from '@/components/ui/confirm-dialog'
 import {
   Dialog,
   DialogContent,
@@ -58,11 +59,11 @@ function formatLastUsed(timestamp: number | null): string {
 
 interface TokenRowProps {
   token: ApiTokenListItem
-  onDelete: (id: string) => void
+  onDeleteClick: (token: { id: string; name: string }) => void
   isDeleting: boolean
 }
 
-function TokenRow({ token, onDelete, isDeleting }: TokenRowProps) {
+function TokenRow({ token, onDeleteClick, isDeleting }: TokenRowProps) {
   return (
     <TableRow>
       <TableCell className="font-medium">{token.name}</TableCell>
@@ -90,7 +91,7 @@ function TokenRow({ token, onDelete, isDeleting }: TokenRowProps) {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => onDelete(token.id)}
+          onClick={() => onDeleteClick({ id: token.id, name: token.name })}
           disabled={isDeleting}
           className="text-destructive hover:text-destructive"
         >
@@ -171,6 +172,21 @@ export function ApiTokensSection() {
   const [newToken, setNewToken] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
+  const deleteConfirmDialog = useConfirmDialog<{ id: string; name: string }>({
+    onConfirm: async (data) => {
+      setDeletingId(data.id)
+      try {
+        await deleteToken.mutateAsync(data.id)
+        toast.success('API token deleted')
+      } catch (error: any) {
+        toast.error(error.message || 'Failed to delete API token')
+        throw error
+      } finally {
+        setDeletingId(null)
+      }
+    },
+  })
+
   const form = useForm<CreateApiTokenInput>({
     resolver: zodResolver(createApiTokenSchema as any),
     defaultValues: {
@@ -191,20 +207,20 @@ export function ApiTokensSection() {
     }
   }
 
-  const onDeleteToken = async (id: string) => {
-    setDeletingId(id)
-    try {
-      await deleteToken.mutateAsync(id)
-      toast.success('API token deleted')
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to delete API token')
-    } finally {
-      setDeletingId(null)
-    }
-  }
-
   return (
     <div className="space-y-6">
+      {/* Delete confirmation dialog */}
+      <ConfirmDialog
+        open={deleteConfirmDialog.open}
+        onOpenChange={deleteConfirmDialog.setOpen}
+        title="Delete API Token"
+        description={`Are you sure you want to delete the token "${deleteConfirmDialog.pendingData?.name || ''}"? Any applications using this token will lose access.`}
+        confirmLabel="Delete Token"
+        variant="destructive"
+        isLoading={deleteConfirmDialog.isLoading}
+        onConfirm={deleteConfirmDialog.handleConfirm}
+      />
+
       {/* New token display modal */}
       {newToken && (
         <NewTokenDisplay token={newToken} onClose={() => setNewToken(null)} />
@@ -361,7 +377,7 @@ export function ApiTokensSection() {
                   <TokenRow
                     key={token.id}
                     token={token}
-                    onDelete={onDeleteToken}
+                    onDeleteClick={deleteConfirmDialog.openDialog}
                     isDeleting={deletingId === token.id}
                   />
                 ))}
