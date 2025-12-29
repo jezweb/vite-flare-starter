@@ -9,6 +9,9 @@ import settingsRoutes from './modules/settings/routes'
 import sessionsRoutes from './modules/settings/sessions'
 import apiTokensRoutes from './modules/api-tokens/routes'
 import organizationRoutes from './modules/organization/routes'
+import activityRoutes from './modules/activity/routes'
+import { featuresPublicRoutes, featuresAdminRoutes } from './modules/feature-flags/routes'
+import notificationsRoutes from './modules/notifications/routes'
 import { securityHeaders } from './middleware/security'
 import { rateLimiter } from './middleware/rate-limit'
 import { authMiddleware } from './middleware/auth'
@@ -144,6 +147,10 @@ app.route('/api/settings', settingsRoutes)
 app.route('/api/settings/sessions', sessionsRoutes)
 app.route('/api/api-tokens', apiTokensRoutes)
 app.route('/api/organization', organizationRoutes)
+app.route('/api/activity', activityRoutes)
+app.route('/api/features', featuresPublicRoutes)
+app.route('/api/admin/feature-flags', featuresAdminRoutes)
+app.route('/api/notifications', notificationsRoutes)
 
 // =============================================================================
 // AI TEST ENDPOINT

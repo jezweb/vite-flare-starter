@@ -13,3 +13,12 @@ export { apiTokens } from '@/server/modules/api-tokens/db/schema'
 
 // Organization module schemas
 export { organizationSettings } from '@/server/modules/organization/db/schema'
+
+// Activity module schemas
+export { activityLogs, activityLogsRelations } from '@/server/modules/activity/db/schema'
+
+// Feature Flags module schemas
+export { featureFlags, featureFlagsRelations } from '@/server/modules/feature-flags/db/schema'
+
+// Notifications module schemas
+export { userNotifications, userNotificationsRelations } from '@/server/modules/notifications/db/schema'
