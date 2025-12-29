@@ -15,6 +15,7 @@ import { useTheme } from '@/client/components/theme-provider'
 import { useSession, authClient } from '@/client/lib/auth'
 import { useNavigate } from 'react-router-dom'
 import { usePreferences, useUpdatePreferences } from '@/client/modules/settings/hooks/useSettings'
+import { useAdminStatus } from '@/client/modules/admin/hooks/useAdminStatus'
 import {
   Home,
   Menu,
@@ -190,6 +191,7 @@ function Header() {
   const { theme, setTheme } = useTheme()
   const { data: session } = useSession()
   const { data: preferences } = usePreferences()
+  const { data: isAdmin } = useAdminStatus()
   const updatePreferences = useUpdatePreferences()
   const navigate = useNavigate()
 
@@ -271,6 +273,15 @@ function Header() {
             <Settings className="mr-2 h-4 w-4" />
             <span>Settings</span>
           </DropdownMenuItem>
+          {isAdmin && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate('/dashboard/admin')}>
+                <Shield className="mr-2 h-4 w-4" />
+                <span>Admin</span>
+              </DropdownMenuItem>
+            </>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleSignOut}>
             <LogOut className="mr-2 h-4 w-4" />

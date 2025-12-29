@@ -16,6 +16,7 @@ import activityRoutes from './modules/activity/routes'
 import { featuresPublicRoutes, featuresAdminRoutes } from './modules/feature-flags/routes'
 import notificationsRoutes from './modules/notifications/routes'
 import chatRoutes from './modules/chat/routes'
+import adminRoutes from './modules/admin/routes'
 import { securityHeaders } from './middleware/security'
 import { rateLimiter } from './middleware/rate-limit'
 import { authMiddleware } from './middleware/auth'
@@ -187,6 +188,7 @@ app.route('/api/organization', organizationRoutes)
 app.route('/api/activity', activityRoutes)
 app.route('/api/features', featuresPublicRoutes)
 app.route('/api/admin/feature-flags', featuresAdminRoutes)
+app.route('/api/admin', adminRoutes)
 app.route('/api/notifications', notificationsRoutes)
 app.route('/api/chat', chatRoutes)
 
