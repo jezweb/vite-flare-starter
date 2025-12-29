@@ -1,8 +1,8 @@
 # CLAUDE.md - AI Developer Context
 
 **Project:** Vite Flare Starter
-**Version:** 0.1.0
-**Purpose:** Minimal authenticated starter kit for Cloudflare Workers
+**Version:** 0.4.0
+**Purpose:** Production-ready authenticated starter kit for Cloudflare Workers
 
 ---
 
@@ -49,11 +49,19 @@ vite-flare-starter/
 │   │   │   ├── auth/        # better-auth config
 │   │   │   ├── settings/    # Settings API
 │   │   │   ├── api-tokens/  # Token management
-│   │   │   └── organization/# Org settings API
+│   │   │   ├── organization/# Org settings API
+│   │   │   ├── activity/    # Activity logging
+│   │   │   ├── feature-flags/# DB-backed feature flags
+│   │   │   └── notifications/# In-app notifications
+│   │   ├── lib/
+│   │   │   ├── logger.ts    # JSON structured logging
+│   │   │   ├── csv.ts       # CSV export utilities
+│   │   │   └── ai.ts        # Workers AI client
 │   │   ├── middleware/auth.ts
 │   │   └── db/schema.ts     # Central schema exports
 │   └── shared/
 │       ├── schemas/         # Zod validation schemas
+│       ├── api-scopes.ts    # API token scope definitions
 │       └── config/
 │           ├── features.ts  # Feature flags
 │           ├── app.ts       # App branding config
@@ -77,6 +85,12 @@ vite-flare-starter/
 - `/api/api-tokens/*` - API token management
 - `/api/organization/*` - Organization settings
 - `/api/avatar/:userId` - Avatar serving from R2
+- `/api/activity/*` - Activity logging (list, entity history, stats)
+- `/api/features` - Public feature flags (no auth)
+- `/api/admin/feature-flags/*` - Feature flag admin (list, update, sync)
+- `/api/notifications/*` - User notifications (list, mark read, delete)
+- `/api/ai/models` - List available AI models
+- `/api/ai/test` - Test AI text generation
 
 ### Middleware
 `src/server/middleware/`:
@@ -89,6 +103,9 @@ vite-flare-starter/
 - `user`, `session`, `account`, `verification` (auth)
 - `apiTokens` (API key management)
 - `organizationSettings` (business settings)
+- `activityLogs` (audit trail)
+- `featureFlags` (DB-backed feature toggles)
+- `userNotifications` (in-app notifications)
 
 ### Auth Configuration
 `src/server/modules/auth/index.ts`:
@@ -255,6 +272,7 @@ pnpm type-check             # Run TypeScript check
 Defined in `wrangler.jsonc`:
 - `DB` - D1 database
 - `AVATARS` - R2 bucket for user avatars
+- `AI` - Workers AI binding for text generation
 
 ---
 
@@ -350,4 +368,5 @@ Components are copied to `src/components/ui/`.
 ---
 
 **Created:** 2025-11-29
+**Updated:** 2025-12-29
 **Author:** Jeremy Dawes (Jezweb)

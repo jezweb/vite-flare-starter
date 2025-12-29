@@ -1,8 +1,53 @@
 # Vite Flare Starter
 
-⚡ Minimal authenticated starter kit for building apps on Cloudflare Workers.
+⚡ Production-ready authenticated starter kit for building apps on Cloudflare Workers.
 
 [![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/jezweb/vite-flare-starter)
+
+**[Live Demo](https://vite-flare-starter.webfonts.workers.dev)** | **[Documentation](./CLAUDE.md)**
+
+---
+
+## Preview
+
+<table>
+<tr>
+<td width="50%">
+
+**Landing Page**
+
+Clean marketing page with dark theme, feature highlights, and call-to-action buttons.
+
+</td>
+<td width="50%">
+
+**Dashboard**
+
+Authenticated dashboard with sidebar navigation, welcome card, and tech stack overview.
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**Authentication**
+
+Email/password and Google OAuth sign-in with forgot password flow.
+
+</td>
+<td width="50%">
+
+**Settings**
+
+User profile, password management, theme preferences with 8+ color themes.
+
+</td>
+</tr>
+</table>
+
+> Visit the [live demo](https://vite-flare-starter.webfonts.workers.dev) to explore the full interface.
+
+---
 
 ## What's Included
 
@@ -14,6 +59,12 @@
 - **Theme System** - Dark/light/system mode support
 - **API Structure** - Hono backend with auth middleware
 - **Database** - Cloudflare D1 with Drizzle ORM
+- **Activity Logging** - Audit trail for user actions with entity tracking
+- **Feature Flags** - DB-backed feature toggles with admin API
+- **Notifications** - In-app notification system with persistence
+- **AI Integration** - Workers AI client with model selection
+- **CSV Export** - Utility for data exports with timezone support
+- **API Token Scopes** - Granular permissions for API tokens
 
 ## Tech Stack
 
@@ -136,7 +187,11 @@ vite-flare-starter/
 │   │   ├── modules/
 │   │   │   ├── auth/        # Auth configuration
 │   │   │   ├── settings/    # Settings routes
-│   │   │   └── api-tokens/  # API token management
+│   │   │   ├── api-tokens/  # API token management
+│   │   │   ├── activity/    # Activity logging
+│   │   │   ├── feature-flags/# DB-backed feature flags
+│   │   │   └── notifications/# In-app notifications
+│   │   ├── lib/             # Utilities (logger, csv, ai)
 │   │   ├── middleware/      # Auth middleware
 │   │   └── db/schema.ts     # Central schema exports
 │   └── shared/              # Shared code (Zod schemas)
