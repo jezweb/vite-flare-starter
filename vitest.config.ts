@@ -7,6 +7,21 @@ export default defineWorkersConfig({
   },
   test: {
     globals: true,
+    include: ['tests/**/*.test.ts'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'json'],
+      reportsDirectory: './coverage',
+      include: [
+        'src/server/**/*.ts',
+        'src/shared/**/*.ts',
+      ],
+      exclude: [
+        'src/server/db/**',
+        'src/server/modules/*/db/**',
+        '**/*.d.ts',
+      ],
+    },
     poolOptions: {
       workers: {
         wrangler: {
