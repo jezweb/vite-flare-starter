@@ -6,13 +6,16 @@
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
-import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
+import { authMiddleware, requireScopes, type AuthContext } from '@/server/middleware/auth'
 import { createAIClient, resolveModelId, MODEL_REGISTRY } from '@/server/lib/ai'
 
 const app = new Hono<AuthContext>()
 
 // Apply auth middleware to all routes
 app.use('*', authMiddleware)
+
+// All chat routes require chat:write scope for API tokens
+app.use('*', requireScopes('chat:write'))
 
 // Schema for chat request
 const chatRequestSchema = z.object({

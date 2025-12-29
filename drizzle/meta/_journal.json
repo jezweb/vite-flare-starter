@@ -22,6 +22,13 @@
       "when": 1767013476122,
       "tag": "0002_add-user-role",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1767044294721,
+      "tag": "0003_add-api-token-scopes",
+      "breakpoints": true
     }
   ]
 }

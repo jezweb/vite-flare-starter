@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { ALL_SCOPES, type ApiTokenScope } from '@/shared/config/scopes'
 
 /**
  * Shared validation schemas for API tokens
@@ -10,6 +11,9 @@ import { z } from 'zod'
  * This ensures consistent validation rules across the stack.
  */
 
+// Scope schema - validates against known scopes
+export const scopeSchema = z.enum(ALL_SCOPES as [ApiTokenScope, ...ApiTokenScope[]])
+
 // Create API token schema - used for POST requests
 export const createApiTokenSchema = z.object({
   name: z
@@ -17,6 +21,10 @@ export const createApiTokenSchema = z.object({
     .min(1, 'Name is required')
     .max(100, 'Name must be 100 characters or less')
     .trim(),
+  scopes: z
+    .array(scopeSchema)
+    .min(1, 'At least one scope is required')
+    .default(['profile:read']),
   expiresAt: z
     .number()
     .int()
@@ -29,6 +37,7 @@ export const apiTokenCreatedSchema = z.object({
   id: z.string(),
   name: z.string(),
   tokenPrefix: z.string(),
+  scopes: z.array(z.string()),
   rawToken: z.string(), // Only returned on creation
   expiresAt: z.number().nullable(),
   createdAt: z.number(),
@@ -39,6 +48,7 @@ export const apiTokenListItemSchema = z.object({
   id: z.string(),
   name: z.string(),
   tokenPrefix: z.string(),
+  scopes: z.array(z.string()),
   lastUsedAt: z.number().nullable(),
   expiresAt: z.number().nullable(),
   createdAt: z.number(),

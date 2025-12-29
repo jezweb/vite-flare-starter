@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm'
 import type { Env } from '../index'
 import { createAuth } from '../modules/auth'
 import * as schema from '@/server/db/schema'
+import type { ApiTokenScope } from '@/shared/config/scopes'
 
 /**
  * Auth middleware for protecting API routes
@@ -28,6 +29,7 @@ export type AuthContext = {
       role: 'user' | 'manager' | 'admin'
     }
     authMethod: 'session' | 'api-token' // Track which auth method was used
+    tokenScopes: ApiTokenScope[] // Scopes granted by API token (empty for session auth)
   }
 }
 
@@ -44,13 +46,25 @@ async function hashToken(token: string): Promise<string> {
 }
 
 /**
+ * Parse scopes from comma-separated string
+ */
+function parseScopes(scopesStr: string): ApiTokenScope[] {
+  if (!scopesStr) return []
+  return scopesStr.split(',').filter(Boolean) as ApiTokenScope[]
+}
+
+/**
  * Authenticate using Bearer token from Authorization header
- * Returns the user if valid, null otherwise
+ * Returns the user and scopes if valid, null otherwise
  */
 async function authenticateWithBearerToken(
   authHeader: string,
   db: D1Database
-): Promise<{ userId: string; user: { id: string; email: string; name: string; image?: string | null; role: 'user' | 'manager' | 'admin' } } | null> {
+): Promise<{
+  userId: string
+  user: { id: string; email: string; name: string; image?: string | null; role: 'user' | 'manager' | 'admin' }
+  scopes: ApiTokenScope[]
+} | null> {
   // Extract token from "Bearer <token>" format
   const token = authHeader.replace(/^Bearer\s+/i, '')
   if (!token) return null
@@ -95,6 +109,7 @@ async function authenticateWithBearerToken(
       image: user.image,
       role: (user.role as 'user' | 'manager' | 'admin') || 'user',
     },
+    scopes: parseScopes(apiToken.scopes),
   }
 }
 
@@ -108,6 +123,7 @@ export const authMiddleware = createMiddleware<AuthContext>(async (c, next) => {
         c.set('userId', tokenAuth.userId)
         c.set('user', tokenAuth.user)
         c.set('authMethod', 'api-token')
+        c.set('tokenScopes', tokenAuth.scopes)
         await next()
         return
       }
@@ -152,6 +168,7 @@ export const authMiddleware = createMiddleware<AuthContext>(async (c, next) => {
       role: (dbUser?.role as 'user' | 'manager' | 'admin') || 'user',
     })
     c.set('authMethod', 'session')
+    c.set('tokenScopes', []) // Session auth has full access (empty = no restrictions)
 
     await next()
   } catch (error) {
@@ -159,6 +176,47 @@ export const authMiddleware = createMiddleware<AuthContext>(async (c, next) => {
     return c.json({ error: 'Unauthorized' }, 401)
   }
 })
+
+/**
+ * Middleware factory to require specific scopes for API token access
+ *
+ * Session auth always passes (full access).
+ * API token auth requires at least one of the specified scopes.
+ *
+ * Usage:
+ *   app.get('/api/profile', authMiddleware, requireScopes('profile:read'), handler)
+ *   app.post('/api/chat', authMiddleware, requireScopes('chat:write', 'chat:read'), handler)
+ */
+export function requireScopes(...requiredScopes: ApiTokenScope[]) {
+  return createMiddleware<AuthContext>(async (c, next) => {
+    const authMethod = c.get('authMethod')
+
+    // Session auth has full access - no scope restrictions
+    if (authMethod === 'session') {
+      await next()
+      return
+    }
+
+    // API token auth - check scopes
+    const tokenScopes = c.get('tokenScopes')
+
+    // Check if token has at least one of the required scopes
+    const hasRequiredScope = requiredScopes.some((scope) => tokenScopes.includes(scope))
+
+    if (!hasRequiredScope) {
+      return c.json(
+        {
+          error: 'Insufficient permissions',
+          required: requiredScopes,
+          granted: tokenScopes,
+        },
+        403
+      )
+    }
+
+    await next()
+  })
+}
 
 // Export hashToken for use in API token creation
 export { hashToken }

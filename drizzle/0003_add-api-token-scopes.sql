@@ -1,0 +1,1 @@
+ALTER TABLE `apiTokens` ADD `scopes` text DEFAULT '' NOT NULL;

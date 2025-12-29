@@ -32,6 +32,14 @@ function generateToken(): string {
 }
 
 /**
+ * Parse scopes from comma-separated string to array
+ */
+function parseScopes(scopesStr: string): string[] {
+  if (!scopesStr) return []
+  return scopesStr.split(',').filter(Boolean)
+}
+
+/**
  * GET /api/api-tokens
  * List all API tokens for the authenticated user
  * Does NOT return the actual token values (they're hashed)
@@ -45,6 +53,7 @@ app.get('/', async (c) => {
       id: apiTokens.id,
       name: apiTokens.name,
       tokenPrefix: apiTokens.tokenPrefix,
+      scopes: apiTokens.scopes,
       lastUsedAt: apiTokens.lastUsedAt,
       expiresAt: apiTokens.expiresAt,
       createdAt: apiTokens.createdAt,
@@ -56,6 +65,7 @@ app.get('/', async (c) => {
   // Convert Date objects to timestamps for JSON serialization
   const formattedTokens = tokens.map(token => ({
     ...token,
+    scopes: parseScopes(token.scopes),
     lastUsedAt: token.lastUsedAt?.getTime() ?? null,
     expiresAt: token.expiresAt?.getTime() ?? null,
     createdAt: token.createdAt.getTime(),
@@ -89,6 +99,9 @@ app.post('/', zValidator('json', createApiTokenSchema), async (c) => {
   // Get the prefix for display (first 12 chars including "vfs_")
   const tokenPrefix = rawToken.substring(0, 12) + '...'
 
+  // Convert scopes array to comma-separated string for storage
+  const scopesStr = input.scopes.join(',')
+
   // Create the token record
   const newToken = await db
     .insert(apiTokens)
@@ -97,6 +110,7 @@ app.post('/', zValidator('json', createApiTokenSchema), async (c) => {
       name: input.name,
       token: hashedToken,
       tokenPrefix,
+      scopes: scopesStr,
       expiresAt: input.expiresAt ? new Date(input.expiresAt) : undefined,
     })
     .returning()
@@ -108,6 +122,7 @@ app.post('/', zValidator('json', createApiTokenSchema), async (c) => {
       id: newToken.id,
       name: newToken.name,
       tokenPrefix: newToken.tokenPrefix,
+      scopes: input.scopes,
       rawToken, // This is only returned on creation!
       expiresAt: newToken.expiresAt?.getTime() ?? null,
       createdAt: newToken.createdAt.getTime(),

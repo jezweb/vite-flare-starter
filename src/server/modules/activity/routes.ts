@@ -9,13 +9,16 @@ import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq, and, desc, inArray, sql, gte } from 'drizzle-orm'
-import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
+import { authMiddleware, requireScopes, type AuthContext } from '@/server/middleware/auth'
 import * as schema from '@/server/db/schema'
 
 const app = new Hono<AuthContext>()
 
 // Apply auth middleware to all routes
 app.use('*', authMiddleware)
+
+// All activity routes require activity:read scope for API tokens
+app.use('*', requireScopes('activity:read'))
 
 // Query schema for activity logs
 const activityQuerySchema = z.object({

@@ -23,6 +23,7 @@ export const apiTokens = sqliteTable('apiTokens', {
   name: text('name').notNull(), // User-friendly name like "ElevenLabs Agent"
   token: text('token').notNull().unique(), // The actual bearer token (hashed)
   tokenPrefix: text('tokenPrefix').notNull(), // First 8 chars for display (e.g., "vfs_abc1...")
+  scopes: text('scopes').notNull().default(''), // Comma-separated list of scopes (e.g., "profile:read,chat:write")
   lastUsedAt: integer('lastUsedAt', { mode: 'timestamp' }),
 
   // Optional expiration

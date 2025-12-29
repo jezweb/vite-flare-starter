@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { PasswordStrengthMeter } from '@/client/components/PasswordStrengthMeter'
 import {
   Dialog,
   DialogContent,
@@ -122,6 +123,7 @@ export function SecuritySection() {
                 placeholder="Enter new password (min 8 characters)"
                 className="mt-1.5"
               />
+              <PasswordStrengthMeter password={passwordForm.watch('newPassword')} className="mt-2" />
               {passwordForm.formState.errors.newPassword && (
                 <p className="text-sm text-destructive mt-1.5">
                   {passwordForm.formState.errors.newPassword.message}

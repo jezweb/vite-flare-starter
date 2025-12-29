@@ -16,7 +16,7 @@ import chatRoutes from './modules/chat/routes'
 import adminRoutes from './modules/admin/routes'
 import { securityHeaders } from './middleware/security'
 import { rateLimiter } from './middleware/rate-limit'
-import { authMiddleware } from './middleware/auth'
+import { authMiddleware, requireScopes } from './middleware/auth'
 import { AVATAR, APP_VERSION } from '@/shared/config/constants'
 import { createAIClient, listModels, getRecommendedModel, resolveModelId } from './lib/ai'
 
@@ -187,7 +187,8 @@ const aiTestSchema = z.object({
 })
 
 // GET /api/ai/models - List available models
-app.get('/api/ai/models', authMiddleware, async (c) => {
+// Requires: ai:use scope for API tokens
+app.get('/api/ai/models', authMiddleware, requireScopes('ai:use'), async (c) => {
   const models = listModels()
   const recommended = getRecommendedModel('general')
 
@@ -205,9 +206,11 @@ app.get('/api/ai/models', authMiddleware, async (c) => {
 })
 
 // POST /api/ai/test - Test AI generation
+// Requires: ai:use scope for API tokens
 app.post(
   '/api/ai/test',
   authMiddleware,
+  requireScopes('ai:use'),
   zValidator('json', aiTestSchema),
   async (c) => {
     const { prompt, model } = c.req.valid('json')

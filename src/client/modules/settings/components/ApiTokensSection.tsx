@@ -1,15 +1,18 @@
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import { Loader2, Key, Copy, Check, Trash2, Plus, ExternalLink } from 'lucide-react'
 import { useApiTokens, useCreateApiToken, useDeleteApiToken } from '@/client/modules/api-tokens/hooks/useApiTokens'
 import { createApiTokenSchema } from '@/shared/schemas/api-token.schema'
 import type { CreateApiTokenInput, ApiTokenListItem } from '@/shared/schemas/api-token.schema'
+import { API_TOKEN_SCOPES, SCOPE_CATEGORIES, type ApiTokenScope } from '@/shared/config/scopes'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Dialog,
@@ -66,11 +69,22 @@ function TokenRow({ token, onDelete, isDeleting }: TokenRowProps) {
       <TableCell className="font-mono text-sm text-muted-foreground">
         {token.tokenPrefix}
       </TableCell>
-      <TableCell className="text-sm text-muted-foreground">
-        {formatLastUsed(token.lastUsedAt)}
+      <TableCell>
+        <div className="flex flex-wrap gap-1">
+          {token.scopes.slice(0, 3).map((scope) => (
+            <Badge key={scope} variant="secondary" className="text-xs">
+              {scope}
+            </Badge>
+          ))}
+          {token.scopes.length > 3 && (
+            <Badge variant="outline" className="text-xs">
+              +{token.scopes.length - 3} more
+            </Badge>
+          )}
+        </div>
       </TableCell>
       <TableCell className="text-sm text-muted-foreground">
-        {token.expiresAt ? formatDate(token.expiresAt) : 'Never'}
+        {formatLastUsed(token.lastUsedAt)}
       </TableCell>
       <TableCell className="text-right">
         <Button
@@ -161,6 +175,7 @@ export function ApiTokensSection() {
     resolver: zodResolver(createApiTokenSchema as any),
     defaultValues: {
       name: '',
+      scopes: ['profile:read'] as ApiTokenScope[],
     },
   })
 
@@ -237,6 +252,60 @@ export function ApiTokensSection() {
                     </p>
                   </div>
 
+                  <div>
+                    <Label>Permissions</Label>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Select which actions this token can perform
+                    </p>
+                    <Controller
+                      name="scopes"
+                      control={form.control}
+                      render={({ field }) => (
+                        <div className="space-y-4 max-h-64 overflow-y-auto border rounded-lg p-3">
+                          {Object.entries(SCOPE_CATEGORIES).map(([category, categoryScopes]) => (
+                            <div key={category}>
+                              <h4 className="font-medium text-sm mb-2">{category}</h4>
+                              <div className="space-y-2 ml-2">
+                                {categoryScopes.map((scope) => (
+                                  <div key={scope} className="flex items-start gap-2">
+                                    <Checkbox
+                                      id={scope}
+                                      checked={field.value?.includes(scope)}
+                                      onCheckedChange={(checked) => {
+                                        const current = field.value || []
+                                        if (checked) {
+                                          field.onChange([...current, scope])
+                                        } else {
+                                          field.onChange(current.filter((s) => s !== scope))
+                                        }
+                                      }}
+                                    />
+                                    <div className="grid gap-0.5 leading-none">
+                                      <label
+                                        htmlFor={scope}
+                                        className="text-sm font-medium cursor-pointer"
+                                      >
+                                        {scope}
+                                      </label>
+                                      <p className="text-xs text-muted-foreground">
+                                        {API_TOKEN_SCOPES[scope]}
+                                      </p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    />
+                    {form.formState.errors.scopes && (
+                      <p className="text-sm text-destructive mt-1.5">
+                        {form.formState.errors.scopes.message}
+                      </p>
+                    )}
+                  </div>
+
                   <DialogFooter>
                     <Button
                       type="button"
@@ -282,8 +351,8 @@ export function ApiTokensSection() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Token</TableHead>
+                  <TableHead>Permissions</TableHead>
                   <TableHead>Last Used</TableHead>
-                  <TableHead>Expires</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>

@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq } from 'drizzle-orm'
-import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
+import { authMiddleware, requireScopes, type AuthContext } from '@/server/middleware/auth'
 import { createAuth } from '@/server/modules/auth'
 import * as schema from '@/server/db/schema'
 import {
@@ -21,6 +21,18 @@ const app = new Hono<AuthContext>()
 app.use('/*', authMiddleware)
 
 /**
+ * Helper middleware to require session auth only (no API tokens)
+ * Used for sensitive operations like password change, email change, account deletion
+ */
+const requireSessionAuth = async (c: any, next: any) => {
+  const authMethod = c.get('authMethod')
+  if (authMethod !== 'session') {
+    return c.json({ error: 'This action requires web session authentication' }, 403)
+  }
+  await next()
+}
+
+/**
  * PATCH /api/settings/profile
  * Update user profile (name, image)
  *
@@ -28,8 +40,10 @@ app.use('/*', authMiddleware)
  * - Automatic updatedAt handling
  * - Lifecycle hook support
  * - Consistent with auth system
+ *
+ * Requires: profile:write scope for API tokens
  */
-app.patch('/profile', zValidator('json', updateNameSchema), async (c) => {
+app.patch('/profile', requireScopes('profile:write'), zValidator('json', updateNameSchema), async (c) => {
   const input = c.req.valid('json')
 
   try {
@@ -71,8 +85,10 @@ app.patch('/profile', zValidator('json', updateNameSchema), async (c) => {
  * Fetch user preferences (theme, mode)
  *
  * Returns user preferences or defaults if not set
+ *
+ * Requires: settings:read scope for API tokens
  */
-app.get('/preferences', async (c) => {
+app.get('/preferences', requireScopes('settings:read'), async (c) => {
   const userId = c.get('userId')
   const db = drizzle(c.env.DB, { schema })
 
@@ -104,8 +120,10 @@ app.get('/preferences', async (c) => {
  * Update user preferences (theme, mode)
  *
  * Validates input and updates preferences in database
+ *
+ * Requires: settings:write scope for API tokens
  */
-app.patch('/preferences', zValidator('json', userPreferencesSchema), async (c) => {
+app.patch('/preferences', requireScopes('settings:write'), zValidator('json', userPreferencesSchema), async (c) => {
   const userId = c.get('userId')
   const input = c.req.valid('json')
   const db = drizzle(c.env.DB, { schema })
@@ -137,8 +155,10 @@ app.patch('/preferences', zValidator('json', userPreferencesSchema), async (c) =
  * Accepts multipart/form-data with 'avatar' field
  * Stores in R2 with key: avatars/{userId}.jpg
  * Updates user.image with public URL
+ *
+ * Requires: profile:write scope for API tokens
  */
-app.post('/avatar', async (c) => {
+app.post('/avatar', requireScopes('profile:write'), async (c) => {
   const userId = c.get('userId')
   const db = drizzle(c.env.DB, { schema })
 
@@ -207,8 +227,10 @@ app.post('/avatar', async (c) => {
  * Delete user avatar from R2
  *
  * Removes avatar from R2 and clears user.image field
+ *
+ * Requires: profile:write scope for API tokens
  */
-app.delete('/avatar', async (c) => {
+app.delete('/avatar', requireScopes('profile:write'), async (c) => {
   const userId = c.get('userId')
   const db = drizzle(c.env.DB, { schema })
 
@@ -247,8 +269,10 @@ app.delete('/avatar', async (c) => {
  * - Email uniqueness check
  * - Verification email sent to CURRENT email (security)
  * - Safe email change workflow
+ *
+ * Requires: Session auth only (no API tokens - security sensitive)
  */
-app.post('/email', zValidator('json', changeEmailSchema), async (c) => {
+app.post('/email', requireSessionAuth, zValidator('json', changeEmailSchema), async (c) => {
   const input = c.req.valid('json')
 
   try {
@@ -304,8 +328,10 @@ app.post('/email', zValidator('json', changeEmailSchema), async (c) => {
  * - Current password verification (custom salt:hash format)
  * - New password hashing
  * - Optional session revocation
+ *
+ * Requires: Session auth only (no API tokens - security sensitive)
  */
-app.post('/password', zValidator('json', changePasswordSchema), async (c) => {
+app.post('/password', requireSessionAuth, zValidator('json', changePasswordSchema), async (c) => {
   const userId = c.get('userId')
   const input = c.req.valid('json')
   const db = drizzle(c.env.DB, { schema })
@@ -378,8 +404,10 @@ app.post('/password', zValidator('json', changePasswordSchema), async (c) => {
  * - Fresh session requirement (default: 1 day)
  * - Lifecycle hooks (beforeDelete, afterDelete)
  * - Cascade delete via afterDelete hook
+ *
+ * Requires: Session auth only (no API tokens - security sensitive)
  */
-app.delete('/account', zValidator('json', deleteAccountSchema), async (c) => {
+app.delete('/account', requireSessionAuth, zValidator('json', deleteAccountSchema), async (c) => {
   const input = c.req.valid('json')
 
   try {

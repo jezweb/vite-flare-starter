@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent } from 'react'
+import { useState, useEffect, FormEvent, useMemo } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { authClient } from '@/client/lib/auth'
 import { Button } from '@/components/ui/button'
@@ -17,6 +17,8 @@ import {
 } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
+import { PasswordStrengthMeter } from '@/client/components/PasswordStrengthMeter'
+import { checkPasswordStrength } from '@/shared/lib/password-strength'
 
 interface AuthConfig {
   emailLoginEnabled: boolean
@@ -55,6 +57,9 @@ export function SignUpPage() {
       })
   }, [])
 
+  // Password strength check
+  const passwordStrength = useMemo(() => checkPasswordStrength(password), [password])
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
@@ -65,9 +70,9 @@ export function SignUpPage() {
       return
     }
 
-    // Validate password length
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters')
+    // Validate password strength
+    if (!passwordStrength.isValid) {
+      setError('Please choose a stronger password')
       return
     }
 
@@ -259,9 +264,7 @@ export function SignUpPage() {
                     required
                     disabled={loading}
                   />
-                  <FieldDescription>
-                    Must be at least 8 characters long.
-                  </FieldDescription>
+                  <PasswordStrengthMeter password={password} className="mt-2" />
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="confirm-password">
