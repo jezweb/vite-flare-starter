@@ -52,6 +52,7 @@ User profile, password management, theme preferences with 8+ color themes.
 ## What's Included
 
 - **Authentication** - better-auth with email/password + Google OAuth
+- **Admin System** - Role-based access (user/manager/admin) with ADMIN_EMAILS auto-promotion
 - **User Settings** - Profile, password, theme preferences
 - **Dashboard Layout** - Responsive sidebar navigation
 - **UI Components** - Full shadcn/ui component library
@@ -62,7 +63,7 @@ User profile, password management, theme preferences with 8+ color themes.
 - **Activity Logging** - Audit trail for user actions with entity tracking
 - **Feature Flags** - DB-backed feature toggles with admin API
 - **Notifications** - In-app notification system with persistence
-- **AI Integration** - Workers AI client with model selection
+- **AI Chat** - Streaming AI chat with markdown rendering and Workers AI
 - **CSV Export** - Utility for data exports with timezone support
 - **API Token Scopes** - Granular permissions for API tokens
 
@@ -190,9 +191,10 @@ vite-flare-starter/
 │   │   │   ├── api-tokens/  # API token management
 │   │   │   ├── activity/    # Activity logging
 │   │   │   ├── feature-flags/# DB-backed feature flags
-│   │   │   └── notifications/# In-app notifications
+│   │   │   ├── notifications/# In-app notifications
+│   │   │   └── chat/        # AI chat with streaming
 │   │   ├── lib/             # Utilities (logger, csv, ai)
-│   │   ├── middleware/      # Auth middleware
+│   │   ├── middleware/      # Auth + admin middleware
 │   │   └── db/schema.ts     # Central schema exports
 │   └── shared/              # Shared code (Zod schemas)
 ├── drizzle/                 # Database migrations
@@ -211,6 +213,22 @@ vite-flare-starter/
 7. **Add Route** - Update `src/client/App.tsx`
 
 ## Configuration
+
+### Admin Users
+
+Grant admin access to specific users via environment variable:
+
+```bash
+# .dev.vars (local)
+ADMIN_EMAILS=admin@example.com,jeremy@jezweb.net
+
+# Production
+echo "admin@example.com,jeremy@jezweb.net" | npx wrangler secret put ADMIN_EMAILS
+```
+
+Users matching these emails are automatically promoted to admin role on their next API request. Admins can access:
+- Feature flag management (`/api/admin/feature-flags/*`)
+- Admin health check (`/api/health/admin`)
 
 ### Disable Email Signup
 

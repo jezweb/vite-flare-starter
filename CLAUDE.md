@@ -1,7 +1,7 @@
 # CLAUDE.md - AI Developer Context
 
 **Project:** Vite Flare Starter
-**Version:** 0.4.0
+**Version:** 0.6.0
 **Purpose:** Production-ready authenticated starter kit for Cloudflare Workers
 
 ---
@@ -52,12 +52,15 @@ vite-flare-starter/
 │   │   │   ├── organization/# Org settings API
 │   │   │   ├── activity/    # Activity logging
 │   │   │   ├── feature-flags/# DB-backed feature flags
-│   │   │   └── notifications/# In-app notifications
+│   │   │   ├── notifications/# In-app notifications
+│   │   │   └── chat/        # AI chat with streaming
 │   │   ├── lib/
 │   │   │   ├── logger.ts    # JSON structured logging
 │   │   │   ├── csv.ts       # CSV export utilities
-│   │   │   └── ai.ts        # Workers AI client
-│   │   ├── middleware/auth.ts
+│   │   │   └── ai/          # Workers AI client + model catalog
+│   │   ├── middleware/
+│   │   │   ├── auth.ts      # Session/API token auth
+│   │   │   └── admin.ts     # Admin role protection
 │   │   └── db/schema.ts     # Central schema exports
 │   └── shared/
 │       ├── schemas/         # Zod validation schemas
@@ -79,6 +82,7 @@ vite-flare-starter/
 ### Server Entry Point
 `src/server/index.ts` - Hono app with routes:
 - `/api/health` - Health check with DB/R2 status and version
+- `/api/health/admin` - Admin status check (requires auth)
 - `/api/auth/*` - better-auth handlers (includes password reset)
 - `/api/settings/*` - User settings (profile, email, password, avatar, preferences)
 - `/api/settings/sessions` - Session management (list, revoke)
@@ -89,18 +93,20 @@ vite-flare-starter/
 - `/api/features` - Public feature flags (no auth)
 - `/api/admin/feature-flags/*` - Feature flag admin (list, update, sync)
 - `/api/notifications/*` - User notifications (list, mark read, delete)
+- `/api/chat` - AI chat with streaming responses (POST for messages, GET for history)
 - `/api/ai/models` - List available AI models
 - `/api/ai/test` - Test AI text generation
 
 ### Middleware
 `src/server/middleware/`:
 - `auth.ts` - Session/API token authentication
+- `admin.ts` - Admin role authorization (requires authMiddleware first)
 - `security.ts` - Security headers (CSP, X-Frame-Options, etc.)
 - `rate-limit.ts` - Rate limiting for sensitive endpoints
 
 ### Database Schema
 `src/server/db/schema.ts` - Exports all tables:
-- `user`, `session`, `account`, `verification` (auth)
+- `user`, `session`, `account`, `verification` (auth) - user has `role` field
 - `apiTokens` (API key management)
 - `organizationSettings` (business settings)
 - `activityLogs` (audit trail)
@@ -113,6 +119,23 @@ vite-flare-starter/
 - Google OAuth (optional, domain restriction via Google Cloud Console)
 - Session management (7-day expiry)
 - `DISABLE_EMAIL_SIGNUP` - blocks new email accounts, Google OAuth unaffected
+
+### Admin System
+Role-based access control with automatic promotion:
+- User roles: `user`, `manager`, `admin`
+- `ADMIN_EMAILS` env var - comma-separated list of emails auto-promoted to admin
+- `/api/health/admin` - Check if current user is admin
+- Admin middleware auto-promotes matching emails on first request
+
+**Usage:**
+```typescript
+import { authMiddleware } from '@/server/middleware/auth'
+import { adminMiddleware, type AdminContext } from '@/server/middleware/admin'
+
+const app = new Hono<AdminContext>()
+app.use('*', authMiddleware)    // Must come first
+app.use('*', adminMiddleware)   // Checks admin role
+```
 
 ---
 
@@ -239,6 +262,7 @@ BETTER_AUTH_URL=http://localhost:5173
 GOOGLE_CLIENT_ID=optional
 GOOGLE_CLIENT_SECRET=optional
 DISABLE_EMAIL_SIGNUP=false
+ADMIN_EMAILS=admin@example.com,jeremy@jezweb.net
 ```
 
 ### Production (Cloudflare Secrets)
