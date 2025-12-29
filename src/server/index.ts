@@ -44,8 +44,9 @@ export interface Env {
   APP_NAME?: string
   NODE_ENV?: string
 
-  // Email signup control (doesn't affect Google OAuth)
-  DISABLE_EMAIL_SIGNUP?: string
+  // Email auth control (Google OAuth unaffected - use Google Cloud Console for domain restrictions)
+  DISABLE_EMAIL_LOGIN?: string // Set to 'true' for Google-only auth
+  DISABLE_EMAIL_SIGNUP?: string // Set to 'true' to block new email signups (existing users can still login)
 
   // Trusted origins for auth (comma-separated list)
   // Example: "http://localhost:5173,https://myapp.workers.dev,https://myapp.com"
@@ -125,6 +126,19 @@ app.get('/api/health/admin', authMiddleware, async (c) => {
   })
 })
 
+// Auth config endpoint (public - returns enabled auth methods for UI)
+app.get('/api/auth/config', async (c) => {
+  const emailLoginEnabled = c.env.DISABLE_EMAIL_LOGIN !== 'true'
+  const emailSignupEnabled = emailLoginEnabled && c.env.DISABLE_EMAIL_SIGNUP !== 'true'
+  const googleEnabled = !!(c.env.GOOGLE_CLIENT_ID && c.env.GOOGLE_CLIENT_SECRET)
+
+  return c.json({
+    emailLoginEnabled,
+    emailSignupEnabled,
+    googleEnabled,
+  })
+})
+
 // Auth routes (better-auth handles all /api/auth/* routes)
 app.all('/api/auth/*', async (c) => {
   const auth = createAuth(c.env.DB, {
@@ -134,6 +148,7 @@ app.all('/api/auth/*', async (c) => {
     GOOGLE_CLIENT_SECRET: c.env.GOOGLE_CLIENT_SECRET,
     EMAIL_API_KEY: c.env.EMAIL_API_KEY,
     EMAIL_FROM: c.env.EMAIL_FROM,
+    DISABLE_EMAIL_LOGIN: c.env.DISABLE_EMAIL_LOGIN,
     DISABLE_EMAIL_SIGNUP: c.env.DISABLE_EMAIL_SIGNUP,
     TRUSTED_ORIGINS: c.env.TRUSTED_ORIGINS,
   })

@@ -28,13 +28,18 @@ GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=your-client-secret
 
 # ============================================
-# Email Signup Control
+# Email Auth Control
 # ============================================
-# Set to 'true' to disable email/password signup
-# - Existing email users can still LOG IN
-# - Google OAuth is NOT affected (use Google Cloud domain restriction instead)
-# - To restrict Google OAuth: Set OAuth consent screen "User type" to "Internal"
+# Control email/password authentication independently:
+#
+# DISABLE_EMAIL_LOGIN=true  → Google-only mode (no email login at all)
+# DISABLE_EMAIL_SIGNUP=true → Existing email users can login, no new signups
+#
+# The UI automatically adapts based on these settings via /api/auth/config
+# Google OAuth is NOT affected (use Google Cloud domain restriction instead)
+# To restrict Google OAuth: Set OAuth consent screen "User type" to "Internal"
 
+DISABLE_EMAIL_LOGIN=false
 DISABLE_EMAIL_SIGNUP=false
 
 # ============================================
@@ -74,6 +79,7 @@ NODE_ENV=development
 # echo "https://your-worker.workers.dev" | npx wrangler secret put BETTER_AUTH_URL
 # echo "your-google-client-id" | npx wrangler secret put GOOGLE_CLIENT_ID
 # echo "your-google-client-secret" | npx wrangler secret put GOOGLE_CLIENT_SECRET
+# echo "true" | npx wrangler secret put DISABLE_EMAIL_LOGIN
 # echo "true" | npx wrangler secret put DISABLE_EMAIL_SIGNUP
 #
 # Never commit production secrets to git!

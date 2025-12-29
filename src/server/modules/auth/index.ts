@@ -44,6 +44,7 @@ export function createAuth(
     GOOGLE_CLIENT_SECRET?: string
     EMAIL_API_KEY?: string
     EMAIL_FROM?: string
+    DISABLE_EMAIL_LOGIN?: string
     DISABLE_EMAIL_SIGNUP?: string
     TRUSTED_ORIGINS?: string
   }
@@ -51,10 +52,12 @@ export function createAuth(
   // Initialize Drizzle with D1 binding
   const db = drizzle(d1, { schema })
 
-  // Check if email signup is disabled (doesn't affect Google OAuth)
+  // Check if email login is completely disabled (Google-only mode)
+  const emailLoginDisabled = env.DISABLE_EMAIL_LOGIN === 'true'
+  // Check if email signup is disabled (existing email users can still sign in)
+  const emailSignupDisabled = env.DISABLE_EMAIL_SIGNUP === 'true'
   // Google OAuth access is controlled at Google Cloud Console level:
   // - Set OAuth consent screen "User type" to "Internal" for domain-only access
-  const emailSignupDisabled = env.DISABLE_EMAIL_SIGNUP === 'true'
 
   return betterAuth({
     baseURL: env.BETTER_AUTH_URL,
@@ -71,18 +74,12 @@ export function createAuth(
     }),
 
     // Email and password authentication
-    // NOTE: This only controls email/password signup - login for existing users always works
+    // - DISABLE_EMAIL_LOGIN=true: Completely disables email/password (Google-only mode)
+    // - DISABLE_EMAIL_SIGNUP=true: Blocks new signups but existing users can still login
     emailAndPassword: {
-      enabled: true,
+      enabled: !emailLoginDisabled,
       requireEmailVerification: false, // Start simple, enable later if needed
-
-      // Disable email sign-up if DISABLE_EMAIL_SIGNUP is set
-      // Existing users can still log in with email/password
-      ...(emailSignupDisabled && {
-        signUp: {
-          enabled: false,
-        },
-      }),
+      disableSignUp: emailSignupDisabled,
 
       // Password reset flow
       sendResetPassword: async ({ user, url }) => {

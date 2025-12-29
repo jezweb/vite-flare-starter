@@ -115,10 +115,19 @@ vite-flare-starter/
 
 ### Auth Configuration
 `src/server/modules/auth/index.ts`:
-- Email/password authentication
+- Email/password authentication (controllable via env vars)
 - Google OAuth (optional, domain restriction via Google Cloud Console)
 - Session management (7-day expiry)
-- `DISABLE_EMAIL_SIGNUP` - blocks new email accounts, Google OAuth unaffected
+- `/api/auth/config` endpoint - returns enabled auth methods for UI
+
+**Auth Method Control:**
+| Env Var | Effect |
+|---------|--------|
+| `DISABLE_EMAIL_LOGIN=true` | Google-only mode (no email login at all) |
+| `DISABLE_EMAIL_SIGNUP=true` | Existing email users can login, no new signups |
+
+The SignInPage and SignUpPage automatically adapt based on `/api/auth/config`.
+Google OAuth is unaffected by these settings - use Google Cloud Console for domain restrictions.
 
 ### Admin System
 Role-based access control with automatic promotion:
@@ -261,6 +270,7 @@ BETTER_AUTH_SECRET=your-32-char-secret
 BETTER_AUTH_URL=http://localhost:5173
 GOOGLE_CLIENT_ID=optional
 GOOGLE_CLIENT_SECRET=optional
+DISABLE_EMAIL_LOGIN=false
 DISABLE_EMAIL_SIGNUP=false
 ADMIN_EMAILS=admin@example.com,jeremy@jezweb.net
 ```
