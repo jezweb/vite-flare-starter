@@ -43,3 +43,6 @@ coverage
 # Temporary files
 *.tmp
 .cache
+
+# Personal session tracking
+SESSION.md
