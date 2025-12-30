@@ -18,7 +18,7 @@ export const userListQuerySchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20),
   search: z.string().optional(),
-  sortBy: z.enum(['name', 'email', 'createdAt']).default('createdAt'),
+  sortBy: z.enum(['name', 'email', 'createdAt', 'lastActiveAt', 'role']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 })
 
@@ -61,4 +61,28 @@ export interface AdminStatusResponse {
   isAdmin: boolean
   role: Role
   email: string
+}
+
+// ============================================================================
+// Feature Flags (Admin)
+// ============================================================================
+
+export const updateFeatureFlagSchema = z.object({
+  enabled: z.boolean(),
+})
+
+export type UpdateFeatureFlagInput = z.infer<typeof updateFeatureFlagSchema>
+
+// Feature flag response type
+export interface FeatureFlagResponse {
+  key: string
+  name: string
+  description: string
+  enabled: boolean
+  category: string
+}
+
+// Feature flags list response
+export interface FeatureFlagsResponse {
+  flags: FeatureFlagResponse[]
 }

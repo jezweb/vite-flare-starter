@@ -10,7 +10,12 @@ import {
   Palette,
   Database,
   Users,
-  Settings,
+  Key,
+  Bot,
+  Flag,
+  Activity,
+  Bell,
+  ShieldCheck,
 } from 'lucide-react'
 import { appConfig } from '@/shared/config/app'
 
@@ -27,12 +32,42 @@ const features = [
   {
     icon: Shield,
     title: 'Secure Authentication',
-    description: 'Email/password and Google OAuth with session management built on better-auth.',
+    description: 'Email/password and Google OAuth with session management, email verification, and password reset.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Admin Panel',
+    description: 'Full admin dashboard with user management, stats, and role-based access control.',
+  },
+  {
+    icon: Bot,
+    title: 'AI Chat',
+    description: 'Workers AI integration with streaming responses and multiple model support.',
+  },
+  {
+    icon: Flag,
+    title: 'Feature Flags',
+    description: 'Runtime feature toggles with admin UI for controlling app behavior without deploys.',
   },
   {
     icon: Users,
     title: 'User Management',
-    description: 'Profile settings, password management, and theme preferences out of the box.',
+    description: 'Profile settings, avatar uploads, password management, and theme preferences.',
+  },
+  {
+    icon: Key,
+    title: 'API Tokens',
+    description: 'Scoped API tokens for programmatic access with granular permissions.',
+  },
+  {
+    icon: Activity,
+    title: 'Activity Logging',
+    description: 'Track user actions with searchable audit trail and data export.',
+  },
+  {
+    icon: Bell,
+    title: 'Notifications',
+    description: 'In-app notification system with real-time updates and read status.',
   },
   {
     icon: Database,
@@ -42,17 +77,12 @@ const features = [
   {
     icon: Palette,
     title: 'Modern UI',
-    description: 'Tailwind v4 + shadcn/ui with dark/light/system theme support.',
-  },
-  {
-    icon: Settings,
-    title: 'API Tokens',
-    description: 'Built-in API token management for programmatic access and integrations.',
+    description: 'Tailwind v4 + shadcn/ui with 8 color themes and dark/light mode.',
   },
   {
     icon: Zap,
     title: 'Edge Performance',
-    description: 'Deployed on Cloudflare Workers for sub-50ms response times globally.',
+    description: 'Cloudflare Workers + R2 storage for sub-50ms response times globally.',
   },
 ]
 
@@ -66,7 +96,7 @@ export function LandingPage() {
         <div className="container relative mx-auto max-w-6xl px-4 py-24 md:py-32">
           <div className="flex flex-col items-center text-center">
             <Badge variant="secondary" className="mb-4">
-              Minimal Authenticated Starter Kit
+              Full-Stack Authenticated Starter Kit
             </Badge>
 
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl max-w-4xl">
@@ -75,8 +105,8 @@ export function LandingPage() {
             </h1>
 
             <p className="mt-6 text-lg text-muted-foreground max-w-2xl md:text-xl">
-              A minimal, production-ready starter kit with authentication, user settings,
-              and essential infrastructure for Cloudflare Workers.
+              A production-ready starter kit with authentication, admin panel, AI chat,
+              and everything you need to build on Cloudflare Workers.
             </p>
 
             <div className="mt-10 flex flex-col sm:flex-row gap-4">
@@ -123,11 +153,11 @@ export function LandingPage() {
         <div className="container mx-auto max-w-6xl px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Everything you need to get started
+              Everything you need to ship
             </h2>
             <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-              A minimal foundation with authentication, user management, and modern UI -
-              ready to build upon.
+              A complete foundation with authentication, admin panel, AI integration,
+              and production-ready infrastructure.
             </p>
           </div>
 
@@ -165,7 +195,9 @@ export function LandingPage() {
               'Vite',
               'Hono',
               'Cloudflare Workers',
+              'Workers AI',
               'D1 Database',
+              'R2 Storage',
               'Drizzle ORM',
               'better-auth',
               'Tailwind v4',
