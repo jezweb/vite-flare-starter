@@ -15,6 +15,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ConfirmDialog, useConfirmDialog } from '@/components/ui/confirm-dialog'
+import { appConfig } from '@/shared/config/app'
 import {
   Dialog,
   DialogContent,
@@ -407,7 +408,7 @@ export function ApiTokensSection() {
           <div>
             <h4 className="font-medium mb-2">Authentication Header</h4>
             <code className="block bg-muted p-3 rounded text-sm">
-              Authorization: Bearer vfs_your_token_here
+              Authorization: Bearer {appConfig.tokenPrefix}your_token_here
             </code>
           </div>
 

@@ -49,11 +49,11 @@ export const AVATAR = {
 
 /**
  * API Token Configuration
+ *
+ * Note: Token PREFIX is now configurable via VITE_TOKEN_PREFIX env var.
+ * See src/shared/config/app.ts for branding configuration.
  */
 export const API_TOKEN = {
-  /** Prefix for generated tokens */
-  PREFIX: 'vfs_',
-
   /** Number of random bytes for token generation */
   BYTE_LENGTH: 32,
 

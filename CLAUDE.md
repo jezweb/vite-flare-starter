@@ -1,8 +1,47 @@
 # CLAUDE.md - AI Developer Context
 
 **Project:** Vite Flare Starter
-**Version:** 0.6.0
+**Version:** 0.8.0
 **Purpose:** Production-ready authenticated starter kit for Cloudflare Workers
+
+---
+
+## Security: Rebranding for Production
+
+**IMPORTANT**: Before deploying to production, rebrand to hide framework identity.
+
+Default values can allow attackers to identify your site uses this starter kit.
+
+### Required Environment Variables
+
+```bash
+# Client-side (VITE_ prefix)
+VITE_APP_NAME=Your App Name        # Shown in UI, headers, sidebar
+VITE_APP_ID=yourapp                # Used for localStorage keys, Sentry
+VITE_TOKEN_PREFIX=yap_             # API token prefix (3-4 chars + _)
+VITE_GITHUB_URL=                   # Empty to hide GitHub links
+VITE_FOOTER_TEXT=© 2025 Your Co    # Custom footer
+
+# Server-side (Cloudflare secrets)
+TOKEN_PREFIX=yap_                  # Must match VITE_TOKEN_PREFIX
+```
+
+### Also Update
+
+1. **`index.html`** - `<title>` and `<meta>` tags
+2. **Favicon** - Replace with your own
+
+### What Gets Fingerprinted (if not changed)
+
+| Location | Default Value | Risk |
+|----------|---------------|------|
+| Page title/meta | "Vite Flare Starter" | Public |
+| API tokens | `vfs_` prefix | Network |
+| localStorage | `vite-flare-starter-theme` | DevTools |
+| Sentry release | `vite-flare-starter@x.x.x` | Network |
+| Landing page | GitHub links | Public |
+
+See `src/shared/config/app.ts` for full configuration options.
 
 ---
 

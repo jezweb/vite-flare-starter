@@ -7,6 +7,19 @@ import { authMiddleware, hashToken, type AuthContext } from '@/server/middleware
 import { createApiTokenSchema } from '@/shared/schemas/api-token.schema'
 import * as schema from '@/server/db/schema'
 
+/**
+ * Default token prefix
+ *
+ * ⚠️  SECURITY: Change this for production deployments!
+ *
+ * This prefix appears in API tokens (e.g., "vfs_abc123...") and can identify
+ * your site as using Vite Flare Starter. Override with TOKEN_PREFIX env var.
+ *
+ * Set in Cloudflare: npx wrangler secret put TOKEN_PREFIX
+ * Example: "myapp_" (3-4 chars + underscore)
+ */
+const DEFAULT_TOKEN_PREFIX = 'vfs_'
+
 // Create Hono app for API token routes with auth context
 const app = new Hono<AuthContext>()
 
@@ -17,10 +30,11 @@ app.use('/*', authMiddleware)
 
 /**
  * Generate a secure random token
- * Format: vfs_<random-base64-url-safe-string>
- * "vfs" = "Vite Flare Stack" prefix for easy identification
+ * Format: <prefix>_<random-base64-url-safe-string>
+ *
+ * @param prefix - Token prefix from env var or default
  */
-function generateToken(): string {
+function generateToken(prefix: string): string {
   const randomBytes = new Uint8Array(32)
   crypto.getRandomValues(randomBytes)
   // Convert to base64url (URL-safe base64)
@@ -28,7 +42,7 @@ function generateToken(): string {
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=/g, '')
-  return `vfs_${base64}`
+  return `${prefix}${base64}`
 }
 
 /**
@@ -90,14 +104,17 @@ app.post('/', zValidator('json', createApiTokenSchema), async (c) => {
   const input = c.req.valid('json')
   const db = drizzle(c.env.DB, { schema })
 
+  // Get token prefix from env or use default
+  const tokenPrefix = c.env.TOKEN_PREFIX || DEFAULT_TOKEN_PREFIX
+
   // Generate the raw token
-  const rawToken = generateToken()
+  const rawToken = generateToken(tokenPrefix)
 
   // Hash it for storage
   const hashedToken = await hashToken(rawToken)
 
-  // Get the prefix for display (first 12 chars including "vfs_")
-  const tokenPrefix = rawToken.substring(0, 12) + '...'
+  // Get the prefix for display (first 12 chars)
+  const displayPrefix = rawToken.substring(0, 12) + '...'
 
   // Convert scopes array to comma-separated string for storage
   const scopesStr = input.scopes.join(',')
@@ -109,7 +126,7 @@ app.post('/', zValidator('json', createApiTokenSchema), async (c) => {
       userId,
       name: input.name,
       token: hashedToken,
-      tokenPrefix,
+      tokenPrefix: displayPrefix,
       scopes: scopesStr,
       expiresAt: input.expiresAt ? new Date(input.expiresAt) : undefined,
     })

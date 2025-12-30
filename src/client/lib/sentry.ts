@@ -3,8 +3,12 @@
  *
  * Initializes Sentry for client-side error tracking.
  * Only initializes if VITE_SENTRY_DSN is set.
+ *
+ * ⚠️  SECURITY: The release name can identify framework identity.
+ * Set VITE_APP_ID env var to customize (see src/shared/config/app.ts)
  */
 import * as Sentry from '@sentry/react'
+import { getSentryRelease } from '@/shared/config/app'
 
 const SENTRY_DSN = import.meta.env['VITE_SENTRY_DSN']
 const SENTRY_ENVIRONMENT = import.meta.env['VITE_SENTRY_ENVIRONMENT'] || 'development'
@@ -28,7 +32,7 @@ export function initSentry(): void {
   Sentry.init({
     dsn: SENTRY_DSN,
     environment: SENTRY_ENVIRONMENT,
-    release: `vite-flare-starter@${APP_VERSION}`,
+    release: getSentryRelease(APP_VERSION),
 
     // Performance monitoring
     tracesSampleRate: SENTRY_ENVIRONMENT === 'production' ? 0.1 : 1.0,

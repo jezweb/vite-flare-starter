@@ -60,6 +60,11 @@ export interface Env {
   // Sentry error tracking (optional)
   SENTRY_DSN?: string
   SENTRY_ENVIRONMENT?: string
+
+  // API token prefix (optional, for rebranding)
+  // Default: "vfs_" - change to hide framework identity
+  // Example: "myapp_" (3-4 chars + underscore)
+  TOKEN_PREFIX?: string
 }
 
 // Create Hono app with type-safe environment

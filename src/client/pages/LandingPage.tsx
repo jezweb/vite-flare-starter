@@ -12,6 +12,16 @@ import {
   Users,
   Settings,
 } from 'lucide-react'
+import { appConfig } from '@/shared/config/app'
+
+/**
+ * ⚠️  SECURITY: Update these for production deployments
+ *
+ * Set VITE_GITHUB_URL="" (empty) to hide GitHub links
+ * Set VITE_APP_NAME for custom branding
+ *
+ * See src/shared/config/app.ts for all branding options
+ */
 
 const features = [
   {
@@ -76,16 +86,18 @@ export function LandingPage() {
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" asChild>
-                <a
-                  href="https://github.com/jezweb/vite-flare-starter"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Github className="mr-2 h-4 w-4" />
-                  View on GitHub
-                </a>
-              </Button>
+              {appConfig.githubUrl && (
+                <Button size="lg" variant="outline" asChild>
+                  <a
+                    href={appConfig.githubUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Github className="mr-2 h-4 w-4" />
+                    View on GitHub
+                  </a>
+                </Button>
+              )}
             </div>
 
             <div className="mt-8 flex items-center gap-6 text-sm text-muted-foreground">
@@ -186,16 +198,18 @@ export function LandingPage() {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
-            <Button size="lg" variant="outline" asChild>
-              <a
-                href="https://github.com/jezweb/vite-flare-starter"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Github className="mr-2 h-4 w-4" />
-                Star on GitHub
-              </a>
-            </Button>
+            {appConfig.githubUrl && (
+              <Button size="lg" variant="outline" asChild>
+                <a
+                  href={appConfig.githubUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Github className="mr-2 h-4 w-4" />
+                  Star on GitHub
+                </a>
+              </Button>
+            )}
           </div>
         </div>
       </section>

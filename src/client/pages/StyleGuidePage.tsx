@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/select'
 import type { ThemeScheme, ThemeMode } from '@/shared/schemas/preferences.schema'
 import { applyTheme } from '@/lib/themes'
+import { appConfig } from '@/shared/config/app'
 import {
   Card,
   CardContent,
@@ -1650,7 +1651,7 @@ export function StyleGuidePage() {
 
       {/* Footer */}
       <div className="py-8 text-center text-sm text-muted-foreground">
-        <p>Style Guide • Vite Flare Stack • Built with shadcn/ui and Tailwind CSS</p>
+        <p>Style Guide • {appConfig.name} • Built with shadcn/ui and Tailwind CSS</p>
         <p className="mt-2 text-xs">
           Reference for developers and AI coding agents
         </p>
