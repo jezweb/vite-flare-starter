@@ -10,40 +10,23 @@
 
 ## Preview
 
-<table>
-<tr>
-<td width="50%">
+### Theme Switching
 
-**Landing Page**
+Cycle through 8+ built-in color themes with instant preview.
 
-Clean marketing page with dark theme, feature highlights, and call-to-action buttons.
+![Theme Switching Demo](./docs/assets/theme-switching.gif)
 
-</td>
-<td width="50%">
+### AI Chat
 
-**Dashboard**
+Streaming AI chat powered by Workers AI with markdown rendering.
 
-Authenticated dashboard with sidebar navigation, welcome card, and tech stack overview.
+![AI Chat Demo](./docs/assets/ai-chat-demo.gif)
 
-</td>
-</tr>
-<tr>
-<td width="50%">
+### Admin Panel
 
-**Authentication**
+Manage users, feature flags, and API tokens from a unified admin interface.
 
-Email/password and Google OAuth sign-in with forgot password flow.
-
-</td>
-<td width="50%">
-
-**Settings**
-
-User profile, password management, theme preferences with 8+ color themes.
-
-</td>
-</tr>
-</table>
+![Admin Panel Demo](./docs/assets/admin-panel.gif)
 
 > Visit the [live demo](https://vite-flare-starter.webfonts.workers.dev) to explore the full interface.
 
