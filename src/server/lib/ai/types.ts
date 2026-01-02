@@ -7,10 +7,26 @@
 import type { z } from 'zod'
 
 /**
- * Available Workers AI model IDs for type-safe model selection
- * Uses the official Cloudflare Workers AI model identifiers
+ * Model ID - can be any string for multi-provider support
+ *
+ * Conventions:
+ * - @cf/vendor/model-name → Workers AI (free)
+ * - @hf/vendor/model-name → Workers AI via HuggingFace (free)
+ * - model-name → External provider via AI Gateway (requires BYOK)
+ * - provider/model-name → Explicit provider specification
+ *
+ * Examples:
+ * - '@cf/meta/llama-3.1-8b-instruct' (Workers AI)
+ * - 'gpt-4o' (OpenAI via AI Gateway)
+ * - 'anthropic/claude-sonnet-4-5-20250929' (Anthropic via AI Gateway)
  */
-export type ModelId =
+export type ModelId = string
+
+/**
+ * Legacy Workers AI model IDs (kept for backwards compatibility)
+ * @deprecated Use string model IDs instead
+ */
+export type WorkersAIModelId =
   // General Purpose
   | '@cf/meta/llama-3.1-8b-instruct'
   | '@cf/meta/llama-3.1-8b-instruct-fast'
@@ -25,9 +41,6 @@ export type ModelId =
   | '@cf/qwen/qwq-32b'
   | '@cf/qwen/qwen2.5-coder-32b-instruct'
   | '@cf/google/gemma-3-12b-it'
-  // OpenAI GPT-OSS
-  | '@cf/openai/gpt-oss-120b'
-  | '@cf/openai/gpt-oss-20b'
 
 /**
  * @deprecated Use ModelId instead - kept for migration compatibility

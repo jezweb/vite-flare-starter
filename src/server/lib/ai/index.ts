@@ -1,44 +1,65 @@
 /**
- * Workers AI Module
+ * AI Module
  *
- * A lightweight, type-safe wrapper around Cloudflare Workers AI.
+ * Unified AI client that works with all providers via AI Gateway.
+ * One code path for Workers AI (free) and external providers (BYOK).
  *
  * @example
- * import { createAIClient, getRecommendedModel } from '@/server/lib/ai'
+ * import { createAIGatewayClient } from '@/server/lib/ai'
  *
- * const ai = createAIClient(c.env.AI)
+ * // Create client with AI Gateway (recommended)
+ * const ai = createAIGatewayClient(c.env)
  *
- * // Simple generation
+ * // Works with any model - Workers AI or external
  * const result = await ai.generate('Hello, world!')
- *
- * // Chat with history
- * const chatResult = await ai.chat([
- *   { role: 'system', content: 'You are helpful.' },
- *   { role: 'user', content: 'Hi!' },
- * ])
+ * const result = await ai.chat(messages, { model: 'gpt-4o' })
+ * const result = await ai.chat(messages, { model: '@cf/meta/llama-3.1-8b-instruct' })
  *
  * // JSON with validation
  * const { data, success } = await ai.generateJSON(prompt, zodSchema)
  *
  * // Streaming
- * const stream = await ai.generateStream('Write a poem...')
+ * const stream = await ai.chatStream(messages)
  */
 
-// Client
+// =============================================================================
+// AI GATEWAY CLIENT (Recommended - works with all providers)
+// =============================================================================
+export { AIGatewayClient, createAIGatewayClient } from './gateway'
+export type { AIGatewayEnv, AIGatewayOptions } from './gateway'
+
+// =============================================================================
+// PROVIDERS (Model registry for all providers)
+// =============================================================================
+export {
+  PROVIDERS,
+  MODEL_CONFIGS,
+  TOOL_CAPABLE_MODELS,
+  DEFAULT_MODEL,
+  DEFAULT_MODELS,
+  parseModelId,
+  getModelConfig,
+  supportsTools,
+  getAllProviders,
+  getFreeProviders,
+  listModels,
+  getToolCapableModels,
+} from './providers'
+export type { ProviderInfo, ProviderModelConfig } from './providers'
+
+// =============================================================================
+// LEGACY CLIENT (Direct Workers AI binding - kept for backwards compatibility)
+// =============================================================================
 export { AIClient, createAIClient } from './client'
 
-// Models
+// Legacy models (kept for backwards compatibility)
 export {
   MODEL_REGISTRY,
-  DEFAULT_MODEL,
   ALIAS_TO_MODEL_ID,
   resolveModelId,
   getModel,
   isReasoningModel,
-  supportsTools,
-  getToolCapableModels,
   getRecommendedModel,
-  listModels,
 } from './models'
 
 // Types

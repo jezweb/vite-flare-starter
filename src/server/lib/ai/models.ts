@@ -282,22 +282,25 @@ export function resolveModelId(modelOrAlias: string): ModelId {
 /**
  * Get model configuration by ID
  */
-export function getModel(modelId: ModelId): ModelConfig {
-  return MODEL_REGISTRY[modelId]
+export function getModel(modelId: ModelId): ModelConfig | undefined {
+  return MODEL_REGISTRY[modelId as keyof typeof MODEL_REGISTRY]
 }
 
 /**
  * Check if a model supports reasoning (thinking tokens)
  */
 export function isReasoningModel(modelId: ModelId): boolean {
-  return MODEL_REGISTRY[modelId].isReasoning
+  const model = MODEL_REGISTRY[modelId as keyof typeof MODEL_REGISTRY]
+  return model?.isReasoning ?? false
 }
 
 /**
  * Check if a model supports tool/function calling
+ * @deprecated Use supportsTools from providers.ts instead
  */
-export function supportsTools(modelId: ModelId): boolean {
-  return MODEL_REGISTRY[modelId].supportsTools
+export function supportsToolsLegacy(modelId: ModelId): boolean {
+  const model = MODEL_REGISTRY[modelId as keyof typeof MODEL_REGISTRY]
+  return model?.supportsTools ?? false
 }
 
 /**

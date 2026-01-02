@@ -21,7 +21,7 @@ import { authMiddleware, requireScopes } from './middleware/auth'
 import { requestIdMiddleware } from './middleware/request-id'
 import { captureServerException } from './lib/sentry'
 import { AVATAR, APP_VERSION } from '@/shared/config/constants'
-import { createAIClient, listModels, getRecommendedModel, resolveModelId } from './lib/ai'
+import { createAIGatewayClient, listModels, DEFAULT_MODEL, getAllProviders } from './lib/ai'
 
 // Define Cloudflare Workers environment bindings
 export interface Env {
@@ -65,6 +65,12 @@ export interface Env {
   // Default: "vfs_" - change to hide framework identity
   // Example: "myapp_" (3-4 chars + underscore)
   TOKEN_PREFIX?: string
+
+  // AI Gateway configuration (optional - enables multi-provider support)
+  // Create gateway at: https://dash.cloudflare.com/ai/ai-gateway
+  AI_GATEWAY_ID?: string // Gateway ID (default: "default")
+  CF_ACCOUNT_ID?: string // Account ID (uses default from code if not set)
+  CF_AIG_TOKEN?: string // Auth token for authenticated gateways
 }
 
 // Create Hono app with type-safe environment
@@ -202,25 +208,35 @@ const aiTestSchema = z.object({
 
 // GET /api/ai/models - List available models
 // Requires: ai:use scope for API tokens
-app.get('/api/ai/models', authMiddleware, requireScopes('ai:use'), async (c) => {
+app.get('/api/ai/models', authMiddleware, requireScopes('ai:use'), async () => {
   const models = listModels()
-  const recommended = getRecommendedModel('general')
+  const providers = getAllProviders()
 
-  return c.json({
+  return Response.json({
     models: models.map((m) => ({
       id: m.id,
       name: m.displayName,
+      provider: m.provider,
       tier: m.tier,
       contextWindow: m.contextWindow,
       supportsTools: m.supportsTools,
+      supportsVision: m.supportsVision,
       isReasoning: m.isReasoning,
     })),
-    recommended,
+    providers: providers.map((p) => ({
+      id: p.id,
+      name: p.name,
+      description: p.description,
+      requiresApiKey: p.requiresApiKey,
+      modelCount: p.models.length,
+    })),
+    defaultModel: DEFAULT_MODEL,
   })
 })
 
 // POST /api/ai/test - Test AI generation
 // Requires: ai:use scope for API tokens
+// Works with all providers via AI Gateway
 app.post(
   '/api/ai/test',
   authMiddleware,
@@ -230,10 +246,8 @@ app.post(
     const { prompt, model } = c.req.valid('json')
 
     try {
-      const ai = createAIClient(c.env.AI)
-      // Resolve model alias to full ID if provided
-      const modelId = model ? resolveModelId(model) : undefined
-      const result = await ai.generate(prompt, { model: modelId })
+      const ai = createAIGatewayClient(c.env)
+      const result = await ai.generate(prompt, { model: model || DEFAULT_MODEL })
 
       return c.json({
         success: true,

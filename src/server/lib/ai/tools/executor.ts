@@ -17,7 +17,8 @@ import type {
   RunWithToolsResult,
   WorkersAIBinding,
 } from './types'
-import { resolveModelId, supportsTools, getRecommendedModel } from '../models'
+import { resolveModelId, getRecommendedModel } from '../models'
+import { supportsTools } from '../providers'
 import type { ModelId, ChatMessage } from '../types'
 
 /**

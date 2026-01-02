@@ -153,4 +153,4 @@ export type { MCPBridgeOptions, LocalMCPServer } from './mcp-bridge'
 // =============================================================================
 
 // Re-export model helpers for tool-capable models
-export { supportsTools, getToolCapableModels } from '../models'
+export { supportsTools, getToolCapableModels } from '../providers'

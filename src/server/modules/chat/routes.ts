@@ -1,13 +1,14 @@
 /**
  * Chat API Routes
  *
- * Provides streaming chat functionality using Workers AI
+ * Provides streaming chat functionality using AI Gateway.
+ * Supports all providers: Workers AI (free), OpenAI, Anthropic, Google, etc.
  */
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { authMiddleware, requireScopes, type AuthContext } from '@/server/middleware/auth'
-import { createAIClient, resolveModelId, MODEL_REGISTRY } from '@/server/lib/ai'
+import { createAIGatewayClient, getModelConfig, DEFAULT_MODEL } from '@/server/lib/ai'
 
 const app = new Hono<AuthContext>()
 
@@ -31,18 +32,19 @@ const chatRequestSchema = z.object({
 /**
  * POST /api/chat - Streaming chat endpoint
  *
- * Returns a text/event-stream response with SSE format
+ * Returns a text/event-stream response with SSE format.
+ * Works with all providers via AI Gateway.
  */
 app.post('/', zValidator('json', chatRequestSchema), async (c) => {
   const { messages, model } = c.req.valid('json')
 
   try {
-    const ai = createAIClient(c.env.AI)
-    const modelId = model ? resolveModelId(model) : undefined
-    const modelConfig = modelId ? MODEL_REGISTRY[modelId] : MODEL_REGISTRY['@cf/meta/llama-3.1-8b-instruct']
+    const ai = createAIGatewayClient(c.env)
+    const modelId = model || DEFAULT_MODEL
+    const modelConfig = getModelConfig(modelId)
 
     // Check if model supports streaming
-    if (!modelConfig.supportsStreaming) {
+    if (modelConfig && !modelConfig.supportsStreaming) {
       // Fall back to non-streaming response
       const result = await ai.chat(messages, { model: modelId })
 
@@ -50,7 +52,6 @@ app.post('/', zValidator('json', chatRequestSchema), async (c) => {
       const encoder = new TextEncoder()
       const stream = new ReadableStream({
         start(controller) {
-          // Send the full response as a single chunk
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: result.response })}\n\n`))
           controller.enqueue(encoder.encode('data: [DONE]\n\n'))
           controller.close()
@@ -66,10 +67,10 @@ app.post('/', zValidator('json', chatRequestSchema), async (c) => {
       })
     }
 
-    // Get streaming response
+    // Get streaming response from AI Gateway
     const stream = await ai.chatStream(messages, { model: modelId })
 
-    // Transform the stream to SSE format
+    // Transform the stream to our SSE format
     const encoder = new TextEncoder()
     const decoder = new TextDecoder()
 
@@ -87,10 +88,8 @@ app.post('/', zValidator('json', chatRequestSchema), async (c) => {
               break
             }
 
-            // Parse the chunk - Workers AI returns JSON chunks
+            // Parse the chunk - AI Gateway returns SSE format
             const text = decoder.decode(value, { stream: true })
-
-            // Workers AI stream format: data: {"response":"text"}
             const lines = text.split('\n').filter((line) => line.trim())
 
             for (const line of lines) {
@@ -101,14 +100,13 @@ app.post('/', zValidator('json', chatRequestSchema), async (c) => {
                 } else {
                   try {
                     const parsed = JSON.parse(data)
-                    if (parsed.response) {
-                      controller.enqueue(
-                        encoder.encode(`data: ${JSON.stringify({ content: parsed.response })}\n\n`)
-                      )
+                    // Handle both Workers AI format and OpenAI format
+                    const content = parsed.response || parsed.choices?.[0]?.delta?.content
+                    if (content) {
+                      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`))
                     }
                   } catch {
-                    // If parsing fails, send raw content
-                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: data })}\n\n`))
+                    // If parsing fails, skip
                   }
                 }
               }
@@ -117,9 +115,7 @@ app.post('/', zValidator('json', chatRequestSchema), async (c) => {
         } catch (error) {
           console.error('Stream processing error:', error)
           controller.enqueue(
-            encoder.encode(
-              `data: ${JSON.stringify({ error: 'Stream processing error' })}\n\n`
-            )
+            encoder.encode(`data: ${JSON.stringify({ error: 'Stream processing error' })}\n\n`)
           )
           controller.close()
         }
@@ -147,14 +143,15 @@ app.post('/', zValidator('json', chatRequestSchema), async (c) => {
 /**
  * POST /api/chat/complete - Non-streaming chat endpoint
  *
- * Returns a JSON response with the complete message
+ * Returns a JSON response with the complete message.
+ * Works with all providers via AI Gateway.
  */
 app.post('/complete', zValidator('json', chatRequestSchema), async (c) => {
   const { messages, model } = c.req.valid('json')
 
   try {
-    const ai = createAIClient(c.env.AI)
-    const modelId = model ? resolveModelId(model) : undefined
+    const ai = createAIGatewayClient(c.env)
+    const modelId = model || DEFAULT_MODEL
     const result = await ai.chat(messages, { model: modelId })
 
     return c.json({

@@ -54,6 +54,7 @@ See `src/shared/config/app.ts` for full configuration options.
 | **Backend** | Hono |
 | **Database** | D1 (SQLite) + Drizzle ORM |
 | **Auth** | better-auth |
+| **AI** | AI Gateway (multi-provider support) |
 | **UI** | Tailwind v4 + shadcn/ui |
 | **Data Fetching** | TanStack Query |
 | **Forms** | React Hook Form + Zod |
@@ -320,6 +321,10 @@ DISABLE_EMAIL_LOGIN=false
 DISABLE_EMAIL_SIGNUP=false
 ADMIN_EMAILS=admin@example.com,jeremy@jezweb.net
 
+# AI Gateway (optional - enables multi-provider AI)
+AI_GATEWAY_ID=default
+CF_AIG_TOKEN=your-gateway-auth-token
+
 # Error tracking (optional)
 SENTRY_DSN=https://xxx@sentry.io/xxx
 SENTRY_ENVIRONMENT=development
@@ -369,7 +374,56 @@ pnpm type-check             # Run TypeScript check
 Defined in `wrangler.jsonc`:
 - `DB` - D1 database
 - `AVATARS` - R2 bucket for user avatars
-- `AI` - Workers AI binding for text generation
+- `AI` - Workers AI binding (optional, used as fallback)
+
+---
+
+## AI Gateway (Multi-Provider Support)
+
+The AI module uses Cloudflare AI Gateway for unified access to all AI providers.
+
+### Supported Providers
+
+| Provider | Models | API Key Required |
+|----------|--------|------------------|
+| **Workers AI** | Llama, Qwen, Gemma, etc. | No (free) |
+| **OpenAI** | GPT-4o, GPT-4-turbo | Yes (BYOK) |
+| **Anthropic** | Claude Sonnet 4.5, etc. | Yes (BYOK) |
+| **Google AI** | Gemini 2.5 Pro/Flash | Yes (BYOK) |
+| **Groq** | Llama 3.3 70B (fast) | Yes (BYOK) |
+| **Mistral** | Mistral Large/Small | Yes (BYOK) |
+
+### Usage
+
+```typescript
+import { createAIGatewayClient, DEFAULT_MODEL } from '@/server/lib/ai'
+
+// Create client (works with any provider)
+const ai = createAIGatewayClient(c.env)
+
+// Use free Workers AI model
+const result = await ai.chat(messages, { model: '@cf/meta/llama-3.1-8b-instruct' })
+
+// Use external provider (requires BYOK in AI Gateway dashboard)
+const result = await ai.chat(messages, { model: 'gpt-4o' })
+const result = await ai.chat(messages, { model: 'claude-sonnet-4-5-20250929' })
+```
+
+### Configuration
+
+1. Create AI Gateway: https://dash.cloudflare.com/ai/ai-gateway
+2. Add provider API keys in gateway dashboard (BYOK)
+3. Set environment variables:
+   ```
+   AI_GATEWAY_ID=your-gateway-id
+   CF_AIG_TOKEN=your-auth-token  # Optional, for authenticated gateways
+   ```
+
+### Key Files
+
+- `src/server/lib/ai/gateway.ts` - AI Gateway client
+- `src/server/lib/ai/providers.ts` - Provider and model registry
+- `src/server/modules/chat/routes.ts` - Chat API routes
 
 ---
 

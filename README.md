@@ -46,7 +46,7 @@ Manage users, feature flags, and API tokens from a unified admin interface.
 - **Activity Logging** - Audit trail for user actions with entity tracking
 - **Feature Flags** - DB-backed feature toggles with admin API
 - **Notifications** - In-app notification system with persistence
-- **AI Chat** - Streaming AI chat with markdown rendering and Workers AI
+- **AI Chat** - Streaming AI chat with multi-provider support via AI Gateway
 - **CSV Export** - Utility for data exports with timezone support
 - **API Token Scopes** - Granular permissions for API tokens
 
@@ -59,6 +59,7 @@ Manage users, feature flags, and API tokens from a unified admin interface.
 | Backend | Hono |
 | Database | D1 (SQLite) + Drizzle ORM |
 | Auth | better-auth |
+| AI | AI Gateway (Workers AI, OpenAI, Anthropic, etc.) |
 | UI | Tailwind v4 + shadcn/ui |
 | Data Fetching | TanStack Query |
 | Forms | React Hook Form + Zod |
