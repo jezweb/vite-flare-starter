@@ -32,6 +32,7 @@ export interface AIGatewayEnv {
   AI_GATEWAY_ID?: string
   CF_ACCOUNT_ID?: string
   CF_AIG_TOKEN?: string
+  AI?: Ai // Native Workers AI binding for @cf/@hf models
 }
 
 /**
@@ -81,9 +82,76 @@ function convertMessages(messages: ChatMessage[]): Array<{ role: string; content
 }
 
 /**
+ * Check if a model should use native Workers AI binding
+ * @cf/ and @hf/ prefixes indicate Workers AI models
+ */
+function isWorkersAIModel(modelId: string): boolean {
+  return modelId.startsWith('@cf/') || modelId.startsWith('@hf/')
+}
+
+/**
+ * Check if a model should route through OpenRouter
+ * Models with slashes (like x-ai/grok-2) that aren't Workers AI
+ */
+function isOpenRouterModel(modelId: string): boolean {
+  return modelId.includes('/') && !isWorkersAIModel(modelId)
+}
+
+/**
+ * Parse tool call from text response (fallback for models like Qwen)
+ *
+ * Some models output tool calls as JSON in their text response:
+ * - {"name":"toolName","arguments":{"param":"value"}}
+ * - {"tool":"toolName","params":{"param":"value"}}
+ */
+function parseToolCallFromText(
+  text: string
+): { id: string; name: string; arguments: Record<string, unknown> } | null {
+  // Try to find JSON in the text
+  const jsonMatch = text.match(/\{[\s\S]*\}/)
+  if (!jsonMatch) return null
+
+  try {
+    const parsed = JSON.parse(jsonMatch[0])
+
+    // Format 1: {"name":"tool","arguments":{...}}
+    if (parsed.name && typeof parsed.name === 'string') {
+      return {
+        id: crypto.randomUUID(),
+        name: parsed.name,
+        arguments: parsed.arguments || parsed.params || parsed.args || {},
+      }
+    }
+
+    // Format 2: {"tool":"name","params":{...}}
+    if (parsed.tool && typeof parsed.tool === 'string') {
+      return {
+        id: crypto.randomUUID(),
+        name: parsed.tool,
+        arguments: parsed.params || parsed.arguments || parsed.args || {},
+      }
+    }
+
+    // Format 3: {"function":{"name":"tool","arguments":{...}}}
+    if (parsed.function?.name && typeof parsed.function.name === 'string') {
+      return {
+        id: crypto.randomUUID(),
+        name: parsed.function.name,
+        arguments: parsed.function.arguments || {},
+      }
+    }
+  } catch {
+    // Not valid JSON, ignore
+  }
+
+  return null
+}
+
+/**
  * Get the AI Gateway model path for a given model ID
  *
  * - Workers AI: workers-ai/@cf/meta/llama-3.1-8b-instruct
+ * - OpenRouter: openrouter/x-ai/grok-2 (for slash-format models)
  * - OpenAI: openai/gpt-4o
  * - Anthropic: anthropic/claude-sonnet-4-5-20250929
  */
@@ -93,6 +161,11 @@ function getGatewayModelPath(modelId: string): string {
   if (provider === 'workers-ai') {
     // Workers AI models go through workers-ai endpoint
     return `workers-ai/${model}`
+  }
+
+  // OpenRouter models (have slash like x-ai/grok-2)
+  if (isOpenRouterModel(modelId)) {
+    return `openrouter/${modelId}`
   }
 
   // External providers: provider/model
@@ -250,6 +323,11 @@ export class AIGatewayClient {
 
   /**
    * Multi-turn chat conversation
+   *
+   * Routes requests optimally:
+   * - Workers AI models (@cf/@hf) → Native env.AI.run() binding (best performance)
+   * - OpenRouter models (x-ai/grok-2) → AI Gateway openrouter passthrough
+   * - Other providers → AI Gateway compat endpoint
    */
   async chat(messages: ChatMessage[], options: AIGatewayOptions = {}): Promise<GenerateResult> {
     const modelId = options.model || DEFAULT_MODEL
@@ -258,11 +336,19 @@ export class AIGatewayClient {
 
     const startTime = Date.now()
 
-    const result = await withRetry(
-      async () => callGateway(this.env, modelId, messages, options),
-      modelId,
-      { retries }
-    )
+    let result: { content: string; finishReason: string }
+
+    // Workers AI models (@cf/@hf) - use native binding for better performance
+    if (isWorkersAIModel(modelId) && this.env.AI) {
+      result = await this.callNativeWorkersAI(modelId, messages, options)
+    } else {
+      // All other models via AI Gateway
+      result = await withRetry(
+        async () => callGateway(this.env, modelId, messages, options),
+        modelId,
+        { retries }
+      )
+    }
 
     const durationMs = Date.now() - startTime
 
@@ -296,6 +382,75 @@ export class AIGatewayClient {
       model: modelId,
       durationMs,
       usage,
+    }
+  }
+
+  /**
+   * Call native Workers AI binding for @cf/@hf models
+   * Better performance than routing through AI Gateway
+   */
+  private async callNativeWorkersAI(
+    modelId: string,
+    messages: ChatMessage[],
+    options: AIGatewayOptions
+  ): Promise<{ content: string; finishReason: string }> {
+    const config = getModelConfig(modelId)
+    const maxTokens = options.maxTokens || config?.defaultMaxTokens || 1000
+
+    const aiMessages = messages.map((msg) => ({
+      role: msg.role as 'user' | 'assistant' | 'system',
+      content: msg.content,
+    }))
+
+    const aiInput: AiTextGenerationInput = {
+      messages: aiMessages,
+      max_tokens: maxTokens,
+    }
+
+    if (options.temperature !== undefined) {
+      aiInput.temperature = options.temperature
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const response = await this.env.AI!.run(modelId as Parameters<Ai['run']>[0], aiInput)
+
+    // Handle string response
+    if (typeof response === 'string') {
+      return { content: response, finishReason: 'stop' }
+    }
+
+    // Handle object response
+    const result = response as {
+      response?: string | unknown
+      tool_calls?: Array<{
+        id?: string
+        name: string
+        arguments: Record<string, unknown>
+      }>
+    }
+
+    // Ensure content is always a string
+    let content =
+      typeof result.response === 'string'
+        ? result.response
+        : result.response
+          ? JSON.stringify(result.response)
+          : ''
+
+    // Fallback: Some models (like Qwen) output tool calls as JSON in text
+    // Try to parse tool call from response if present
+    if (content) {
+      const parsed = parseToolCallFromText(content)
+      if (parsed) {
+        // Found a tool call in the text - this is informational only
+        // The actual tool execution would happen in a separate tool-calling module
+        console.log('[Workers AI] Detected tool call in text response:', parsed.name)
+      }
+    }
+
+    return {
+      content,
+      finishReason: result.tool_calls ? 'tool_calls' : 'stop',
     }
   }
 

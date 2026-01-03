@@ -62,7 +62,8 @@ export const PROVIDERS: Record<string, ProviderInfo> = {
       '@cf/qwen/qwen3-30b-a3b-fp8',
       '@cf/google/gemma-3-12b-it',
       '@hf/nousresearch/hermes-2-pro-mistral-7b',
-      '@cf/ibm/granite-4.0-h-micro',
+      '@cf/ibm-granite/granite-4.0-h-micro',
+      '@cf/mistralai/mistral-small-3.1-24b-instruct', // 128k context, tool calling
     ],
   },
 
@@ -265,11 +266,11 @@ export const MODEL_CONFIGS: Record<string, ProviderModelConfig> = {
     description: 'Hermes 2 Pro - optimized for tool use',
     tier: 'fast',
   },
-  '@cf/ibm/granite-4.0-h-micro': {
-    id: '@cf/ibm/granite-4.0-h-micro',
+  '@cf/ibm-granite/granite-4.0-h-micro': {
+    id: '@cf/ibm-granite/granite-4.0-h-micro',
     displayName: 'Granite 4.0 Micro',
     provider: 'workers-ai',
-    contextWindow: 8000,
+    contextWindow: 131000, // 131k context per CF docs
     isReasoning: false,
     supportsStreaming: true,
     supportsTools: true,
@@ -277,6 +278,19 @@ export const MODEL_CONFIGS: Record<string, ProviderModelConfig> = {
     defaultMaxTokens: 1000,
     description: 'IBM Granite - compact with tool calling',
     tier: 'fast',
+  },
+  '@cf/mistralai/mistral-small-3.1-24b-instruct': {
+    id: '@cf/mistralai/mistral-small-3.1-24b-instruct',
+    displayName: 'Mistral Small 3.1 24B',
+    provider: 'workers-ai',
+    contextWindow: 128000,
+    isReasoning: false,
+    supportsStreaming: true,
+    supportsTools: true,
+    supportsVision: false,
+    defaultMaxTokens: 2000,
+    description: 'Mistral Small 3.1 - efficient tool calling',
+    tier: 'balanced',
   },
 
   // OpenAI models
@@ -383,12 +397,14 @@ export const MODEL_CONFIGS: Record<string, ProviderModelConfig> = {
  * Models that support tool calling / function calling
  */
 export const TOOL_CAPABLE_MODELS: string[] = [
-  // Workers AI
+  // Workers AI (verified Jan 2026)
+  // @see https://developers.cloudflare.com/workers-ai/features/function-calling/
+  '@cf/meta/llama-4-scout-17b-16e-instruct', // Llama 4 - newest, multimodal
   '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
-  '@cf/meta/llama-4-scout-17b-16e-instruct',
-  '@cf/qwen/qwen3-30b-a3b-fp8',
+  '@cf/ibm-granite/granite-4.0-h-micro', // 131k context
+  '@cf/qwen/qwen3-30b-a3b-fp8', // Qwen 3 (NOT 2.5!)
+  '@cf/mistralai/mistral-small-3.1-24b-instruct', // 128k context
   '@hf/nousresearch/hermes-2-pro-mistral-7b',
-  '@cf/ibm/granite-4.0-h-micro',
   // OpenAI
   'gpt-4o',
   'gpt-4o-mini',
@@ -426,7 +442,7 @@ export const DEFAULT_MODEL = '@cf/meta/llama-3.1-8b-instruct'
  * Default models by provider
  */
 export const DEFAULT_MODELS: Record<string, string> = {
-  'workers-ai': '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+  'workers-ai': '@cf/meta/llama-4-scout-17b-16e-instruct', // Llama 4 - best tool calling
   openai: 'gpt-4o-mini',
   anthropic: 'claude-sonnet-4-5-20250929',
   'google-ai-studio': 'gemini-2.5-flash',

@@ -135,11 +135,11 @@ export const MODEL_REGISTRY: Record<ModelId, ModelConfig> = {
     tier: 'balanced',
   },
 
-  '@cf/ibm/granite-4.0-h-micro': {
-    id: '@cf/ibm/granite-4.0-h-micro',
+  '@cf/ibm-granite/granite-4.0-h-micro': {
+    id: '@cf/ibm-granite/granite-4.0-h-micro',
     displayName: 'Granite 4.0 Micro',
     provider: 'ibm',
-    contextWindow: 8000,
+    contextWindow: 131000, // 131k context per CF docs
     isReasoning: false,
     supportsStreaming: true,
     supportsTools: true,
@@ -148,6 +148,21 @@ export const MODEL_REGISTRY: Record<ModelId, ModelConfig> = {
     defaultMaxTokens: 1000,
     description: 'IBM Granite - compact with tool calling',
     tier: 'fast',
+  },
+
+  '@cf/mistralai/mistral-small-3.1-24b-instruct': {
+    id: '@cf/mistralai/mistral-small-3.1-24b-instruct',
+    displayName: 'Mistral Small 3.1 24B',
+    provider: 'mistral',
+    contextWindow: 128000,
+    isReasoning: false,
+    supportsStreaming: true,
+    supportsTools: true,
+    supportsVision: false,
+    supportsPdf: false,
+    defaultMaxTokens: 2000,
+    description: 'Mistral Small 3.1 - efficient tool calling',
+    tier: 'balanced',
   },
 
   // ============================================================================
@@ -258,7 +273,8 @@ export const ALIAS_TO_MODEL_ID: Record<string, ModelId> = {
   'gpt-oss-120b': '@cf/openai/gpt-oss-120b',
   'gpt-oss-20b': '@cf/openai/gpt-oss-20b',
   'hermes-7b': '@hf/nousresearch/hermes-2-pro-mistral-7b',
-  'granite-micro': '@cf/ibm/granite-4.0-h-micro',
+  'granite-micro': '@cf/ibm-granite/granite-4.0-h-micro',
+  'mistral-small': '@cf/mistralai/mistral-small-3.1-24b-instruct',
 }
 
 /**
@@ -342,9 +358,9 @@ export function getRecommendedModel(
     case 'multilingual':
       return '@cf/google/gemma-3-12b-it'
     case 'tools':
-      return '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
+      return '@cf/meta/llama-4-scout-17b-16e-instruct' // Llama 4 - best tool calling
     case 'tools-fast':
-      return '@cf/meta/llama-4-scout-17b-16e-instruct'
+      return '@cf/mistralai/mistral-small-3.1-24b-instruct'
     case 'tools-cheap':
       return '@hf/nousresearch/hermes-2-pro-mistral-7b'
   }

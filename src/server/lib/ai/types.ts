@@ -36,7 +36,8 @@ export type WorkersAIModelId =
   | '@cf/meta/llama-4-scout-17b-16e-instruct'
   | '@hf/nousresearch/hermes-2-pro-mistral-7b'
   | '@cf/qwen/qwen3-30b-a3b-fp8'
-  | '@cf/ibm/granite-4.0-h-micro'
+  | '@cf/ibm-granite/granite-4.0-h-micro'
+  | '@cf/mistralai/mistral-small-3.1-24b-instruct'
   // Specialized
   | '@cf/qwen/qwq-32b'
   | '@cf/qwen/qwen2.5-coder-32b-instruct'
@@ -69,7 +70,7 @@ export interface ModelConfig {
   /** Human-readable display name for UI (e.g., "Llama 3.1 8B") */
   displayName: string
   /** Model provider (for Workers AI models only) */
-  provider: 'meta' | 'qwen' | 'google' | 'openai' | 'nous' | 'ibm'
+  provider: 'meta' | 'qwen' | 'google' | 'openai' | 'nous' | 'ibm' | 'mistral'
   /** Maximum context window in tokens */
   contextWindow: number
   /** Whether the model outputs <think> tokens */
