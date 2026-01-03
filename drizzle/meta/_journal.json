@@ -29,6 +29,13 @@
       "when": 1767044294721,
       "tag": "0003_add-api-token-scopes",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1767431231813,
+      "tag": "0004_add_files_table",
+      "breakpoints": true
     }
   ]
 }

@@ -41,6 +41,10 @@
     {
       "binding": "AVATARS",
       "bucket_name": "vite-flare-starter-avatars"
+    },
+    {
+      "binding": "FILES",
+      "bucket_name": "vite-flare-starter-files"
     }
   ],
 

@@ -1,101 +1,80 @@
 # Adding File Uploads with R2
 
-Guide for extending vite-flare-starter's avatar upload pattern to general file uploads using Cloudflare R2.
+Guide for extending vite-flare-starter's built-in files module with advanced features like presigned URLs, image processing, and organization-scoped storage.
 
-**Time estimate**: 2-3 hours for basic uploads, 4-6 hours with presigned URLs and processing
-
----
-
-## Current State
-
-The starter already has:
-- R2 bucket configured (`AVATARS` binding)
-- Avatar upload endpoint (`/api/avatar`)
-- Avatar serving (`/api/avatar/:userId`)
-
-This guide extends that pattern to general file uploads.
+**Time estimate**: 1-2 hours for advanced features (basic uploads already included)
 
 ---
 
-## What You'll Build
+## Built-In Files Module
+
+**The starter now includes a complete files module out of the box:**
+
+| Feature | Status |
+|---------|--------|
+| **Database schema** | ✅ `files` table in D1 |
+| **R2 bucket** | ✅ `FILES` binding configured |
+| **Upload API** | ✅ `POST /api/files` with validation |
+| **Download API** | ✅ `GET /api/files/:id/download` |
+| **File management** | ✅ List, update, delete endpoints |
+| **Virtual folders** | ✅ Folder-based organization |
+| **Public/private toggle** | ✅ Per-file visibility control |
+| **File browser UI** | ✅ Drag-drop uploader + file list |
+
+### What's Included
+
+**Server** (`src/server/modules/files/`):
+- `db/schema.ts` - Files table schema
+- `routes.ts` - Full CRUD API with streaming downloads
+
+**Client** (`src/client/modules/files/`):
+- `hooks/useFiles.ts` - TanStack Query hooks
+- `components/FileUploader.tsx` - Drag-drop uploader
+- `components/FileList.tsx` - File list with actions
+- `pages/FilesPage.tsx` - Dashboard page with stats
+
+**Limits**:
+- 10MB max file size (configurable in routes.ts)
+- Allowed types: images, PDF, JSON, text, CSV, markdown, ZIP
+
+This guide covers **advanced features** you can add on top of the built-in module.
+
+---
+
+## Advanced Features
+
+This guide covers extensions you can add:
 
 | Feature | Description |
 |---------|-------------|
-| **File Upload API** | Upload any file type with validation |
-| **Presigned URLs** | Direct browser-to-R2 uploads |
-| **File Management** | List, delete, get signed download URLs |
-| **Image Processing** | Optional: resize, thumbnails via Workers |
+| **Presigned URLs** | Direct browser-to-R2 uploads (for large files) |
+| **Image Processing** | Resize, thumbnails via Workers |
+| **Organization-Scoped** | Multi-tenant file storage |
+| **Storage Quotas** | Per-user storage limits |
 
 ---
 
-## Setup
+## Extending the Built-In Module
 
-### 1. Create Files Bucket
+The built-in files module is located at:
+- **Server**: `src/server/modules/files/routes.ts`
+- **Client**: `src/client/modules/files/`
 
-```bash
-npx wrangler r2 bucket create vite-flare-starter-files
-```
-
-### 2. Add Binding
-
-```jsonc
-// wrangler.jsonc
-{
-  "r2_buckets": [
-    { "binding": "AVATARS", "bucket_name": "vite-flare-starter-avatars" },
-    { "binding": "FILES", "bucket_name": "vite-flare-starter-files" }
-  ]
-}
-```
-
-### 3. Update Types
+To customize limits, edit `routes.ts`:
 
 ```typescript
-// Add to your Env interface
-interface Env {
-  FILES: R2Bucket
-}
+// src/server/modules/files/routes.ts
+const MAX_FILE_SIZE = 50 * 1024 * 1024 // Change to 50MB
+const ALLOWED_MIME_TYPES = [
+  // Add more types as needed
+  'video/mp4',
+  'audio/mpeg',
+]
 ```
 
 ---
 
-## Database Schema
-
-Track uploaded files:
-
-```typescript
-// src/server/modules/files/db/schema.ts
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
-import { user } from '@/server/modules/auth/db/schema'
-
-export const files = sqliteTable('files', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  userId: text('userId').notNull().references(() => user.id, { onDelete: 'cascade' }),
-
-  // Optional: for organization-scoped files
-  // organizationId: text('organizationId').references(() => organization.id, { onDelete: 'cascade' }),
-
-  // File metadata
-  name: text('name').notNull(),           // Original filename
-  key: text('key').notNull().unique(),    // R2 object key
-  mimeType: text('mimeType').notNull(),
-  size: integer('size').notNull(),        // Bytes
-
-  // Optional categorization
-  folder: text('folder'),                  // Virtual folder path
-  isPublic: integer('isPublic', { mode: 'boolean' }).default(false),
-
-  // Timestamps
-  createdAt: integer('createdAt', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
-})
-
-// Add to central schema exports
-export { files } from '@/server/modules/files/db/schema'
-```
-
----
-
-## File Upload Routes
+## Reference: File Upload Routes (Built-In)
 
 ```typescript
 // src/server/modules/files/routes.ts
@@ -351,7 +330,9 @@ async function generatePresignedUploadUrl(
 
 ---
 
-## Client Integration
+## Reference: Client Integration (Built-In)
+
+The following hooks and components are already included in `src/client/modules/files/`.
 
 ### File Upload Hook
 

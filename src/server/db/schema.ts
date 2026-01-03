@@ -22,3 +22,6 @@ export { featureFlags, featureFlagsRelations } from '@/server/modules/feature-fl
 
 // Notifications module schemas
 export { userNotifications, userNotificationsRelations } from '@/server/modules/notifications/db/schema'
+
+// Files module schemas
+export { files } from '@/server/modules/files/db/schema'

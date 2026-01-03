@@ -29,6 +29,7 @@ import {
   Component,
   MessageSquare,
   Activity,
+  FolderOpen,
 } from 'lucide-react'
 import { NotificationBell } from '@/client/components/NotificationBell'
 import { EmailVerificationBanner } from '@/client/components/EmailVerificationBanner'
@@ -67,6 +68,12 @@ const navItems: NavItem[] = [
     label: 'Activity',
     href: '/dashboard/activity',
     icon: Activity,
+  },
+  // Files
+  {
+    label: 'Files',
+    href: '/dashboard/files',
+    icon: FolderOpen,
   },
 
   // Settings removed from sidebar - already in user dropdown menu

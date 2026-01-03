@@ -18,6 +18,7 @@ import { ChatPage } from './modules/chat'
 import { StyleGuidePage } from './pages/StyleGuidePage'
 import { ComponentsPage } from './pages/ComponentsPage'
 import { ActivityPage } from './modules/activity/pages/ActivityPage'
+import { FilesPage } from './modules/files'
 
 function App() {
   return (
@@ -60,6 +61,9 @@ function App() {
 
             {/* Activity log */}
             <Route path="activity" element={<ActivityPage />} />
+
+            {/* Files */}
+            <Route path="files" element={<FilesPage />} />
 
             {/* Profile redirects to Settings (Profile tab is default) */}
             <Route path="profile" element={<Navigate to="/dashboard/settings" replace />} />

@@ -73,6 +73,7 @@ vite-flare-starter/
 │   │   │   ├── auth/        # Sign-in/sign-up pages
 │   │   │   ├── settings/    # Profile, password, theme
 │   │   │   ├── api-tokens/  # API token management
+│   │   │   ├── files/       # File management
 │   │   │   └── organization/# Org settings (timezone, etc.)
 │   │   ├── pages/           # Route pages
 │   │   │   ├── DashboardPage.tsx
@@ -89,6 +90,7 @@ vite-flare-starter/
 │   │   │   ├── auth/        # better-auth config
 │   │   │   ├── settings/    # Settings API
 │   │   │   ├── api-tokens/  # Token management
+│   │   │   ├── files/       # File upload/management
 │   │   │   ├── organization/# Org settings API
 │   │   │   ├── activity/    # Activity logging
 │   │   │   ├── feature-flags/# DB-backed feature flags
@@ -134,6 +136,7 @@ vite-flare-starter/
 - `/api/admin/feature-flags/*` - Feature flag admin (list, update, sync)
 - `/api/notifications/*` - User notifications (list, mark read, delete)
 - `/api/chat` - AI chat with streaming responses (POST for messages, GET for history)
+- `/api/files/*` - File management (upload, list, download, delete)
 - `/api/ai/models` - List available AI models
 - `/api/ai/test` - Test AI text generation
 
@@ -155,6 +158,7 @@ vite-flare-starter/
 `src/server/db/schema.ts` - Exports all tables:
 - `user`, `session`, `account`, `verification` (auth) - user has `role` field
 - `apiTokens` (API key management)
+- `files` (user file uploads, metadata stored in D1, content in R2)
 - `organizationSettings` (business settings)
 - `activityLogs` (audit trail)
 - `featureFlags` (DB-backed feature toggles)
