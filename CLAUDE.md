@@ -61,6 +61,45 @@ See `src/shared/config/app.ts` for full configuration options.
 
 ---
 
+## UI Patterns
+
+### Pages Over Modals (STRONG PREFERENCE)
+
+**Use dedicated pages instead of modals/dialogs** for most forms and content:
+
+| Use Pages For | Use Modals Only For |
+|---------------|---------------------|
+| Create/edit forms | Quick confirmations ("Delete?") |
+| Multi-step flows | Simple yes/no decisions |
+| Data entry | Contextual tooltips/popovers |
+| Settings sections | Keyboard shortcut overlays |
+| Search/filter views | Loading states |
+
+**Why pages are better:**
+- **URLs**: Bookmarkable, shareable, browser history works
+- **Space**: Full viewport, no awkward scrolling
+- **Accessibility**: No focus trapping issues
+- **Mobile**: Better touch experience
+- **Testing**: Easier to test with proper routes
+
+**Page pattern**: See `src/client/modules/settings/pages/SettingsPage.tsx` for standard layout:
+```tsx
+<div className="container max-w-4xl py-8">
+  <div className="mb-8">
+    <div className="flex items-center gap-2 mb-2">
+      <Icon className="h-6 w-6 text-primary" />
+      <h1 className="text-3xl font-bold">Page Title</h1>
+    </div>
+    <p className="text-muted-foreground">Description</p>
+  </div>
+  {/* Content */}
+</div>
+```
+
+**When asked to "add a form" or "create X"** → Default to a new page route, not a modal.
+
+---
+
 ## Project Structure
 
 ```
@@ -166,16 +205,16 @@ vite-flare-starter/
 
 ### Auth Configuration
 `src/server/modules/auth/index.ts`:
-- Email/password authentication (controllable via env vars)
+- **OAuth-only by default** - email/password is disabled
 - Google OAuth (optional, domain restriction via Google Cloud Console)
 - Session management (7-day expiry)
 - `/api/auth/config` endpoint - returns enabled auth methods for UI
 
-**Auth Method Control:**
+**Auth Method Control (OAuth-only by default):**
 | Env Var | Effect |
 |---------|--------|
-| `DISABLE_EMAIL_LOGIN=true` | Google-only mode (no email login at all) |
-| `DISABLE_EMAIL_SIGNUP=true` | Existing email users can login, no new signups |
+| `ENABLE_EMAIL_LOGIN=true` | Enable email/password authentication |
+| `ENABLE_EMAIL_SIGNUP=true` | Also allow new email signups (requires `ENABLE_EMAIL_LOGIN`) |
 
 The SignInPage and SignUpPage automatically adapt based on `/api/auth/config`.
 Google OAuth is unaffected by these settings - use Google Cloud Console for domain restrictions.
@@ -321,8 +360,9 @@ BETTER_AUTH_SECRET=your-32-char-secret
 BETTER_AUTH_URL=http://localhost:5173
 GOOGLE_CLIENT_ID=optional
 GOOGLE_CLIENT_SECRET=optional
-DISABLE_EMAIL_LOGIN=false
-DISABLE_EMAIL_SIGNUP=false
+# Email login is disabled by default (OAuth-only). Uncomment to enable:
+# ENABLE_EMAIL_LOGIN=true
+# ENABLE_EMAIL_SIGNUP=true
 ADMIN_EMAILS=admin@example.com,jeremy@jezweb.net
 
 # AI Gateway (optional - enables multi-provider AI)

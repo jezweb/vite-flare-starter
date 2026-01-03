@@ -28,19 +28,23 @@ GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=your-client-secret
 
 # ============================================
-# Email Auth Control
+# Email Auth Control - OAUTH-ONLY BY DEFAULT
 # ============================================
-# Control email/password authentication independently:
+# Email/password login is DISABLED by default (OAuth-only mode).
+# Set these to "true" to enable email authentication:
 #
-# DISABLE_EMAIL_LOGIN=true  → Google-only mode (no email login at all)
-# DISABLE_EMAIL_SIGNUP=true → Existing email users can login, no new signups
+# ENABLE_EMAIL_LOGIN=true   → Enable email/password login
+# ENABLE_EMAIL_SIGNUP=true  → Also allow new email signups (requires ENABLE_EMAIL_LOGIN)
 #
 # The UI automatically adapts based on these settings via /api/auth/config
 # Google OAuth is NOT affected (use Google Cloud domain restriction instead)
 # To restrict Google OAuth: Set OAuth consent screen "User type" to "Internal"
+#
+# See CLAUDE.md "Auth Method Control" section for full documentation.
 
-DISABLE_EMAIL_LOGIN=false
-DISABLE_EMAIL_SIGNUP=false
+# Uncomment to enable email/password authentication:
+# ENABLE_EMAIL_LOGIN=true
+# ENABLE_EMAIL_SIGNUP=true
 
 # ============================================
 # Email Configuration - OPTIONAL
@@ -79,8 +83,10 @@ NODE_ENV=development
 # echo "https://your-worker.workers.dev" | npx wrangler secret put BETTER_AUTH_URL
 # echo "your-google-client-id" | npx wrangler secret put GOOGLE_CLIENT_ID
 # echo "your-google-client-secret" | npx wrangler secret put GOOGLE_CLIENT_SECRET
-# echo "true" | npx wrangler secret put DISABLE_EMAIL_LOGIN
-# echo "true" | npx wrangler secret put DISABLE_EMAIL_SIGNUP
+#
+# Email login is disabled by default. To enable in production:
+# echo "true" | npx wrangler secret put ENABLE_EMAIL_LOGIN
+# echo "true" | npx wrangler secret put ENABLE_EMAIL_SIGNUP
 #
 # Never commit production secrets to git!
 

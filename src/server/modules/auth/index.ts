@@ -32,6 +32,11 @@ function parseTrustedOrigins(envValue?: string): string[] {
 /**
  * Create better-auth instance with Cloudflare D1
  *
+ * AUTH CONFIGURATION - See CLAUDE.md "Auth Method Control" section
+ * ─────────────────────────────────────────────────────────────────
+ * Email/password is DISABLED by default (OAuth-only mode).
+ * To enable: Set ENABLE_EMAIL_LOGIN=true (and optionally ENABLE_EMAIL_SIGNUP=true)
+ *
  * CRITICAL: Uses drizzleAdapter() with SQLite provider
  * There is NO direct d1Adapter() - must use Drizzle ORM
  */
@@ -44,18 +49,19 @@ export function createAuth(
     GOOGLE_CLIENT_SECRET?: string
     EMAIL_API_KEY?: string
     EMAIL_FROM?: string
-    DISABLE_EMAIL_LOGIN?: string
-    DISABLE_EMAIL_SIGNUP?: string
+    ENABLE_EMAIL_LOGIN?: string // Set to 'true' to enable email/password (default: disabled)
+    ENABLE_EMAIL_SIGNUP?: string // Set to 'true' to allow signups (requires ENABLE_EMAIL_LOGIN)
     TRUSTED_ORIGINS?: string
   }
 ) {
   // Initialize Drizzle with D1 binding
   const db = drizzle(d1, { schema })
 
-  // Check if email login is completely disabled (Google-only mode)
-  const emailLoginDisabled = env.DISABLE_EMAIL_LOGIN === 'true'
-  // Check if email signup is disabled (existing email users can still sign in)
-  const emailSignupDisabled = env.DISABLE_EMAIL_SIGNUP === 'true'
+  // Email login is DISABLED by default (OAuth-only mode)
+  // Set ENABLE_EMAIL_LOGIN=true to allow email/password authentication
+  const emailLoginEnabled = env.ENABLE_EMAIL_LOGIN === 'true'
+  // Email signup requires login to be enabled first
+  const emailSignupEnabled = emailLoginEnabled && env.ENABLE_EMAIL_SIGNUP === 'true'
   // Google OAuth access is controlled at Google Cloud Console level:
   // - Set OAuth consent screen "User type" to "Internal" for domain-only access
 
@@ -73,13 +79,12 @@ export function createAuth(
       provider: 'sqlite',
     }),
 
-    // Email and password authentication
-    // - DISABLE_EMAIL_LOGIN=true: Completely disables email/password (Google-only mode)
-    // - DISABLE_EMAIL_SIGNUP=true: Blocks new signups but existing users can still login
+    // Email and password authentication - DISABLED BY DEFAULT
+    // See CLAUDE.md for configuration: ENABLE_EMAIL_LOGIN=true, ENABLE_EMAIL_SIGNUP=true
     emailAndPassword: {
-      enabled: !emailLoginDisabled,
+      enabled: emailLoginEnabled,
       requireEmailVerification: true, // Users must verify email before signing in
-      disableSignUp: emailSignupDisabled,
+      disableSignUp: !emailSignupEnabled,
 
       // Password reset flow
       sendResetPassword: async ({ user, url }) => {

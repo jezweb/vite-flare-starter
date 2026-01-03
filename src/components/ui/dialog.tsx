@@ -1,3 +1,24 @@
+/**
+ * Dialog Component (Modal)
+ *
+ * ⚠️  PREFER PAGES OVER MODALS - See CLAUDE.md "UI Patterns" section
+ * ─────────────────────────────────────────────────────────────────────
+ * Before using a Dialog, consider: should this be a dedicated page instead?
+ *
+ * ✅ Use Dialog for:
+ *    - Quick confirmations ("Are you sure you want to delete?")
+ *    - Simple yes/no decisions
+ *    - Keyboard shortcut overlays
+ *
+ * ❌ Use a PAGE instead for:
+ *    - Create/edit forms
+ *    - Multi-step flows
+ *    - Data entry
+ *    - Settings sections
+ *    - Anything that benefits from a URL
+ *
+ * Page pattern: src/client/modules/settings/pages/SettingsPage.tsx
+ */
 import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { XIcon } from "lucide-react"

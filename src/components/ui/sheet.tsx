@@ -1,3 +1,24 @@
+/**
+ * Sheet Component (Slide-over Panel)
+ *
+ * ⚠️  PREFER PAGES OVER SHEETS - See CLAUDE.md "UI Patterns" section
+ * ─────────────────────────────────────────────────────────────────────
+ * Before using a Sheet, consider: should this be a dedicated page instead?
+ *
+ * ✅ Use Sheet for:
+ *    - Mobile navigation menus
+ *    - Quick filters/settings that don't need URLs
+ *    - Contextual help panels
+ *
+ * ❌ Use a PAGE instead for:
+ *    - Create/edit forms
+ *    - Multi-step flows
+ *    - Data entry
+ *    - Settings sections
+ *    - Anything that benefits from a URL
+ *
+ * Page pattern: src/client/modules/settings/pages/SettingsPage.tsx
+ */
 import * as React from "react"
 import * as SheetPrimitive from "@radix-ui/react-dialog"
 import { XIcon } from "lucide-react"

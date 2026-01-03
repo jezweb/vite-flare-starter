@@ -1,3 +1,16 @@
+/**
+ * Sign In Page
+ *
+ * AUTH CONFIGURATION - See CLAUDE.md "Auth Method Control" section
+ * ─────────────────────────────────────────────────────────────────
+ * This page adapts to server config via /api/auth/config endpoint.
+ * Email/password is DISABLED by default (OAuth-only mode).
+ *
+ * To enable email login: Set ENABLE_EMAIL_LOGIN=true in Cloudflare secrets
+ * To enable email signup: Also set ENABLE_EMAIL_SIGNUP=true
+ *
+ * The UI automatically shows/hides email form based on server config.
+ */
 import { useState, useEffect, FormEvent } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { authClient } from '@/client/lib/auth'
