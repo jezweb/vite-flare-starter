@@ -1,84 +1,266 @@
-# Adding Email Templates
+# Email System
 
-Guide for extending transactional emails beyond authentication using Resend (already included in vite-flare-starter).
+Multi-provider email abstraction for sending transactional emails through Resend, SendGrid, Mailgun, SMTP2Go, or SMTP.
 
-**Time estimate**: 1-2 hours for basic templates, 3-4 hours for full system
-
----
-
-## Current State
-
-The starter already has:
-- Resend as a dependency
-- Email verification in better-auth
-- Password reset emails
-
-This guide extends that to general transactional emails.
+**Time estimate**: 30 mins for basic setup, 1-2 hours for full templates
 
 ---
 
-## Email Types
-
-| Type | Trigger | Priority |
-|------|---------|----------|
-| **Welcome** | User signup | High |
-| **Notifications** | Activity alerts | Medium |
-| **Digest** | Weekly summary | Low (queued) |
-| **Invoices** | Payment events | High |
-| **Team invites** | Organization invites | High |
-
----
-
-## Setup
-
-### 1. Verify Resend Configuration
-
-```bash
-# Set API key if not already done
-echo "re_xxx" | npx wrangler secret put RESEND_API_KEY
-```
-
-### 2. Create Email Module
+## Quick Start
 
 ```typescript
-// src/server/lib/email/client.ts
-import { Resend } from 'resend'
+import { createEmailClient, createEmailClientFromEnv } from '@/server/lib/email'
 
-export function createEmailClient(apiKey: string) {
-  return new Resend(apiKey)
+// Option 1: Create from explicit config
+const email = createEmailClient({
+  provider: 'resend',
+  apiKey: 're_...',
+  fromEmail: 'hello@example.com',
+  fromName: 'My App',
+})
+
+// Option 2: Create from environment variables (recommended)
+const email = createEmailClientFromEnv(c.env)
+
+// Send email
+const result = await email.send({
+  to: 'user@example.com',
+  subject: 'Welcome!',
+  html: '<h1>Hello!</h1>',
+})
+
+if (result.success) {
+  console.log('Sent:', result.messageId)
+} else {
+  console.error('Failed:', result.error)
 }
+```
 
-export interface EmailOptions {
-  to: string | string[]
+---
+
+## Supported Providers
+
+| Provider | Best For | Features |
+|----------|----------|----------|
+| **Resend** (default) | Developer-friendly API | Webhooks, analytics |
+| **SendGrid** | Enterprise scale | Templates, advanced analytics |
+| **Mailgun** | Deliverability | Detailed logs, validation |
+| **SMTP2Go** | Global sending | 24/7 support |
+| **SMTP** | Legacy systems | Requires Node.js (not Workers) |
+
+---
+
+## Environment Variables
+
+Set the provider and API key in your environment:
+
+```bash
+# .dev.vars (local) or Cloudflare secrets (production)
+EMAIL_PROVIDER=resend           # resend, sendgrid, mailgun, smtp2go, smtp
+EMAIL_FROM=hello@example.com    # Default from address
+EMAIL_FROM_NAME=My App          # Default from name
+
+# Provider-specific API keys
+RESEND_API_KEY=re_xxx           # For Resend
+SENDGRID_API_KEY=SG.xxx         # For SendGrid
+MAILGUN_API_KEY=xxx             # For Mailgun (also needs MAILGUN_DOMAIN)
+MAILGUN_DOMAIN=mg.example.com   # Mailgun sending domain
+SMTP2GO_API_KEY=api-xxx         # For SMTP2Go
+
+# SMTP (requires host, port, credentials)
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USERNAME=user
+SMTP_PASSWORD=pass
+```
+
+### Setting Production Secrets
+
+```bash
+echo "re_xxx" | npx wrangler secret put RESEND_API_KEY
+echo "resend" | npx wrangler secret put EMAIL_PROVIDER
+echo "hello@example.com" | npx wrangler secret put EMAIL_FROM
+npx wrangler deploy
+```
+
+---
+
+## API Reference
+
+### EmailClient
+
+```typescript
+class EmailClient {
+  // Send a single email
+  async send(options: SendOptions): Promise<SendResult>
+
+  // Send batch emails (rate-limited)
+  async sendBatch(recipients: SendOptions[]): Promise<BatchSendResult>
+
+  // Send using provider template (SendGrid, Mailgun)
+  async sendTemplate(options: SendTemplateOptions): Promise<SendResult>
+
+  // Validate configuration
+  async validate(): Promise<boolean>
+
+  // Get current provider
+  getProvider(): ProviderAlias
+
+  // Debug info (safe to log)
+  getDebugInfo(): Record<string, unknown>
+}
+```
+
+### SendOptions
+
+```typescript
+interface SendOptions {
+  to: string | string[] | EmailAddress | EmailAddress[]
   subject: string
-  html: string
+  html?: string
   text?: string
-  from?: string
-  replyTo?: string
-  tags?: { name: string; value: string }[]
+  from?: string | EmailAddress  // Overrides default
+  replyTo?: string | EmailAddress
+  cc?: string | string[] | EmailAddress[]
+  bcc?: string | string[] | EmailAddress[]
+  headers?: Record<string, string>
+  tags?: Record<string, string>
+  metadata?: Record<string, unknown>
+  attachments?: EmailAttachment[]
+  scheduledAt?: Date  // For scheduled sending
 }
 
-export async function sendEmail(
-  client: Resend,
-  options: EmailOptions,
-  defaultFrom: string = 'Your App <noreply@yourapp.com>'
-) {
-  const { data, error } = await client.emails.send({
-    from: options.from || defaultFrom,
-    to: Array.isArray(options.to) ? options.to : [options.to],
-    subject: options.subject,
-    html: options.html,
-    text: options.text,
-    reply_to: options.replyTo,
-    tags: options.tags,
-  })
-
-  if (error) {
-    throw new Error(`Email failed: ${error.message}`)
-  }
-
-  return data
+interface EmailAddress {
+  email: string
+  name?: string
 }
+
+interface EmailAttachment {
+  filename: string
+  content: string  // Base64 encoded
+  contentType?: string
+}
+```
+
+### SendResult
+
+```typescript
+interface SendResult {
+  success: boolean
+  messageId?: string
+  error?: string
+  errorCode?: string
+  provider: ProviderAlias
+  durationMs: number
+  rawResponse?: unknown
+}
+```
+
+---
+
+## Usage Examples
+
+### Basic Email
+
+```typescript
+const result = await email.send({
+  to: 'user@example.com',
+  subject: 'Hello!',
+  html: '<h1>Welcome!</h1>',
+  text: 'Welcome!',  // Plain text fallback
+})
+```
+
+### Multiple Recipients
+
+```typescript
+const result = await email.send({
+  to: ['user1@example.com', 'user2@example.com'],
+  cc: 'manager@example.com',
+  bcc: 'audit@example.com',
+  subject: 'Team Update',
+  html: '<p>Here is the update...</p>',
+})
+```
+
+### With Custom From Address
+
+```typescript
+const result = await email.send({
+  to: 'user@example.com',
+  from: { email: 'support@example.com', name: 'Support Team' },
+  replyTo: 'help@example.com',
+  subject: 'Support Ticket #123',
+  html: '<p>Your ticket has been received.</p>',
+})
+```
+
+### Batch Sending
+
+```typescript
+const result = await email.sendBatch([
+  { to: 'user1@example.com', subject: 'Hello User 1', html: '...' },
+  { to: 'user2@example.com', subject: 'Hello User 2', html: '...' },
+  { to: 'user3@example.com', subject: 'Hello User 3', html: '...' },
+])
+
+console.log(`Sent: ${result.successCount}/${result.total}`)
+```
+
+### Provider Templates
+
+```typescript
+// SendGrid dynamic template
+const result = await email.sendTemplate({
+  to: 'user@example.com',
+  templateId: 'd-abc123',
+  templateData: {
+    firstName: 'John',
+    resetLink: 'https://...',
+  },
+})
+
+// Mailgun template
+const result = await email.sendTemplate({
+  to: 'user@example.com',
+  templateId: 'welcome-email',
+  templateData: {
+    userName: 'John',
+  },
+})
+```
+
+### With Attachments
+
+```typescript
+const pdfBuffer = await generatePDF()
+const base64Content = btoa(String.fromCharCode(...new Uint8Array(pdfBuffer)))
+
+const result = await email.send({
+  to: 'user@example.com',
+  subject: 'Your Invoice',
+  html: '<p>Please find your invoice attached.</p>',
+  attachments: [{
+    filename: 'invoice-123.pdf',
+    content: base64Content,
+    contentType: 'application/pdf',
+  }],
+})
+```
+
+### Scheduled Sending
+
+```typescript
+const tomorrow = new Date()
+tomorrow.setDate(tomorrow.getDate() + 1)
+tomorrow.setHours(9, 0, 0, 0)
+
+const result = await email.send({
+  to: 'user@example.com',
+  subject: 'Good Morning!',
+  html: '<p>Rise and shine!</p>',
+  scheduledAt: tomorrow,
+})
 ```
 
 ---
@@ -107,15 +289,6 @@ export function baseTemplate({
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Email</title>
-  <!--[if mso]>
-  <noscript>
-    <xml>
-      <o:OfficeDocumentSettings>
-        <o:PixelsPerInch>96</o:PixelsPerInch>
-      </o:OfficeDocumentSettings>
-    </xml>
-  </noscript>
-  <![endif]-->
   <style>
     body {
       margin: 0;
@@ -126,41 +299,11 @@ export function baseTemplate({
       color: #1a1a1a;
       background-color: #f5f5f5;
     }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 40px 20px;
-    }
-    .card {
-      background: #ffffff;
-      border-radius: 8px;
-      padding: 40px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-    .button {
-      display: inline-block;
-      padding: 12px 24px;
-      background-color: #0066cc;
-      color: #ffffff !important;
-      text-decoration: none;
-      border-radius: 6px;
-      font-weight: 500;
-    }
-    .button:hover {
-      background-color: #0052a3;
-    }
-    .footer {
-      margin-top: 32px;
-      padding-top: 24px;
-      border-top: 1px solid #e5e5e5;
-      font-size: 14px;
-      color: #666666;
-    }
-    .preheader {
-      display: none;
-      max-height: 0;
-      overflow: hidden;
-    }
+    .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
+    .card { background: #ffffff; border-radius: 8px; padding: 40px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
+    .button { display: inline-block; padding: 12px 24px; background-color: #0066cc; color: #ffffff !important; text-decoration: none; border-radius: 6px; font-weight: 500; }
+    .footer { margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e5e5; font-size: 14px; color: #666666; }
+    .preheader { display: none; max-height: 0; overflow: hidden; }
   </style>
 </head>
 <body>
@@ -196,17 +339,8 @@ export function welcomeEmail({ userName, loginUrl }: WelcomeEmailProps): string 
     <h1>Welcome to Your App!</h1>
     <p>Hi ${userName},</p>
     <p>Thanks for signing up. We're excited to have you on board.</p>
-    <p>Here's what you can do next:</p>
-    <ul>
-      <li>Complete your profile</li>
-      <li>Explore the dashboard</li>
-      <li>Connect with your team</li>
-    </ul>
     <p style="margin-top: 24px;">
       <a href="${loginUrl}" class="button">Go to Dashboard</a>
-    </p>
-    <p style="margin-top: 24px;">
-      If you have any questions, just reply to this email.
     </p>
   `
 
@@ -214,300 +348,6 @@ export function welcomeEmail({ userName, loginUrl }: WelcomeEmailProps): string 
     preheader: `Welcome to Your App, ${userName}!`,
     content,
   })
-}
-```
-
-### Notification Email
-
-```typescript
-// src/server/lib/email/templates/notification.ts
-import { baseTemplate } from './base'
-
-export interface NotificationEmailProps {
-  userName: string
-  title: string
-  message: string
-  actionUrl?: string
-  actionText?: string
-}
-
-export function notificationEmail({
-  userName,
-  title,
-  message,
-  actionUrl,
-  actionText = 'View Details',
-}: NotificationEmailProps): string {
-  const content = `
-    <h1>${title}</h1>
-    <p>Hi ${userName},</p>
-    <p>${message}</p>
-    ${actionUrl ? `
-      <p style="margin-top: 24px;">
-        <a href="${actionUrl}" class="button">${actionText}</a>
-      </p>
-    ` : ''}
-  `
-
-  return baseTemplate({
-    preheader: title,
-    content,
-  })
-}
-```
-
-### Weekly Digest
-
-```typescript
-// src/server/lib/email/templates/digest.ts
-import { baseTemplate } from './base'
-
-export interface DigestItem {
-  title: string
-  description: string
-  url: string
-}
-
-export interface DigestEmailProps {
-  userName: string
-  weekOf: string
-  stats: {
-    label: string
-    value: string | number
-  }[]
-  items: DigestItem[]
-  dashboardUrl: string
-}
-
-export function digestEmail({
-  userName,
-  weekOf,
-  stats,
-  items,
-  dashboardUrl,
-}: DigestEmailProps): string {
-  const statsHtml = stats.map(s => `
-    <div style="text-align: center; padding: 16px;">
-      <div style="font-size: 32px; font-weight: bold; color: #0066cc;">${s.value}</div>
-      <div style="font-size: 14px; color: #666;">${s.label}</div>
-    </div>
-  `).join('')
-
-  const itemsHtml = items.map(item => `
-    <div style="padding: 16px 0; border-bottom: 1px solid #e5e5e5;">
-      <a href="${item.url}" style="font-weight: 500; color: #0066cc; text-decoration: none;">
-        ${item.title}
-      </a>
-      <p style="margin: 8px 0 0; color: #666; font-size: 14px;">${item.description}</p>
-    </div>
-  `).join('')
-
-  const content = `
-    <h1>Your Weekly Digest</h1>
-    <p>Hi ${userName}, here's your summary for the week of ${weekOf}.</p>
-
-    <div style="display: flex; justify-content: space-around; background: #f9f9f9; border-radius: 8px; margin: 24px 0; padding: 16px;">
-      ${statsHtml}
-    </div>
-
-    <h2 style="margin-top: 32px;">Recent Activity</h2>
-    ${itemsHtml}
-
-    <p style="margin-top: 24px;">
-      <a href="${dashboardUrl}" class="button">View Full Dashboard</a>
-    </p>
-  `
-
-  return baseTemplate({
-    preheader: `Your weekly summary for ${weekOf}`,
-    content,
-  })
-}
-```
-
-### Invoice Email
-
-```typescript
-// src/server/lib/email/templates/invoice.ts
-import { baseTemplate } from './base'
-
-export interface InvoiceItem {
-  description: string
-  quantity: number
-  unitPrice: number
-  total: number
-}
-
-export interface InvoiceEmailProps {
-  userName: string
-  invoiceNumber: string
-  invoiceDate: string
-  dueDate: string
-  items: InvoiceItem[]
-  subtotal: number
-  tax: number
-  total: number
-  paymentUrl: string
-  currency?: string
-}
-
-export function invoiceEmail({
-  userName,
-  invoiceNumber,
-  invoiceDate,
-  dueDate,
-  items,
-  subtotal,
-  tax,
-  total,
-  paymentUrl,
-  currency = 'USD',
-}: InvoiceEmailProps): string {
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount)
-
-  const itemsHtml = items.map(item => `
-    <tr>
-      <td style="padding: 12px; border-bottom: 1px solid #e5e5e5;">${item.description}</td>
-      <td style="padding: 12px; border-bottom: 1px solid #e5e5e5; text-align: center;">${item.quantity}</td>
-      <td style="padding: 12px; border-bottom: 1px solid #e5e5e5; text-align: right;">${formatCurrency(item.unitPrice)}</td>
-      <td style="padding: 12px; border-bottom: 1px solid #e5e5e5; text-align: right;">${formatCurrency(item.total)}</td>
-    </tr>
-  `).join('')
-
-  const content = `
-    <h1>Invoice ${invoiceNumber}</h1>
-    <p>Hi ${userName},</p>
-    <p>Please find your invoice below.</p>
-
-    <div style="background: #f9f9f9; padding: 16px; border-radius: 8px; margin: 24px 0;">
-      <p style="margin: 0;"><strong>Invoice Date:</strong> ${invoiceDate}</p>
-      <p style="margin: 8px 0 0;"><strong>Due Date:</strong> ${dueDate}</p>
-    </div>
-
-    <table style="width: 100%; border-collapse: collapse; margin: 24px 0;">
-      <thead>
-        <tr style="background: #f9f9f9;">
-          <th style="padding: 12px; text-align: left;">Description</th>
-          <th style="padding: 12px; text-align: center;">Qty</th>
-          <th style="padding: 12px; text-align: right;">Unit Price</th>
-          <th style="padding: 12px; text-align: right;">Total</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${itemsHtml}
-      </tbody>
-      <tfoot>
-        <tr>
-          <td colspan="3" style="padding: 12px; text-align: right;">Subtotal</td>
-          <td style="padding: 12px; text-align: right;">${formatCurrency(subtotal)}</td>
-        </tr>
-        <tr>
-          <td colspan="3" style="padding: 12px; text-align: right;">Tax</td>
-          <td style="padding: 12px; text-align: right;">${formatCurrency(tax)}</td>
-        </tr>
-        <tr style="font-weight: bold; font-size: 18px;">
-          <td colspan="3" style="padding: 12px; text-align: right;">Total</td>
-          <td style="padding: 12px; text-align: right;">${formatCurrency(total)}</td>
-        </tr>
-      </tfoot>
-    </table>
-
-    <p style="margin-top: 24px;">
-      <a href="${paymentUrl}" class="button">Pay Now</a>
-    </p>
-  `
-
-  return baseTemplate({
-    preheader: `Invoice ${invoiceNumber} - ${formatCurrency(total)}`,
-    content,
-  })
-}
-```
-
----
-
-## Email Service
-
-```typescript
-// src/server/lib/email/service.ts
-import { Resend } from 'resend'
-import { welcomeEmail, type WelcomeEmailProps } from './templates/welcome'
-import { notificationEmail, type NotificationEmailProps } from './templates/notification'
-import { digestEmail, type DigestEmailProps } from './templates/digest'
-import { invoiceEmail, type InvoiceEmailProps } from './templates/invoice'
-
-export class EmailService {
-  private client: Resend
-  private defaultFrom: string
-
-  constructor(apiKey: string, defaultFrom: string = 'Your App <noreply@yourapp.com>') {
-    this.client = new Resend(apiKey)
-    this.defaultFrom = defaultFrom
-  }
-
-  async sendWelcome(to: string, props: WelcomeEmailProps) {
-    return this.send({
-      to,
-      subject: `Welcome to Your App, ${props.userName}!`,
-      html: welcomeEmail(props),
-      tags: [{ name: 'type', value: 'welcome' }],
-    })
-  }
-
-  async sendNotification(to: string, props: NotificationEmailProps) {
-    return this.send({
-      to,
-      subject: props.title,
-      html: notificationEmail(props),
-      tags: [{ name: 'type', value: 'notification' }],
-    })
-  }
-
-  async sendDigest(to: string, props: DigestEmailProps) {
-    return this.send({
-      to,
-      subject: `Your Weekly Digest - ${props.weekOf}`,
-      html: digestEmail(props),
-      tags: [{ name: 'type', value: 'digest' }],
-    })
-  }
-
-  async sendInvoice(to: string, props: InvoiceEmailProps) {
-    return this.send({
-      to,
-      subject: `Invoice ${props.invoiceNumber}`,
-      html: invoiceEmail(props),
-      tags: [{ name: 'type', value: 'invoice' }],
-    })
-  }
-
-  private async send(options: {
-    to: string | string[]
-    subject: string
-    html: string
-    tags?: { name: string; value: string }[]
-  }) {
-    const { data, error } = await this.client.emails.send({
-      from: this.defaultFrom,
-      to: Array.isArray(options.to) ? options.to : [options.to],
-      subject: options.subject,
-      html: options.html,
-      tags: options.tags,
-    })
-
-    if (error) {
-      console.error('Email send error:', error)
-      throw new Error(`Failed to send email: ${error.message}`)
-    }
-
-    return data
-  }
-}
-
-// Factory function for use in routes
-export function createEmailService(env: Env) {
-  return new EmailService(env.RESEND_API_KEY, env.EMAIL_FROM || 'Your App <noreply@yourapp.com>')
 }
 ```
 
@@ -519,7 +359,8 @@ export function createEmailService(env: Env) {
 
 ```typescript
 // In better-auth config (src/server/modules/auth/index.ts)
-import { createEmailService } from '@/server/lib/email/service'
+import { createEmailClientFromEnv } from '@/server/lib/email'
+import { welcomeEmail } from '@/server/lib/email/templates/welcome'
 
 export const auth = (env: Env) => betterAuth({
   // ... existing config
@@ -528,11 +369,15 @@ export const auth = (env: Env) => betterAuth({
     user: {
       create: {
         after: async (user) => {
-          const emailService = createEmailService(env)
+          const email = createEmailClientFromEnv(env)
 
-          await emailService.sendWelcome(user.email, {
-            userName: user.name || 'there',
-            loginUrl: `${env.BETTER_AUTH_URL}/dashboard`,
+          await email.send({
+            to: user.email,
+            subject: `Welcome to Your App, ${user.name || 'there'}!`,
+            html: welcomeEmail({
+              userName: user.name || 'there',
+              loginUrl: `${env.BETTER_AUTH_URL}/dashboard`,
+            }),
           })
         },
       },
@@ -541,146 +386,158 @@ export const auth = (env: Env) => betterAuth({
 })
 ```
 
-### Send Notification from Route
+### Send from API Route
 
 ```typescript
 // src/server/modules/notifications/routes.ts
-app.post('/send-email', async (c) => {
-  const emailService = createEmailService(c.env)
-  const { userId, title, message, actionUrl } = await c.req.json()
+import { createEmailClientFromEnv } from '@/server/lib/email'
 
-  // Get user email
-  const user = await db.select().from(users).where(eq(users.id, userId)).get()
+app.post('/send-notification', async (c) => {
+  const email = createEmailClientFromEnv(c.env)
+  const { userId, title, message } = await c.req.json()
+
+  const user = await db.query.user.findFirst({
+    where: eq(user.id, userId),
+  })
+
   if (!user) return c.json({ error: 'User not found' }, 404)
 
-  await emailService.sendNotification(user.email, {
-    userName: user.name,
-    title,
-    message,
-    actionUrl,
+  const result = await email.send({
+    to: user.email,
+    subject: title,
+    html: `<p>Hi ${user.name},</p><p>${message}</p>`,
   })
 
-  return c.json({ success: true })
+  return c.json(result)
 })
-```
-
-### Queue Emails for Async Sending
-
-```typescript
-// In route - queue the email
-app.post('/trigger-digest', async (c) => {
-  const users = await db.select().from(user).where(eq(user.digestEnabled, true)).all()
-
-  for (const u of users) {
-    await c.env.QUEUE.send({
-      type: 'send-digest',
-      payload: { userId: u.id, email: u.email },
-    })
-  }
-
-  return c.json({ queued: users.length })
-})
-
-// In queue consumer
-case 'send-digest':
-  const emailService = createEmailService(env)
-  const stats = await getWeeklyStats(db, payload.userId)
-  const items = await getRecentActivity(db, payload.userId)
-
-  await emailService.sendDigest(payload.email, {
-    userName: payload.userName,
-    weekOf: formatWeekOf(new Date()),
-    stats,
-    items,
-    dashboardUrl: `${env.BETTER_AUTH_URL}/dashboard`,
-  })
-  break
 ```
 
 ---
 
-## Testing Emails
+## Switching Providers
 
-### Preview in Browser
+To switch providers, just change the environment variable:
 
-```typescript
-// src/server/modules/email/routes.ts (development only)
-app.get('/preview/:template', async (c) => {
-  if (c.env.ENVIRONMENT !== 'development') {
-    return c.json({ error: 'Not available in production' }, 403)
-  }
-
-  const template = c.req.param('template')
-
-  const templates: Record<string, string> = {
-    welcome: welcomeEmail({
-      userName: 'Test User',
-      loginUrl: 'https://example.com/dashboard',
-    }),
-    notification: notificationEmail({
-      userName: 'Test User',
-      title: 'New Comment',
-      message: 'Someone commented on your post.',
-      actionUrl: 'https://example.com/post/123',
-    }),
-    // Add more...
-  }
-
-  const html = templates[template]
-  if (!html) {
-    return c.json({ error: 'Template not found' }, 404)
-  }
-
-  return c.html(html)
-})
+```bash
+# Switch to SendGrid
+echo "sendgrid" | npx wrangler secret put EMAIL_PROVIDER
+echo "SG.xxx" | npx wrangler secret put SENDGRID_API_KEY
+npx wrangler deploy
 ```
 
-### Resend Test Mode
+Your code stays the same - the abstraction handles provider differences.
 
-Use Resend's test email addresses:
+---
+
+## Error Handling
+
+```typescript
+const result = await email.send({
+  to: 'user@example.com',
+  subject: 'Test',
+  html: '<p>Test</p>',
+})
+
+if (!result.success) {
+  console.error('Email failed:', {
+    error: result.error,
+    errorCode: result.errorCode,
+    provider: result.provider,
+    durationMs: result.durationMs,
+  })
+
+  // Handle specific error codes
+  if (result.errorCode === 'RATE_LIMITED') {
+    // Retry later
+  } else if (result.errorCode === 'INVALID_EMAIL') {
+    // Bad email address
+  } else if (result.errorCode === 'AUTH_ERROR') {
+    // Check API key
+  }
+}
+```
+
+### Error Codes
+
+| Code | Meaning |
+|------|---------|
+| `RATE_LIMITED` | Too many requests, retry later |
+| `INVALID_EMAIL` | Invalid email address format |
+| `AUTH_ERROR` | Invalid API key |
+| `SEND_FAILED` | General send failure |
+| `PROVIDER_NOT_FOUND` | Unknown provider |
+| `PROVIDER_NOT_CONFIGURED` | Missing provider config |
+| `NETWORK_ERROR` | Network/connection issue |
+
+---
+
+## Testing
+
+### Resend Test Addresses
+
 - `delivered@resend.dev` - Always succeeds
 - `bounced@resend.dev` - Simulates bounce
 
----
-
-## Common Gotchas
-
-### 1. SPF/DKIM Setup
-
-Verify your domain in Resend dashboard for better deliverability.
-
-### 2. Rate Limits
-
-Resend has rate limits. Queue high-volume emails.
-
-### 3. HTML Email Quirks
-
-- Use inline styles (not external CSS)
-- Use tables for complex layouts
-- Test in multiple clients (Gmail, Outlook, Apple Mail)
-
-### 4. Plain Text Fallback
-
-Always include a text version for accessibility:
+### Validate Configuration
 
 ```typescript
-await client.emails.send({
-  // ...
-  html: welcomeEmail(props),
-  text: `Welcome ${props.userName}! Visit ${props.loginUrl} to get started.`,
-})
+const email = createEmailClientFromEnv(c.env)
+const isValid = await email.validate()
+
+if (!isValid) {
+  console.error('Email provider not properly configured')
+}
 ```
+
+### Debug Info
+
+```typescript
+const email = createEmailClientFromEnv(c.env)
+console.log(email.getDebugInfo())
+// { provider: 'resend', fromEmail: 'hello@...', apiKeyConfigured: true, ... }
+```
+
+---
+
+## Provider Notes
+
+### Resend (Default)
+
+Best for developers. Simple API, good documentation.
+
+### SendGrid
+
+Supports dynamic templates with `{{variable}}` syntax. Set up templates in SendGrid dashboard.
+
+### Mailgun
+
+Uses FormData (not JSON). EU region available via `MAILGUN_REGION=EU`.
+
+### SMTP2Go
+
+Good for bulk sending with SMTP relay option.
+
+### SMTP (Generic)
+
+**Note**: SMTP requires raw TCP connections which are NOT supported in Cloudflare Workers. Use for:
+- Local development with Node.js
+- Non-Workers deployments
+- Reference implementation
+
+For Workers, use an API-based provider instead.
 
 ---
 
 ## Resources
 
 - [Resend Documentation](https://resend.com/docs)
-- [Email on Acid (testing)](https://www.emailonacid.com/)
+- [SendGrid Documentation](https://docs.sendgrid.com/)
+- [Mailgun Documentation](https://documentation.mailgun.com/)
+- [SMTP2Go Documentation](https://www.smtp2go.com/docs/)
 - [Can I Email (compatibility)](https://www.caniemail.com/)
-- [MJML (email framework)](https://mjml.io/)
 
 ---
 
 **Created**: 2026-01-03
+**Updated**: 2026-01-05
 **Author**: Jeremy Dawes (Jezweb)
