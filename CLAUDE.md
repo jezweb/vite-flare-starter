@@ -6,6 +6,18 @@
 
 ---
 
+## Forking This Project
+
+**If you're an AI coding agent or developer forking this project:**
+
+📖 **Read [FORKING.md](./FORKING.md) first!** It provides step-by-step instructions to:
+1. Create your own Cloudflare resources (D1, R2 buckets)
+2. Update configuration files
+3. Remove all framework fingerprints
+4. Deploy to production
+
+---
+
 ## Security: Rebranding for Production
 
 **IMPORTANT**: Before deploying to production, rebrand to hide framework identity.
@@ -563,5 +575,5 @@ Components are copied to `src/components/ui/`.
 ---
 
 **Created:** 2025-11-29
-**Updated:** 2025-12-29
+**Updated:** 2026-01-05
 **Author:** Jeremy Dawes (Jezweb)
