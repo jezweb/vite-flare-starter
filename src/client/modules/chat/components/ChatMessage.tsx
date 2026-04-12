@@ -1,7 +1,8 @@
 /**
  * ChatMessage Component
  *
- * Displays a single chat message with markdown rendering for assistant responses
+ * Displays a single chat message with markdown rendering for assistant responses.
+ * Supports AI SDK v6 UIMessage format with parts-based content.
  */
 import { memo } from 'react'
 import ReactMarkdown from 'react-markdown'
@@ -15,9 +16,23 @@ interface ChatMessageProps {
   message: Message
 }
 
+/**
+ * Extract text content from AI SDK UIMessage parts
+ */
+function getMessageText(message: Message): string {
+  if (!message.parts || message.parts.length === 0) {
+    return ''
+  }
+  return message.parts
+    .filter((part): part is Extract<typeof part, { type: 'text' }> => part.type === 'text')
+    .map((part) => part.text)
+    .join('')
+}
+
 export const ChatMessage = memo(function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.role === 'user'
   const isAssistant = message.role === 'assistant'
+  const content = getMessageText(message)
 
   return (
     <div
@@ -53,7 +68,6 @@ export const ChatMessage = memo(function ChatMessage({ message }: ChatMessagePro
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
-                  // Override pre/code for better code block styling
                   pre: ({ children }) => (
                     <pre className="overflow-x-auto rounded-md bg-background/50 p-3 text-xs">
                       {children}
@@ -74,7 +88,6 @@ export const ChatMessage = memo(function ChatMessage({ message }: ChatMessagePro
                       </code>
                     )
                   },
-                  // Style links
                   a: ({ children, ...props }) => (
                     <a
                       className="text-primary underline hover:text-primary/80"
@@ -85,14 +98,12 @@ export const ChatMessage = memo(function ChatMessage({ message }: ChatMessagePro
                       {children}
                     </a>
                   ),
-                  // Style lists
                   ul: ({ children }) => (
                     <ul className="list-disc pl-4 space-y-1">{children}</ul>
                   ),
                   ol: ({ children }) => (
                     <ol className="list-decimal pl-4 space-y-1">{children}</ol>
                   ),
-                  // Style tables
                   table: ({ children }) => (
                     <div className="overflow-x-auto">
                       <table className="min-w-full border-collapse border border-border text-xs">
@@ -110,11 +121,11 @@ export const ChatMessage = memo(function ChatMessage({ message }: ChatMessagePro
                   ),
                 }}
               >
-                {message.content || '...'}
+                {content || '...'}
               </ReactMarkdown>
             </div>
           ) : (
-            <p className="whitespace-pre-wrap">{message.content}</p>
+            <p className="whitespace-pre-wrap">{content}</p>
           )}
         </div>
       </div>

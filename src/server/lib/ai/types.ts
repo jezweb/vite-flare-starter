@@ -279,6 +279,8 @@ export interface AIRunParams {
   max_tokens?: number
   temperature?: number
   stream?: boolean
+  // Index signature required by @cloudflare/workers-types Ai.run() overload
+  [key: string]: unknown
 }
 
 /**

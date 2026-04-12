@@ -254,7 +254,7 @@ export const MODEL_REGISTRY: Record<ModelId, ModelConfig> = {
 /**
  * Default model for general use
  */
-export const DEFAULT_MODEL: ModelId = '@cf/meta/llama-3.1-8b-instruct'
+export const DEFAULT_MODEL: ModelId = '@cf/meta/llama-4-scout-17b-16e-instruct'
 
 /**
  * Alias to ModelId mapping for backwards compatibility

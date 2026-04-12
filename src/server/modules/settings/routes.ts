@@ -368,7 +368,7 @@ app.post('/password', requireSessionAuth, zValidator('json', changePasswordSchem
       body: {
         currentPassword: input.currentPassword,
         newPassword: input.newPassword,
-        revokeOtherSessions: false, // Keep other sessions active
+        revokeOtherSessions: true, // Revoke other sessions on password change for security
       },
       headers: c.req.raw.headers, // Pass session cookie
     })

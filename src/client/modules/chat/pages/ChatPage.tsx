@@ -1,7 +1,8 @@
 /**
  * ChatPage
  *
- * Full-page AI chat interface with model selection and streaming responses
+ * Full-page AI chat interface with model selection and streaming responses.
+ * Uses AI SDK useChat for streaming protocol.
  */
 import { useState, useRef, useEffect } from 'react'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -9,9 +10,10 @@ import { Button } from '@/components/ui/button'
 import { Trash2, MessageSquare } from 'lucide-react'
 import { ChatMessage, ChatInput, ModelSelector } from '../components'
 import { useChat } from '../hooks/useChat'
+import { DEFAULT_MODEL } from '@/server/lib/ai/models'
 
 export function ChatPage() {
-  const [model, setModel] = useState<string>('@cf/meta/llama-3.1-8b-instruct')
+  const [model, setModel] = useState<string>(DEFAULT_MODEL)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const {
@@ -19,7 +21,7 @@ export function ChatPage() {
     isLoading,
     error,
     sendMessage,
-    stopGeneration,
+    stop,
     clearMessages,
   } = useChat({ model })
 
@@ -29,6 +31,10 @@ export function ChatPage() {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
   }, [messages])
+
+  const handleSend = (text: string) => {
+    sendMessage({ text })
+  }
 
   return (
     <div className="flex h-[calc(100vh-8rem)] flex-col">
@@ -89,8 +95,8 @@ export function ChatPage() {
 
       {/* Input */}
       <ChatInput
-        onSend={sendMessage}
-        onStop={stopGeneration}
+        onSend={handleSend}
+        onStop={stop}
         isLoading={isLoading}
         placeholder="Send a message..."
       />

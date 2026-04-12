@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSession } from '@/client/lib/auth'
+import { apiClient } from '@/client/lib/api-client'
+import { queryKeys } from '@/client/lib/query-keys'
 import type {
   UpdateNameInput,
   ChangeEmailInput,
@@ -11,16 +13,14 @@ import type { UserPreferences } from '@/shared/schemas/preferences.schema'
 /**
  * TanStack Query hooks for user settings
  *
- * Provides mutations for profile, email, password, and account deletion
+ * Uses centralised apiClient and query key factory.
  */
 
-// Base URL for API requests (relative to current origin)
 const API_BASE = '/api/settings'
 
-// API response types
 interface SuccessResponse {
   message: string
-  user?: any
+  user?: Record<string, unknown>
 }
 
 interface EmailChangeResponse {
@@ -49,24 +49,10 @@ export function useUpdateProfile() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (input: UpdateNameInput): Promise<SuccessResponse> => {
-      const response = await fetch(`${API_BASE}/profile`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(input),
-      })
-
-      if (!response.ok) {
-        const errorData: any = await response.json()
-        throw new Error(errorData.error || 'Failed to update profile')
-      }
-
-      return response.json()
-    },
+    mutationFn: (input: UpdateNameInput) =>
+      apiClient.patch<SuccessResponse>(`${API_BASE}/profile`, input),
     onSuccess: () => {
-      // Invalidate auth session to refetch updated user data
-      queryClient.invalidateQueries({ queryKey: ['session'] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.session })
     },
   })
 }
@@ -76,23 +62,8 @@ export function useUpdateProfile() {
  */
 export function useChangeEmail() {
   return useMutation({
-    mutationFn: async (
-      input: ChangeEmailInput
-    ): Promise<EmailChangeResponse> => {
-      const response = await fetch(`${API_BASE}/email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(input),
-      })
-
-      if (!response.ok) {
-        const errorData: any = await response.json()
-        throw new Error(errorData.error || 'Failed to change email')
-      }
-
-      return response.json()
-    },
+    mutationFn: (input: ChangeEmailInput) =>
+      apiClient.post<EmailChangeResponse>(`${API_BASE}/email`, input),
   })
 }
 
@@ -101,23 +72,8 @@ export function useChangeEmail() {
  */
 export function useChangePassword() {
   return useMutation({
-    mutationFn: async (
-      input: ChangePasswordInput
-    ): Promise<SuccessResponse> => {
-      const response = await fetch(`${API_BASE}/password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(input),
-      })
-
-      if (!response.ok) {
-        const errorData: any = await response.json()
-        throw new Error(errorData.error || 'Failed to change password')
-      }
-
-      return response.json()
-    },
+    mutationFn: (input: ChangePasswordInput) =>
+      apiClient.post<SuccessResponse>(`${API_BASE}/password`, input),
   })
 }
 
@@ -128,27 +84,12 @@ export function useDeleteAccount() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (
-      input: DeleteAccountInput
-    ): Promise<DeleteAccountResponse> => {
-      const response = await fetch(`${API_BASE}/account`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(input),
-      })
-
-      if (!response.ok) {
-        const errorData: any = await response.json()
-        throw new Error(errorData.error || 'Failed to delete account')
-      }
-
-      return response.json()
-    },
+    mutationFn: (input: DeleteAccountInput) =>
+      apiClient.delete<DeleteAccountResponse>(`${API_BASE}/account`, {
+        body: input,
+      }),
     onSuccess: () => {
-      // Clear all cached data
       queryClient.clear()
-      // Redirect to home page will be handled by component
     },
   })
 }
@@ -161,21 +102,13 @@ export function usePreferences() {
   const { data: session } = useSession()
 
   return useQuery({
-    queryKey: ['preferences'],
+    queryKey: queryKeys.settings.preferences(),
     queryFn: async (): Promise<UserPreferences> => {
-      const response = await fetch(`${API_BASE}/preferences`, {
-        credentials: 'include',
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch preferences')
-      }
-
-      const data: PreferencesResponse = await response.json()
+      const data = await apiClient.get<PreferencesResponse>(`${API_BASE}/preferences`)
       return data.preferences
     },
-    enabled: !!session?.user, // Only fetch when logged in
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !!session?.user,
+    staleTime: 5 * 60 * 1000,
   })
 }
 
@@ -186,26 +119,10 @@ export function useUpdatePreferences() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (
-      input: UserPreferences
-    ): Promise<UpdatePreferencesResponse> => {
-      const response = await fetch(`${API_BASE}/preferences`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(input),
-      })
-
-      if (!response.ok) {
-        const errorData: any = await response.json()
-        throw new Error(errorData.error || 'Failed to update preferences')
-      }
-
-      return response.json()
-    },
+    mutationFn: (input: UserPreferences) =>
+      apiClient.patch<UpdatePreferencesResponse>(`${API_BASE}/preferences`, input),
     onSuccess: () => {
-      // Invalidate preferences query to refetch
-      queryClient.invalidateQueries({ queryKey: ['preferences'] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings.preferences() })
     },
   })
 }

@@ -188,7 +188,7 @@ export function createAuth(
       // Email change with verification
       changeEmail: {
         enabled: true,
-        sendChangeEmailVerification: async ({ user, newEmail, url, token }) => {
+        sendChangeEmailVerification: async ({ user, newEmail, url, token }: { user: { name: string; email: string }; newEmail: string; url: string; token: string }) => {
           // Only send email if we have API key configured
           if (!env.EMAIL_API_KEY || !env.EMAIL_FROM) {
             console.warn('Email credentials not configured - skipping verification email')

@@ -1,140 +1,49 @@
 /**
  * Chat API Routes
  *
- * Provides streaming chat functionality using AI Gateway.
- * Supports all providers: Workers AI (free), OpenAI, Anthropic, Google, etc.
+ * Streaming chat using AI SDK + Workers AI provider.
+ * Supports all Workers AI models via the native binding.
  */
 import { Hono } from 'hono'
-import { zValidator } from '@hono/zod-validator'
-import { z } from 'zod'
+import { streamText, convertToModelMessages } from 'ai'
+import { createWorkersAI } from 'workers-ai-provider'
 import { authMiddleware, requireScopes, type AuthContext } from '@/server/middleware/auth'
-import { createAIGatewayClient, getModelConfig, DEFAULT_MODEL } from '@/server/lib/ai'
+import { DEFAULT_MODEL, getModel } from '@/server/lib/ai/models'
 
 const app = new Hono<AuthContext>()
 
-// Apply auth middleware to all routes
 app.use('*', authMiddleware)
-
-// All chat routes require chat:write scope for API tokens
 app.use('*', requireScopes('chat:write'))
 
-// Schema for chat request
-const chatRequestSchema = z.object({
-  messages: z.array(
-    z.object({
-      role: z.enum(['user', 'assistant', 'system']),
-      content: z.string(),
-    })
-  ),
-  model: z.string().optional(),
-})
-
 /**
- * POST /api/chat - Streaming chat endpoint
+ * POST /api/chat - Streaming chat endpoint (AI SDK protocol)
  *
- * Returns a text/event-stream response with SSE format.
- * Works with all providers via AI Gateway.
+ * Accepts AI SDK UIMessage format from useChat hook.
+ * Returns streaming response via toUIMessageStreamResponse().
  */
-app.post('/', zValidator('json', chatRequestSchema), async (c) => {
-  const { messages, model } = c.req.valid('json')
-
+app.post('/', async (c) => {
   try {
-    const ai = createAIGatewayClient(c.env)
-    const modelId = model || DEFAULT_MODEL
-    const modelConfig = getModelConfig(modelId)
+    const body = await c.req.json()
+    const { messages, model: requestedModel, systemPrompt } = body
 
-    // Check if model supports streaming
-    if (modelConfig && !modelConfig.supportsStreaming) {
-      // Fall back to non-streaming response
-      const result = await ai.chat(messages, { model: modelId })
+    const modelId = requestedModel || DEFAULT_MODEL
+    const modelConfig = getModel(modelId)
 
-      // Return as SSE format for consistency
-      const encoder = new TextEncoder()
-      const stream = new ReadableStream({
-        start(controller) {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: result.response })}\n\n`))
-          controller.enqueue(encoder.encode('data: [DONE]\n\n'))
-          controller.close()
-        },
-      })
+    // Create Workers AI provider with the native binding
+    const workersai = createWorkersAI({ binding: c.env.AI })
 
-      return new Response(stream, {
-        headers: {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          Connection: 'keep-alive',
-        },
-      })
-    }
-
-    // Get streaming response from AI Gateway
-    const stream = await ai.chatStream(messages, { model: modelId })
-
-    // Transform the stream to our SSE format
-    const encoder = new TextEncoder()
-    const decoder = new TextDecoder()
-
-    const transformedStream = new ReadableStream({
-      async start(controller) {
-        const reader = stream.getReader()
-
-        try {
-          while (true) {
-            const { done, value } = await reader.read()
-
-            if (done) {
-              controller.enqueue(encoder.encode('data: [DONE]\n\n'))
-              controller.close()
-              break
-            }
-
-            // Parse the chunk - AI Gateway returns SSE format
-            const text = decoder.decode(value, { stream: true })
-            const lines = text.split('\n').filter((line) => line.trim())
-
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                const data = line.slice(6)
-                if (data === '[DONE]') {
-                  controller.enqueue(encoder.encode('data: [DONE]\n\n'))
-                } else {
-                  try {
-                    const parsed = JSON.parse(data)
-                    // Handle both Workers AI format and OpenAI format
-                    const content = parsed.response || parsed.choices?.[0]?.delta?.content
-                    if (content) {
-                      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`))
-                    }
-                  } catch {
-                    // If parsing fails, skip
-                  }
-                }
-              }
-            }
-          }
-        } catch (error) {
-          console.error('Stream processing error:', error)
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ error: 'Stream processing error' })}\n\n`)
-          )
-          controller.close()
-        }
-      },
+    const result = streamText({
+      model: workersai(modelId),
+      system: systemPrompt,
+      messages: await convertToModelMessages(messages),
+      maxOutputTokens: modelConfig?.defaultMaxTokens ?? 2000,
     })
 
-    return new Response(transformedStream, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        Connection: 'keep-alive',
-      },
-    })
+    return result.toUIMessageStreamResponse()
   } catch (error) {
     console.error('Chat error:', error)
     return c.json(
-      {
-        error: error instanceof Error ? error.message : 'Chat failed',
-      },
+      { error: error instanceof Error ? error.message : 'Chat failed' },
       500
     )
   }
@@ -144,34 +53,33 @@ app.post('/', zValidator('json', chatRequestSchema), async (c) => {
  * POST /api/chat/complete - Non-streaming chat endpoint
  *
  * Returns a JSON response with the complete message.
- * Works with all providers via AI Gateway.
  */
-app.post('/complete', zValidator('json', chatRequestSchema), async (c) => {
-  const { messages, model } = c.req.valid('json')
-
+app.post('/complete', async (c) => {
   try {
-    const ai = createAIGatewayClient(c.env)
-    const modelId = model || DEFAULT_MODEL
-    const result = await ai.chat(messages, { model: modelId })
+    const body = await c.req.json()
+    const { messages, model: requestedModel } = body
+
+    const modelId = requestedModel || DEFAULT_MODEL
+    const modelConfig = getModel(modelId)
+
+    const workersai = createWorkersAI({ binding: c.env.AI })
+
+    const { text, usage } = await streamText({
+      model: workersai(modelId),
+      messages: await convertToModelMessages(messages),
+      maxOutputTokens: modelConfig?.defaultMaxTokens ?? 2000,
+    })
 
     return c.json({
       success: true,
-      message: {
-        role: 'assistant' as const,
-        content: result.response,
-      },
-      model: result.model,
-      thinking: result.thinking,
-      durationMs: result.durationMs,
-      usage: result.usage,
+      message: { role: 'assistant' as const, content: text },
+      model: modelId,
+      usage,
     })
   } catch (error) {
     console.error('Chat error:', error)
     return c.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Chat failed',
-      },
+      { success: false, error: error instanceof Error ? error.message : 'Chat failed' },
       500
     )
   }

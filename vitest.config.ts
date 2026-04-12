@@ -1,7 +1,23 @@
-import { defineWorkersConfig } from '@cloudflare/vitest-pool-workers/config'
+import { cloudflareTest } from '@cloudflare/vitest-pool-workers'
+import { defineConfig } from 'vitest/config'
 import path from 'node:path'
 
-export default defineWorkersConfig({
+export default defineConfig({
+  plugins: [
+    cloudflareTest({
+      wrangler: {
+        configPath: './wrangler.jsonc',
+      },
+      miniflare: {
+        d1Databases: {
+          DB: 'test-db',
+        },
+        r2Buckets: {
+          AVATARS: 'test-avatars',
+        },
+      },
+    }),
+  ],
   define: {
     __APP_VERSION__: JSON.stringify('0.0.0-test'),
   },
@@ -21,22 +37,6 @@ export default defineWorkersConfig({
         'src/server/modules/*/db/**',
         '**/*.d.ts',
       ],
-    },
-    poolOptions: {
-      workers: {
-        wrangler: {
-          configPath: './wrangler.jsonc',
-        },
-        miniflare: {
-          // D1 bindings are automatically mocked by Miniflare
-          d1Databases: {
-            DB: 'test-db',
-          },
-          r2Buckets: {
-            AVATARS: 'test-avatars',
-          },
-        },
-      },
     },
   },
   resolve: {
