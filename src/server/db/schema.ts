@@ -25,3 +25,6 @@ export { userNotifications, userNotificationsRelations } from '@/server/modules/
 
 // Files module schemas
 export { files } from '@/server/modules/files/db/schema'
+
+// Chat / AI module schemas
+export { aiUsageLogs } from '@/server/modules/chat/db/schema'

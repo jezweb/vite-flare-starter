@@ -22,7 +22,7 @@ import { authMiddleware, requireScopes } from './middleware/auth'
 import { requestIdMiddleware } from './middleware/request-id'
 import { captureServerException } from './lib/sentry'
 import { AVATAR, APP_VERSION } from '@/shared/config/constants'
-import { createAIGatewayClient, listModels, DEFAULT_MODEL, getAllProviders } from './lib/ai'
+import { listModels, DEFAULT_MODEL } from './lib/ai'
 
 // Define Cloudflare Workers environment bindings
 export interface Env {
@@ -214,11 +214,10 @@ const aiTestSchema = z.object({
   model: z.string().optional(),
 })
 
-// GET /api/ai/models - List available models
+// GET /api/ai/models - List available Workers AI models
 // Requires: ai:use scope for API tokens
 app.get('/api/ai/models', authMiddleware, requireScopes('ai:use'), async () => {
   const models = listModels()
-  const providers = getAllProviders()
 
   return Response.json({
     models: models.map((m) => ({
@@ -231,20 +230,12 @@ app.get('/api/ai/models', authMiddleware, requireScopes('ai:use'), async () => {
       supportsVision: m.supportsVision,
       isReasoning: m.isReasoning,
     })),
-    providers: providers.map((p) => ({
-      id: p.id,
-      name: p.name,
-      description: p.description,
-      requiresApiKey: p.requiresApiKey,
-      modelCount: p.models.length,
-    })),
     defaultModel: DEFAULT_MODEL,
   })
 })
 
-// POST /api/ai/test - Test AI generation
+// POST /api/ai/test - Test AI text generation
 // Requires: ai:use scope for API tokens
-// Works with all providers via AI Gateway
 app.post(
   '/api/ai/test',
   authMiddleware,
@@ -254,15 +245,24 @@ app.post(
     const { prompt, model } = c.req.valid('json')
 
     try {
-      const ai = createAIGatewayClient(c.env)
-      const result = await ai.generate(prompt, { model: model || DEFAULT_MODEL })
+      const { generateText } = await import('ai')
+      const { createWorkersAI } = await import('workers-ai-provider')
+
+      const workersai = createWorkersAI({ binding: c.env.AI })
+      const modelId = model || DEFAULT_MODEL
+      const startTime = Date.now()
+
+      const { text, usage } = await generateText({
+        model: workersai(modelId),
+        prompt,
+      })
 
       return c.json({
         success: true,
-        response: result.response,
-        model: result.model,
-        durationMs: result.durationMs,
-        usage: result.usage,
+        response: text,
+        model: modelId,
+        durationMs: Date.now() - startTime,
+        usage,
       })
     } catch (error) {
       console.error('AI test error:', error)
