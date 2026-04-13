@@ -1,5 +1,14 @@
-import { useState } from 'react'
-import { Outlet, Link, useLocation } from 'react-router-dom'
+/**
+ * Dashboard Layout
+ *
+ * Config-driven layout with collapsible sidebar, sections, and feature/role filtering.
+ * Edit src/shared/config/nav.ts to customise navigation — don't modify this file.
+ *
+ * @see src/shared/config/nav.ts — sidebar sections and items
+ * @see src/shared/config/features.ts — feature flag definitions
+ */
+import { useState, useMemo } from 'react'
+import { Outlet, Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -13,11 +22,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { useTheme } from '@/client/components/theme-provider'
 import { useSession, authClient } from '@/client/lib/auth'
-import { useNavigate } from 'react-router-dom'
 import { usePreferences, useUpdatePreferences } from '@/client/modules/settings/hooks/useSettings'
 import { useAdminStatus } from '@/client/modules/admin/hooks/useAdminStatus'
 import {
-  Home,
   Menu,
   Moon,
   Sun,
@@ -25,139 +32,213 @@ import {
   Settings,
   LogOut,
   Shield,
-  Palette,
-  Component,
-  MessageSquare,
-  Sparkles,
-  Activity,
-  FolderOpen,
+  PanelLeftClose,
+  PanelLeft,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react'
 import { NotificationBell } from '@/client/components/NotificationBell'
 import { EmailVerificationBanner } from '@/client/components/EmailVerificationBanner'
 import { cn } from '@/lib/utils'
 import { features } from '@/shared/config/features'
 import { appConfig } from '@/shared/config/app'
+import { APP_VERSION } from '@/shared/config/constants'
+import { NAV_SECTIONS, type NavItem, type NavSection } from '@/shared/config/nav'
 
-/**
- * Navigation item type
- */
-type NavItem = {
-  label: string
-  href: string
-  icon: React.ComponentType<{ className?: string }>
+const COLLAPSED_KEY = 'sidebar-collapsed'
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+/** Filter nav items by feature flags and user role */
+function filterItems(
+  items: NavItem[],
+  featureFlags: Record<string, boolean>,
+  userRole?: string
+): NavItem[] {
+  return items.filter((item) => {
+    if (item.feature && !featureFlags[item.feature]) return false
+    if (item.minRole) {
+      const roleHierarchy: Record<string, number> = { user: 0, manager: 1, admin: 2 }
+      const required = roleHierarchy[item.minRole] ?? 0
+      const current = roleHierarchy[userRole ?? 'user'] ?? 0
+      if (current < required) return false
+    }
+    return true
+  })
 }
 
-/**
- * Navigation items configuration
- * Items are conditionally included based on feature flags
- */
-const navItems: NavItem[] = [
-  // Home is always visible
-  {
-    label: 'Home',
-    href: '/dashboard',
-    icon: Home,
-  },
-  // AI Chat
-  {
-    label: 'AI Chat',
-    href: '/dashboard/chat',
-    icon: MessageSquare,
-  },
-  // Structured Extract
-  {
-    label: 'Extract',
-    href: '/dashboard/extract',
-    icon: Sparkles,
-  },
-  // Activity log
-  {
-    label: 'Activity',
-    href: '/dashboard/activity',
-    icon: Activity,
-  },
-  // Files
-  {
-    label: 'Files',
-    href: '/dashboard/files',
-    icon: FolderOpen,
-  },
+// ─── Sidebar Section ─────────────────────────────────────────────────────────
 
-  // Settings removed from sidebar - already in user dropdown menu
-
-  // Development tools (only in dev or when explicitly enabled)
-  ...(features.devTools && features.components
-    ? [
-        {
-          label: 'Components',
-          href: '/dashboard/components',
-          icon: Component,
-        },
-      ]
-    : []),
-
-  ...(features.devTools && features.styleGuide
-    ? [
-        {
-          label: 'Style Guide',
-          href: '/dashboard/style-guide',
-          icon: Palette,
-        },
-      ]
-    : []),
-]
-
-/**
- * Sidebar component - desktop navigation
- */
-function Sidebar() {
+function SidebarSection({
+  section,
+  collapsed,
+  onNavigate,
+}: {
+  section: NavSection
+  collapsed: boolean
+  onNavigate?: () => void
+}) {
   const location = useLocation()
+  const hasActiveItem = section.items.some(
+    (item) => location.pathname === item.to || location.pathname.startsWith(item.to + '/')
+  )
+  const [open, setOpen] = useState(hasActiveItem || !section.defaultCollapsed)
+
+  // Collapsed mode — icons only
+  if (collapsed) {
+    return (
+      <div className="mb-2">
+        {section.items.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.to === '/dashboard'}
+            title={item.label}
+            onClick={onNavigate}
+            className={({ isActive }) =>
+              cn(
+                'flex items-center justify-center rounded-md p-2 mb-0.5 transition-colors',
+                isActive
+                  ? 'bg-primary/10 text-primary border-l-2 border-l-primary'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              )
+            }
+          >
+            {item.icon && <item.icon className="h-4 w-4" />}
+          </NavLink>
+        ))}
+      </div>
+    )
+  }
+
+  // Expanded mode — full labels with collapsible section headers
+  return (
+    <div className="mb-3">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center gap-1 px-2 py-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground"
+      >
+        {open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+        {section.label}
+      </button>
+      {open && (
+        <div className="mt-0.5">
+          {section.items.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.to === '/dashboard'}
+              onClick={onNavigate}
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors',
+                  isActive
+                    ? 'bg-primary/10 text-primary font-medium border-l-2 border-l-primary pl-2.5'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                )
+              }
+            >
+              {item.icon && <item.icon className="h-4 w-4" />}
+              {item.label}
+            </NavLink>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Desktop Sidebar ─────────────────────────────────────────────────────────
+
+function Sidebar() {
+  const [collapsed, setCollapsed] = useState(
+    () => localStorage.getItem(COLLAPSED_KEY) === 'true'
+  )
+  const { data: session } = useSession()
+  const userRole = (session?.user as { role?: string } | undefined)?.role ?? 'user'
+
+  const visibleSections = useMemo(() => {
+    const featureFlags = features as unknown as Record<string, boolean>
+    return NAV_SECTIONS.map((section) => ({
+      ...section,
+      items: filterItems(section.items, featureFlags, userRole),
+    })).filter((section) => section.items.length > 0)
+  }, [userRole])
+
+  const toggle = () => {
+    const next = !collapsed
+    setCollapsed(next)
+    localStorage.setItem(COLLAPSED_KEY, String(next))
+  }
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-border bg-background">
-      <div className="flex h-full flex-col">
-        {/* Logo */}
-        <div className="flex h-16 items-center border-b border-border px-6">
-          <Link to="/" className="flex items-center gap-2 font-semibold text-lg">
-            <span className="text-primary">⚡</span>
-            <span>{appConfig.name}</span>
-          </Link>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 space-y-1 p-4">
-          {navItems.map((item) => {
-            const Icon = item.icon
-            const isActive = location.pathname === item.href
-
-            return (
-              <Link
-                key={item.href}
-                to={item.href}
-                className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                  isActive
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            )
-          })}
-        </nav>
+    <aside
+      className={cn(
+        'flex h-screen flex-col border-r border-border bg-card transition-all duration-200 shrink-0',
+        collapsed ? 'w-14' : 'w-60'
+      )}
+    >
+      {/* Logo + collapse toggle */}
+      <div className="flex h-14 items-center gap-2 border-b border-border px-3">
+        <Link to="/" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground text-xs font-bold">
+          {appConfig.name.charAt(0)}
+        </Link>
+        {!collapsed && (
+          <>
+            <Link to="/" className="min-w-0 flex-1">
+              <span className="text-sm font-semibold truncate block">{appConfig.name}</span>
+            </Link>
+            <button
+              onClick={toggle}
+              className="p-1 rounded text-muted-foreground hover:bg-muted hover:text-foreground transition-colors shrink-0"
+              title="Collapse sidebar"
+            >
+              <PanelLeftClose className="h-4 w-4" />
+            </button>
+          </>
+        )}
+        {collapsed && (
+          <button
+            onClick={toggle}
+            className="p-1 rounded text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            title="Expand sidebar"
+          >
+            <PanelLeft className="h-4 w-4" />
+          </button>
+        )}
       </div>
+
+      {/* Navigation sections */}
+      <nav className="flex-1 overflow-y-auto px-2 py-3">
+        {visibleSections.map((section) => (
+          <SidebarSection key={section.label} section={section} collapsed={collapsed} />
+        ))}
+      </nav>
+
+      {/* Version */}
+      {!collapsed && (
+        <div className="px-3 py-1 border-t border-border">
+          <p className="text-[9px] text-muted-foreground/40">v{APP_VERSION}</p>
+        </div>
+      )}
     </aside>
   )
 }
 
-/**
- * Mobile sidebar - sheet component
- */
+// ─── Mobile Sidebar ──────────────────────────────────────────────────────────
+
 function MobileSidebar() {
-  const location = useLocation()
   const [open, setOpen] = useState(false)
+  const { data: session } = useSession()
+  const userRole = (session?.user as { role?: string } | undefined)?.role ?? 'user'
+
+  const visibleSections = useMemo(() => {
+    const featureFlags = features as unknown as Record<string, boolean>
+    return NAV_SECTIONS.map((section) => ({
+      ...section,
+      items: filterItems(section.items, featureFlags, userRole),
+    })).filter((section) => section.items.length > 0)
+  }, [userRole])
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -167,39 +248,23 @@ function MobileSidebar() {
           <span className="sr-only">Toggle menu</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-64 p-0">
+      <SheetContent side="left" className="w-60 p-0">
         <div className="flex h-full flex-col">
-          {/* Logo */}
-          <div className="flex h-16 items-center border-b border-border px-6">
-            <Link to="/" className="flex items-center gap-2 font-semibold text-lg">
-              <span className="text-primary">⚡</span>
-              <span>{appConfig.name}</span>
-            </Link>
+          <div className="flex h-14 items-center gap-2 border-b border-border px-3">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground text-xs font-bold">
+              {appConfig.name.charAt(0)}
+            </div>
+            <span className="text-sm font-semibold">{appConfig.name}</span>
           </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 space-y-1 p-4">
-            {navItems.map((item) => {
-              const Icon = item.icon
-              const isActive = location.pathname === item.href
-
-              return (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  onClick={() => setOpen(false)}
-                  className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                    isActive
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                  )}
-                >
-                  <Icon className="h-4 w-4" />
-                  {item.label}
-                </Link>
-              )
-            })}
+          <nav className="flex-1 overflow-y-auto px-2 py-3">
+            {visibleSections.map((section) => (
+              <SidebarSection
+                key={section.label}
+                section={section}
+                collapsed={false}
+                onNavigate={() => setOpen(false)}
+              />
+            ))}
           </nav>
         </div>
       </SheetContent>
@@ -207,9 +272,8 @@ function MobileSidebar() {
   )
 }
 
-/**
- * Header component - top navigation bar
- */
+// ─── Header ──────────────────────────────────────────────────────────────────
+
 function Header() {
   const { theme, setTheme } = useTheme()
   const { data: session } = useSession()
@@ -225,21 +289,13 @@ function Header() {
 
   const toggleTheme = () => {
     if (session && preferences) {
-      // Logged in: update preferences in database
-      const currentMode = preferences.mode
-      const newMode = currentMode === 'dark' ? 'light' : 'dark'
-
-      updatePreferences.mutate({
-        theme: preferences.theme,
-        mode: newMode,
-      })
+      const newMode = preferences.mode === 'dark' ? 'light' : 'dark'
+      updatePreferences.mutate({ theme: preferences.theme, mode: newMode })
     } else {
-      // Not logged in: use localStorage
       setTheme(theme === 'dark' ? 'light' : 'dark')
     }
   }
 
-  // Get user initials for avatar fallback
   const userInitials = session?.user?.name
     ?.split(' ')
     .map((n) => n[0])
@@ -247,27 +303,17 @@ function Header() {
     .toUpperCase() || 'U'
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-background px-4 md:px-6">
-      {/* Mobile menu toggle */}
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-border bg-background px-4 md:px-6">
       <MobileSidebar />
-
-      {/* Spacer */}
       <div className="flex-1" />
 
-      {/* Notifications */}
-      <NotificationBell />
+      {features.notifications && <NotificationBell />}
 
-      {/* Theme toggle */}
       <Button variant="ghost" size="icon" onClick={toggleTheme}>
-        {theme === 'dark' ? (
-          <Sun className="h-5 w-5" />
-        ) : (
-          <Moon className="h-5 w-5" />
-        )}
+        {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         <span className="sr-only">Toggle theme</span>
       </Button>
 
-      {/* User menu */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-10 w-10 rounded-full">
@@ -281,37 +327,35 @@ function Header() {
           <DropdownMenuLabel>
             <div className="flex flex-col space-y-1">
               <p className="text-sm font-medium leading-none">{session?.user?.name}</p>
-              <p className="text-xs leading-none text-muted-foreground">
-                {session?.user?.email}
-              </p>
+              <p className="text-xs leading-none text-muted-foreground">{session?.user?.email}</p>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => navigate('/dashboard/profile')}>
             <User className="mr-2 h-4 w-4" />
-            <span>Profile</span>
+            Profile
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => navigate('/dashboard/settings?tab=security')}>
             <Shield className="mr-2 h-4 w-4" />
-            <span>Security</span>
+            Security
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => navigate('/dashboard/settings?tab=settings')}>
             <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
+            Settings
           </DropdownMenuItem>
           {isAdmin && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate('/dashboard/admin')}>
                 <Shield className="mr-2 h-4 w-4" />
-                <span>Admin</span>
+                Admin
               </DropdownMenuItem>
             </>
           )}
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleSignOut}>
             <LogOut className="mr-2 h-4 w-4" />
-            <span>Sign out</span>
+            Sign out
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -319,26 +363,18 @@ function Header() {
   )
 }
 
-/**
- * Dashboard layout wrapper
- * Provides consistent layout with sidebar and header for all dashboard pages
- */
+// ─── Layout ──────────────────────────────────────────────────────────────────
+
 export function DashboardLayout() {
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Desktop sidebar */}
       <div className="hidden md:block">
         <Sidebar />
       </div>
 
-      {/* Main content area */}
-      <div className="flex flex-1 flex-col md:pl-64">
+      <div className="flex flex-1 flex-col min-w-0">
         <Header />
-
-        {/* Email verification banner - shown for unverified users */}
         <EmailVerificationBanner />
-
-        {/* Page content */}
         <main className="flex-1 overflow-y-auto bg-background p-4 md:p-6">
           <Outlet />
         </main>
