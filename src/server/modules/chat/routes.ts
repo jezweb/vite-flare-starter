@@ -1,18 +1,18 @@
 /**
  * Chat API Routes
  *
- * Streaming chat using AI SDK + Workers AI provider.
- * Features: smoothStream, token usage logging, reasoning middleware, tool calling.
+ * Streaming chat using AI SDK ToolLoopAgent pattern.
+ * Features: agent abstraction, smoothStream, token usage logging,
+ * reasoning middleware, tool calling, consumeStream for disconnect resilience.
  */
 import { Hono } from 'hono'
-import { streamText, generateText, convertToModelMessages, smoothStream, stepCountIs, Output } from 'ai'
+import { generateText, convertToModelMessages, smoothStream, Output, createAgentUIStreamResponse, safeValidateUIMessages, pruneMessages, consumeStream, streamObject } from 'ai'
 import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
 import { desc, eq, sql } from 'drizzle-orm'
 import { authMiddleware, requireScopes, type AuthContext } from '@/server/middleware/auth'
-import { DEFAULT_MODEL, getModel, resolveModel, buildModel, buildSystemPrompt, getMCPTools } from '@/server/lib/ai'
-import { listSkills } from '@/server/lib/ai/skills/registry'
-import { buildChatTools } from './tools'
+import { DEFAULT_MODEL, getModel, resolveModel, buildChatAgent } from '@/server/lib/ai'
+import { createD1ChatStorage } from '@/server/modules/conversations/storage'
 import { aiUsageLogs } from './db/schema'
 
 const app = new Hono<AuthContext>()
@@ -21,93 +21,62 @@ app.use('*', authMiddleware)
 app.use('*', requireScopes('chat:write'))
 
 /**
- * POST /api/chat - Streaming chat endpoint (AI SDK protocol)
+ * POST /api/chat - Streaming chat endpoint (AI SDK ToolLoopAgent)
  *
  * Accepts AI SDK UIMessage format from useChat hook.
- * Returns streaming response via toUIMessageStreamResponse().
- * Logs token usage to D1 on completion.
+ * Uses ToolLoopAgent for the agent loop, createAgentUIStreamResponse for streaming.
+ * Supports conversation persistence via optional conversationId.
  */
 app.post('/', async (c) => {
   try {
     const body = await c.req.json()
-    const { messages, model: requestedModel, systemPrompt } = body
+    const { messages, model: requestedModel, systemPrompt, conversationId: existingConversationId } = body
 
-    const modelId = requestedModel || DEFAULT_MODEL
-    const modelConfig = getModel(modelId)
     const userId = c.get('userId')
     const user = c.get('user') as { name?: string; email?: string; role?: string } | undefined
-    const startTime = Date.now()
+    const storage = createD1ChatStorage(c.env.DB)
 
-    const baseModel = resolveModel(c.env, modelId)
-    const model = buildModel(baseModel, modelId)
+    // Create or reuse conversation
+    let conversationId = existingConversationId as string | undefined
+    if (!conversationId) {
+      // Auto-generate title from first user message
+      const firstUserMsg = messages.find((m: { role: string }) => m.role === 'user')
+      const title = firstUserMsg?.content
+        ? String(typeof firstUserMsg.content === 'string' ? firstUserMsg.content : JSON.stringify(firstUserMsg.content)).slice(0, 80)
+        : 'New conversation'
 
-    // List available skills (metadata only — Level 1 of progressive disclosure)
-    const availableSkills = await listSkills(c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket })
-    const skillsCatalog = availableSkills.length > 0
-      ? availableSkills.map((s) => `- **${s.name}**: ${s.description}`).join('\n')
-      : null
-
-    // Build system prompt with context injection
-    const system = buildSystemPrompt({
-      baseInstructions: systemPrompt || 'You are a helpful assistant.',
-      user: user ? { name: user.name, email: user.email, role: user.role } : undefined,
-      currentDate: true,
-      timezone: 'Australia/Sydney',
-      extra: skillsCatalog ? {
-        'Available Skills': `Use the load_skill tool to get full instructions for any of these:\n\n${skillsCatalog}`,
-      } : undefined,
-    })
-
-    // Build the toolkit: core tools + module tools (based on available bindings)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let tools: any
-    let mcpCleanup: (() => Promise<void>) | undefined
-
-    if (modelConfig?.supportsTools) {
-      const chatTools = buildChatTools({
-        env: c.env as unknown as Parameters<typeof buildChatTools>[0]['env'],
-        userId,
-        defaultModel: modelId,
+      conversationId = await storage.createConversation(userId, {
+        title,
+        model: requestedModel || DEFAULT_MODEL,
+        systemPrompt,
       })
-      const { tools: mcpTools, cleanup } = await getMCPTools(c.env as unknown as Record<string, unknown>)
-      mcpCleanup = cleanup
-      tools = { ...chatTools, ...mcpTools }
     }
 
-    const result = streamText({
-      model,
-      system,
-      messages: await convertToModelMessages(messages),
-      tools,
-      stopWhen: modelConfig?.supportsTools ? stepCountIs(5) : stepCountIs(1),
-      maxOutputTokens: modelConfig?.defaultMaxTokens ?? 2000,
-      experimental_transform: smoothStream({ chunking: 'word' }),
-      onFinish: async ({ usage, finishReason }) => {
-        // Clean up MCP connections
-        if (mcpCleanup) await mcpCleanup()
-
-        try {
-          const db = drizzle(c.env.DB)
-          await db.insert(aiUsageLogs).values({
-            userId,
-            model: modelId,
-            promptTokens: usage.inputTokens ?? 0,
-            completionTokens: usage.outputTokens ?? 0,
-            totalTokens: (usage.inputTokens ?? 0) + (usage.outputTokens ?? 0),
-            finishReason,
-            durationMs: Date.now() - startTime,
-          })
-        } catch (err) {
-          console.error('Failed to log AI usage:', err)
-        }
-      },
+    // Build the agent (model, tools, system prompt, logging — all encapsulated)
+    const { agent, startTime, modelId } = await buildChatAgent({
+      env: c.env as unknown as Parameters<typeof buildChatAgent>[0]['env'],
+      userId,
+      user: user || undefined,
+      modelId: requestedModel,
+      systemPrompt,
     })
 
-    return result.toUIMessageStreamResponse({
+    // Validate loaded messages against current tool schemas (handles schema drift)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const validation = await safeValidateUIMessages({ messages, tools: agent.tools as any })
+    const validatedMessages = validation.success ? validation.data : messages
+
+    // Stream the agent response to the client
+    const response = await createAgentUIStreamResponse({
+      agent,
+      uiMessages: validatedMessages,
+      originalMessages: validatedMessages,
+      experimental_transform: smoothStream({ chunking: 'word' }),
       sendReasoning: true,
       messageMetadata: ({ part }) => {
         if (part.type === 'finish') {
           return {
+            conversationId,
             model: modelId,
             inputTokens: part.totalUsage?.inputTokens,
             outputTokens: part.totalUsage?.outputTokens,
@@ -116,7 +85,21 @@ app.post('/', async (c) => {
         }
         return undefined
       },
+      onFinish: async ({ messages: finalMessages }) => {
+        // Persist conversation messages to D1
+        try {
+          await storage.saveChat({ conversationId: conversationId!, messages: finalMessages })
+        } catch (err) {
+          console.error('Failed to persist conversation:', err)
+        }
+      },
+      // Consume a tee'd copy server-side — ensures onFinish fires even if client disconnects
+      consumeSseStream: async ({ stream }) => {
+        await consumeStream({ stream })
+      },
     })
+
+    return response
   } catch (error) {
     console.error('Chat error:', error)
     return c.json(
@@ -137,9 +120,16 @@ app.post('/complete', async (c) => {
     const modelId = requestedModel || DEFAULT_MODEL
     const modelConfig = getModel(modelId)
 
-    const { text, usage } = await streamText({
-      model: resolveModel(c.env, modelId),
+    // Prune old reasoning and tool calls to reduce context size
+    const modelMessages = pruneMessages({
       messages: await convertToModelMessages(messages),
+      reasoning: 'before-last-message',
+      toolCalls: 'before-last-message',
+    })
+
+    const { text, usage } = await generateText({
+      model: resolveModel(c.env, modelId),
+      messages: modelMessages,
       maxOutputTokens: modelConfig?.defaultMaxTokens ?? 2000,
     })
 
@@ -248,6 +238,44 @@ app.post('/extract', async (c) => {
     })
   } catch (error) {
     console.error('Extract error:', error)
+    return c.json(
+      { success: false, error: error instanceof Error ? error.message : 'Extraction failed' },
+      500
+    )
+  }
+})
+
+/**
+ * POST /api/chat/stream-extract - Streaming structured data extraction
+ *
+ * Like /extract but streams the object progressively via AI SDK streamObject.
+ * Client consumes with useObject() hook from @ai-sdk/react.
+ */
+app.post('/stream-extract', async (c) => {
+  try {
+    const body = await c.req.json()
+    const { text, schema: schemaName } = body as { text: string; schema: ExtractSchema }
+
+    if (!text || !schemaName || !extractSchemas[schemaName]) {
+      return c.json(
+        { error: 'Required: text (string) and schema (summary | entities | sentiment)' },
+        400
+      )
+    }
+
+    const modelId = '@cf/moonshotai/kimi-k2.5'
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const schema = extractSchemas[schemaName] as any
+    const result = streamObject({
+      model: resolveModel(c.env, modelId),
+      schema,
+      prompt: `Extract the following from this text:\n\n${text}`,
+    })
+
+    return result.toTextStreamResponse()
+  } catch (error) {
+    console.error('Stream extract error:', error)
     return c.json(
       { success: false, error: error instanceof Error ? error.message : 'Extraction failed' },
       500

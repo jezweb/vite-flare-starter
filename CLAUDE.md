@@ -1,7 +1,7 @@
 # CLAUDE.md - AI Developer Context
 
 **Project:** Vite Flare Starter
-**Version:** 1.0.0
+**Version:** 2.0.0
 **Purpose:** Pattern library and production-ready starter kit for Cloudflare Workers
 
 ---
@@ -23,7 +23,8 @@ VITE_FEATURE_ACTIVITY=false
 
 | Module | Pattern it teaches | Key files |
 |--------|--------------------|-----------|
-| **chat** | AI SDK streaming, tool calling, reasoning middleware, structured output, usage logging, vision | `server/modules/chat/routes.ts`, `tools.ts`, `client/modules/chat/hooks/useChat.ts` |
+| **chat** | ToolLoopAgent, tool calling, reasoning, structured output, usage logging, vision, subagents | `server/lib/ai/agent.ts`, `server/modules/chat/routes.ts`, `client/modules/chat/hooks/useChat.ts` |
+| **conversations** | Conversation persistence, ChatStorage interface (D1-backed, DO-ready), sidebar UI | `server/modules/conversations/storage.ts`, `server/modules/conversations/routes.ts` |
 | **files** | R2 file upload/download, multipart form handling, file metadata in D1 | `server/modules/files/routes.ts` |
 | **activity** | Audit logging with pagination, entity history, stats aggregation | `server/modules/activity/routes.ts` |
 | **notifications** | In-app notification service, unread counts, bulk operations | `server/modules/notifications/routes.ts` |
@@ -200,38 +201,66 @@ export function useCreateYourData() {
 
 **Reference:** `src/client/modules/settings/hooks/useSettings.ts` (apiClient + queryKeys pattern)
 
-### Pattern 4: AI Streaming Chat
+### Pattern 4: AI Streaming Chat (ToolLoopAgent)
 
 ```typescript
-// Server: streamText + tools + reasoning
-import { streamText, smoothStream, stepCountIs } from 'ai'
-import { createWorkersAI } from 'workers-ai-provider'
-import { buildModel } from '@/server/lib/ai/middleware'
+// Server: ToolLoopAgent + createAgentUIStreamResponse
+import { buildChatAgent } from '@/server/lib/ai'
+import { createAgentUIStreamResponse, smoothStream } from 'ai'
 
-const workersai = createWorkersAI({ binding: c.env.AI })
-const model = buildModel(workersai(modelId), modelId)
-
-const result = streamText({
-  model,
-  messages: await convertToModelMessages(messages),
-  tools: myTools,                                      // AI SDK tool() definitions
-  stopWhen: stepCountIs(5),                            // Multi-step agent loop
-  experimental_transform: smoothStream({ chunking: 'word' }),
-  onFinish: async ({ usage }) => { /* log to D1 */ },
+// Build agent with all tools, system prompt, logging encapsulated
+const { agent, startTime, modelId } = await buildChatAgent({
+  env, userId, user, modelId: requestedModel, systemPrompt,
 })
 
-return result.toUIMessageStreamResponse({ sendReasoning: true })
+// Stream via AI SDK's agent response pattern
+return createAgentUIStreamResponse({
+  agent,
+  uiMessages: messages,
+  experimental_transform: smoothStream({ chunking: 'word' }),
+  sendReasoning: true,
+  onFinish: async ({ messages }) => {
+    await storage.saveChat({ conversationId, messages })  // Persist conversation
+  },
+})
 ```
 
 ```typescript
 // Client: useChat hook (wrapper around @ai-sdk/react useChat)
 import { useChat } from '@/client/modules/chat/hooks/useChat'
-const { messages, sendMessage, isLoading, status, stop } = useChat({ model: '@cf/moonshotai/kimi-k2.5' })
-// isLoading = status === 'streaming' || status === 'submitted'
+const { messages, sendMessage, isLoading, conversationId, addToolApprovalResponse } = useChat({
+  model: '@cf/moonshotai/kimi-k2.5',
+  conversationId: urlConversationId,   // Load existing conversation
+})
 sendMessage({ text: 'Hello' })
 ```
 
-**Reference:** `src/server/modules/chat/routes.ts` (full implementation), `src/server/modules/chat/tools.ts` (tool definitions)
+**Reference:** `src/server/lib/ai/agent.ts` (agent factory), `src/server/modules/chat/routes.ts` (streaming endpoint)
+
+### Pattern 4b: Conversation Persistence
+
+```typescript
+// Conversations are stored in D1 (conversations + conversation_messages tables)
+import { createD1ChatStorage } from '@/server/modules/conversations/storage'
+
+const storage = createD1ChatStorage(c.env.DB)
+
+// Create
+const conversationId = await storage.createConversation(userId, { title, model })
+
+// Load
+const messages = await storage.loadChat(conversationId)
+
+// Save (append-only — only inserts new messages)
+await storage.saveChat({ conversationId, messages })
+
+// List (paginated, sorted by updatedAt)
+const conversations = await storage.listConversations(userId, { limit: 50 })
+```
+
+The `ChatStorage` interface is designed for future swap to Durable Objects (Cloudflare Agents SDK).
+
+**Reference:** `src/server/modules/conversations/storage.ts`, `src/server/modules/conversations/routes.ts`
 
 ### Pattern 5: Structured Output
 

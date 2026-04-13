@@ -58,6 +58,7 @@ function App() {
 
             {/* AI Chat */}
             <Route path="chat" element={<ChatPage />} />
+            <Route path="chat/:conversationId" element={<ChatPage />} />
             <Route path="extract" element={<ExtractPage />} />
 
             {/* Activity log */}

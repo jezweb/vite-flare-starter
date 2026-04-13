@@ -13,6 +13,7 @@ import { Bot, User, Brain, Wrench, Loader2, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { Message, MessageMetadata } from '../hooks/useChat'
 import { extractUIResources, ToolUIResource } from './ToolUIResource'
+import { ToolApproval } from './chat-ui/ToolApproval'
 import { ChatUiElement, hasUiMarker } from './chat-ui/ChatUiElement'
 import { isTakeoverElement } from './chat-ui/InputTakeover'
 import { ArtifactViewer, isArtifact } from './chat-ui/ArtifactViewer'
@@ -23,9 +24,10 @@ interface ChatMessageProps {
   isLast?: boolean
   onRegenerate?: () => void
   onSendMessage?: (text: string) => void
+  onToolApproval?: (params: { toolCallId: string; toolName: string; result: 'approve' | 'deny' }) => void
 }
 
-export const ChatMessage = memo(function ChatMessage({ message, isLast, onRegenerate, onSendMessage }: ChatMessageProps) {
+export const ChatMessage = memo(function ChatMessage({ message, isLast, onRegenerate, onSendMessage, onToolApproval }: ChatMessageProps) {
   const isUser = message.role === 'user'
   const isAssistant = message.role === 'assistant'
   const metadata = (message.metadata ?? {}) as MessageMetadata
@@ -69,6 +71,7 @@ export const ChatMessage = memo(function ChatMessage({ message, isLast, onRegene
                   const toolName = String(p['toolName'] || part.type.replace('tool-', ''))
                   const state = String(p['state'] || 'pending')
                   const output = p['output']
+                  const isApprovalRequested = state === 'approval-requested'
                   const isComplete = state === 'result' || state === 'call' || output != null
 
                   // Detect different types of rich output:
@@ -84,8 +87,17 @@ export const ChatMessage = memo(function ChatMessage({ message, isLast, onRegene
 
                   return (
                     <div key={i}>
+                      {/* Tool approval request — destructive tools that need user confirmation */}
+                      {isApprovalRequested && onToolApproval && (
+                        <ToolApproval
+                          toolName={toolName}
+                          args={(p['input'] as Record<string, unknown>) ?? {}}
+                          onApprove={() => onToolApproval({ toolCallId: String(p['toolCallId']), toolName, result: 'approve' })}
+                          onDeny={() => onToolApproval({ toolCallId: String(p['toolCallId']), toolName, result: 'deny' })}
+                        />
+                      )}
                       {/* Show tool name pill ONLY when there's no rich UI to display */}
-                      {!isUiMarker && !isTakeover && !isArtifactOutput && !isDocumentOutput && uiResources.length === 0 && (
+                      {!isApprovalRequested && !isUiMarker && !isTakeover && !isArtifactOutput && !isDocumentOutput && uiResources.length === 0 && (
                         <div className="my-1 rounded border border-border/50 bg-background/30 px-3 py-2 text-xs">
                           <div className="flex items-center gap-1.5 text-muted-foreground">
                             {isComplete ? (

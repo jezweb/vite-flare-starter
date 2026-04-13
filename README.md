@@ -1,428 +1,166 @@
 # Vite Flare Starter
 
-⚡ Production-ready authenticated starter kit for building apps on Cloudflare Workers.
+Production-ready AI agent starter kit for Cloudflare Workers. 53+ tools, skills system, conversation persistence, and full AI SDK v6 patterns.
 
 [![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/jezweb/vite-flare-starter)
 
-**[Live Demo](https://vite-flare-starter.webfonts.workers.dev)** | **[Documentation](./CLAUDE.md)**
-
----
-
-## Preview
-
-### Theme Switching
-
-Cycle through 8+ built-in color themes with instant preview.
-
-![Theme Switching Demo](./docs/assets/theme-switching.gif)
-
-### AI Chat
-
-Streaming AI chat powered by Workers AI with markdown rendering.
-
-![AI Chat Demo](./docs/assets/ai-chat-demo.gif)
-
-### Admin Panel
-
-Manage users, feature flags, and API tokens from a unified admin interface.
-
-![Admin Panel Demo](./docs/assets/admin-panel.gif)
-
-> Visit the [live demo](https://vite-flare-starter.webfonts.workers.dev) to explore the full interface.
+**[Live Demo](https://vite-flare-starter.webfonts.workers.dev)** | **[Documentation](./CLAUDE.md)** | **[Forking Guide](./FORKING.md)**
 
 ---
 
 ## What's Included
 
-- **Authentication** - better-auth with email/password + Google OAuth
-- **Admin System** - Role-based access (user/manager/admin) with ADMIN_EMAILS auto-promotion
-- **User Settings** - Profile, password, theme preferences
-- **Dashboard Layout** - Responsive sidebar navigation
-- **UI Components** - Full shadcn/ui component library
-- **Component Showcase** - Reference page for all available components
-- **Theme System** - Dark/light/system mode support
-- **API Structure** - Hono backend with auth middleware
-- **Database** - Cloudflare D1 with Drizzle ORM
-- **Activity Logging** - Audit trail for user actions with entity tracking
-- **Feature Flags** - DB-backed feature toggles with admin API
-- **Notifications** - In-app notification system with persistence
-- **AI Chat** - Streaming AI chat with multi-provider support via AI Gateway
-- **CSV Export** - Utility for data exports with timezone support
-- **API Token Scopes** - Granular permissions for API tokens
+### AI Agent Layer
+- **ToolLoopAgent** pattern (AI SDK v6) with `createAgentUIStreamResponse`
+- **53+ tools** across 15 modules: browser, search, memory, files, code execution, UI, audio, scheduling, delegation
+- **Skills system** (Claude Agent Skills compatible) with bundled + R2 + GitHub sources
+- **Conversation persistence** with D1 storage and conversation sidebar
+- **Subagent delegation** with role-based tool assignment (researchers get search, coders get code tools)
+- **Human-in-the-loop** via `needsApproval` on destructive tools
+- **Token budget tracking** via `prepareStep` loop control
+- **Multi-provider** AI via factory pattern (Workers AI, Anthropic, OpenAI, Google, OpenRouter)
+- **MCP integration** (full spec: tools, resources, prompts, elicitation) + MCP-UI rendering
+
+### Application Framework
+- **Authentication** — better-auth with Google OAuth (email/password optional)
+- **Admin system** — role-based access (user/manager/admin) with ADMIN_EMAILS auto-promotion
+- **Config-driven sidebar** — add nav items in `nav.ts`, feature-flag modules via `features.ts`
+- **UI library** — Tailwind v4 + shadcn/ui, 8+ themes, dark/light/system mode
+- **Command palette** — Cmd+K search/navigation, keyboard shortcuts
+- **File management** — R2 upload/download with metadata in D1
+- **Activity logging** — audit trail with pagination and entity history
+- **Notifications** — in-app notifications with unread counts
+- **API tokens** — SHA-256 hashed, scope-based access control
+- **Feature flags** — DB-backed toggles with admin API
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|------------|
-| Platform | Cloudflare Workers with Static Assets |
-| Frontend | React 19 + Vite |
-| Backend | Hono |
-| Database | D1 (SQLite) + Drizzle ORM |
-| Auth | better-auth |
-| AI | AI Gateway (Workers AI, OpenAI, Anthropic, etc.) |
-| UI | Tailwind v4 + shadcn/ui |
-| Data Fetching | TanStack Query |
-| Forms | React Hook Form + Zod |
+| **Platform** | Cloudflare Workers with Static Assets |
+| **Frontend** | React 19 + Vite 7 |
+| **Backend** | Hono 4.12 |
+| **Database** | D1 (SQLite) + Drizzle ORM 0.45 |
+| **Auth** | better-auth 1.6 (Google OAuth, optional email/password) |
+| **AI** | AI SDK v6 + workers-ai-provider (16 Workers AI models) |
+| **UI** | Tailwind v4 + shadcn/ui |
+| **Data Fetching** | TanStack Query 5 + apiClient |
+| **Forms** | React Hook Form + Zod |
+| **Testing** | Vitest 4 + @cloudflare/vitest-pool-workers |
 
 ## Quick Start
 
-### 1. Clone and Install
-
 ```bash
+# Clone and install
 git clone https://github.com/jezweb/vite-flare-starter.git my-app
 cd my-app
 pnpm install
-```
 
-### 2. Create Cloudflare Resources
-
-```bash
-# Login to Cloudflare
+# Create Cloudflare resources
 pnpm cf:login
+npx wrangler d1 create my-app-db       # Copy database_id to wrangler.jsonc
+npx wrangler r2 bucket create my-app-avatars
 
-# Create D1 database
-npx wrangler d1 create vite-flare-starter-db
-# Copy the database_id to wrangler.jsonc
-
-# Create R2 bucket for avatars
-npx wrangler r2 bucket create vite-flare-starter-avatars
-```
-
-### 3. Configure Environment
-
-```bash
-# Copy example env file
+# Configure
 cp .dev.vars.example .dev.vars
+# Edit .dev.vars: BETTER_AUTH_SECRET, BETTER_AUTH_URL, Google OAuth creds
 
-# Edit .dev.vars with your values:
-# - BETTER_AUTH_SECRET (generate with: openssl rand -hex 32)
-# - BETTER_AUTH_URL (http://localhost:5173 for local)
-# - Optional: Google OAuth credentials
-```
-
-### 4. Generate and Apply Migrations
-
-```bash
-# Generate migration from schema
-pnpm db:generate:named "initial_schema"
-
-# Apply migration locally
+# Database
 pnpm db:migrate:local
-```
 
-### 5. Start Development
-
-```bash
+# Run
 pnpm dev
-# Open http://localhost:5173
 ```
 
-### 6. Deploy to Production
+## Agent Toolkit
 
-```bash
-# Apply migration to remote database
-pnpm db:migrate:remote
+Tools are in `src/server/modules/chat/tools/` and auto-included based on available env bindings.
 
-# Set production secrets
-echo "your-secret" | npx wrangler secret put BETTER_AUTH_SECRET
-echo "https://your-app.workers.dev" | npx wrangler secret put BETTER_AUTH_URL
+| Module | Tools | Requires |
+|--------|-------|----------|
+| **core** | `get_server_time`, `get_model_info`, `calculate` | Always |
+| **memory** | `remember`, `recall`, `search_memory`, `forget` | Always |
+| **ui** | 12 inline UI components (choices, alerts, forms, tables, timelines...) | Always |
+| **skills** | `load_skill`, `create_skill`, `install_skill`, `toggle_skill` | Always |
+| **code** | `run_python`, `run_shell`, `run_js` | SANDBOX binding |
+| **delegate** | `delegate` (ToolLoopAgent subagent with role-based tools) | Always |
+| **audio** | `transcribe_audio`, `speak_text` | Always |
+| **todo** | `todo_add`, `todo_update`, `todo_list`, `todo_clear` | Always |
+| **schedule** | `schedule_task`, `list_tasks`, `cancel_task` | Always |
+| **session** | `session_stats`, `search_memories`, `list_all_memories` | Always |
+| **browser** | `browser_markdown`, `browser_extract`, `browser_screenshot`, `browser_links`, `browser_content` | CF API token |
+| **search** | `web_search` | Search provider key |
+| **files** | `fs_list`, `fs_read`, `fs_write`, `fs_delete` | FILES R2 bucket |
+| **artifacts** | `create_artifact`, `edit_artifact` | Always |
+| **documents** | `generate_docx`, `generate_csv` | Always |
 
-# Deploy
-pnpm deploy
-```
+## Skills System
 
-### Production Checklist
-
-Before deploying to a new domain, ensure:
-
-1. **Set `TRUSTED_ORIGINS`** to include your production domain(s):
-   ```bash
-   echo "http://localhost:5173,https://your-app.workers.dev" | npx wrangler secret put TRUSTED_ORIGINS
-   ```
-
-2. **Set `BETTER_AUTH_URL` secret** to your exact production URL:
-   ```bash
-   echo "https://your-app.workers.dev" | npx wrangler secret put BETTER_AUTH_URL
-   ```
-
-3. **For Google OAuth**, add redirect URI in Google Cloud Console:
-   ```
-   https://your-app.workers.dev/api/auth/callback/google
-   ```
-
-**Common issues:**
-- Auth works but redirects to homepage → Check `TRUSTED_ORIGINS` includes your domain
-- OAuth callback fails → Check `BETTER_AUTH_URL` matches your domain exactly
-- Google sign-in fails → Check redirect URI is registered in Google Cloud Console
-
-## Project Structure
+Claude Agent Skills compatible (SKILL.md format). 14 bundled skills covering research, writing, documents, workflows, and self-management.
 
 ```
-vite-flare-starter/
-├── src/
-│   ├── client/              # Frontend (React SPA)
-│   │   ├── components/ui/   # shadcn/ui components
-│   │   ├── layouts/         # DashboardLayout
-│   │   ├── modules/
-│   │   │   ├── auth/        # Sign-in/sign-up pages
-│   │   │   └── settings/    # User settings module
-│   │   ├── pages/           # Route pages
-│   │   └── lib/             # Utilities
-│   ├── server/              # Backend (Hono API)
-│   │   ├── modules/
-│   │   │   ├── auth/        # Auth configuration
-│   │   │   ├── settings/    # Settings routes
-│   │   │   ├── api-tokens/  # API token management
-│   │   │   ├── activity/    # Activity logging
-│   │   │   ├── feature-flags/# DB-backed feature flags
-│   │   │   ├── notifications/# In-app notifications
-│   │   │   └── chat/        # AI chat with streaming
-│   │   ├── lib/             # Utilities (logger, csv, ai)
-│   │   ├── middleware/      # Auth + admin middleware
-│   │   └── db/schema.ts     # Central schema exports
-│   └── shared/              # Shared code (Zod schemas)
-├── drizzle/                 # Database migrations
-├── wrangler.jsonc           # Cloudflare Workers config
-└── vite.config.ts           # Vite build config
+skills/
+  web-research/SKILL.md
+  draft-email/SKILL.md
+  code-review/SKILL.md
+  ...
 ```
 
-## Adding a New Module
+Skills from R2 or GitHub can be installed at runtime via the `install_skill` tool or REST API.
 
-1. **Create Backend** - Add routes in `src/server/modules/your-module/`
-2. **Create Schema** - Add Drizzle table in `src/server/modules/your-module/db/schema.ts`
-3. **Export Schema** - Add export to `src/server/db/schema.ts`
-4. **Generate Migration** - Run `pnpm db:generate:named "add_your_table"`
-5. **Register Routes** - Mount in `src/server/index.ts`
-6. **Create Frontend** - Add pages/hooks/components in `src/client/modules/your-module/`
-7. **Add Route** - Update `src/client/App.tsx`
+## Conversation Persistence
 
-## Configuration
+Chats are persisted to D1 via a `ChatStorage` interface (designed for future swap to Durable Objects).
 
-### Admin Users
+- Conversation sidebar with create/delete/rename
+- URL-based routing (`/dashboard/chat/:conversationId`)
+- Auto-title from first user message
+- Messages saved on stream completion via `onFinish`
 
-Grant admin access to specific users via environment variable:
+## Multi-Provider AI
 
-```bash
-# .dev.vars (local)
-ADMIN_EMAILS=admin@example.com,jeremy@jezweb.net
-
-# Production
-echo "admin@example.com,jeremy@jezweb.net" | npx wrangler secret put ADMIN_EMAILS
-```
-
-Users matching these emails are automatically promoted to admin role on their next API request. Admins can access:
-- Feature flag management (`/api/admin/feature-flags/*`)
-- Admin health check (`/api/health/admin`)
-
-### Disable Email Signup
-
-Set `DISABLE_EMAIL_SIGNUP=true` to prevent new email/password registrations:
-
-```bash
-# .dev.vars (local)
-DISABLE_EMAIL_SIGNUP=true
-
-# Production
-echo "true" | npx wrangler secret put DISABLE_EMAIL_SIGNUP
-```
-
-**Note:** This only affects email/password signup:
-- Existing email users can still log in
-- Google OAuth is NOT affected (domain restriction is handled at Google Cloud level)
-
-### Google OAuth
-
-1. Create OAuth credentials at [Google Cloud Console](https://console.cloud.google.com)
-2. Set authorized redirect URI: `https://your-app.workers.dev/api/auth/callback/google`
-3. Add credentials to `.dev.vars` and production secrets
-
-**Domain Restriction:** To allow only your Google Workspace domain:
-- Go to OAuth consent screen → Set "User type" to **Internal**
-- Only users from your domain can sign in (e.g., @yourcompany.com)
-
-### Custom Themes
-
-The starter includes 8 built-in color themes plus support for custom themes.
-
-**Using Theme Generators:**
-1. Visit a theme generator:
-   - [tweakcn](https://tweakcn.com/) - Modern editor with OKLch support
-   - [shadcn/ui Themes](https://ui.shadcn.com/themes) - Official hand-picked themes
-   - [10000+ Themes](https://ui.jln.dev/) - Browse community themes
-2. Copy the generated CSS
-3. Go to Settings → Color Theme → Custom
-4. Paste the CSS and click "Apply Theme"
-
-**Using Claude Code:**
-
-Ask Claude Code to generate a theme based on your brand:
-
-```
-Create a custom theme for my app using brand colors:
-- Primary: #2563eb (blue)
-- Make it professional and clean
-```
-
-Claude will generate the CSS variables which you can paste into the Custom Theme dialog.
-
-**Theme CSS Format:**
-```css
-:root {
-  --background: 0 0% 100%;
-  --foreground: 240 10% 3.9%;
-  --primary: 220 90% 56%;
-  /* ... other variables */
-}
-
-.dark {
-  --background: 240 10% 3.9%;
-  /* ... dark mode variables */
-}
-```
-
-### App Branding
-
-Customize the app name displayed in the sidebar:
-
-```bash
-# .dev.vars (local)
-VITE_APP_NAME=My Client App
-
-# Production (in wrangler.jsonc vars or secrets)
-```
-
-### Default Theme
-
-Set the default color theme for new users:
-
-```bash
-# .dev.vars (local)
-VITE_DEFAULT_THEME=blue   # Options: default, blue, green, orange, red, rose, violet, yellow
-```
-
-Or edit `src/shared/schemas/preferences.schema.ts` directly for additional control.
-
-### Lock Theme for Client Sites
-
-To prevent users from changing the color theme (useful for branded client sites):
-
-```bash
-# .dev.vars (local)
-VITE_FEATURE_THEME_PICKER=false
-```
-
-**Note:** Users can still switch between light/dark/system mode - only the color theme picker is hidden.
-
-### Hide API Tokens
-
-To hide the API Tokens tab from regular users (power user feature):
-
-```bash
-# .dev.vars (local)
-VITE_FEATURE_API_TOKENS=false
-```
-
-### Trusted Origins (Auth)
-
-Configure allowed origins for authentication (required for production):
-
-```bash
-# .dev.vars (local) - comma-separated list
-TRUSTED_ORIGINS=http://localhost:5173,https://myapp.workers.dev,https://myapp.com
-```
-
-**Note:** `http://localhost:5173` is always included automatically for development.
-
-## Security Features
-
-### Rate Limiting
-
-Sensitive endpoints are rate-limited to prevent abuse:
-
-| Endpoint | Limit | Window |
-|----------|-------|--------|
-| Password change | 3 | 24 hours |
-| Email change | 5 | 24 hours |
-| Account deletion | 1 | 24 hours |
-| Avatar upload | 10 | 1 hour |
-| API token creation | 10 | 24 hours |
-
-Rate limit constants can be configured in `src/shared/config/constants.ts`.
-
-**Note:** Rate limiting uses in-memory storage per worker instance. For distributed rate limiting across workers, consider upgrading to KV storage.
-
-### Security Headers
-
-All responses include security headers:
-- `X-Content-Type-Options: nosniff`
-- `X-Frame-Options: DENY`
-- `Referrer-Policy: strict-origin-when-cross-origin`
-- `Permissions-Policy: camera=(), microphone=(), geolocation=()`
-- HSTS in production
-
-## Password Reset
-
-Users can reset their password via email. Requires email configuration:
-
-```bash
-# .dev.vars
-EMAIL_API_KEY=re_xxxxx          # Resend API key
-EMAIL_FROM=noreply@yourdomain.com
-```
-
-The flow:
-1. User visits `/forgot-password`
-2. Enter email → reset link sent
-3. Click link → `/reset-password?token=xxx`
-4. Set new password → redirect to sign-in
-
-## Session Management
-
-Users can view and revoke active sessions at Settings → Sessions:
-
-- View all logged-in devices/browsers
-- See IP address and last active time
-- Revoke individual sessions
-- "Log out everywhere" to revoke all other sessions
-
-## Development
-
-### Testing
-
-Run tests with Vitest:
-
-```bash
-pnpm test           # Run tests once
-pnpm test:watch     # Watch mode
-```
-
-Tests use `@cloudflare/vitest-pool-workers` to run against Miniflare for realistic D1/R2 simulation.
-
-### Database Seeding
-
-Populate development data:
-
-```bash
-pnpm db:seed
-```
-
-Creates test users:
-- `test@example.com` / `password123`
-- `admin@example.com` / `admin12345`
-
-Plus sample API tokens and organization settings.
-
-### API Client
-
-A centralized API client is available at `src/client/lib/api-client.ts`:
+Pass any model string to `resolveModel()` — the factory picks the right provider:
 
 ```typescript
-import { apiClient } from '@/client/lib/api-client'
-
-// Type-safe requests with automatic credentials
-const data = await apiClient.get<User>('/api/user')
-const result = await apiClient.post<Result>('/api/items', { name: 'New Item' })
+resolveModel(env, '@cf/moonshotai/kimi-k2.5')      // Workers AI (free)
+resolveModel(env, 'claude-sonnet-4-6')               // Anthropic
+resolveModel(env, 'gpt-4o')                          // OpenAI
+resolveModel(env, 'gemini-2.5-pro')                  // Google
+resolveModel(env, 'openrouter/anthropic/claude-...')  // OpenRouter
 ```
+
+16 curated Workers AI models ship with the starter. Set provider API keys as env vars to unlock external models.
+
+## Deployment
+
+```bash
+# Set secrets
+printf "secret" | npx wrangler secret put BETTER_AUTH_SECRET
+printf "https://your-app.workers.dev" | npx wrangler secret put BETTER_AUTH_URL
+printf "http://localhost:5173,https://your-app.workers.dev" | npx wrangler secret put TRUSTED_ORIGINS
+
+# Apply migrations + deploy
+pnpm db:migrate:remote
+npx wrangler deploy
+```
+
+## Commands
+
+```bash
+pnpm dev                    # Start development server
+pnpm build                  # Build for production
+npx wrangler deploy         # Deploy to Cloudflare
+pnpm db:generate:named "x"  # Generate migration
+pnpm db:migrate:local       # Apply migrations locally
+pnpm db:migrate:remote      # Apply migrations to production
+pnpm test                   # Run tests
+pnpm type-check             # TypeScript check
+```
+
+## Documentation
+
+- **[CLAUDE.md](./CLAUDE.md)** — Full developer context: patterns, architecture, how to build features
+- **[FORKING.md](./FORKING.md)** — Step-by-step guide for forking and customising
 
 ## License
 

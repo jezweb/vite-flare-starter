@@ -1,0 +1,27 @@
+import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core'
+import { user } from '@/server/modules/auth/db/schema'
+
+export const conversations = sqliteTable('conversations', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  title: text('title'),
+  model: text('model'),
+  systemPrompt: text('system_prompt'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+}, (table) => [
+  index('conversations_user_id_idx').on(table.userId),
+  index('conversations_updated_at_idx').on(table.updatedAt),
+])
+
+export const conversationMessages = sqliteTable('conversation_messages', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  conversationId: text('conversation_id').notNull().references(() => conversations.id, { onDelete: 'cascade' }),
+  role: text('role').notNull(),
+  parts: text('parts').notNull(), // JSON blob of UIMessage parts
+  metadata: text('metadata'), // JSON blob of message metadata
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+}, (table) => [
+  index('conversation_messages_conversation_id_idx').on(table.conversationId),
+  index('conversation_messages_created_at_idx').on(table.createdAt),
+])

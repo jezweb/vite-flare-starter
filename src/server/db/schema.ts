@@ -37,3 +37,6 @@ export { skills } from '@/server/modules/skills/db/schema'
 
 // Scheduled jobs (cron-triggered AI tasks)
 export { scheduledJobs } from '@/server/modules/chat/tools/schedule'
+
+// Conversations (chat persistence)
+export { conversations, conversationMessages } from '@/server/modules/conversations/db/schema'

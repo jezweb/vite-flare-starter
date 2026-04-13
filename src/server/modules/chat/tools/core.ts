@@ -64,4 +64,17 @@ export const coreTools = {
       }
     },
   }),
+
+  /**
+   * Done tool — signals structured task completion.
+   * No execute function — calling this stops the agent loop.
+   * The answer is accessible via result.staticToolCalls[0].
+   * Use with hasToolCall('done') as a stop condition.
+   */
+  done: tool({
+    description: 'Signal that you have completed the current task. Use when you have a final answer and no more tool calls are needed. Put your complete answer in the answer field.',
+    inputSchema: z.object({
+      answer: z.string().describe('Your final, complete answer to the user\'s request'),
+    }),
+  }),
 }

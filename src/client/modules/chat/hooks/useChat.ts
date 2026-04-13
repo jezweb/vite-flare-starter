@@ -2,48 +2,78 @@
  * useChat Hook
  *
  * Wraps AI SDK's useChat for streaming chat with Workers AI.
- * Handles model selection, metadata, and regeneration.
+ * Features: conversation persistence, bandwidth-optimised transport,
+ * client-side tool execution, typed metadata, tool approval flow.
  */
 import { useChat as useAIChat } from '@ai-sdk/react'
-import { DefaultChatTransport } from 'ai'
+import { DefaultChatTransport, type UIMessage } from 'ai'
+import { messageMetadataSchema, type MessageMetadata } from '@/shared/schemas/chat.schema'
 
-export type { UIMessage as Message } from 'ai'
-
-/** Metadata attached to assistant messages by the server */
-export interface MessageMetadata {
-  model?: string
-  inputTokens?: number
-  outputTokens?: number
-  durationMs?: number
-}
+export type Message = UIMessage
+export type { MessageMetadata }
 
 interface ChatOptions {
   model?: string
   systemPrompt?: string
+  conversationId?: string
+  initialMessages?: Message[]
+  /** Client-side tool handlers — execute tools in the browser without server round-trip */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onToolCall?: (params: { toolCall: any }) => void | Promise<void>
 }
 
 export function useChat(options: ChatOptions = {}) {
-  const { model, systemPrompt } = options
+  const { model, systemPrompt, conversationId, initialMessages, onToolCall } = options
 
   const chat = useAIChat({
+    messages: initialMessages,
+    messageMetadataSchema,
     transport: new DefaultChatTransport({
       api: '/api/chat',
-      body: { model, systemPrompt },
+      body: { model, systemPrompt, conversationId },
       credentials: 'include',
+      // Bandwidth optimisation: send only the latest message, server loads history from DB
+      prepareSendMessagesRequest({ messages: msgs, id }) {
+        return {
+          body: {
+            message: msgs[msgs.length - 1],
+            allMessages: msgs, // Full history as fallback for new conversations
+            id,
+            model,
+            systemPrompt,
+            conversationId,
+          },
+        }
+      },
     }),
+    onToolCall,
     onError: (error: Error) => {
       console.error('Chat error:', error)
     },
   })
+
+  // Extract conversationId from the latest assistant message metadata
+  const latestConversationId = (() => {
+    for (let i = chat.messages.length - 1; i >= 0; i--) {
+      const msg = chat.messages[i]
+      if (msg?.role === 'assistant') {
+        const meta = (msg as unknown as Record<string, unknown>)['metadata'] as MessageMetadata | undefined
+        if (meta?.conversationId) return meta.conversationId
+      }
+    }
+    return conversationId
+  })()
 
   return {
     messages: chat.messages,
     isLoading: chat.status === 'streaming' || chat.status === 'submitted',
     error: chat.error?.message ?? null,
     status: chat.status,
+    conversationId: latestConversationId,
     sendMessage: chat.sendMessage,
     stop: chat.stop,
     clearMessages: () => chat.setMessages([]),
     setMessages: chat.setMessages,
+    addToolApprovalResponse: chat.addToolApprovalResponse,
   }
 }

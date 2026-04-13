@@ -19,6 +19,7 @@ import adminRoutes from './modules/admin/routes'
 import webhookRoutes from './modules/webhooks/routes'
 import userMetaRoutes from './modules/user-meta/routes'
 import skillsRoutes from './modules/skills/routes'
+import conversationsRoutes from './modules/conversations/routes'
 import { securityHeaders } from './middleware/security'
 import { rateLimiter } from './middleware/rate-limit'
 import { authMiddleware, requireScopes } from './middleware/auth'
@@ -226,6 +227,7 @@ app.route('/api/files', filesRoutes)
 app.route('/api/webhooks', webhookRoutes)
 app.route('/api/user-meta', userMetaRoutes)
 app.route('/api/skills', skillsRoutes)
+app.route('/api/conversations', conversationsRoutes)
 
 // =============================================================================
 // AI TEST ENDPOINT

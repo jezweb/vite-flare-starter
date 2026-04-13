@@ -15,11 +15,14 @@
  * const result = streamText({ model, messages })
  */
 
-// Provider factory — the main entry point
-export { resolveModel, getAvailableProviders } from './providers'
+// Provider registry + factory
+export { resolveModel, getAvailableProviders, buildRegistry } from './providers'
 
 // Model middleware (reasoning extraction, etc.)
 export { buildModel } from './middleware'
+
+// Chat agent factory (ToolLoopAgent-based)
+export { buildChatAgent } from './agent'
 
 // Context builder (system prompt assembly)
 export { buildSystemPrompt } from './context'
@@ -27,6 +30,9 @@ export { buildSystemPrompt } from './context'
 // MCP client integration (full spec: tools, resources, prompts, elicitation)
 export { createMCPManager, getMCPTools } from './mcp'
 export type { MCPServerConfig, MCPManager } from './mcp'
+
+// Embeddings (semantic search, RAG)
+export { embedText, embedBatch, findSimilar, cosineSimilarity } from './embeddings'
 
 // Document conversion (PDF, images, text → markdown)
 export { convertToMarkdown, isConvertible } from './documents'

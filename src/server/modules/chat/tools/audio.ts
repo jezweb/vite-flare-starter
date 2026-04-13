@@ -1,17 +1,19 @@
 /**
- * Audio Tools — Speech-to-Text and Text-to-Speech via Workers AI
+ * Audio Tools — Speech-to-Text and Text-to-Speech via AI SDK
  *
- * Uses Cloudflare's Deepgram bindings — no external API keys needed.
- * - STT: Deepgram Nova 3 (auto language detection)
- * - TTS: Deepgram Aura 2 (12 voice options) with Aura 1 fallback
+ * Uses AI SDK's unified audio functions with Workers AI provider.
+ * - STT: Workers AI Deepgram Nova 3 (auto language detection)
+ * - TTS: Workers AI Deepgram Aura 2 (12 voice options)
  *
- * @see https://developers.cloudflare.com/workers-ai/models/
+ * Falls back to OpenAI Whisper/TTS if configured and Workers AI fails.
  */
-import { tool } from 'ai'
+import { tool, experimental_generateSpeech as generateSpeech, experimental_transcribe as transcribe } from 'ai'
 import { z } from 'zod'
+import { createWorkersAI } from 'workers-ai-provider'
 
 interface AudioEnv {
   AI: Ai
+  OPENAI_API_KEY?: string
 }
 
 interface AudioContext {
@@ -24,20 +26,22 @@ const SPEAKERS = [
 ] as const
 
 export function buildAudioTools(ctx: AudioContext) {
+  const workersai = createWorkersAI({ binding: ctx.env.AI })
+
   return {
     transcribe_audio: tool({
-      description: 'Convert audio to text (speech-to-text). Use when the user provides an audio recording or wants you to listen to something. Auto-detects language. Pass audio as a base64 data URL.',
+      description: 'Convert audio to text (speech-to-text). Use when the user provides an audio recording or wants you to listen to something. Pass audio as a base64 data URL.',
       inputSchema: z.object({
         audioDataUrl: z.string().describe('Audio file as data URL (data:audio/webm;base64,...). Max 10MB.'),
       }),
       execute: async ({ audioDataUrl }) => {
         try {
-          // Parse data URL
+          // Parse data URL to Uint8Array
           const match = audioDataUrl.match(/^data:([^;]+);base64,(.+)$/)
           if (!match) {
             return { error: 'Invalid audio data URL. Expected format: data:audio/<type>;base64,<content>' }
           }
-          const [, contentType = 'audio/webm', base64 = ''] = match
+          const [, , base64 = ''] = match
           const binary = atob(base64)
           const bytes = new Uint8Array(binary.length)
           for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
@@ -46,90 +50,84 @@ export function buildAudioTools(ctx: AudioContext) {
             return { error: 'Audio too large (max 10MB)' }
           }
 
-          // Stream the audio to Workers AI Deepgram model
-          const stream = new ReadableStream({
-            start(controller) {
-              controller.enqueue(bytes)
-              controller.close()
-            },
+          // Use AI SDK transcribe with Workers AI Deepgram
+          const result = await transcribe({
+            model: workersai.transcription('@cf/deepgram/nova-3'),
+            audio: bytes,
           })
 
-          const resp = await ctx.env.AI.run(
-            '@cf/deepgram/nova-3' as Parameters<Ai['run']>[0],
-            {
-              audio: { body: stream, contentType },
-              detect_language: true,
-            } as never,
-            { returnRawResponse: true },
-          ) as unknown as Response
-
-          const data = await resp.json() as {
-            results?: { channels?: Array<{ alternatives?: Array<{ transcript?: string; confidence?: number }> }> }
-            metadata?: { detected_language?: string }
-          }
-
-          const transcript = data?.results?.channels?.[0]?.alternatives?.[0]?.transcript || ''
-          const confidence = data?.results?.channels?.[0]?.alternatives?.[0]?.confidence
-          const language = data?.metadata?.detected_language || 'en'
-
-          return { text: transcript, language, confidence }
+          return { text: result.text, segments: result.segments?.length ?? 0 }
         } catch (error) {
+          // Fallback to OpenAI Whisper if Workers AI fails and OpenAI is configured
+          if (ctx.env.OPENAI_API_KEY) {
+            try {
+              const { createOpenAI } = await import('@ai-sdk/openai')
+              const openai = createOpenAI({ apiKey: ctx.env.OPENAI_API_KEY })
+              const match = audioDataUrl.match(/^data:([^;]+);base64,(.+)$/)
+              const binary = atob(match?.[2] ?? '')
+              const bytes = new Uint8Array(binary.length)
+              for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+
+              const result = await transcribe({
+                model: openai.transcription('whisper-1'),
+                audio: bytes,
+              })
+              return { text: result.text, provider: 'openai-fallback' }
+            } catch {
+              // Both failed
+            }
+          }
           return { error: error instanceof Error ? error.message : String(error) }
         }
       },
     }),
 
     speak_text: tool({
-      description: 'Convert text to speech audio (text-to-speech). Returns an audio data URL the user can play. Use when the user asks you to read something aloud or speak a message. Choose a speaker voice that fits the content.',
+      description: 'Convert text to speech audio (text-to-speech). Returns an audio data URL the user can play. Choose a speaker voice that fits the content.',
       inputSchema: z.object({
         text: z.string().max(2000).describe('Text to convert to speech (max 2000 chars)'),
-        speaker: z.enum(SPEAKERS).optional().describe('Voice: luna (default, neutral female), orion (male), athena (warm female), zeus (deep male), and others'),
+        speaker: z.enum(SPEAKERS).optional().describe('Voice: luna (default, neutral female), orion (male), athena (warm female), zeus (deep male)'),
       }),
       execute: async ({ text, speaker = 'luna' }) => {
         try {
-          let result: unknown
-          try {
-            // Try Aura 2 first
-            result = await ctx.env.AI.run(
-              '@cf/deepgram/aura-2-en' as Parameters<Ai['run']>[0],
-              { text, speaker } as never,
-            )
-          } catch {
-            // Fallback to Aura 1
-            result = await ctx.env.AI.run(
-              '@cf/deepgram/aura-1' as Parameters<Ai['run']>[0],
-              { text, speaker } as never,
-            )
-          }
+          // Use AI SDK generateSpeech with Workers AI Deepgram
+          const result = await generateSpeech({
+            model: workersai.speech('@cf/deepgram/aura-2-en'),
+            text,
+            voice: speaker,
+          })
 
-          // Result is a ReadableStream of MP3 audio
-          const stream = result as ReadableStream<Uint8Array>
-          const reader = stream.getReader()
-          const chunks: Uint8Array[] = []
-          let total = 0
-          // eslint-disable-next-line no-constant-condition
-          while (true) {
-            const { done, value } = await reader.read()
-            if (done) break
-            if (value) {
-              chunks.push(value)
-              total += value.length
-            }
-          }
-          const audio = new Uint8Array(total)
-          let offset = 0
-          for (const chunk of chunks) {
-            audio.set(chunk, offset)
-            offset += chunk.length
-          }
-          const base64 = btoa(String.fromCharCode(...audio))
+          const base64 = result.audio.base64
           return {
             audioDataUrl: `data:audio/mpeg;base64,${base64}`,
             speaker,
-            sizeBytes: audio.length,
+            sizeBytes: result.audio.uint8Array.length,
             characters: text.length,
           }
         } catch (error) {
+          // Fallback to OpenAI TTS if configured
+          if (ctx.env.OPENAI_API_KEY) {
+            try {
+              const { createOpenAI } = await import('@ai-sdk/openai')
+              const openai = createOpenAI({ apiKey: ctx.env.OPENAI_API_KEY })
+
+              const result = await generateSpeech({
+                model: openai.speech('tts-1'),
+                text,
+                voice: 'alloy',
+              })
+              const base64 = result.audio.base64
+              return {
+                audioDataUrl: `data:audio/mpeg;base64,${base64}`,
+                speaker: 'alloy',
+                provider: 'openai-fallback',
+                sizeBytes: result.audio.uint8Array.length,
+                characters: text.length,
+              }
+            } catch {
+              // Both failed
+            }
+          }
           return { error: error instanceof Error ? error.message : String(error) }
         }
       },

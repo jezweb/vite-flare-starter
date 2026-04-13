@@ -5,29 +5,51 @@
  * tool calling, inline UI, and input takeover (claude.ai-style).
  */
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
-import { Trash2, MessageSquare } from 'lucide-react'
+import { Trash2, MessageSquare, PanelLeftClose, PanelLeft } from 'lucide-react'
 import { ChatMessage, ChatInput, ModelSelector } from '../components'
-import { useChat } from '../hooks/useChat'
+import { useChat, type Message } from '../hooks/useChat'
+import { useConversationMessages } from '../hooks/useConversations'
+import { ConversationSidebar } from '../components/ConversationSidebar'
 import { DEFAULT_MODEL, MODEL_REGISTRY } from '@/server/lib/ai/models'
 import { InputTakeover, isTakeoverElement } from '../components/chat-ui/InputTakeover'
 import { hasUiMarker } from '../components/chat-ui/ChatUiElement'
 
 export function ChatPage() {
+  const { conversationId: urlConversationId } = useParams<{ conversationId?: string }>()
+  const navigate = useNavigate()
   const [model, setModel] = useState<string>(DEFAULT_MODEL)
+  const [showSidebar, setShowSidebar] = useState(true)
   const modelConfig = MODEL_REGISTRY[model as keyof typeof MODEL_REGISTRY]
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  // Load existing conversation messages if URL has an ID
+  const { data: existingConversation } = useConversationMessages(urlConversationId)
 
   const {
     messages,
     isLoading,
     error,
+    conversationId,
     sendMessage,
     stop,
     clearMessages,
     setMessages,
-  } = useChat({ model })
+    addToolApprovalResponse,
+  } = useChat({
+    model,
+    conversationId: urlConversationId,
+    initialMessages: existingConversation?.messages as Message[] | undefined,
+  })
+
+  // Navigate to conversation URL when a new conversation is created
+  useEffect(() => {
+    if (conversationId && !urlConversationId && messages.length > 0) {
+      navigate(`/dashboard/chat/${conversationId}`, { replace: true })
+    }
+  }, [conversationId, urlConversationId, messages.length, navigate])
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -118,33 +140,56 @@ export function ChatPage() {
     setActiveTakeover(null)
   }, [])
 
+  const handleToolApproval = useCallback(({ toolCallId, result }: { toolCallId: string; toolName: string; result: 'approve' | 'deny' }) => {
+    addToolApprovalResponse({ id: toolCallId, approved: result === 'approve' })
+  }, [addToolApprovalResponse])
+
   return (
-    <div className="flex h-[calc(100vh-8rem)] flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b px-4 py-3">
-        <div className="flex items-center gap-3">
-          <MessageSquare className="size-5 text-muted-foreground" />
-          <h1 className="text-lg font-semibold">AI Chat</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <ModelSelector
-            value={model}
-            onChange={setModel}
-            disabled={isLoading}
-          />
-          {messages.length > 0 && (
+    <div className="flex h-[calc(100vh-8rem)]">
+      {/* Conversation Sidebar */}
+      {showSidebar && (
+        <ConversationSidebar activeConversationId={urlConversationId} />
+      )}
+
+      {/* Chat Area */}
+      <div className="flex flex-1 flex-col min-w-0">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b px-4 py-3">
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="icon"
-              onClick={clearMessages}
-              disabled={isLoading}
-              title="Clear chat"
+              className="size-7"
+              onClick={() => setShowSidebar(!showSidebar)}
+              title={showSidebar ? 'Hide sidebar' : 'Show sidebar'}
             >
-              <Trash2 className="size-4" />
+              {showSidebar ? <PanelLeftClose className="size-4" /> : <PanelLeft className="size-4" />}
             </Button>
-          )}
+            <MessageSquare className="size-5 text-muted-foreground" />
+            <h1 className="text-lg font-semibold">AI Chat</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <ModelSelector
+              value={model}
+              onChange={setModel}
+              disabled={isLoading}
+            />
+            {messages.length > 0 && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  clearMessages()
+                  navigate('/dashboard/chat')
+                }}
+                disabled={isLoading}
+                title="New chat"
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
 
       {/* Messages */}
       <ScrollArea className="flex-1" ref={scrollRef}>
@@ -168,6 +213,7 @@ export function ChatPage() {
                 isLast={idx === lastAssistantMsgIdx && !isLoading}
                 onRegenerate={handleRegenerate}
                 onSendMessage={(text) => sendMessage({ text })}
+                onToolApproval={handleToolApproval}
               />
             ))}
           </div>
@@ -197,6 +243,7 @@ export function ChatPage() {
           supportsVision={modelConfig?.supportsVision ?? false}
         />
       )}
+      </div>{/* end chat area */}
     </div>
   )
 }

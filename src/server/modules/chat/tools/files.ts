@@ -101,10 +101,11 @@ export function buildFileTools(ctx: FilesContext) {
     }),
 
     fs_delete: tool({
-      description: 'Delete a file from the filesystem. Cannot be undone.',
+      description: 'Delete a file from the filesystem. Cannot be undone. Requires user approval.',
       inputSchema: z.object({
         path: z.string().describe('File path to delete'),
       }),
+      needsApproval: true,
       execute: async ({ path }) => {
         try {
           const key = scopedPath(ctx.userId, path)

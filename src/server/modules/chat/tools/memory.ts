@@ -113,10 +113,11 @@ export function buildMemoryTools(ctx: MemoryContext) {
     }),
 
     forget: tool({
-      description: 'Delete a fact from memory. Use when the user asks you to forget something or when a fact becomes invalid.',
+      description: 'Delete a fact from memory. Use when the user asks you to forget something or when a fact becomes invalid. Requires user approval.',
       inputSchema: z.object({
         key: z.string().describe('The memory key to delete'),
       }),
+      needsApproval: true,
       execute: async ({ key }) => {
         try {
           const db = drizzle(ctx.db)

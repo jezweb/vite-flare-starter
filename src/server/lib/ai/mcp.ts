@@ -144,6 +144,9 @@ export async function createMCPManager(env: Record<string, unknown>): Promise<MC
       clients.push({ config, client })
 
       // Collect tools
+      // NOTE: MCP tool annotations (destructiveHint, readOnlyHint, etc.) are parsed
+      // by @ai-sdk/mcp but only annotations.title is currently mapped. When AI SDK
+      // adds needsApproval mapping from destructiveHint, it will work automatically.
       const tools = await client.tools()
       Object.assign(allTools, tools)
 

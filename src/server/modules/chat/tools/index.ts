@@ -18,6 +18,8 @@ import { buildTodoTools } from './todo'
 import { buildScheduleTools } from './schedule'
 import { artifactTools } from './artifacts'
 import { buildDocumentTools } from './documents'
+import { buildSemanticSearchTools } from './search-semantic'
+import { buildImageTools } from './image'
 import { buildSessionTools } from './session'
 
 interface ChatToolsContext {
@@ -60,11 +62,12 @@ export function buildChatTools(ctx: ChatToolsContext) {
     ...buildMemoryTools({ db: ctx.env.DB, userId: ctx.userId }),
     ...buildSkillsTools({ env: ctx.env }),
     ...buildCodeTools({ env: ctx.env, userId: ctx.userId }),
-    ...buildDelegateTool({ env: ctx.env, defaultModel: ctx.defaultModel }),
+    ...buildDelegateTool({ env: ctx.env as Parameters<typeof buildDelegateTool>[0]['env'], defaultModel: ctx.defaultModel, userId: ctx.userId }),
     ...buildAudioTools({ env: ctx.env }),
     ...buildTodoTools({ db: ctx.env.DB, userId: ctx.userId }),
     ...buildScheduleTools({ db: ctx.env.DB, userId: ctx.userId }),
     ...buildSessionTools({ db: ctx.env.DB, userId: ctx.userId }),
+    ...buildSemanticSearchTools({ env: ctx.env as unknown as Parameters<typeof buildSemanticSearchTools>[0]['env'], userId: ctx.userId }),
   }
 
   if (ctx.env.CLOUDFLARE_ACCOUNT_ID && ctx.env.CLOUDFLARE_API_TOKEN) {
@@ -77,6 +80,7 @@ export function buildChatTools(ctx: ChatToolsContext) {
 
   if (ctx.env.FILES) {
     Object.assign(tools, buildFileTools({ bucket: ctx.env.FILES, userId: ctx.userId }))
+    Object.assign(tools, buildImageTools({ env: ctx.env as Parameters<typeof buildImageTools>[0]['env'], userId: ctx.userId }))
   }
 
   return tools

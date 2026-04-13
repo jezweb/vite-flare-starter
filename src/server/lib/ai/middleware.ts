@@ -1,25 +1,47 @@
 /**
- * AI SDK Middleware
+ * AI SDK Middleware Stack
  *
- * Wraps Workers AI models with AI SDK middleware based on capabilities.
- * Currently applies extractReasoningMiddleware for reasoning models.
+ * Wraps language models with a layered middleware stack:
+ * 1. defaultSettingsMiddleware — standard temperature, etc.
+ * 2. addToolInputExamplesMiddleware — improves tool selection accuracy
+ * 3. extractReasoningMiddleware — extracts <think> tokens for reasoning models
  */
-import { wrapLanguageModel, extractReasoningMiddleware } from 'ai'
+import {
+  wrapLanguageModel,
+  extractReasoningMiddleware,
+  defaultSettingsMiddleware,
+  addToolInputExamplesMiddleware,
+} from 'ai'
 import { isReasoningModel } from './models'
 import type { ModelId } from './types'
 
 /**
- * Build a model instance with appropriate middleware applied.
- *
- * - Reasoning models (QwQ 32B): extracts <think> tokens into reasoning parts
- * - All other models: returned as-is
+ * Build a model instance with the full middleware stack applied.
  */
 export function buildModel(baseModel: Parameters<typeof wrapLanguageModel>[0]['model'], modelId: ModelId) {
+  let model = baseModel
+
+  // 1. Default settings — standardise temperature across providers
+  model = wrapLanguageModel({
+    model,
+    middleware: defaultSettingsMiddleware({
+      settings: { temperature: 0.7 },
+    }),
+  })
+
+  // 2. Tool input examples — helps models pick the right tool
+  model = wrapLanguageModel({
+    model,
+    middleware: addToolInputExamplesMiddleware(),
+  })
+
+  // 3. Reasoning extraction for thinking models (QwQ 32B, etc.)
   if (isReasoningModel(modelId)) {
-    return wrapLanguageModel({
-      model: baseModel,
+    model = wrapLanguageModel({
+      model,
       middleware: extractReasoningMiddleware({ tagName: 'think' }),
     })
   }
-  return baseModel
+
+  return model
 }
