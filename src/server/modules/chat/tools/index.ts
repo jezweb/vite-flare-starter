@@ -13,6 +13,8 @@ import { uiTools } from './ui'
 import { buildSkillsTools } from './skills'
 import { buildCodeTools } from './code'
 import { buildDelegateTool } from './delegate'
+import { buildAudioTools } from './audio'
+import { buildTodoTools } from './todo'
 
 interface ChatToolsContext {
   env: {
@@ -53,6 +55,8 @@ export function buildChatTools(ctx: ChatToolsContext) {
     ...buildSkillsTools({ env: ctx.env }),
     ...buildCodeTools({ env: ctx.env, userId: ctx.userId }),
     ...buildDelegateTool({ env: ctx.env, defaultModel: ctx.defaultModel }),
+    ...buildAudioTools({ env: ctx.env }),
+    ...buildTodoTools({ db: ctx.env.DB, userId: ctx.userId }),
   }
 
   if (ctx.env.CLOUDFLARE_ACCOUNT_ID && ctx.env.CLOUDFLARE_API_TOKEN) {
@@ -80,4 +84,6 @@ export {
   buildSkillsTools,
   buildCodeTools,
   buildDelegateTool,
+  buildAudioTools,
+  buildTodoTools,
 }

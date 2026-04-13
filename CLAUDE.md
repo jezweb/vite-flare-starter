@@ -435,6 +435,8 @@ The chat module ships with a **modular agent toolkit** in `src/server/modules/ch
 | **skills** | `load_skill` | Yes |
 | **code** | `run_python`, `run_shell`, `run_js` | Yes (returns setup msg if SANDBOX missing) |
 | **delegate** | `delegate` | Yes (subagent pattern) |
+| **audio** | `transcribe_audio` (Deepgram Nova 3 STT, auto language detect), `speak_text` (Deepgram Aura 2 TTS with 12 voices, Aura 1 fallback) | Yes (uses AI binding — no external API keys) |
+| **todo** | `todo_add`, `todo_update`, `todo_list`, `todo_clear` | Yes (Hermes-style session task list, persisted via user_meta) |
 | **browser** | `browser_markdown`, `browser_extract`, `browser_screenshot`, `browser_links`, `browser_content` | Only if `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_API_TOKEN` set |
 | **search** | `web_search` | Only if a provider key is set |
 | **files** | `fs_list`, `fs_read`, `fs_write`, `fs_delete` | Only if `FILES` R2 bucket bound |
