@@ -18,6 +18,7 @@ import { buildTodoTools } from './todo'
 import { buildScheduleTools } from './schedule'
 import { artifactTools } from './artifacts'
 import { buildDocumentTools } from './documents'
+import { buildSessionTools } from './session'
 
 interface ChatToolsContext {
   env: {
@@ -63,6 +64,7 @@ export function buildChatTools(ctx: ChatToolsContext) {
     ...buildAudioTools({ env: ctx.env }),
     ...buildTodoTools({ db: ctx.env.DB, userId: ctx.userId }),
     ...buildScheduleTools({ db: ctx.env.DB, userId: ctx.userId }),
+    ...buildSessionTools({ db: ctx.env.DB, userId: ctx.userId }),
   }
 
   if (ctx.env.CLOUDFLARE_ACCOUNT_ID && ctx.env.CLOUDFLARE_API_TOKEN) {
