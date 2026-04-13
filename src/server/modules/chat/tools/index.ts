@@ -15,6 +15,7 @@ import { buildCodeTools } from './code'
 import { buildDelegateTool } from './delegate'
 import { buildAudioTools } from './audio'
 import { buildTodoTools } from './todo'
+import { buildScheduleTools } from './schedule'
 
 interface ChatToolsContext {
   env: {
@@ -57,6 +58,7 @@ export function buildChatTools(ctx: ChatToolsContext) {
     ...buildDelegateTool({ env: ctx.env, defaultModel: ctx.defaultModel }),
     ...buildAudioTools({ env: ctx.env }),
     ...buildTodoTools({ db: ctx.env.DB, userId: ctx.userId }),
+    ...buildScheduleTools({ db: ctx.env.DB, userId: ctx.userId }),
   }
 
   if (ctx.env.CLOUDFLARE_ACCOUNT_ID && ctx.env.CLOUDFLARE_API_TOKEN) {

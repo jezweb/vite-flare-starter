@@ -335,4 +335,18 @@ app.onError((err, c) => {
   )
 })
 
-export default app
+// ─── Cron Handler (scheduled tasks) ──────────────────────────────────
+// Add a cron trigger in wrangler.jsonc to enable:
+//   "triggers": { "crons": ["*/5 * * * *"] }   // every 5 minutes
+//
+// The handler processes due jobs from the scheduled_jobs D1 table.
+export default {
+  fetch: app.fetch,
+  async scheduled(event: ScheduledEvent, env: Env) {
+    const { processDueJobs } = await import('./modules/chat/tools/schedule')
+    const processed = await processDueJobs(env.DB, env as unknown as Record<string, unknown>)
+    if (processed > 0) {
+      console.log(JSON.stringify({ event: 'cron_tick', processed, trigger: event.cron }))
+    }
+  },
+}

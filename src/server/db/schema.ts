@@ -34,3 +34,6 @@ export { userMeta } from '@/server/modules/user-meta/db/schema'
 
 // Skills registry (Claude Agent Skills compatible)
 export { skills } from '@/server/modules/skills/db/schema'
+
+// Scheduled jobs (cron-triggered AI tasks)
+export { scheduledJobs } from '@/server/modules/chat/tools/schedule'

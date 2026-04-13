@@ -57,6 +57,13 @@
       "when": 1776078049747,
       "tag": "0007_add_skills_registry",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1776080750802,
+      "tag": "0008_add_scheduled_jobs",
+      "breakpoints": true
     }
   ]
 }

@@ -4,7 +4,7 @@ import { defineConfig } from 'drizzle-kit';
 // Documentation: https://orm.drizzle.team/kit-docs/config-reference
 export default defineConfig({
   // Database schema files
-  schema: './src/server/modules/*/db/schema.ts',
+  schema: ['./src/server/modules/*/db/schema.ts', './src/server/db/schema.ts'],
 
   // Output directory for migrations
   out: './drizzle',
