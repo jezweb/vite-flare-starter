@@ -10,7 +10,7 @@ import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
 import { desc, eq, sql } from 'drizzle-orm'
 import { authMiddleware, requireScopes, type AuthContext } from '@/server/middleware/auth'
-import { DEFAULT_MODEL, getModel, resolveModel, buildModel } from '@/server/lib/ai'
+import { DEFAULT_MODEL, getModel, resolveModel, buildModel, buildSystemPrompt, getMCPTools } from '@/server/lib/ai'
 import { chatTools } from './tools'
 import { aiUsageLogs } from './db/schema'
 
@@ -34,23 +34,42 @@ app.post('/', async (c) => {
     const modelId = requestedModel || DEFAULT_MODEL
     const modelConfig = getModel(modelId)
     const userId = c.get('userId')
+    const user = c.get('user') as { name?: string; email?: string; role?: string } | undefined
     const startTime = Date.now()
 
     const baseModel = resolveModel(c.env, modelId)
     const model = buildModel(baseModel, modelId)
 
-    // Only attach tools for tool-capable models
-    const tools = modelConfig?.supportsTools ? chatTools : undefined
+    // Build system prompt with context injection
+    const system = buildSystemPrompt({
+      baseInstructions: systemPrompt || 'You are a helpful assistant.',
+      user: user ? { name: user.name, email: user.email, role: user.role } : undefined,
+      currentDate: true,
+      timezone: 'Australia/Sydney',
+    })
+
+    // Collect tools: local demo tools + MCP server tools (if configured)
+    let tools: typeof chatTools | undefined
+    let mcpCleanup: (() => Promise<void>) | undefined
+
+    if (modelConfig?.supportsTools) {
+      const { tools: mcpTools, cleanup } = await getMCPTools(c.env as unknown as Record<string, unknown>)
+      mcpCleanup = cleanup
+      tools = { ...chatTools, ...(mcpTools as typeof chatTools) }
+    }
 
     const result = streamText({
       model,
-      system: systemPrompt,
+      system,
       messages: await convertToModelMessages(messages),
       tools,
       stopWhen: modelConfig?.supportsTools ? stepCountIs(5) : stepCountIs(1),
       maxOutputTokens: modelConfig?.defaultMaxTokens ?? 2000,
       experimental_transform: smoothStream({ chunking: 'word' }),
       onFinish: async ({ usage, finishReason }) => {
+        // Clean up MCP connections
+        if (mcpCleanup) await mcpCleanup()
+
         try {
           const db = drizzle(c.env.DB)
           await db.insert(aiUsageLogs).values({

@@ -21,6 +21,12 @@ export { resolveModel, getAvailableProviders } from './providers'
 // Model middleware (reasoning extraction, etc.)
 export { buildModel } from './middleware'
 
+// Context builder (system prompt assembly)
+export { buildSystemPrompt } from './context'
+
+// MCP client integration
+export { getMCPTools } from './mcp'
+
 // Model registry
 export {
   MODEL_REGISTRY,

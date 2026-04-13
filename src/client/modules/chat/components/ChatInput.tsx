@@ -36,10 +36,13 @@ export function ChatInput({
 
   const { getRootProps, getInputProps, open: openFilePicker } = useDropzone({
     onDrop,
-    accept: { 'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp'] },
+    accept: {
+      'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp'],
+      'application/pdf': ['.pdf'],
+    },
     noClick: true,
     noKeyboard: true,
-    maxSize: 5 * 1024 * 1024, // 5MB
+    maxSize: 10 * 1024 * 1024, // 10MB (PDFs can be larger)
   })
 
   const removeFile = (index: number) => {
@@ -82,11 +85,20 @@ export function ChatInput({
         <div className="flex gap-2 px-4 pt-3">
           {attachedFiles.map((file, i) => (
             <div key={i} className="relative group">
-              <img
-                src={URL.createObjectURL(file)}
-                alt={file.name}
-                className="size-16 rounded-md object-cover border"
-              />
+              {file.type.startsWith('image/') ? (
+                <img
+                  src={URL.createObjectURL(file)}
+                  alt={file.name}
+                  className="size-16 rounded-md object-cover border"
+                />
+              ) : (
+                <div className="size-16 rounded-md border bg-muted flex flex-col items-center justify-center p-1">
+                  <Paperclip className="size-4 text-muted-foreground mb-0.5" />
+                  <span className="text-[8px] text-muted-foreground truncate w-full text-center">
+                    {file.name.split('.').pop()?.toUpperCase()}
+                  </span>
+                </div>
+              )}
               <button
                 type="button"
                 onClick={() => removeFile(i)}
@@ -109,7 +121,7 @@ export function ChatInput({
             onClick={openFilePicker}
             disabled={disabled || isLoading}
             className="shrink-0 size-[44px] text-muted-foreground"
-            title="Attach image"
+            title="Attach file (image or PDF)"
           >
             <Paperclip className="size-4" />
           </Button>
