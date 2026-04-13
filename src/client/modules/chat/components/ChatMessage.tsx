@@ -85,7 +85,7 @@ export const ChatMessage = memo(function ChatMessage({ message, isLast, onRegene
                   return (
                     <div key={i}>
                       {/* Show tool name pill ONLY when there's no rich UI to display */}
-                      {!isUiMarker && uiResources.length === 0 && (
+                      {!isUiMarker && !isTakeover && !isArtifactOutput && !isDocumentOutput && uiResources.length === 0 && (
                         <div className="my-1 rounded border border-border/50 bg-background/30 px-3 py-2 text-xs">
                           <div className="flex items-center gap-1.5 text-muted-foreground">
                             {isComplete ? (
