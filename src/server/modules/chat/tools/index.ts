@@ -16,6 +16,7 @@ import { buildDelegateTool } from './delegate'
 import { buildAudioTools } from './audio'
 import { buildTodoTools } from './todo'
 import { buildScheduleTools } from './schedule'
+import { artifactTools } from './artifacts'
 
 interface ChatToolsContext {
   env: {
@@ -52,6 +53,7 @@ export function buildChatTools(ctx: ChatToolsContext) {
   const tools: Record<string, unknown> = {
     ...coreTools,
     ...uiTools,
+    ...artifactTools,
     ...buildMemoryTools({ db: ctx.env.DB, userId: ctx.userId }),
     ...buildSkillsTools({ env: ctx.env }),
     ...buildCodeTools({ env: ctx.env, userId: ctx.userId }),

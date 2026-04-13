@@ -15,6 +15,7 @@ import type { Message, MessageMetadata } from '../hooks/useChat'
 import { extractUIResources, ToolUIResource } from './ToolUIResource'
 import { ChatUiElement, hasUiMarker } from './chat-ui/ChatUiElement'
 import { isTakeoverElement } from './chat-ui/InputTakeover'
+import { ArtifactViewer, isArtifact } from './chat-ui/ArtifactViewer'
 
 interface ChatMessageProps {
   message: Message
@@ -69,12 +70,15 @@ export const ChatMessage = memo(function ChatMessage({ message, isLast, onRegene
                   const output = p['output']
                   const isComplete = state === 'result' || state === 'call' || output != null
 
-                  // Detect inline UI markers (ClawHQ-style) and MCP-UI resources (SEP-1865)
-                  // Takeover-type elements (ask_questions, offer_choices, confirm_action, etc.)
-                  // are NOT rendered inline — they go to InputTakeover in the input area.
-                  const isUiMarker = isComplete && hasUiMarker(output) && !isTakeoverElement(output)
-                  const isTakeover = isComplete && hasUiMarker(output) && isTakeoverElement(output)
-                  const uiResources = isComplete && !isUiMarker && !isTakeover ? extractUIResources(output) : []
+                  // Detect different types of rich output:
+                  // 1. Artifacts (HTML/SVG/Mermaid rendered in sandboxed iframe)
+                  const isArtifactOutput = isComplete && isArtifact(output)
+                  // 2. Inline UI markers (ClawHQ-style: data_table, timeline, etc.)
+                  //    Takeover types are NOT rendered inline — they go to InputTakeover.
+                  const isUiMarker = isComplete && !isArtifactOutput && hasUiMarker(output) && !isTakeoverElement(output)
+                  const isTakeover = isComplete && !isArtifactOutput && hasUiMarker(output) && isTakeoverElement(output)
+                  // 3. MCP-UI resources (SEP-1865 — external server UI in iframe)
+                  const uiResources = isComplete && !isUiMarker && !isTakeover && !isArtifactOutput ? extractUIResources(output) : []
 
                   return (
                     <div key={i}>
@@ -112,6 +116,10 @@ export const ChatMessage = memo(function ChatMessage({ message, isLast, onRegene
                           <Loader2 className="size-3 animate-spin" />
                           Waiting for your response below...
                         </div>
+                      )}
+                      {/* Artifacts (HTML/SVG/Mermaid in sandboxed iframe) */}
+                      {isArtifactOutput && (
+                        <ArtifactViewer artifact={output as { _artifact: true; type: 'html' | 'svg' | 'mermaid'; title: string; code: string; height?: number }} />
                       )}
                       {/* MCP-UI resources (SEP-1865 — iframe-rendered from external MCP servers) */}
                       {uiResources.map((resource, idx) => (
