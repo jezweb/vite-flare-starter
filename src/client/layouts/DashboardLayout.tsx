@@ -28,6 +28,7 @@ import {
   Palette,
   Component,
   MessageSquare,
+  Sparkles,
   Activity,
   FolderOpen,
 } from 'lucide-react'
@@ -62,6 +63,12 @@ const navItems: NavItem[] = [
     label: 'AI Chat',
     href: '/dashboard/chat',
     icon: MessageSquare,
+  },
+  // Structured Extract
+  {
+    label: 'Extract',
+    href: '/dashboard/extract',
+    icon: Sparkles,
   },
   // Activity log
   {

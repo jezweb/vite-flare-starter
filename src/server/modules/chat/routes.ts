@@ -5,7 +5,8 @@
  * Features: smoothStream, token usage logging, reasoning middleware, tool calling.
  */
 import { Hono } from 'hono'
-import { streamText, convertToModelMessages, smoothStream, stepCountIs } from 'ai'
+import { streamText, generateText, convertToModelMessages, smoothStream, stepCountIs, Output } from 'ai'
+import { z } from 'zod'
 import { createWorkersAI } from 'workers-ai-provider'
 import { drizzle } from 'drizzle-orm/d1'
 import { desc, eq, sql } from 'drizzle-orm'
@@ -152,5 +153,86 @@ app.get('/usage', async (c) => {
 
   return c.json({ totals, recent })
 })
+
+// ============================================================================
+// STRUCTURED OUTPUT
+// ============================================================================
+
+const extractSchemas = {
+  summary: z.object({
+    title: z.string().describe('A concise title for the text'),
+    summary: z.string().max(200).describe('A brief summary in 1-2 sentences'),
+    keyPoints: z.array(z.string()).max(5).describe('Key points from the text'),
+    wordCount: z.number().describe('Approximate word count of the input'),
+  }),
+  entities: z.object({
+    people: z.array(z.string()).describe('Named people mentioned'),
+    places: z.array(z.string()).describe('Locations and places mentioned'),
+    organizations: z.array(z.string()).describe('Companies, teams, or organizations'),
+    dates: z.array(z.string()).describe('Dates and time references'),
+  }),
+  sentiment: z.object({
+    overall: z.enum(['positive', 'negative', 'neutral', 'mixed']).describe('Overall sentiment'),
+    score: z.number().min(-1).max(1).describe('Sentiment score from -1 (negative) to 1 (positive)'),
+    reasoning: z.string().describe('Brief explanation of the sentiment assessment'),
+  }),
+} as const
+
+type ExtractSchema = keyof typeof extractSchemas
+
+/**
+ * POST /api/chat/extract - Structured data extraction
+ *
+ * Uses AI SDK generateObject with Zod schemas to extract
+ * structured data from text. Requires a tool-capable model.
+ */
+app.post('/extract', async (c) => {
+  try {
+    const body = await c.req.json()
+    const { text, schema: schemaName } = body as { text: string; schema: ExtractSchema }
+
+    if (!text || !schemaName || !extractSchemas[schemaName]) {
+      return c.json(
+        { error: 'Required: text (string) and schema (summary | entities | sentiment)' },
+        400
+      )
+    }
+
+    const workersai = createWorkersAI({ binding: c.env.AI })
+    // Use a tool-capable model for structured output
+    const modelId = '@cf/moonshotai/kimi-k2.5'
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const schema = extractSchemas[schemaName] as any
+    const { output } = await generateText({
+      model: workersai(modelId),
+      output: Output.object({ schema }),
+      prompt: `Extract the following from this text:\n\n${text}`,
+    })
+
+    return c.json({
+      success: true,
+      schema: schemaName,
+      model: modelId,
+      data: output,
+    })
+  } catch (error) {
+    console.error('Extract error:', error)
+    return c.json(
+      { success: false, error: error instanceof Error ? error.message : 'Extraction failed' },
+      500
+    )
+  }
+})
+
+/**
+ * Hono RPC type export for type-safe client usage
+ *
+ * @example
+ * import { hc } from 'hono/client'
+ * import type { ChatRoutes } from '@/server/modules/chat/routes'
+ * const client = hc<ChatRoutes>('/api/chat')
+ */
+export type ChatRoutes = typeof app
 
 export default app

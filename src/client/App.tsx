@@ -14,7 +14,7 @@ import { DashboardPage } from './pages/DashboardPage'
 import { LandingPage } from './pages/LandingPage'
 import { SettingsPage } from './modules/settings/pages/SettingsPage'
 import { AdminPage } from './modules/admin/pages/AdminPage'
-import { ChatPage } from './modules/chat'
+import { ChatPage, ExtractPage } from './modules/chat'
 import { StyleGuidePage } from './pages/StyleGuidePage'
 import { ComponentsPage } from './pages/ComponentsPage'
 import { ActivityPage } from './modules/activity/pages/ActivityPage'
@@ -58,6 +58,7 @@ function App() {
 
             {/* AI Chat */}
             <Route path="chat" element={<ChatPage />} />
+            <Route path="extract" element={<ExtractPage />} />
 
             {/* Activity log */}
             <Route path="activity" element={<ActivityPage />} />
