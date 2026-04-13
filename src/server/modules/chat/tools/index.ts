@@ -10,11 +10,13 @@ import { buildSearchTools, getActiveSearchProvider } from './search'
 import { buildMemoryTools } from './memory'
 import { buildFileTools } from './files'
 import { uiTools } from './ui'
+import { buildSkillsTools } from './skills'
 
 interface ChatToolsContext {
   env: {
     DB: D1Database
     FILES?: R2Bucket
+    SKILLS?: R2Bucket
     CLOUDFLARE_ACCOUNT_ID?: string
     CLOUDFLARE_API_TOKEN?: string
     SEARCH_PROVIDER?: string
@@ -35,19 +37,17 @@ export function buildChatTools(ctx: ChatToolsContext) {
     ...coreTools,
     ...uiTools,
     ...buildMemoryTools({ db: ctx.env.DB, userId: ctx.userId }),
+    ...buildSkillsTools({ env: ctx.env }),
   }
 
-  // Browser tools — only if Cloudflare API credentials are set
   if (ctx.env.CLOUDFLARE_ACCOUNT_ID && ctx.env.CLOUDFLARE_API_TOKEN) {
     Object.assign(tools, buildBrowserTools(ctx.env))
   }
 
-  // Search tools — only if a provider has a key configured
   if (getActiveSearchProvider(ctx.env)) {
     Object.assign(tools, buildSearchTools(ctx.env))
   }
 
-  // File tools — only if FILES R2 bucket is bound
   if (ctx.env.FILES) {
     Object.assign(tools, buildFileTools({ bucket: ctx.env.FILES, userId: ctx.userId }))
   }
@@ -55,4 +55,4 @@ export function buildChatTools(ctx: ChatToolsContext) {
   return tools
 }
 
-export { coreTools, uiTools, buildBrowserTools, buildSearchTools, buildMemoryTools, buildFileTools }
+export { coreTools, uiTools, buildBrowserTools, buildSearchTools, buildMemoryTools, buildFileTools, buildSkillsTools }

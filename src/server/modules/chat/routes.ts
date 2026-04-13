@@ -11,6 +11,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { desc, eq, sql } from 'drizzle-orm'
 import { authMiddleware, requireScopes, type AuthContext } from '@/server/middleware/auth'
 import { DEFAULT_MODEL, getModel, resolveModel, buildModel, buildSystemPrompt, getMCPTools } from '@/server/lib/ai'
+import { listSkills } from '@/server/lib/ai/skills/registry'
 import { buildChatTools } from './tools'
 import { aiUsageLogs } from './db/schema'
 
@@ -40,12 +41,21 @@ app.post('/', async (c) => {
     const baseModel = resolveModel(c.env, modelId)
     const model = buildModel(baseModel, modelId)
 
+    // List available skills (metadata only — Level 1 of progressive disclosure)
+    const availableSkills = await listSkills(c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket })
+    const skillsCatalog = availableSkills.length > 0
+      ? availableSkills.map((s) => `- **${s.name}**: ${s.description}`).join('\n')
+      : null
+
     // Build system prompt with context injection
     const system = buildSystemPrompt({
       baseInstructions: systemPrompt || 'You are a helpful assistant.',
       user: user ? { name: user.name, email: user.email, role: user.role } : undefined,
       currentDate: true,
       timezone: 'Australia/Sydney',
+      extra: skillsCatalog ? {
+        'Available Skills': `Use the load_skill tool to get full instructions for any of these:\n\n${skillsCatalog}`,
+      } : undefined,
     })
 
     // Build the toolkit: core tools + module tools (based on available bindings)

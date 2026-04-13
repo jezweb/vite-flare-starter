@@ -31,3 +31,6 @@ export { aiUsageLogs } from '@/server/modules/chat/db/schema'
 
 // User metadata (key-value store)
 export { userMeta } from '@/server/modules/user-meta/db/schema'
+
+// Skills registry (Claude Agent Skills compatible)
+export { skills } from '@/server/modules/skills/db/schema'

@@ -18,6 +18,7 @@ import filesRoutes from './modules/files/routes'
 import adminRoutes from './modules/admin/routes'
 import webhookRoutes from './modules/webhooks/routes'
 import userMetaRoutes from './modules/user-meta/routes'
+import skillsRoutes from './modules/skills/routes'
 import { securityHeaders } from './middleware/security'
 import { rateLimiter } from './middleware/rate-limit'
 import { authMiddleware, requireScopes } from './middleware/auth'
@@ -34,6 +35,8 @@ export interface Env {
   // R2 Storage
   AVATARS: R2Bucket
   FILES: R2Bucket
+  /** Optional — for storing Claude Agent Skills uploaded via API */
+  SKILLS?: R2Bucket
 
   // Workers AI
   AI: Ai
@@ -222,6 +225,7 @@ app.route('/api/chat', chatRoutes)
 app.route('/api/files', filesRoutes)
 app.route('/api/webhooks', webhookRoutes)
 app.route('/api/user-meta', userMetaRoutes)
+app.route('/api/skills', skillsRoutes)
 
 // =============================================================================
 // AI TEST ENDPOINT
