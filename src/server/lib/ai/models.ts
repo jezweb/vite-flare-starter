@@ -1,79 +1,73 @@
 /**
  * Workers AI Model Registry
  *
- * A curated selection of stable Workers AI models for different use cases.
+ * A curated selection of Workers AI models for different use cases.
  * All models are hosted on Cloudflare Workers AI - no external API keys needed.
  *
  * @see https://developers.cloudflare.com/workers-ai/models/
+ * @updated 2026-04-13
  */
 
 import type { ModelId, ModelConfig } from './types'
 
 /**
- * Model registry with curated, stable models
+ * Model registry keyed by official Cloudflare Workers AI model IDs.
  *
- * Keys are the official Cloudflare Workers AI model IDs.
- * This provides universal compatibility with OpenRouter and other providers.
- *
- * Models are organized by:
- * - General Purpose: Everyday tasks, balanced performance
- * - Tool-Capable: Support function/tool calling for agents
- * - Specialized: Reasoning, coding, multilingual
- * - OpenAI GPT-OSS: Production quality with Responses API
+ * Organised by tier:
+ * - Flagship: Best quality, largest models
+ * - Balanced: Good quality/speed trade-off, tool-capable
+ * - Fast: Lightweight, low latency
+ * - Reasoning: Step-by-step thinking with <think> tokens
  */
 export const MODEL_REGISTRY: Record<ModelId, ModelConfig> = {
   // ============================================================================
-  // GENERAL PURPOSE MODELS
+  // FLAGSHIP MODELS — Best quality, largest parameter counts
   // ============================================================================
 
-  '@cf/meta/llama-3.1-8b-instruct': {
-    id: '@cf/meta/llama-3.1-8b-instruct',
-    displayName: 'Llama 3.1 8B',
-    provider: 'meta',
-    contextWindow: 7968,
+  '@cf/moonshotai/kimi-k2.5': {
+    id: '@cf/moonshotai/kimi-k2.5',
+    displayName: 'Kimi K2.5',
+    provider: 'moonshot',
+    contextWindow: 256000,
     isReasoning: false,
     supportsStreaming: true,
-    supportsTools: false,
-    supportsVision: false,
+    supportsTools: true,
+    supportsVision: true,
     supportsPdf: false,
-    defaultMaxTokens: 1000,
-    description: 'General purpose, stable production model',
-    tier: 'balanced',
+    defaultMaxTokens: 4000,
+    description: 'Frontier-scale MoE — 256k context, vision, tools, structured output',
+    tier: 'flagship',
   },
 
-  '@cf/meta/llama-3.1-8b-instruct-fast': {
-    id: '@cf/meta/llama-3.1-8b-instruct-fast',
-    displayName: 'Llama 3.1 8B Fast',
-    provider: 'meta',
+  '@cf/nvidia/nemotron-3-120b-a12b': {
+    id: '@cf/nvidia/nemotron-3-120b-a12b',
+    displayName: 'Nemotron 3 Super 120B',
+    provider: 'nvidia',
     contextWindow: 128000,
-    isReasoning: false,
+    isReasoning: true,
     supportsStreaming: true,
-    supportsTools: false,
+    supportsTools: true,
     supportsVision: false,
     supportsPdf: false,
-    defaultMaxTokens: 1000,
-    description: 'Large context, optimized for speed',
-    tier: 'balanced',
+    defaultMaxTokens: 4000,
+    description: 'NVIDIA hybrid MoE — 120B total, 12B active, multi-agent capable',
+    tier: 'flagship',
   },
 
-  '@cf/meta/llama-3.2-3b-instruct': {
-    id: '@cf/meta/llama-3.2-3b-instruct',
-    displayName: 'Llama 3.2 3B',
-    provider: 'meta',
+  '@cf/openai/gpt-oss-120b': {
+    id: '@cf/openai/gpt-oss-120b',
+    displayName: 'GPT-OSS 120B',
+    provider: 'openai',
     contextWindow: 128000,
-    isReasoning: false,
+    isReasoning: true,
     supportsStreaming: true,
-    supportsTools: false,
+    supportsTools: true,
     supportsVision: false,
     supportsPdf: false,
-    defaultMaxTokens: 500,
-    description: 'Budget-friendly, quick tasks',
-    tier: 'fast',
+    defaultMaxTokens: 2000,
+    description: 'OpenAI open-source flagship with reasoning and tools',
+    tier: 'flagship',
   },
-
-  // ============================================================================
-  // TOOL-CAPABLE MODELS (Function Calling Support)
-  // ============================================================================
 
   '@cf/meta/llama-3.3-70b-instruct-fp8-fast': {
     id: '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
@@ -86,8 +80,27 @@ export const MODEL_REGISTRY: Record<ModelId, ModelConfig> = {
     supportsVision: false,
     supportsPdf: false,
     defaultMaxTokens: 2000,
-    description: 'High quality with tool calling support',
+    description: 'High quality dense model with tool calling',
     tier: 'flagship',
+  },
+
+  // ============================================================================
+  // BALANCED MODELS — Good quality/speed, most support tools + vision
+  // ============================================================================
+
+  '@cf/google/gemma-4-26b-a4b-it': {
+    id: '@cf/google/gemma-4-26b-a4b-it',
+    displayName: 'Gemma 4 26B',
+    provider: 'google',
+    contextWindow: 256000,
+    isReasoning: true,
+    supportsStreaming: true,
+    supportsTools: true,
+    supportsVision: true,
+    supportsPdf: false,
+    defaultMaxTokens: 4000,
+    description: 'Google MoE — 26B/4B active, 256k context, vision, reasoning, tools',
+    tier: 'balanced',
   },
 
   '@cf/meta/llama-4-scout-17b-16e-instruct': {
@@ -98,26 +111,41 @@ export const MODEL_REGISTRY: Record<ModelId, ModelConfig> = {
     isReasoning: false,
     supportsStreaming: true,
     supportsTools: true,
-    supportsVision: true, // Natively multimodal
+    supportsVision: true,
     supportsPdf: false,
     defaultMaxTokens: 2000,
-    description: 'Llama 4 Scout - multimodal with tool calling',
+    description: 'Meta MoE — multimodal with tool calling, 16 experts',
     tier: 'balanced',
   },
 
-  '@hf/nousresearch/hermes-2-pro-mistral-7b': {
-    id: '@hf/nousresearch/hermes-2-pro-mistral-7b',
-    displayName: 'Hermes 2 Pro 7B',
-    provider: 'nous',
-    contextWindow: 8000,
+  '@cf/zai-org/glm-4.7-flash': {
+    id: '@cf/zai-org/glm-4.7-flash',
+    displayName: 'GLM 4.7 Flash',
+    provider: 'zhipu',
+    contextWindow: 131072,
     isReasoning: false,
     supportsStreaming: true,
     supportsTools: true,
     supportsVision: false,
     supportsPdf: false,
-    defaultMaxTokens: 1000,
-    description: 'Hermes 2 Pro - optimized for tool use',
-    tier: 'fast',
+    defaultMaxTokens: 2000,
+    description: 'Zhipu AI — fast multilingual, optimised for tool calling',
+    tier: 'balanced',
+  },
+
+  '@cf/mistralai/mistral-small-3.1-24b-instruct': {
+    id: '@cf/mistralai/mistral-small-3.1-24b-instruct',
+    displayName: 'Mistral Small 3.1 24B',
+    provider: 'mistral',
+    contextWindow: 128000,
+    isReasoning: false,
+    supportsStreaming: true,
+    supportsTools: true,
+    supportsVision: true,
+    supportsPdf: false,
+    defaultMaxTokens: 2000,
+    description: 'Mistral Small — efficient tool calling with vision',
+    tier: 'balanced',
   },
 
   '@cf/qwen/qwen3-30b-a3b-fp8': {
@@ -131,57 +159,23 @@ export const MODEL_REGISTRY: Record<ModelId, ModelConfig> = {
     supportsVision: false,
     supportsPdf: false,
     defaultMaxTokens: 2000,
-    description: 'Qwen 3 with function calling',
+    description: 'Alibaba MoE — 30B/3B active, function calling',
     tier: 'balanced',
   },
 
-  '@cf/ibm-granite/granite-4.0-h-micro': {
-    id: '@cf/ibm-granite/granite-4.0-h-micro',
-    displayName: 'Granite 4.0 Micro',
-    provider: 'ibm',
-    contextWindow: 131000, // 131k context per CF docs
+  '@cf/google/gemma-3-12b-it': {
+    id: '@cf/google/gemma-3-12b-it',
+    displayName: 'Gemma 3 12B',
+    provider: 'google',
+    contextWindow: 80000,
     isReasoning: false,
-    supportsStreaming: true,
-    supportsTools: true,
-    supportsVision: false,
-    supportsPdf: false,
-    defaultMaxTokens: 1000,
-    description: 'IBM Granite - compact with tool calling',
-    tier: 'fast',
-  },
-
-  '@cf/mistralai/mistral-small-3.1-24b-instruct': {
-    id: '@cf/mistralai/mistral-small-3.1-24b-instruct',
-    displayName: 'Mistral Small 3.1 24B',
-    provider: 'mistral',
-    contextWindow: 128000,
-    isReasoning: false,
-    supportsStreaming: true,
-    supportsTools: true,
-    supportsVision: false,
-    supportsPdf: false,
-    defaultMaxTokens: 2000,
-    description: 'Mistral Small 3.1 - efficient tool calling',
-    tier: 'balanced',
-  },
-
-  // ============================================================================
-  // SPECIALIZED MODELS
-  // ============================================================================
-
-  '@cf/qwen/qwq-32b': {
-    id: '@cf/qwen/qwq-32b',
-    displayName: 'QwQ 32B',
-    provider: 'qwen',
-    contextWindow: 24000,
-    isReasoning: true,
     supportsStreaming: true,
     supportsTools: false,
-    supportsVision: false,
+    supportsVision: true,
     supportsPdf: false,
-    defaultMaxTokens: 2000,
-    description: 'Step-by-step reasoning with thinking tokens',
-    tier: 'reasoning',
+    defaultMaxTokens: 1000,
+    description: 'Multilingual (140+ languages), vision-capable',
+    tier: 'balanced',
   },
 
   '@cf/qwen/qwen2.5-coder-32b-instruct': {
@@ -199,39 +193,23 @@ export const MODEL_REGISTRY: Record<ModelId, ModelConfig> = {
     tier: 'balanced',
   },
 
-  '@cf/google/gemma-3-12b-it': {
-    id: '@cf/google/gemma-3-12b-it',
-    displayName: 'Gemma 3 12B',
-    provider: 'google',
-    contextWindow: 80000,
+  // ============================================================================
+  // FAST MODELS — Lightweight, low latency
+  // ============================================================================
+
+  '@cf/meta/llama-3.1-8b-instruct': {
+    id: '@cf/meta/llama-3.1-8b-instruct',
+    displayName: 'Llama 3.1 8B',
+    provider: 'meta',
+    contextWindow: 7968,
     isReasoning: false,
     supportsStreaming: true,
     supportsTools: false,
-    supportsVision: true, // Gemma 3 supports vision
-    supportsPdf: false,
-    defaultMaxTokens: 1000,
-    description: 'Multilingual (140+ languages), vision-capable',
-    tier: 'balanced',
-  },
-
-  // ============================================================================
-  // OPENAI GPT-OSS MODELS (Responses API format)
-  // ============================================================================
-
-  '@cf/openai/gpt-oss-120b': {
-    id: '@cf/openai/gpt-oss-120b',
-    displayName: 'GPT-OSS 120B',
-    provider: 'openai',
-    contextWindow: 128000,
-    isReasoning: false,
-    supportsStreaming: false, // Streaming broken for Responses API models
-    supportsTools: false,
     supportsVision: false,
     supportsPdf: false,
-    defaultMaxTokens: 2000,
-    description: 'OpenAI flagship, production quality',
-    apiFormat: 'responses',
-    tier: 'flagship',
+    defaultMaxTokens: 1000,
+    description: 'General purpose, stable and fast',
+    tier: 'fast',
   },
 
   '@cf/openai/gpt-oss-20b': {
@@ -240,58 +218,108 @@ export const MODEL_REGISTRY: Record<ModelId, ModelConfig> = {
     provider: 'openai',
     contextWindow: 128000,
     isReasoning: false,
-    supportsStreaming: false, // Streaming broken for Responses API models
-    supportsTools: false,
+    supportsStreaming: true,
+    supportsTools: true,
     supportsVision: false,
     supportsPdf: false,
     defaultMaxTokens: 1000,
-    description: 'OpenAI lightweight, lower latency',
-    apiFormat: 'responses',
-    tier: 'balanced',
+    description: 'OpenAI lightweight, lower latency with tools',
+    tier: 'fast',
+  },
+
+  '@cf/ibm-granite/granite-4.0-h-micro': {
+    id: '@cf/ibm-granite/granite-4.0-h-micro',
+    displayName: 'Granite 4.0 Micro',
+    provider: 'ibm',
+    contextWindow: 131000,
+    isReasoning: false,
+    supportsStreaming: true,
+    supportsTools: true,
+    supportsVision: false,
+    supportsPdf: false,
+    defaultMaxTokens: 1000,
+    description: 'IBM Granite — compact with tool calling',
+    tier: 'fast',
+  },
+
+  '@cf/meta/llama-3.2-3b-instruct': {
+    id: '@cf/meta/llama-3.2-3b-instruct',
+    displayName: 'Llama 3.2 3B',
+    provider: 'meta',
+    contextWindow: 128000,
+    isReasoning: false,
+    supportsStreaming: true,
+    supportsTools: false,
+    supportsVision: false,
+    supportsPdf: false,
+    defaultMaxTokens: 500,
+    description: 'Ultra-lightweight, quick tasks',
+    tier: 'fast',
+  },
+
+  // ============================================================================
+  // REASONING MODELS — Step-by-step thinking with <think> tokens
+  // ============================================================================
+
+  '@cf/qwen/qwq-32b': {
+    id: '@cf/qwen/qwq-32b',
+    displayName: 'QwQ 32B',
+    provider: 'qwen',
+    contextWindow: 24000,
+    isReasoning: true,
+    supportsStreaming: true,
+    supportsTools: false,
+    supportsVision: false,
+    supportsPdf: false,
+    defaultMaxTokens: 2000,
+    description: 'Dedicated reasoning with thinking tokens',
+    tier: 'reasoning',
   },
 } as const
 
 /**
- * Default model for general use
+ * Default model — Kimi K2.5 is the most capable all-rounder
+ * (256k context, tools, vision, structured output)
  */
-export const DEFAULT_MODEL: ModelId = '@cf/meta/llama-4-scout-17b-16e-instruct'
+export const DEFAULT_MODEL: ModelId = '@cf/moonshotai/kimi-k2.5'
 
 /**
- * Alias to ModelId mapping for backwards compatibility
- * Maps old alias names to new model IDs
+ * Alias to ModelId mapping for convenience
  */
 export const ALIAS_TO_MODEL_ID: Record<string, ModelId> = {
-  'llama-8b': '@cf/meta/llama-3.1-8b-instruct',
-  'llama-8b-fast': '@cf/meta/llama-3.1-8b-instruct-fast',
-  'llama-3b': '@cf/meta/llama-3.2-3b-instruct',
+  // Flagships
+  'kimi': '@cf/moonshotai/kimi-k2.5',
+  'nemotron': '@cf/nvidia/nemotron-3-120b-a12b',
+  'gpt-oss': '@cf/openai/gpt-oss-120b',
   'llama-70b': '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+  // Balanced
+  'gemma-4': '@cf/google/gemma-4-26b-a4b-it',
   'llama-scout': '@cf/meta/llama-4-scout-17b-16e-instruct',
-  'qwq-32b': '@cf/qwen/qwq-32b',
-  'qwen-coder': '@cf/qwen/qwen2.5-coder-32b-instruct',
-  'qwen-30b': '@cf/qwen/qwen3-30b-a3b-fp8',
-  'gemma-12b': '@cf/google/gemma-3-12b-it',
-  'gpt-oss-120b': '@cf/openai/gpt-oss-120b',
-  'gpt-oss-20b': '@cf/openai/gpt-oss-20b',
-  'hermes-7b': '@hf/nousresearch/hermes-2-pro-mistral-7b',
-  'granite-micro': '@cf/ibm-granite/granite-4.0-h-micro',
+  'glm': '@cf/zai-org/glm-4.7-flash',
   'mistral-small': '@cf/mistralai/mistral-small-3.1-24b-instruct',
+  'qwen-30b': '@cf/qwen/qwen3-30b-a3b-fp8',
+  'gemma-3': '@cf/google/gemma-3-12b-it',
+  'qwen-coder': '@cf/qwen/qwen2.5-coder-32b-instruct',
+  // Fast
+  'llama-8b': '@cf/meta/llama-3.1-8b-instruct',
+  'gpt-oss-20b': '@cf/openai/gpt-oss-20b',
+  'granite': '@cf/ibm-granite/granite-4.0-h-micro',
+  'llama-3b': '@cf/meta/llama-3.2-3b-instruct',
+  // Reasoning
+  'qwq': '@cf/qwen/qwq-32b',
 }
 
 /**
  * Resolve a model ID or alias to a valid ModelId
- * Handles both new full IDs and legacy aliases
  */
 export function resolveModelId(modelOrAlias: string): ModelId {
-  // Check if it's already a valid model ID
   if (modelOrAlias in MODEL_REGISTRY) {
     return modelOrAlias as ModelId
   }
-  // Check if it's a legacy alias
   const aliasResult = ALIAS_TO_MODEL_ID[modelOrAlias]
   if (aliasResult) {
     return aliasResult
   }
-  // Default fallback
   return DEFAULT_MODEL
 }
 
@@ -308,15 +336,6 @@ export function getModel(modelId: ModelId): ModelConfig | undefined {
 export function isReasoningModel(modelId: ModelId): boolean {
   const model = MODEL_REGISTRY[modelId as keyof typeof MODEL_REGISTRY]
   return model?.isReasoning ?? false
-}
-
-/**
- * Check if a model supports tool/function calling
- * @deprecated Use supportsTools from providers.ts instead
- */
-export function supportsToolsLegacy(modelId: ModelId): boolean {
-  const model = MODEL_REGISTRY[modelId as keyof typeof MODEL_REGISTRY]
-  return model?.supportsTools ?? false
 }
 
 /**
@@ -340,29 +359,29 @@ export function getRecommendedModel(
     | 'multilingual'
     | 'tools'
     | 'tools-fast'
-    | 'tools-cheap'
+    | 'vision'
 ): ModelId {
   switch (useCase) {
     case 'general':
-      return '@cf/meta/llama-3.1-8b-instruct'
+      return '@cf/moonshotai/kimi-k2.5'
     case 'fast':
-      return '@cf/meta/llama-3.1-8b-instruct-fast'
+      return '@cf/meta/llama-3.1-8b-instruct'
     case 'cheap':
       return '@cf/meta/llama-3.2-3b-instruct'
     case 'quality':
-      return '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
+      return '@cf/moonshotai/kimi-k2.5'
     case 'reasoning':
-      return '@cf/qwen/qwq-32b'
+      return '@cf/nvidia/nemotron-3-120b-a12b'
     case 'code':
       return '@cf/qwen/qwen2.5-coder-32b-instruct'
     case 'multilingual':
-      return '@cf/google/gemma-3-12b-it'
+      return '@cf/google/gemma-4-26b-a4b-it'
     case 'tools':
-      return '@cf/meta/llama-4-scout-17b-16e-instruct' // Llama 4 - best tool calling
+      return '@cf/moonshotai/kimi-k2.5'
     case 'tools-fast':
-      return '@cf/mistralai/mistral-small-3.1-24b-instruct'
-    case 'tools-cheap':
-      return '@hf/nousresearch/hermes-2-pro-mistral-7b'
+      return '@cf/zai-org/glm-4.7-flash'
+    case 'vision':
+      return '@cf/google/gemma-4-26b-a4b-it'
   }
 }
 
