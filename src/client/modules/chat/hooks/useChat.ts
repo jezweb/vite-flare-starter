@@ -2,12 +2,20 @@
  * useChat Hook
  *
  * Wraps AI SDK's useChat for streaming chat with Workers AI.
- * Handles model selection and provides a clean API for the chat UI.
+ * Handles model selection, metadata, and regeneration.
  */
 import { useChat as useAIChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 
 export type { UIMessage as Message } from 'ai'
+
+/** Metadata attached to assistant messages by the server */
+export interface MessageMetadata {
+  model?: string
+  inputTokens?: number
+  outputTokens?: number
+  durationMs?: number
+}
 
 interface ChatOptions {
   model?: string
@@ -36,5 +44,6 @@ export function useChat(options: ChatOptions = {}) {
     sendMessage: chat.sendMessage,
     stop: chat.stop,
     clearMessages: () => chat.setMessages([]),
+    setMessages: chat.setMessages,
   }
 }

@@ -69,7 +69,20 @@ app.post('/', async (c) => {
       },
     })
 
-    return result.toUIMessageStreamResponse()
+    return result.toUIMessageStreamResponse({
+      sendReasoning: true,
+      messageMetadata: ({ part }) => {
+        if (part.type === 'finish') {
+          return {
+            model: modelId,
+            inputTokens: part.totalUsage?.inputTokens,
+            outputTokens: part.totalUsage?.outputTokens,
+            durationMs: Date.now() - startTime,
+          }
+        }
+        return undefined
+      },
+    })
   } catch (error) {
     console.error('Chat error:', error)
     return c.json(

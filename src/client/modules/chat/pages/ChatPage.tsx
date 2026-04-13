@@ -1,19 +1,20 @@
 /**
  * ChatPage
  *
- * Full-page AI chat interface with model selection and streaming responses.
- * Uses AI SDK useChat for streaming protocol.
+ * Full-page AI chat interface with model selection, streaming responses,
+ * tool calling, and message metadata display.
  */
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
 import { Trash2, MessageSquare } from 'lucide-react'
 import { ChatMessage, ChatInput, ModelSelector } from '../components'
 import { useChat } from '../hooks/useChat'
-import { DEFAULT_MODEL } from '@/server/lib/ai/models'
+import { DEFAULT_MODEL, MODEL_REGISTRY } from '@/server/lib/ai/models'
 
 export function ChatPage() {
   const [model, setModel] = useState<string>(DEFAULT_MODEL)
+  const modelConfig = MODEL_REGISTRY[model as keyof typeof MODEL_REGISTRY]
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const {
@@ -23,6 +24,7 @@ export function ChatPage() {
     sendMessage,
     stop,
     clearMessages,
+    setMessages,
   } = useChat({ model })
 
   // Auto-scroll to bottom on new messages
@@ -32,9 +34,44 @@ export function ChatPage() {
     }
   }, [messages])
 
-  const handleSend = (text: string) => {
-    sendMessage({ text })
+  const handleSend = async (text: string, files?: File[]) => {
+    if (files && files.length > 0) {
+      // Convert files to data URLs for AI SDK
+      const filePromises = files.map(async (file) => {
+        const buffer = await file.arrayBuffer()
+        const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)))
+        const dataUrl = `data:${file.type};base64,${base64}`
+        return { type: 'file' as const, mediaType: file.type, url: dataUrl, filename: file.name }
+      })
+      const fileParts = await Promise.all(filePromises)
+      sendMessage({ text, files: fileParts })
+    } else {
+      sendMessage({ text })
+    }
   }
+
+  // Regenerate: remove the last assistant message and re-send the last user message
+  const handleRegenerate = useCallback(() => {
+    if (isLoading || messages.length < 2) return
+    const lastAssistantIdx = [...messages].reverse().findIndex(m => m.role === 'assistant')
+    if (lastAssistantIdx === -1) return
+    const removeFrom = messages.length - 1 - lastAssistantIdx
+    const remaining = messages.slice(0, removeFrom)
+    const lastUserMsg = [...remaining].reverse().find(m => m.role === 'user')
+    if (!lastUserMsg) return
+    const userText = lastUserMsg.parts
+      ?.filter((p): p is Extract<typeof p, { type: 'text' }> => p.type === 'text')
+      .map(p => p.text)
+      .join('') || ''
+    if (!userText) return
+    setMessages(remaining)
+    // Small delay to let state settle before re-sending
+    setTimeout(() => sendMessage({ text: userText }), 50)
+  }, [messages, isLoading, setMessages, sendMessage])
+
+  // Find the last assistant message index for regenerate button
+  const lastAssistantIdx = [...messages].reverse().findIndex(m => m.role === 'assistant')
+  const lastAssistantMsgIdx = lastAssistantIdx === -1 ? -1 : messages.length - 1 - lastAssistantIdx
 
   return (
     <div className="flex h-[calc(100vh-8rem)] flex-col">
@@ -79,8 +116,13 @@ export function ChatPage() {
           </div>
         ) : (
           <div className="divide-y">
-            {messages.map((message) => (
-              <ChatMessage key={message.id} message={message} />
+            {messages.map((message, idx) => (
+              <ChatMessage
+                key={message.id}
+                message={message}
+                isLast={idx === lastAssistantMsgIdx && !isLoading}
+                onRegenerate={handleRegenerate}
+              />
             ))}
           </div>
         )}
@@ -99,6 +141,7 @@ export function ChatPage() {
         onStop={stop}
         isLoading={isLoading}
         placeholder="Send a message..."
+        supportsVision={modelConfig?.supportsVision ?? false}
       />
     </div>
   )

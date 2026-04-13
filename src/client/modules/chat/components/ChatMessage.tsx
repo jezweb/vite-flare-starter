@@ -9,16 +9,20 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Bot, User, Brain, Wrench, Loader2 } from 'lucide-react'
-import type { Message } from '../hooks/useChat'
+import { Bot, User, Brain, Wrench, Loader2, RotateCcw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import type { Message, MessageMetadata } from '../hooks/useChat'
 
 interface ChatMessageProps {
   message: Message
+  isLast?: boolean
+  onRegenerate?: () => void
 }
 
-export const ChatMessage = memo(function ChatMessage({ message }: ChatMessageProps) {
+export const ChatMessage = memo(function ChatMessage({ message, isLast, onRegenerate }: ChatMessageProps) {
   const isUser = message.role === 'user'
   const isAssistant = message.role === 'assistant'
+  const metadata = (message.metadata ?? {}) as MessageMetadata
 
   return (
     <div className={cn('flex gap-3 p-4', isUser && 'flex-row-reverse')}>
@@ -105,6 +109,32 @@ export const ChatMessage = memo(function ChatMessage({ message }: ChatMessagePro
             </p>
           )}
         </div>
+
+        {/* Metadata + Regenerate for assistant messages */}
+        {isAssistant && (metadata.model || metadata.inputTokens != null) && (
+          <div className="flex items-center gap-3 text-[10px] text-muted-foreground/60 mt-1 px-1">
+            {metadata.model && (
+              <span>{metadata.model.replace('@cf/', '').split('/').pop()}</span>
+            )}
+            {metadata.inputTokens != null && metadata.outputTokens != null && (
+              <span>{metadata.inputTokens + metadata.outputTokens} tokens</span>
+            )}
+            {metadata.durationMs != null && (
+              <span>{(metadata.durationMs / 1000).toFixed(1)}s</span>
+            )}
+            {isLast && onRegenerate && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-5 text-muted-foreground/60 hover:text-foreground"
+                onClick={onRegenerate}
+                title="Regenerate response"
+              >
+                <RotateCcw className="size-3" />
+              </Button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
