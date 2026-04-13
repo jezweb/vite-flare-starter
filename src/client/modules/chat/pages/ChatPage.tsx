@@ -2,7 +2,7 @@
  * ChatPage
  *
  * Full-page AI chat interface with model selection, streaming responses,
- * tool calling, and message metadata display.
+ * tool calling, inline UI, and input takeover (claude.ai-style).
  */
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -11,6 +11,8 @@ import { Trash2, MessageSquare } from 'lucide-react'
 import { ChatMessage, ChatInput, ModelSelector } from '../components'
 import { useChat } from '../hooks/useChat'
 import { DEFAULT_MODEL, MODEL_REGISTRY } from '@/server/lib/ai/models'
+import { InputTakeover, isTakeoverElement } from '../components/chat-ui/InputTakeover'
+import { hasUiMarker } from '../components/chat-ui/ChatUiElement'
 
 export function ChatPage() {
   const [model, setModel] = useState<string>(DEFAULT_MODEL)
@@ -36,7 +38,6 @@ export function ChatPage() {
 
   const handleSend = async (text: string, files?: File[]) => {
     if (files && files.length > 0) {
-      // Convert files to data URLs for AI SDK
       const filePromises = files.map(async (file) => {
         const buffer = await file.arrayBuffer()
         const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)))
@@ -50,28 +51,72 @@ export function ChatPage() {
     }
   }
 
-  // Regenerate: remove the last assistant message and re-send the last user message
+  // Regenerate: remove last assistant message and re-send last user message
   const handleRegenerate = useCallback(() => {
     if (isLoading || messages.length < 2) return
-    const lastAssistantIdx = [...messages].reverse().findIndex(m => m.role === 'assistant')
+    const lastAssistantIdx = [...messages].reverse().findIndex((m) => m.role === 'assistant')
     if (lastAssistantIdx === -1) return
     const removeFrom = messages.length - 1 - lastAssistantIdx
     const remaining = messages.slice(0, removeFrom)
-    const lastUserMsg = [...remaining].reverse().find(m => m.role === 'user')
+    const lastUserMsg = [...remaining].reverse().find((m) => m.role === 'user')
     if (!lastUserMsg) return
     const userText = lastUserMsg.parts
       ?.filter((p): p is Extract<typeof p, { type: 'text' }> => p.type === 'text')
-      .map(p => p.text)
+      .map((p) => p.text)
       .join('') || ''
     if (!userText) return
     setMessages(remaining)
-    // Small delay to let state settle before re-sending
     setTimeout(() => sendMessage({ text: userText }), 50)
   }, [messages, isLoading, setMessages, sendMessage])
 
   // Find the last assistant message index for regenerate button
-  const lastAssistantIdx = [...messages].reverse().findIndex(m => m.role === 'assistant')
+  const lastAssistantIdx = [...messages].reverse().findIndex((m) => m.role === 'assistant')
   const lastAssistantMsgIdx = lastAssistantIdx === -1 ? -1 : messages.length - 1 - lastAssistantIdx
+
+  // ─── Input Takeover Detection ──────────────────────────────────────
+  // Watch the last assistant message for _ui tool outputs that should
+  // take over the input area (ask_questions, offer_choices, etc.)
+  const [activeTakeover, setActiveTakeover] = useState<{ _ui: string; [key: string]: unknown } | null>(null)
+  const lastTakeoverCheckRef = useRef(0)
+
+  // Detect takeover elements in the most recent assistant message
+  useEffect(() => {
+    if (messages.length <= lastTakeoverCheckRef.current && !isLoading) return
+    lastTakeoverCheckRef.current = messages.length
+
+    // Find the last assistant message
+    const lastAssistantMsg = [...messages].reverse().find((m) => m.role === 'assistant')
+    if (!lastAssistantMsg?.parts) return
+
+    // Check all tool parts for _ui takeover markers
+    for (const part of lastAssistantMsg.parts) {
+      if (part.type.startsWith('tool-') || part.type === 'dynamic-tool') {
+        const p = part as Record<string, unknown>
+        const output = p['output']
+        if (output && hasUiMarker(output) && isTakeoverElement(output)) {
+          setActiveTakeover(output as { _ui: string; [key: string]: unknown })
+          return
+        }
+      }
+    }
+  }, [messages, isLoading])
+
+  // Clear takeover when conversation is cleared
+  useEffect(() => {
+    if (messages.length === 0) {
+      setActiveTakeover(null)
+      lastTakeoverCheckRef.current = 0
+    }
+  }, [messages.length])
+
+  const handleTakeoverSubmit = useCallback((text: string) => {
+    setActiveTakeover(null)
+    sendMessage({ text })
+  }, [sendMessage])
+
+  const handleTakeoverDismiss = useCallback(() => {
+    setActiveTakeover(null)
+  }, [])
 
   return (
     <div className="flex h-[calc(100vh-8rem)] flex-col">
@@ -136,14 +181,22 @@ export function ChatPage() {
         </div>
       )}
 
-      {/* Input */}
-      <ChatInput
-        onSend={handleSend}
-        onStop={stop}
-        isLoading={isLoading}
-        placeholder="Send a message..."
-        supportsVision={modelConfig?.supportsVision ?? false}
-      />
+      {/* Input area — either InputTakeover or ChatInput */}
+      {activeTakeover ? (
+        <InputTakeover
+          element={activeTakeover}
+          onSubmit={handleTakeoverSubmit}
+          onDismiss={handleTakeoverDismiss}
+        />
+      ) : (
+        <ChatInput
+          onSend={handleSend}
+          onStop={stop}
+          isLoading={isLoading}
+          placeholder="Send a message..."
+          supportsVision={modelConfig?.supportsVision ?? false}
+        />
+      )}
     </div>
   )
 }

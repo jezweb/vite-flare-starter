@@ -187,4 +187,14 @@ export const uiTools = {
     }),
     execute: async (args) => ({ _ui: 'confirm_action', ...args }),
   }),
+
+  collect_text: tool({
+    description: 'Ask the user for free-text input. Use when you need a detailed open-ended response — a description, explanation, feedback, or any multi-line text. The input area becomes a focused text field with a submit button.',
+    inputSchema: z.object({
+      prompt: z.string().describe('The question or instruction to show above the input'),
+      placeholder: z.string().optional().describe('Placeholder text in the input field'),
+      multiline: z.boolean().optional().describe('Allow multi-line input (default: true)'),
+    }),
+    execute: async (args) => ({ _ui: 'collect_text', ...args }),
+  }),
 }

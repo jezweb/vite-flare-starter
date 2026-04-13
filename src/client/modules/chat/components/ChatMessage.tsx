@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import type { Message, MessageMetadata } from '../hooks/useChat'
 import { extractUIResources, ToolUIResource } from './ToolUIResource'
 import { ChatUiElement, hasUiMarker } from './chat-ui/ChatUiElement'
+import { isTakeoverElement } from './chat-ui/InputTakeover'
 
 interface ChatMessageProps {
   message: Message
@@ -69,8 +70,11 @@ export const ChatMessage = memo(function ChatMessage({ message, isLast, onRegene
                   const isComplete = state === 'result' || state === 'call' || output != null
 
                   // Detect inline UI markers (ClawHQ-style) and MCP-UI resources (SEP-1865)
-                  const isUiMarker = isComplete && hasUiMarker(output)
-                  const uiResources = isComplete && !isUiMarker ? extractUIResources(output) : []
+                  // Takeover-type elements (ask_questions, offer_choices, confirm_action, etc.)
+                  // are NOT rendered inline — they go to InputTakeover in the input area.
+                  const isUiMarker = isComplete && hasUiMarker(output) && !isTakeoverElement(output)
+                  const isTakeover = isComplete && hasUiMarker(output) && isTakeoverElement(output)
+                  const uiResources = isComplete && !isUiMarker && !isTakeover ? extractUIResources(output) : []
 
                   return (
                     <div key={i}>
@@ -100,6 +104,13 @@ export const ChatMessage = memo(function ChatMessage({ message, isLast, onRegene
                             onSendMessage={onSendMessage}
                             disabled={!isLast}
                           />
+                        </div>
+                      )}
+                      {/* Takeover hint — shows "Waiting for your input" in the message */}
+                      {isTakeover && isLast && (
+                        <div className="my-1 rounded border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-primary flex items-center gap-1.5">
+                          <Loader2 className="size-3 animate-spin" />
+                          Waiting for your response below...
                         </div>
                       )}
                       {/* MCP-UI resources (SEP-1865 — iframe-rendered from external MCP servers) */}
