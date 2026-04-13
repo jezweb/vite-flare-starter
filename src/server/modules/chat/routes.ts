@@ -11,7 +11,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { desc, eq, sql } from 'drizzle-orm'
 import { authMiddleware, requireScopes, type AuthContext } from '@/server/middleware/auth'
 import { DEFAULT_MODEL, getModel, resolveModel, buildModel, buildSystemPrompt, getMCPTools } from '@/server/lib/ai'
-import { chatTools } from './tools'
+import { buildChatTools } from './tools'
 import { aiUsageLogs } from './db/schema'
 
 const app = new Hono<AuthContext>()
@@ -48,14 +48,19 @@ app.post('/', async (c) => {
       timezone: 'Australia/Sydney',
     })
 
-    // Collect tools: local demo tools + MCP server tools (if configured)
-    let tools: typeof chatTools | undefined
+    // Build the toolkit: core tools + module tools (based on available bindings)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let tools: any
     let mcpCleanup: (() => Promise<void>) | undefined
 
     if (modelConfig?.supportsTools) {
+      const chatTools = buildChatTools({
+        env: c.env as unknown as Parameters<typeof buildChatTools>[0]['env'],
+        userId,
+      })
       const { tools: mcpTools, cleanup } = await getMCPTools(c.env as unknown as Record<string, unknown>)
       mcpCleanup = cleanup
-      tools = { ...chatTools, ...(mcpTools as typeof chatTools) }
+      tools = { ...chatTools, ...mcpTools }
     }
 
     const result = streamText({

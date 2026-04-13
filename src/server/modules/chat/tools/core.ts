@@ -1,18 +1,14 @@
 /**
- * Demo Tools for AI Chat
+ * Core Tools — always available, zero dependencies
  *
- * AI SDK tool definitions that demonstrate agentic capabilities.
- * Only active when the selected model supports tool calling.
+ * Simple primitives that work in any environment: time, math, registry lookup.
  */
 import { tool } from 'ai'
 import { z } from 'zod'
 import { getModel, listModels } from '@/server/lib/ai/models'
 import type { ModelId } from '@/server/lib/ai/types'
 
-export const chatTools = {
-  /**
-   * Returns the current server time in UTC
-   */
+export const coreTools = {
   get_server_time: tool({
     description: 'Get the current server time in UTC. Use when the user asks about the current time or date.',
     inputSchema: z.object({}),
@@ -23,18 +19,15 @@ export const chatTools = {
     }),
   }),
 
-  /**
-   * Looks up a Workers AI model's capabilities from the registry
-   */
   get_model_info: tool({
-    description: 'Get capabilities and metadata for a Workers AI model. Use when the user asks about available models or model features.',
+    description: 'Get capabilities and metadata for a Workers AI model. Use when the user asks about available AI models or model features.',
     inputSchema: z.object({
-      modelId: z.string().describe('The model ID to look up, e.g. @cf/meta/llama-4-scout-17b-16e-instruct'),
+      modelId: z.string().describe('The model ID to look up, e.g. @cf/moonshotai/kimi-k2.5'),
     }),
     execute: async ({ modelId }: { modelId: string }) => {
       const model = getModel(modelId as ModelId)
       if (!model) {
-        const available = listModels().map(m => ({ id: m.id, name: m.displayName }))
+        const available = listModels().map((m) => ({ id: m.id, name: m.displayName }))
         return { error: `Unknown model: ${modelId}`, availableModels: available }
       }
       return {
@@ -51,9 +44,6 @@ export const chatTools = {
     },
   }),
 
-  /**
-   * Evaluates a simple arithmetic expression safely
-   */
   calculate: tool({
     description: 'Evaluate a simple arithmetic expression. Use for any math calculations.',
     inputSchema: z.object({

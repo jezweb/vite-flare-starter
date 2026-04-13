@@ -78,6 +78,20 @@ export interface Env {
   OPENAI_API_KEY?: string     // GPT models
   GOOGLE_AI_API_KEY?: string  // Gemini models
   OPENROUTER_API_KEY?: string // Any model via OpenRouter (single key)
+
+  // Browser Rendering (optional — enables browser_* agent tools)
+  // Create token at https://dash.cloudflare.com/profile/api-tokens with "Browser Rendering - Edit" permission
+  CLOUDFLARE_ACCOUNT_ID?: string
+  CLOUDFLARE_API_TOKEN?: string
+
+  // Web search provider (optional — enables web_search tool)
+  // Default: serper (2500 free/month at https://serper.dev)
+  // Options: serper | brave | tavily | exa
+  SEARCH_PROVIDER?: string
+  SERPER_API_KEY?: string
+  BRAVE_API_KEY?: string
+  TAVILY_API_KEY?: string
+  EXA_API_KEY?: string
 }
 
 // Create Hono app with type-safe environment
