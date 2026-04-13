@@ -17,6 +17,7 @@ import { buildAudioTools } from './audio'
 import { buildTodoTools } from './todo'
 import { buildScheduleTools } from './schedule'
 import { artifactTools } from './artifacts'
+import { buildDocumentTools } from './documents'
 
 interface ChatToolsContext {
   env: {
@@ -54,6 +55,7 @@ export function buildChatTools(ctx: ChatToolsContext) {
     ...coreTools,
     ...uiTools,
     ...artifactTools,
+    ...buildDocumentTools({ bucket: ctx.env.FILES, userId: ctx.userId }),
     ...buildMemoryTools({ db: ctx.env.DB, userId: ctx.userId }),
     ...buildSkillsTools({ env: ctx.env }),
     ...buildCodeTools({ env: ctx.env, userId: ctx.userId }),

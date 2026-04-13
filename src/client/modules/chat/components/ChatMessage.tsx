@@ -16,6 +16,7 @@ import { extractUIResources, ToolUIResource } from './ToolUIResource'
 import { ChatUiElement, hasUiMarker } from './chat-ui/ChatUiElement'
 import { isTakeoverElement } from './chat-ui/InputTakeover'
 import { ArtifactViewer, isArtifact } from './chat-ui/ArtifactViewer'
+import { DocumentDownload, isDocument } from './chat-ui/DocumentDownload'
 
 interface ChatMessageProps {
   message: Message
@@ -73,12 +74,13 @@ export const ChatMessage = memo(function ChatMessage({ message, isLast, onRegene
                   // Detect different types of rich output:
                   // 1. Artifacts (HTML/SVG/Mermaid rendered in sandboxed iframe)
                   const isArtifactOutput = isComplete && isArtifact(output)
-                  // 2. Inline UI markers (ClawHQ-style: data_table, timeline, etc.)
-                  //    Takeover types are NOT rendered inline — they go to InputTakeover.
-                  const isUiMarker = isComplete && !isArtifactOutput && hasUiMarker(output) && !isTakeoverElement(output)
-                  const isTakeover = isComplete && !isArtifactOutput && hasUiMarker(output) && isTakeoverElement(output)
-                  // 3. MCP-UI resources (SEP-1865 — external server UI in iframe)
-                  const uiResources = isComplete && !isUiMarker && !isTakeover && !isArtifactOutput ? extractUIResources(output) : []
+                  // 2. Documents (DOCX/XLSX/CSV with download button)
+                  const isDocumentOutput = isComplete && !isArtifactOutput && isDocument(output)
+                  // 3. Inline UI markers (ClawHQ-style: data_table, timeline, etc.)
+                  const isUiMarker = isComplete && !isArtifactOutput && !isDocumentOutput && hasUiMarker(output) && !isTakeoverElement(output)
+                  const isTakeover = isComplete && !isArtifactOutput && !isDocumentOutput && hasUiMarker(output) && isTakeoverElement(output)
+                  // 4. MCP-UI resources (SEP-1865 — external server UI in iframe)
+                  const uiResources = isComplete && !isUiMarker && !isTakeover && !isArtifactOutput && !isDocumentOutput ? extractUIResources(output) : []
 
                   return (
                     <div key={i}>
@@ -120,6 +122,10 @@ export const ChatMessage = memo(function ChatMessage({ message, isLast, onRegene
                       {/* Artifacts (HTML/SVG/Mermaid in sandboxed iframe) */}
                       {isArtifactOutput && (
                         <ArtifactViewer artifact={output as { _artifact: true; type: 'html' | 'svg' | 'mermaid'; title: string; code: string; height?: number }} />
+                      )}
+                      {/* Documents (DOCX/XLSX/CSV with download card) */}
+                      {isDocumentOutput && (
+                        <DocumentDownload doc={output as { _document: true; format: 'docx' | 'xlsx' | 'csv'; title: string; filename: string; sizeBytes: number; downloadUrl?: string; base64?: string }} />
                       )}
                       {/* MCP-UI resources (SEP-1865 — iframe-rendered from external MCP servers) */}
                       {uiResources.map((resource, idx) => (

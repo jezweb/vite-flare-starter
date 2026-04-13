@@ -72,6 +72,7 @@
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
+    "docx": "^9.6.1",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.12",
     "lucide-react": "^1.8.0",
