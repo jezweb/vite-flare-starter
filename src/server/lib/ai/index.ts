@@ -1,19 +1,25 @@
 /**
  * AI Module
  *
- * Model registry and utilities for Workers AI via AI SDK.
+ * Multi-provider AI via AI SDK. Pass any model string to resolveModel()
+ * and it picks the right provider automatically.
  *
  * @example
- * import { DEFAULT_MODEL, getModel, listModels } from '@/server/lib/ai'
- * import { createWorkersAI } from 'workers-ai-provider'
+ * import { resolveModel, DEFAULT_MODEL } from '@/server/lib/ai'
  * import { streamText } from 'ai'
  *
- * const workersai = createWorkersAI({ binding: c.env.AI })
- * const result = streamText({
- *   model: workersai(DEFAULT_MODEL),
- *   messages,
- * })
+ * const model = resolveModel(c.env, '@cf/moonshotai/kimi-k2.5') // Workers AI
+ * const model = resolveModel(c.env, 'claude-sonnet-4-6')         // Anthropic
+ * const model = resolveModel(c.env, 'gpt-4o')                    // OpenAI
+ *
+ * const result = streamText({ model, messages })
  */
+
+// Provider factory — the main entry point
+export { resolveModel, getAvailableProviders } from './providers'
+
+// Model middleware (reasoning extraction, etc.)
+export { buildModel } from './middleware'
 
 // Model registry
 export {

@@ -24,7 +24,7 @@ import { authMiddleware, requireScopes } from './middleware/auth'
 import { requestIdMiddleware } from './middleware/request-id'
 import { captureServerException } from './lib/sentry'
 import { AVATAR, APP_VERSION } from '@/shared/config/constants'
-import { listModels, DEFAULT_MODEL } from './lib/ai'
+import { listModels, DEFAULT_MODEL, getAvailableProviders } from './lib/ai'
 
 // Define Cloudflare Workers environment bindings
 export interface Env {
@@ -72,11 +72,12 @@ export interface Env {
   // Example: "myapp_" (3-4 chars + underscore)
   TOKEN_PREFIX?: string
 
-  // AI Gateway configuration (optional - enables multi-provider support)
-  // Create gateway at: https://dash.cloudflare.com/ai/ai-gateway
-  AI_GATEWAY_ID?: string // Gateway ID (default: "default")
-  CF_ACCOUNT_ID?: string // Account ID (uses default from code if not set)
-  CF_AIG_TOKEN?: string // Auth token for authenticated gateways
+  // AI Provider API keys (optional — set for the providers you want to use)
+  // Workers AI is free and needs no key (uses env.AI binding)
+  ANTHROPIC_API_KEY?: string  // Claude models
+  OPENAI_API_KEY?: string     // GPT models
+  GOOGLE_AI_API_KEY?: string  // Gemini models
+  OPENROUTER_API_KEY?: string // Any model via OpenRouter (single key)
 }
 
 // Create Hono app with type-safe environment
@@ -220,7 +221,7 @@ const aiTestSchema = z.object({
 
 // GET /api/ai/models - List available Workers AI models
 // Requires: ai:use scope for API tokens
-app.get('/api/ai/models', authMiddleware, requireScopes('ai:use'), async () => {
+app.get('/api/ai/models', authMiddleware, requireScopes('ai:use'), async (c) => {
   const models = listModels()
 
   return Response.json({
@@ -235,6 +236,7 @@ app.get('/api/ai/models', authMiddleware, requireScopes('ai:use'), async () => {
       isReasoning: m.isReasoning,
     })),
     defaultModel: DEFAULT_MODEL,
+    providers: getAvailableProviders(c.env),
   })
 })
 
@@ -250,14 +252,13 @@ app.post(
 
     try {
       const { generateText } = await import('ai')
-      const { createWorkersAI } = await import('workers-ai-provider')
+      const { resolveModel } = await import('./lib/ai')
 
-      const workersai = createWorkersAI({ binding: c.env.AI })
       const modelId = model || DEFAULT_MODEL
       const startTime = Date.now()
 
       const { text, usage } = await generateText({
-        model: workersai(modelId),
+        model: resolveModel(c.env, modelId),
         prompt,
       })
 

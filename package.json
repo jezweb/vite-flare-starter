@@ -29,9 +29,13 @@
     "format": "biome format --write ."
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.69",
+    "@ai-sdk/google": "^3.0.62",
+    "@ai-sdk/openai": "^3.0.52",
     "@ai-sdk/react": "^3.0.160",
     "@cloudflare/ai-utils": "^1.0.1",
     "@hookform/resolvers": "^3.10.0",
+    "@openrouter/ai-sdk-provider": "^2.5.1",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-avatar": "^1.1.11",

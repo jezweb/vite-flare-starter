@@ -7,12 +7,10 @@
 import { Hono } from 'hono'
 import { streamText, generateText, convertToModelMessages, smoothStream, stepCountIs, Output } from 'ai'
 import { z } from 'zod'
-import { createWorkersAI } from 'workers-ai-provider'
 import { drizzle } from 'drizzle-orm/d1'
 import { desc, eq, sql } from 'drizzle-orm'
 import { authMiddleware, requireScopes, type AuthContext } from '@/server/middleware/auth'
-import { DEFAULT_MODEL, getModel } from '@/server/lib/ai/models'
-import { buildModel } from '@/server/lib/ai/middleware'
+import { DEFAULT_MODEL, getModel, resolveModel, buildModel } from '@/server/lib/ai'
 import { chatTools } from './tools'
 import { aiUsageLogs } from './db/schema'
 
@@ -38,8 +36,8 @@ app.post('/', async (c) => {
     const userId = c.get('userId')
     const startTime = Date.now()
 
-    const workersai = createWorkersAI({ binding: c.env.AI })
-    const model = buildModel(workersai(modelId), modelId)
+    const baseModel = resolveModel(c.env, modelId)
+    const model = buildModel(baseModel, modelId)
 
     // Only attach tools for tool-capable models
     const tools = modelConfig?.supportsTools ? chatTools : undefined
@@ -104,10 +102,8 @@ app.post('/complete', async (c) => {
     const modelId = requestedModel || DEFAULT_MODEL
     const modelConfig = getModel(modelId)
 
-    const workersai = createWorkersAI({ binding: c.env.AI })
-
     const { text, usage } = await streamText({
-      model: workersai(modelId),
+      model: resolveModel(c.env, modelId),
       messages: await convertToModelMessages(messages),
       maxOutputTokens: modelConfig?.defaultMaxTokens ?? 2000,
     })
@@ -198,14 +194,13 @@ app.post('/extract', async (c) => {
       )
     }
 
-    const workersai = createWorkersAI({ binding: c.env.AI })
     // Use a tool-capable model for structured output
     const modelId = '@cf/moonshotai/kimi-k2.5'
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const schema = extractSchemas[schemaName] as any
     const { output } = await generateText({
-      model: workersai(modelId),
+      model: resolveModel(c.env, modelId),
       output: Output.object({ schema }),
       prompt: `Extract the following from this text:\n\n${text}`,
     })
