@@ -39,6 +39,7 @@ import {
 } from 'lucide-react'
 import { NotificationBell } from '@/client/components/NotificationBell'
 import { CommandPalette } from '@/client/components/CommandPalette'
+import { KeyboardShortcuts } from '@/client/components/KeyboardShortcuts'
 import { EmailVerificationBanner } from '@/client/components/EmailVerificationBanner'
 import { cn } from '@/lib/utils'
 import { features } from '@/shared/config/features'
@@ -374,6 +375,7 @@ export function DashboardLayout() {
       </div>
 
       <CommandPalette />
+      <KeyboardShortcuts />
       <div className="flex flex-1 flex-col min-w-0">
         <Header />
         <EmailVerificationBanner />

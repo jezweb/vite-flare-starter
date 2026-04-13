@@ -326,6 +326,84 @@ Use dedicated pages for forms and content. Modals only for confirmations and qui
 3. Add nav item in `src/shared/config/nav.ts`
 4. Feature flag it if it should be optional
 
+### UI Components Available
+
+| Component | File | What it does |
+|-----------|------|-------------|
+| **Command Palette** | `src/client/components/CommandPalette.tsx` | Cmd+K global search/navigation, reads from nav config |
+| **Keyboard Shortcuts** | `src/client/components/KeyboardShortcuts.tsx` | Press ? to show all shortcuts |
+| **Empty State** | `src/client/components/EmptyState.tsx` | No-data screens with icon, title, description, CTA button |
+| **Inline Edit** | `src/client/components/InlineEdit.tsx` | Click-to-edit text fields (save on blur/Enter, cancel on Escape) |
+| **Skeletons** | `src/client/components/skeletons.tsx` | Loading placeholders: StatCard, Table, Chart, List, Page |
+| **Notification Bell** | `src/client/components/NotificationBell.tsx` | Unread count badge + dropdown |
+
+---
+
+## Cloudflare Platform Features
+
+The starter uses D1, R2, and Workers AI. Here's when to reach for other Cloudflare services in your fork:
+
+### Already Configured (in wrangler.jsonc)
+
+| Service | Binding | What it does | Used by |
+|---------|---------|-------------|---------|
+| **D1** | `DB` | SQLite database | Auth, all modules |
+| **R2** | `AVATARS`, `FILES` | Object storage | Avatars, file uploads |
+| **Workers AI** | `AI` | LLM inference (free) | Chat module via AI SDK |
+
+### Add When You Need It
+
+**Durable Objects** — stateful agents, WebSocket sessions, per-user state
+```jsonc
+// wrangler.jsonc
+"durable_objects": {
+  "bindings": [{ "name": "AGENT", "class_name": "AgentDO" }]
+}
+```
+Use for: AI agent conversation loops, real-time collaboration, scheduled tasks via DO.alarm(), WebSocket hibernation (80-95% cost reduction). Every AI assistant project (Apollo, Athena, Claq, l2chat) uses this pattern.
+
+**Queues** — async job processing
+```jsonc
+"queues": {
+  "producers": [{ "binding": "JOBS", "queue": "job-queue" }],
+  "consumers": [{ "queue": "job-queue", "max_batch_size": 10 }]
+}
+```
+Use for: background email sending, webhook delivery, image processing, any work that shouldn't block the request.
+
+**Vectorize** — semantic search with embeddings
+```jsonc
+"vectorize": [{ "binding": "VECTORS", "index_name": "my-index" }]
+```
+Use for: knowledge base search, RAG (retrieval-augmented generation), similar item discovery. Create metadata indexes BEFORE inserting vectors (they're not retroactive).
+
+**KV** — low-latency key-value cache
+```jsonc
+"kv_namespaces": [{ "binding": "CACHE", "id": "..." }]
+```
+Use for: session cache, rate limiting state, frequently-read config, API response caching. Not for large objects (use R2) or complex queries (use D1).
+
+**Browser Rendering** — headless Chrome
+```jsonc
+"browser": { "binding": "BROWSER" }
+```
+Use for: screenshots, PDF generation, web scraping, visual testing. REST API available for simple screenshot/PDF without Puppeteer.
+
+**Cron Triggers** — scheduled execution
+```jsonc
+"triggers": { "crons": ["0 6 * * *"] }
+```
+Use for: daily reports, data cleanup, health checks. Handler is `scheduled(event, env, ctx)` in your Worker. For per-user schedules, use Durable Object alarms instead.
+
+**Hyperdrive** — connection pooling for external databases
+```jsonc
+"hyperdrive": [{ "binding": "HYPERDRIVE", "id": "..." }]
+```
+Use for: connecting to PostgreSQL, MySQL, or other external databases from Workers. Crosbe-ai uses this for Google Cloud SQL.
+
+**Containers** — long-running compute
+Use for: heavy ML inference, video processing, anything that exceeds Workers CPU limits. ClawHQ uses this for compute-intensive operations.
+
 ---
 
 ## AI Module
