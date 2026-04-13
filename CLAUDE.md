@@ -417,7 +417,120 @@ Use for: heavy ML inference, video processing, anything that exceeds Workers CPU
 | **Fast** | Llama 3.1 8B, GPT-OSS 20B, Granite 4.0, Llama 3.2 3B | Low latency |
 | **Reasoning** | QwQ 32B | Step-by-step thinking |
 
-AI features in the chat module: streaming, tool calling (3 demo tools), reasoning extraction, vision (image attachments), structured output, token usage logging, message metadata, regenerate.
+AI features in the chat module: streaming, tool calling, reasoning extraction, vision (image attachments), structured output, token usage logging, message metadata, regenerate, MCP integration, MCP-UI rendering.
+
+---
+
+## Agentic Toolkit
+
+The chat module ships with a **modular agent toolkit** in `src/server/modules/chat/tools/`. Tools are auto-included based on which env bindings are configured.
+
+### Tool modules
+
+| Module | Tools | Always present? |
+|--------|-------|-----------------|
+| **core** | `get_server_time`, `get_model_info`, `calculate` | Yes |
+| **memory** | `remember`, `recall`, `search_memory`, `forget` | Yes (uses user_meta D1 table) |
+| **ui** | `offer_choices`, `show_alert`, `show_contact`, `collect_info`, `ask_questions`, `show_data_table`, `show_metric_cards`, `show_timeline`, `show_progress`, `show_comparison`, `confirm_action` | Yes (rendered as inline React components) |
+| **skills** | `load_skill` | Yes |
+| **code** | `run_python`, `run_shell`, `run_js` | Yes (returns setup msg if SANDBOX missing) |
+| **delegate** | `delegate` | Yes (subagent pattern) |
+| **browser** | `browser_markdown`, `browser_extract`, `browser_screenshot`, `browser_links`, `browser_content` | Only if `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_API_TOKEN` set |
+| **search** | `web_search` | Only if a provider key is set |
+| **files** | `fs_list`, `fs_read`, `fs_write`, `fs_delete` | Only if `FILES` R2 bucket bound |
+
+**Adding a new tool**: create a new file in `tools/`, export a `buildXxxTools(ctx)` function, add to `tools/index.ts` aggregator. Use existing tools as reference.
+
+### Browser Rendering tools
+
+Use Cloudflare Browser Rendering's REST API directly — no Puppeteer/Playwright. Set up an API token at https://dash.cloudflare.com/profile/api-tokens with "Browser Rendering - Edit" permission, then set `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`.
+
+`browser_extract` is particularly powerful — uses the `/json` endpoint which runs Workers AI extraction natively, so you can pass natural-language prompts like "Extract product name, price, availability".
+
+### Search providers
+
+Configure via `SEARCH_PROVIDER` env var (default: `serper`). All providers normalised to `{ title, url, snippet, date }`.
+
+| Provider | Free tier | Setup |
+|----------|-----------|-------|
+| **Serper** (default) | 2,500 queries/month | https://serper.dev → `SERPER_API_KEY` |
+| Brave | $5 monthly credits | https://brave.com/search/api/ → `BRAVE_API_KEY` |
+| Tavily | 1,000 credits/month | https://tavily.com → `TAVILY_API_KEY` |
+| Exa | Paid | https://exa.ai → `EXA_API_KEY` |
+
+### Inline UI tools (vs MCP-UI)
+
+Two patterns coexist:
+
+- **Inline UI** (`_ui` marker) — tools return `{ _ui: 'toolName', ...args }`. Rendered in `chat-ui/ChatUiElement.tsx` using shadcn components. No iframes. Tighter integration. Use for your own app's UI.
+- **MCP-UI** (SEP-1865) — external MCP servers deliver `ui://` resources. Rendered in sandboxed iframes via `ToolUIResource.tsx`. Cross-host standard. Use for plug-in capabilities.
+
+Both render automatically when detected in tool output. The tool-name pill is hidden when rich UI displays.
+
+### Code execution
+
+`run_python`, `run_shell`, `run_js` use Cloudflare Sandbox — isolated Linux containers via Firecracker microVMs. Each user gets their own persistent sandbox (`user-<userId>`). Requires Workers Paid plan and a SANDBOX Durable Object binding in wrangler.jsonc.
+
+When the binding is missing, the tools still appear in the toolkit but return a clear setup message — the agent will know what's needed.
+
+---
+
+## Skills System
+
+Claude Agent Skills compatible — same SKILL.md format that works with Claude Code, Codex, Hermes, OpenClaw, Cursor, and Aider.
+
+### Format (SKILL.md)
+
+```yaml
+---
+name: my-skill
+description: What this skill does and when to use it (≤1024 chars)
+---
+
+# My Skill
+
+Step-by-step instructions the AI follows...
+```
+
+Required: `name` (lowercase-hyphens, ≤64 chars), `description` (≤1024 chars).
+
+### Storage — three sources
+
+1. **Bundled** — drop a SKILL.md at `skills/<name>/SKILL.md`. Picked up at build time via Vite glob. 12 examples ship with the starter.
+2. **R2** — upload via `POST /api/skills/upload` with the SKILL.md content. Stored in the SKILLS R2 bucket (optional binding).
+3. **GitHub** — register via `POST /api/skills/github` with a raw GitHub URL. Cached in R2 if available.
+
+### Progressive disclosure
+
+- **Level 1** (always loaded): `name` + `description` of every enabled skill, injected into system prompt
+- **Level 2** (on demand): full SKILL.md body, loaded via the `load_skill` tool when triggered
+- **Level 3** (referenced files): the skill body can mention other files, agent reads via `fs_read`
+
+### Bundled skills
+
+12 reference implementations covering common agent patterns:
+
+- **Research**: `web-research`, `fact-check`, `summarise-url`
+- **Writing**: `draft-email`, `rewrite-for-audience`
+- **Documents**: `document-qa`, `extract-structured-data`
+- **Self-management**: `morning-brief`, `remember-conversation`, `save-research-doc`
+- **Workflows**: `compare-options`, `plan-task`, `code-review`
+
+Each demonstrates a different combination of primitive tools — fork, modify, add your own.
+
+### Adding skills from external sources
+
+```bash
+# From GitHub (raw URL)
+curl -X POST /api/skills/github \
+  -H 'Content-Type: application/json' \
+  -d '{"url": "https://raw.githubusercontent.com/anthropics/skills/main/pdf/SKILL.md"}'
+
+# From inline content
+curl -X POST /api/skills/upload \
+  -H 'Content-Type: application/json' \
+  -d '{"content": "---\nname: my-skill\ndescription: ...\n---\n\n..."}'
+```
 
 ---
 
