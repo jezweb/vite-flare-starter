@@ -13,14 +13,16 @@ import { Bot, User, Brain, Wrench, Loader2, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { Message, MessageMetadata } from '../hooks/useChat'
 import { extractUIResources, ToolUIResource } from './ToolUIResource'
+import { ChatUiElement, hasUiMarker } from './chat-ui/ChatUiElement'
 
 interface ChatMessageProps {
   message: Message
   isLast?: boolean
   onRegenerate?: () => void
+  onSendMessage?: (text: string) => void
 }
 
-export const ChatMessage = memo(function ChatMessage({ message, isLast, onRegenerate }: ChatMessageProps) {
+export const ChatMessage = memo(function ChatMessage({ message, isLast, onRegenerate, onSendMessage }: ChatMessageProps) {
   const isUser = message.role === 'user'
   const isAssistant = message.role === 'assistant'
   const metadata = (message.metadata ?? {}) as MessageMetadata
@@ -66,32 +68,43 @@ export const ChatMessage = memo(function ChatMessage({ message, isLast, onRegene
                   const output = p['output']
                   const isComplete = state === 'result' || state === 'call' || output != null
 
-                  // Detect MCP-UI resources in tool output (SEP-1865)
-                  const uiResources = isComplete ? extractUIResources(output) : []
+                  // Detect inline UI markers (ClawHQ-style) and MCP-UI resources (SEP-1865)
+                  const isUiMarker = isComplete && hasUiMarker(output)
+                  const uiResources = isComplete && !isUiMarker ? extractUIResources(output) : []
 
                   return (
                     <div key={i}>
-                      <div className="my-1 rounded border border-border/50 bg-background/30 px-3 py-2 text-xs">
-                        <div className="flex items-center gap-1.5 text-muted-foreground">
-                          {isComplete ? (
-                            <Wrench className="size-3" />
-                          ) : (
-                            <Loader2 className="size-3 animate-spin" />
+                      {/* Show tool name pill ONLY when there's no rich UI to display */}
+                      {!isUiMarker && uiResources.length === 0 && (
+                        <div className="my-1 rounded border border-border/50 bg-background/30 px-3 py-2 text-xs">
+                          <div className="flex items-center gap-1.5 text-muted-foreground">
+                            {isComplete ? (
+                              <Wrench className="size-3" />
+                            ) : (
+                              <Loader2 className="size-3 animate-spin" />
+                            )}
+                            <span className="font-medium">{toolName}</span>
+                          </div>
+                          {isComplete && output != null && (
+                            <pre className="mt-1 text-[10px] text-muted-foreground overflow-x-auto">
+                              {JSON.stringify(output, null, 2)}
+                            </pre>
                           )}
-                          <span className="font-medium">{toolName}</span>
                         </div>
-                        {isComplete && output != null && uiResources.length === 0 && (
-                          <pre className="mt-1 text-[10px] text-muted-foreground overflow-x-auto">
-                            {JSON.stringify(output, null, 2)}
-                          </pre>
-                        )}
-                      </div>
-                      {/* Render MCP-UI resources (SEP-1865) */}
+                      )}
+                      {/* Inline UI elements (offer_choices, show_alert, etc.) */}
+                      {isUiMarker && (
+                        <div className="my-2">
+                          <ChatUiElement
+                            element={output as { _ui: string;[key: string]: unknown }}
+                            onSendMessage={onSendMessage}
+                            disabled={!isLast}
+                          />
+                        </div>
+                      )}
+                      {/* MCP-UI resources (SEP-1865 — iframe-rendered from external MCP servers) */}
                       {uiResources.map((resource, idx) => (
-                        <ToolUIResource
-                          key={`${resource.uri}-${idx}`}
-                          resource={resource}
-                        />
+                        <ToolUIResource key={`${resource.uri}-${idx}`} resource={resource} />
                       ))}
                     </div>
                   )

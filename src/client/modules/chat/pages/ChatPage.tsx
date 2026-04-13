@@ -122,6 +122,7 @@ export function ChatPage() {
                 message={message}
                 isLast={idx === lastAssistantMsgIdx && !isLoading}
                 onRegenerate={handleRegenerate}
+                onSendMessage={(text) => sendMessage({ text })}
               />
             ))}
           </div>

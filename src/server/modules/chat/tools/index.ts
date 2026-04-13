@@ -9,6 +9,7 @@ import { buildBrowserTools } from './browser'
 import { buildSearchTools, getActiveSearchProvider } from './search'
 import { buildMemoryTools } from './memory'
 import { buildFileTools } from './files'
+import { uiTools } from './ui'
 
 interface ChatToolsContext {
   env: {
@@ -32,6 +33,7 @@ interface ChatToolsContext {
 export function buildChatTools(ctx: ChatToolsContext) {
   const tools: Record<string, unknown> = {
     ...coreTools,
+    ...uiTools,
     ...buildMemoryTools({ db: ctx.env.DB, userId: ctx.userId }),
   }
 
@@ -53,4 +55,4 @@ export function buildChatTools(ctx: ChatToolsContext) {
   return tools
 }
 
-export { coreTools, buildBrowserTools, buildSearchTools, buildMemoryTools, buildFileTools }
+export { coreTools, uiTools, buildBrowserTools, buildSearchTools, buildMemoryTools, buildFileTools }
