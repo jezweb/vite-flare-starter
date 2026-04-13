@@ -67,6 +67,7 @@ app.post('/', async (c) => {
       const chatTools = buildChatTools({
         env: c.env as unknown as Parameters<typeof buildChatTools>[0]['env'],
         userId,
+        defaultModel: modelId,
       })
       const { tools: mcpTools, cleanup } = await getMCPTools(c.env as unknown as Record<string, unknown>)
       mcpCleanup = cleanup

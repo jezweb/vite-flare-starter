@@ -35,6 +35,7 @@
     "@ai-sdk/openai": "^3.0.52",
     "@ai-sdk/react": "^3.0.160",
     "@cloudflare/ai-utils": "^1.0.1",
+    "@cloudflare/sandbox": "^0.8.9",
     "@hookform/resolvers": "^3.10.0",
     "@mcp-ui/client": "^7.0.0",
     "@mcp-ui/server": "^6.1.0",
