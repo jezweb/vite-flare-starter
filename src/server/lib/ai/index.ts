@@ -30,6 +30,13 @@ export type { MCPServerConfig, MCPManager } from './mcp'
 
 // Document conversion (PDF, images, text → markdown)
 export { convertToMarkdown, isConvertible } from './documents'
+export type { ConvertOptions } from './documents'
+
+// MCP-UI server helpers — re-exported from @mcp-ui/server.
+// Use createUIResource() in your own MCP server tools to return interactive
+// HTML/URL/remote-DOM resources that the chat renders via UIResourceRenderer.
+// See SEP-1865 (MCP Apps spec) for the full content model.
+export { createUIResource } from '@mcp-ui/server'
 
 // Model registry
 export {

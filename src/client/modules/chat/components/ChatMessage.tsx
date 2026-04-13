@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Bot, User, Brain, Wrench, Loader2, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { Message, MessageMetadata } from '../hooks/useChat'
+import { extractUIResources, ToolUIResource } from './ToolUIResource'
 
 interface ChatMessageProps {
   message: Message
@@ -64,21 +65,34 @@ export const ChatMessage = memo(function ChatMessage({ message, isLast, onRegene
                   const state = String(p['state'] || 'pending')
                   const output = p['output']
                   const isComplete = state === 'result' || state === 'call' || output != null
+
+                  // Detect MCP-UI resources in tool output (SEP-1865)
+                  const uiResources = isComplete ? extractUIResources(output) : []
+
                   return (
-                    <div key={i} className="my-1 rounded border border-border/50 bg-background/30 px-3 py-2 text-xs">
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        {isComplete ? (
-                          <Wrench className="size-3" />
-                        ) : (
-                          <Loader2 className="size-3 animate-spin" />
+                    <div key={i}>
+                      <div className="my-1 rounded border border-border/50 bg-background/30 px-3 py-2 text-xs">
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                          {isComplete ? (
+                            <Wrench className="size-3" />
+                          ) : (
+                            <Loader2 className="size-3 animate-spin" />
+                          )}
+                          <span className="font-medium">{toolName}</span>
+                        </div>
+                        {isComplete && output != null && uiResources.length === 0 && (
+                          <pre className="mt-1 text-[10px] text-muted-foreground overflow-x-auto">
+                            {JSON.stringify(output, null, 2)}
+                          </pre>
                         )}
-                        <span className="font-medium">{toolName}</span>
                       </div>
-                      {isComplete && output != null && (
-                        <pre className="mt-1 text-[10px] text-muted-foreground overflow-x-auto">
-                          {JSON.stringify(output, null, 2)}
-                        </pre>
-                      )}
+                      {/* Render MCP-UI resources (SEP-1865) */}
+                      {uiResources.map((resource, idx) => (
+                        <ToolUIResource
+                          key={`${resource.uri}-${idx}`}
+                          resource={resource}
+                        />
+                      ))}
                     </div>
                   )
                 }

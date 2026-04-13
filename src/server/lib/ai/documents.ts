@@ -1,142 +1,138 @@
 /**
  * Document Conversion
  *
- * Converts uploaded files (PDF, images, Office docs) to markdown text
- * that can be injected into AI context. Uses Cloudflare Workers AI
- * for OCR and document understanding.
+ * Converts uploaded files (PDF, images, text) to markdown that can be
+ * injected into AI context. Uses AI SDK so it works with any provider's
+ * vision-capable model — Kimi K2.5 is the default (best quality on Workers AI).
  *
  * @example
  * import { convertToMarkdown } from '@/server/lib/ai/documents'
  *
- * // Convert a PDF to markdown
- * const markdown = await convertToMarkdown(env.AI, pdfBuffer, 'application/pdf')
+ * const markdown = await convertToMarkdown(env, pdfBuffer, 'application/pdf')
  *
  * // Use in system prompt
  * const system = buildSystemPrompt({
  *   knowledge: [{ title: 'Uploaded Document', content: markdown }],
  * })
  */
+import { generateText } from 'ai'
+import { resolveModel } from './providers'
+
+interface DocumentEnv {
+  AI: Ai
+  ANTHROPIC_API_KEY?: string
+  OPENAI_API_KEY?: string
+  GOOGLE_AI_API_KEY?: string
+  OPENROUTER_API_KEY?: string
+}
 
 /**
- * Convert a document or image to markdown text using Workers AI.
+ * Default model for document conversion.
+ *
+ * Kimi K2.5 leads Workers AI for vision tasks — 256k context, strong OCR,
+ * structured output. Override via the `model` option if you prefer another.
+ */
+const DEFAULT_VISION_MODEL = '@cf/moonshotai/kimi-k2.5'
+
+export interface ConvertOptions {
+  /** Override the model (any vision-capable model ID) */
+  model?: string
+  /** Original filename for context */
+  filename?: string
+  /** Custom extraction prompt */
+  prompt?: string
+}
+
+/**
+ * Convert a document or image to markdown text.
  *
  * Supported formats:
- * - Images (JPEG, PNG, WebP, GIF) — OCR via vision model
- * - PDF — page-by-page text extraction
+ * - Images (JPEG, PNG, WebP, GIF) — OCR + scene description
+ * - PDF — text extraction with structure preservation
  * - Plain text — returned as-is
  *
- * For Office docs (DOCX, XLSX), convert to PDF first or use
- * a dedicated conversion service.
+ * For Office docs (DOCX, XLSX), convert to PDF first.
  */
 export async function convertToMarkdown(
-  ai: Ai,
+  env: DocumentEnv,
   data: ArrayBuffer | Uint8Array,
   mimeType: string,
-  options?: { filename?: string; maxPages?: number }
+  options: ConvertOptions = {}
 ): Promise<string> {
   const bytes = data instanceof ArrayBuffer ? new Uint8Array(data) : data
 
-  // Plain text — return as-is
+  // Plain text — pass through
   if (mimeType.startsWith('text/')) {
     return new TextDecoder().decode(bytes)
   }
 
-  // Images — use vision model for OCR / description
-  if (mimeType.startsWith('image/')) {
-    return extractFromImage(ai, bytes, mimeType)
+  // Images and PDFs — use vision model via AI SDK
+  if (mimeType.startsWith('image/') || mimeType === 'application/pdf') {
+    return extractWithVision(env, bytes, mimeType, options)
   }
 
-  // PDF — extract text
-  if (mimeType === 'application/pdf') {
-    return extractFromPDF(ai, bytes, options?.maxPages)
-  }
-
-  // Unsupported format
-  const ext = options?.filename?.split('.').pop() || mimeType
-  return `[Document: ${ext} — conversion not supported. Upload as PDF or image for text extraction.]`
+  // Unsupported format — return a clear message
+  const ext = options.filename?.split('.').pop() || mimeType
+  return `[Document: ${ext} — conversion not supported. Upload as PDF, image, or plain text.]`
 }
 
 /**
- * Extract text/description from an image using Workers AI vision model.
- */
-async function extractFromImage(
-  ai: Ai,
-  imageBytes: Uint8Array,
-  mimeType: string
-): Promise<string> {
-  try {
-    // Use Llama 3.2 Vision for image understanding
-    const base64 = btoa(String.fromCharCode(...imageBytes))
-    const dataUrl = `data:${mimeType};base64,${base64}`
-
-    const result = await ai.run('@cf/meta/llama-3.2-11b-vision-instruct' as Parameters<Ai['run']>[0], {
-      messages: [
-        {
-          role: 'user',
-          content: [
-            { type: 'text', text: 'Extract all text from this image. If it\'s a document, preserve the structure (headings, lists, tables). If it\'s a photo, describe what you see in detail.' },
-            { type: 'image_url', image_url: { url: dataUrl } },
-          ],
-        },
-      ],
-      max_tokens: 4096,
-    } as Record<string, unknown>)
-
-    const response = result as Record<string, unknown>
-    return String(response['response'] || response['text'] || response['content'] || '[Could not extract text from image]')
-  } catch (error) {
-    console.error('Image extraction failed:', error)
-    return '[Image text extraction failed]'
-  }
-}
-
-/**
- * Extract text from a PDF using Workers AI.
+ * Extract text from image or PDF using a vision-capable model via AI SDK.
  *
- * Uses the toMarkdown utility if available, falls back to
- * vision-based extraction on individual pages.
+ * Works with any provider — Workers AI (Kimi K2.5), Anthropic (Claude),
+ * OpenAI (GPT-4o), Google (Gemini). Model chosen via resolveModel().
  */
-async function extractFromPDF(
-  ai: Ai,
-  pdfBytes: Uint8Array,
-  _maxPages?: number
+async function extractWithVision(
+  env: DocumentEnv,
+  bytes: Uint8Array,
+  mimeType: string,
+  options: ConvertOptions
 ): Promise<string> {
   try {
-    // Workers AI has a document understanding model
-    // Try using it for PDF text extraction
-    const result = await ai.run('@cf/meta/llama-3.2-11b-vision-instruct' as Parameters<Ai['run']>[0], {
+    const modelId = options.model || DEFAULT_VISION_MODEL
+    const model = resolveModel(env, modelId)
+
+    const defaultPrompt = mimeType === 'application/pdf'
+      ? 'Extract all text from this PDF. Preserve structure: headings as markdown, lists as markdown, tables as markdown tables. Keep the original reading order.'
+      : 'Extract all text visible in this image as markdown. If there is no text, describe the image in detail. For documents, preserve structure (headings, lists, tables).'
+
+    const prompt = options.prompt || defaultPrompt
+
+    // AI SDK handles file part conversion for any vision-capable provider
+    const { text } = await generateText({
+      model,
       messages: [
         {
           role: 'user',
           content: [
-            { type: 'text', text: 'Extract all text content from this PDF document. Preserve structure: headings, paragraphs, lists, tables.' },
+            { type: 'text', text: prompt },
             {
-              type: 'image_url',
-              image_url: {
-                url: `data:application/pdf;base64,${btoa(String.fromCharCode(...pdfBytes))}`,
-              },
+              type: 'file',
+              data: bytes,
+              mediaType: mimeType,
             },
           ],
         },
       ],
-      max_tokens: 4096,
-    } as Record<string, unknown>)
+      maxOutputTokens: 8192,
+    })
 
-    const response = result as Record<string, unknown>
-    const text = String(response['response'] || response['text'] || '')
+    if (text && text.length > 10) return text
 
-    if (text && text.length > 50) return text
-
-    // Fallback message if extraction produced minimal content
-    return `[PDF document — ${(pdfBytes.length / 1024).toFixed(0)}KB. Vision-based extraction returned limited content. For better results, copy text directly from the PDF or use a dedicated PDF parser.]`
+    return `[Extraction returned minimal content — ${(bytes.length / 1024).toFixed(0)}KB file. The document may be image-based, encrypted, or empty.]`
   } catch (error) {
-    console.error('PDF extraction failed:', error)
-    return `[PDF document — ${(pdfBytes.length / 1024).toFixed(0)}KB. Text extraction failed. The PDF may be image-based or encrypted.]`
+    console.error(JSON.stringify({
+      event: 'document_extraction_failed',
+      mimeType,
+      size: bytes.length,
+      error: error instanceof Error ? error.message : String(error),
+    }))
+    return `[Document extraction failed — ${mimeType}, ${(bytes.length / 1024).toFixed(0)}KB]`
   }
 }
 
 /**
- * Check if a MIME type is supported for conversion
+ * Check if a MIME type is supported for conversion.
  */
 export function isConvertible(mimeType: string): boolean {
   return (
