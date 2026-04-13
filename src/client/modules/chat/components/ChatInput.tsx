@@ -57,7 +57,7 @@ export function ChatInput({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2 p-4 border-t bg-background">
+    <form onSubmit={handleSubmit} className="flex items-end gap-2 p-4 border-t bg-background">
       <Textarea
         ref={textareaRef}
         value={input}
@@ -74,7 +74,7 @@ export function ChatInput({
           size="icon"
           variant="destructive"
           onClick={onStop}
-          className="shrink-0"
+          className="shrink-0 size-[44px]"
         >
           <Square className="size-4" />
           <span className="sr-only">Stop generation</span>
@@ -84,7 +84,7 @@ export function ChatInput({
           type="submit"
           size="icon"
           disabled={!input.trim() || disabled}
-          className="shrink-0"
+          className="shrink-0 size-[44px]"
         >
           <Send className="size-4" />
           <span className="sr-only">Send message</span>
