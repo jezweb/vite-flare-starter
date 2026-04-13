@@ -1,8 +1,8 @@
 # CLAUDE.md - AI Developer Context
 
 **Project:** Vite Flare Starter
-**Version:** 0.8.0
-**Purpose:** Production-ready authenticated starter kit for Cloudflare Workers
+**Version:** 0.15.0
+**Purpose:** Production-ready authenticated starter kit for Cloudflare Workers with AI SDK
 
 ---
 
@@ -10,7 +10,7 @@
 
 **If you're an AI coding agent or developer forking this project:**
 
-📖 **Read [FORKING.md](./FORKING.md) first!** It provides step-by-step instructions to:
+Read [FORKING.md](./FORKING.md) first! It provides step-by-step instructions to:
 1. Create your own Cloudflare resources (D1, R2 buckets)
 2. Update configuration files
 3. Remove all framework fingerprints
@@ -62,13 +62,13 @@ See `src/shared/config/app.ts` for full configuration options.
 | Layer | Technology |
 |-------|------------|
 | **Platform** | Cloudflare Workers with Static Assets |
-| **Frontend** | React 19 + Vite |
-| **Backend** | Hono |
-| **Database** | D1 (SQLite) + Drizzle ORM |
-| **Auth** | better-auth |
-| **AI** | AI Gateway (multi-provider support) |
+| **Frontend** | React 19 + Vite 7 |
+| **Backend** | Hono 4.12 |
+| **Database** | D1 (SQLite) + Drizzle ORM 0.45 |
+| **Auth** | better-auth 1.6 |
+| **AI** | AI SDK v6 + workers-ai-provider (native Workers AI binding) |
 | **UI** | Tailwind v4 + shadcn/ui |
-| **Data Fetching** | TanStack Query |
+| **Data Fetching** | TanStack Query 5 |
 | **Forms** | React Hook Form + Zod |
 
 ---
@@ -87,28 +87,9 @@ See `src/shared/config/app.ts` for full configuration options.
 | Settings sections | Keyboard shortcut overlays |
 | Search/filter views | Loading states |
 
-**Why pages are better:**
-- **URLs**: Bookmarkable, shareable, browser history works
-- **Space**: Full viewport, no awkward scrolling
-- **Accessibility**: No focus trapping issues
-- **Mobile**: Better touch experience
-- **Testing**: Easier to test with proper routes
+**Page pattern**: See `src/client/modules/settings/pages/SettingsPage.tsx` for standard layout.
 
-**Page pattern**: See `src/client/modules/settings/pages/SettingsPage.tsx` for standard layout:
-```tsx
-<div className="container max-w-4xl py-8">
-  <div className="mb-8">
-    <div className="flex items-center gap-2 mb-2">
-      <Icon className="h-6 w-6 text-primary" />
-      <h1 className="text-3xl font-bold">Page Title</h1>
-    </div>
-    <p className="text-muted-foreground">Description</p>
-  </div>
-  {/* Content */}
-</div>
-```
-
-**When asked to "add a form" or "create X"** → Default to a new page route, not a modal.
+**When asked to "add a form" or "create X"** -> Default to a new page route, not a modal.
 
 ---
 
@@ -125,15 +106,17 @@ vite-flare-starter/
 │   │   │   ├── settings/    # Profile, password, theme
 │   │   │   ├── api-tokens/  # API token management
 │   │   │   ├── files/       # File management
+│   │   │   ├── chat/        # AI chat, extract, model selector
+│   │   │   ├── admin/       # Admin dashboard
+│   │   │   ├── activity/    # Activity log
+│   │   │   ├── notifications/ # In-app notifications
 │   │   │   └── organization/# Org settings (timezone, etc.)
 │   │   ├── pages/           # Route pages
-│   │   │   ├── DashboardPage.tsx
-│   │   │   ├── ComponentsPage.tsx
-│   │   │   └── StyleGuidePage.tsx
 │   │   └── lib/
-│   │       ├── auth.ts           # Auth client
-│   │       ├── api-client.ts     # Centralized fetch wrapper
-│   │       ├── error-reporting.ts# Error boundary utilities
+│   │       ├── auth.ts           # Auth client (better-auth)
+│   │       ├── api-client.ts     # Centralised fetch wrapper
+│   │       ├── query-keys.ts     # TanStack Query key factory
+│   │       ├── rpc.ts            # Hono RPC typed client
 │   │       └── utils.ts
 │   ├── server/              # Backend (Hono API)
 │   │   ├── index.ts         # Main app + routes
@@ -146,14 +129,18 @@ vite-flare-starter/
 │   │   │   ├── activity/    # Activity logging
 │   │   │   ├── feature-flags/# DB-backed feature flags
 │   │   │   ├── notifications/# In-app notifications
-│   │   │   └── chat/        # AI chat with streaming
+│   │   │   ├── chat/        # AI chat, extract, tools, usage logging
+│   │   │   └── admin/       # Admin routes
 │   │   ├── lib/
 │   │   │   ├── logger.ts    # JSON structured logging
 │   │   │   ├── csv.ts       # CSV export utilities
-│   │   │   └── ai/          # Workers AI client + model catalog
+│   │   │   └── ai/          # Model registry + middleware
 │   │   ├── middleware/
 │   │   │   ├── auth.ts      # Session/API token auth
-│   │   │   └── admin.ts     # Admin role protection
+│   │   │   ├── admin.ts     # Admin role protection
+│   │   │   ├── security.ts  # CSP, X-Frame-Options
+│   │   │   ├── rate-limit.ts# Rate limiting
+│   │   │   └── request-id.ts# Request ID tracking
 │   │   └── db/schema.ts     # Central schema exports
 │   └── shared/
 │       ├── schemas/         # Zod validation schemas
@@ -165,87 +152,206 @@ vite-flare-starter/
 ├── drizzle/                 # Database migrations
 ├── wrangler.jsonc           # Workers config
 ├── vite.config.ts           # Vite config
-└── drizzle.config.ts        # Drizzle config
+└── vitest.config.ts         # Vitest 4 config (cloudflareTest plugin)
 ```
 
 ---
 
 ## Key Files
 
-### Server Entry Point
-`src/server/index.ts` - Hono app with routes:
+### API Routes
+`src/server/index.ts` + module routes:
 - `/api/health` - Health check with DB/R2 status and version
-- `/api/health/admin` - Admin status check (requires auth)
-- `/api/auth/*` - better-auth handlers (includes password reset)
+- `/api/auth/*` - better-auth handlers (OAuth, password reset)
+- `/api/auth/config` - Returns enabled auth methods for UI
 - `/api/settings/*` - User settings (profile, email, password, avatar, preferences)
 - `/api/settings/sessions` - Session management (list, revoke)
-- `/api/api-tokens/*` - API token management
+- `/api/api-tokens/*` - API token CRUD
 - `/api/organization/*` - Organization settings
 - `/api/avatar/:userId` - Avatar serving from R2
 - `/api/activity/*` - Activity logging (list, entity history, stats)
 - `/api/features` - Public feature flags (no auth)
-- `/api/admin/feature-flags/*` - Feature flag admin (list, update, sync)
+- `/api/admin/*` - Admin user management, feature flag admin
 - `/api/notifications/*` - User notifications (list, mark read, delete)
-- `/api/chat` - AI chat with streaming responses (POST for messages, GET for history)
+- `/api/chat` - **AI SDK streaming chat** (POST, AI SDK UIMessage protocol)
+- `/api/chat/complete` - Non-streaming chat (POST, JSON response)
+- `/api/chat/usage` - Token usage stats for authenticated user (GET)
+- `/api/chat/extract` - **Structured data extraction** (POST, Zod schema output)
 - `/api/files/*` - File management (upload, list, download, delete)
-- `/api/ai/models` - List available AI models
-- `/api/ai/test` - Test AI text generation
-
-### Middleware
-`src/server/middleware/`:
-- `auth.ts` - Session/API token authentication
-- `admin.ts` - Admin role authorization (requires authMiddleware first)
-- `security.ts` - Security headers (CSP, X-Frame-Options, etc.)
-- `rate-limit.ts` - Rate limiting for sensitive endpoints
-- `request-id.ts` - Request ID generation and tracking
-
-### Error Tracking
-`src/server/lib/sentry.ts` and `src/client/lib/sentry.ts`:
-- Sentry integration for error tracking (optional, requires SENTRY_DSN)
-- Request ID included in all error reports for correlation
-- X-Request-ID header returned in all API responses
+- `/api/ai/models` - List available Workers AI models (GET)
+- `/api/ai/test` - Test AI text generation (POST)
 
 ### Database Schema
 `src/server/db/schema.ts` - Exports all tables:
 - `user`, `session`, `account`, `verification` (auth) - user has `role` field
 - `apiTokens` (API key management)
-- `files` (user file uploads, metadata stored in D1, content in R2)
+- `files` (user file uploads, metadata in D1, content in R2)
 - `organizationSettings` (business settings)
 - `activityLogs` (audit trail)
 - `featureFlags` (DB-backed feature toggles)
 - `userNotifications` (in-app notifications)
+- `aiUsageLogs` (token usage tracking per chat request)
 
 ### Auth Configuration
 `src/server/modules/auth/index.ts`:
 - **OAuth-only by default** - email/password is disabled
 - Google OAuth (optional, domain restriction via Google Cloud Console)
-- Session management (7-day expiry)
+- Session management (7-day expiry, other sessions revoked on password change)
 - `/api/auth/config` endpoint - returns enabled auth methods for UI
 
-**Auth Method Control (OAuth-only by default):**
 | Env Var | Effect |
 |---------|--------|
 | `ENABLE_EMAIL_LOGIN=true` | Enable email/password authentication |
-| `ENABLE_EMAIL_SIGNUP=true` | Also allow new email signups (requires `ENABLE_EMAIL_LOGIN`) |
+| `ENABLE_EMAIL_SIGNUP=true` | Also allow new email signups |
 
-The SignInPage and SignUpPage automatically adapt based on `/api/auth/config`.
-Google OAuth is unaffected by these settings - use Google Cloud Console for domain restrictions.
+---
 
-### Admin System
-Role-based access control with automatic promotion:
-- User roles: `user`, `manager`, `admin`
-- `ADMIN_EMAILS` env var - comma-separated list of emails auto-promoted to admin
-- `/api/health/admin` - Check if current user is admin
-- Admin middleware auto-promotes matching emails on first request
+## AI Module (AI SDK v6)
 
-**Usage:**
+The AI module uses **Vercel AI SDK v6** with `workers-ai-provider` for native Cloudflare Workers AI binding access. All models are free (no API keys needed).
+
+### Architecture
+
+```
+Client (useChat)  -->  POST /api/chat  -->  streamText()  -->  Workers AI
+  @ai-sdk/react        Hono route           ai package        env.AI binding
+  DefaultChatTransport  toUIMessageStream    workers-ai-provider
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `src/server/modules/chat/routes.ts` | Chat, extract, usage API routes |
+| `src/server/modules/chat/tools.ts` | AI SDK tool definitions (get_server_time, get_model_info, calculate) |
+| `src/server/modules/chat/db/schema.ts` | aiUsageLogs D1 table |
+| `src/server/lib/ai/models.ts` | Workers AI model registry with capabilities |
+| `src/server/lib/ai/middleware.ts` | extractReasoningMiddleware wrapper |
+| `src/server/lib/ai/types.ts` | ModelConfig, ModelId, ModelTier types |
+| `src/client/modules/chat/hooks/useChat.ts` | AI SDK useChat wrapper |
+| `src/client/modules/chat/components/ChatMessage.tsx` | Renders text, reasoning, tool parts |
+
+### Features
+
+- **Streaming chat** via `streamText()` + `toUIMessageStreamResponse()` + `useChat()`
+- **Tool calling** with 3 demo tools, conditionally active per model capability
+- **Reasoning middleware** extracts `<think>` tokens for QwQ 32B, Nemotron 3, Gemma 4
+- **Token usage logging** to D1 via `onFinish` callback
+- **Smooth streaming** via `smoothStream({ chunking: 'word' })`
+- **Message metadata** streams model name, token usage, duration to the UI
+- **Vision support** with image attachments for multimodal models (Kimi K2.5, Llama 4 Scout, Gemma 4)
+- **Structured output** via `generateText()` + `Output.object()` with Zod schemas
+- **Regenerate** button on last assistant message
+
+### Model Registry
+
+16 curated Workers AI models in `src/server/lib/ai/models.ts`:
+
+| Tier | Models | Capabilities |
+|------|--------|-------------|
+| **Flagship** | Kimi K2.5 (default), Nemotron 3 120B, GPT-OSS 120B, Llama 3.3 70B | Tools, vision, reasoning |
+| **Balanced** | Gemma 4 26B, Llama 4 Scout, GLM 4.7, Mistral Small 3.1, Qwen 3 30B | Tools, vision |
+| **Fast** | Llama 3.1 8B, GPT-OSS 20B, Granite 4.0, Llama 3.2 3B | Low latency |
+| **Reasoning** | QwQ 32B | Step-by-step thinking |
+
+### Adding AI Features
+
+**Add a new tool:**
 ```typescript
-import { authMiddleware } from '@/server/middleware/auth'
-import { adminMiddleware, type AdminContext } from '@/server/middleware/admin'
+// src/server/modules/chat/tools.ts
+import { tool } from 'ai'
+import { z } from 'zod'
 
-const app = new Hono<AdminContext>()
-app.use('*', authMiddleware)    // Must come first
-app.use('*', adminMiddleware)   // Checks admin role
+export const chatTools = {
+  // ... existing tools
+  your_tool: tool({
+    description: 'What this tool does',
+    inputSchema: z.object({ param: z.string() }),
+    execute: async ({ param }) => ({ result: param }),
+  }),
+}
+```
+
+**Use structured output:**
+```typescript
+import { generateText, Output } from 'ai'
+import { createWorkersAI } from 'workers-ai-provider'
+import { z } from 'zod'
+
+const workersai = createWorkersAI({ binding: c.env.AI })
+const { output } = await generateText({
+  model: workersai('@cf/moonshotai/kimi-k2.5'),
+  output: Output.object({
+    schema: z.object({
+      title: z.string(),
+      summary: z.string(),
+    }),
+  }),
+  prompt: 'Summarise this text...',
+})
+```
+
+**Use the chat hook with model selection:**
+```typescript
+import { useChat } from '@/client/modules/chat/hooks/useChat'
+
+const { messages, sendMessage, isLoading, stop } = useChat({
+  model: '@cf/moonshotai/kimi-k2.5',
+})
+
+// Send text
+sendMessage({ text: 'Hello' })
+
+// Send with image (vision models only)
+sendMessage({ text: 'What is this?', files: [filePart] })
+```
+
+### MCP Integration (Ready)
+
+The AI SDK supports MCP clients via `@ai-sdk/mcp`. To connect MCP tools:
+
+```typescript
+import { createMCPClient } from '@ai-sdk/mcp'
+import { streamText } from 'ai'
+
+const mcp = await createMCPClient({
+  transport: { type: 'http', url: 'https://your-mcp-server/mcp' },
+})
+const mcpTools = await mcp.tools()
+
+const result = streamText({
+  model: workersai(modelId),
+  tools: { ...chatTools, ...mcpTools },
+  // ...
+})
+```
+
+---
+
+## TanStack Query Patterns
+
+### Query Key Factory
+
+Use `src/client/lib/query-keys.ts` for consistent cache keys:
+
+```typescript
+import { queryKeys } from '@/client/lib/query-keys'
+
+// In hooks
+useQuery({ queryKey: queryKeys.settings.preferences(), ... })
+queryClient.invalidateQueries({ queryKey: queryKeys.session })
+```
+
+### API Client
+
+Use `src/client/lib/api-client.ts` instead of raw `fetch`:
+
+```typescript
+import { apiClient } from '@/client/lib/api-client'
+
+// Handles credentials, headers, error extraction
+const data = await apiClient.get<ResponseType>('/api/endpoint')
+await apiClient.post<ResponseType>('/api/endpoint', body)
 ```
 
 ---
@@ -256,13 +362,13 @@ app.use('*', adminMiddleware)   // Checks admin role
 
 1. **Set `TRUSTED_ORIGINS`** to include your production domain(s):
    ```bash
-   echo "http://localhost:5173,https://your-domain.workers.dev" | npx wrangler secret put TRUSTED_ORIGINS
+   printf "http://localhost:5173,https://your-domain.workers.dev" | npx wrangler secret put TRUSTED_ORIGINS
    ```
    Without this, auth will silently fail and redirect to homepage.
 
 2. **Set `BETTER_AUTH_URL` secret** to exact production URL:
    ```bash
-   echo "https://your-domain.workers.dev" | npx wrangler secret put BETTER_AUTH_URL
+   printf "https://your-domain.workers.dev" | npx wrangler secret put BETTER_AUTH_URL
    ```
 
 3. **Google OAuth redirect URI** must be registered in Google Cloud Console:
@@ -271,95 +377,9 @@ app.use('*', adminMiddleware)   // Checks admin role
    ```
 
 **Symptoms of misconfiguration:**
-- User signs in but lands on homepage → `TRUSTED_ORIGINS` missing domain
-- OAuth callback 500 error → `BETTER_AUTH_URL` mismatch
-- Google "redirect_uri_mismatch" → URI not registered in Google Cloud
-
----
-
-## Common Patterns
-
-### Adding a New API Route
-
-```typescript
-// src/server/modules/your-module/routes.ts
-import { Hono } from 'hono'
-import { zValidator } from '@hono/zod-validator'
-import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
-
-const app = new Hono<AuthContext>()
-
-app.use('*', authMiddleware)
-
-app.get('/', async (c) => {
-  const userId = c.get('userId')
-  // Your logic here
-  return c.json({ data: [] })
-})
-
-export default app
-
-// Then in src/server/index.ts:
-import yourRoutes from './modules/your-module/routes'
-app.route('/api/your-module', yourRoutes)
-```
-
-### Adding a New Database Table
-
-```typescript
-// src/server/modules/your-module/db/schema.ts
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
-import { user } from '@/server/modules/auth/db/schema'
-
-export const yourTable = sqliteTable('your_table', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  userId: text('userId').notNull().references(() => user.id, { onDelete: 'cascade' }),
-  name: text('name').notNull(),
-  createdAt: integer('createdAt', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
-  updatedAt: integer('updatedAt', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
-})
-
-// Add to src/server/db/schema.ts:
-export { yourTable } from '@/server/modules/your-module/db/schema'
-```
-
-### TanStack Query Hooks
-
-```typescript
-// src/client/modules/your-module/hooks/useYourData.ts
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-
-export function useYourData() {
-  return useQuery({
-    queryKey: ['your-data'],
-    queryFn: async () => {
-      const res = await fetch('/api/your-module', { credentials: 'include' })
-      if (!res.ok) throw new Error('Failed to fetch')
-      return res.json()
-    },
-  })
-}
-
-export function useCreateYourData() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: async (data: CreateInput) => {
-      const res = await fetch('/api/your-module', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(data),
-      })
-      if (!res.ok) throw new Error('Failed to create')
-      return res.json()
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['your-data'] })
-    },
-  })
-}
-```
+- User signs in but lands on homepage -> `TRUSTED_ORIGINS` missing domain
+- OAuth callback 500 error -> `BETTER_AUTH_URL` mismatch
+- Google "redirect_uri_mismatch" -> URI not registered in Google Cloud
 
 ---
 
@@ -375,35 +395,18 @@ GOOGLE_CLIENT_SECRET=optional
 # Email login is disabled by default (OAuth-only). Uncomment to enable:
 # ENABLE_EMAIL_LOGIN=true
 # ENABLE_EMAIL_SIGNUP=true
-ADMIN_EMAILS=admin@example.com,jeremy@jezweb.net
-
-# AI Gateway (optional - enables multi-provider AI)
-AI_GATEWAY_ID=default
-CF_AIG_TOKEN=your-gateway-auth-token
+ADMIN_EMAILS=admin@example.com
 
 # Error tracking (optional)
 SENTRY_DSN=https://xxx@sentry.io/xxx
 SENTRY_ENVIRONMENT=development
 ```
 
-### Client-side Environment Variables
-
-Add to `.env` or `.env.local` for Vite:
-```
-VITE_SENTRY_DSN=https://xxx@sentry.io/xxx
-VITE_SENTRY_ENVIRONMENT=development
-VITE_APP_VERSION=0.1.0
-```
-
 ### Production (Cloudflare Secrets)
 
 ```bash
-echo "secret" | npx wrangler secret put BETTER_AUTH_SECRET
-echo "https://your-app.workers.dev" | npx wrangler secret put BETTER_AUTH_URL
-
-# Optional: Sentry error tracking
-echo "https://xxx@sentry.io/xxx" | npx wrangler secret put SENTRY_DSN
-echo "production" | npx wrangler secret put SENTRY_ENVIRONMENT
+printf "secret" | npx wrangler secret put BETTER_AUTH_SECRET
+printf "https://your-app.workers.dev" | npx wrangler secret put BETTER_AUTH_URL
 ```
 
 ---
@@ -413,13 +416,12 @@ echo "production" | npx wrangler secret put SENTRY_ENVIRONMENT
 ```bash
 pnpm dev                    # Start development server
 pnpm build                  # Build for production
-pnpm deploy                 # Deploy to Cloudflare
+npx wrangler deploy         # Deploy to Cloudflare
 pnpm db:generate:named "x"  # Generate migration
 pnpm db:migrate:local       # Apply migrations locally
 pnpm db:migrate:remote      # Apply migrations to production
 pnpm db:seed                # Seed local database with test data
-pnpm test                   # Run tests
-pnpm test:watch             # Run tests in watch mode
+pnpm test                   # Run tests (vitest 4 + cloudflareTest)
 pnpm type-check             # Run TypeScript check
 ```
 
@@ -430,56 +432,8 @@ pnpm type-check             # Run TypeScript check
 Defined in `wrangler.jsonc`:
 - `DB` - D1 database
 - `AVATARS` - R2 bucket for user avatars
-- `AI` - Workers AI binding (optional, used as fallback)
-
----
-
-## AI Gateway (Multi-Provider Support)
-
-The AI module uses Cloudflare AI Gateway for unified access to all AI providers.
-
-### Supported Providers
-
-| Provider | Models | API Key Required |
-|----------|--------|------------------|
-| **Workers AI** | Llama, Qwen, Gemma, etc. | No (free) |
-| **OpenAI** | GPT-4o, GPT-4-turbo | Yes (BYOK) |
-| **Anthropic** | Claude Sonnet 4.5, etc. | Yes (BYOK) |
-| **Google AI** | Gemini 2.5 Pro/Flash | Yes (BYOK) |
-| **Groq** | Llama 3.3 70B (fast) | Yes (BYOK) |
-| **Mistral** | Mistral Large/Small | Yes (BYOK) |
-
-### Usage
-
-```typescript
-import { createAIGatewayClient, DEFAULT_MODEL } from '@/server/lib/ai'
-
-// Create client (works with any provider)
-const ai = createAIGatewayClient(c.env)
-
-// Use free Workers AI model
-const result = await ai.chat(messages, { model: '@cf/meta/llama-3.1-8b-instruct' })
-
-// Use external provider (requires BYOK in AI Gateway dashboard)
-const result = await ai.chat(messages, { model: 'gpt-4o' })
-const result = await ai.chat(messages, { model: 'claude-sonnet-4-5-20250929' })
-```
-
-### Configuration
-
-1. Create AI Gateway: https://dash.cloudflare.com/ai/ai-gateway
-2. Add provider API keys in gateway dashboard (BYOK)
-3. Set environment variables:
-   ```
-   AI_GATEWAY_ID=your-gateway-id
-   CF_AIG_TOKEN=your-auth-token  # Optional, for authenticated gateways
-   ```
-
-### Key Files
-
-- `src/server/lib/ai/gateway.ts` - AI Gateway client
-- `src/server/lib/ai/providers.ts` - Provider and model registry
-- `src/server/modules/chat/routes.ts` - Chat API routes
+- `FILES` - R2 bucket for user file uploads
+- `AI` - Workers AI binding (used by AI SDK via workers-ai-provider)
 
 ---
 
@@ -489,78 +443,15 @@ See `src/shared/config/features.ts`. Control via `VITE_FEATURE_*` env vars:
 
 - `styleGuide` - Show style guide page (dev only by default)
 - `components` - Show components showcase
-- `themePicker` - Show color theme picker (set `VITE_FEATURE_THEME_PICKER=false` to hide for branded client sites)
-- `apiTokens` - Show API Tokens tab in settings (set `VITE_FEATURE_API_TOKENS=false` to hide)
+- `themePicker` - Show colour theme picker
+- `apiTokens` - Show API Tokens tab in settings
 
 ## App Configuration
 
 See `src/shared/config/app.ts`. Control via env vars:
 
 - `VITE_APP_NAME` - Application name in sidebar (default: "Vite Flare Starter")
-- `VITE_DEFAULT_THEME` - Default color theme for new users (default: "default", options: default, blue, green, orange, red, rose, violet, yellow)
-
----
-
-## Custom Theming
-
-The starter includes 8 built-in themes plus custom theme support via CSS import.
-
-### Theme Files
-
-- `src/lib/themes.ts` - Theme definitions and CSS parser
-- `src/shared/schemas/preferences.schema.ts` - Theme types including `CustomThemeColors`
-- `src/client/modules/settings/components/PreferencesSection.tsx` - Theme UI
-
-### Generating Custom Themes
-
-When asked to create a custom theme, generate CSS in this format:
-
-```css
-:root {
-  --background: 0 0% 100%;
-  --foreground: 240 10% 3.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 240 10% 3.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 240 10% 3.9%;
-  --primary: 220 90% 56%;
-  --primary-foreground: 0 0% 98%;
-  --secondary: 240 4.8% 95.9%;
-  --secondary-foreground: 240 5.9% 10%;
-  --muted: 240 4.8% 95.9%;
-  --muted-foreground: 240 3.8% 46.1%;
-  --accent: 240 4.8% 95.9%;
-  --accent-foreground: 240 5.9% 10%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 240 5.9% 90%;
-  --input: 240 5.9% 90%;
-  --ring: 220 90% 56%;
-}
-
-.dark {
-  --background: 240 10% 3.9%;
-  --foreground: 0 0% 98%;
-  /* ... dark variants */
-}
-```
-
-**Color format:** HSL values without `hsl()` wrapper: `H S% L%` (e.g., `220 90% 56%`)
-
-### Key Functions
-
-```typescript
-import { parseThemeCSS, validateThemeColors, applyTheme } from '@/lib/themes'
-
-// Parse CSS from theme generators
-const parsed = parseThemeCSS(cssString)
-
-// Validate theme has all required variables
-const { valid, missing } = validateThemeColors(parsed.light)
-
-// Apply theme (supports custom colors)
-applyTheme('custom', 'dark', customTheme)
-```
+- `VITE_DEFAULT_THEME` - Default colour theme (default, blue, green, orange, red, rose, violet, yellow)
 
 ---
 
@@ -575,5 +466,5 @@ Components are copied to `src/components/ui/`.
 ---
 
 **Created:** 2025-11-29
-**Updated:** 2026-01-05
+**Updated:** 2026-04-13
 **Author:** Jeremy Dawes (Jezweb)
