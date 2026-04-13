@@ -24,8 +24,12 @@ export { buildModel } from './middleware'
 // Context builder (system prompt assembly)
 export { buildSystemPrompt } from './context'
 
-// MCP client integration
-export { getMCPTools } from './mcp'
+// MCP client integration (full spec: tools, resources, prompts, elicitation)
+export { createMCPManager, getMCPTools } from './mcp'
+export type { MCPServerConfig, MCPManager } from './mcp'
+
+// Document conversion (PDF, images, text → markdown)
+export { convertToMarkdown, isConvertible } from './documents'
 
 // Model registry
 export {
