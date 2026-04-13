@@ -92,7 +92,7 @@ export function ArtifactViewer({ artifact }: Props) {
       {showCode ? (
         <pre className="p-3 text-xs font-mono overflow-auto max-h-96 bg-background">{artifact.code}</pre>
       ) : (
-        <div className="bg-[#0f1117]">
+        <div className="bg-muted/50 dark:bg-[#0f1117]">
           {artifact.type === 'svg' ? (
             <SvgRenderer code={artifact.code} height={height} />
           ) : (
