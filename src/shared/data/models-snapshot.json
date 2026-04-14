@@ -1,28 +1,26 @@
 {
-  "updated": "2026-04-14T22:16:56.956Z",
-  "filter": {
-    "providers": [
-      "anthropic",
-      "openai",
-      "google",
-      "meta-llama",
-      "mistralai",
-      "deepseek",
-      "qwen",
-      "x-ai",
-      "z-ai",
-      "cohere",
-      "nvidia"
-    ],
-    "days": 90
+  "updated": "2026-04-14T22:49:41.181Z",
+  "total": 101,
+  "sources": {
+    "openrouter": {
+      "url": "https://models.flared.au/json",
+      "updated": "2026-04-14T22:49:38.865Z",
+      "count": 47
+    },
+    "workersai": {
+      "url": "https://ai.flared.au/json",
+      "updated": "2026-04-14T22:49:41.165Z",
+      "count": 90
+    }
   },
-  "total": 47,
   "models": [
     {
       "id": "anthropic/claude-opus-4.6-fast",
       "name": "Anthropic: Claude Opus 4.6 (Fast)",
+      "short_name": "Claude Opus 4.6 (Fast)",
       "provider": "anthropic",
       "api_id": "claude-opus-4-6-fast",
+      "env_var": "ANTHROPIC_API_KEY",
       "context_length": 1000000,
       "max_output": 128000,
       "pricing": {
@@ -30,15 +28,33 @@
         "output": 150
       },
       "modality": "text+image->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": false,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "flagship",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://api.anthropic.com/v1/messages",
+        "curl": "curl https://api.anthropic.com/v1/messages \\\n  -H \"x-api-key: $ANTHROPIC_API_KEY\" \\\n  -H \"anthropic-version: 2023-06-01\" \\\n  -H \"content-type: application/json\" \\\n  -d '{\"model\":\"claude-opus-4-6-fast\",\"max_tokens\":1024,\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2026-04-07",
       "knowledge_cutoff": "2025-05",
-      "flagship": true
+      "sunset_date": null,
+      "flagship": true,
+      "source": "openrouter"
     },
     {
       "id": "anthropic/claude-sonnet-4.6",
       "name": "Anthropic: Claude Sonnet 4.6",
+      "short_name": "Claude Sonnet 4.6",
       "provider": "anthropic",
       "api_id": "claude-sonnet-4-6",
+      "env_var": "ANTHROPIC_API_KEY",
       "context_length": 1000000,
       "max_output": 128000,
       "pricing": {
@@ -46,15 +62,33 @@
         "output": 15
       },
       "modality": "text+image->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": false,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "flagship",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://api.anthropic.com/v1/messages",
+        "curl": "curl https://api.anthropic.com/v1/messages \\\n  -H \"x-api-key: $ANTHROPIC_API_KEY\" \\\n  -H \"anthropic-version: 2023-06-01\" \\\n  -H \"content-type: application/json\" \\\n  -d '{\"model\":\"claude-sonnet-4-6\",\"max_tokens\":1024,\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2026-02-17",
       "knowledge_cutoff": "2025-08",
-      "flagship": true
+      "sunset_date": null,
+      "flagship": true,
+      "source": "openrouter"
     },
     {
       "id": "anthropic/claude-haiku-4.5",
       "name": "Anthropic: Claude Haiku 4.5",
+      "short_name": "Claude Haiku 4.5",
       "provider": "anthropic",
       "api_id": "claude-haiku-4-5",
+      "env_var": "ANTHROPIC_API_KEY",
       "context_length": 200000,
       "max_output": 64000,
       "pricing": {
@@ -62,15 +96,33 @@
         "output": 5
       },
       "modality": "text+image->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": false,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "flagship",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://api.anthropic.com/v1/messages",
+        "curl": "curl https://api.anthropic.com/v1/messages \\\n  -H \"x-api-key: $ANTHROPIC_API_KEY\" \\\n  -H \"anthropic-version: 2023-06-01\" \\\n  -H \"content-type: application/json\" \\\n  -d '{\"model\":\"claude-haiku-4-5\",\"max_tokens\":1024,\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2025-10-15",
       "knowledge_cutoff": "2025-02",
-      "flagship": true
+      "sunset_date": null,
+      "flagship": true,
+      "source": "openrouter"
     },
     {
       "id": "anthropic/claude-opus-4.6",
       "name": "Anthropic: Claude Opus 4.6",
+      "short_name": "Claude Opus 4.6",
       "provider": "anthropic",
       "api_id": "claude-opus-4-6",
+      "env_var": "ANTHROPIC_API_KEY",
       "context_length": 1000000,
       "max_output": 128000,
       "pricing": {
@@ -78,15 +130,33 @@
         "output": 25
       },
       "modality": "text+image->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": false,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "reasoning",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://api.anthropic.com/v1/messages",
+        "curl": "curl https://api.anthropic.com/v1/messages \\\n  -H \"x-api-key: $ANTHROPIC_API_KEY\" \\\n  -H \"anthropic-version: 2023-06-01\" \\\n  -H \"content-type: application/json\" \\\n  -d '{\"model\":\"claude-opus-4-6\",\"max_tokens\":1024,\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2026-02-04",
       "knowledge_cutoff": "2025-05",
-      "flagship": false
+      "sunset_date": null,
+      "flagship": false,
+      "source": "openrouter"
     },
     {
       "id": "deepseek/deepseek-r1",
       "name": "DeepSeek: R1",
+      "short_name": "R1",
       "provider": "deepseek",
       "api_id": "deepseek-r1",
+      "env_var": "DEEPSEEK_API_KEY",
       "context_length": 64000,
       "max_output": 16000,
       "pricing": {
@@ -94,31 +164,67 @@
         "output": 2.5
       },
       "modality": "text->text",
+      "capabilities": {
+        "tools": true,
+        "vision": false,
+        "pdf": false,
+        "reasoning": true,
+        "structured_outputs": false,
+        "streaming": true
+      },
+      "tier": "flagship",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "curl": "curl https://api.deepseek.com/chat/completions \\\n  -H \"Authorization: Bearer $DEEPSEEK_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"deepseek-r1\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2025-01-20",
-      "knowledge_cutoff": "2024-07",
-      "flagship": true
+      "knowledge_cutoff": "2024-07-31",
+      "sunset_date": null,
+      "flagship": true,
+      "source": "openrouter"
     },
     {
       "id": "deepseek/deepseek-v3.2-speciale",
       "name": "DeepSeek: DeepSeek V3.2 Speciale",
+      "short_name": "DeepSeek V3.2 Speciale",
       "provider": "deepseek",
       "api_id": "deepseek-v3.2-speciale",
+      "env_var": "DEEPSEEK_API_KEY",
       "context_length": 163840,
       "max_output": 163840,
       "pricing": {
-        "input": 0.39999999999999997,
+        "input": 0.4,
         "output": 1.2
       },
       "modality": "text->text",
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "pdf": false,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "flagship",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "curl": "curl https://api.deepseek.com/chat/completions \\\n  -H \"Authorization: Bearer $DEEPSEEK_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"deepseek-v3.2-speciale\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2025-12-01",
       "knowledge_cutoff": "2024-07",
-      "flagship": true
+      "sunset_date": null,
+      "flagship": true,
+      "source": "openrouter"
     },
     {
       "id": "google/gemini-3.1-pro-preview",
       "name": "Google: Gemini 3.1 Pro Preview",
+      "short_name": "Gemini 3.1 Pro Preview",
       "provider": "google",
       "api_id": "gemini-3.1-pro-preview",
+      "env_var": "GEMINI_API_KEY",
       "context_length": 1048576,
       "max_output": 65536,
       "pricing": {
@@ -126,15 +232,33 @@
         "output": 12
       },
       "modality": "text+image+file+audio+video->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": true,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "flagship",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent",
+        "curl": "curl \"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent?key=$GEMINI_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"contents\":[{\"parts\":[{\"text\":\"Hello\"}]}]}'"
+      },
       "released": "2026-02-19",
       "knowledge_cutoff": null,
-      "flagship": true
+      "sunset_date": null,
+      "flagship": true,
+      "source": "openrouter"
     },
     {
       "id": "google/gemini-3-flash-preview",
       "name": "Google: Gemini 3 Flash Preview",
+      "short_name": "Gemini 3 Flash Preview",
       "provider": "google",
       "api_id": "gemini-3-flash-preview",
+      "env_var": "GEMINI_API_KEY",
       "context_length": 1048576,
       "max_output": 65536,
       "pricing": {
@@ -142,15 +266,33 @@
         "output": 3
       },
       "modality": "text+image+file+audio+video->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": true,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "flagship",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent",
+        "curl": "curl \"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=$GEMINI_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"contents\":[{\"parts\":[{\"text\":\"Hello\"}]}]}'"
+      },
       "released": "2025-12-17",
       "knowledge_cutoff": null,
-      "flagship": true
+      "sunset_date": null,
+      "flagship": true,
+      "source": "openrouter"
     },
     {
       "id": "google/gemini-3.1-flash-lite-preview",
       "name": "Google: Gemini 3.1 Flash Lite Preview",
+      "short_name": "Gemini 3.1 Flash Lite Preview",
       "provider": "google",
       "api_id": "gemini-3.1-flash-lite-preview",
+      "env_var": "GEMINI_API_KEY",
       "context_length": 1048576,
       "max_output": 65536,
       "pricing": {
@@ -158,15 +300,33 @@
         "output": 1.5
       },
       "modality": "text+image+file+audio+video->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": true,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "flagship",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent",
+        "curl": "curl \"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=$GEMINI_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"contents\":[{\"parts\":[{\"text\":\"Hello\"}]}]}'"
+      },
       "released": "2026-03-03",
       "knowledge_cutoff": null,
-      "flagship": true
+      "sunset_date": null,
+      "flagship": true,
+      "source": "openrouter"
     },
     {
       "id": "google/gemini-3.1-pro-preview-customtools",
       "name": "Google: Gemini 3.1 Pro Preview Custom Tools",
+      "short_name": "Gemini 3.1 Pro Preview Custom Tools",
       "provider": "google",
       "api_id": "gemini-3.1-pro-preview-customtools",
+      "env_var": "GEMINI_API_KEY",
       "context_length": 1048576,
       "max_output": 65536,
       "pricing": {
@@ -174,15 +334,33 @@
         "output": 12
       },
       "modality": "text+image+file+audio+video->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": true,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "reasoning",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview-customtools:generateContent",
+        "curl": "curl \"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview-customtools:generateContent?key=$GEMINI_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"contents\":[{\"parts\":[{\"text\":\"Hello\"}]}]}'"
+      },
       "released": "2026-02-25",
       "knowledge_cutoff": null,
-      "flagship": false
+      "sunset_date": null,
+      "flagship": false,
+      "source": "openrouter"
     },
     {
       "id": "google/gemini-3.1-flash-image-preview",
       "name": "Google: Nano Banana 2 (Gemini 3.1 Flash Image Preview)",
+      "short_name": "Nano Banana 2 (Gemini 3.1 Flash Image Preview)",
       "provider": "google",
       "api_id": "gemini-3.1-flash-image-preview",
+      "env_var": "GEMINI_API_KEY",
       "context_length": 65536,
       "max_output": 65536,
       "pricing": {
@@ -190,15 +368,33 @@
         "output": 3
       },
       "modality": "text+image->text+image",
+      "capabilities": {
+        "tools": false,
+        "vision": true,
+        "pdf": false,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "reasoning",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent",
+        "curl": "curl \"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent?key=$GEMINI_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"contents\":[{\"parts\":[{\"text\":\"Hello\"}]}]}'"
+      },
       "released": "2026-02-26",
       "knowledge_cutoff": null,
-      "flagship": false
+      "sunset_date": null,
+      "flagship": false,
+      "source": "openrouter"
     },
     {
       "id": "google/gemma-4-31b-it",
       "name": "Google: Gemma 4 31B",
+      "short_name": "Gemma 4 31B",
       "provider": "google",
       "api_id": "gemma-4-31b-it",
+      "env_var": "GEMINI_API_KEY",
       "context_length": 262144,
       "max_output": null,
       "pricing": {
@@ -206,15 +402,33 @@
         "output": 0.38
       },
       "modality": "text+image+video->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": false,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "reasoning",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemma-4-31b-it:generateContent",
+        "curl": "curl \"https://generativelanguage.googleapis.com/v1beta/models/gemma-4-31b-it:generateContent?key=$GEMINI_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"contents\":[{\"parts\":[{\"text\":\"Hello\"}]}]}'"
+      },
       "released": "2026-04-02",
       "knowledge_cutoff": null,
-      "flagship": false
+      "sunset_date": null,
+      "flagship": false,
+      "source": "openrouter"
     },
     {
       "id": "google/gemma-4-26b-a4b-it",
       "name": "Google: Gemma 4 26B A4B ",
+      "short_name": "Gemma 4 26B A4B ",
       "provider": "google",
       "api_id": "gemma-4-26b-a4b-it",
+      "env_var": "GEMINI_API_KEY",
       "context_length": 262144,
       "max_output": null,
       "pricing": {
@@ -222,15 +436,33 @@
         "output": 0.35
       },
       "modality": "text+image+video->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": false,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "reasoning",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemma-4-26b-a4b-it:generateContent",
+        "curl": "curl \"https://generativelanguage.googleapis.com/v1beta/models/gemma-4-26b-a4b-it:generateContent?key=$GEMINI_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"contents\":[{\"parts\":[{\"text\":\"Hello\"}]}]}'"
+      },
       "released": "2026-04-03",
       "knowledge_cutoff": null,
-      "flagship": false
+      "sunset_date": null,
+      "flagship": false,
+      "source": "openrouter"
     },
     {
       "id": "meta-llama/llama-3.2-11b-vision-instruct",
       "name": "Meta: Llama 3.2 11B Vision Instruct",
+      "short_name": "Llama 3.2 11B Vision Instruct",
       "provider": "meta-llama",
       "api_id": null,
+      "env_var": "OPENROUTER_API_KEY",
       "context_length": 131072,
       "max_output": 16384,
       "pricing": {
@@ -238,15 +470,33 @@
         "output": 0.245
       },
       "modality": "text+image->text",
+      "capabilities": {
+        "tools": false,
+        "vision": true,
+        "pdf": false,
+        "reasoning": false,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "flagship",
+      "example": {
+        "via": "openrouter",
+        "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+        "curl": "curl https://openrouter.ai/api/v1/chat/completions \\\n  -H \"Authorization: Bearer $OPENROUTER_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"meta-llama/llama-3.2-11b-vision-instruct\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2024-09-25",
-      "knowledge_cutoff": null,
-      "flagship": true
+      "knowledge_cutoff": "2023-12-31",
+      "sunset_date": null,
+      "flagship": true,
+      "source": "openrouter"
     },
     {
       "id": "meta-llama/llama-4-maverick",
       "name": "Meta: Llama 4 Maverick",
+      "short_name": "Llama 4 Maverick",
       "provider": "meta-llama",
       "api_id": null,
+      "env_var": "OPENROUTER_API_KEY",
       "context_length": 1048576,
       "max_output": 16384,
       "pricing": {
@@ -254,31 +504,67 @@
         "output": 0.6
       },
       "modality": "text+image->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": false,
+        "reasoning": false,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "flagship",
+      "example": {
+        "via": "openrouter",
+        "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+        "curl": "curl https://openrouter.ai/api/v1/chat/completions \\\n  -H \"Authorization: Bearer $OPENROUTER_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"meta-llama/llama-4-maverick\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2025-04-05",
-      "knowledge_cutoff": "2024-08",
-      "flagship": true
+      "knowledge_cutoff": "2024-08-31",
+      "sunset_date": null,
+      "flagship": true,
+      "source": "openrouter"
     },
     {
       "id": "meta-llama/llama-3.3-70b-instruct",
       "name": "Meta: Llama 3.3 70B Instruct",
+      "short_name": "Llama 3.3 70B Instruct",
       "provider": "meta-llama",
       "api_id": null,
+      "env_var": "OPENROUTER_API_KEY",
       "context_length": 131072,
       "max_output": 16384,
       "pricing": {
-        "input": 0.09999999999999999,
+        "input": 0.1,
         "output": 0.32
       },
       "modality": "text->text",
+      "capabilities": {
+        "tools": true,
+        "vision": false,
+        "pdf": false,
+        "reasoning": false,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "flagship",
+      "example": {
+        "via": "openrouter",
+        "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+        "curl": "curl https://openrouter.ai/api/v1/chat/completions \\\n  -H \"Authorization: Bearer $OPENROUTER_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"meta-llama/llama-3.3-70b-instruct\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2024-12-06",
-      "knowledge_cutoff": "2023-12",
-      "flagship": true
+      "knowledge_cutoff": "2023-12-31",
+      "sunset_date": null,
+      "flagship": true,
+      "source": "openrouter"
     },
     {
       "id": "mistralai/mistral-large-2512",
       "name": "Mistral: Mistral Large 3 2512",
+      "short_name": "Mistral Large 3 2512",
       "provider": "mistralai",
       "api_id": "mistral-large-2512",
+      "env_var": "MISTRAL_API_KEY",
       "context_length": 262144,
       "max_output": null,
       "pricing": {
@@ -286,47 +572,101 @@
         "output": 1.5
       },
       "modality": "text+image->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": false,
+        "reasoning": false,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "flagship",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://api.mistral.ai/v1/chat/completions",
+        "curl": "curl https://api.mistral.ai/v1/chat/completions \\\n  -H \"Authorization: Bearer $MISTRAL_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"mistral-large-2512\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2025-12-01",
       "knowledge_cutoff": "2024-10",
-      "flagship": true
+      "sunset_date": null,
+      "flagship": true,
+      "source": "openrouter"
     },
     {
       "id": "mistralai/mistral-medium-3.1",
       "name": "Mistral: Mistral Medium 3.1",
+      "short_name": "Mistral Medium 3.1",
       "provider": "mistralai",
       "api_id": "mistral-medium-3.1",
+      "env_var": "MISTRAL_API_KEY",
       "context_length": 131072,
       "max_output": null,
       "pricing": {
-        "input": 0.39999999999999997,
+        "input": 0.4,
         "output": 2
       },
       "modality": "text+image->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": false,
+        "reasoning": false,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "flagship",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://api.mistral.ai/v1/chat/completions",
+        "curl": "curl https://api.mistral.ai/v1/chat/completions \\\n  -H \"Authorization: Bearer $MISTRAL_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"mistral-medium-3.1\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2025-08-13",
-      "knowledge_cutoff": null,
-      "flagship": true
+      "knowledge_cutoff": "2025-06-30",
+      "sunset_date": null,
+      "flagship": true,
+      "source": "openrouter"
     },
     {
       "id": "mistralai/ministral-14b-2512",
       "name": "Mistral: Ministral 3 14B 2512",
+      "short_name": "Ministral 3 14B 2512",
       "provider": "mistralai",
       "api_id": "ministral-14b-2512",
+      "env_var": "MISTRAL_API_KEY",
       "context_length": 262144,
       "max_output": null,
       "pricing": {
-        "input": 0.19999999999999998,
-        "output": 0.19999999999999998
+        "input": 0.2,
+        "output": 0.2
       },
       "modality": "text+image->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": false,
+        "reasoning": false,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "flagship",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://api.mistral.ai/v1/chat/completions",
+        "curl": "curl https://api.mistral.ai/v1/chat/completions \\\n  -H \"Authorization: Bearer $MISTRAL_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"ministral-14b-2512\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2025-12-02",
       "knowledge_cutoff": null,
-      "flagship": true
+      "sunset_date": null,
+      "flagship": true,
+      "source": "openrouter"
     },
     {
       "id": "mistralai/mistral-small-2603",
       "name": "Mistral: Mistral Small 4",
+      "short_name": "Mistral Small 4",
       "provider": "mistralai",
       "api_id": "mistral-small-2603",
+      "env_var": "MISTRAL_API_KEY",
       "context_length": 262144,
       "max_output": null,
       "pricing": {
@@ -334,31 +674,67 @@
         "output": 0.6
       },
       "modality": "text+image->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": false,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "flagship",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://api.mistral.ai/v1/chat/completions",
+        "curl": "curl https://api.mistral.ai/v1/chat/completions \\\n  -H \"Authorization: Bearer $MISTRAL_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"mistral-small-2603\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2026-03-16",
       "knowledge_cutoff": "2023-10",
-      "flagship": true
+      "sunset_date": null,
+      "flagship": true,
+      "source": "openrouter"
     },
     {
       "id": "nvidia/nemotron-3-super-120b-a12b",
       "name": "NVIDIA: Nemotron 3 Super",
+      "short_name": "Nemotron 3 Super",
       "provider": "nvidia",
       "api_id": null,
+      "env_var": "OPENROUTER_API_KEY",
       "context_length": 262144,
       "max_output": null,
       "pricing": {
-        "input": 0.09999999999999999,
+        "input": 0.1,
         "output": 0.5
       },
       "modality": "text->text",
+      "capabilities": {
+        "tools": true,
+        "vision": false,
+        "pdf": false,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "reasoning",
+      "example": {
+        "via": "openrouter",
+        "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+        "curl": "curl https://openrouter.ai/api/v1/chat/completions \\\n  -H \"Authorization: Bearer $OPENROUTER_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"nvidia/nemotron-3-super-120b-a12b\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2026-03-11",
       "knowledge_cutoff": null,
-      "flagship": false
+      "sunset_date": null,
+      "flagship": false,
+      "source": "openrouter"
     },
     {
       "id": "openai/gpt-5.4-pro",
       "name": "OpenAI: GPT-5.4 Pro",
+      "short_name": "GPT-5.4 Pro",
       "provider": "openai",
       "api_id": "gpt-5.4-pro",
+      "env_var": "OPENAI_API_KEY",
       "context_length": 1050000,
       "max_output": 128000,
       "pricing": {
@@ -366,15 +742,33 @@
         "output": 180
       },
       "modality": "text+image+file->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": true,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "flagship",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://api.openai.com/v1/chat/completions",
+        "curl": "curl https://api.openai.com/v1/chat/completions \\\n  -H \"Authorization: Bearer $OPENAI_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"gpt-5.4-pro\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2026-03-05",
       "knowledge_cutoff": null,
-      "flagship": true
+      "sunset_date": null,
+      "flagship": true,
+      "source": "openrouter"
     },
     {
       "id": "openai/gpt-5.4",
       "name": "OpenAI: GPT-5.4",
+      "short_name": "GPT-5.4",
       "provider": "openai",
       "api_id": "gpt-5.4",
+      "env_var": "OPENAI_API_KEY",
       "context_length": 1050000,
       "max_output": 128000,
       "pricing": {
@@ -382,15 +776,33 @@
         "output": 15
       },
       "modality": "text+image+file->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": true,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "flagship",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://api.openai.com/v1/chat/completions",
+        "curl": "curl https://api.openai.com/v1/chat/completions \\\n  -H \"Authorization: Bearer $OPENAI_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"gpt-5.4\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2026-03-05",
       "knowledge_cutoff": null,
-      "flagship": true
+      "sunset_date": null,
+      "flagship": true,
+      "source": "openrouter"
     },
     {
       "id": "openai/gpt-5.3-codex",
       "name": "OpenAI: GPT-5.3-Codex",
+      "short_name": "GPT-5.3-Codex",
       "provider": "openai",
       "api_id": "gpt-5.3-codex",
+      "env_var": "OPENAI_API_KEY",
       "context_length": 400000,
       "max_output": 128000,
       "pricing": {
@@ -398,15 +810,33 @@
         "output": 14
       },
       "modality": "text+image+file->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": true,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "flagship",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://api.openai.com/v1/chat/completions",
+        "curl": "curl https://api.openai.com/v1/chat/completions \\\n  -H \"Authorization: Bearer $OPENAI_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"gpt-5.3-codex\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2026-02-24",
       "knowledge_cutoff": null,
-      "flagship": true
+      "sunset_date": null,
+      "flagship": true,
+      "source": "openrouter"
     },
     {
       "id": "openai/gpt-5.4-mini",
       "name": "OpenAI: GPT-5.4 Mini",
+      "short_name": "GPT-5.4 Mini",
       "provider": "openai",
       "api_id": "gpt-5.4-mini",
+      "env_var": "OPENAI_API_KEY",
       "context_length": 400000,
       "max_output": 128000,
       "pricing": {
@@ -414,15 +844,33 @@
         "output": 4.5
       },
       "modality": "text+image+file->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": true,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "flagship",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://api.openai.com/v1/chat/completions",
+        "curl": "curl https://api.openai.com/v1/chat/completions \\\n  -H \"Authorization: Bearer $OPENAI_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"gpt-5.4-mini\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2026-03-17",
-      "knowledge_cutoff": null,
-      "flagship": true
+      "knowledge_cutoff": "2025-08-31",
+      "sunset_date": null,
+      "flagship": true,
+      "source": "openrouter"
     },
     {
       "id": "openai/gpt-audio",
       "name": "OpenAI: GPT Audio",
+      "short_name": "GPT Audio",
       "provider": "openai",
       "api_id": "gpt-audio",
+      "env_var": "OPENAI_API_KEY",
       "context_length": 128000,
       "max_output": 16384,
       "pricing": {
@@ -430,15 +878,33 @@
         "output": 10
       },
       "modality": "text+audio->text+audio",
+      "capabilities": {
+        "tools": true,
+        "vision": false,
+        "pdf": false,
+        "reasoning": false,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "balanced",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://api.openai.com/v1/chat/completions",
+        "curl": "curl https://api.openai.com/v1/chat/completions \\\n  -H \"Authorization: Bearer $OPENAI_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"gpt-audio\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2026-01-19",
       "knowledge_cutoff": null,
-      "flagship": false
+      "sunset_date": null,
+      "flagship": false,
+      "source": "openrouter"
     },
     {
       "id": "openai/gpt-5.3-chat",
       "name": "OpenAI: GPT-5.3 Chat",
+      "short_name": "GPT-5.3 Chat",
       "provider": "openai",
       "api_id": "gpt-5.3-chat",
+      "env_var": "OPENAI_API_KEY",
       "context_length": 128000,
       "max_output": 16384,
       "pricing": {
@@ -446,15 +912,33 @@
         "output": 14
       },
       "modality": "text+image+file->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": true,
+        "reasoning": false,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "balanced",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://api.openai.com/v1/chat/completions",
+        "curl": "curl https://api.openai.com/v1/chat/completions \\\n  -H \"Authorization: Bearer $OPENAI_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"gpt-5.3-chat\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2026-03-03",
       "knowledge_cutoff": null,
-      "flagship": false
+      "sunset_date": null,
+      "flagship": false,
+      "source": "openrouter"
     },
     {
       "id": "openai/gpt-audio-mini",
       "name": "OpenAI: GPT Audio Mini",
+      "short_name": "GPT Audio Mini",
       "provider": "openai",
       "api_id": "gpt-audio-mini",
+      "env_var": "OPENAI_API_KEY",
       "context_length": 128000,
       "max_output": 16384,
       "pricing": {
@@ -462,31 +946,67 @@
         "output": 2.4
       },
       "modality": "text+audio->text+audio",
+      "capabilities": {
+        "tools": true,
+        "vision": false,
+        "pdf": false,
+        "reasoning": false,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "fast",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://api.openai.com/v1/chat/completions",
+        "curl": "curl https://api.openai.com/v1/chat/completions \\\n  -H \"Authorization: Bearer $OPENAI_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"gpt-audio-mini\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2026-01-19",
       "knowledge_cutoff": null,
-      "flagship": false
+      "sunset_date": null,
+      "flagship": false,
+      "source": "openrouter"
     },
     {
       "id": "openai/gpt-5.4-nano",
       "name": "OpenAI: GPT-5.4 Nano",
+      "short_name": "GPT-5.4 Nano",
       "provider": "openai",
       "api_id": "gpt-5.4-nano",
+      "env_var": "OPENAI_API_KEY",
       "context_length": 400000,
       "max_output": 128000,
       "pricing": {
-        "input": 0.19999999999999998,
+        "input": 0.2,
         "output": 1.25
       },
       "modality": "text+image+file->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": true,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "reasoning",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://api.openai.com/v1/chat/completions",
+        "curl": "curl https://api.openai.com/v1/chat/completions \\\n  -H \"Authorization: Bearer $OPENAI_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"gpt-5.4-nano\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2026-03-17",
-      "knowledge_cutoff": null,
-      "flagship": false
+      "knowledge_cutoff": "2025-08-31",
+      "sunset_date": null,
+      "flagship": false,
+      "source": "openrouter"
     },
     {
       "id": "qwen/qwen3-max-thinking",
       "name": "Qwen: Qwen3 Max Thinking",
+      "short_name": "Qwen3 Max Thinking",
       "provider": "qwen",
       "api_id": "qwen3-max-thinking",
+      "env_var": "DASHSCOPE_API_KEY",
       "context_length": 262144,
       "max_output": 32768,
       "pricing": {
@@ -494,15 +1014,33 @@
         "output": 3.9
       },
       "modality": "text->text",
+      "capabilities": {
+        "tools": true,
+        "vision": false,
+        "pdf": false,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "flagship",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
+        "curl": "curl https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions \\\n  -H \"Authorization: Bearer $DASHSCOPE_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"qwen3-max-thinking\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2026-02-09",
       "knowledge_cutoff": null,
-      "flagship": true
+      "sunset_date": null,
+      "flagship": true,
+      "source": "openrouter"
     },
     {
       "id": "qwen/qwen3.6-plus",
       "name": "Qwen: Qwen3.6 Plus",
+      "short_name": "Qwen3.6 Plus",
       "provider": "qwen",
       "api_id": "qwen3.6-plus",
+      "env_var": "DASHSCOPE_API_KEY",
       "context_length": 1000000,
       "max_output": 65536,
       "pricing": {
@@ -510,15 +1048,33 @@
         "output": 1.95
       },
       "modality": "text+image+video->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": false,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "flagship",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
+        "curl": "curl https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions \\\n  -H \"Authorization: Bearer $DASHSCOPE_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"qwen3.6-plus\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2026-04-02",
       "knowledge_cutoff": null,
-      "flagship": true
+      "sunset_date": null,
+      "flagship": true,
+      "source": "openrouter"
     },
     {
       "id": "qwen/qwen3.5-flash-02-23",
       "name": "Qwen: Qwen3.5-Flash",
+      "short_name": "Qwen3.5-Flash",
       "provider": "qwen",
       "api_id": "qwen3.5-flash-02-23",
+      "env_var": "DASHSCOPE_API_KEY",
       "context_length": 1000000,
       "max_output": 65536,
       "pricing": {
@@ -526,15 +1082,33 @@
         "output": 0.26
       },
       "modality": "text+image+video->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": false,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "flagship",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
+        "curl": "curl https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions \\\n  -H \"Authorization: Bearer $DASHSCOPE_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"qwen3.5-flash-02-23\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2026-02-25",
       "knowledge_cutoff": null,
-      "flagship": true
+      "sunset_date": null,
+      "flagship": true,
+      "source": "openrouter"
     },
     {
       "id": "qwen/qwen3.5-397b-a17b",
       "name": "Qwen: Qwen3.5 397B A17B",
+      "short_name": "Qwen3.5 397B A17B",
       "provider": "qwen",
       "api_id": "qwen3.5-397b-a17b",
+      "env_var": "DASHSCOPE_API_KEY",
       "context_length": 262144,
       "max_output": 65536,
       "pricing": {
@@ -542,15 +1116,33 @@
         "output": 2.34
       },
       "modality": "text+image+video->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": false,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "reasoning",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
+        "curl": "curl https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions \\\n  -H \"Authorization: Bearer $DASHSCOPE_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"qwen3.5-397b-a17b\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2026-02-16",
       "knowledge_cutoff": null,
-      "flagship": false
+      "sunset_date": null,
+      "flagship": false,
+      "source": "openrouter"
     },
     {
       "id": "qwen/qwen3.5-122b-a10b",
       "name": "Qwen: Qwen3.5-122B-A10B",
+      "short_name": "Qwen3.5-122B-A10B",
       "provider": "qwen",
       "api_id": "qwen3.5-122b-a10b",
+      "env_var": "DASHSCOPE_API_KEY",
       "context_length": 262144,
       "max_output": 65536,
       "pricing": {
@@ -558,15 +1150,33 @@
         "output": 2.08
       },
       "modality": "text+image+video->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": false,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "reasoning",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
+        "curl": "curl https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions \\\n  -H \"Authorization: Bearer $DASHSCOPE_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"qwen3.5-122b-a10b\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2026-02-25",
       "knowledge_cutoff": null,
-      "flagship": false
+      "sunset_date": null,
+      "flagship": false,
+      "source": "openrouter"
     },
     {
       "id": "qwen/qwen3.5-plus-02-15",
       "name": "Qwen: Qwen3.5 Plus 2026-02-15",
+      "short_name": "Qwen3.5 Plus 2026-02-15",
       "provider": "qwen",
       "api_id": "qwen3.5-plus-02-15",
+      "env_var": "DASHSCOPE_API_KEY",
       "context_length": 1000000,
       "max_output": 65536,
       "pricing": {
@@ -574,15 +1184,33 @@
         "output": 1.56
       },
       "modality": "text+image+video->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": false,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "reasoning",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
+        "curl": "curl https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions \\\n  -H \"Authorization: Bearer $DASHSCOPE_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"qwen3.5-plus-02-15\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2026-02-16",
       "knowledge_cutoff": null,
-      "flagship": false
+      "sunset_date": null,
+      "flagship": false,
+      "source": "openrouter"
     },
     {
       "id": "qwen/qwen3.5-27b",
       "name": "Qwen: Qwen3.5-27B",
+      "short_name": "Qwen3.5-27B",
       "provider": "qwen",
       "api_id": "qwen3.5-27b",
+      "env_var": "DASHSCOPE_API_KEY",
       "context_length": 262144,
       "max_output": 65536,
       "pricing": {
@@ -590,15 +1218,33 @@
         "output": 1.56
       },
       "modality": "text+image+video->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": false,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "reasoning",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
+        "curl": "curl https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions \\\n  -H \"Authorization: Bearer $DASHSCOPE_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"qwen3.5-27b\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2026-02-25",
       "knowledge_cutoff": null,
-      "flagship": false
+      "sunset_date": null,
+      "flagship": false,
+      "source": "openrouter"
     },
     {
       "id": "qwen/qwen3.5-35b-a3b",
       "name": "Qwen: Qwen3.5-35B-A3B",
+      "short_name": "Qwen3.5-35B-A3B",
       "provider": "qwen",
       "api_id": "qwen3.5-35b-a3b",
+      "env_var": "DASHSCOPE_API_KEY",
       "context_length": 262144,
       "max_output": 65536,
       "pricing": {
@@ -606,47 +1252,101 @@
         "output": 1.3
       },
       "modality": "text+image+video->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": false,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "reasoning",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
+        "curl": "curl https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions \\\n  -H \"Authorization: Bearer $DASHSCOPE_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"qwen3.5-35b-a3b\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2026-02-25",
       "knowledge_cutoff": null,
-      "flagship": false
+      "sunset_date": null,
+      "flagship": false,
+      "source": "openrouter"
     },
     {
       "id": "qwen/qwen3-coder-next",
       "name": "Qwen: Qwen3 Coder Next",
+      "short_name": "Qwen3 Coder Next",
       "provider": "qwen",
       "api_id": "qwen3-coder-next",
+      "env_var": "DASHSCOPE_API_KEY",
       "context_length": 262144,
       "max_output": 262144,
       "pricing": {
         "input": 0.15,
-        "output": 0.7999999999999999
+        "output": 0.8
       },
       "modality": "text->text",
+      "capabilities": {
+        "tools": true,
+        "vision": false,
+        "pdf": false,
+        "reasoning": false,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "balanced",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
+        "curl": "curl https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions \\\n  -H \"Authorization: Bearer $DASHSCOPE_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"qwen3-coder-next\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2026-02-04",
       "knowledge_cutoff": null,
-      "flagship": false
+      "sunset_date": null,
+      "flagship": false,
+      "source": "openrouter"
     },
     {
       "id": "qwen/qwen3.5-9b",
       "name": "Qwen: Qwen3.5-9B",
+      "short_name": "Qwen3.5-9B",
       "provider": "qwen",
       "api_id": "qwen3.5-9b",
+      "env_var": "DASHSCOPE_API_KEY",
       "context_length": 256000,
       "max_output": 32768,
       "pricing": {
-        "input": 0.049999999999999996,
+        "input": 0.05,
         "output": 0.15
       },
       "modality": "text+image+video->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": false,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "reasoning",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
+        "curl": "curl https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions \\\n  -H \"Authorization: Bearer $DASHSCOPE_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"qwen3.5-9b\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2026-03-10",
       "knowledge_cutoff": null,
-      "flagship": false
+      "sunset_date": null,
+      "flagship": false,
+      "source": "openrouter"
     },
     {
       "id": "x-ai/grok-4.20-multi-agent",
       "name": "xAI: Grok 4.20 Multi-Agent",
+      "short_name": "Grok 4.20 Multi-Agent",
       "provider": "x-ai",
       "api_id": "grok-4.20-multi-agent",
+      "env_var": "XAI_API_KEY",
       "context_length": 2000000,
       "max_output": null,
       "pricing": {
@@ -654,31 +1354,67 @@
         "output": 6
       },
       "modality": "text+image+file->text",
+      "capabilities": {
+        "tools": false,
+        "vision": true,
+        "pdf": true,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "flagship",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://api.x.ai/v1/chat/completions",
+        "curl": "curl https://api.x.ai/v1/chat/completions \\\n  -H \"Authorization: Bearer $XAI_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"grok-4.20-multi-agent\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2026-03-31",
-      "knowledge_cutoff": null,
-      "flagship": true
+      "knowledge_cutoff": "2025-09-01",
+      "sunset_date": null,
+      "flagship": true,
+      "source": "openrouter"
     },
     {
       "id": "x-ai/grok-4.1-fast",
       "name": "xAI: Grok 4.1 Fast",
+      "short_name": "Grok 4.1 Fast",
       "provider": "x-ai",
       "api_id": "grok-4.1-fast",
+      "env_var": "XAI_API_KEY",
       "context_length": 2000000,
       "max_output": 30000,
       "pricing": {
-        "input": 0.19999999999999998,
+        "input": 0.2,
         "output": 0.5
       },
       "modality": "text+image+file->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": true,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "flagship",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://api.x.ai/v1/chat/completions",
+        "curl": "curl https://api.x.ai/v1/chat/completions \\\n  -H \"Authorization: Bearer $XAI_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"grok-4.1-fast\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2025-11-19",
       "knowledge_cutoff": null,
-      "flagship": true
+      "sunset_date": null,
+      "flagship": true,
+      "source": "openrouter"
     },
     {
       "id": "x-ai/grok-4.20",
       "name": "xAI: Grok 4.20",
+      "short_name": "Grok 4.20",
       "provider": "x-ai",
       "api_id": "grok-4.20",
+      "env_var": "XAI_API_KEY",
       "context_length": 2000000,
       "max_output": null,
       "pricing": {
@@ -686,15 +1422,33 @@
         "output": 6
       },
       "modality": "text+image+file->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": true,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "reasoning",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://api.x.ai/v1/chat/completions",
+        "curl": "curl https://api.x.ai/v1/chat/completions \\\n  -H \"Authorization: Bearer $XAI_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"grok-4.20\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2026-03-31",
-      "knowledge_cutoff": null,
-      "flagship": false
+      "knowledge_cutoff": "2025-09-01",
+      "sunset_date": null,
+      "flagship": false,
+      "source": "openrouter"
     },
     {
       "id": "z-ai/glm-5",
       "name": "Z.ai: GLM 5",
+      "short_name": "GLM 5",
       "provider": "z-ai",
       "api_id": null,
+      "env_var": "OPENROUTER_API_KEY",
       "context_length": 80000,
       "max_output": 131072,
       "pricing": {
@@ -702,31 +1456,67 @@
         "output": 2.3
       },
       "modality": "text->text",
+      "capabilities": {
+        "tools": true,
+        "vision": false,
+        "pdf": false,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "flagship",
+      "example": {
+        "via": "openrouter",
+        "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+        "curl": "curl https://openrouter.ai/api/v1/chat/completions \\\n  -H \"Authorization: Bearer $OPENROUTER_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"z-ai/glm-5\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2026-02-11",
       "knowledge_cutoff": null,
-      "flagship": true
+      "sunset_date": null,
+      "flagship": true,
+      "source": "openrouter"
     },
     {
       "id": "z-ai/glm-4.7-flash",
       "name": "Z.ai: GLM 4.7 Flash",
+      "short_name": "GLM 4.7 Flash",
       "provider": "z-ai",
       "api_id": null,
+      "env_var": "OPENROUTER_API_KEY",
       "context_length": 202752,
       "max_output": null,
       "pricing": {
         "input": 0.06,
-        "output": 0.39999999999999997
+        "output": 0.4
       },
       "modality": "text->text",
+      "capabilities": {
+        "tools": true,
+        "vision": false,
+        "pdf": false,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "flagship",
+      "example": {
+        "via": "openrouter",
+        "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+        "curl": "curl https://openrouter.ai/api/v1/chat/completions \\\n  -H \"Authorization: Bearer $OPENROUTER_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"z-ai/glm-4.7-flash\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2026-01-19",
       "knowledge_cutoff": null,
-      "flagship": true
+      "sunset_date": null,
+      "flagship": true,
+      "source": "openrouter"
     },
     {
       "id": "z-ai/glm-5v-turbo",
       "name": "Z.ai: GLM 5V Turbo",
+      "short_name": "GLM 5V Turbo",
       "provider": "z-ai",
       "api_id": null,
+      "env_var": "OPENROUTER_API_KEY",
       "context_length": 202752,
       "max_output": 131072,
       "pricing": {
@@ -734,15 +1524,33 @@
         "output": 4
       },
       "modality": "text+image+video->text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": false,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "reasoning",
+      "example": {
+        "via": "openrouter",
+        "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+        "curl": "curl https://openrouter.ai/api/v1/chat/completions \\\n  -H \"Authorization: Bearer $OPENROUTER_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"z-ai/glm-5v-turbo\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2026-04-01",
       "knowledge_cutoff": null,
-      "flagship": false
+      "sunset_date": null,
+      "flagship": false,
+      "source": "openrouter"
     },
     {
       "id": "z-ai/glm-5-turbo",
       "name": "Z.ai: GLM 5 Turbo",
+      "short_name": "GLM 5 Turbo",
       "provider": "z-ai",
       "api_id": null,
+      "env_var": "OPENROUTER_API_KEY",
       "context_length": 202752,
       "max_output": 131072,
       "pricing": {
@@ -750,15 +1558,33 @@
         "output": 4
       },
       "modality": "text->text",
+      "capabilities": {
+        "tools": true,
+        "vision": false,
+        "pdf": false,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "reasoning",
+      "example": {
+        "via": "openrouter",
+        "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+        "curl": "curl https://openrouter.ai/api/v1/chat/completions \\\n  -H \"Authorization: Bearer $OPENROUTER_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"z-ai/glm-5-turbo\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2026-03-15",
       "knowledge_cutoff": null,
-      "flagship": false
+      "sunset_date": null,
+      "flagship": false,
+      "source": "openrouter"
     },
     {
       "id": "z-ai/glm-5.1",
       "name": "Z.ai: GLM 5.1",
+      "short_name": "GLM 5.1",
       "provider": "z-ai",
       "api_id": null,
+      "env_var": "OPENROUTER_API_KEY",
       "context_length": 202752,
       "max_output": 65535,
       "pricing": {
@@ -766,9 +1592,1375 @@
         "output": 3.15
       },
       "modality": "text->text",
+      "capabilities": {
+        "tools": true,
+        "vision": false,
+        "pdf": false,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "reasoning",
+      "example": {
+        "via": "openrouter",
+        "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+        "curl": "curl https://openrouter.ai/api/v1/chat/completions \\\n  -H \"Authorization: Bearer $OPENROUTER_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"z-ai/glm-5.1\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
       "released": "2026-04-07",
       "knowledge_cutoff": null,
-      "flagship": false
+      "sunset_date": null,
+      "flagship": false,
+      "source": "openrouter"
+    },
+    {
+      "id": "@cf/aisingapore/gemma-sea-lion-v4-27b-it",
+      "short_name": "Gemma Sea Lion V4 27B IT",
+      "provider": "aisingapore",
+      "task": "text-generation",
+      "params": "27B",
+      "context_length": 128000,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "flagship",
+      "description": "SEA-LION stands for Southeast Asian Languages In One Network, which is a collection of Large Language Models (LLMs) which have been pretrained and instruct-tuned for the Southeast Asia (SEA) region.",
+      "docs_url": null,
+      "licence_url": null,
+      "flagship": true,
+      "created_at": "2025-09-23 19:27:30.468",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b",
+      "short_name": "Deepseek R1 Distill Qwen 32B",
+      "provider": "deepseek-ai",
+      "task": "text-generation",
+      "params": "32B",
+      "context_length": 80000,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": true,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "flagship",
+      "description": "DeepSeek-R1-Distill-Qwen-32B is a model distilled from DeepSeek-R1 based on Qwen2.5. It outperforms OpenAI-o1-mini across various benchmarks, achieving new state-of-the-art results for dense models.",
+      "docs_url": null,
+      "licence_url": "https://github.com/deepseek-ai/DeepSeek-R1/blob/main/LICENSE",
+      "flagship": true,
+      "created_at": "2025-01-22 19:48:55.776",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/deepseek-ai/deepseek-math-7b-instruct",
+      "short_name": "Deepseek Math 7B Instruct",
+      "provider": "deepseek-ai",
+      "task": "text-generation",
+      "params": "7B",
+      "context_length": 4096,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "flagship",
+      "description": "DeepSeekMath-Instruct 7B is a mathematically instructed tuning model derived from DeepSeekMath-Base 7B. DeepSeekMath is initialized with DeepSeek-Coder-v1.5 7B and continues pre-training on math-related tokens sourced from Common Crawl, together with natural language and code data for 500B tokens.",
+      "docs_url": "https://huggingface.co/deepseek-ai/deepseek-math-7b-instruct",
+      "licence_url": "https://github.com/deepseek-ai/DeepSeek-Math/blob/main/LICENSE-MODEL",
+      "flagship": true,
+      "created_at": "2024-02-27 17:54:17.459",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/defog/sqlcoder-7b-2",
+      "short_name": "Sqlcoder 7B 2",
+      "provider": "defog",
+      "task": "text-generation",
+      "params": "7B",
+      "context_length": 10000,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "flagship",
+      "description": "This model is intended to be used by non-technical users to understand data inside their SQL databases. ",
+      "docs_url": "https://huggingface.co/defog/sqlcoder-7b-2",
+      "licence_url": "https://creativecommons.org/licenses/by-sa/4.0/deed.en",
+      "flagship": true,
+      "created_at": "2024-02-27 18:18:46.095",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/fblgit/una-cybertron-7b-v2-bf16",
+      "short_name": "Una Cybertron 7B V2 BF16",
+      "provider": "fblgit",
+      "task": "text-generation",
+      "params": "7B",
+      "context_length": 15000,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "fast",
+      "description": "Cybertron 7B v2 is a 7B MistralAI based model, best on it's series. It was trained with SFT, DPO and UNA (Unified Neural Alignment) on multiple datasets.",
+      "docs_url": null,
+      "licence_url": null,
+      "flagship": false,
+      "created_at": "2024-04-24 14:37:19.494",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/google/gemma-4-26b-a4b-it",
+      "short_name": "Gemma 4 26B A4b IT",
+      "provider": "google",
+      "task": "text-generation",
+      "params": "26B",
+      "context_length": 256000,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": true,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "flagship",
+      "description": "Gemma 4 is Google's most intelligent family of open models, built from Gemini 3 research to maximize intelligence-per-parameter.",
+      "docs_url": null,
+      "licence_url": "https://ai.google.dev/gemma/docs/gemma_4_license",
+      "flagship": true,
+      "created_at": "2026-04-02 15:05:22.642",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/google/gemma-3-12b-it",
+      "short_name": "Gemma 3 12B IT",
+      "provider": "google",
+      "task": "text-generation",
+      "params": "12B",
+      "context_length": 80000,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": true
+      },
+      "tier": "flagship",
+      "description": "Gemma 3 models are well-suited for a variety of text generation and image understanding tasks, including question answering, summarization, and reasoning. Gemma 3 models are multimodal, handling text and image input and generating text output, with a large, 128K context window, multilingual support in over 140 languages, and is available in more sizes than previous versions.",
+      "docs_url": null,
+      "licence_url": null,
+      "flagship": true,
+      "created_at": "2025-03-18 03:58:02.423",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/google/gemma-7b-it-lora",
+      "short_name": "Gemma 7B IT LORA",
+      "provider": "google",
+      "task": "text-generation",
+      "params": "7B",
+      "context_length": 3500,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": true
+      },
+      "tier": "fast",
+      "description": "  This is a Gemma-7B base model that Cloudflare dedicates for inference with LoRA adapters. Gemma is a family of lightweight, state-of-the-art open models from Google, built from the same research and technology used to create the Gemini models.",
+      "docs_url": null,
+      "licence_url": null,
+      "flagship": false,
+      "created_at": "2024-04-02 00:20:19.633",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@hf/google/gemma-7b-it",
+      "short_name": "Gemma 7B IT",
+      "provider": "google",
+      "task": "text-generation",
+      "params": "7B",
+      "context_length": 8192,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": true
+      },
+      "tier": "fast",
+      "description": "Gemma is a family of lightweight, state-of-the-art open models from Google, built from the same research and technology used to create the Gemini models. They are text-to-text, decoder-only large language models, available in English, with open weights, pre-trained variants, and instruction-tuned variants.",
+      "docs_url": "https://ai.google.dev/gemma/docs",
+      "licence_url": "https://ai.google.dev/gemma/terms",
+      "flagship": false,
+      "created_at": "2024-04-01 23:51:35.866",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/google/gemma-2b-it-lora",
+      "short_name": "Gemma 2B IT LORA",
+      "provider": "google",
+      "task": "text-generation",
+      "params": "2B",
+      "context_length": 8192,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": true
+      },
+      "tier": "balanced",
+      "description": "This is a Gemma-2B base model that Cloudflare dedicates for inference with LoRA adapters. Gemma is a family of lightweight, state-of-the-art open models from Google, built from the same research and technology used to create the Gemini models.",
+      "docs_url": null,
+      "licence_url": null,
+      "flagship": false,
+      "created_at": "2024-04-02 00:19:34.669",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/ibm-granite/granite-4.0-h-micro",
+      "short_name": "Granite 4.0 H Micro",
+      "provider": "ibm-granite",
+      "task": "text-generation",
+      "params": null,
+      "context_length": 131000,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": true,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "flagship",
+      "description": "Granite 4.0 instruct models deliver strong performance across benchmarks, achieving industry-leading results in key agentic tasks like instruction following and function calling. These efficiencies make the models well-suited for a wide range of use cases like retrieval-augmented generation (RAG), multi-agent workflows, and edge deployments.",
+      "docs_url": null,
+      "licence_url": null,
+      "flagship": true,
+      "created_at": "2025-10-07 18:46:29.436",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "short_name": "Llama 3.3 70B Instruct FP8 Fast",
+      "provider": "meta",
+      "task": "text-generation",
+      "params": "70B",
+      "context_length": 24000,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": true,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "flagship",
+      "description": "Llama 3.3 70B quantized to fp8 precision, optimized to be faster.",
+      "docs_url": null,
+      "licence_url": "https://github.com/meta-llama/llama-models/blob/main/models/llama3_3/LICENSE",
+      "flagship": true,
+      "created_at": "2024-12-06 17:09:18.338",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/meta/llama-4-scout-17b-16e-instruct",
+      "short_name": "Llama 4 Scout 17B 16E Instruct",
+      "provider": "meta",
+      "task": "text-generation",
+      "params": "17B",
+      "context_length": 131000,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": true,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "flagship",
+      "description": "Meta's Llama 4 Scout is a 17 billion parameter model with 16 experts that is natively multimodal. These models leverage a mixture-of-experts architecture to offer industry-leading performance in text and image understanding.",
+      "docs_url": null,
+      "licence_url": "https://github.com/meta-llama/llama-models/blob/main/models/llama4/LICENSE",
+      "flagship": true,
+      "created_at": "2025-04-05 20:25:56.137",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/meta/llama-3.2-11b-vision-instruct",
+      "short_name": "Llama 3.2 11B Vision Instruct",
+      "provider": "meta",
+      "task": "text-generation",
+      "params": "11B",
+      "context_length": 128000,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": true,
+        "reasoning": false,
+        "streaming": true,
+        "lora": true
+      },
+      "tier": "flagship",
+      "description": " The Llama 3.2-Vision instruction-tuned models are optimized for visual recognition, image reasoning, captioning, and answering general questions about an image.",
+      "docs_url": null,
+      "licence_url": "https://github.com/meta-llama/llama-models/blob/main/models/llama3_2/LICENSE",
+      "flagship": true,
+      "created_at": "2024-09-25 05:36:04.547",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/meta/llama-3.1-8b-instruct-awq",
+      "short_name": "Llama 3.1 8B Instruct AWQ",
+      "provider": "meta",
+      "task": "text-generation",
+      "params": "8B",
+      "context_length": 8192,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "flagship",
+      "description": "Quantized (int4) generative text model with 8 billion parameters from Meta.\n",
+      "docs_url": null,
+      "licence_url": "https://github.com/meta-llama/llama-models/blob/main/models/llama3_1/LICENSE",
+      "flagship": true,
+      "created_at": "2024-07-25 17:46:04.304",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/meta/llama-guard-3-8b",
+      "short_name": "Llama Guard 3 8B",
+      "provider": "meta",
+      "task": "text-generation",
+      "params": "8B",
+      "context_length": 131072,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": true
+      },
+      "tier": "flagship",
+      "description": "Llama Guard 3 is a Llama-3.1-8B pretrained model, fine-tuned for content safety classification. Similar to previous versions, it can be used to classify content in both LLM inputs (prompt classification) and in LLM responses (response classification). It acts as an LLM – it generates text in its output that indicates whether a given prompt or response is safe or unsafe, and if unsafe, it also lists the content categories violated.",
+      "docs_url": null,
+      "licence_url": null,
+      "flagship": true,
+      "created_at": "2025-01-22 23:26:23.495",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/meta/llama-3-8b-instruct",
+      "short_name": "Llama 3 8B Instruct",
+      "provider": "meta",
+      "task": "text-generation",
+      "params": "8B",
+      "context_length": 7968,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "fast",
+      "description": "Generation over generation, Meta Llama 3 demonstrates state-of-the-art performance on a wide range of industry benchmarks and offers new capabilities, including improved reasoning.",
+      "docs_url": "https://llama.meta.com",
+      "licence_url": "https://llama.meta.com/llama3/license/#",
+      "flagship": false,
+      "created_at": "2024-04-18 20:31:47.273",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/meta/llama-3-8b-instruct-awq",
+      "short_name": "Llama 3 8B Instruct AWQ",
+      "provider": "meta",
+      "task": "text-generation",
+      "params": "8B",
+      "context_length": 8192,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "fast",
+      "description": "Quantized (int4) generative text model with 8 billion parameters from Meta.",
+      "docs_url": "https://llama.meta.com",
+      "licence_url": "https://llama.meta.com/llama3/license/#",
+      "flagship": false,
+      "created_at": "2024-05-09 23:32:47.584",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/meta/llama-3.1-8b-instruct-fp8",
+      "short_name": "Llama 3.1 8B Instruct FP8",
+      "provider": "meta",
+      "task": "text-generation",
+      "params": "8B",
+      "context_length": 32000,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "fast",
+      "description": "Llama 3.1 8B quantized to FP8 precision",
+      "docs_url": null,
+      "licence_url": "https://github.com/meta-llama/llama-models/blob/main/models/llama3_1/LICENSE",
+      "flagship": false,
+      "created_at": "2024-07-25 17:28:43.328",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/meta/llama-2-7b-chat-fp16",
+      "short_name": "Llama 2 7B Chat FP16",
+      "provider": "meta",
+      "task": "text-generation",
+      "params": "7B",
+      "context_length": 4096,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "fast",
+      "description": "Full precision (fp16) generative text model with 7 billion parameters from Meta",
+      "docs_url": "https://ai.meta.com/llama/",
+      "licence_url": "https://ai.meta.com/resources/models-and-libraries/llama-downloads/",
+      "flagship": false,
+      "created_at": "2023-11-07 11:54:20.229",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/meta/llama-2-7b-chat-int8",
+      "short_name": "Llama 2 7B Chat INT8",
+      "provider": "meta",
+      "task": "text-generation",
+      "params": "7B",
+      "context_length": 8192,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "fast",
+      "description": "Quantized (int8) generative text model with 7 billion parameters from Meta",
+      "docs_url": null,
+      "licence_url": null,
+      "flagship": false,
+      "created_at": "2023-09-25 19:21:11.898",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/meta/llama-3.2-3b-instruct",
+      "short_name": "Llama 3.2 3B Instruct",
+      "provider": "meta",
+      "task": "text-generation",
+      "params": "3B",
+      "context_length": 80000,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "fast",
+      "description": "The Llama 3.2 instruction-tuned text only models are optimized for multilingual dialogue use cases, including agentic retrieval and summarization tasks.",
+      "docs_url": null,
+      "licence_url": "https://github.com/meta-llama/llama-models/blob/main/models/llama3_2/LICENSE",
+      "flagship": false,
+      "created_at": "2024-09-25 20:05:43.986",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/meta/llama-3.2-1b-instruct",
+      "short_name": "Llama 3.2 1B Instruct",
+      "provider": "meta",
+      "task": "text-generation",
+      "params": "1B",
+      "context_length": 60000,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "fast",
+      "description": "The Llama 3.2 instruction-tuned text only models are optimized for multilingual dialogue use cases, including agentic retrieval and summarization tasks.",
+      "docs_url": null,
+      "licence_url": "https://github.com/meta-llama/llama-models/blob/main/models/llama3_2/LICENSE",
+      "flagship": false,
+      "created_at": "2024-09-25 21:36:32.050",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/meta-llama/llama-2-7b-chat-hf-lora",
+      "short_name": "Llama 2 7B Chat HF LORA",
+      "provider": "meta-llama",
+      "task": "text-generation",
+      "params": "7B",
+      "context_length": 8192,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": true
+      },
+      "tier": "fast",
+      "description": "This is a Llama2 base model that Cloudflare dedicated for inference with LoRA adapters. Llama 2 is a collection of pretrained and fine-tuned generative text models ranging in scale from 7 billion to 70 billion parameters. This is the repository for the 7B fine-tuned model, optimized for dialogue use cases and converted for the Hugging Face Transformers format. ",
+      "docs_url": null,
+      "licence_url": null,
+      "flagship": false,
+      "created_at": "2024-04-02 00:17:18.579",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/microsoft/phi-2",
+      "short_name": "Phi 2",
+      "provider": "microsoft",
+      "task": "text-generation",
+      "params": null,
+      "context_length": 2048,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "flagship",
+      "description": "Phi-2 is a Transformer-based model with a next-word prediction objective, trained on 1.4T tokens from multiple passes on a mixture of Synthetic and Web datasets for NLP and coding.",
+      "docs_url": "https://huggingface.co/microsoft/phi-2",
+      "licence_url": null,
+      "flagship": true,
+      "created_at": "2024-02-27 18:26:21.126",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/mistral/mistral-7b-instruct-v0.1",
+      "short_name": "Mistral 7B Instruct V0.1",
+      "provider": "mistral",
+      "task": "text-generation",
+      "params": "7B",
+      "context_length": 2824,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": true
+      },
+      "tier": "fast",
+      "description": "Instruct fine-tuned version of the Mistral-7b generative text model with 7 billion parameters",
+      "docs_url": "https://mistral.ai/news/announcing-mistral-7b/",
+      "licence_url": null,
+      "flagship": false,
+      "created_at": "2023-11-07 11:54:20.229",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/mistral/mistral-7b-instruct-v0.2-lora",
+      "short_name": "Mistral 7B Instruct V0.2 LORA",
+      "provider": "mistral",
+      "task": "text-generation",
+      "params": "7B",
+      "context_length": 15000,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": true
+      },
+      "tier": "fast",
+      "description": "The Mistral-7B-Instruct-v0.2 Large Language Model (LLM) is an instruct fine-tuned version of the Mistral-7B-v0.2.",
+      "docs_url": null,
+      "licence_url": null,
+      "flagship": false,
+      "created_at": "2024-04-01 22:14:40.529",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@hf/mistral/mistral-7b-instruct-v0.2",
+      "short_name": "Mistral 7B Instruct V0.2",
+      "provider": "mistral",
+      "task": "text-generation",
+      "params": "7B",
+      "context_length": 3072,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": true
+      },
+      "tier": "fast",
+      "description": "The Mistral-7B-Instruct-v0.2 Large Language Model (LLM) is an instruct fine-tuned version of the Mistral-7B-v0.2. Mistral-7B-v0.2 has the following changes compared to Mistral-7B-v0.1: 32k context window (vs 8k context in v0.1), rope-theta = 1e6, and no Sliding-Window Attention.",
+      "docs_url": "https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.2",
+      "licence_url": null,
+      "flagship": false,
+      "created_at": "2024-04-02 13:00:59.244",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/mistralai/mistral-small-3.1-24b-instruct",
+      "short_name": "Mistral Small 3.1 24B Instruct",
+      "provider": "mistralai",
+      "task": "text-generation",
+      "params": "24B",
+      "context_length": 128000,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": true,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "flagship",
+      "description": "Building upon Mistral Small 3 (2501), Mistral Small 3.1 (2503) adds state-of-the-art vision understanding and enhances long context capabilities up to 128k tokens without compromising text performance. With 24 billion parameters, this model achieves top-tier capabilities in both text and vision tasks.",
+      "docs_url": null,
+      "licence_url": null,
+      "flagship": true,
+      "created_at": "2025-03-18 03:28:37.890",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/moonshotai/kimi-k2.5",
+      "short_name": "Kimi K2.5",
+      "provider": "moonshotai",
+      "task": "text-generation",
+      "params": null,
+      "context_length": 256000,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": true,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "flagship",
+      "description": "Kimi K2.5 is a frontier-scale open-source model with a 256k context window, multi-turn tool calling, vision inputs, and structured outputs for agentic workloads.",
+      "docs_url": null,
+      "licence_url": "https://github.com/MoonshotAI/Kimi-K2.5/blob/master/LICENSE",
+      "flagship": true,
+      "created_at": "2026-02-02 21:11:49.874",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@hf/nexusflow/starling-lm-7b-beta",
+      "short_name": "Starling Lm 7B Beta",
+      "provider": "nexusflow",
+      "task": "text-generation",
+      "params": "7B",
+      "context_length": 4096,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "fast",
+      "description": "We introduce Starling-LM-7B-beta, an open large language model (LLM) trained by Reinforcement Learning from AI Feedback (RLAIF). Starling-LM-7B-beta is trained from Openchat-3.5-0106 with our new reward model Nexusflow/Starling-RM-34B and policy optimization method Fine-Tuning Language Models from Human Preferences (PPO).",
+      "docs_url": "https://huggingface.co/Nexusflow/Starling-LM-7B-beta",
+      "licence_url": null,
+      "flagship": false,
+      "created_at": "2024-04-01 23:49:31.797",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@hf/nousresearch/hermes-2-pro-mistral-7b",
+      "short_name": "Hermes 2 Pro Mistral 7B",
+      "provider": "nousresearch",
+      "task": "text-generation",
+      "params": "7B",
+      "context_length": 24000,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": true,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "fast",
+      "description": "Hermes 2 Pro on Mistral 7B is the new flagship 7B Hermes! Hermes 2 Pro is an upgraded, retrained version of Nous Hermes 2, consisting of an updated and cleaned version of the OpenHermes 2.5 Dataset, as well as a newly introduced Function Calling and JSON Mode dataset developed in-house.",
+      "docs_url": "https://huggingface.co/NousResearch/Hermes-2-Pro-Mistral-7B",
+      "licence_url": null,
+      "flagship": false,
+      "created_at": "2024-04-01 23:45:53.800",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/nvidia/nemotron-3-120b-a12b",
+      "short_name": "Nemotron 3 120B A12b",
+      "provider": "nvidia",
+      "task": "text-generation",
+      "params": "120B",
+      "context_length": 256000,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": true,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "flagship",
+      "description": "NVIDIA Nemotron 3 Super is a hybrid MoE model with leading accuracy for multi-agent applications and specialized agentic AI systems.",
+      "docs_url": null,
+      "licence_url": "https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-nemotron-open-model-license/",
+      "flagship": true,
+      "created_at": "2026-02-24 23:22:47.215",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/openai/gpt-oss-120b",
+      "short_name": "Gpt OSS 120B",
+      "provider": "openai",
+      "task": "text-generation",
+      "params": "120B",
+      "context_length": 128000,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": true,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "flagship",
+      "description": "OpenAI’s open-weight models designed for powerful reasoning, agentic tasks, and versatile developer use cases – gpt-oss-120b is for production, general purpose, high reasoning use-cases.",
+      "docs_url": null,
+      "licence_url": null,
+      "flagship": true,
+      "created_at": "2025-08-05 10:27:29.131",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/openai/gpt-oss-20b",
+      "short_name": "Gpt OSS 20B",
+      "provider": "openai",
+      "task": "text-generation",
+      "params": "20B",
+      "context_length": 128000,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": true,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "flagship",
+      "description": "OpenAI’s open-weight models designed for powerful reasoning, agentic tasks, and versatile developer use cases – gpt-oss-20b is for lower latency, and local or specialized use-cases.",
+      "docs_url": null,
+      "licence_url": null,
+      "flagship": true,
+      "created_at": "2025-08-05 10:49:53.265",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/openchat/openchat-3.5-0106",
+      "short_name": "Openchat 3.5 0106",
+      "provider": "openchat",
+      "task": "text-generation",
+      "params": null,
+      "context_length": 8192,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "balanced",
+      "description": "OpenChat is an innovative library of open-source language models, fine-tuned with C-RLFT - a strategy inspired by offline reinforcement learning.",
+      "docs_url": "https://huggingface.co/openchat/openchat-3.5-0106",
+      "licence_url": null,
+      "flagship": false,
+      "created_at": "2024-02-27 18:20:39.169",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/qwen/qwen2.5-coder-32b-instruct",
+      "short_name": "Qwen2.5 Coder 32B Instruct",
+      "provider": "qwen",
+      "task": "text-generation",
+      "params": "32B",
+      "context_length": 32768,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": true
+      },
+      "tier": "flagship",
+      "description": "Qwen2.5-Coder is the latest series of Code-Specific Qwen large language models (formerly known as CodeQwen). As of now, Qwen2.5-Coder has covered six mainstream model sizes, 0.5, 1.5, 3, 7, 14, 32 billion parameters, to meet the needs of different developers. Qwen2.5-Coder brings the following improvements upon CodeQwen1.5:",
+      "docs_url": null,
+      "licence_url": null,
+      "flagship": true,
+      "created_at": "2025-02-27 00:31:43.829",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/qwen/qwq-32b",
+      "short_name": "Qwq 32B",
+      "provider": "qwen",
+      "task": "text-generation",
+      "params": "32B",
+      "context_length": 24000,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": true,
+        "streaming": true,
+        "lora": true
+      },
+      "tier": "flagship",
+      "description": "QwQ is the reasoning model of the Qwen series. Compared with conventional instruction-tuned models, QwQ, which is capable of thinking and reasoning, can achieve significantly enhanced performance in downstream tasks, especially hard problems. QwQ-32B is the medium-sized reasoning model, which is capable of achieving competitive performance against state-of-the-art reasoning models, e.g., DeepSeek-R1, o1-mini.",
+      "docs_url": null,
+      "licence_url": null,
+      "flagship": true,
+      "created_at": "2025-03-05 21:52:40.974",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/qwen/qwen3-30b-a3b-fp8",
+      "short_name": "Qwen3 30B A3b FP8",
+      "provider": "qwen",
+      "task": "text-generation",
+      "params": "30B",
+      "context_length": 32768,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": true,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "flagship",
+      "description": "Qwen3 is the latest generation of large language models in Qwen series, offering a comprehensive suite of dense and mixture-of-experts (MoE) models. Built upon extensive training, Qwen3 delivers groundbreaking advancements in reasoning, instruction-following, agent capabilities, and multilingual support.",
+      "docs_url": null,
+      "licence_url": null,
+      "flagship": true,
+      "created_at": "2025-04-30 21:36:10.009",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/qwen/qwen1.5-14b-chat-awq",
+      "short_name": "Qwen1.5 14B Chat AWQ",
+      "provider": "qwen",
+      "task": "text-generation",
+      "params": "14B",
+      "context_length": 7500,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "balanced",
+      "description": "Qwen1.5 is the improved version of Qwen, the large language model series developed by Alibaba Cloud. AWQ is an efficient, accurate and blazing-fast low-bit weight quantization method, currently supporting 4-bit quantization.",
+      "docs_url": "https://huggingface.co/qwen/qwen1.5-14b-chat-awq",
+      "licence_url": null,
+      "flagship": false,
+      "created_at": "2024-02-27 18:24:45.316",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/qwen/qwen1.5-7b-chat-awq",
+      "short_name": "Qwen1.5 7B Chat AWQ",
+      "provider": "qwen",
+      "task": "text-generation",
+      "params": "7B",
+      "context_length": 20000,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "fast",
+      "description": "Qwen1.5 is the improved version of Qwen, the large language model series developed by Alibaba Cloud. AWQ is an efficient, accurate and blazing-fast low-bit weight quantization method, currently supporting 4-bit quantization.",
+      "docs_url": "https://huggingface.co/qwen/qwen1.5-7b-chat-awq",
+      "licence_url": null,
+      "flagship": false,
+      "created_at": "2024-02-27 18:24:11.709",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/qwen/qwen1.5-1.8b-chat",
+      "short_name": "Qwen1.5 1.8B Chat",
+      "provider": "qwen",
+      "task": "text-generation",
+      "params": "1.8B",
+      "context_length": 32000,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "balanced",
+      "description": "Qwen1.5 is the improved version of Qwen, the large language model series developed by Alibaba Cloud.",
+      "docs_url": "https://huggingface.co/qwen/qwen1.5-1.8b-chat",
+      "licence_url": null,
+      "flagship": false,
+      "created_at": "2024-02-27 18:30:31.723",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/qwen/qwen1.5-0.5b-chat",
+      "short_name": "Qwen1.5 0.5B Chat",
+      "provider": "qwen",
+      "task": "text-generation",
+      "params": "0.5B",
+      "context_length": 32000,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "balanced",
+      "description": "Qwen1.5 is the improved version of Qwen, the large language model series developed by Alibaba Cloud.",
+      "docs_url": "https://huggingface.co/qwen/qwen1.5-0.5b-chat",
+      "licence_url": null,
+      "flagship": false,
+      "created_at": "2024-02-27 18:23:37.344",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@hf/thebloke/llama-2-13b-chat-awq",
+      "short_name": "Llama 2 13B Chat AWQ",
+      "provider": "thebloke",
+      "task": "text-generation",
+      "params": "13B",
+      "context_length": 4096,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "balanced",
+      "description": "Llama 2 13B Chat AWQ is an efficient, accurate and blazing-fast low-bit weight quantized Llama 2 variant.",
+      "docs_url": "https://huggingface.co/TheBloke/Llama-2-13B-chat-AWQ",
+      "licence_url": null,
+      "flagship": false,
+      "created_at": "2023-11-24 00:27:15.869",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/thebloke/discolm-german-7b-v1-awq",
+      "short_name": "Discolm German 7B V1 AWQ",
+      "provider": "thebloke",
+      "task": "text-generation",
+      "params": "7B",
+      "context_length": 4096,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "fast",
+      "description": "DiscoLM German 7b is a Mistral-based large language model with a focus on German-language applications. AWQ is an efficient, accurate and blazing-fast low-bit weight quantization method, currently supporting 4-bit quantization.",
+      "docs_url": "https://huggingface.co/TheBloke/DiscoLM_German_7b_v1-AWQ",
+      "licence_url": null,
+      "flagship": false,
+      "created_at": "2024-02-27 18:23:05.178",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@hf/thebloke/mistral-7b-instruct-v0.1-awq",
+      "short_name": "Mistral 7B Instruct V0.1 AWQ",
+      "provider": "thebloke",
+      "task": "text-generation",
+      "params": "7B",
+      "context_length": 4096,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "fast",
+      "description": "Mistral 7B Instruct v0.1 AWQ is an efficient, accurate and blazing-fast low-bit weight quantized Mistral variant.",
+      "docs_url": "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-AWQ",
+      "licence_url": null,
+      "flagship": false,
+      "created_at": "2023-11-24 00:27:15.869",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@hf/thebloke/neural-chat-7b-v3-1-awq",
+      "short_name": "Neural Chat 7B V3 1 AWQ",
+      "provider": "thebloke",
+      "task": "text-generation",
+      "params": "7B",
+      "context_length": 4096,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "fast",
+      "description": "This model is a fine-tuned 7B parameter LLM on the Intel Gaudi 2 processor from the mistralai/Mistral-7B-v0.1 on the open source dataset Open-Orca/SlimOrca.",
+      "docs_url": null,
+      "licence_url": null,
+      "flagship": false,
+      "created_at": "2024-02-06 18:12:30.722",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@hf/thebloke/openhermes-2.5-mistral-7b-awq",
+      "short_name": "Openhermes 2.5 Mistral 7B AWQ",
+      "provider": "thebloke",
+      "task": "text-generation",
+      "params": "7B",
+      "context_length": 4096,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "fast",
+      "description": "OpenHermes 2.5 Mistral 7B is a state of the art Mistral Fine-tune, a continuation of OpenHermes 2 model, which trained on additional code datasets.",
+      "docs_url": null,
+      "licence_url": null,
+      "flagship": false,
+      "created_at": "2024-02-06 18:04:22.846",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@hf/thebloke/zephyr-7b-beta-awq",
+      "short_name": "Zephyr 7B Beta AWQ",
+      "provider": "thebloke",
+      "task": "text-generation",
+      "params": "7B",
+      "context_length": 4096,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "fast",
+      "description": "Zephyr 7B Beta AWQ is an efficient, accurate and blazing-fast low-bit weight quantized Zephyr model variant.",
+      "docs_url": "https://huggingface.co/TheBloke/zephyr-7B-beta-AWQ",
+      "licence_url": null,
+      "flagship": false,
+      "created_at": "2023-11-24 00:27:15.869",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@hf/thebloke/deepseek-coder-6.7b-base-awq",
+      "short_name": "Deepseek Coder 6.7B Base AWQ",
+      "provider": "thebloke",
+      "task": "text-generation",
+      "params": "6.7B",
+      "context_length": 4096,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "balanced",
+      "description": "Deepseek Coder is composed of a series of code language models, each trained from scratch on 2T tokens, with a composition of 87% code and 13% natural language in both English and Chinese.",
+      "docs_url": null,
+      "licence_url": "https://huggingface.co/TheBloke/deepseek-coder-6.7B-base-AWQ",
+      "flagship": false,
+      "created_at": "2024-02-06 18:16:27.183",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@hf/thebloke/deepseek-coder-6.7b-instruct-awq",
+      "short_name": "Deepseek Coder 6.7B Instruct AWQ",
+      "provider": "thebloke",
+      "task": "text-generation",
+      "params": "6.7B",
+      "context_length": 4096,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "balanced",
+      "description": "Deepseek Coder is composed of a series of code language models, each trained from scratch on 2T tokens, with a composition of 87% code and 13% natural language in both English and Chinese.",
+      "docs_url": null,
+      "licence_url": "https://huggingface.co/TheBloke/deepseek-coder-6.7B-instruct-AWQ",
+      "flagship": false,
+      "created_at": "2024-02-06 18:18:27.462",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/tiiuae/falcon-7b-instruct",
+      "short_name": "Falcon 7B Instruct",
+      "provider": "tiiuae",
+      "task": "text-generation",
+      "params": "7B",
+      "context_length": 4096,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "fast",
+      "description": "Falcon-7B-Instruct is a 7B parameters causal decoder-only model built by TII based on Falcon-7B and finetuned on a mixture of chat/instruct datasets.",
+      "docs_url": "https://huggingface.co/tiiuae/falcon-7b-instruct",
+      "licence_url": null,
+      "flagship": false,
+      "created_at": "2024-02-27 18:21:15.796",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/tinyllama/tinyllama-1.1b-chat-v1.0",
+      "short_name": "Tinyllama 1.1B Chat V1.0",
+      "provider": "tinyllama",
+      "task": "text-generation",
+      "params": "1.1B",
+      "context_length": 2048,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": false,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "fast",
+      "description": "The TinyLlama project aims to pretrain a 1.1B Llama model on 3 trillion tokens. This is the chat model finetuned on top of TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T.",
+      "docs_url": "https://huggingface.co/TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+      "licence_url": null,
+      "flagship": false,
+      "created_at": "2024-02-27 18:25:37.524",
+      "source": "workers-ai"
+    },
+    {
+      "id": "@cf/zai-org/glm-4.7-flash",
+      "short_name": "Glm 4.7 Flash",
+      "provider": "zai-org",
+      "task": "text-generation",
+      "params": null,
+      "context_length": 131072,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": true,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "flagship",
+      "description": "GLM-4.7-Flash is a fast and efficient multilingual text generation model with a 131,072 token context window. Optimized for dialogue, instruction-following, and multi-turn tool calling across 100+ languages.",
+      "docs_url": null,
+      "licence_url": null,
+      "flagship": true,
+      "created_at": "2026-01-28 16:04:39.346",
+      "source": "workers-ai"
     }
   ]
 }

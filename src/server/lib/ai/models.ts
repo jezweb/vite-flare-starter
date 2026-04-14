@@ -24,96 +24,34 @@ import snapshot from '@/shared/data/models-snapshot.json'
 interface Snapshot {
   updated: string
   total: number
-  models: CatalogueModel[]
+  models: (CatalogueModel & { source?: 'openrouter' | 'workers-ai' })[]
 }
 
 const CATALOGUE = new Map(
   (snapshot as Snapshot).models.map((m) => [m.id, m] as const),
 )
 
-/** Workers AI model metadata — the one thing flared.au doesn't yet cover. */
-const WORKERS_AI_CONFIGS: Record<string, ModelConfig> = {
-  '@cf/moonshotai/kimi-k2.5': {
-    id: '@cf/moonshotai/kimi-k2.5',
-    displayName: 'Kimi K2.5',
-    provider: 'moonshot',
-    contextWindow: 128_000,
-    isReasoning: false,
-    supportsStreaming: true,
-    supportsTools: true,
-    supportsVision: false,
-    supportsPdf: false,
-    defaultMaxTokens: 4096,
-    description: 'Moonshot AI Kimi K2.5 — 1T-param flagship. Free via Workers AI.',
-    tier: 'flagship',
-  },
-  '@cf/google/gemma-4-26b-a4b-it': {
-    id: '@cf/google/gemma-4-26b-a4b-it',
-    displayName: 'Gemma 4 26B',
-    provider: 'google',
-    contextWindow: 128_000,
-    isReasoning: false,
-    supportsStreaming: true,
-    supportsTools: true,
-    supportsVision: true,
-    supportsPdf: false,
-    defaultMaxTokens: 4096,
-    description: 'Google Gemma 4 with vision. Free via Workers AI.',
-    tier: 'balanced',
-  },
-  '@cf/zai-org/glm-4.7-flash': {
-    id: '@cf/zai-org/glm-4.7-flash',
-    displayName: 'GLM 4.7 Flash',
-    provider: 'zhipu',
-    contextWindow: 128_000,
-    isReasoning: false,
-    supportsStreaming: true,
-    supportsTools: true,
-    supportsVision: false,
-    supportsPdf: false,
-    defaultMaxTokens: 4096,
-    description: 'Z.AI GLM 4.7 Flash — fast tool-capable. Free via Workers AI.',
-    tier: 'fast',
-  },
-  '@cf/qwen/qwq-32b': {
-    id: '@cf/qwen/qwq-32b',
-    displayName: 'QwQ 32B',
-    provider: 'qwen',
-    contextWindow: 32_768,
-    isReasoning: true,
-    supportsStreaming: true,
-    supportsTools: false,
-    supportsVision: false,
-    supportsPdf: false,
-    defaultMaxTokens: 4096,
-    description: 'Qwen QwQ 32B reasoning model. Free via Workers AI.',
-    tier: 'reasoning',
-  },
-}
-
 /** Convert a CatalogueModel (from flared.au) into our ModelConfig shape. */
-function fromCatalogue(m: CatalogueModel): ModelConfig {
-  const supportsVision = m.modality.includes('image')
+function fromCatalogue(m: CatalogueModel & { source?: 'openrouter' | 'workers-ai' }): ModelConfig {
+  const caps = m.capabilities
   const priceIn = m.pricing?.input ?? 0
-  // Cheap heuristic tiers while we wait for flared.au to expose them explicitly.
-  let tier: ModelTier = 'balanced'
-  if (m.flagship && priceIn >= 2) tier = 'flagship'
-  else if (priceIn < 0.3) tier = 'fast'
+  const isFree = m.source === 'workers-ai' || priceIn === 0
+  const ctxK = m.context_length ? (m.context_length / 1000).toFixed(0) : '?'
   return {
     id: m.id,
-    displayName: m.name.replace(/^.*?: /, ''),
+    displayName: m.short_name ?? m.name?.replace(/^.*?: /, '') ?? m.id,
     provider: (m.provider as ModelConfig['provider']) ?? 'openai',
-    contextWindow: m.context_length,
-    isReasoning: /reason|think|r1|o1|o3|qwq/i.test(m.id),
-    supportsStreaming: true,
-    supportsTools: true,
-    supportsVision,
-    supportsPdf: false,
+    contextWindow: m.context_length ?? 128_000,
+    isReasoning: caps?.reasoning ?? false,
+    supportsStreaming: caps?.streaming ?? true,
+    supportsTools: caps?.tools ?? true,
+    supportsVision: caps?.vision ?? m.modality?.includes('image') ?? false,
+    supportsPdf: caps?.pdf ?? false,
     defaultMaxTokens: Math.min(m.max_output ?? 4096, 8192),
     description:
-      `${m.name} — ${(m.context_length / 1000).toFixed(0)}K ctx` +
-      (priceIn > 0 ? `, $${priceIn.toFixed(2)}/M in` : ''),
-    tier,
+      `${m.short_name ?? m.name ?? m.id} — ${ctxK}K ctx` +
+      (isFree ? ', free via Workers AI' : priceIn > 0 ? `, $${priceIn}/M in` : ''),
+    tier: (m.tier as ModelTier) ?? 'balanced',
   }
 }
 
@@ -121,15 +59,12 @@ function fromCatalogue(m: CatalogueModel): ModelConfig {
 export const MODEL_REGISTRY: Record<string, ModelConfig> = (() => {
   const out: Record<string, ModelConfig> = {}
   for (const id of ENABLED_MODEL_IDS) {
-    if (id.startsWith('@cf/') || id.startsWith('@hf/')) {
-      const cfg = WORKERS_AI_CONFIGS[id]
-      if (cfg) out[id] = cfg
-      continue
-    }
     const cat = CATALOGUE.get(id)
-    if (cat) out[id] = fromCatalogue(cat)
-    else {
-      // Enabled but not in snapshot — keep a stub so selection still works.
+    if (cat) {
+      out[id] = fromCatalogue(cat)
+    } else {
+      // Enabled but missing from both catalogues — show a stub so the
+      // selector still works. Run `pnpm models:refresh` to pick up new models.
       out[id] = {
         id,
         displayName: id.split('/').pop() ?? id,

@@ -80,13 +80,25 @@ export const MODELS_CATALOGUE_URL = 'https://models.flared.au/json'
 export interface CatalogueModel {
   id: string
   name: string
+  /** Clean display name without provider prefix, e.g. "Claude Opus 4.6". */
+  short_name?: string
   provider: string
   api_id: string
   context_length: number
   max_output: number
   pricing: { input: number; output: number }
   modality: string
+  capabilities?: {
+    tools: boolean
+    vision: boolean
+    pdf: boolean
+    reasoning: boolean
+    structured_outputs: boolean
+    streaming: boolean
+  }
+  tier?: 'flagship' | 'balanced' | 'fast' | 'reasoning'
   released?: string
   knowledge_cutoff?: string
+  sunset_date?: string | null
   flagship?: boolean
 }
