@@ -140,15 +140,15 @@ export function LandingPage() {
 
             <div className="mt-8 flex items-center gap-6 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-green-500" />
+                <div className="h-2 w-2 rounded-full bg-green-500 dark:bg-green-400" />
                 MIT Licensed
               </div>
               <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-blue-500" />
+                <div className="h-2 w-2 rounded-full bg-blue-500 dark:bg-blue-400" />
                 TypeScript
               </div>
               <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-orange-500" />
+                <div className="h-2 w-2 rounded-full bg-orange-500 dark:bg-orange-400" />
                 Cloudflare Ready
               </div>
             </div>

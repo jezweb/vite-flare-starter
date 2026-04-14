@@ -41,10 +41,10 @@ export function PasswordStrengthMeter({
             className={cn(
               'text-xs font-medium',
               strength.score === 0 && 'text-destructive',
-              strength.score === 1 && 'text-orange-500',
-              strength.score === 2 && 'text-yellow-500',
-              strength.score === 3 && 'text-green-500',
-              strength.score === 4 && 'text-emerald-500'
+              strength.score === 1 && 'text-orange-600 dark:text-orange-400',
+              strength.score === 2 && 'text-amber-600 dark:text-amber-400',
+              strength.score === 3 && 'text-green-600 dark:text-green-400',
+              strength.score === 4 && 'text-emerald-600 dark:text-emerald-400'
             )}
           >
             {strength.label}
@@ -66,7 +66,7 @@ export function PasswordStrengthMeter({
               key={index}
               className={cn(
                 'flex items-center gap-1.5 text-xs',
-                req.met ? 'text-green-600' : 'text-muted-foreground'
+                req.met ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'
               )}
             >
               {req.met ? (

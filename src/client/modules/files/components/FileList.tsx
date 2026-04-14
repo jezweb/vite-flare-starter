@@ -161,10 +161,10 @@ export function FileList({ files, isLoading }: FileListProps) {
               <div
                 className={cn(
                   'flex items-center justify-center h-10 w-10 rounded-lg',
-                  iconType === 'image' && 'bg-purple-500/10 text-purple-500',
-                  iconType === 'document' && 'bg-red-500/10 text-red-500',
-                  iconType === 'code' && 'bg-blue-500/10 text-blue-500',
-                  iconType === 'archive' && 'bg-amber-500/10 text-amber-500',
+                  iconType === 'image' && 'bg-purple-500/10 dark:bg-purple-500/15 text-purple-600 dark:text-purple-400',
+                  iconType === 'document' && 'bg-red-500/10 dark:bg-red-500/15 text-red-600 dark:text-red-400',
+                  iconType === 'code' && 'bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400',
+                  iconType === 'archive' && 'bg-amber-500/10 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400',
                   iconType === 'file' && 'bg-muted text-muted-foreground'
                 )}
               >
@@ -176,7 +176,7 @@ export function FileList({ files, isLoading }: FileListProps) {
                 <div className="flex items-center gap-2">
                   <p className="font-medium truncate">{file.name}</p>
                   {file.isPublic ? (
-                    <Globe className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                    <Globe className="h-3.5 w-3.5 text-green-600 dark:text-green-400 flex-shrink-0" />
                   ) : (
                     <Lock className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                   )}

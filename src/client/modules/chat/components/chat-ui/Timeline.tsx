@@ -1,5 +1,6 @@
 import { Check, Circle, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { STATUS_SOLID } from '@/client/lib/status-colors'
 
 interface Event {
   title: string
@@ -15,7 +16,7 @@ interface Props {
 
 const ICONS = { completed: Check, current: Clock, upcoming: Circle }
 const COLORS = {
-  completed: 'bg-green-500 text-white border-green-500',
+  completed: STATUS_SOLID.success,
   current: 'bg-primary text-primary-foreground border-primary',
   upcoming: 'bg-background text-muted-foreground border-border',
 }
