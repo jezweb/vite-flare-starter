@@ -620,6 +620,7 @@ npx wrangler deploy         # Deploy to Cloudflare
 pnpm db:generate:named "x"  # Generate migration
 pnpm db:migrate:local       # Apply migrations locally
 pnpm db:migrate:remote      # Apply migrations to production
+pnpm models:refresh         # Update AI model catalogue from flared.au
 pnpm test                   # Run tests
 pnpm type-check             # Run TypeScript check
 ```
@@ -627,5 +628,5 @@ pnpm type-check             # Run TypeScript check
 ---
 
 **Created:** 2025-11-29
-**Updated:** 2026-04-13
+**Updated:** 2026-04-15
 **Author:** Jeremy Dawes (Jezweb)
