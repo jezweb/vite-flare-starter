@@ -43,10 +43,10 @@ async function verifySignature(
   const secretKey = `WEBHOOK_SECRET_${provider.toUpperCase()}` as keyof Env
   const secret = env[secretKey] as string | undefined
 
-  // No secret configured = skip verification (dev mode)
+  // No secret configured = reject. Set WEBHOOK_SECRET_<PROVIDER> as a wrangler secret.
   if (!secret) {
-    console.warn(`No webhook secret for provider "${provider}" — skipping verification`)
-    return true
+    console.error(`No webhook secret for provider "${provider}" — rejecting unverified payload`)
+    return false
   }
 
   const signature = headers.get('x-webhook-signature')

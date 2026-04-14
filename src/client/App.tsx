@@ -1,25 +1,42 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { ScrollToTop } from './components/shared/ScrollToTop'
 import { ErrorBoundary } from './components/shared/ErrorBoundary'
 import { createErrorHandler } from './lib/error-reporting'
-import { SignInPage } from './modules/auth/SignInPage'
-import { SignUpPage } from './modules/auth/SignUpPage'
-import { ForgotPasswordPage } from './modules/auth/ForgotPasswordPage'
-import { ResetPasswordPage } from './modules/auth/ResetPasswordPage'
-import { VerifyEmailPage } from './modules/auth/VerifyEmailPage'
 import { ProtectedRoute } from './components/shared/ProtectedRoute'
+import { Loader2 } from 'lucide-react'
+
+// Critical-path imports (always in the main bundle)
+import { LandingPage } from './pages/LandingPage'
 import { DashboardLayout } from './layouts/DashboardLayout'
 import { PublicLayout } from './layouts/PublicLayout'
 import { DashboardPage } from './pages/DashboardPage'
-import { LandingPage } from './pages/LandingPage'
-import { SettingsPage } from './modules/settings/pages/SettingsPage'
-import { AdminPage } from './modules/admin/pages/AdminPage'
-import { ChatPage, ExtractPage } from './modules/chat'
-import { StyleGuidePage } from './pages/StyleGuidePage'
-import { ComponentsPage } from './pages/ComponentsPage'
-import { ActivityPage } from './modules/activity/pages/ActivityPage'
-import { FilesPage } from './modules/files'
+
+// Auth pages — small, fast-loading, keep in main bundle
+import { SignInPage } from './modules/auth/SignInPage'
+import { SignUpPage } from './modules/auth/SignUpPage'
+
+// Lazy-loaded pages — each gets its own chunk, loaded on first visit
+const ForgotPasswordPage = lazy(() => import('./modules/auth/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })))
+const ResetPasswordPage = lazy(() => import('./modules/auth/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage })))
+const VerifyEmailPage = lazy(() => import('./modules/auth/VerifyEmailPage').then(m => ({ default: m.VerifyEmailPage })))
+const SettingsPage = lazy(() => import('./modules/settings/pages/SettingsPage').then(m => ({ default: m.SettingsPage })))
+const AdminPage = lazy(() => import('./modules/admin/pages/AdminPage').then(m => ({ default: m.AdminPage })))
+const ChatPage = lazy(() => import('./modules/chat/pages/ChatPage').then(m => ({ default: m.ChatPage })))
+const ExtractPage = lazy(() => import('./modules/chat/pages/ExtractPage').then(m => ({ default: m.ExtractPage })))
+const ActivityPage = lazy(() => import('./modules/activity/pages/ActivityPage').then(m => ({ default: m.ActivityPage })))
+const FilesPage = lazy(() => import('./modules/files/pages/FilesPage').then(m => ({ default: m.FilesPage })))
+const ComponentsPage = lazy(() => import('./pages/ComponentsPage').then(m => ({ default: m.ComponentsPage })))
+const StyleGuidePage = lazy(() => import('./pages/StyleGuidePage').then(m => ({ default: m.StyleGuidePage })))
+
+function PageSpinner() {
+  return (
+    <div className="flex h-64 items-center justify-center">
+      <Loader2 className="size-6 animate-spin text-muted-foreground" />
+    </div>
+  )
+}
 
 function App() {
   return (
@@ -27,6 +44,7 @@ function App() {
       <TooltipProvider delayDuration={200}>
       <BrowserRouter>
         <ScrollToTop />
+        <Suspense fallback={<PageSpinner />}>
         <Routes>
           {/* Public marketing pages with header/footer */}
           <Route element={<PublicLayout />}>
@@ -82,6 +100,7 @@ function App() {
           {/* Catch all - redirect to landing page */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </Suspense>
       </BrowserRouter>
       </TooltipProvider>
     </ErrorBoundary>

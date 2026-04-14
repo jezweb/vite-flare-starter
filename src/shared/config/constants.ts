@@ -79,6 +79,12 @@ export const RATE_LIMITS = {
 
   /** API token creations per day */
   TOKEN_CREATION: 10,
+
+  /** AI chat requests per hour (cost protection) */
+  CHAT: 60,
+
+  /** Structured extraction requests per hour */
+  EXTRACT: 30,
 } as const
 
 /**

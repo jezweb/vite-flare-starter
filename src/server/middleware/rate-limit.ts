@@ -39,6 +39,20 @@ const ENDPOINT_LIMITS: Record<string, RateLimitConfig> = {
     key: 'TOKEN_CREATION',
     windowMs: 24 * 60 * 60 * 1000,
   },
+  // AI chat: 60 per hour (cost protection — one OPENROUTER_API_KEY unlocks paid models)
+  'POST:/api/chat': {
+    key: 'CHAT',
+    windowMs: 60 * 60 * 1000,
+  },
+  // Structured extraction: 30 per hour
+  'POST:/api/chat/extract': {
+    key: 'EXTRACT',
+    windowMs: 60 * 60 * 1000,
+  },
+  'POST:/api/chat/stream-extract': {
+    key: 'EXTRACT',
+    windowMs: 60 * 60 * 1000,
+  },
 }
 
 /**

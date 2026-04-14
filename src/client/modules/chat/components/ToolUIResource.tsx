@@ -116,7 +116,7 @@ export function ToolUIResource({ resource }: ToolUIResourceProps) {
           <iframe
             ref={iframeRef}
             srcDoc={content}
-            sandbox="allow-scripts allow-same-origin allow-forms"
+            sandbox="allow-scripts allow-forms"
             style={{ width: '100%', height: `${height}px`, border: 'none' }}
             title={title || resource.uri}
           />

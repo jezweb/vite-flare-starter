@@ -120,7 +120,15 @@ const app = new Hono<{ Bindings: Env }>()
 app.use('*', requestIdMiddleware)
 app.use('*', logger())
 app.use('*', securityHeaders)
-app.use('/api/*', cors())
+app.use('/api/*', cors({
+  origin: (origin, c) => {
+    // Use TRUSTED_ORIGINS if set, otherwise allow same-origin only
+    const trusted = (c.env.TRUSTED_ORIGINS as string | undefined)?.split(',').map(s => s.trim()) ?? []
+    if (trusted.length === 0) return origin // Same-origin: reflect the request origin
+    return trusted.includes(origin) ? origin : trusted[0]!
+  },
+  credentials: true,
+}))
 app.use('/api/*', rateLimiter)
 
 // Health check endpoint

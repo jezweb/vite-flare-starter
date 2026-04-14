@@ -1,7 +1,7 @@
 # CLAUDE.md - AI Developer Context
 
 **Project:** Vite Flare Starter
-**Version:** 2.0.0
+**Version:** 2.1.0
 **Purpose:** Pattern library and production-ready starter kit for Cloudflare Workers
 
 ---
@@ -69,7 +69,7 @@ Change these before deploying to production:
 | **Backend** | Hono 4.12 |
 | **Database** | D1 (SQLite) + Drizzle ORM 0.45 |
 | **Auth** | better-auth 1.6 (Google OAuth, optional email/password) |
-| **AI** | AI SDK v6 + workers-ai-provider (16 Workers AI models) |
+| **AI** | AI SDK v6 + workers-ai-provider + OpenRouter (16 models across 8 providers) |
 | **UI** | Tailwind v4 + shadcn/ui |
 | **Data Fetching** | TanStack Query 5 + apiClient |
 | **Forms** | React Hook Form + Zod |
@@ -227,10 +227,13 @@ return createAgentUIStreamResponse({
 
 ```typescript
 // Client: useChat hook (wrapper around @ai-sdk/react useChat)
+// Uses refs for model/systemPrompt/conversationId to avoid stale-closure bugs
+// when switching models in the UI. The transport is memoised once; refs update
+// on each render so prepareSendMessagesRequest always reads the latest values.
 import { useChat } from '@/client/modules/chat/hooks/useChat'
 const { messages, sendMessage, isLoading, conversationId, addToolApprovalResponse } = useChat({
-  model: '@cf/moonshotai/kimi-k2.5',
-  conversationId: urlConversationId,   // Load existing conversation
+  model: 'anthropic/claude-sonnet-4.6',  // or any id from src/shared/config/models.ts
+  conversationId: urlConversationId,      // Load existing conversation
 })
 sendMessage({ text: 'Hello' })
 ```
@@ -451,16 +454,23 @@ Use for: heavy ML inference, video processing, anything that exceeds Workers CPU
 
 ## AI Module
 
-16 curated Workers AI models in `src/server/lib/ai/models.ts`:
+16 curated models across 8 providers. Edit `src/shared/config/models.ts` to add or remove models — metadata comes from a bundled snapshot of [models.flared.au](https://models.flared.au) + [ai.flared.au](https://ai.flared.au). Run `pnpm models:refresh` to update.
 
-| Tier | Models | Capabilities |
-|------|--------|-------------|
-| **Flagship** | Kimi K2.5 (default), Nemotron 3 120B, GPT-OSS 120B, Llama 3.3 70B | Tools, vision, reasoning |
-| **Balanced** | Gemma 4 26B, Llama 4 Scout, GLM 4.7, Mistral Small 3.1, Qwen 3 30B | Tools, vision |
-| **Fast** | Llama 3.1 8B, GPT-OSS 20B, Granite 4.0, Llama 3.2 3B | Low latency |
-| **Reasoning** | QwQ 32B | Step-by-step thinking |
+| Source | Models | Notes |
+|--------|--------|-------|
+| **Workers AI** (free) | Kimi K2.5 (default), Gemma 4 26B, GLM 4.7 Flash, QwQ 32B | No API key needed |
+| **Anthropic** | Claude Opus 4.6, Claude Sonnet 4.6, Claude Haiku 4.5 | Via OpenRouter |
+| **OpenAI** | GPT-5.4, GPT-5.4 mini | Via OpenRouter |
+| **Google** | Gemini 3.1 Pro, Gemini 3 Flash | Via OpenRouter |
+| **DeepSeek** | DeepSeek V3.2 Speciale | Via OpenRouter |
+| **Qwen** | Qwen 3.6 Plus | Via OpenRouter |
+| **Mistral** | Mistral Large 3 2512 | Via OpenRouter |
+| **xAI** | Grok 4.1 Fast | Via OpenRouter |
+| **Z.AI** | GLM 5 | Via OpenRouter |
 
-AI features in the chat module: streaming, tool calling, reasoning extraction, vision (image attachments), structured output, token usage logging, message metadata, regenerate, MCP integration, MCP-UI rendering.
+One `OPENROUTER_API_KEY` unlocks all non-Workers-AI models. Direct-provider SDKs (`@ai-sdk/anthropic`, `@ai-sdk/openai`, `@ai-sdk/google`) are kept as fallbacks if you prefer native routing.
+
+AI features in the chat module: streaming, tool calling, reasoning extraction, vision (image attachments), structured output, token usage logging, message metadata, regenerate, conversation persistence, MCP integration, MCP-UI rendering.
 
 ---
 

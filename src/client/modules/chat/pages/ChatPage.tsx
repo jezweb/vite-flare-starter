@@ -32,7 +32,7 @@ import { useConversationMessages } from '../hooks/useConversations'
 import { ConversationSidebar } from '../components/ConversationSidebar'
 import { MessageRenderer } from '../components/MessageRenderer'
 import { ModelSelector } from '../components'
-import { DEFAULT_MODEL, MODEL_REGISTRY } from '@/server/lib/ai/models'
+import { DEFAULT_MODEL_ID } from '@/shared/config/models'
 import { InputTakeover, isTakeoverElement } from '../components/chat-ui/InputTakeover'
 import { hasUiMarker } from '../components/chat-ui/ChatUiElement'
 import { useSession } from '@/client/lib/auth'
@@ -48,9 +48,11 @@ export function ChatPage() {
   const { conversationId: urlConversationId } = useParams<{ conversationId?: string }>()
   const navigate = useNavigate()
   const { data: session } = useSession()
-  const [model, setModel] = useState<string>(DEFAULT_MODEL)
+  const [model, setModel] = useState<string>(DEFAULT_MODEL_ID)
   const [showSidebar, setShowSidebar] = useState(false)
-  const modelConfig = MODEL_REGISTRY[model as keyof typeof MODEL_REGISTRY]
+  // Vision support check — accept image attachments for models known to support it.
+  // The API endpoint also validates this server-side.
+  const supportsVision = model.includes('gemma') || model.includes('gemini') || model.includes('claude') || model.includes('gpt')
 
   const { data: existingConversation } = useConversationMessages(urlConversationId)
 
@@ -261,7 +263,7 @@ export function ChatPage() {
             ) : (
               <PromptInput
                 onSubmit={handleSubmit}
-                accept={modelConfig?.supportsVision ? 'image/*' : undefined}
+                accept={supportsVision ? 'image/*' : undefined}
                 multiple
                 maxFiles={5}
                 maxFileSize={10 * 1024 * 1024}

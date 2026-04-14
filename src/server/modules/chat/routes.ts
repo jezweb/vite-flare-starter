@@ -30,7 +30,10 @@ app.use('*', requireScopes('chat:write'))
 app.post('/', async (c) => {
   try {
     const body = await c.req.json()
-    const { model: requestedModel, systemPrompt, conversationId: existingConversationId } = body
+    const { model: requestedModel, conversationId: existingConversationId } = body
+    // systemPrompt is intentionally server-controlled — client cannot override.
+    // Fork-users: change this in buildChatAgent's default instructions.
+    const systemPrompt = undefined
     // Accept both legacy { messages } and new { message, allMessages } shapes
     const messages = (body.messages || body.allMessages || (body.message ? [body.message] : [])) as Array<{ role: string; content?: unknown; parts?: unknown[] }>
 
