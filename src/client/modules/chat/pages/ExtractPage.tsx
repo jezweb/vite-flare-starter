@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
 import { apiClient } from '@/client/lib/api-client'
 
 type SchemaName = 'summary' | 'entities' | 'sentiment'
@@ -59,7 +60,7 @@ export function ExtractPage() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <label htmlFor="text" className="text-sm font-medium">Text to analyse</label>
+          <Label htmlFor="text">Text to analyse</Label>
           <Textarea
             id="text"
             value={text}
@@ -70,7 +71,7 @@ export function ExtractPage() {
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="schema" className="text-sm font-medium">Extraction schema</label>
+          <Label htmlFor="schema">Extraction schema</Label>
           <Select value={schema} onValueChange={(v) => setSchema(v as SchemaName)}>
             <SelectTrigger id="schema" className="w-full">
               <SelectValue />

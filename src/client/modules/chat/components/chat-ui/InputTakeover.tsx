@@ -72,9 +72,9 @@ function TakeoverHeader({ title, onDismiss, hint }: { title: string; onDismiss: 
         <p className="text-sm font-medium text-foreground">{title}</p>
         {hint && <p className="text-[10px] text-muted-foreground mt-0.5">{hint}</p>}
       </div>
-      <button onClick={onDismiss} className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors shrink-0">
+      <Button variant="ghost" size="icon-sm" onClick={onDismiss} className="text-muted-foreground hover:text-foreground shrink-0">
         <X className="h-4 w-4" />
-      </button>
+      </Button>
     </div>
   )
 }
@@ -308,7 +308,7 @@ function ChoiceTakeover({ element, onSubmit, onDismiss }: Props) {
     <div className="border-t border-border bg-card rounded-b-2xl">
       <div className="flex items-center justify-between px-4 pt-3 pb-1">
         <span className="text-xs text-muted-foreground">Choose an option</span>
-        <button onClick={onDismiss} className="p-1 text-muted-foreground hover:text-foreground transition-colors"><X className="h-4 w-4" /></button>
+        <Button variant="ghost" size="icon-sm" onClick={onDismiss} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></Button>
       </div>
       <div className="px-4 pb-3 flex flex-wrap gap-2">
         {items.map((item, i) => {

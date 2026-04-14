@@ -11,6 +11,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Code2, Eye, Copy, Check, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 import { useTheme } from '@/client/components/theme-provider'
 
 /**
@@ -90,27 +91,37 @@ export function ArtifactViewer({ artifact }: Props) {
           <span className="text-[10px] text-muted-foreground uppercase">{artifact.type}</span>
         </div>
         <div className="flex items-center gap-1">
-          <button
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={() => setShowCode(!showCode)}
-            className={cn('p-1 rounded text-muted-foreground hover:text-foreground transition-colors', showCode && 'bg-muted text-foreground')}
+            className={cn('text-muted-foreground hover:text-foreground', showCode && 'bg-muted text-foreground')}
             title={showCode ? 'Show preview' : 'Show code'}
           >
             {showCode ? <Eye className="size-3.5" /> : <Code2 className="size-3.5" />}
-          </button>
-          <button onClick={handleCopy} className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors" title="Copy code">
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={handleCopy}
+            className="text-muted-foreground hover:text-foreground"
+            title="Copy code"
+          >
             {copied ? <Check className="size-3.5 text-green-600 dark:text-green-400" /> : <Copy className="size-3.5" />}
-          </button>
+          </Button>
           {artifact.type === 'html' && (
-            <button
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={() => {
                 const blob = new Blob([artifact.code], { type: 'text/html' })
                 window.open(URL.createObjectURL(blob), '_blank')
               }}
-              className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors"
+              className="text-muted-foreground hover:text-foreground"
               title="Open in new tab"
             >
               <ExternalLink className="size-3.5" />
-            </button>
+            </Button>
           )}
         </div>
       </div>
