@@ -48,14 +48,26 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
+    chunkSizeWarningLimit: 1500,
     // Code splitting for optimal loading
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Vendor chunks for better caching
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
-          // Add more chunks as needed
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined
+          // Heavy libs users never need on first paint — keep out of main chunk.
+          // Do NOT group shiki or @shikijs — each language should stay its own
+          // lazy chunk (see shiki/guide/best-performance).
+          if (id.includes('/streamdown/')) return 'streamdown'
+          if (id.includes('/mermaid/')) return 'mermaid'
+          if (id.includes('/cytoscape')) return 'cytoscape'
+          if (id.includes('@milkdown/') || id.includes('/milkdown/') || id.includes('/prosemirror-')) return 'milkdown'
+          if (id.includes('/katex/')) return 'katex'
+          // Vendor chunks
+          if (id.includes('/react-router')) return 'react-router'
+          if (id.includes('/@tanstack/')) return 'tanstack'
+          if (id.includes('/@radix-ui/')) return 'radix'
+          if (id.includes('/ai/') || id.includes('/@ai-sdk/')) return 'ai-sdk'
+          return undefined
         },
       },
     },

@@ -27,7 +27,13 @@ import type {
   HighlighterGeneric,
   ThemedToken,
 } from "shiki";
-import { createHighlighter } from "shiki";
+// Follows https://shiki.style/guide/best-performance:
+// - shiki/core with fine-grained imports
+// - createJavaScriptRegexEngine (no WASM oniguruma in the client bundle)
+// - lazy-load each language grammar on demand
+//
+// Result: Shiki core + engine ≈ 70 KB, each language ≈ 5-20 KB loaded only
+// when a code block of that language is actually rendered.
 
 // Shiki uses bitflags for font styles: 1=italic, 2=bold, 4=underline
 // oxlint-disable-next-line eslint(no-bitwise)
@@ -155,10 +161,41 @@ const getHighlighter = (
     return cached;
   }
 
-  const highlighterPromise = createHighlighter({
-    langs: [language],
-    themes: ["github-light", "github-dark"],
-  });
+  const highlighterPromise = (async () => {
+    const [
+      { createHighlighterCore },
+      { createJavaScriptRegexEngine },
+      lightTheme,
+      darkTheme,
+    ] = await Promise.all([
+      import("shiki/core"),
+      import("shiki/engine/javascript"),
+      import("@shikijs/themes/github-light"),
+      import("@shikijs/themes/github-dark"),
+    ]);
+
+    // Language import can 404 for unknown identifiers — fall back silently.
+    let langModule: unknown = null;
+    try {
+      langModule = await import(`@shikijs/langs/${language}`);
+    } catch {
+      // Unknown language — skip loading grammar; plain rendering handles it.
+    }
+
+    return createHighlighterCore({
+      engine: createJavaScriptRegexEngine(),
+      themes: [
+        (lightTheme as { default?: unknown }).default ?? lightTheme,
+        (darkTheme as { default?: unknown }).default ?? darkTheme,
+      ],
+      langs: langModule
+        ? [(langModule as { default?: unknown }).default ?? langModule]
+        : [],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any) as unknown as Promise<
+      HighlighterGeneric<BundledLanguage, BundledTheme>
+    >;
+  })();
 
   highlighterCache.set(language, highlighterPromise);
   return highlighterPromise;

@@ -22,7 +22,7 @@ import { FileUploader } from '../components/FileUploader'
 import { FileList } from '../components/FileList'
 
 export function FilesPage() {
-  const [currentFolder, setCurrentFolder] = useState<string>('/')
+  const [currentFolder, setCurrentFolder] = useState<string>('all')
   const [uploadOpen, setUploadOpen] = useState(false)
 
   const { data, isLoading, refetch } = useFiles({ folder: currentFolder === 'all' ? undefined : currentFolder })
