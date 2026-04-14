@@ -16,10 +16,14 @@ import {
 } from '@/components/ai-elements/conversation'
 import {
   PromptInput,
-  PromptInputBody,
   PromptInputTextarea,
+  PromptInputFooter,
   PromptInputTools,
   PromptInputSubmit,
+  PromptInputActionMenu,
+  PromptInputActionMenuTrigger,
+  PromptInputActionMenuContent,
+  PromptInputActionAddAttachments,
 } from '@/components/ai-elements/prompt-input'
 import { Suggestion } from '@/components/ai-elements/suggestion'
 import { Plus, MessageSquare, PanelLeft, PanelLeftClose, Sparkles } from 'lucide-react'
@@ -197,7 +201,6 @@ export function ChatPage() {
             <h1 className="text-sm font-medium">AI Chat</h1>
           </div>
           <div className="flex items-center gap-2">
-            <ModelSelector value={model} onChange={setModel} disabled={isLoading} />
             {hasMessages && (
               <Button
                 variant="ghost"
@@ -263,15 +266,21 @@ export function ChatPage() {
                 maxFiles={5}
                 maxFileSize={10 * 1024 * 1024}
               >
-                <PromptInputBody>
-                  <PromptInputTextarea
-                    placeholder={hasMessages ? 'Reply to the AI...' : 'Ask anything...'}
-                  />
+                <PromptInputTextarea
+                  placeholder={hasMessages ? 'Reply to the AI...' : 'Ask anything...'}
+                />
+                <PromptInputFooter>
                   <PromptInputTools>
-                    <div className="flex-1" />
-                    <PromptInputSubmit status={status} onStop={stop} />
+                    <PromptInputActionMenu>
+                      <PromptInputActionMenuTrigger />
+                      <PromptInputActionMenuContent>
+                        <PromptInputActionAddAttachments />
+                      </PromptInputActionMenuContent>
+                    </PromptInputActionMenu>
+                    <ModelSelector value={model} onChange={setModel} disabled={isLoading} />
                   </PromptInputTools>
-                </PromptInputBody>
+                  <PromptInputSubmit status={status} onStop={stop} />
+                </PromptInputFooter>
               </PromptInput>
             )}
           </div>
