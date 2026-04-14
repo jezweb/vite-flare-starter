@@ -7,6 +7,7 @@
  */
 import { useChat as useAIChat } from '@ai-sdk/react'
 import { DefaultChatTransport, type UIMessage } from 'ai'
+import { useMemo, useRef, useEffect } from 'react'
 import { messageMetadataSchema, type MessageMetadata } from '@/shared/schemas/chat.schema'
 
 export type Message = UIMessage
@@ -25,27 +26,42 @@ interface ChatOptions {
 export function useChat(options: ChatOptions = {}) {
   const { model, systemPrompt, conversationId, initialMessages, onToolCall } = options
 
+  // Refs keep prepareSendMessagesRequest reading the LATEST model/systemPrompt/conversationId.
+  // useAIChat memoises the transport internally, so a closure captured at mount would
+  // otherwise pin the request to the model first passed in.
+  const modelRef = useRef(model)
+  const systemPromptRef = useRef(systemPrompt)
+  const conversationIdRef = useRef(conversationId)
+  useEffect(() => { modelRef.current = model }, [model])
+  useEffect(() => { systemPromptRef.current = systemPrompt }, [systemPrompt])
+  useEffect(() => { conversationIdRef.current = conversationId }, [conversationId])
+
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: '/api/chat',
+        credentials: 'include',
+        // Bandwidth optimisation: send only the latest message, server loads history from DB
+        prepareSendMessagesRequest({ messages: msgs, id }) {
+          return {
+            body: {
+              message: msgs[msgs.length - 1],
+              allMessages: msgs,
+              id,
+              model: modelRef.current,
+              systemPrompt: systemPromptRef.current,
+              conversationId: conversationIdRef.current,
+            },
+          }
+        },
+      }),
+    [],
+  )
+
   const chat = useAIChat({
     messages: initialMessages,
     messageMetadataSchema,
-    transport: new DefaultChatTransport({
-      api: '/api/chat',
-      body: { model, systemPrompt, conversationId },
-      credentials: 'include',
-      // Bandwidth optimisation: send only the latest message, server loads history from DB
-      prepareSendMessagesRequest({ messages: msgs, id }) {
-        return {
-          body: {
-            message: msgs[msgs.length - 1],
-            allMessages: msgs, // Full history as fallback for new conversations
-            id,
-            model,
-            systemPrompt,
-            conversationId,
-          },
-        }
-      },
-    }),
+    transport,
     onToolCall,
     onError: (error: Error) => {
       console.error('Chat error:', error)

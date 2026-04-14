@@ -18,26 +18,29 @@ import { EmailVerificationBanner } from '@/client/components/EmailVerificationBa
 
 export function DashboardLayout() {
   return (
-    <SidebarProvider
-      style={
-        {
-          '--sidebar-width': 'calc(var(--spacing) * 72)',
-          '--header-height': 'calc(var(--spacing) * 14)',
-        } as CSSProperties
-      }
-    >
-      <AppSidebar />
-      <CommandPalette />
-      <KeyboardShortcuts />
-      <SidebarInset>
-        <SiteHeader />
-        <EmailVerificationBanner />
-        <main className="flex-1 overflow-y-auto">
-          <div className="p-4 md:p-6">
-            <Outlet />
-          </div>
-        </main>
-      </SidebarInset>
-    </SidebarProvider>
+    <div className="h-svh overflow-hidden">
+      <SidebarProvider
+        className="h-full"
+        style={
+          {
+            '--sidebar-width': 'calc(var(--spacing) * 72)',
+            '--header-height': 'calc(var(--spacing) * 14)',
+          } as CSSProperties
+        }
+      >
+        <AppSidebar />
+        <CommandPalette />
+        <KeyboardShortcuts />
+        <SidebarInset className="flex h-full min-w-0 flex-col">
+          <SiteHeader />
+          <EmailVerificationBanner />
+          <main className="flex-1 min-h-0 overflow-y-auto">
+            <div className="p-4 md:p-6">
+              <Outlet />
+            </div>
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
+    </div>
   )
 }

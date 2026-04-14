@@ -21,7 +21,7 @@ import {
   PromptInputTools,
   PromptInputSubmit,
 } from '@/components/ai-elements/prompt-input'
-import { Suggestions, Suggestion } from '@/components/ai-elements/suggestion'
+import { Suggestion } from '@/components/ai-elements/suggestion'
 import { Plus, MessageSquare, PanelLeft, PanelLeftClose, Sparkles } from 'lucide-react'
 import { useChat, type Message } from '../hooks/useChat'
 import { useConversationMessages } from '../hooks/useConversations'
@@ -73,6 +73,15 @@ export function ChatPage() {
       navigate(`/dashboard/chat/${conversationId}`, { replace: true })
     }
   }, [conversationId, urlConversationId, messages.length, navigate])
+
+  // Hydrate messages when the conversation loads (useChat ignores initialMessages after mount)
+  useEffect(() => {
+    const loaded = existingConversation?.messages as Message[] | undefined
+    if (loaded && loaded.length > 0 && messages.length === 0) {
+      setMessages(loaded)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existingConversation?.messages])
 
   // Regenerate: remove last assistant message and re-send last user message
   const handleRegenerate = useCallback(() => {
@@ -285,11 +294,11 @@ function EmptyState({ onSuggestion }: { onSuggestion: (s: string) => void }) {
             60+ tools including web search, file management, code execution, image and video processing.
           </p>
         </div>
-        <Suggestions className="justify-center">
+        <div className="flex flex-wrap justify-center gap-2">
           {EXAMPLE_PROMPTS.map((prompt) => (
             <Suggestion key={prompt} suggestion={prompt} onClick={onSuggestion} />
           ))}
-        </Suggestions>
+        </div>
       </div>
     </div>
   )

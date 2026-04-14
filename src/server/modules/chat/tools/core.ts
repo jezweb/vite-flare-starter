@@ -8,6 +8,79 @@ import { z } from 'zod'
 import { getModel, listModels } from '@/server/lib/ai/models'
 import type { ModelId } from '@/server/lib/ai/types'
 
+/**
+ * Safe arithmetic evaluator using Shunting-Yard.
+ * Workers disallow Function()/eval(). This supports + - * / % and parentheses.
+ */
+function computeArithmetic(expr: string): number {
+  const tokens: string[] = []
+  let i = 0
+  while (i < expr.length) {
+    const ch = expr[i]!
+    if (/\s/.test(ch)) { i++; continue }
+    if (/[\d.]/.test(ch)) {
+      let num = ''
+      while (i < expr.length && /[\d.]/.test(expr[i]!)) { num += expr[i]; i++ }
+      tokens.push(num)
+      continue
+    }
+    if ('+-*/%()'.includes(ch)) { tokens.push(ch); i++; continue }
+    throw new Error(`unexpected '${ch}'`)
+  }
+  const prec: Record<string, number> = { '+': 1, '-': 1, '*': 2, '/': 2, '%': 2 }
+  const output: string[] = []
+  const ops: string[] = []
+  let prev = ''
+  for (const t of tokens) {
+    if (/^[\d.]+$/.test(t)) {
+      output.push(t)
+    } else if (t === '(') {
+      ops.push(t)
+    } else if (t === ')') {
+      while (ops.length && ops[ops.length - 1] !== '(') output.push(ops.pop()!)
+      if (!ops.length) throw new Error('mismatched )')
+      ops.pop()
+    } else {
+      const isUnary = (t === '-' || t === '+') && (prev === '' || prev === '(' || '+-*/%'.includes(prev))
+      const op = isUnary ? (t === '-' ? 'u-' : 'u+') : t
+      const p = isUnary ? 3 : (prec[t] ?? 0)
+      while (ops.length && ops[ops.length - 1] !== '(' && (prec[ops[ops.length - 1]!] ?? 3) >= p) {
+        output.push(ops.pop()!)
+      }
+      ops.push(op)
+    }
+    prev = t
+  }
+  while (ops.length) {
+    const op = ops.pop()!
+    if (op === '(' || op === ')') throw new Error('mismatched parens')
+    output.push(op)
+  }
+  const stack: number[] = []
+  for (const t of output) {
+    if (/^[\d.]+$/.test(t)) {
+      stack.push(parseFloat(t))
+    } else if (t === 'u-') {
+      stack.push(-stack.pop()!)
+    } else if (t === 'u+') {
+      // no-op
+    } else {
+      const b = stack.pop()!
+      const a = stack.pop()!
+      switch (t) {
+        case '+': stack.push(a + b); break
+        case '-': stack.push(a - b); break
+        case '*': stack.push(a * b); break
+        case '/': stack.push(a / b); break
+        case '%': stack.push(a % b); break
+        default: throw new Error(`unknown op ${t}`)
+      }
+    }
+  }
+  if (stack.length !== 1) throw new Error('invalid expression')
+  return stack[0]!
+}
+
 export const coreTools = {
   get_server_time: tool({
     description: 'Get the current server time in UTC. Use when the user asks about the current time or date.',
@@ -51,16 +124,17 @@ export const coreTools = {
     }),
     execute: async ({ expression }: { expression: string }) => {
       if (!/^[\d\s+\-*/()%.]+$/.test(expression)) {
-        return { error: 'Expression contains invalid characters. Only numbers and basic operators (+, -, *, /) are allowed.' }
+        return { error: 'Expression contains invalid characters. Only numbers and basic operators (+, -, *, /, %) are allowed.' }
       }
       try {
-        const result = Function(`"use strict"; return (${expression})`)()
+        // Cloudflare Workers blocks Function()/eval() — use Shunting-Yard parser.
+        const result = computeArithmetic(expression)
         if (typeof result !== 'number' || !isFinite(result)) {
           return { error: 'Expression did not evaluate to a valid number' }
         }
         return { expression, result }
-      } catch {
-        return { error: `Could not evaluate: ${expression}` }
+      } catch (err) {
+        return { error: `Could not compute: ${expression} (${err instanceof Error ? err.message : 'parse error'})` }
       }
     },
   }),

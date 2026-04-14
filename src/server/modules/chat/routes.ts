@@ -41,14 +41,19 @@ app.post('/', async (c) => {
     // Create or reuse conversation
     let conversationId = existingConversationId as string | undefined
     if (!conversationId) {
-      // Auto-generate title from first user message
+      // Auto-generate title from first user message — UIMessages use `parts`, not `content`
       const firstUserMsg = messages.find((m: { role: string }) => m.role === 'user')
-      const title = firstUserMsg?.content
-        ? String(typeof firstUserMsg.content === 'string' ? firstUserMsg.content : JSON.stringify(firstUserMsg.content)).slice(0, 80)
-        : 'New conversation'
+      const extractTitle = (msg: typeof firstUserMsg): string => {
+        if (!msg) return 'New conversation'
+        if (typeof msg.content === 'string' && msg.content.trim()) return msg.content.slice(0, 80)
+        const parts = msg.parts as Array<{ type?: string; text?: string }> | undefined
+        const textPart = parts?.find((p) => p?.type === 'text' && typeof p.text === 'string' && p.text.trim())
+        if (textPart?.text) return textPart.text.slice(0, 80)
+        return 'New conversation'
+      }
 
       conversationId = await storage.createConversation(userId, {
-        title,
+        title: extractTitle(firstUserMsg),
         model: requestedModel || DEFAULT_MODEL,
         systemPrompt,
       })
