@@ -379,6 +379,8 @@ The starter uses D1, R2, and Workers AI. Here's when to reach for other Cloudfla
 | **D1** | `DB` | SQLite database | Auth, all modules |
 | **R2** | `AVATARS`, `FILES` | Object storage | Avatars, file uploads |
 | **Workers AI** | `AI` | LLM inference (free) | Chat module via AI SDK |
+| **Images** | `IMAGES` | Image transforms (resize, crop, bg removal, face crop, format conversion) | Image processing module |
+| **Media** | `MEDIA` | Video transforms (resize, clip, frame extraction, audio extraction) | Media processing module |
 
 ### Add When You Need It
 
@@ -400,11 +402,14 @@ Use for: AI agent conversation loops, real-time collaboration, scheduled tasks v
 ```
 Use for: background email sending, webhook delivery, image processing, any work that shouldn't block the request.
 
-**Vectorize** — semantic search with embeddings
+**Vectorize** — semantic search with embeddings (ready to enable)
 ```jsonc
-"vectorize": [{ "binding": "VECTORS", "index_name": "my-index" }]
+// Uncomment in wrangler.jsonc after creating the index:
+// npx wrangler vectorize create vite-flare-starter-vectors --dimensions=768 --metric=cosine
+// npx wrangler vectorize create-metadata-index vite-flare-starter-vectors --property-name=userId --type=string
+"vectorize": [{ "binding": "VECTORS", "index_name": "vite-flare-starter-vectors" }]
 ```
-Use for: knowledge base search, RAG (retrieval-augmented generation), similar item discovery. Create metadata indexes BEFORE inserting vectors (they're not retroactive).
+Use for: knowledge base search, RAG (retrieval-augmented generation), similar item discovery. The `semantic_search` and `vectorize_content` agent tools automatically use Vectorize when the binding is available, falling back to in-memory embedding comparison. Create metadata indexes BEFORE inserting vectors (they're not retroactive).
 
 **KV** — low-latency key-value cache
 ```jsonc
@@ -426,9 +431,18 @@ Use for: daily reports, data cleanup, health checks. Handler is `scheduled(event
 
 **Hyperdrive** — connection pooling for external databases
 ```jsonc
+// Create: npx wrangler hyperdrive create my-hyperdrive --connection-string="postgres://user:pass@host:5432/db"
 "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "..." }]
 ```
-Use for: connecting to PostgreSQL, MySQL, or other external databases from Workers. Crosbe-ai uses this for Google Cloud SQL.
+Use for: connecting to PostgreSQL, MySQL, or other external databases from Workers with connection pooling and query caching. Not needed for D1 (native). Relevant when a fork needs to talk to an existing database (e.g. legacy systems, data warehouses, managed PostgreSQL on AWS/GCP/Neon). Works with standard Postgres drivers — no code changes needed.
+
+**Cloudflare Stream** — video hosting and delivery platform
+```jsonc
+// Not a binding — uses the Stream API via REST or the dashboard
+// Upload: curl -X POST -H "Authorization: Bearer $CF_TOKEN" \
+//   -F file=@video.mp4 "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/stream"
+```
+Use for: full video hosting with automatic encoding (adaptive bitrate, 360p-1080p), HLS/DASH playback, signed URLs for access control, upload from users (one-time upload URLs), per-creator analytics. Different from the Media Transformations binding — Stream is a complete video platform (hosting + CDN + player), while Media (`env.MEDIA`) is for on-the-fly transforms of your own video files. Use Stream when you need a YouTube-like video hosting feature.
 
 **Containers** — long-running compute
 Use for: heavy ML inference, video processing, anything that exceeds Workers CPU limits. ClawHQ uses this for compute-intensive operations.

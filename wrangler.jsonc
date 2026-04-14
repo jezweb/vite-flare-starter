@@ -74,6 +74,18 @@
     "binding": "MEDIA"
   },
 
+  // Vectorize (semantic search, RAG)
+  // Create with: npx wrangler vectorize create vite-flare-starter-vectors --dimensions=768 --metric=cosine
+  // Create metadata indexes BEFORE inserting vectors (not retroactive):
+  //   npx wrangler vectorize create-metadata-index vite-flare-starter-vectors --property-name=userId --type=string
+  //   npx wrangler vectorize create-metadata-index vite-flare-starter-vectors --property-name=type --type=string
+  // "vectorize": [
+  //   {
+  //     "binding": "VECTORS",
+  //     "index_name": "vite-flare-starter-vectors"
+  //   }
+  // ],
+
   // Observability
   "observability": {
     "enabled": true

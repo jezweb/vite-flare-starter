@@ -43,6 +43,11 @@ interface ChatToolsContext {
     OPENAI_API_KEY?: string
     GOOGLE_AI_API_KEY?: string
     OPENROUTER_API_KEY?: string
+    VECTORS?: VectorizeIndex
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    IMAGES?: any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    MEDIA?: any
   }
   userId: string
   defaultModel: string
