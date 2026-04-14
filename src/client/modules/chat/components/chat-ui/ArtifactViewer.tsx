@@ -11,6 +11,31 @@
 import { useState, useRef, useEffect } from 'react'
 import { Code2, Eye, Copy, Check, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useTheme } from '@/client/components/theme-provider'
+
+/**
+ * Read the resolved value of a CSS custom property on the document root.
+ * Returns undefined during SSR / before hydration.
+ */
+function readCssVar(name: string): string | undefined {
+  if (typeof window === 'undefined') return undefined
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+  return v || undefined
+}
+
+/** Resolve whether the current theme is dark by inspecting the `.dark` class. */
+function useResolvedDarkMode(): boolean {
+  const { theme } = useTheme()
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof document === 'undefined') return false
+    return document.documentElement.classList.contains('dark')
+  })
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    setIsDark(document.documentElement.classList.contains('dark'))
+  }, [theme])
+  return isDark
+}
 
 interface ArtifactData {
   _artifact: true
@@ -34,6 +59,7 @@ export function ArtifactViewer({ artifact }: Props) {
   const [copied, setCopied] = useState(false)
   const [autoHeight, setAutoHeight] = useState<number | null>(null)
   const iframeRef = useRef<HTMLIFrameElement>(null)
+  const isDark = useResolvedDarkMode()
 
   const height = autoHeight || artifact.height || 400
 
@@ -54,7 +80,7 @@ export function ArtifactViewer({ artifact }: Props) {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const iframeSrc = buildIframeSrc(artifact)
+  const iframeSrc = buildIframeSrc(artifact, isDark)
 
   return (
     <div className="my-2 rounded-lg border border-border overflow-hidden">
@@ -72,7 +98,7 @@ export function ArtifactViewer({ artifact }: Props) {
             {showCode ? <Eye className="size-3.5" /> : <Code2 className="size-3.5" />}
           </button>
           <button onClick={handleCopy} className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors" title="Copy code">
-            {copied ? <Check className="size-3.5 text-green-500" /> : <Copy className="size-3.5" />}
+            {copied ? <Check className="size-3.5 text-green-600 dark:text-green-400" /> : <Copy className="size-3.5" />}
           </button>
           {artifact.type === 'html' && (
             <button
@@ -92,9 +118,9 @@ export function ArtifactViewer({ artifact }: Props) {
       {showCode ? (
         <pre className="p-3 text-xs font-mono overflow-auto max-h-96 bg-background">{artifact.code}</pre>
       ) : (
-        <div className="bg-muted/50 dark:bg-[#0f1117]">
+        <div className="bg-muted/50">
           {artifact.type === 'svg' ? (
-            <SvgRenderer code={artifact.code} height={height} />
+            <SvgRenderer code={artifact.code} height={height} isDark={isDark} />
           ) : (
             <iframe
               ref={iframeRef}
@@ -110,10 +136,23 @@ export function ArtifactViewer({ artifact }: Props) {
   )
 }
 
+/** Resolve theme-aware iframe colours from the page's CSS variables. */
+function resolveIframeColors(isDark: boolean): { bg: string; fg: string } {
+  // Fall back to safe defaults if computed styles can't be read yet (SSR / first paint).
+  const fallback = isDark
+    ? { bg: 'hsl(222.2 84% 4.9%)', fg: 'hsl(210 40% 98%)' }
+    : { bg: 'hsl(0 0% 100%)', fg: 'hsl(222.2 84% 4.9%)' }
+  return {
+    bg: readCssVar('--background') ?? fallback.bg,
+    fg: readCssVar('--foreground') ?? fallback.fg,
+  }
+}
+
 /** Render SVG safely via an iframe to avoid script injection */
-function SvgRenderer({ code, height }: { code: string; height: number }) {
+function SvgRenderer({ code, height, isDark }: { code: string; height: number; isDark: boolean }) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
-  const html = `<!DOCTYPE html><html><head><style>body{margin:0;padding:16px;background:#0f1117;display:flex;justify-content:center;align-items:center;min-height:100vh;}</style></head><body>${code}</body></html>`
+  const { bg, fg } = resolveIframeColors(isDark)
+  const html = `<!DOCTYPE html><html><head><style>body{margin:0;padding:16px;background:${bg};color:${fg};display:flex;justify-content:center;align-items:center;min-height:100vh;}</style></head><body>${code}</body></html>`
   return (
     <iframe
       ref={iframeRef}
@@ -125,17 +164,19 @@ function SvgRenderer({ code, height }: { code: string; height: number }) {
   )
 }
 
-function buildIframeSrc(artifact: ArtifactData): string {
+function buildIframeSrc(artifact: ArtifactData, isDark: boolean): string {
   const resizeScript = `<script>new ResizeObserver(()=>{parent.postMessage({type:'artifact-resize',height:document.documentElement.scrollHeight},'*')}).observe(document.documentElement)<\/script>`
 
   if (artifact.type === 'mermaid') {
+    const { bg, fg } = resolveIframeColors(isDark)
+    const mermaidTheme = isDark ? 'dark' : 'default'
     return `<!DOCTYPE html>
 <html><head>
-<style>body{margin:0;padding:16px;background:#0f1117;color:#e2e8f0;font-family:system-ui;display:flex;justify-content:center;}</style>
+<style>body{margin:0;padding:16px;background:${bg};color:${fg};font-family:system-ui;display:flex;justify-content:center;}</style>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"><\/script>
 </head><body>
 <pre class="mermaid">${escapeHtml(artifact.code)}</pre>
-<script>mermaid.initialize({startOnLoad:true,theme:'dark'});<\/script>
+<script>mermaid.initialize({startOnLoad:true,theme:'${mermaidTheme}'});<\/script>
 ${resizeScript}
 </body></html>`
   }

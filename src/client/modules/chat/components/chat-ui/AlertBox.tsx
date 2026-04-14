@@ -1,5 +1,6 @@
 import { Info, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { STATUS_SOFT_BG } from '@/client/lib/status-colors'
 
 interface Props {
   type?: 'info' | 'success' | 'warning' | 'error'
@@ -9,9 +10,9 @@ interface Props {
 
 const ICONS = { info: Info, success: CheckCircle2, warning: AlertTriangle, error: XCircle }
 const STYLES = {
-  info: 'border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-300',
-  success: 'border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-300',
-  warning: 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300',
+  info: STATUS_SOFT_BG.info,
+  success: STATUS_SOFT_BG.success,
+  warning: STATUS_SOFT_BG.warning,
   error: 'border-destructive/30 bg-destructive/10 text-destructive',
 }
 

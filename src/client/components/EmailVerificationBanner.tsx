@@ -34,17 +34,17 @@ export function EmailVerificationBanner() {
 
   if (success) {
     return (
-      <Alert className="rounded-none border-x-0 border-t-0 bg-green-500/10 border-green-500/20">
-        <CheckCircle className="h-4 w-4 text-green-600" />
+      <Alert className="rounded-none border-x-0 border-t-0 bg-green-500/10 dark:bg-green-500/15 border-green-500/20 dark:border-green-500/30">
+        <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
         <AlertDescription className="flex items-center justify-between">
-          <span className="text-green-600">
+          <span className="text-green-700 dark:text-green-300">
             Verification email sent! Check your inbox.
           </span>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setSuccess(false)}
-            className="h-6 px-2 text-green-600 hover:text-green-700 hover:bg-green-500/10"
+            className="h-6 px-2 text-green-700 dark:text-green-300 hover:text-green-800 dark:hover:text-green-200 hover:bg-green-500/10 dark:hover:bg-green-500/20"
           >
             <X className="h-4 w-4" />
           </Button>
@@ -54,10 +54,10 @@ export function EmailVerificationBanner() {
   }
 
   return (
-    <Alert className="rounded-none border-x-0 border-t-0 bg-yellow-500/10 border-yellow-500/20">
-      <Mail className="h-4 w-4 text-yellow-600" />
+    <Alert className="rounded-none border-x-0 border-t-0 bg-amber-500/10 dark:bg-amber-500/15 border-amber-500/20 dark:border-amber-500/30">
+      <Mail className="h-4 w-4 text-amber-600 dark:text-amber-400" />
       <AlertDescription className="flex items-center justify-between flex-wrap gap-2">
-        <span className="text-yellow-600">
+        <span className="text-amber-700 dark:text-amber-300">
           Please verify your email address to access all features.
         </span>
         <div className="flex items-center gap-2">
@@ -66,7 +66,7 @@ export function EmailVerificationBanner() {
             size="sm"
             onClick={handleResend}
             disabled={resending}
-            className="h-7 border-yellow-500/30 text-yellow-600 hover:bg-yellow-500/10"
+            className="h-7 border-amber-500/30 dark:border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-500/10 dark:hover:bg-amber-500/20"
           >
             {resending ? (
               <>
@@ -81,7 +81,7 @@ export function EmailVerificationBanner() {
             variant="ghost"
             size="sm"
             onClick={() => setDismissed(true)}
-            className="h-7 px-2 text-yellow-600 hover:text-yellow-700 hover:bg-yellow-500/10"
+            className="h-7 px-2 text-amber-700 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200 hover:bg-amber-500/10 dark:hover:bg-amber-500/20"
           >
             <X className="h-4 w-4" />
           </Button>

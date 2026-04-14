@@ -52,17 +52,17 @@ const ACTION_ICONS: Record<Activity['action'], React.ElementType> = {
 }
 
 const ACTION_COLORS: Record<Activity['action'], string> = {
-  create: 'bg-green-500/10 text-green-600',
-  update: 'bg-blue-500/10 text-blue-600',
-  delete: 'bg-red-500/10 text-red-600',
-  archive: 'bg-yellow-500/10 text-yellow-600',
-  restore: 'bg-purple-500/10 text-purple-600',
-  import: 'bg-cyan-500/10 text-cyan-600',
-  export: 'bg-orange-500/10 text-orange-600',
-  assign: 'bg-emerald-500/10 text-emerald-600',
-  unassign: 'bg-pink-500/10 text-pink-600',
-  view: 'bg-slate-500/10 text-slate-600',
-  convert: 'bg-indigo-500/10 text-indigo-600',
+  create: 'bg-green-500/10 dark:bg-green-500/15 text-green-600 dark:text-green-400',
+  update: 'bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400',
+  delete: 'bg-red-500/10 dark:bg-red-500/15 text-red-600 dark:text-red-400',
+  archive: 'bg-amber-500/10 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400',
+  restore: 'bg-purple-500/10 dark:bg-purple-500/15 text-purple-600 dark:text-purple-400',
+  import: 'bg-cyan-500/10 dark:bg-cyan-500/15 text-cyan-600 dark:text-cyan-400',
+  export: 'bg-orange-500/10 dark:bg-orange-500/15 text-orange-600 dark:text-orange-400',
+  assign: 'bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
+  unassign: 'bg-pink-500/10 dark:bg-pink-500/15 text-pink-600 dark:text-pink-400',
+  view: 'bg-slate-500/10 dark:bg-slate-500/20 text-slate-600 dark:text-slate-300',
+  convert: 'bg-indigo-500/10 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400',
 }
 
 function formatTime(dateString: string): string {

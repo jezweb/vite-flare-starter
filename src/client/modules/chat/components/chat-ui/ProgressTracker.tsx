@@ -1,5 +1,6 @@
 import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { STATUS_SOLID } from '@/client/lib/status-colors'
 
 interface Step {
   label: string
@@ -31,7 +32,7 @@ export function ProgressTracker({ title, steps }: Props) {
             <div
               className={cn(
                 'mt-0.5 size-5 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0',
-                step.status === 'completed' && 'bg-green-500 text-white',
+                step.status === 'completed' && STATUS_SOLID.success,
                 step.status === 'current' && 'bg-primary text-primary-foreground',
                 step.status === 'upcoming' && 'bg-muted text-muted-foreground'
               )}

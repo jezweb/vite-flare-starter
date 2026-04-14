@@ -145,7 +145,7 @@ export function VerifyEmailPage() {
           <CardContent>
             {resendSuccess ? (
               <div className="text-center space-y-4">
-                <div className="p-3 bg-green-500/10 text-green-600 rounded-md">
+                <div className="p-3 bg-green-500/10 dark:bg-green-500/15 text-green-700 dark:text-green-300 rounded-md border border-green-500/30">
                   Verification email sent! Check your inbox.
                 </div>
                 <p className="text-sm text-muted-foreground">
