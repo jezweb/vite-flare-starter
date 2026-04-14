@@ -149,8 +149,8 @@ export function FileUploader({
                   )}
                   {item.status === 'success' && (
                     <>
-                      <CheckCircle className="h-3 w-3 text-green-500" />
-                      <span className="text-xs text-green-500">Uploaded</span>
+                      <CheckCircle className="h-3 w-3 text-green-600 dark:text-green-400" />
+                      <span className="text-xs text-green-600 dark:text-green-400">Uploaded</span>
                     </>
                   )}
                   {item.status === 'error' && (

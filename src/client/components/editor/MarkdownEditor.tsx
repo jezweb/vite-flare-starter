@@ -3,6 +3,7 @@
  *
  * Plugin-driven, lightweight (~40kb gzipped), markdown-native.
  * Stores/outputs real markdown, not HTML.
+ * Adapts to dark/light mode via wrapper CSS (no fixed theme).
  *
  * @example
  * <MarkdownEditor
@@ -14,7 +15,6 @@
 import { Editor, rootCtx, defaultValueCtx } from '@milkdown/core'
 import { commonmark } from '@milkdown/preset-commonmark'
 import { gfm } from '@milkdown/preset-gfm'
-import { nord } from '@milkdown/theme-nord'
 import { Milkdown, MilkdownProvider, useEditor } from '@milkdown/react'
 import { cn } from '@/lib/utils'
 
@@ -33,7 +33,6 @@ function MilkdownEditorInner({ value, className, minHeight = '200px' }: Props) {
         ctx.set(rootCtx, root)
         if (value) ctx.set(defaultValueCtx, value)
       })
-      .config(nord)
       .use(commonmark)
       .use(gfm),
     [])
@@ -41,9 +40,10 @@ function MilkdownEditorInner({ value, className, minHeight = '200px' }: Props) {
   return (
     <div
       className={cn(
-        'rounded-md border border-input bg-background',
+        'rounded-md border border-input bg-background text-foreground',
         'prose prose-sm dark:prose-invert max-w-none',
         '[&_.milkdown]:outline-none [&_.milkdown]:px-3 [&_.milkdown]:py-2',
+        '[&_.milkdown_.ProseMirror]:outline-none',
         className,
       )}
       style={{ minHeight }}

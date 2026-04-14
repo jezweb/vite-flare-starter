@@ -111,7 +111,7 @@ export function CsvImportWizard({ fields, onImport, maxPreviewRows = 5 }: Props)
       <div className="flex items-center gap-2 text-sm">
         {['Upload', 'Map columns', 'Preview', 'Done'].map((label, i) => (
           <span key={label} className={cn('flex items-center gap-1', (i + 1) <= step ? 'text-foreground font-medium' : 'text-muted-foreground')}>
-            {(i + 1) < step ? <Check className="size-3.5 text-green-500" /> : <span className="size-5 rounded-full border text-xs flex items-center justify-center">{i + 1}</span>}
+            {(i + 1) < step ? <Check className="size-3.5 text-green-600 dark:text-green-400" /> : <span className="size-5 rounded-full border text-xs flex items-center justify-center">{i + 1}</span>}
             {label}
             {i < 3 && <ArrowRight className="size-3 text-muted-foreground/50 mx-1" />}
           </span>
@@ -198,7 +198,7 @@ export function CsvImportWizard({ fields, onImport, maxPreviewRows = 5 }: Props)
       {/* Step 4: Done */}
       {step === 4 && (
         <div className="flex flex-col items-center gap-2 py-8">
-          <Check className="size-10 text-green-500" />
+          <Check className="size-10 text-green-600 dark:text-green-400" />
           <p className="text-sm font-medium">Import complete</p>
           <p className="text-xs text-muted-foreground">{mappedRows.length} rows imported successfully</p>
         </div>
