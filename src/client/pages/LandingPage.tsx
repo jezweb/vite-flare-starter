@@ -38,59 +38,59 @@ function GithubIcon({ className }: { className?: string }) {
 
 const features = [
   {
-    icon: Shield,
-    title: 'Secure Authentication',
-    description: 'Email/password and Google OAuth with session management, email verification, and password reset.',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Admin Panel',
-    description: 'Full admin dashboard with user management, stats, and role-based access control.',
-  },
-  {
     icon: Bot,
-    title: 'AI Chat',
-    description: 'Workers AI integration with streaming responses and multiple model support.',
-  },
-  {
-    icon: Flag,
-    title: 'Feature Flags',
-    description: 'Runtime feature toggles with admin UI for controlling app behavior without deploys.',
-  },
-  {
-    icon: Users,
-    title: 'User Management',
-    description: 'Profile settings, avatar uploads, password management, and theme preferences.',
-  },
-  {
-    icon: Key,
-    title: 'API Tokens',
-    description: 'Scoped API tokens for programmatic access with granular permissions.',
-  },
-  {
-    icon: Activity,
-    title: 'Activity Logging',
-    description: 'Track user actions with searchable audit trail and data export.',
-  },
-  {
-    icon: Bell,
-    title: 'Notifications',
-    description: 'In-app notification system with real-time updates and read status.',
+    title: 'AI Agent (60+ Tools)',
+    description: 'ToolLoopAgent with browser, search, memory, files, code execution, scheduling, audio, and subagent delegation.',
   },
   {
     icon: Database,
-    title: 'Edge Database',
-    description: 'Cloudflare D1 with Drizzle ORM for type-safe SQL queries at the edge.',
-  },
-  {
-    icon: Palette,
-    title: 'Modern UI',
-    description: 'Tailwind v4 + shadcn/ui with 8 color themes and dark/light mode.',
+    title: 'Conversation Persistence',
+    description: 'Chat history saved to D1 with sidebar UI, conversation resume, and message validation.',
   },
   {
     icon: Zap,
-    title: 'Edge Performance',
-    description: 'Cloudflare Workers + R2 storage for sub-50ms response times globally.',
+    title: 'Image + Video Processing',
+    description: 'Cloudflare Images and Media bindings for resize, crop, background removal, face detection, and video clipping.',
+  },
+  {
+    icon: Shield,
+    title: 'Auth + Admin',
+    description: 'Google OAuth, email/password, role-based access, API tokens with scopes, session management.',
+  },
+  {
+    icon: Flag,
+    title: 'Skills System',
+    description: 'Claude Agent Skills compatible. 14 bundled skills, plus install from R2 or GitHub at runtime.',
+  },
+  {
+    icon: Key,
+    title: 'MCP Integration',
+    description: 'Full MCP spec support: tools, resources, prompts, elicitation. Connect to any MCP server.',
+  },
+  {
+    icon: Users,
+    title: 'Business Modules',
+    description: 'Comments, tags, watchers, favourites, recent views, soft delete — all polymorphic.',
+  },
+  {
+    icon: Activity,
+    title: 'Semantic Search',
+    description: 'AI SDK embeddings with Vectorize-ready vector storage. Cosine similarity with in-memory fallback.',
+  },
+  {
+    icon: Bell,
+    title: 'DataTable + Editor',
+    description: 'TanStack Table with sort, filter, pagination, bulk actions. Milkdown markdown editor.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Human-in-the-Loop',
+    description: 'needsApproval on destructive tools, token budget tracking via prepareStep, tool approval UI.',
+  },
+  {
+    icon: Palette,
+    title: '59 UI Components',
+    description: 'Complete shadcn/ui library with Tailwind v4, 8 themes, dark/light mode, command palette.',
   },
 ]
 
@@ -104,17 +104,17 @@ export function LandingPage() {
         <div className="container relative mx-auto max-w-6xl px-4 py-24 md:py-32">
           <div className="flex flex-col items-center text-center">
             <Badge variant="secondary" className="mb-4">
-              Full-Stack Authenticated Starter Kit
+              AI Agent Starter Kit for Cloudflare
             </Badge>
 
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl max-w-4xl">
-              Start building{' '}
-              <span className="text-primary">faster</span>
+              Build AI apps{' '}
+              <span className="text-primary">at the edge</span>
             </h1>
 
             <p className="mt-6 text-lg text-muted-foreground max-w-2xl md:text-xl">
-              A production-ready starter kit with authentication, admin panel, AI chat,
-              and everything you need to build on Cloudflare Workers.
+              60+ agent tools, conversation persistence, image and video processing,
+              semantic search, and a full business module library. All on Cloudflare Workers.
             </p>
 
             <div className="mt-10 flex flex-col sm:flex-row gap-4">
