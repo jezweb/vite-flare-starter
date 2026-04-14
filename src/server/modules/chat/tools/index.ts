@@ -21,6 +21,7 @@ import { buildDocumentTools } from './documents'
 import { buildSemanticSearchTools } from './search-semantic'
 import { buildImageTools } from './image'
 import { buildImageTransformTools } from './image-transform'
+import { buildMediaTools } from './media'
 import { buildSessionTools } from './session'
 
 interface ChatToolsContext {
@@ -83,6 +84,7 @@ export function buildChatTools(ctx: ChatToolsContext) {
     Object.assign(tools, buildFileTools({ bucket: ctx.env.FILES, userId: ctx.userId }))
     Object.assign(tools, buildImageTools({ env: ctx.env as Parameters<typeof buildImageTools>[0]['env'], userId: ctx.userId }))
     Object.assign(tools, buildImageTransformTools({ env: ctx.env as Parameters<typeof buildImageTransformTools>[0]['env'], userId: ctx.userId }))
+    Object.assign(tools, buildMediaTools({ env: ctx.env as Parameters<typeof buildMediaTools>[0]['env'], userId: ctx.userId }))
   }
 
   return tools

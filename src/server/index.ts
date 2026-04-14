@@ -26,6 +26,7 @@ import watchersRoutes from './modules/watchers/routes'
 import favouritesRoutes from './modules/favourites/routes'
 import recentViewsRoutes from './modules/recent-views/routes'
 import imagesRoutes from './modules/images/routes'
+import mediaRoutes from './modules/media/routes'
 import { securityHeaders } from './middleware/security'
 import { rateLimiter } from './middleware/rate-limit'
 import { authMiddleware, requireScopes } from './middleware/auth'
@@ -51,6 +52,10 @@ export interface Env {
   // Cloudflare Images (resize, crop, background removal, format conversion)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   IMAGES?: any
+
+  // Cloudflare Media Transformations (video resize, clip, frame/audio extraction)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  MEDIA?: any
 
   // Environment variables
   BETTER_AUTH_SECRET: string
@@ -244,6 +249,7 @@ app.route('/api/watchers', watchersRoutes)
 app.route('/api/favourites', favouritesRoutes)
 app.route('/api/recent', recentViewsRoutes)
 app.route('/api/images', imagesRoutes)
+app.route('/api/media', mediaRoutes)
 
 // =============================================================================
 // AI TEST ENDPOINT

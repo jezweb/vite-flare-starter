@@ -68,6 +68,12 @@
     "binding": "IMAGES"
   },
 
+  // Cloudflare Media Transformations (video resize, clip, frame extraction, audio)
+  // https://developers.cloudflare.com/stream/transform-videos/
+  "media": {
+    "binding": "MEDIA"
+  },
+
   // Observability
   "observability": {
     "enabled": true
