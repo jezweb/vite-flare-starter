@@ -1,0 +1,774 @@
+{
+  "updated": "2026-04-14T22:16:56.956Z",
+  "filter": {
+    "providers": [
+      "anthropic",
+      "openai",
+      "google",
+      "meta-llama",
+      "mistralai",
+      "deepseek",
+      "qwen",
+      "x-ai",
+      "z-ai",
+      "cohere",
+      "nvidia"
+    ],
+    "days": 90
+  },
+  "total": 47,
+  "models": [
+    {
+      "id": "anthropic/claude-opus-4.6-fast",
+      "name": "Anthropic: Claude Opus 4.6 (Fast)",
+      "provider": "anthropic",
+      "api_id": "claude-opus-4-6-fast",
+      "context_length": 1000000,
+      "max_output": 128000,
+      "pricing": {
+        "input": 30,
+        "output": 150
+      },
+      "modality": "text+image->text",
+      "released": "2026-04-07",
+      "knowledge_cutoff": "2025-05",
+      "flagship": true
+    },
+    {
+      "id": "anthropic/claude-sonnet-4.6",
+      "name": "Anthropic: Claude Sonnet 4.6",
+      "provider": "anthropic",
+      "api_id": "claude-sonnet-4-6",
+      "context_length": 1000000,
+      "max_output": 128000,
+      "pricing": {
+        "input": 3,
+        "output": 15
+      },
+      "modality": "text+image->text",
+      "released": "2026-02-17",
+      "knowledge_cutoff": "2025-08",
+      "flagship": true
+    },
+    {
+      "id": "anthropic/claude-haiku-4.5",
+      "name": "Anthropic: Claude Haiku 4.5",
+      "provider": "anthropic",
+      "api_id": "claude-haiku-4-5",
+      "context_length": 200000,
+      "max_output": 64000,
+      "pricing": {
+        "input": 1,
+        "output": 5
+      },
+      "modality": "text+image->text",
+      "released": "2025-10-15",
+      "knowledge_cutoff": "2025-02",
+      "flagship": true
+    },
+    {
+      "id": "anthropic/claude-opus-4.6",
+      "name": "Anthropic: Claude Opus 4.6",
+      "provider": "anthropic",
+      "api_id": "claude-opus-4-6",
+      "context_length": 1000000,
+      "max_output": 128000,
+      "pricing": {
+        "input": 5,
+        "output": 25
+      },
+      "modality": "text+image->text",
+      "released": "2026-02-04",
+      "knowledge_cutoff": "2025-05",
+      "flagship": false
+    },
+    {
+      "id": "deepseek/deepseek-r1",
+      "name": "DeepSeek: R1",
+      "provider": "deepseek",
+      "api_id": "deepseek-r1",
+      "context_length": 64000,
+      "max_output": 16000,
+      "pricing": {
+        "input": 0.7,
+        "output": 2.5
+      },
+      "modality": "text->text",
+      "released": "2025-01-20",
+      "knowledge_cutoff": "2024-07",
+      "flagship": true
+    },
+    {
+      "id": "deepseek/deepseek-v3.2-speciale",
+      "name": "DeepSeek: DeepSeek V3.2 Speciale",
+      "provider": "deepseek",
+      "api_id": "deepseek-v3.2-speciale",
+      "context_length": 163840,
+      "max_output": 163840,
+      "pricing": {
+        "input": 0.39999999999999997,
+        "output": 1.2
+      },
+      "modality": "text->text",
+      "released": "2025-12-01",
+      "knowledge_cutoff": "2024-07",
+      "flagship": true
+    },
+    {
+      "id": "google/gemini-3.1-pro-preview",
+      "name": "Google: Gemini 3.1 Pro Preview",
+      "provider": "google",
+      "api_id": "gemini-3.1-pro-preview",
+      "context_length": 1048576,
+      "max_output": 65536,
+      "pricing": {
+        "input": 2,
+        "output": 12
+      },
+      "modality": "text+image+file+audio+video->text",
+      "released": "2026-02-19",
+      "knowledge_cutoff": null,
+      "flagship": true
+    },
+    {
+      "id": "google/gemini-3-flash-preview",
+      "name": "Google: Gemini 3 Flash Preview",
+      "provider": "google",
+      "api_id": "gemini-3-flash-preview",
+      "context_length": 1048576,
+      "max_output": 65536,
+      "pricing": {
+        "input": 0.5,
+        "output": 3
+      },
+      "modality": "text+image+file+audio+video->text",
+      "released": "2025-12-17",
+      "knowledge_cutoff": null,
+      "flagship": true
+    },
+    {
+      "id": "google/gemini-3.1-flash-lite-preview",
+      "name": "Google: Gemini 3.1 Flash Lite Preview",
+      "provider": "google",
+      "api_id": "gemini-3.1-flash-lite-preview",
+      "context_length": 1048576,
+      "max_output": 65536,
+      "pricing": {
+        "input": 0.25,
+        "output": 1.5
+      },
+      "modality": "text+image+file+audio+video->text",
+      "released": "2026-03-03",
+      "knowledge_cutoff": null,
+      "flagship": true
+    },
+    {
+      "id": "google/gemini-3.1-pro-preview-customtools",
+      "name": "Google: Gemini 3.1 Pro Preview Custom Tools",
+      "provider": "google",
+      "api_id": "gemini-3.1-pro-preview-customtools",
+      "context_length": 1048576,
+      "max_output": 65536,
+      "pricing": {
+        "input": 2,
+        "output": 12
+      },
+      "modality": "text+image+file+audio+video->text",
+      "released": "2026-02-25",
+      "knowledge_cutoff": null,
+      "flagship": false
+    },
+    {
+      "id": "google/gemini-3.1-flash-image-preview",
+      "name": "Google: Nano Banana 2 (Gemini 3.1 Flash Image Preview)",
+      "provider": "google",
+      "api_id": "gemini-3.1-flash-image-preview",
+      "context_length": 65536,
+      "max_output": 65536,
+      "pricing": {
+        "input": 0.5,
+        "output": 3
+      },
+      "modality": "text+image->text+image",
+      "released": "2026-02-26",
+      "knowledge_cutoff": null,
+      "flagship": false
+    },
+    {
+      "id": "google/gemma-4-31b-it",
+      "name": "Google: Gemma 4 31B",
+      "provider": "google",
+      "api_id": "gemma-4-31b-it",
+      "context_length": 262144,
+      "max_output": null,
+      "pricing": {
+        "input": 0.13,
+        "output": 0.38
+      },
+      "modality": "text+image+video->text",
+      "released": "2026-04-02",
+      "knowledge_cutoff": null,
+      "flagship": false
+    },
+    {
+      "id": "google/gemma-4-26b-a4b-it",
+      "name": "Google: Gemma 4 26B A4B ",
+      "provider": "google",
+      "api_id": "gemma-4-26b-a4b-it",
+      "context_length": 262144,
+      "max_output": null,
+      "pricing": {
+        "input": 0.08,
+        "output": 0.35
+      },
+      "modality": "text+image+video->text",
+      "released": "2026-04-03",
+      "knowledge_cutoff": null,
+      "flagship": false
+    },
+    {
+      "id": "meta-llama/llama-3.2-11b-vision-instruct",
+      "name": "Meta: Llama 3.2 11B Vision Instruct",
+      "provider": "meta-llama",
+      "api_id": null,
+      "context_length": 131072,
+      "max_output": 16384,
+      "pricing": {
+        "input": 0.245,
+        "output": 0.245
+      },
+      "modality": "text+image->text",
+      "released": "2024-09-25",
+      "knowledge_cutoff": null,
+      "flagship": true
+    },
+    {
+      "id": "meta-llama/llama-4-maverick",
+      "name": "Meta: Llama 4 Maverick",
+      "provider": "meta-llama",
+      "api_id": null,
+      "context_length": 1048576,
+      "max_output": 16384,
+      "pricing": {
+        "input": 0.15,
+        "output": 0.6
+      },
+      "modality": "text+image->text",
+      "released": "2025-04-05",
+      "knowledge_cutoff": "2024-08",
+      "flagship": true
+    },
+    {
+      "id": "meta-llama/llama-3.3-70b-instruct",
+      "name": "Meta: Llama 3.3 70B Instruct",
+      "provider": "meta-llama",
+      "api_id": null,
+      "context_length": 131072,
+      "max_output": 16384,
+      "pricing": {
+        "input": 0.09999999999999999,
+        "output": 0.32
+      },
+      "modality": "text->text",
+      "released": "2024-12-06",
+      "knowledge_cutoff": "2023-12",
+      "flagship": true
+    },
+    {
+      "id": "mistralai/mistral-large-2512",
+      "name": "Mistral: Mistral Large 3 2512",
+      "provider": "mistralai",
+      "api_id": "mistral-large-2512",
+      "context_length": 262144,
+      "max_output": null,
+      "pricing": {
+        "input": 0.5,
+        "output": 1.5
+      },
+      "modality": "text+image->text",
+      "released": "2025-12-01",
+      "knowledge_cutoff": "2024-10",
+      "flagship": true
+    },
+    {
+      "id": "mistralai/mistral-medium-3.1",
+      "name": "Mistral: Mistral Medium 3.1",
+      "provider": "mistralai",
+      "api_id": "mistral-medium-3.1",
+      "context_length": 131072,
+      "max_output": null,
+      "pricing": {
+        "input": 0.39999999999999997,
+        "output": 2
+      },
+      "modality": "text+image->text",
+      "released": "2025-08-13",
+      "knowledge_cutoff": null,
+      "flagship": true
+    },
+    {
+      "id": "mistralai/ministral-14b-2512",
+      "name": "Mistral: Ministral 3 14B 2512",
+      "provider": "mistralai",
+      "api_id": "ministral-14b-2512",
+      "context_length": 262144,
+      "max_output": null,
+      "pricing": {
+        "input": 0.19999999999999998,
+        "output": 0.19999999999999998
+      },
+      "modality": "text+image->text",
+      "released": "2025-12-02",
+      "knowledge_cutoff": null,
+      "flagship": true
+    },
+    {
+      "id": "mistralai/mistral-small-2603",
+      "name": "Mistral: Mistral Small 4",
+      "provider": "mistralai",
+      "api_id": "mistral-small-2603",
+      "context_length": 262144,
+      "max_output": null,
+      "pricing": {
+        "input": 0.15,
+        "output": 0.6
+      },
+      "modality": "text+image->text",
+      "released": "2026-03-16",
+      "knowledge_cutoff": "2023-10",
+      "flagship": true
+    },
+    {
+      "id": "nvidia/nemotron-3-super-120b-a12b",
+      "name": "NVIDIA: Nemotron 3 Super",
+      "provider": "nvidia",
+      "api_id": null,
+      "context_length": 262144,
+      "max_output": null,
+      "pricing": {
+        "input": 0.09999999999999999,
+        "output": 0.5
+      },
+      "modality": "text->text",
+      "released": "2026-03-11",
+      "knowledge_cutoff": null,
+      "flagship": false
+    },
+    {
+      "id": "openai/gpt-5.4-pro",
+      "name": "OpenAI: GPT-5.4 Pro",
+      "provider": "openai",
+      "api_id": "gpt-5.4-pro",
+      "context_length": 1050000,
+      "max_output": 128000,
+      "pricing": {
+        "input": 30,
+        "output": 180
+      },
+      "modality": "text+image+file->text",
+      "released": "2026-03-05",
+      "knowledge_cutoff": null,
+      "flagship": true
+    },
+    {
+      "id": "openai/gpt-5.4",
+      "name": "OpenAI: GPT-5.4",
+      "provider": "openai",
+      "api_id": "gpt-5.4",
+      "context_length": 1050000,
+      "max_output": 128000,
+      "pricing": {
+        "input": 2.5,
+        "output": 15
+      },
+      "modality": "text+image+file->text",
+      "released": "2026-03-05",
+      "knowledge_cutoff": null,
+      "flagship": true
+    },
+    {
+      "id": "openai/gpt-5.3-codex",
+      "name": "OpenAI: GPT-5.3-Codex",
+      "provider": "openai",
+      "api_id": "gpt-5.3-codex",
+      "context_length": 400000,
+      "max_output": 128000,
+      "pricing": {
+        "input": 1.75,
+        "output": 14
+      },
+      "modality": "text+image+file->text",
+      "released": "2026-02-24",
+      "knowledge_cutoff": null,
+      "flagship": true
+    },
+    {
+      "id": "openai/gpt-5.4-mini",
+      "name": "OpenAI: GPT-5.4 Mini",
+      "provider": "openai",
+      "api_id": "gpt-5.4-mini",
+      "context_length": 400000,
+      "max_output": 128000,
+      "pricing": {
+        "input": 0.75,
+        "output": 4.5
+      },
+      "modality": "text+image+file->text",
+      "released": "2026-03-17",
+      "knowledge_cutoff": null,
+      "flagship": true
+    },
+    {
+      "id": "openai/gpt-audio",
+      "name": "OpenAI: GPT Audio",
+      "provider": "openai",
+      "api_id": "gpt-audio",
+      "context_length": 128000,
+      "max_output": 16384,
+      "pricing": {
+        "input": 2.5,
+        "output": 10
+      },
+      "modality": "text+audio->text+audio",
+      "released": "2026-01-19",
+      "knowledge_cutoff": null,
+      "flagship": false
+    },
+    {
+      "id": "openai/gpt-5.3-chat",
+      "name": "OpenAI: GPT-5.3 Chat",
+      "provider": "openai",
+      "api_id": "gpt-5.3-chat",
+      "context_length": 128000,
+      "max_output": 16384,
+      "pricing": {
+        "input": 1.75,
+        "output": 14
+      },
+      "modality": "text+image+file->text",
+      "released": "2026-03-03",
+      "knowledge_cutoff": null,
+      "flagship": false
+    },
+    {
+      "id": "openai/gpt-audio-mini",
+      "name": "OpenAI: GPT Audio Mini",
+      "provider": "openai",
+      "api_id": "gpt-audio-mini",
+      "context_length": 128000,
+      "max_output": 16384,
+      "pricing": {
+        "input": 0.6,
+        "output": 2.4
+      },
+      "modality": "text+audio->text+audio",
+      "released": "2026-01-19",
+      "knowledge_cutoff": null,
+      "flagship": false
+    },
+    {
+      "id": "openai/gpt-5.4-nano",
+      "name": "OpenAI: GPT-5.4 Nano",
+      "provider": "openai",
+      "api_id": "gpt-5.4-nano",
+      "context_length": 400000,
+      "max_output": 128000,
+      "pricing": {
+        "input": 0.19999999999999998,
+        "output": 1.25
+      },
+      "modality": "text+image+file->text",
+      "released": "2026-03-17",
+      "knowledge_cutoff": null,
+      "flagship": false
+    },
+    {
+      "id": "qwen/qwen3-max-thinking",
+      "name": "Qwen: Qwen3 Max Thinking",
+      "provider": "qwen",
+      "api_id": "qwen3-max-thinking",
+      "context_length": 262144,
+      "max_output": 32768,
+      "pricing": {
+        "input": 0.78,
+        "output": 3.9
+      },
+      "modality": "text->text",
+      "released": "2026-02-09",
+      "knowledge_cutoff": null,
+      "flagship": true
+    },
+    {
+      "id": "qwen/qwen3.6-plus",
+      "name": "Qwen: Qwen3.6 Plus",
+      "provider": "qwen",
+      "api_id": "qwen3.6-plus",
+      "context_length": 1000000,
+      "max_output": 65536,
+      "pricing": {
+        "input": 0.325,
+        "output": 1.95
+      },
+      "modality": "text+image+video->text",
+      "released": "2026-04-02",
+      "knowledge_cutoff": null,
+      "flagship": true
+    },
+    {
+      "id": "qwen/qwen3.5-flash-02-23",
+      "name": "Qwen: Qwen3.5-Flash",
+      "provider": "qwen",
+      "api_id": "qwen3.5-flash-02-23",
+      "context_length": 1000000,
+      "max_output": 65536,
+      "pricing": {
+        "input": 0.065,
+        "output": 0.26
+      },
+      "modality": "text+image+video->text",
+      "released": "2026-02-25",
+      "knowledge_cutoff": null,
+      "flagship": true
+    },
+    {
+      "id": "qwen/qwen3.5-397b-a17b",
+      "name": "Qwen: Qwen3.5 397B A17B",
+      "provider": "qwen",
+      "api_id": "qwen3.5-397b-a17b",
+      "context_length": 262144,
+      "max_output": 65536,
+      "pricing": {
+        "input": 0.39,
+        "output": 2.34
+      },
+      "modality": "text+image+video->text",
+      "released": "2026-02-16",
+      "knowledge_cutoff": null,
+      "flagship": false
+    },
+    {
+      "id": "qwen/qwen3.5-122b-a10b",
+      "name": "Qwen: Qwen3.5-122B-A10B",
+      "provider": "qwen",
+      "api_id": "qwen3.5-122b-a10b",
+      "context_length": 262144,
+      "max_output": 65536,
+      "pricing": {
+        "input": 0.26,
+        "output": 2.08
+      },
+      "modality": "text+image+video->text",
+      "released": "2026-02-25",
+      "knowledge_cutoff": null,
+      "flagship": false
+    },
+    {
+      "id": "qwen/qwen3.5-plus-02-15",
+      "name": "Qwen: Qwen3.5 Plus 2026-02-15",
+      "provider": "qwen",
+      "api_id": "qwen3.5-plus-02-15",
+      "context_length": 1000000,
+      "max_output": 65536,
+      "pricing": {
+        "input": 0.26,
+        "output": 1.56
+      },
+      "modality": "text+image+video->text",
+      "released": "2026-02-16",
+      "knowledge_cutoff": null,
+      "flagship": false
+    },
+    {
+      "id": "qwen/qwen3.5-27b",
+      "name": "Qwen: Qwen3.5-27B",
+      "provider": "qwen",
+      "api_id": "qwen3.5-27b",
+      "context_length": 262144,
+      "max_output": 65536,
+      "pricing": {
+        "input": 0.195,
+        "output": 1.56
+      },
+      "modality": "text+image+video->text",
+      "released": "2026-02-25",
+      "knowledge_cutoff": null,
+      "flagship": false
+    },
+    {
+      "id": "qwen/qwen3.5-35b-a3b",
+      "name": "Qwen: Qwen3.5-35B-A3B",
+      "provider": "qwen",
+      "api_id": "qwen3.5-35b-a3b",
+      "context_length": 262144,
+      "max_output": 65536,
+      "pricing": {
+        "input": 0.1625,
+        "output": 1.3
+      },
+      "modality": "text+image+video->text",
+      "released": "2026-02-25",
+      "knowledge_cutoff": null,
+      "flagship": false
+    },
+    {
+      "id": "qwen/qwen3-coder-next",
+      "name": "Qwen: Qwen3 Coder Next",
+      "provider": "qwen",
+      "api_id": "qwen3-coder-next",
+      "context_length": 262144,
+      "max_output": 262144,
+      "pricing": {
+        "input": 0.15,
+        "output": 0.7999999999999999
+      },
+      "modality": "text->text",
+      "released": "2026-02-04",
+      "knowledge_cutoff": null,
+      "flagship": false
+    },
+    {
+      "id": "qwen/qwen3.5-9b",
+      "name": "Qwen: Qwen3.5-9B",
+      "provider": "qwen",
+      "api_id": "qwen3.5-9b",
+      "context_length": 256000,
+      "max_output": 32768,
+      "pricing": {
+        "input": 0.049999999999999996,
+        "output": 0.15
+      },
+      "modality": "text+image+video->text",
+      "released": "2026-03-10",
+      "knowledge_cutoff": null,
+      "flagship": false
+    },
+    {
+      "id": "x-ai/grok-4.20-multi-agent",
+      "name": "xAI: Grok 4.20 Multi-Agent",
+      "provider": "x-ai",
+      "api_id": "grok-4.20-multi-agent",
+      "context_length": 2000000,
+      "max_output": null,
+      "pricing": {
+        "input": 2,
+        "output": 6
+      },
+      "modality": "text+image+file->text",
+      "released": "2026-03-31",
+      "knowledge_cutoff": null,
+      "flagship": true
+    },
+    {
+      "id": "x-ai/grok-4.1-fast",
+      "name": "xAI: Grok 4.1 Fast",
+      "provider": "x-ai",
+      "api_id": "grok-4.1-fast",
+      "context_length": 2000000,
+      "max_output": 30000,
+      "pricing": {
+        "input": 0.19999999999999998,
+        "output": 0.5
+      },
+      "modality": "text+image+file->text",
+      "released": "2025-11-19",
+      "knowledge_cutoff": null,
+      "flagship": true
+    },
+    {
+      "id": "x-ai/grok-4.20",
+      "name": "xAI: Grok 4.20",
+      "provider": "x-ai",
+      "api_id": "grok-4.20",
+      "context_length": 2000000,
+      "max_output": null,
+      "pricing": {
+        "input": 2,
+        "output": 6
+      },
+      "modality": "text+image+file->text",
+      "released": "2026-03-31",
+      "knowledge_cutoff": null,
+      "flagship": false
+    },
+    {
+      "id": "z-ai/glm-5",
+      "name": "Z.ai: GLM 5",
+      "provider": "z-ai",
+      "api_id": null,
+      "context_length": 80000,
+      "max_output": 131072,
+      "pricing": {
+        "input": 0.72,
+        "output": 2.3
+      },
+      "modality": "text->text",
+      "released": "2026-02-11",
+      "knowledge_cutoff": null,
+      "flagship": true
+    },
+    {
+      "id": "z-ai/glm-4.7-flash",
+      "name": "Z.ai: GLM 4.7 Flash",
+      "provider": "z-ai",
+      "api_id": null,
+      "context_length": 202752,
+      "max_output": null,
+      "pricing": {
+        "input": 0.06,
+        "output": 0.39999999999999997
+      },
+      "modality": "text->text",
+      "released": "2026-01-19",
+      "knowledge_cutoff": null,
+      "flagship": true
+    },
+    {
+      "id": "z-ai/glm-5v-turbo",
+      "name": "Z.ai: GLM 5V Turbo",
+      "provider": "z-ai",
+      "api_id": null,
+      "context_length": 202752,
+      "max_output": 131072,
+      "pricing": {
+        "input": 1.2,
+        "output": 4
+      },
+      "modality": "text+image+video->text",
+      "released": "2026-04-01",
+      "knowledge_cutoff": null,
+      "flagship": false
+    },
+    {
+      "id": "z-ai/glm-5-turbo",
+      "name": "Z.ai: GLM 5 Turbo",
+      "provider": "z-ai",
+      "api_id": null,
+      "context_length": 202752,
+      "max_output": 131072,
+      "pricing": {
+        "input": 1.2,
+        "output": 4
+      },
+      "modality": "text->text",
+      "released": "2026-03-15",
+      "knowledge_cutoff": null,
+      "flagship": false
+    },
+    {
+      "id": "z-ai/glm-5.1",
+      "name": "Z.ai: GLM 5.1",
+      "provider": "z-ai",
+      "api_id": null,
+      "context_length": 202752,
+      "max_output": 65535,
+      "pricing": {
+        "input": 0.95,
+        "output": 3.15
+      },
+      "modality": "text->text",
+      "released": "2026-04-07",
+      "knowledge_cutoff": null,
+      "flagship": false
+    }
+  ]
+}

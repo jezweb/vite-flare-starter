@@ -16,48 +16,49 @@ export interface ProviderEnv {
 }
 
 export function resolveModel(env: ProviderEnv, modelId: string) {
-  // Workers AI — native binding, free
+  // Workers AI — native binding, free.
   if (modelId.startsWith('@cf/') || modelId.startsWith('@hf/')) {
     const workersai = createWorkersAI({ binding: env.AI })
     return workersai(modelId)
   }
 
-  // Anthropic — Claude models
-  if (modelId.startsWith('claude-')) {
-    if (!env.ANTHROPIC_API_KEY) throw new Error(`ANTHROPIC_API_KEY required for model: ${modelId}`)
-    const anthropic = createAnthropic({ apiKey: env.ANTHROPIC_API_KEY })
-    return anthropic(modelId)
-  }
-
-  // OpenAI — GPT and o-series models
-  if (modelId.startsWith('gpt-') || modelId.startsWith('o1-') || modelId.startsWith('o3-') || modelId.startsWith('o4-')) {
-    if (!env.OPENAI_API_KEY) throw new Error(`OPENAI_API_KEY required for model: ${modelId}`)
-    const openai = createOpenAI({ apiKey: env.OPENAI_API_KEY })
-    return openai(modelId)
-  }
-
-  // Google — Gemini models
-  if (modelId.startsWith('gemini-')) {
-    if (!env.GOOGLE_AI_API_KEY) throw new Error(`GOOGLE_AI_API_KEY required for model: ${modelId}`)
-    const google = createGoogleGenerativeAI({ apiKey: env.GOOGLE_AI_API_KEY })
-    return google(modelId)
-  }
-
-  // OpenRouter — explicit prefix or fallback
+  // Explicit `openrouter/provider/model` prefix — strip and forward.
   if (modelId.startsWith('openrouter/')) {
     if (!env.OPENROUTER_API_KEY) throw new Error(`OPENROUTER_API_KEY required for model: ${modelId}`)
     const openrouter = createOpenRouter({ apiKey: env.OPENROUTER_API_KEY })
     return openrouter(modelId.replace('openrouter/', ''))
   }
 
-  // Fallback: try OpenRouter, else Workers AI
+  // `provider/model` shape (e.g. `anthropic/claude-sonnet-4.6`) → OpenRouter.
+  // This is the new default for non-Workers-AI models and lets one key unlock
+  // the full OpenRouter catalogue.
+  if (modelId.includes('/') && !modelId.startsWith('@')) {
+    if (!env.OPENROUTER_API_KEY) throw new Error(`OPENROUTER_API_KEY required for model: ${modelId}`)
+    const openrouter = createOpenRouter({ apiKey: env.OPENROUTER_API_KEY })
+    return openrouter(modelId)
+  }
+
+  // Direct-provider fallbacks kept for users who prefer native SDKs per provider.
+  if (modelId.startsWith('claude-')) {
+    if (!env.ANTHROPIC_API_KEY) throw new Error(`ANTHROPIC_API_KEY required for model: ${modelId}`)
+    return createAnthropic({ apiKey: env.ANTHROPIC_API_KEY })(modelId)
+  }
+  if (modelId.startsWith('gpt-') || modelId.startsWith('o1-') || modelId.startsWith('o3-') || modelId.startsWith('o4-')) {
+    if (!env.OPENAI_API_KEY) throw new Error(`OPENAI_API_KEY required for model: ${modelId}`)
+    return createOpenAI({ apiKey: env.OPENAI_API_KEY })(modelId)
+  }
+  if (modelId.startsWith('gemini-')) {
+    if (!env.GOOGLE_AI_API_KEY) throw new Error(`GOOGLE_AI_API_KEY required for model: ${modelId}`)
+    return createGoogleGenerativeAI({ apiKey: env.GOOGLE_AI_API_KEY })(modelId)
+  }
+
+  // Last-chance fallback: OpenRouter if key is set, else Workers AI.
   if (env.OPENROUTER_API_KEY) {
     const openrouter = createOpenRouter({ apiKey: env.OPENROUTER_API_KEY })
     return openrouter(modelId)
   }
   console.warn(`Unknown model "${modelId}" — falling back to Workers AI`)
-  const workersai = createWorkersAI({ binding: env.AI })
-  return workersai(modelId)
+  return createWorkersAI({ binding: env.AI })(modelId)
 }
 
 export function getAvailableProviders(env: ProviderEnv): string[] {

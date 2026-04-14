@@ -1,192 +1,173 @@
 /**
- * AI Model Registry — curated selection
+ * AI Model Registry — curated + live from flared.au
  *
- * 4 Workers AI models (free, no key needed) + 3 external providers
- * (Claude, GPT, Gemini) activated when their API key is set in env.
+ * Fork-users edit `src/shared/config/models.ts` to add or remove models.
+ * Model metadata (context window, pricing, capability tags) is pulled from
+ * a bundled snapshot of https://models.flared.au/json, which you can refresh
+ * with `pnpm models:refresh` whenever new models ship.
  *
- * Fork-users can add more models by extending this registry.
- * resolveModel() auto-detects the provider from the model ID prefix.
+ * Model IDs:
+ * - `@cf/...`   → Workers AI (free, no key)
+ * - `provider/model` (e.g. `anthropic/claude-sonnet-4.6`) → OpenRouter
+ *   (requires OPENROUTER_API_KEY)
  */
-import type { ModelId, ModelConfig } from './types'
+import type { ModelId, ModelConfig, ModelTier } from './types'
+import {
+  ENABLED_MODEL_IDS,
+  DEFAULT_MODEL_ID,
+  WORKERS_AI_MODELS,
+  OPENROUTER_MODELS,
+  type CatalogueModel,
+} from '@/shared/config/models'
+import snapshot from '@/shared/data/models-snapshot.json'
 
-export const MODEL_REGISTRY: Record<string, ModelConfig> = {
-  // ─── Workers AI (free, always available) ────────────────────────────────
+interface Snapshot {
+  updated: string
+  total: number
+  models: CatalogueModel[]
+}
+
+const CATALOGUE = new Map(
+  (snapshot as Snapshot).models.map((m) => [m.id, m] as const),
+)
+
+/** Workers AI model metadata — the one thing flared.au doesn't yet cover. */
+const WORKERS_AI_CONFIGS: Record<string, ModelConfig> = {
   '@cf/moonshotai/kimi-k2.5': {
     id: '@cf/moonshotai/kimi-k2.5',
     displayName: 'Kimi K2.5',
     provider: 'moonshot',
-    contextWindow: 128000,
+    contextWindow: 128_000,
     isReasoning: false,
     supportsStreaming: true,
     supportsTools: true,
     supportsVision: false,
     supportsPdf: false,
     defaultMaxTokens: 4096,
-    description: 'Flagship 1T-param agentic model from Moonshot AI. Best for general chat, tools, reasoning.',
+    description: 'Moonshot AI Kimi K2.5 — 1T-param flagship. Free via Workers AI.',
     tier: 'flagship',
   },
   '@cf/google/gemma-4-26b-a4b-it': {
     id: '@cf/google/gemma-4-26b-a4b-it',
     displayName: 'Gemma 4 26B',
     provider: 'google',
-    contextWindow: 128000,
+    contextWindow: 128_000,
     isReasoning: false,
     supportsStreaming: true,
     supportsTools: true,
     supportsVision: true,
     supportsPdf: false,
     defaultMaxTokens: 4096,
-    description: 'Google Gemma 4 with vision. Strong multilingual performance.',
+    description: 'Google Gemma 4 with vision. Free via Workers AI.',
     tier: 'balanced',
   },
   '@cf/zai-org/glm-4.7-flash': {
     id: '@cf/zai-org/glm-4.7-flash',
     displayName: 'GLM 4.7 Flash',
     provider: 'zhipu',
-    contextWindow: 128000,
+    contextWindow: 128_000,
     isReasoning: false,
     supportsStreaming: true,
     supportsTools: true,
     supportsVision: false,
     supportsPdf: false,
     defaultMaxTokens: 4096,
-    description: 'Fast, tool-capable model from Zhipu AI. Good for high-throughput agents.',
+    description: 'Z.AI GLM 4.7 Flash — fast tool-capable. Free via Workers AI.',
     tier: 'fast',
   },
   '@cf/qwen/qwq-32b': {
     id: '@cf/qwen/qwq-32b',
     displayName: 'QwQ 32B',
     provider: 'qwen',
-    contextWindow: 32768,
+    contextWindow: 32_768,
     isReasoning: true,
     supportsStreaming: true,
     supportsTools: false,
     supportsVision: false,
     supportsPdf: false,
     defaultMaxTokens: 4096,
-    description: 'Reasoning model with step-by-step <think> tokens. Best for complex problems.',
+    description: 'Qwen QwQ 32B reasoning model. Free via Workers AI.',
     tier: 'reasoning',
-  },
-
-  // ─── Anthropic Claude (requires ANTHROPIC_API_KEY) ─────────────────────
-  'claude-opus-4-6-fast': {
-    id: 'claude-opus-4-6-fast',
-    displayName: 'Claude Opus 4.6',
-    provider: 'anthropic',
-    contextWindow: 1000000,
-    isReasoning: false,
-    supportsStreaming: true,
-    supportsTools: true,
-    supportsVision: true,
-    supportsPdf: true,
-    defaultMaxTokens: 8192,
-    description: 'Anthropic Claude Opus 4.6 (fast) — 1M context flagship. Requires ANTHROPIC_API_KEY.',
-    tier: 'flagship',
-  },
-  'claude-sonnet-4-6': {
-    id: 'claude-sonnet-4-6',
-    displayName: 'Claude Sonnet 4.6',
-    provider: 'anthropic',
-    contextWindow: 1000000,
-    isReasoning: false,
-    supportsStreaming: true,
-    supportsTools: true,
-    supportsVision: true,
-    supportsPdf: true,
-    defaultMaxTokens: 8192,
-    description: 'Anthropic Claude Sonnet 4.6 — 1M context, balanced flagship. Requires ANTHROPIC_API_KEY.',
-    tier: 'flagship',
-  },
-  'claude-haiku-4-5': {
-    id: 'claude-haiku-4-5',
-    displayName: 'Claude Haiku 4.5',
-    provider: 'anthropic',
-    contextWindow: 200000,
-    isReasoning: false,
-    supportsStreaming: true,
-    supportsTools: true,
-    supportsVision: true,
-    supportsPdf: true,
-    defaultMaxTokens: 8192,
-    description: 'Anthropic Claude Haiku 4.5 — fast + cheap, 200K context. Requires ANTHROPIC_API_KEY.',
-    tier: 'fast',
-  },
-
-  // ─── OpenAI (requires OPENAI_API_KEY) ───────────────────────────────────
-  'gpt-5.4-pro': {
-    id: 'gpt-5.4-pro',
-    displayName: 'GPT-5.4 Pro',
-    provider: 'openai',
-    contextWindow: 1100000,
-    isReasoning: false,
-    supportsStreaming: true,
-    supportsTools: true,
-    supportsVision: true,
-    supportsPdf: true,
-    defaultMaxTokens: 8192,
-    description: 'OpenAI GPT-5.4 Pro — 1.1M context multimodal flagship. Requires OPENAI_API_KEY.',
-    tier: 'flagship',
-  },
-  'gpt-5.4-mini': {
-    id: 'gpt-5.4-mini',
-    displayName: 'GPT-5.4 mini',
-    provider: 'openai',
-    contextWindow: 400000,
-    isReasoning: false,
-    supportsStreaming: true,
-    supportsTools: true,
-    supportsVision: true,
-    supportsPdf: false,
-    defaultMaxTokens: 8192,
-    description: 'OpenAI GPT-5.4 mini — fast + cheap, 400K context. Requires OPENAI_API_KEY.',
-    tier: 'fast',
-  },
-
-  // ─── Google Gemini (requires GOOGLE_AI_API_KEY) ─────────────────────────
-  'gemini-3.1-pro-preview': {
-    id: 'gemini-3.1-pro-preview',
-    displayName: 'Gemini 3.1 Pro',
-    provider: 'google',
-    contextWindow: 1000000,
-    isReasoning: false,
-    supportsStreaming: true,
-    supportsTools: true,
-    supportsVision: true,
-    supportsPdf: true,
-    defaultMaxTokens: 8192,
-    description: 'Google Gemini 3.1 Pro (preview) — 1M context flagship, vision + PDF. Requires GOOGLE_AI_API_KEY.',
-    tier: 'flagship',
-  },
-  'gemini-3.1-flash-lite-preview': {
-    id: 'gemini-3.1-flash-lite-preview',
-    displayName: 'Gemini 3.1 Flash Lite',
-    provider: 'google',
-    contextWindow: 1000000,
-    isReasoning: false,
-    supportsStreaming: true,
-    supportsTools: true,
-    supportsVision: true,
-    supportsPdf: false,
-    defaultMaxTokens: 8192,
-    description: 'Google Gemini 3.1 Flash Lite (preview) — fast, 1M context. Requires GOOGLE_AI_API_KEY.',
-    tier: 'fast',
   },
 }
 
-export const DEFAULT_MODEL: ModelId = '@cf/moonshotai/kimi-k2.5'
+/** Convert a CatalogueModel (from flared.au) into our ModelConfig shape. */
+function fromCatalogue(m: CatalogueModel): ModelConfig {
+  const supportsVision = m.modality.includes('image')
+  const priceIn = m.pricing?.input ?? 0
+  // Cheap heuristic tiers while we wait for flared.au to expose them explicitly.
+  let tier: ModelTier = 'balanced'
+  if (m.flagship && priceIn >= 2) tier = 'flagship'
+  else if (priceIn < 0.3) tier = 'fast'
+  return {
+    id: m.id,
+    displayName: m.name.replace(/^.*?: /, ''),
+    provider: (m.provider as ModelConfig['provider']) ?? 'openai',
+    contextWindow: m.context_length,
+    isReasoning: /reason|think|r1|o1|o3|qwq/i.test(m.id),
+    supportsStreaming: true,
+    supportsTools: true,
+    supportsVision,
+    supportsPdf: false,
+    defaultMaxTokens: Math.min(m.max_output ?? 4096, 8192),
+    description:
+      `${m.name} — ${(m.context_length / 1000).toFixed(0)}K ctx` +
+      (priceIn > 0 ? `, $${priceIn.toFixed(2)}/M in` : ''),
+    tier,
+  }
+}
 
+/** Materialise the enabled registry once at module load. */
+export const MODEL_REGISTRY: Record<string, ModelConfig> = (() => {
+  const out: Record<string, ModelConfig> = {}
+  for (const id of ENABLED_MODEL_IDS) {
+    if (id.startsWith('@cf/') || id.startsWith('@hf/')) {
+      const cfg = WORKERS_AI_CONFIGS[id]
+      if (cfg) out[id] = cfg
+      continue
+    }
+    const cat = CATALOGUE.get(id)
+    if (cat) out[id] = fromCatalogue(cat)
+    else {
+      // Enabled but not in snapshot — keep a stub so selection still works.
+      out[id] = {
+        id,
+        displayName: id.split('/').pop() ?? id,
+        provider: (id.split('/')[0] as ModelConfig['provider']) ?? 'openai',
+        contextWindow: 128_000,
+        isReasoning: false,
+        supportsStreaming: true,
+        supportsTools: true,
+        supportsVision: false,
+        supportsPdf: false,
+        defaultMaxTokens: 4096,
+        description: `${id} (not in catalogue — run pnpm models:refresh)`,
+        tier: 'balanced',
+      }
+    }
+  }
+  return out
+})()
+
+export const DEFAULT_MODEL: ModelId = DEFAULT_MODEL_ID
+
+/** Shortcut aliases for use in URLs / tool calls. Extend freely. */
 export const ALIAS_TO_MODEL_ID: Record<string, ModelId> = {
   kimi: '@cf/moonshotai/kimi-k2.5',
   gemma: '@cf/google/gemma-4-26b-a4b-it',
   glm: '@cf/zai-org/glm-4.7-flash',
   qwq: '@cf/qwen/qwq-32b',
-  opus: 'claude-opus-4-6-fast',
-  claude: 'claude-sonnet-4-6',
-  haiku: 'claude-haiku-4-5',
-  gpt: 'gpt-5.4-pro',
-  'gpt-mini': 'gpt-5.4-mini',
-  gemini: 'gemini-3.1-pro-preview',
-  'gemini-flash': 'gemini-3.1-flash-lite-preview',
+  opus: 'anthropic/claude-opus-4.6',
+  sonnet: 'anthropic/claude-sonnet-4.6',
+  haiku: 'anthropic/claude-haiku-4.5',
+  gpt: 'openai/gpt-5.4',
+  'gpt-mini': 'openai/gpt-5.4-mini',
+  gemini: 'google/gemini-3.1-pro-preview',
+  'gemini-flash': 'google/gemini-3-flash-preview',
+  deepseek: 'deepseek/deepseek-v3.2-speciale',
+  qwen: 'qwen/qwen3.6-plus',
+  grok: 'x-ai/grok-4.1-fast',
+  mistral: 'mistralai/mistral-large-2512',
 }
 
 export function resolveModelId(alias: string): ModelId {
@@ -205,7 +186,9 @@ export function getToolCapableModels(): ModelConfig[] {
   return Object.values(MODEL_REGISTRY).filter((m) => m.supportsTools)
 }
 
-export function getRecommendedModel(useCase: 'general' | 'fast' | 'reasoning' | 'vision' | 'tools'): ModelId {
+export function getRecommendedModel(
+  useCase: 'general' | 'fast' | 'reasoning' | 'vision' | 'tools',
+): ModelId {
   switch (useCase) {
     case 'general':
     case 'tools':
@@ -222,3 +205,6 @@ export function getRecommendedModel(useCase: 'general' | 'fast' | 'reasoning' | 
 export function listModels(): ModelConfig[] {
   return Object.values(MODEL_REGISTRY)
 }
+
+// Re-exports so consumers don't need to know about the config file.
+export { WORKERS_AI_MODELS, OPENROUTER_MODELS }

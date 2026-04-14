@@ -1,0 +1,92 @@
+/**
+ * Curated model list.
+ *
+ * THIS is the file fork-users edit to add/remove AI models. Everything else
+ * (metadata, context windows, pricing, capability tags) is pulled live from
+ * https://models.flared.au/json — a small API that stays current with the
+ * OpenRouter catalogue. If flared.au is unreachable the list below still
+ * works, it just won't have enriched metadata.
+ *
+ * Format:
+ * - `@cf/...`  → free Cloudflare Workers AI (no API key required)
+ * - `provider/model` (e.g. `anthropic/claude-sonnet-4.6`) → routed through
+ *   OpenRouter. Requires OPENROUTER_API_KEY secret.
+ *
+ * Browse the full catalogue at https://models.flared.au/ and just paste the
+ * `id` field of any model you want.
+ */
+
+/** Free Workers AI models (always available). */
+export const WORKERS_AI_MODELS = [
+  '@cf/moonshotai/kimi-k2.5',
+  '@cf/google/gemma-4-26b-a4b-it',
+  '@cf/zai-org/glm-4.7-flash',
+  '@cf/qwen/qwq-32b',
+] as const
+
+/**
+ * OpenRouter-routed models (require OPENROUTER_API_KEY).
+ *
+ * IDs match https://models.flared.au/json — the `id` field verbatim.
+ * To add a model: open models.flared.au, find it, paste its `id` here.
+ */
+export const OPENROUTER_MODELS = [
+  // Anthropic
+  'anthropic/claude-opus-4.6',
+  'anthropic/claude-sonnet-4.6',
+  'anthropic/claude-haiku-4.5',
+
+  // OpenAI
+  'openai/gpt-5.4',
+  'openai/gpt-5.4-mini',
+
+  // Google
+  'google/gemini-3.1-pro-preview',
+  'google/gemini-3-flash-preview',
+
+  // DeepSeek
+  'deepseek/deepseek-v3.2-speciale',
+
+  // Qwen
+  'qwen/qwen3.6-plus',
+
+  // Mistral
+  'mistralai/mistral-large-2512',
+
+  // xAI
+  'x-ai/grok-4.1-fast',
+
+  // Z.AI
+  'z-ai/glm-5',
+] as const
+
+/** Every enabled model ID — used by the chat model selector. */
+export const ENABLED_MODEL_IDS: readonly string[] = [
+  ...WORKERS_AI_MODELS,
+  ...OPENROUTER_MODELS,
+]
+
+/**
+ * Default model when the user hasn't picked one. Kimi is free and handles
+ * tools, so it's a good starter. Change to a paid model if OPENROUTER_API_KEY
+ * is always set in your deployment.
+ */
+export const DEFAULT_MODEL_ID = '@cf/moonshotai/kimi-k2.5'
+
+/** flared.au API endpoint — cached at the edge, automatically OpenRouter-synced. */
+export const MODELS_CATALOGUE_URL = 'https://models.flared.au/json'
+
+/** Shape returned by models.flared.au/json. */
+export interface CatalogueModel {
+  id: string
+  name: string
+  provider: string
+  api_id: string
+  context_length: number
+  max_output: number
+  pricing: { input: number; output: number }
+  modality: string
+  released?: string
+  knowledge_cutoff?: string
+  flagship?: boolean
+}
