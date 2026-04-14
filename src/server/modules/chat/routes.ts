@@ -81,6 +81,8 @@ app.post('/', async (c) => {
       originalMessages: validatedMessages as any,
       experimental_transform: smoothStream({ chunking: 'word' }),
       sendReasoning: true,
+      // Without this the assistant message lands in D1 with an empty id, failing the PK.
+      generateMessageId: () => crypto.randomUUID(),
       messageMetadata: ({ part }) => {
         if (part.type === 'finish') {
           return {
@@ -95,10 +97,12 @@ app.post('/', async (c) => {
       },
       onFinish: async ({ messages: finalMessages }) => {
         // Persist conversation messages to D1
+        console.log(JSON.stringify({ event: 'chat_onFinish', conversationId, messageCount: finalMessages.length, firstRole: finalMessages[0]?.role }))
         try {
           await storage.saveChat({ conversationId: conversationId!, messages: finalMessages })
+          console.log(JSON.stringify({ event: 'chat_saved', conversationId, messageCount: finalMessages.length }))
         } catch (err) {
-          console.error('Failed to persist conversation:', err)
+          console.error(JSON.stringify({ event: 'chat_save_error', error: String(err), conversationId }))
         }
       },
       // Consume a tee'd copy server-side — ensures onFinish fires even if client disconnects
