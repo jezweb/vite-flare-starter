@@ -166,7 +166,7 @@ export function ChatPage() {
   const hasMessages = messages.length > 0
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] overflow-hidden">
+    <div className="flex h-[calc(100svh-7rem)] min-h-[500px] overflow-hidden">
       {/* Conversation sidebar (toggleable) */}
       {showSidebar && <ConversationSidebar activeConversationId={urlConversationId} />}
 
