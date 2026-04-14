@@ -20,6 +20,11 @@ import webhookRoutes from './modules/webhooks/routes'
 import userMetaRoutes from './modules/user-meta/routes'
 import skillsRoutes from './modules/skills/routes'
 import conversationsRoutes from './modules/conversations/routes'
+import commentsRoutes from './modules/comments/routes'
+import tagsRoutes from './modules/tags/routes'
+import watchersRoutes from './modules/watchers/routes'
+import favouritesRoutes from './modules/favourites/routes'
+import recentViewsRoutes from './modules/recent-views/routes'
 import { securityHeaders } from './middleware/security'
 import { rateLimiter } from './middleware/rate-limit'
 import { authMiddleware, requireScopes } from './middleware/auth'
@@ -228,6 +233,11 @@ app.route('/api/webhooks', webhookRoutes)
 app.route('/api/user-meta', userMetaRoutes)
 app.route('/api/skills', skillsRoutes)
 app.route('/api/conversations', conversationsRoutes)
+app.route('/api/comments', commentsRoutes)
+app.route('/api/tags', tagsRoutes)
+app.route('/api/watchers', watchersRoutes)
+app.route('/api/favourites', favouritesRoutes)
+app.route('/api/recent', recentViewsRoutes)
 
 // =============================================================================
 // AI TEST ENDPOINT
