@@ -62,6 +62,12 @@
     "binding": "AI"
   },
 
+  // Cloudflare Images (resize, crop, format conversion, background removal, face crop)
+  // https://developers.cloudflare.com/images/transform-images/bindings/
+  "images": {
+    "binding": "IMAGES"
+  },
+
   // Observability
   "observability": {
     "enabled": true

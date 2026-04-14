@@ -25,6 +25,7 @@ import tagsRoutes from './modules/tags/routes'
 import watchersRoutes from './modules/watchers/routes'
 import favouritesRoutes from './modules/favourites/routes'
 import recentViewsRoutes from './modules/recent-views/routes'
+import imagesRoutes from './modules/images/routes'
 import { securityHeaders } from './middleware/security'
 import { rateLimiter } from './middleware/rate-limit'
 import { authMiddleware, requireScopes } from './middleware/auth'
@@ -46,6 +47,10 @@ export interface Env {
 
   // Workers AI
   AI: Ai
+
+  // Cloudflare Images (resize, crop, background removal, format conversion)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  IMAGES?: any
 
   // Environment variables
   BETTER_AUTH_SECRET: string
@@ -238,6 +243,7 @@ app.route('/api/tags', tagsRoutes)
 app.route('/api/watchers', watchersRoutes)
 app.route('/api/favourites', favouritesRoutes)
 app.route('/api/recent', recentViewsRoutes)
+app.route('/api/images', imagesRoutes)
 
 // =============================================================================
 // AI TEST ENDPOINT
