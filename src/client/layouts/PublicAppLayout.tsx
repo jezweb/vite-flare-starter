@@ -51,7 +51,7 @@ export function PublicAppLayout({ showAuthBanner = true, isAuthenticated = false
       {showAuthBanner && !isAuthenticated && (
         <div className="border-b border-border bg-muted/50">
           <div className="mx-auto max-w-5xl px-4 py-2 text-center text-sm text-muted-foreground">
-            <Link to="/sign-in" className="underline hover:text-foreground">
+            <Link to="/sign-in" className="underline hover:text-foreground transition-colors">
               Sign in
             </Link>{' '}
             for additional features and personalisation.

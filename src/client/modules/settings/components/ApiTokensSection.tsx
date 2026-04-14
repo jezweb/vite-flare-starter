@@ -94,7 +94,7 @@ function TokenRow({ token, onDeleteClick, isDeleting }: TokenRowProps) {
           size="sm"
           onClick={() => onDeleteClick({ id: token.id, name: token.name })}
           disabled={isDeleting}
-          className="text-destructive hover:text-destructive"
+          className="text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors"
         >
           {isDeleting ? (
             <Loader2 className="h-4 w-4 animate-spin" />

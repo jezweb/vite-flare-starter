@@ -104,7 +104,7 @@ export function ArtifactViewer({ artifact }: Props) {
             variant="ghost"
             size="icon-sm"
             onClick={handleCopy}
-            className="text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground transition-colors"
             title="Copy code"
           >
             {copied ? <Check className="size-3.5 text-green-600 dark:text-green-400" /> : <Copy className="size-3.5" />}
@@ -117,7 +117,7 @@ export function ArtifactViewer({ artifact }: Props) {
                 const blob = new Blob([artifact.code], { type: 'text/html' })
                 window.open(URL.createObjectURL(blob), '_blank')
               }}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground transition-colors"
               title="Open in new tab"
             >
               <ExternalLink className="size-3.5" />
