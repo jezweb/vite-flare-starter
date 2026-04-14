@@ -1,5 +1,10 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "streamdown/styles.css";
+
+/* Streamdown's Shiki tokens set --sdm-c / --shiki-dark inline; apply them. */
+:root pre code [style*="--sdm-c"] { color: var(--sdm-c); }
+.dark pre code [style*="--shiki-dark"] { color: var(--shiki-dark); }
 
 @custom-variant dark (&:is(.dark *));
 @plugin "@tailwindcss/typography";
