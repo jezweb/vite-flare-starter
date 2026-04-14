@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import { ScrollToTop } from './components/shared/ScrollToTop'
 import { ErrorBoundary } from './components/shared/ErrorBoundary'
 import { createErrorHandler } from './lib/error-reporting'
@@ -23,6 +24,7 @@ import { FilesPage } from './modules/files'
 function App() {
   return (
     <ErrorBoundary onError={createErrorHandler()}>
+      <TooltipProvider delayDuration={200}>
       <BrowserRouter>
         <ScrollToTop />
         <Routes>
@@ -81,6 +83,7 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
+      </TooltipProvider>
     </ErrorBoundary>
   )
 }

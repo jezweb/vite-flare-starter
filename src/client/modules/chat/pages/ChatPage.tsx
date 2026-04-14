@@ -1,37 +1,60 @@
 /**
- * ChatPage
+ * ChatPage — full-page AI chat interface built on AI Elements.
  *
- * Full-page AI chat interface with model selection, streaming responses,
- * tool calling, inline UI, and input takeover (claude.ai-style).
+ * Uses AI Elements primitives (Conversation, Message, PromptInput) for
+ * polished chat UI with streaming, tool calls, reasoning, and file
+ * attachments. Custom bits (artifacts, documents, inline UI, input
+ * takeover, approval UI) are composed inside the AI Elements layout.
  */
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
-import { Trash2, MessageSquare, PanelLeftClose, PanelLeft } from 'lucide-react'
-import { ChatMessage, ChatInput, ModelSelector } from '../components'
+import {
+  Conversation,
+  ConversationContent,
+  ConversationScrollButton,
+} from '@/components/ai-elements/conversation'
+import {
+  PromptInput,
+  PromptInputBody,
+  PromptInputTextarea,
+  PromptInputTools,
+  PromptInputSubmit,
+} from '@/components/ai-elements/prompt-input'
+import { Suggestions, Suggestion } from '@/components/ai-elements/suggestion'
+import { Plus, MessageSquare, PanelLeft, PanelLeftClose, Sparkles } from 'lucide-react'
 import { useChat, type Message } from '../hooks/useChat'
 import { useConversationMessages } from '../hooks/useConversations'
 import { ConversationSidebar } from '../components/ConversationSidebar'
+import { MessageRenderer } from '../components/MessageRenderer'
+import { ModelSelector } from '../components'
 import { DEFAULT_MODEL, MODEL_REGISTRY } from '@/server/lib/ai/models'
 import { InputTakeover, isTakeoverElement } from '../components/chat-ui/InputTakeover'
 import { hasUiMarker } from '../components/chat-ui/ChatUiElement'
+import { useSession } from '@/client/lib/auth'
+
+const EXAMPLE_PROMPTS = [
+  'Search the web for the latest news on AI agents',
+  'Remember that my preferred language is TypeScript',
+  'Show me a table comparing the top 5 programming languages',
+  'Help me draft an email about a project update',
+]
 
 export function ChatPage() {
   const { conversationId: urlConversationId } = useParams<{ conversationId?: string }>()
   const navigate = useNavigate()
+  const { data: session } = useSession()
   const [model, setModel] = useState<string>(DEFAULT_MODEL)
-  const [showSidebar, setShowSidebar] = useState(true)
+  const [showSidebar, setShowSidebar] = useState(false)
   const modelConfig = MODEL_REGISTRY[model as keyof typeof MODEL_REGISTRY]
-  const scrollRef = useRef<HTMLDivElement>(null)
 
-  // Load existing conversation messages if URL has an ID
   const { data: existingConversation } = useConversationMessages(urlConversationId)
 
   const {
     messages,
     isLoading,
     error,
+    status,
     conversationId,
     sendMessage,
     stop,
@@ -51,28 +74,6 @@ export function ChatPage() {
     }
   }, [conversationId, urlConversationId, messages.length, navigate])
 
-  // Auto-scroll to bottom on new messages
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-    }
-  }, [messages])
-
-  const handleSend = async (text: string, files?: File[]) => {
-    if (files && files.length > 0) {
-      const filePromises = files.map(async (file) => {
-        const buffer = await file.arrayBuffer()
-        const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)))
-        const dataUrl = `data:${file.type};base64,${base64}`
-        return { type: 'file' as const, mediaType: file.type, url: dataUrl, filename: file.name }
-      })
-      const fileParts = await Promise.all(filePromises)
-      sendMessage({ text, files: fileParts })
-    } else {
-      sendMessage({ text })
-    }
-  }
-
   // Regenerate: remove last assistant message and re-send last user message
   const handleRegenerate = useCallback(() => {
     if (isLoading || messages.length < 2) return
@@ -91,26 +92,21 @@ export function ChatPage() {
     setTimeout(() => sendMessage({ text: userText }), 50)
   }, [messages, isLoading, setMessages, sendMessage])
 
-  // Find the last assistant message index for regenerate button
-  const lastAssistantIdx = [...messages].reverse().findIndex((m) => m.role === 'assistant')
-  const lastAssistantMsgIdx = lastAssistantIdx === -1 ? -1 : messages.length - 1 - lastAssistantIdx
+  // Find the last assistant message index
+  const lastAssistantIdx = useMemo(() => {
+    const idx = [...messages].reverse().findIndex((m) => m.role === 'assistant')
+    return idx === -1 ? -1 : messages.length - 1 - idx
+  }, [messages])
 
-  // ─── Input Takeover Detection ──────────────────────────────────────
-  // Watch the last assistant message for _ui tool outputs that should
-  // take over the input area (ask_questions, offer_choices, etc.)
+  // ─── Input Takeover Detection ─────────────────────────────────
   const [activeTakeover, setActiveTakeover] = useState<{ _ui: string; [key: string]: unknown } | null>(null)
-  const lastTakeoverCheckRef = useRef(0)
 
-  // Detect takeover elements in the most recent assistant message
   useEffect(() => {
-    if (messages.length <= lastTakeoverCheckRef.current && !isLoading) return
-    lastTakeoverCheckRef.current = messages.length
-
-    // Find the last assistant message
     const lastAssistantMsg = [...messages].reverse().find((m) => m.role === 'assistant')
-    if (!lastAssistantMsg?.parts) return
-
-    // Check all tool parts for _ui takeover markers
+    if (!lastAssistantMsg?.parts) {
+      if (activeTakeover) setActiveTakeover(null)
+      return
+    }
     for (const part of lastAssistantMsg.parts) {
       if (part.type.startsWith('tool-') || part.type === 'dynamic-tool') {
         const p = part as Record<string, unknown>
@@ -121,129 +117,181 @@ export function ChatPage() {
         }
       }
     }
-  }, [messages, isLoading])
+  }, [messages, isLoading, activeTakeover])
 
-  // Clear takeover when conversation is cleared
   useEffect(() => {
-    if (messages.length === 0) {
-      setActiveTakeover(null)
-      lastTakeoverCheckRef.current = 0
-    }
+    if (messages.length === 0) setActiveTakeover(null)
   }, [messages.length])
 
-  const handleTakeoverSubmit = useCallback((text: string) => {
-    setActiveTakeover(null)
-    sendMessage({ text })
-  }, [sendMessage])
+  const handleTakeoverSubmit = useCallback(
+    (text: string) => {
+      setActiveTakeover(null)
+      sendMessage({ text })
+    },
+    [sendMessage],
+  )
 
   const handleTakeoverDismiss = useCallback(() => {
     setActiveTakeover(null)
   }, [])
 
-  const handleToolApproval = useCallback(({ toolCallId, result }: { toolCallId: string; toolName: string; result: 'approve' | 'deny' }) => {
-    addToolApprovalResponse({ id: toolCallId, approved: result === 'approve' })
-  }, [addToolApprovalResponse])
+  const handleToolApproval = useCallback(
+    ({ toolCallId, result }: { toolCallId: string; toolName: string; result: 'approve' | 'deny' }) => {
+      addToolApprovalResponse({ id: toolCallId, approved: result === 'approve' })
+    },
+    [addToolApprovalResponse],
+  )
+
+  const handleSuggestion = useCallback(
+    (suggestion: string) => {
+      sendMessage({ text: suggestion })
+    },
+    [sendMessage],
+  )
+
+  const handleSubmit = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (message: { text?: string; files?: any[] }) => {
+      const text = message.text?.trim()
+      if (!text && !message.files?.length) return
+      if (message.files && message.files.length > 0) {
+        sendMessage({ text: text || '', files: message.files })
+      } else if (text) {
+        sendMessage({ text })
+      }
+    },
+    [sendMessage],
+  )
+
+  const hasMessages = messages.length > 0
 
   return (
-    <div className="flex h-[calc(100vh-8rem)]">
-      {/* Conversation Sidebar */}
-      {showSidebar && (
-        <ConversationSidebar activeConversationId={urlConversationId} />
-      )}
+    <div className="flex h-[calc(100vh-8rem)] overflow-hidden">
+      {/* Conversation sidebar (toggleable) */}
+      {showSidebar && <ConversationSidebar activeConversationId={urlConversationId} />}
 
-      {/* Chat Area */}
+      {/* Chat area */}
       <div className="flex flex-1 flex-col min-w-0">
         {/* Header */}
-        <div className="flex items-center justify-between border-b px-4 py-3">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between border-b px-4 py-2">
+          <div className="flex items-center gap-1.5">
             <Button
               variant="ghost"
               size="icon"
-              className="size-7"
+              className="size-8"
               onClick={() => setShowSidebar(!showSidebar)}
-              title={showSidebar ? 'Hide sidebar' : 'Show sidebar'}
+              title={showSidebar ? 'Hide conversations' : 'Show conversations'}
             >
               {showSidebar ? <PanelLeftClose className="size-4" /> : <PanelLeft className="size-4" />}
             </Button>
-            <MessageSquare className="size-5 text-muted-foreground" />
-            <h1 className="text-lg font-semibold">AI Chat</h1>
+            <MessageSquare className="size-4 text-muted-foreground ml-1" />
+            <h1 className="text-sm font-medium">AI Chat</h1>
           </div>
           <div className="flex items-center gap-2">
-            <ModelSelector
-              value={model}
-              onChange={setModel}
-              disabled={isLoading}
-            />
-            {messages.length > 0 && (
+            <ModelSelector value={model} onChange={setModel} disabled={isLoading} />
+            {hasMessages && (
               <Button
                 variant="ghost"
-                size="icon"
+                size="sm"
+                className="gap-1.5 h-8"
                 onClick={() => {
                   clearMessages()
                   navigate('/dashboard/chat')
                 }}
                 disabled={isLoading}
-                title="New chat"
               >
-                <Trash2 className="size-4" />
+                <Plus className="size-3.5" />
+                New chat
               </Button>
             )}
           </div>
         </div>
 
-      {/* Messages */}
-      <ScrollArea className="flex-1" ref={scrollRef}>
-        {messages.length === 0 ? (
-          <div className="flex h-full items-center justify-center p-8">
-            <div className="text-center max-w-md">
-              <MessageSquare className="mx-auto size-12 text-muted-foreground/50 mb-4" />
-              <h2 className="text-lg font-medium mb-2">Start a conversation</h2>
-              <p className="text-sm text-muted-foreground">
-                Send a message to begin chatting with the AI. Responses support markdown
-                formatting including code blocks, lists, and tables.
-              </p>
-            </div>
-          </div>
+        {/* Messages */}
+        {hasMessages ? (
+          <Conversation className="flex-1">
+            <ConversationContent className="max-w-3xl mx-auto w-full px-4 py-6">
+              {messages.map((message, idx) => (
+                <MessageRenderer
+                  key={message.id}
+                  message={message}
+                  isLast={idx === lastAssistantIdx && !isLoading}
+                  isLoading={isLoading && idx === messages.length - 1}
+                  onRegenerate={handleRegenerate}
+                  onSendMessage={(text) => sendMessage({ text })}
+                  onToolApproval={handleToolApproval}
+                  userImage={session?.user?.image}
+                />
+              ))}
+            </ConversationContent>
+            <ConversationScrollButton />
+          </Conversation>
         ) : (
-          <div className="divide-y">
-            {messages.map((message, idx) => (
-              <ChatMessage
-                key={message.id}
-                message={message}
-                isLast={idx === lastAssistantMsgIdx && !isLoading}
-                onRegenerate={handleRegenerate}
-                onSendMessage={(text) => sendMessage({ text })}
-                onToolApproval={handleToolApproval}
-              />
-            ))}
+          <EmptyState onSuggestion={handleSuggestion} />
+        )}
+
+        {/* Error display */}
+        {error && (
+          <div className="border-t bg-destructive/10 px-4 py-2 text-xs text-destructive">
+            {error}
           </div>
         )}
-      </ScrollArea>
 
-      {/* Error display */}
-      {error && (
-        <div className="border-t bg-destructive/10 px-4 py-2 text-sm text-destructive">
-          {error}
+        {/* Input area */}
+        <div className="border-t bg-background">
+          <div className="mx-auto max-w-3xl p-3">
+            {activeTakeover ? (
+              <InputTakeover
+                element={activeTakeover}
+                onSubmit={handleTakeoverSubmit}
+                onDismiss={handleTakeoverDismiss}
+              />
+            ) : (
+              <PromptInput
+                onSubmit={handleSubmit}
+                accept={modelConfig?.supportsVision ? 'image/*' : undefined}
+                multiple
+                maxFiles={5}
+                maxFileSize={10 * 1024 * 1024}
+                className="rounded-xl border bg-muted/30"
+              >
+                <PromptInputBody>
+                  <PromptInputTextarea
+                    placeholder={hasMessages ? 'Reply to the AI...' : 'Ask anything...'}
+                  />
+                  <PromptInputTools>
+                    <div className="flex-1" />
+                    <PromptInputSubmit status={status} onStop={stop} />
+                  </PromptInputTools>
+                </PromptInputBody>
+              </PromptInput>
+            )}
+          </div>
         </div>
-      )}
+      </div>
+    </div>
+  )
+}
 
-      {/* Input area — either InputTakeover or ChatInput */}
-      {activeTakeover ? (
-        <InputTakeover
-          element={activeTakeover}
-          onSubmit={handleTakeoverSubmit}
-          onDismiss={handleTakeoverDismiss}
-        />
-      ) : (
-        <ChatInput
-          onSend={handleSend}
-          onStop={stop}
-          isLoading={isLoading}
-          placeholder="Send a message..."
-          supportsVision={modelConfig?.supportsVision ?? false}
-        />
-      )}
-      </div>{/* end chat area */}
+function EmptyState({ onSuggestion }: { onSuggestion: (s: string) => void }) {
+  return (
+    <div className="flex flex-1 items-center justify-center overflow-y-auto px-4">
+      <div className="max-w-2xl w-full text-center space-y-6">
+        <div className="inline-flex size-12 items-center justify-center rounded-full bg-primary/10 mb-2">
+          <Sparkles className="size-5 text-primary" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-2xl font-semibold tracking-tight">What can I help with?</h2>
+          <p className="text-sm text-muted-foreground">
+            60+ tools including web search, file management, code execution, image and video processing.
+          </p>
+        </div>
+        <Suggestions className="justify-center">
+          {EXAMPLE_PROMPTS.map((prompt) => (
+            <Suggestion key={prompt} suggestion={prompt} onClick={onSuggestion} />
+          ))}
+        </Suggestions>
+      </div>
     </div>
   )
 }

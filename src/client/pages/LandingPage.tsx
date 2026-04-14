@@ -101,7 +101,7 @@ export function LandingPage() {
       <section className="relative overflow-hidden border-b border-border">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-background" />
 
-        <div className="container relative mx-auto max-w-6xl px-4 py-24 md:py-32">
+        <div className="container relative mx-auto max-w-6xl px-4 py-16 md:py-20">
           <div className="flex flex-col items-center text-center">
             <Badge variant="secondary" className="mb-4">
               AI Agent Starter Kit for Cloudflare
@@ -157,27 +157,44 @@ export function LandingPage() {
       </section>
 
       {/* Features Grid */}
-      <section className="py-24 bg-muted/30">
+      <section className="py-16 bg-muted/30">
         <div className="container mx-auto max-w-6xl px-4">
-          <div className="text-center mb-16">
+          <div className="text-center mb-10">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
               Everything you need to ship
             </h2>
-            <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-              A complete foundation with authentication, admin panel, AI integration,
-              and production-ready infrastructure.
+            <p className="mt-3 text-lg text-muted-foreground max-w-2xl mx-auto">
+              AI agent toolkit, edge platform integration, and production-ready business modules.
             </p>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {features.map((feature) => (
-              <Card key={feature.title} className="border border-border/50">
-                <CardContent className="pt-6">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary mb-4">
-                    <feature.icon className="h-6 w-6" />
+          {/* Hero features — top 3 get extra prominence */}
+          <div className="grid gap-4 md:grid-cols-3 mb-4">
+            {features.slice(0, 3).map((feature) => (
+              <Card key={feature.title} className="border-primary/20 bg-primary/[0.02]">
+                <CardContent className="pt-6 pb-5">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary mb-3">
+                    <feature.icon className="h-5 w-5" />
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
+                  <h3 className="text-base font-semibold mb-1.5">{feature.title}</h3>
                   <p className="text-muted-foreground text-sm">{feature.description}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Remaining features — compact grid */}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {features.slice(3).map((feature) => (
+              <Card key={feature.title} className="border-border/50">
+                <CardContent className="pt-4 pb-4">
+                  <div className="flex items-center gap-2.5 mb-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted text-muted-foreground shrink-0">
+                      <feature.icon className="h-4 w-4" />
+                    </div>
+                    <h3 className="text-sm font-semibold">{feature.title}</h3>
+                  </div>
+                  <p className="text-muted-foreground text-xs leading-relaxed">{feature.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -186,7 +203,7 @@ export function LandingPage() {
       </section>
 
       {/* Tech Stack */}
-      <section className="py-24">
+      <section className="py-12">
         <div className="container mx-auto max-w-6xl px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">
@@ -200,18 +217,18 @@ export function LandingPage() {
           <div className="flex flex-wrap justify-center gap-4">
             {[
               'React 19',
-              'Vite',
+              'Vite 7',
               'Hono',
+              'AI SDK v6',
               'Cloudflare Workers',
               'Workers AI',
-              'D1 Database',
+              'D1 + Drizzle ORM',
               'R2 Storage',
-              'Drizzle ORM',
               'better-auth',
               'Tailwind v4',
-              'shadcn/ui',
-              'TanStack Query',
-              'React Hook Form',
+              'shadcn/ui (59)',
+              'TanStack Query + Table',
+              'Milkdown Editor',
               'Zod',
             ].map((tech) => (
               <Badge key={tech} variant="secondary" className="text-sm py-1.5 px-3">
