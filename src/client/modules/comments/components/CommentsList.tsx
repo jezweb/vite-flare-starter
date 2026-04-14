@@ -98,12 +98,12 @@ export function CommentsList({ entityType, entityId, currentUserId }: Props) {
             <p className="mt-1 text-sm whitespace-pre-wrap">{comment.body}</p>
           )}
           <div className="mt-1 flex gap-2">
-            <Button variant="ghost" size="sm" className="h-6 px-2 text-xs gap-1" onClick={() => setReplyTo(comment.id)}>
+            <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={() => setReplyTo(comment.id)}>
               <Reply className="size-3" /> Reply
             </Button>
             {currentUserId === comment.userId && (
               <>
-                <Button variant="ghost" size="sm" className="h-6 px-2 text-xs gap-1" onClick={() => { setEditingId(comment.id); setEditBody(comment.body) }}>
+                <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={() => { setEditingId(comment.id); setEditBody(comment.body) }}>
                   <Pencil className="size-3" /> Edit
                 </Button>
                 <Button variant="ghost" size="sm" className="h-6 px-2 text-xs gap-1 text-destructive" onClick={() => deleteComment.mutate(comment.id)}>

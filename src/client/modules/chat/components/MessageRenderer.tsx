@@ -75,18 +75,18 @@ export const MessageRenderer = memo(function MessageRenderer({
 
       {/* Regenerate button + metadata, only on the last assistant message */}
       {isAssistant && isLast && !isLoading && onRegenerate && (
-        <div className="flex items-center gap-2 ml-10 mt-1 text-[11px] text-muted-foreground/70">
+        <div className="flex items-center gap-2 ml-10 mt-1 text-xs text-muted-foreground/70">
           <Button
             variant="ghost"
             size="sm"
-            className="h-6 px-2 text-[11px] gap-1"
+            className="h-7 gap-1 text-xs"
             onClick={onRegenerate}
           >
             <RotateCcw className="size-3" />
             Regenerate
           </Button>
           {metadata?.model && (
-            <span className="ml-auto">
+            <span className="ml-auto text-[11px]">
               {metadata.model}
               {typeof metadata.inputTokens === 'number' && typeof metadata.outputTokens === 'number' && (
                 <> · {metadata.inputTokens + metadata.outputTokens} tokens</>

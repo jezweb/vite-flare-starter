@@ -115,7 +115,7 @@ export function NotificationBell() {
             <p className="mt-2 text-sm text-muted-foreground">No notifications</p>
           </div>
         ) : (
-          <ScrollArea className="h-[300px]">
+          <ScrollArea className="h-72">
             {notifications.map((notification) => (
               <DropdownMenuItem
                 key={notification.id}

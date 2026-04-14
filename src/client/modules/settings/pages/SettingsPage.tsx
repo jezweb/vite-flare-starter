@@ -22,14 +22,13 @@ export function SettingsPage() {
   const gridCols = tabCount === 6 ? 'grid-cols-3 sm:grid-cols-6' : 'grid-cols-3 sm:grid-cols-5'
 
   return (
-    <div className="container max-w-4xl py-8">
-      {/* Page Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-2 mb-2">
-          <Settings className="h-6 w-6 text-primary" />
-          <h1 className="text-3xl font-bold">Settings</h1>
+    <div className="mx-auto max-w-4xl space-y-6">
+      <div>
+        <div className="flex items-center gap-2 mb-1">
+          <Settings className="size-5 text-primary" />
+          <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
         </div>
-        <p className="text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Manage your account settings and preferences
         </p>
       </div>

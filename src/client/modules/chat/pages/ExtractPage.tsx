@@ -46,11 +46,11 @@ export function ExtractPage() {
   }
 
   return (
-    <div className="container max-w-4xl py-8">
-      <div className="mb-8">
-        <div className="flex items-center gap-2 mb-2">
-          <Sparkles className="h-6 w-6 text-primary" />
-          <h1 className="text-3xl font-bold">Structured Extract</h1>
+    <div className="mx-auto max-w-4xl space-y-6">
+      <div>
+        <div className="flex items-center gap-2 mb-1">
+          <Sparkles className="size-5 text-primary" />
+          <h1 className="text-2xl font-semibold tracking-tight">Structured Extract</h1>
         </div>
         <p className="text-muted-foreground">
           Extract structured data from any text using AI SDK with Zod schemas.
@@ -66,7 +66,7 @@ export function ExtractPage() {
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="Paste any article, email, or text here..."
-            className="min-h-[200px]"
+            className="min-h-52"
           />
         </div>
 

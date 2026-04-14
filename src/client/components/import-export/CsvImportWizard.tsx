@@ -16,6 +16,8 @@
 import { useState, useCallback } from 'react'
 import { Upload, ArrowRight, Check, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 
 interface FieldDef {
@@ -120,11 +122,11 @@ export function CsvImportWizard({ fields, onImport, maxPreviewRows = 5 }: Props)
 
       {/* Step 1: Upload */}
       {step === 1 && (
-        <label className="flex flex-col items-center gap-2 rounded-lg border-2 border-dashed p-8 cursor-pointer hover:border-primary/50 transition-colors">
+        <Label className="flex flex-col items-center gap-2 rounded-lg border-2 border-dashed p-8 cursor-pointer hover:border-primary/50 transition-colors">
           <Upload className="size-8 text-muted-foreground" />
           <span className="text-sm text-muted-foreground">Click to upload a CSV file</span>
           <input type="file" accept=".csv,text/csv" onChange={handleFile} className="hidden" />
-        </label>
+        </Label>
       )}
 
       {/* Step 2: Map columns */}
@@ -136,14 +138,18 @@ export function CsvImportWizard({ fields, onImport, maxPreviewRows = 5 }: Props)
               <div key={field.key} className="flex items-center gap-3">
                 <span className="text-sm w-32 shrink-0">{field.label}{field.required && <span className="text-destructive">*</span>}</span>
                 <ArrowRight className="size-3 text-muted-foreground shrink-0" />
-                <select
-                  value={mapping[field.key] || ''}
-                  onChange={(e) => setMapping((m) => ({ ...m, [field.key]: e.target.value }))}
-                  className="h-8 rounded-md border bg-background px-2 text-sm flex-1"
+                <Select
+                  value={mapping[field.key] || '__skip__'}
+                  onValueChange={(v) => setMapping((m) => ({ ...m, [field.key]: v === '__skip__' ? '' : v }))}
                 >
-                  <option value="">— Skip —</option>
-                  {csvData.headers.map((h) => <option key={h} value={h}>{h}</option>)}
-                </select>
+                  <SelectTrigger className="h-8 flex-1">
+                    <SelectValue placeholder="— Skip —" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__skip__">— Skip —</SelectItem>
+                    {csvData.headers.map((h) => <SelectItem key={h} value={h}>{h}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
             ))}
           </div>
