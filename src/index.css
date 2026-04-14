@@ -6,6 +6,12 @@
 :root pre code [style*="--sdm-c"] { color: var(--sdm-c); }
 .dark pre code [style*="--shiki-dark"] { color: var(--shiki-dark); }
 
+/* Collapse Streamdown's empty code-block header when the AI didn't specify a
+   language (e.g. plain ``` fences). Without this it reserves a row for the
+   filename label, leaving a visible gap above the actions row. */
+[class*="bg-sidebar"][class*="rounded-xl"] > div:first-child:empty { display: none; }
+[class*="bg-sidebar"][class*="rounded-xl"] > div:first-child:empty + [class*="sticky"] { margin-top: 0; }
+
 @custom-variant dark (&:is(.dark *));
 @plugin "@tailwindcss/typography";
 
