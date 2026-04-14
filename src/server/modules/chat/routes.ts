@@ -30,7 +30,9 @@ app.use('*', requireScopes('chat:write'))
 app.post('/', async (c) => {
   try {
     const body = await c.req.json()
-    const { messages, model: requestedModel, systemPrompt, conversationId: existingConversationId } = body
+    const { model: requestedModel, systemPrompt, conversationId: existingConversationId } = body
+    // Accept both legacy { messages } and new { message, allMessages } shapes
+    const messages = (body.messages || body.allMessages || (body.message ? [body.message] : [])) as Array<{ role: string; content?: unknown; parts?: unknown[] }>
 
     const userId = c.get('userId')
     const user = c.get('user') as { name?: string; email?: string; role?: string } | undefined
@@ -70,7 +72,8 @@ app.post('/', async (c) => {
     const response = await createAgentUIStreamResponse({
       agent,
       uiMessages: validatedMessages,
-      originalMessages: validatedMessages,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      originalMessages: validatedMessages as any,
       experimental_transform: smoothStream({ chunking: 'word' }),
       sendReasoning: true,
       messageMetadata: ({ part }) => {

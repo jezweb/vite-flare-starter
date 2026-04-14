@@ -1,3 +1,11 @@
+/**
+ * Dashboard home — capability overview.
+ *
+ * More useful than a generic analytics template for the starter kit
+ * because it explains what the fork-user gets. Forks should replace
+ * this with their own home page. The analytics template lives at
+ * /dashboard/templates/analytics as a reference.
+ */
 import { Link } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -17,85 +25,48 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
-/**
- * Dashboard home page — overview of starter capabilities
- */
 export function DashboardPage() {
   const { data: session } = useSession()
 
   return (
-    <div className="space-y-6">
-      {/* Welcome Header */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">
-          Welcome{session?.user?.name ? `, ${session.user.name.split(' ')[0]}` : ''}!
+    <div className="flex flex-col gap-6">
+      {/* Welcome */}
+      <div className="space-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Welcome{session?.user?.name ? `, ${session.user.name.split(' ')[0]}` : ''}
         </h1>
-        <p className="text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           AI agent starter kit with 60+ tools, conversation persistence, and full Cloudflare edge platform integration.
         </p>
       </div>
 
       {/* Primary actions */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="border-primary/20">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <MessageSquare className="size-5 text-primary" />
-              AI Chat
-            </CardTitle>
-            <CardDescription>
-              Multi-model streaming chat with tool calling, conversation history, and inline UI.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild size="sm" className="gap-1.5">
-              <Link to="/dashboard/chat">
-                Open Chat <ArrowRight className="size-3.5" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Sparkles className="size-5 text-primary" />
-              Extract
-            </CardTitle>
-            <CardDescription>
-              Structured data extraction with streaming output. Summary, entities, or sentiment analysis.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild variant="outline" size="sm" className="gap-1.5">
-              <Link to="/dashboard/extract">
-                Try Extract <ArrowRight className="size-3.5" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Settings className="size-5 text-primary" />
-              Settings
-            </CardTitle>
-            <CardDescription>
-              Profile, password, appearance, sessions, and data export.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild variant="outline" size="sm" className="gap-1.5">
-              <Link to="/dashboard/settings">
-                Open Settings <ArrowRight className="size-3.5" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="grid gap-4 md:grid-cols-3">
+        <ActionCard
+          icon={MessageSquare}
+          title="AI Chat"
+          description="Multi-model streaming chat with tool calling, conversation history, and inline UI."
+          to="/dashboard/chat"
+          cta="Open chat"
+          primary
+        />
+        <ActionCard
+          icon={Sparkles}
+          title="Extract"
+          description="Structured data extraction with streaming output. Summary, entities, sentiment."
+          to="/dashboard/extract"
+          cta="Try extract"
+        />
+        <ActionCard
+          icon={Settings}
+          title="Settings"
+          description="Profile, password, appearance, sessions, and data export."
+          to="/dashboard/settings"
+          cta="Open settings"
+        />
       </div>
 
-      {/* Capability overview */}
+      {/* Capability grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <CapabilityCard
           icon={Brain}
@@ -142,6 +113,42 @@ export function DashboardPage() {
   )
 }
 
+function ActionCard({
+  icon: Icon,
+  title,
+  description,
+  to,
+  cta,
+  primary,
+}: {
+  icon: LucideIcon
+  title: string
+  description: string
+  to: string
+  cta: string
+  primary?: boolean
+}) {
+  return (
+    <Card className={primary ? 'border-primary/20' : undefined}>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Icon className="size-5 text-primary" />
+          {title}
+        </CardTitle>
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button asChild size="sm" variant={primary ? 'default' : 'outline'} className="gap-1.5">
+          <Link to={to}>
+            {cta}
+            <ArrowRight className="size-3.5" />
+          </Link>
+        </Button>
+      </CardContent>
+    </Card>
+  )
+}
+
 function CapabilityCard({ icon: Icon, title, items }: { icon: LucideIcon; title: string; items: string[] }) {
   return (
     <Card>
@@ -164,3 +171,5 @@ function CapabilityCard({ icon: Icon, title, items }: { icon: LucideIcon; title:
     </Card>
   )
 }
+
+export default DashboardPage

@@ -253,7 +253,6 @@ export function ChatPage() {
                 multiple
                 maxFiles={5}
                 maxFileSize={10 * 1024 * 1024}
-                className="rounded-xl border bg-muted/30"
               >
                 <PromptInputBody>
                   <PromptInputTextarea
