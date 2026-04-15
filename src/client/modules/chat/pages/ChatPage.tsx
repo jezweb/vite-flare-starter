@@ -35,6 +35,8 @@ import { ModelSelector } from '../components'
 import { DEFAULT_MODEL_ID } from '@/shared/config/models'
 import { InputTakeover, isTakeoverElement } from '../components/chat-ui/InputTakeover'
 import { hasUiMarker } from '../components/chat-ui/ChatUiElement'
+import { AudioRecorder } from '@/client/components/AudioRecorder'
+import { usePasteUpload } from '@/client/hooks/usePasteUpload'
 import { useSession } from '@/client/lib/auth'
 
 const EXAMPLE_PROMPTS = [
@@ -191,6 +193,37 @@ export function ChatPage() {
     [sendMessage],
   )
 
+  // Helper: convert File/Blob → data URL for AI SDK's FileUIPart
+  const toDataUrl = useCallback((blob: Blob): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result as string)
+      reader.readAsDataURL(blob)
+    })
+  }, [])
+
+  // Paste-to-upload: Cmd+V anywhere in the chat sends images as attachments
+  const handlePastedFiles = useCallback(
+    async (files: File[]) => {
+      if (files.length === 0) return
+      const parts = await Promise.all(
+        files.map(async (f) => ({ type: 'file' as const, url: await toDataUrl(f), mediaType: f.type })),
+      )
+      sendMessage({ text: 'What do you see in this image?', files: parts })
+    },
+    [sendMessage, toDataUrl],
+  )
+  usePasteUpload({ onPaste: handlePastedFiles, accept: 'image/*', global: true, disabled: isLoading })
+
+  // Audio recording: sends the recorded blob as an attachment
+  const handleAudioRecording = useCallback(
+    async (blob: Blob) => {
+      const url = await toDataUrl(blob)
+      sendMessage({ text: 'Transcribe this audio recording.', files: [{ type: 'file', url, mediaType: blob.type }] })
+    },
+    [sendMessage, toDataUrl],
+  )
+
   const hasMessages = messages.length > 0
 
   return (
@@ -292,6 +325,7 @@ export function ChatPage() {
                         <PromptInputActionAddAttachments />
                       </PromptInputActionMenuContent>
                     </PromptInputActionMenu>
+                    <AudioRecorder compact onRecordingComplete={handleAudioRecording} />
                     <ModelSelector value={model} onChange={setModel} disabled={isLoading} />
                   </PromptInputTools>
                   <PromptInputSubmit status={status} onStop={stop} />
