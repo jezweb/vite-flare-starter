@@ -7,7 +7,7 @@
  * takeover, approval UI) are composed inside the AI Elements layout.
  */
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import {
   Conversation,
@@ -46,10 +46,14 @@ const EXAMPLE_PROMPTS = [
 
 export function ChatPage() {
   const { conversationId: urlConversationId } = useParams<{ conversationId?: string }>()
+  const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
   const { data: session } = useSession()
   const [model, setModel] = useState<string>(DEFAULT_MODEL_ID)
   const [showSidebar, setShowSidebar] = useState(false)
+
+  // Share Target: when shared from mobile, params arrive as ?title=&text=&url=
+  const sharedText = searchParams.get('text') || searchParams.get('title') || searchParams.get('url')
   // Vision support check — accept image attachments for models known to support it.
   // The API endpoint also validates this server-side.
   const supportsVision = model.includes('gemma') || model.includes('gemini') || model.includes('claude') || model.includes('gpt')
@@ -88,6 +92,15 @@ export function ChatPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [existingConversation?.messages])
+
+  // Share Target: auto-send shared text on first load, then clear params
+  useEffect(() => {
+    if (sharedText && messages.length === 0 && !isLoading) {
+      sendMessage({ text: sharedText })
+      setSearchParams({}, { replace: true })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sharedText])
 
   // Regenerate: remove last assistant message and re-send last user message
   const handleRegenerate = useCallback(() => {

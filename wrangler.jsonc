@@ -86,6 +86,12 @@
   //   }
   // ],
 
+  // Cron Triggers (scheduled tasks — processes due jobs from scheduled_jobs table)
+  // Uncomment to enable. The scheduled() handler is already wired up in src/server/index.ts.
+  // "triggers": {
+  //   "crons": ["*/5 * * * *"]
+  // },
+
   // Observability
   "observability": {
     "enabled": true
