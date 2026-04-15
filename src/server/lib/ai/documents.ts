@@ -1,19 +1,15 @@
 /**
- * Document Conversion
+ * Document Conversion — converts files to markdown for AI context.
  *
- * Converts uploaded files (PDF, images, text) to markdown that can be
- * injected into AI context. Uses AI SDK so it works with any provider's
- * vision-capable model — Kimi K2.5 is the default (best quality on Workers AI).
+ * Two strategies:
+ * 1. `env.AI.toMarkdown()` — Cloudflare's built-in converter (free, fast,
+ *    handles PDFs natively + images via Workers AI vision models). Preferred.
+ * 2. Vision model fallback — sends the file as an image to a vision-capable
+ *    LLM (Kimi K2.5 default). Used when toMarkdown isn't available or for
+ *    formats it doesn't support.
  *
  * @example
- * import { convertToMarkdown } from '@/server/lib/ai/documents'
- *
- * const markdown = await convertToMarkdown(env, pdfBuffer, 'application/pdf')
- *
- * // Use in system prompt
- * const system = buildSystemPrompt({
- *   knowledge: [{ title: 'Uploaded Document', content: markdown }],
- * })
+ * const markdown = await convertToMarkdown(env, pdfBuffer, 'application/pdf', { filename: 'report.pdf' })
  */
 import { generateText } from 'ai'
 import { resolveModel } from './providers'
@@ -26,118 +22,117 @@ interface DocumentEnv {
   OPENROUTER_API_KEY?: string
 }
 
-/**
- * Default model for document conversion.
- *
- * Kimi K2.5 leads Workers AI for vision tasks — 256k context, strong OCR,
- * structured output. Override via the `model` option if you prefer another.
- */
 const DEFAULT_VISION_MODEL = '@cf/moonshotai/kimi-k2.5'
 
 export interface ConvertOptions {
-  /** Override the model (any vision-capable model ID) */
+  /** Override the model for vision fallback */
   model?: string
   /** Original filename for context */
   filename?: string
   /** Custom extraction prompt */
   prompt?: string
+  /** Force vision model instead of toMarkdown */
+  forceVision?: boolean
+}
+
+/** MIME types that env.AI.toMarkdown handles natively. */
+const TOMARKDOWN_TYPES = new Set([
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'image/svg+xml',
+])
+
+/** MIME types we can handle (toMarkdown + vision + plain text). */
+const ALL_CONVERTIBLE = new Set([
+  ...TOMARKDOWN_TYPES,
+  'text/plain',
+  'text/markdown',
+  'text/csv',
+  'text/html',
+  'application/json',
+])
+
+export function isConvertible(mimeType: string): boolean {
+  return ALL_CONVERTIBLE.has(mimeType) || mimeType.startsWith('image/') || mimeType.startsWith('text/')
 }
 
 /**
- * Convert a document or image to markdown text.
+ * Convert a document or image to markdown.
  *
- * Supported formats:
- * - Images (JPEG, PNG, WebP, GIF) — OCR + scene description
- * - PDF — text extraction with structure preservation
- * - Plain text — returned as-is
- *
- * For Office docs (DOCX, XLSX), convert to PDF first.
+ * Tries `env.AI.toMarkdown()` first (free, fast, native PDF parsing).
+ * Falls back to vision model for unsupported formats or errors.
  */
 export async function convertToMarkdown(
   env: DocumentEnv,
   data: ArrayBuffer | Uint8Array,
   mimeType: string,
-  options: ConvertOptions = {}
+  options?: ConvertOptions,
 ): Promise<string> {
-  const bytes = data instanceof ArrayBuffer ? new Uint8Array(data) : data
-
   // Plain text — pass through
-  if (mimeType.startsWith('text/')) {
-    return new TextDecoder().decode(bytes)
+  if (mimeType.startsWith('text/') || mimeType === 'application/json') {
+    return new TextDecoder().decode(data)
   }
 
-  // Images and PDFs — use vision model via AI SDK
-  if (mimeType.startsWith('image/') || mimeType === 'application/pdf') {
-    return extractWithVision(env, bytes, mimeType, options)
+  // Try Cloudflare's built-in converter (free, handles PDF + images)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ai = env.AI as any
+  if (!options?.forceVision && TOMARKDOWN_TYPES.has(mimeType) && typeof ai?.toMarkdown === 'function') {
+    try {
+      const result = await ai.toMarkdown([
+        {
+          name: options?.filename || `file.${mimeType.split('/')[1]}`,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          blob: new Blob([data as any], { type: mimeType }),
+        },
+      ]) as { name: string; data: string }[]
+      if (result?.[0]?.data) {
+        return result[0].data
+      }
+    } catch (err) {
+      console.warn('toMarkdown failed, falling back to vision model:', err)
+    }
   }
 
-  // Unsupported format — return a clear message
-  const ext = options.filename?.split('.').pop() || mimeType
-  return `[Document: ${ext} — conversion not supported. Upload as PDF, image, or plain text.]`
+  // Vision model fallback — send as image/file to an LLM
+  return extractWithVision(env, data, mimeType, options)
 }
 
-/**
- * Extract text from image or PDF using a vision-capable model via AI SDK.
- *
- * Works with any provider — Workers AI (Kimi K2.5), Anthropic (Claude),
- * OpenAI (GPT-4o), Google (Gemini). Model chosen via resolveModel().
- */
 async function extractWithVision(
   env: DocumentEnv,
-  bytes: Uint8Array,
+  data: ArrayBuffer | Uint8Array,
   mimeType: string,
-  options: ConvertOptions
+  options?: ConvertOptions,
 ): Promise<string> {
+  const modelId = options?.model || DEFAULT_VISION_MODEL
+  const model = resolveModel(env as Parameters<typeof resolveModel>[0], modelId)
+
+  const prompt = options?.prompt ||
+    `Extract all text content from this ${options?.filename || 'document'} and convert it to well-formatted markdown. ` +
+    'Preserve headings, lists, tables, and structure. If there are images, describe them briefly.'
+
+  const bytes = data instanceof Uint8Array ? data : new Uint8Array(data)
+  const base64 = btoa(String.fromCharCode(...bytes))
+  const dataUrl = `data:${mimeType};base64,${base64}`
+
   try {
-    const modelId = options.model || DEFAULT_VISION_MODEL
-    const model = resolveModel(env, modelId)
-
-    const defaultPrompt = mimeType === 'application/pdf'
-      ? 'Extract all text from this PDF. Preserve structure: headings as markdown, lists as markdown, tables as markdown tables. Keep the original reading order.'
-      : 'Extract all text visible in this image as markdown. If there is no text, describe the image in detail. For documents, preserve structure (headings, lists, tables).'
-
-    const prompt = options.prompt || defaultPrompt
-
-    // AI SDK handles file part conversion for any vision-capable provider
     const { text } = await generateText({
       model,
       messages: [
         {
           role: 'user',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           content: [
+            { type: 'file', data: dataUrl, mimeType },
             { type: 'text', text: prompt },
-            {
-              type: 'file',
-              data: bytes,
-              mediaType: mimeType,
-            },
-          ],
+          ] as any,
         },
       ],
-      maxOutputTokens: 8192,
     })
-
-    if (text && text.length > 10) return text
-
-    return `[Extraction returned minimal content — ${(bytes.length / 1024).toFixed(0)}KB file. The document may be image-based, encrypted, or empty.]`
-  } catch (error) {
-    console.error(JSON.stringify({
-      event: 'document_extraction_failed',
-      mimeType,
-      size: bytes.length,
-      error: error instanceof Error ? error.message : String(error),
-    }))
-    return `[Document extraction failed — ${mimeType}, ${(bytes.length / 1024).toFixed(0)}KB]`
+    return text
+  } catch (err) {
+    return `[Document conversion failed: ${err instanceof Error ? err.message : 'unknown error'}]`
   }
-}
-
-/**
- * Check if a MIME type is supported for conversion.
- */
-export function isConvertible(mimeType: string): boolean {
-  return (
-    mimeType.startsWith('text/') ||
-    mimeType.startsWith('image/') ||
-    mimeType === 'application/pdf'
-  )
 }
