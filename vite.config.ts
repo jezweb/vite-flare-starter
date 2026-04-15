@@ -2,12 +2,11 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { cloudflare } from '@cloudflare/vite-plugin';
-import path from 'path';
 
 // Read package.json for version injection
 import packageJson from './package.json';
 
-// Vite configuration for Vite-Flare-Stack
+// Vite 8 configuration — uses Rolldown (Rust-based bundler)
 // Documentation: https://vitejs.dev/config/
 export default defineConfig({
   // Define global constants
@@ -19,7 +18,7 @@ export default defineConfig({
     // React plugin with Fast Refresh
     react(),
 
-    // Tailwind CSS v4 plugin
+    // Tailwind CSS v4 plugin (no PostCSS needed)
     tailwindcss(),
 
     // Cloudflare Workers plugin
@@ -27,21 +26,15 @@ export default defineConfig({
     cloudflare(),
   ],
 
-  // Path aliases for cleaner imports
+  // Path aliases — reads from tsconfig.json paths automatically in Vite 8
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@/client': path.resolve(__dirname, './src/client'),
-      '@/server': path.resolve(__dirname, './src/server'),
-    },
+    tsconfigPaths: true,
   },
 
   // Development server configuration
   server: {
     port: 5173,
     strictPort: true,
-    // API requests are proxied to the Worker (via Cloudflare plugin)
-    // No CORS configuration needed!
   },
 
   // Build configuration
@@ -49,14 +42,12 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: true,
     chunkSizeWarningLimit: 1500,
-    // Code splitting for optimal loading
+    // Vite 8 uses rolldownOptions (Rolldown replaces Rollup)
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (!id.includes('node_modules')) return undefined
-          // Heavy libs users never need on first paint — keep out of main chunk.
-          // Do NOT group shiki or @shikijs — each language should stay its own
-          // lazy chunk (see shiki/guide/best-performance).
+          // Heavy libs — keep out of main chunk, loaded on demand.
           if (id.includes('/streamdown/')) return 'streamdown'
           if (id.includes('/mermaid/')) return 'mermaid'
           if (id.includes('/cytoscape')) return 'cytoscape'
@@ -71,11 +62,6 @@ export default defineConfig({
         },
       },
     },
-  },
-
-  // CSS configuration (for Tailwind v4)
-  css: {
-    postcss: './postcss.config.js',
   },
 
   // Optimize dependencies
