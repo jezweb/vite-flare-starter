@@ -83,7 +83,9 @@ export function createAuth(
     // See CLAUDE.md for configuration: ENABLE_EMAIL_LOGIN=true, ENABLE_EMAIL_SIGNUP=true
     emailAndPassword: {
       enabled: emailLoginEnabled,
-      requireEmailVerification: true, // Users must verify email before signing in
+      // Only require verification when an email provider is configured to deliver it.
+      // Without this, users sign up but can never verify → permanently locked out.
+      requireEmailVerification: !!(env.EMAIL_API_KEY && env.EMAIL_FROM),
       disableSignUp: !emailSignupEnabled,
 
       // Password reset flow

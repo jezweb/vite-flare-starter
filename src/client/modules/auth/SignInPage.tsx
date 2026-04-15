@@ -77,8 +77,9 @@ export function SignInPage() {
         password,
       })
 
-      // Redirect to dashboard on success
-      navigate('/dashboard')
+      // Full page reload so useSession() picks up the new auth cookie.
+      // navigate() does a client-side transition that doesn't re-read cookies.
+      window.location.href = '/dashboard'
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to sign in')
     } finally {

@@ -98,8 +98,8 @@ export function SignUpPage() {
         name,
       })
 
-      // Redirect to dashboard on success
-      navigate('/dashboard')
+      // Full page reload so useSession() picks up the new auth cookie.
+      window.location.href = '/dashboard'
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create account')
     } finally {
