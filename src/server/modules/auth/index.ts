@@ -1,9 +1,6 @@
 import { betterAuth } from 'better-auth'
-import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import { drizzle } from 'drizzle-orm/d1'
 import type { D1Database } from '@cloudflare/workers-types'
 import { Resend } from 'resend'
-import * as schema from './db/schema'
 import { SESSION } from '@/shared/config/constants'
 
 /** Default trusted origins (always included) */
@@ -37,8 +34,7 @@ function parseTrustedOrigins(envValue?: string): string[] {
  * Email/password is DISABLED by default (OAuth-only mode).
  * To enable: Set ENABLE_EMAIL_LOGIN=true (and optionally ENABLE_EMAIL_SIGNUP=true)
  *
- * CRITICAL: Uses drizzleAdapter() with SQLite provider
- * There is NO direct d1Adapter() - must use Drizzle ORM
+ * Uses D1 binding directly (better-auth auto-detects D1 since v1.5).
  */
 export function createAuth(
   d1: D1Database,
@@ -54,9 +50,6 @@ export function createAuth(
     TRUSTED_ORIGINS?: string
   }
 ) {
-  // Initialize Drizzle with D1 binding
-  const db = drizzle(d1, { schema })
-
   // Email login is DISABLED by default (OAuth-only mode)
   // Set ENABLE_EMAIL_LOGIN=true to allow email/password authentication
   const emailLoginEnabled = env.ENABLE_EMAIL_LOGIN === 'true'
@@ -74,10 +67,16 @@ export function createAuth(
     // Example: "http://localhost:5173,https://myapp.workers.dev,https://myapp.com"
     trustedOrigins: parseTrustedOrigins(env.TRUSTED_ORIGINS),
 
-    // CRITICAL: Use drizzleAdapter with SQLite provider
-    database: drizzleAdapter(db, {
-      provider: 'sqlite',
-    }),
+    // D1 binding directly — better-auth auto-detects D1 (v1.5+).
+    // Don't use drizzleAdapter() — it creates an unnecessary Drizzle instance
+    // and can cause JSON parse errors on deployed Workers.
+    database: d1 as unknown as D1Database,
+
+    // Required on Cloudflare Workers — the OAuth state cookie doesn't reliably
+    // survive cross-site redirects from Google. State is still validated via D1.
+    account: {
+      skipStateCookieCheck: true,
+    },
 
     // Email and password authentication - DISABLED BY DEFAULT
     // See CLAUDE.md for configuration: ENABLE_EMAIL_LOGIN=true, ENABLE_EMAIL_SIGNUP=true
@@ -86,6 +85,7 @@ export function createAuth(
       // Only require verification when an email provider is configured to deliver it.
       // Without this, users sign up but can never verify → permanently locked out.
       requireEmailVerification: !!(env.EMAIL_API_KEY && env.EMAIL_FROM),
+      revokeSessionsOnPasswordReset: true,
       disableSignUp: !emailSignupEnabled,
 
       // Password reset flow
@@ -125,6 +125,14 @@ export function createAuth(
     session: {
       expiresIn: SESSION.EXPIRES_IN, // Default: 7 days
       updateAge: SESSION.UPDATE_AGE, // Default: 24 hours
+      // Avoid D1 writes on every GET — only refresh session on POST requests
+      deferSessionRefresh: true,
+      // Validate session from a signed cookie for up to 5 min between DB checks.
+      // Eliminates a D1 query on most authenticated requests.
+      cookieCache: {
+        enabled: true,
+        maxAge: 5 * 60,
+      },
     },
 
     // Email verification configuration

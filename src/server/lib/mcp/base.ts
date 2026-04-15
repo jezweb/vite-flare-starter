@@ -184,110 +184,17 @@ export interface JsonRpcResponse {
 }
 
 /**
- * Convert Zod schema to JSON Schema for MCP tools/list response
+ * Convert Zod schema to JSON Schema for MCP tools/list response.
+ * Uses the zod-to-json-schema library which handles Zod 3 + 4.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function zodToJsonSchema(schema: z.ZodObject<any>): Record<string, any> {
-  const shape = schema.shape
-  const properties: Record<string, any> = {}
-  const required: string[] = []
-
-  for (const [key, value] of Object.entries(shape)) {
-    const zodType = value as z.ZodTypeAny
-    properties[key] = zodTypeToJsonSchema(zodType)
-
-    // Check if field is required (not optional/nullable)
-    if (!zodType.isOptional() && !zodType.isNullable()) {
-      required.push(key)
-    }
-  }
-
-  return {
-    type: 'object',
-    properties,
-    ...(required.length > 0 ? { required } : {}),
-  }
-}
-
-function zodTypeToJsonSchema(zodType: z.ZodTypeAny): Record<string, any> {
-  const def = zodType._def
-
-  // Handle optional wrapper
-  if (def.typeName === 'ZodOptional') {
-    return zodTypeToJsonSchema(def.innerType)
-  }
-
-  // Handle nullable wrapper
-  if (def.typeName === 'ZodNullable') {
-    const inner = zodTypeToJsonSchema(def.innerType)
-    return { ...inner, nullable: true }
-  }
-
-  // Handle default wrapper
-  if (def.typeName === 'ZodDefault') {
-    const inner = zodTypeToJsonSchema(def.innerType)
-    return { ...inner, default: def.defaultValue() }
-  }
-
-  // Handle string
-  if (def.typeName === 'ZodString') {
-    const result: Record<string, any> = { type: 'string' }
-    for (const check of def.checks || []) {
-      if (check.kind === 'min') result['minLength'] = check.value
-      if (check.kind === 'max') result['maxLength'] = check.value
-      if (check.kind === 'email') result['format'] = 'email'
-      if (check.kind === 'url') result['format'] = 'uri'
-      if (check.kind === 'uuid') result['format'] = 'uuid'
-    }
-    if (zodType.description) result['description'] = zodType.description
-    return result
-  }
-
-  // Handle number
-  if (def.typeName === 'ZodNumber') {
-    const result: Record<string, any> = { type: 'number' }
-    for (const check of def.checks || []) {
-      if (check.kind === 'min') result['minimum'] = check.value
-      if (check.kind === 'max') result['maximum'] = check.value
-      if (check.kind === 'int') result['type'] = 'integer'
-    }
-    if (zodType.description) result['description'] = zodType.description
-    return result
-  }
-
-  // Handle boolean
-  if (def.typeName === 'ZodBoolean') {
-    const result: Record<string, any> = { type: 'boolean' }
-    if (zodType.description) result['description'] = zodType.description
-    return result
-  }
-
-  // Handle enum
-  if (def.typeName === 'ZodEnum') {
-    const result: Record<string, any> = {
-      type: 'string',
-      enum: def.values,
-    }
-    if (zodType.description) result['description'] = zodType.description
-    return result
-  }
-
-  // Handle array
-  if (def.typeName === 'ZodArray') {
-    const result: Record<string, any> = {
-      type: 'array',
-      items: zodTypeToJsonSchema(def.type),
-    }
-    if (zodType.description) result['description'] = zodType.description
-    return result
-  }
-
-  // Handle object
-  if (def.typeName === 'ZodObject') {
-    return zodToJsonSchema(zodType as z.ZodObject<any>)
-  }
-
-  // Fallback
-  return { type: 'string' }
+  // Use zod-to-json-schema which handles Zod 3 + 4. Dynamic import avoids
+  // top-level await; the lib is tiny and cached after first load.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+  const { zodToJsonSchema: convert } = require('zod-to-json-schema')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return convert(schema as any, { target: 'jsonSchema7' }) as Record<string, any>
 }
 
 /**

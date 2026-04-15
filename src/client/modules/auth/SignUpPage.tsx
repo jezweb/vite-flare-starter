@@ -12,7 +12,7 @@
  * The UI automatically shows/hides email form based on server config.
  */
 import { useState, useEffect, FormEvent, useMemo } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { authClient } from '@/client/lib/auth'
 import { Button } from '@/components/ui/button'
 import {
@@ -40,7 +40,6 @@ interface AuthConfig {
 }
 
 export function SignUpPage() {
-  const navigate = useNavigate()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
