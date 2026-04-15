@@ -70,8 +70,27 @@ import {
 } from '@/components/ui/table'
 import { Calendar } from '@/components/ui/calendar'
 import { Separator } from '@/components/ui/separator'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command'
+import { DatePicker } from '@/components/ui/date-picker'
 import { AudioRecorder } from '@/client/components/AudioRecorder'
 import { EmptyState } from '@/client/components/EmptyState'
+import { toast } from 'sonner'
 import {
   AlertCircle,
   Check,
@@ -80,6 +99,7 @@ import {
   MoreHorizontal,
   Terminal,
   Inbox,
+  PanelRight,
 } from 'lucide-react'
 
 /**
@@ -89,9 +109,11 @@ import {
  */
 export function ComponentsPage() {
   const [date, setDate] = useState<Date | undefined>(new Date())
+  const [pickerDate, setPickerDate] = useState<Date | undefined>(new Date())
   const [sliderValue, setSliderValue] = useState([50])
   const [switchEnabled, setSwitchEnabled] = useState(false)
   const [checkboxChecked, setCheckboxChecked] = useState(false)
+  const [radioValue, setRadioValue] = useState('comfortable')
 
   return (
     <div className="space-y-6">
@@ -242,8 +264,41 @@ export function ComponentsPage() {
 
           <Card>
             <CardHeader>
+              <CardTitle>Radio Group</CardTitle>
+              <CardDescription>Single selection from a set of options</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <RadioGroup value={radioValue} onValueChange={setRadioValue}>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="default" id="r1" />
+                  <Label htmlFor="r1">Default</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="comfortable" id="r2" />
+                  <Label htmlFor="r2">Comfortable</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="compact" id="r3" />
+                  <Label htmlFor="r3">Compact</Label>
+                </div>
+              </RadioGroup>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Date Picker</CardTitle>
+              <CardDescription>Popover-based date selection</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DatePicker value={pickerDate} onChange={setPickerDate} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <CardTitle>Calendar</CardTitle>
-              <CardDescription>Date picker component</CardDescription>
+              <CardDescription>Inline calendar for date ranges or always-visible selection</CardDescription>
             </CardHeader>
             <CardContent>
               <Calendar
@@ -413,6 +468,27 @@ export function ComponentsPage() {
               </Tooltip>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Toast (Sonner)</CardTitle>
+              <CardDescription>Notification toasts for success, error, and info</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={() => toast.success('Item saved successfully')}>
+                Success
+              </Button>
+              <Button variant="outline" onClick={() => toast.error('Something went wrong')}>
+                Error
+              </Button>
+              <Button variant="outline" onClick={() => toast.info('New update available')}>
+                Info
+              </Button>
+              <Button variant="outline" onClick={() => toast('Event created', { description: 'Monday, January 3 at 6:00 PM' })}>
+                With description
+              </Button>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Overlay Tab */}
@@ -490,6 +566,63 @@ export function ComponentsPage() {
                   <DropdownMenuItem>Sign out</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Sheet</CardTitle>
+              <CardDescription>Slide-over panel from the edge — great for mobile drawers and detail views</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline">
+                    <PanelRight className="mr-2 h-4 w-4" />
+                    Open Sheet
+                  </Button>
+                </SheetTrigger>
+                <SheetContent>
+                  <SheetHeader>
+                    <SheetTitle>Sheet Title</SheetTitle>
+                    <SheetDescription>
+                      This is a slide-over panel. Use it for detail views, forms, or mobile navigation.
+                    </SheetDescription>
+                  </SheetHeader>
+                  <div className="py-6 space-y-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="sheet-name">Name</Label>
+                      <Input id="sheet-name" placeholder="Enter a name" />
+                    </div>
+                    <Button className="w-full">Save changes</Button>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Command</CardTitle>
+              <CardDescription>Searchable command palette — the building block behind Cmd+K</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Command className="rounded-lg border">
+                <CommandInput placeholder="Type a command or search..." />
+                <CommandList>
+                  <CommandEmpty>No results found.</CommandEmpty>
+                  <CommandGroup heading="Suggestions">
+                    <CommandItem>Calendar</CommandItem>
+                    <CommandItem>Search Emoji</CommandItem>
+                    <CommandItem>Calculator</CommandItem>
+                  </CommandGroup>
+                  <CommandGroup heading="Settings">
+                    <CommandItem>Profile</CommandItem>
+                    <CommandItem>Billing</CommandItem>
+                    <CommandItem>Preferences</CommandItem>
+                  </CommandGroup>
+                </CommandList>
+              </Command>
             </CardContent>
           </Card>
         </TabsContent>
