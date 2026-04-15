@@ -150,5 +150,8 @@ export const coreTools = {
     inputSchema: z.object({
       answer: z.string().describe('Your final, complete answer to the user\'s request'),
     }),
+    // Execute returns the answer so the streaming UI gets a tool result
+    // (without this, the UI shows "Running" forever and "tool result missing").
+    execute: async ({ answer }: { answer: string }) => ({ answer, completed: true }),
   }),
 }

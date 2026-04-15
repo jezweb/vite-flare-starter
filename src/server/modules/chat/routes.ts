@@ -71,6 +71,46 @@ app.post('/', async (c) => {
       systemPrompt,
     })
 
+    // Pre-process file attachments: convert non-image files (PDFs, etc.) to text
+    // so they work with models that only accept image file parts.
+    for (const msg of messages) {
+      if (msg.role !== 'user' || !msg.parts) continue
+      const parts = msg.parts as Array<{ type: string; url?: string; mediaType?: string; data?: string; text?: string }>
+      for (let i = 0; i < parts.length; i++) {
+        const part = parts[i]!
+        if (part.type !== 'file') continue
+        const mime = part.mediaType || ''
+        // Images pass through — models handle them natively
+        if (mime.startsWith('image/')) continue
+        // Non-image files (PDF, etc.): convert to markdown text via toMarkdown or TextDecoder
+        try {
+          let textContent = ''
+          if (part.url?.startsWith('data:')) {
+            const base64 = part.url.split(',')[1] || ''
+            const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))
+            if (mime === 'application/pdf' || mime.startsWith('image/')) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const ai = c.env.AI as any
+              if (typeof ai?.toMarkdown === 'function') {
+                const result = await ai.toMarkdown([{ name: 'upload', blob: new Blob([bytes], { type: mime }) }])
+                textContent = result?.[0]?.data || new TextDecoder().decode(bytes)
+              } else {
+                textContent = new TextDecoder().decode(bytes)
+              }
+            } else {
+              textContent = new TextDecoder().decode(bytes)
+            }
+          }
+          if (textContent) {
+            // Replace the file part with a text part containing the extracted content
+            parts[i] = { type: 'text', text: `[Attached file content]:\n\n${textContent}` } as typeof part
+          }
+        } catch (err) {
+          console.warn('Failed to convert file attachment:', err)
+        }
+      }
+    }
+
     // Validate loaded messages against current tool schemas (handles schema drift)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const validation = await safeValidateUIMessages({ messages, tools: agent.tools as any })

@@ -184,8 +184,22 @@ function MessageBody({
   const hasVisibleText = parts.some((p) => p.type === 'text')
   const isUser = message.role === 'user'
 
+  // Detect empty assistant messages (no visible content)
+  const hasContent = parts.some((p) => {
+    if (p.type === 'text') return !!(p as { text: string }).text?.trim()
+    if (p.type === 'reasoning') return true
+    if (p.type.startsWith('tool-') || p.type === 'dynamic-tool') return true
+    if (p.type === 'file') return true
+    return false
+  })
+
   return (
     <MessageContent className="flex flex-col gap-2">
+      {!isLoading && !hasContent && !isUser && (
+        <p className="text-sm text-muted-foreground italic">
+          The model returned an empty response. Try regenerating or switching to a different model.
+        </p>
+      )}
       {parts.map((part, i) => {
         // 1. Text (streaming markdown)
         if (part.type === 'text') {
@@ -246,6 +260,19 @@ function MessageBody({
                 onDeny={() => onToolApproval({ toolCallId: String(p['toolCallId']), toolName, result: 'deny' })}
               />
             )
+          }
+
+          // 4a2. "done" tool — no execute, stops the agent loop. Render the answer as text.
+          if (toolName === 'done') {
+            const input = p['input'] as { answer?: string } | undefined
+            if (input?.answer) {
+              return (
+                <MessageResponse key={i}>
+                  {input.answer}
+                </MessageResponse>
+              )
+            }
+            return null // Hide empty done tool calls
           }
 
           const isComplete = state === 'result' || state === 'call' || state === 'output-available' || output != null
