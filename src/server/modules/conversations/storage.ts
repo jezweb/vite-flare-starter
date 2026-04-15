@@ -22,11 +22,13 @@ export interface ConversationSummary {
 
 export interface ChatStorage {
   createConversation(userId: string, opts?: { title?: string; model?: string; systemPrompt?: string }): Promise<string>
+  /** Check if a user owns a conversation. Returns false if not found or not owned. */
+  isOwner(conversationId: string, userId: string): Promise<boolean>
   loadChat(conversationId: string): Promise<UIMessage[]>
   saveChat(params: { conversationId: string; messages: UIMessage[] }): Promise<void>
   listConversations(userId: string, opts?: { limit?: number; offset?: number }): Promise<ConversationSummary[]>
   deleteConversation(conversationId: string, userId: string): Promise<void>
-  updateTitle(conversationId: string, title: string): Promise<void>
+  updateTitle(conversationId: string, userId: string, title: string): Promise<void>
 }
 
 /**
@@ -49,6 +51,15 @@ export function createD1ChatStorage(db: D1Database): ChatStorage {
         systemPrompt: opts?.systemPrompt || null,
       })
       return id
+    },
+
+    async isOwner(conversationId, userId) {
+      const [row] = await d
+        .select({ id: conversations.id })
+        .from(conversations)
+        .where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)))
+        .limit(1)
+      return !!row
     },
 
     async loadChat(conversationId) {
@@ -166,11 +177,11 @@ export function createD1ChatStorage(db: D1Database): ChatStorage {
         .where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)))
     },
 
-    async updateTitle(conversationId, title) {
+    async updateTitle(conversationId, userId, title) {
       await d
         .update(conversations)
         .set({ title })
-        .where(eq(conversations.id, conversationId))
+        .where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)))
     },
   }
 }

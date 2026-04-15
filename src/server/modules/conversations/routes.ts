@@ -42,6 +42,9 @@ app.get('/search', async (c) => {
         query,
         limit: 20,
         select: '"conversation_messages".conversation_id, "conversation_messages".parts, "conversation_messages".role',
+        // Scope to current user's conversations only
+        where: '"conversation_messages".conversation_id IN (SELECT id FROM conversations WHERE user_id = ?)',
+        whereParams: [userId],
       },
     )
 
@@ -78,7 +81,12 @@ app.get('/search', async (c) => {
 /** GET /api/conversations/:id — load a conversation's messages */
 app.get('/:id', async (c) => {
   const conversationId = c.req.param('id')
+  const userId = c.get('userId')
   const storage = createD1ChatStorage(c.env.DB)
+
+  if (!(await storage.isOwner(conversationId, userId))) {
+    return c.json({ error: 'Not found' }, 404)
+  }
 
   const messages = await storage.loadChat(conversationId)
   return c.json({ messages })
@@ -97,8 +105,14 @@ app.delete('/:id', async (c) => {
 /** GET /api/conversations/:id/export — export as JSON or Markdown */
 app.get('/:id/export', async (c) => {
   const conversationId = c.req.param('id')
+  const userId = c.get('userId')
   const format = (c.req.query('format') || 'json') as 'json' | 'md'
   const storage = createD1ChatStorage(c.env.DB)
+
+  if (!(await storage.isOwner(conversationId, userId))) {
+    return c.json({ error: 'Not found' }, 404)
+  }
+
   const messages = await storage.loadChat(conversationId)
 
   if (format === 'md') {
@@ -134,10 +148,11 @@ app.patch(
   zValidator('json', z.object({ title: z.string().max(200) })),
   async (c) => {
     const conversationId = c.req.param('id')
+    const userId = c.get('userId')
     const { title } = c.req.valid('json')
     const storage = createD1ChatStorage(c.env.DB)
 
-    await storage.updateTitle(conversationId, title)
+    await storage.updateTitle(conversationId, userId, title)
     return c.json({ success: true })
   }
 )

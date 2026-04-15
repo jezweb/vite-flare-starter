@@ -37,6 +37,11 @@ app.post('/', async (c) => {
     // Accept both legacy { messages } and new { message, allMessages } shapes
     const messages = (body.messages || body.allMessages || (body.message ? [body.message] : [])) as Array<{ role: string; content?: unknown; parts?: unknown[] }>
 
+    // Server-side limits: cap message count and attachment sizes
+    if (messages.length > 200) {
+      return c.json({ error: 'Too many messages (max 200)' }, 400)
+    }
+
     const userId = c.get('userId')
     const user = c.get('user') as { name?: string; email?: string; role?: string } | undefined
     const storage = createD1ChatStorage(c.env.DB)
@@ -200,7 +205,7 @@ app.post('/complete', async (c) => {
     const { text, usage } = await generateText({
       model: resolveModel(c.env, modelId),
       messages: modelMessages,
-      maxOutputTokens: modelConfig?.defaultMaxTokens ?? 2000,
+      maxOutputTokens: modelConfig?.defaultMaxTokens ?? 16384,
     })
 
     return c.json({
@@ -288,6 +293,9 @@ app.post('/extract', async (c) => {
         400
       )
     }
+    if (text.length > 100_000) {
+      return c.json({ error: 'Text too long (max 100,000 characters)' }, 400)
+    }
 
     // Use a tool-capable model for structured output
     const modelId = '@cf/moonshotai/kimi-k2.5'
@@ -331,6 +339,9 @@ app.post('/stream-extract', async (c) => {
         { error: 'Required: text (string) and schema (summary | entities | sentiment)' },
         400
       )
+    }
+    if (text.length > 100_000) {
+      return c.json({ error: 'Text too long (max 100,000 characters)' }, 400)
     }
 
     const modelId = '@cf/moonshotai/kimi-k2.5'

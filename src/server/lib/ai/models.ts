@@ -47,7 +47,7 @@ function fromCatalogue(m: CatalogueModel & { source?: 'openrouter' | 'workers-ai
     supportsTools: caps?.tools ?? true,
     supportsVision: caps?.vision ?? m.modality?.includes('image') ?? false,
     supportsPdf: caps?.pdf ?? false,
-    defaultMaxTokens: Math.min(m.max_output ?? 4096, 8192),
+    defaultMaxTokens: m.max_output ?? 16384,
     description:
       `${m.short_name ?? m.name ?? m.id} — ${ctxK}K ctx` +
       (isFree ? ', free via Workers AI' : priceIn > 0 ? `, $${priceIn}/M in` : ''),
@@ -75,7 +75,7 @@ export const MODEL_REGISTRY: Record<string, ModelConfig> = (() => {
         supportsTools: true,
         supportsVision: false,
         supportsPdf: false,
-        defaultMaxTokens: 4096,
+        defaultMaxTokens: 16384,
         description: `${id} (not in catalogue — run pnpm models:refresh)`,
         tier: 'balanced',
       }

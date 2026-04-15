@@ -100,7 +100,7 @@ export async function buildChatAgent(ctx: AgentContext): Promise<AgentResult> {
     instructions,
     tools,
     stopWhen: modelConfig?.supportsTools ? [stepCountIs(5), hasToolCall('done')] : stepCountIs(1),
-    maxOutputTokens: modelConfig?.defaultMaxTokens ?? 2000,
+    maxOutputTokens: modelConfig?.defaultMaxTokens ?? 16384,
     prepareStep: (opts) => {
       try {
         return budgetCheck(opts) as PrepareStepResult
