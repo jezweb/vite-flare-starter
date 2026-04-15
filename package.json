@@ -24,6 +24,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:agent": "bash scripts/test-agent.sh",
     "type-check": "tsc --noEmit",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
