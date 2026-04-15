@@ -87,6 +87,7 @@ export function useChat(options: ChatOptions = {}) {
     status: chat.status,
     conversationId: latestConversationId,
     sendMessage: chat.sendMessage,
+    regenerate: chat.regenerate,
     stop: chat.stop,
     clearMessages: () => chat.setMessages([]),
     setMessages: chat.setMessages,

@@ -74,6 +74,7 @@ export function ChatPage() {
     status,
     conversationId,
     sendMessage,
+    regenerate,
     stop,
     clearMessages,
     setMessages,
@@ -122,23 +123,11 @@ export function ChatPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sharedText])
 
-  // Regenerate: remove last assistant message and re-send last user message
+  // Regenerate: uses AI SDK's built-in regenerate (removes last assistant + re-sends)
   const handleRegenerate = useCallback(() => {
-    if (isLoading || messages.length < 2) return
-    const lastAssistantIdx = [...messages].reverse().findIndex((m) => m.role === 'assistant')
-    if (lastAssistantIdx === -1) return
-    const removeFrom = messages.length - 1 - lastAssistantIdx
-    const remaining = messages.slice(0, removeFrom)
-    const lastUserMsg = [...remaining].reverse().find((m) => m.role === 'user')
-    if (!lastUserMsg) return
-    const userText = lastUserMsg.parts
-      ?.filter((p): p is Extract<typeof p, { type: 'text' }> => p.type === 'text')
-      .map((p) => p.text)
-      .join('') || ''
-    if (!userText) return
-    setMessages(remaining)
-    setTimeout(() => sendMessage({ text: userText }), 50)
-  }, [messages, isLoading, setMessages, sendMessage])
+    if (isLoading) return
+    regenerate()
+  }, [isLoading, regenerate])
 
   // Edit a user message: truncate to that point and re-send with new text
   const handleEdit = useCallback(
@@ -319,23 +308,30 @@ export function ChatPage() {
           </div>
         </div>
 
-        {/* Messages */}
+        {/* Messages — skip consecutive duplicate user messages (from regenerate) */}
         {hasMessages ? (
           <Conversation className="flex-1">
             <ConversationContent className="max-w-3xl mx-auto w-full px-4 py-6">
-              {messages.map((message, idx) => (
-                <MessageRenderer
-                  key={message.id}
-                  message={message}
-                  isLast={idx === lastAssistantIdx && !isLoading}
-                  isLoading={isLoading && idx === messages.length - 1}
-                  onRegenerate={handleRegenerate}
-                  onEdit={handleEdit}
-                  onSendMessage={(text) => sendMessage({ text })}
-                  onToolApproval={handleToolApproval}
-                  userImage={session?.user?.image}
-                />
-              ))}
+              {messages.map((message, idx) => {
+                // Hide duplicate user messages left by regenerate
+                if (message.role === 'user' && idx > 0) {
+                  const prev = messages[idx - 1]
+                  if (prev?.role === 'user') return null
+                }
+                return (
+                  <MessageRenderer
+                    key={message.id}
+                    message={message}
+                    isLast={idx === lastAssistantIdx && !isLoading}
+                    isLoading={isLoading && idx === messages.length - 1}
+                    onRegenerate={handleRegenerate}
+                    onEdit={handleEdit}
+                    onSendMessage={(text) => sendMessage({ text })}
+                    onToolApproval={handleToolApproval}
+                    userImage={session?.user?.image}
+                  />
+                )
+              })}
             </ConversationContent>
             <ConversationScrollButton />
           </Conversation>
