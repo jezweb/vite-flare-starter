@@ -8,6 +8,7 @@
  */
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import {
   Conversation,
@@ -52,6 +53,7 @@ export function ChatPage() {
   const { conversationId: urlConversationId } = useParams<{ conversationId?: string }>()
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { data: session } = useSession()
   const [model, setModel] = useState<string>(DEFAULT_MODEL_ID)
   const [showSidebar, setShowSidebar] = useState(false)
@@ -86,8 +88,10 @@ export function ChatPage() {
   useEffect(() => {
     if (conversationId && !urlConversationId && messages.length > 0) {
       navigate(`/dashboard/chat/${conversationId}`, { replace: true })
+      // Refresh sidebar so the new conversation appears
+      queryClient.invalidateQueries({ queryKey: ['conversations'] })
     }
-  }, [conversationId, urlConversationId, messages.length, navigate])
+  }, [conversationId, urlConversationId, messages.length, navigate, queryClient])
 
   // Hydrate messages when the conversation loads (useChat ignores initialMessages after mount).
   // Messages from the API have createdAt as ISO string (JSON serialisation); convert back to Date
