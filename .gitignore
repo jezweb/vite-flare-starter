@@ -46,3 +46,6 @@ coverage
 
 # Personal session tracking
 SESSION.md
+
+# Playwright CLI session captures (ephemeral page snapshots)
+.playwright-cli/
