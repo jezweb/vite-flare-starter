@@ -341,6 +341,32 @@ app.post('/webhooks/:provider', async (c) => {
 })
 ```
 
+### Pattern 9: Full-Text Search (FTS5)
+
+```typescript
+import { createFTSIndex, searchFTS, rebuildFTSIndex } from '@/server/lib/search'
+
+// One-time setup (in a migration or init endpoint):
+await createFTSIndex(db, {
+  table: 'conversation_messages',
+  columns: ['parts'],                    // JSON text column
+  ftsTable: 'conversation_messages_fts', // auto-creates triggers
+})
+
+// Search with BM25 ranking, joined to source table:
+const { results } = await searchFTS(db, {
+  ftsTable: 'conversation_messages_fts',
+  sourceTable: 'conversation_messages',
+  query: 'meeting notes',
+  limit: 20,
+})
+
+// Rebuild after bulk import:
+await rebuildFTSIndex(db, 'conversation_messages_fts')
+```
+
+**Reference:** `src/server/lib/search/fts.ts`, wired in `src/server/modules/conversations/routes.ts` (`GET /search`)
+
 ---
 
 ## UI Patterns
@@ -368,6 +394,8 @@ Use dedicated pages for forms and content. Modals only for confirmations and qui
 | **Inline Edit** | `src/client/components/InlineEdit.tsx` | Click-to-edit text fields (save on blur/Enter, cancel on Escape) |
 | **Skeletons** | `src/client/components/skeletons.tsx` | Loading placeholders: StatCard, Table, Chart, List, Page |
 | **Notification Bell** | `src/client/components/NotificationBell.tsx` | Unread count badge + dropdown |
+| **Audio Recorder** | `src/client/components/AudioRecorder.tsx` | Voice input, live duration, returns Blob. Compact mode for toolbars |
+| **Paste Upload** | `src/client/hooks/usePasteUpload.ts` | Cmd+V file/image paste handler. Global or element-scoped |
 
 ---
 
@@ -470,7 +498,26 @@ Use for: heavy ML inference, video processing, anything that exceeds Workers CPU
 
 One `OPENROUTER_API_KEY` unlocks all non-Workers-AI models. Direct-provider SDKs (`@ai-sdk/anthropic`, `@ai-sdk/openai`, `@ai-sdk/google`) are kept as fallbacks if you prefer native routing.
 
-AI features in the chat module: streaming, tool calling, reasoning extraction, vision (image attachments), structured output, token usage logging, message metadata, regenerate, conversation persistence, MCP integration, MCP-UI rendering.
+AI features in the chat module: streaming, tool calling, reasoning extraction, vision (image attachments), structured output, token usage logging, message metadata, regenerate, **message editing** (truncate + re-send), **conversation search** (FTS5), **conversation export** (JSON/Markdown), response duration display, conversation persistence, MCP integration, MCP-UI rendering.
+
+### Document Conversion
+
+`convertToMarkdown()` in `src/server/lib/ai/documents.ts` converts uploaded files to markdown:
+
+- **PDFs + images**: Uses `env.AI.toMarkdown()` (Cloudflare's built-in converter — free, fast, native PDF parsing)
+- **Fallback**: Vision model (Kimi K2.5) for formats `toMarkdown()` doesn't handle
+- **Text files**: Pass-through via `TextDecoder`
+
+### AI SDK v7 Migration
+
+v7 is in beta. When it goes stable, the migration is ~30 minutes:
+
+1. Rename `stepCountIs` → `isStepCount` (2 files, 4 lines)
+2. Remove `experimental_telemetry` block (1 file — we log via D1 already)
+3. Add `redirect: 'follow'` to MCP transport config (1 file)
+4. Drop `experimental_` prefix on promoted APIs (audio, useObject)
+
+All AI SDK imports are concentrated in `src/server/lib/ai/` (4 files). No architectural changes needed. `ChatStorage` interface is designed for future swap to Durable Objects / CF Agents SDK.
 
 ---
 
