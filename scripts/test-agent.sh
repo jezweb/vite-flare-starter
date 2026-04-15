@@ -22,7 +22,7 @@
 #   AGENT_TEST_COOKIE Session cookie value
 #   AGENT_TEST_MODEL  Model to test with (default: @cf/moonshotai/kimi-k2.5)
 
-set -euo pipefail
+set -uo pipefail
 
 # === Config ===
 URL="${AGENT_TEST_URL:-https://vite-flare-starter.webfonts.workers.dev}"
