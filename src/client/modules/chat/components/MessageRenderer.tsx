@@ -7,7 +7,7 @@
  * - tool-* / dynamic-tool → Tool accordion (plus our custom rich-output renderers)
  * - our custom markers (_artifact, _document, _ui) take precedence over the generic Tool view
  */
-import { memo } from 'react'
+import { memo, useState, useCallback } from 'react'
 import { Message, MessageContent, MessageResponse } from '@/components/ai-elements/message'
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@/components/ai-elements/reasoning'
 import { Tool, ToolContent, ToolHeader, ToolInput, ToolOutput } from '@/components/ai-elements/tool'
@@ -19,7 +19,8 @@ import { DocumentDownload, isDocument } from './chat-ui/DocumentDownload'
 import { extractUIResources, ToolUIResource } from './ToolUIResource'
 import { ToolApproval } from './chat-ui/ToolApproval'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Loader2, RotateCcw } from 'lucide-react'
+import { Textarea } from '@/components/ui/textarea'
+import { Loader2, RotateCcw, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -29,6 +30,8 @@ interface Props {
   isLoading?: boolean
   onRegenerate?: () => void
   onSendMessage?: (text: string) => void
+  /** Edit a user message and regenerate from that point. */
+  onEdit?: (messageId: string, newText: string) => void
   onToolApproval?: (params: { toolCallId: string; toolName: string; result: 'approve' | 'deny' }) => void
   userImage?: string | null
 }
@@ -39,11 +42,32 @@ export const MessageRenderer = memo(function MessageRenderer({
   isLoading,
   onRegenerate,
   onSendMessage,
+  onEdit,
   onToolApproval,
   userImage,
 }: Props) {
   const isAssistant = message.role === 'assistant'
+  const isUser = message.role === 'user'
   const metadata = (message as unknown as { metadata?: MessageMetadata }).metadata
+  const [editing, setEditing] = useState(false)
+  const [editText, setEditText] = useState('')
+
+  const startEdit = useCallback(() => {
+    const text = (message.parts ?? [])
+      .filter((p): p is { type: 'text'; text: string } => (p as { type: string }).type === 'text')
+      .map((p) => p.text)
+      .join('\n')
+    setEditText(text)
+    setEditing(true)
+  }, [message.parts])
+
+  const submitEdit = useCallback(() => {
+    const trimmed = editText.trim()
+    if (trimmed && onEdit) {
+      onEdit(message.id, trimmed)
+    }
+    setEditing(false)
+  }, [editText, message.id, onEdit])
 
   return (
     <Message from={message.role} className="gap-3">
@@ -63,8 +87,47 @@ export const MessageRenderer = memo(function MessageRenderer({
         </div>
       )}
 
-      {/* User messages: just the bubble */}
-      {!isAssistant && (
+      {/* User messages: bubble + optional edit */}
+      {isUser && editing && (
+        <div className="ml-auto max-w-[85%] space-y-2">
+          <Textarea
+            value={editText}
+            onChange={(e) => setEditText(e.target.value)}
+            className="min-h-20 text-sm"
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitEdit() }
+              if (e.key === 'Escape') setEditing(false)
+            }}
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setEditing(false)}>Cancel</Button>
+            <Button size="sm" onClick={submitEdit}>Save & regenerate</Button>
+          </div>
+        </div>
+      )}
+      {isUser && !editing && (
+        <div className="group relative ml-auto">
+          {onEdit && (
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              className="absolute -left-8 top-1 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground"
+              onClick={startEdit}
+              title="Edit message"
+            >
+              <Pencil className="size-3" />
+            </Button>
+          )}
+          <MessageBody
+            message={message}
+            onSendMessage={onSendMessage}
+            onToolApproval={onToolApproval}
+            userImage={userImage}
+          />
+        </div>
+      )}
+      {!isAssistant && !isUser && (
         <MessageBody
           message={message}
           onSendMessage={onSendMessage}
@@ -89,7 +152,10 @@ export const MessageRenderer = memo(function MessageRenderer({
             <span className="ml-auto text-[11px]">
               {metadata.model}
               {typeof metadata.inputTokens === 'number' && typeof metadata.outputTokens === 'number' && (
-                <> · {metadata.inputTokens + metadata.outputTokens} tokens</>
+                <> · {(metadata.inputTokens + metadata.outputTokens).toLocaleString()} tokens</>
+              )}
+              {typeof metadata.durationMs === 'number' && (
+                <> · {(metadata.durationMs / 1000).toFixed(1)}s</>
               )}
             </span>
           )}

@@ -26,7 +26,7 @@ import {
   PromptInputActionAddAttachments,
 } from '@/components/ai-elements/prompt-input'
 import { Suggestion } from '@/components/ai-elements/suggestion'
-import { Plus, MessageSquare, PanelLeft, PanelLeftClose, Sparkles } from 'lucide-react'
+import { Plus, MessageSquare, PanelLeft, PanelLeftClose, Sparkles, Download } from 'lucide-react'
 import { useChat, type Message } from '../hooks/useChat'
 import { useConversationMessages } from '../hooks/useConversations'
 import { ConversationSidebar } from '../components/ConversationSidebar'
@@ -121,6 +121,20 @@ export function ChatPage() {
     setMessages(remaining)
     setTimeout(() => sendMessage({ text: userText }), 50)
   }, [messages, isLoading, setMessages, sendMessage])
+
+  // Edit a user message: truncate to that point and re-send with new text
+  const handleEdit = useCallback(
+    (messageId: string, newText: string) => {
+      if (isLoading) return
+      const idx = messages.findIndex((m) => m.id === messageId)
+      if (idx === -1) return
+      // Keep everything before this message
+      const truncated = messages.slice(0, idx)
+      setMessages(truncated)
+      setTimeout(() => sendMessage({ text: newText }), 50)
+    },
+    [messages, isLoading, setMessages, sendMessage],
+  )
 
   // Find the last assistant message index
   const lastAssistantIdx = useMemo(() => {
@@ -248,7 +262,18 @@ export function ChatPage() {
             <MessageSquare className="size-4 text-muted-foreground ml-1" />
             <h1 className="text-sm font-medium">AI Chat</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            {hasMessages && conversationId && (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="text-muted-foreground"
+                onClick={() => window.open(`/api/conversations/${conversationId}/export?format=md`, '_blank')}
+                title="Export as Markdown"
+              >
+                <Download className="size-3.5" />
+              </Button>
+            )}
             {hasMessages && (
               <Button
                 variant="ghost"
@@ -278,6 +303,7 @@ export function ChatPage() {
                   isLast={idx === lastAssistantIdx && !isLoading}
                   isLoading={isLoading && idx === messages.length - 1}
                   onRegenerate={handleRegenerate}
+                  onEdit={handleEdit}
                   onSendMessage={(text) => sendMessage({ text })}
                   onToolApproval={handleToolApproval}
                   userImage={session?.user?.image}

@@ -1,12 +1,15 @@
 /**
- * ConversationSidebar — list of past conversations with CRUD
+ * ConversationSidebar — list of past conversations with search + CRUD
  */
-import { useState } from 'react'
+import { useState, useDeferredValue } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Trash2, MessageSquare } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { Plus, Trash2, MessageSquare, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
+import { apiClient } from '@/client/lib/api-client'
 import { useConversationList, useDeleteConversation } from '../hooks/useConversations'
 
 interface Props {
@@ -27,8 +30,23 @@ export function ConversationSidebar({ activeConversationId }: Props) {
   const { data, isLoading } = useConversationList()
   const deleteConversation = useDeleteConversation()
   const [hoveredId, setHoveredId] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const deferredQuery = useDeferredValue(searchQuery)
 
   const conversations = data?.conversations ?? []
+
+  // Search conversations when query is non-empty
+  const { data: searchResults } = useQuery({
+    queryKey: ['conversations', 'search', deferredQuery],
+    queryFn: () =>
+      apiClient.get<{ results: { conversationId: string; snippet: string; role: string }[] }>(
+        `/api/conversations/search?q=${encodeURIComponent(deferredQuery)}`,
+      ),
+    enabled: deferredQuery.length >= 2,
+  })
+
+  const isSearching = deferredQuery.length >= 2
+  const searchHits = searchResults?.results ?? []
 
   return (
     <div className="flex h-full w-56 flex-col border-r bg-muted/30 shrink-0">
@@ -45,8 +63,41 @@ export function ConversationSidebar({ activeConversationId }: Props) {
         </Button>
       </div>
 
+      {/* Search */}
+      <div className="px-2 pt-2">
+        <div className="relative">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/50" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search..."
+            className="h-7 pl-7 text-xs"
+          />
+        </div>
+      </div>
+
       <ScrollArea className="flex-1">
-        {isLoading ? (
+        {isSearching ? (
+          // Search results
+          searchHits.length === 0 ? (
+            <div className="p-4 text-center text-xs text-muted-foreground">
+              No results for "{deferredQuery}"
+            </div>
+          ) : (
+            <div className="p-1.5 space-y-0.5">
+              {searchHits.map((hit) => (
+                <div
+                  key={hit.conversationId}
+                  className="rounded-md px-2.5 py-2 cursor-pointer transition-colors hover:bg-muted"
+                  onClick={() => navigate(`/dashboard/chat/${hit.conversationId}`)}
+                >
+                  <div className="text-sm truncate">{hit.snippet}</div>
+                  <div className="text-[10px] text-muted-foreground">{hit.role === 'title' ? 'Title match' : 'Message match'}</div>
+                </div>
+              ))}
+            </div>
+          )
+        ) : isLoading ? (
           <div className="p-3 space-y-2">
             {[1, 2, 3].map((i) => (
               <div key={i} className="h-12 rounded bg-muted animate-pulse" />

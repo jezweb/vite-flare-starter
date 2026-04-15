@@ -9,6 +9,7 @@ import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import { createD1ChatStorage } from './storage'
+import { searchFTS } from '@/server/lib/search'
 
 const app = new Hono<AuthContext>()
 app.use('*', authMiddleware)
@@ -23,6 +24,55 @@ app.get('/', async (c) => {
   const items = await storage.listConversations(userId, { limit, offset })
 
   return c.json({ conversations: items })
+})
+
+/** GET /api/conversations/search — full-text search across conversations */
+app.get('/search', async (c) => {
+  const userId = c.get('userId')
+  const query = c.req.query('q')?.trim()
+  if (!query) return c.json({ results: [] })
+
+  try {
+    // Search message text via FTS5 (requires conversations_fts virtual table)
+    const { results } = await searchFTS<{ conversation_id: string; parts: string; role: string }>(
+      c.env.DB,
+      {
+        ftsTable: 'conversation_messages_fts',
+        sourceTable: 'conversation_messages',
+        query,
+        limit: 20,
+        select: '"conversation_messages".conversation_id, "conversation_messages".parts, "conversation_messages".role',
+      },
+    )
+
+    // Dedupe by conversation and return with snippet
+    const seen = new Set<string>()
+    const hits = results
+      .filter((r) => {
+        if (seen.has(r.conversation_id)) return false
+        seen.add(r.conversation_id)
+        return true
+      })
+      .map((r) => {
+        const parts = JSON.parse(r.parts) as { type: string; text?: string }[]
+        const text = parts.find((p) => p.type === 'text')?.text || ''
+        return {
+          conversationId: r.conversation_id,
+          snippet: text.slice(0, 150),
+          role: r.role,
+        }
+      })
+
+    return c.json({ results: hits })
+  } catch {
+    // FTS table may not exist yet — fall back to LIKE search on conversation titles
+    const storage = createD1ChatStorage(c.env.DB)
+    const all = await storage.listConversations(userId, { limit: 100 })
+    const filtered = all.filter((conv) =>
+      conv.title?.toLowerCase().includes(query.toLowerCase()),
+    )
+    return c.json({ results: filtered.map((conv) => ({ conversationId: conv.id, snippet: conv.title || '', role: 'title' })) })
+  }
 })
 
 /** GET /api/conversations/:id — load a conversation's messages */
@@ -42,6 +92,40 @@ app.delete('/:id', async (c) => {
 
   await storage.deleteConversation(conversationId, userId)
   return c.json({ success: true })
+})
+
+/** GET /api/conversations/:id/export — export as JSON or Markdown */
+app.get('/:id/export', async (c) => {
+  const conversationId = c.req.param('id')
+  const format = (c.req.query('format') || 'json') as 'json' | 'md'
+  const storage = createD1ChatStorage(c.env.DB)
+  const messages = await storage.loadChat(conversationId)
+
+  if (format === 'md') {
+    const lines: string[] = []
+    for (const msg of messages) {
+      const role = msg.role === 'user' ? '**You**' : '**AI**'
+      const textParts = (msg.parts ?? [])
+        .filter((p): p is { type: 'text'; text: string } => (p as { type: string }).type === 'text')
+        .map((p) => p.text)
+      if (textParts.length > 0) {
+        lines.push(`### ${role}\n\n${textParts.join('\n\n')}`)
+      }
+    }
+    return new Response(lines.join('\n\n---\n\n'), {
+      headers: {
+        'Content-Type': 'text/markdown; charset=utf-8',
+        'Content-Disposition': `attachment; filename="conversation-${conversationId.slice(0, 8)}.md"`,
+      },
+    })
+  }
+
+  return new Response(JSON.stringify({ conversationId, messages, exportedAt: new Date().toISOString() }, null, 2), {
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Content-Disposition': `attachment; filename="conversation-${conversationId.slice(0, 8)}.json"`,
+    },
+  })
 })
 
 /** PATCH /api/conversations/:id — update title */

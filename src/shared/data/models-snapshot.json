@@ -1,15 +1,15 @@
 {
-  "updated": "2026-04-14T22:49:41.181Z",
+  "updated": "2026-04-15T10:16:34.777Z",
   "total": 101,
   "sources": {
     "openrouter": {
       "url": "https://models.flared.au/json",
-      "updated": "2026-04-14T22:49:38.865Z",
+      "updated": "2026-04-15T10:16:33.439Z",
       "count": 47
     },
     "workersai": {
       "url": "https://ai.flared.au/json",
-      "updated": "2026-04-14T22:49:41.165Z",
+      "updated": "2026-04-15T10:16:34.763Z",
       "count": 90
     }
   },
@@ -1639,7 +1639,7 @@
     },
     {
       "id": "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b",
-      "short_name": "Deepseek R1 Distill Qwen 32B",
+      "short_name": "DeepSeek R1 Distill Qwen 32B",
       "provider": "deepseek-ai",
       "task": "text-generation",
       "params": "32B",
@@ -1664,7 +1664,7 @@
     },
     {
       "id": "@cf/deepseek-ai/deepseek-math-7b-instruct",
-      "short_name": "Deepseek Math 7B Instruct",
+      "short_name": "DeepSeek Math 7B Instruct",
       "provider": "deepseek-ai",
       "task": "text-generation",
       "params": "7B",
@@ -1739,7 +1739,7 @@
     },
     {
       "id": "@cf/google/gemma-4-26b-a4b-it",
-      "short_name": "Gemma 4 26B A4b IT",
+      "short_name": "Gemma 4 26B IT",
       "provider": "google",
       "task": "text-generation",
       "params": "26B",
@@ -2414,7 +2414,7 @@
     },
     {
       "id": "@cf/nvidia/nemotron-3-120b-a12b",
-      "short_name": "Nemotron 3 120B A12b",
+      "short_name": "Nemotron 3 120B",
       "provider": "nvidia",
       "task": "text-generation",
       "params": "120B",
@@ -2539,7 +2539,7 @@
     },
     {
       "id": "@cf/qwen/qwq-32b",
-      "short_name": "Qwq 32B",
+      "short_name": "QwQ 32B",
       "provider": "qwen",
       "task": "text-generation",
       "params": "32B",
@@ -2564,7 +2564,7 @@
     },
     {
       "id": "@cf/qwen/qwen3-30b-a3b-fp8",
-      "short_name": "Qwen3 30B A3b FP8",
+      "short_name": "Qwen3 30B FP8",
       "provider": "qwen",
       "task": "text-generation",
       "params": "30B",
@@ -2839,7 +2839,7 @@
     },
     {
       "id": "@hf/thebloke/deepseek-coder-6.7b-base-awq",
-      "short_name": "Deepseek Coder 6.7B Base AWQ",
+      "short_name": "DeepSeek Coder 6.7B Base AWQ",
       "provider": "thebloke",
       "task": "text-generation",
       "params": "6.7B",
@@ -2864,7 +2864,7 @@
     },
     {
       "id": "@hf/thebloke/deepseek-coder-6.7b-instruct-awq",
-      "short_name": "Deepseek Coder 6.7B Instruct AWQ",
+      "short_name": "DeepSeek Coder 6.7B Instruct AWQ",
       "provider": "thebloke",
       "task": "text-generation",
       "params": "6.7B",
@@ -2939,7 +2939,7 @@
     },
     {
       "id": "@cf/zai-org/glm-4.7-flash",
-      "short_name": "Glm 4.7 Flash",
+      "short_name": "GLM 4.7 Flash",
       "provider": "zai-org",
       "task": "text-generation",
       "params": null,
