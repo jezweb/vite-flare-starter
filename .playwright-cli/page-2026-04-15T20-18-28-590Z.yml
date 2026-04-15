@@ -1,0 +1,29 @@
+- generic [ref=e2]:
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]: Create an account
+      - generic [ref=e8]: Enter your information below to create your account
+    - generic [ref=e11]:
+      - group [ref=e12]:
+        - generic [ref=e13]: Full Name
+        - textbox "Full Name" [ref=e14]:
+          - /placeholder: John Doe
+      - group [ref=e15]:
+        - generic [ref=e16]: Email
+        - textbox "Email" [ref=e17]:
+          - /placeholder: m@example.com
+        - paragraph [ref=e18]: We'll use this to contact you. We will not share your email with anyone else.
+      - group [ref=e19]:
+        - generic [ref=e20]: Password
+        - textbox "Password" [ref=e21]
+      - group [ref=e22]:
+        - generic [ref=e23]: Confirm Password
+        - textbox "Confirm Password" [ref=e24]
+        - paragraph [ref=e25]: Please confirm your password.
+      - group [ref=e27]:
+        - button "Create Account" [ref=e28]
+        - paragraph [ref=e29]:
+          - text: Already have an account?
+          - link "Sign in" [ref=e30] [cursor=pointer]:
+            - /url: /sign-in
+  - region "Notifications alt+T"

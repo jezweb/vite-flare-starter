@@ -1,0 +1,266 @@
+- generic:
+  - generic:
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - list:
+                  - listitem:
+                    - link:
+                      - /url: /
+                      - generic:
+                        - generic: V
+                      - generic:
+                        - generic: Vite Flare Starter
+              - generic:
+                - generic:
+                  - generic: Main
+                  - generic:
+                    - list:
+                      - listitem:
+                        - link:
+                          - /url: /dashboard
+                          - img
+                          - generic: Home
+                      - listitem:
+                        - link:
+                          - /url: /dashboard/chat
+                          - img
+                          - generic: AI Chat
+                      - listitem:
+                        - link:
+                          - /url: /dashboard/extract
+                          - img
+                          - generic: Extract
+                      - listitem:
+                        - link:
+                          - /url: /dashboard/activity
+                          - img
+                          - generic: Activity
+                      - listitem:
+                        - link:
+                          - /url: /dashboard/files
+                          - img
+                          - generic: Files
+                - generic:
+                  - generic: Dev Tools
+                  - generic:
+                    - list:
+                      - listitem:
+                        - link:
+                          - /url: /dashboard/components
+                          - img
+                          - generic: Components
+                      - listitem:
+                        - link:
+                          - /url: /dashboard/style-guide
+                          - img
+                          - generic: Style Guide
+              - generic:
+                - list:
+                  - listitem:
+                    - button:
+                      - generic:
+                        - generic: TA
+                      - generic:
+                        - generic: Test Admin
+                        - generic: test@example.com
+                      - img
+              - button
+        - generic:
+          - heading [level=2]: Command Palette
+          - paragraph: Search for a command to run...
+        - main:
+          - generic:
+            - generic:
+              - button:
+                - img
+                - generic: Toggle Sidebar
+              - generic:
+                - button:
+                  - img
+                  - generic: Notifications
+                - button:
+                  - img
+                  - generic: Toggle theme
+          - main:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic: Conversations
+                    - button:
+                      - img
+                  - generic:
+                    - generic:
+                      - img
+                      - textbox:
+                        - /placeholder: Search...
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic: Today
+                            - generic:
+                              - generic:
+                                - img
+                                - generic:
+                                  - generic: What is 2+2?
+                                  - generic: just now
+                - generic:
+                  - generic:
+                    - generic:
+                      - button:
+                        - img
+                      - img
+                      - heading [level=1]: AI Chat
+                    - generic:
+                      - button:
+                        - img
+                      - button:
+                        - img
+                        - text: New chat
+                  - log:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - button:
+                              - img
+                            - generic:
+                              - generic:
+                                - paragraph: What is 2+2?
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic: AI
+                            - generic:
+                              - generic:
+                                - button:
+                                  - img
+                                  - paragraph: Thought for a few seconds
+                                  - img
+                              - generic:
+                                - button [expanded]:
+                                  - generic:
+                                    - img
+                                    - generic: calculate
+                                    - generic:
+                                      - img
+                                      - text: Completed
+                                  - img
+                                - generic:
+                                  - generic:
+                                    - heading [level=4]: Parameters
+                                    - generic:
+                                      - generic:
+                                        - generic:
+                                          - generic:
+                                            - code:
+                                              - generic: "{"
+                                              - generic: "\"expression\": \"2 + 2\""
+                                              - generic: "}"
+                                  - generic:
+                                    - heading [level=4]: Result
+                                    - generic:
+                                      - generic:
+                                        - generic:
+                                          - generic:
+                                            - code:
+                                              - generic: "{"
+                                              - generic: "\"expression\": \"2 + 2\","
+                                              - generic: "\"result\": 4"
+                                              - generic: "}"
+                              - generic:
+                                - button:
+                                  - img
+                                  - paragraph: Thought for a few seconds
+                                  - img
+                              - generic:
+                                - paragraph: 2 + 2 = 4
+                          - generic:
+                            - button:
+                              - img
+                              - text: Copy
+                            - button:
+                              - img
+                              - text: Regenerate
+                            - generic: "@cf/moonshotai/kimi-k2.5 · 15,005 tokens · 4.0s"
+                  - generic:
+                    - generic:
+                      - generic:
+                        - group:
+                          - textbox:
+                            - /placeholder: Reply to the AI...
+                          - group:
+                            - generic:
+                              - button:
+                                - img
+                              - button:
+                                - img
+                              - combobox [expanded]:
+                                - generic: Kimi K2.5
+                                - img
+                              - combobox
+                            - button:
+                              - img
+    - region "Notifications alt+T"
+  - listbox [ref=e439]:
+    - generic [ref=e440]:
+      - generic [ref=e441]: Free · Workers AI
+      - option "Kimi K2.5" [active] [selected] [ref=e442]:
+        - generic [ref=e444]:
+          - img
+        - generic [ref=e447]: Kimi K2.5
+      - option "Gemma 4 26B IT" [ref=e448]:
+        - generic [ref=e452]: Gemma 4 26B IT
+      - option "GLM 4.7 Flash" [ref=e453]:
+        - generic [ref=e457]: GLM 4.7 Flash
+      - option "QwQ 32B no tools reasoning" [ref=e458]:
+        - generic [ref=e461]:
+          - generic [ref=e462]: QwQ 32B
+          - generic [ref=e463]: no tools
+          - generic [ref=e464]: reasoning
+    - generic [ref=e465]:
+      - generic [ref=e466]: Google
+      - option "Gemini 3.1 Pro Preview" [ref=e467]:
+        - generic [ref=e471]: Gemini 3.1 Pro Preview
+      - option "Gemini 3 Flash Preview" [ref=e472]:
+        - generic [ref=e476]: Gemini 3 Flash Preview
+    - generic [ref=e477]:
+      - generic [ref=e478]: Anthropic
+      - option "Claude Opus 4.6" [ref=e479]:
+        - generic [ref=e483]: Claude Opus 4.6
+      - option "Claude Sonnet 4.6" [ref=e484]:
+        - generic [ref=e488]: Claude Sonnet 4.6
+      - option "Claude Haiku 4.5" [ref=e489]:
+        - generic [ref=e493]: Claude Haiku 4.5
+    - generic [ref=e494]:
+      - generic [ref=e495]: OpenAI
+      - option "GPT-5.4" [ref=e496]:
+        - generic [ref=e500]: GPT-5.4
+      - option "GPT-5.4 Mini" [ref=e501]:
+        - generic [ref=e505]: GPT-5.4 Mini
+    - generic [ref=e506]:
+      - generic [ref=e507]: DeepSeek
+      - option "DeepSeek V3.2 Speciale no tools reasoning" [ref=e508]:
+        - generic [ref=e511]:
+          - generic [ref=e512]: DeepSeek V3.2 Speciale
+          - generic [ref=e513]: no tools
+          - generic [ref=e514]: reasoning
+    - generic [ref=e515]:
+      - generic [ref=e516]: Mistral
+      - option "Mistral Large 3 2512" [ref=e517]:
+        - generic [ref=e521]: Mistral Large 3 2512
+    - generic [ref=e522]:
+      - generic [ref=e523]: xAI
+      - option "Grok 4.1 Fast" [ref=e524]:
+        - generic [ref=e528]: Grok 4.1 Fast
+    - generic [ref=e529]:
+      - generic [ref=e530]: Z.AI
+      - option "GLM 5" [ref=e531]:
+        - generic [ref=e535]: GLM 5
+    - img [ref=e537]

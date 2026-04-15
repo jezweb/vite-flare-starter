@@ -1,0 +1,170 @@
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - generic [ref=e7]:
+      - list [ref=e9]:
+        - listitem [ref=e10]:
+          - link "V Vite Flare Starter" [ref=e11] [cursor=pointer]:
+            - /url: /
+            - generic [ref=e13]: V
+            - generic [ref=e15]: Vite Flare Starter
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - generic [ref=e18]: Main
+          - list [ref=e20]:
+            - listitem [ref=e21]:
+              - link "Home" [ref=e22] [cursor=pointer]:
+                - /url: /dashboard
+                - img [ref=e23]
+                - generic [ref=e26]: Home
+            - listitem [ref=e27]:
+              - link "AI Chat" [ref=e28] [cursor=pointer]:
+                - /url: /dashboard/chat
+                - img [ref=e29]
+                - generic [ref=e31]: AI Chat
+            - listitem [ref=e32]:
+              - link "Extract" [ref=e33] [cursor=pointer]:
+                - /url: /dashboard/extract
+                - img [ref=e34]
+                - generic [ref=e37]: Extract
+            - listitem [ref=e38]:
+              - link "Activity" [ref=e39] [cursor=pointer]:
+                - /url: /dashboard/activity
+                - img [ref=e40]
+                - generic [ref=e42]: Activity
+            - listitem [ref=e43]:
+              - link "Files" [ref=e44] [cursor=pointer]:
+                - /url: /dashboard/files
+                - img [ref=e45]
+                - generic [ref=e47]: Files
+        - generic [ref=e48]:
+          - generic [ref=e49]: Dev Tools
+          - list [ref=e51]:
+            - listitem [ref=e52]:
+              - link "Components" [ref=e53] [cursor=pointer]:
+                - /url: /dashboard/components
+                - img [ref=e54]
+                - generic [ref=e59]: Components
+            - listitem [ref=e60]:
+              - link "Style Guide" [ref=e61] [cursor=pointer]:
+                - /url: /dashboard/style-guide
+                - img [ref=e62]
+                - generic [ref=e68]: Style Guide
+      - list [ref=e70]:
+        - listitem [ref=e71]:
+          - button "TA Test Admin test@example.com" [ref=e72]:
+            - generic [ref=e74]: TA
+            - generic [ref=e75]:
+              - generic [ref=e76]: Test Admin
+              - generic [ref=e77]: test@example.com
+            - img [ref=e78]
+      - button "Toggle Sidebar" [ref=e82]
+    - generic [ref=e83]:
+      - heading "Command Palette" [level=2] [ref=e84]
+      - paragraph [ref=e85]: Search for a command to run...
+    - main [ref=e86]:
+      - generic [ref=e88]:
+        - button "Toggle Sidebar" [ref=e89]:
+          - img
+          - generic [ref=e90]: Toggle Sidebar
+        - generic [ref=e91]:
+          - button "Notifications" [ref=e92]:
+            - img
+            - generic [ref=e93]: Notifications
+          - button "Toggle theme" [ref=e94]:
+            - img
+            - generic [ref=e95]: Toggle theme
+      - main [ref=e105]:
+        - generic [ref=e300]:
+          - generic [ref=e334]:
+            - generic [ref=e335]:
+              - generic [ref=e336]: Conversations
+              - button "New conversation" [ref=e337]:
+                - img
+            - generic [ref=e339]:
+              - img [ref=e340]
+              - textbox "Search..." [ref=e343]
+            - generic [ref=e349]:
+              - generic [ref=e350]: Today
+              - generic [ref=e352] [cursor=pointer]:
+                - img [ref=e353]
+                - generic [ref=e355]:
+                  - generic [ref=e356]: What is 2+2?
+                  - generic [ref=e357]: just now
+          - generic [ref=e301]:
+            - generic [ref=e302]:
+              - generic [ref=e303]:
+                - button "Hide conversations" [ref=e348]:
+                  - img
+                - img [ref=e305]
+                - heading "AI Chat" [level=1] [ref=e307]
+              - generic [ref=e358]:
+                - button "Export as Markdown" [ref=e359]:
+                  - img
+                - button "New chat" [ref=e360]:
+                  - img
+                  - text: New chat
+            - log [ref=e361]:
+              - generic [ref=e363]:
+                - generic [ref=e545]:
+                  - button "Edit message" [ref=e546]:
+                    - img
+                  - paragraph [ref=e549]: What is 2+2?
+                - generic [ref=e370]:
+                  - generic [ref=e371]:
+                    - generic [ref=e373]: AI
+                    - generic [ref=e374]:
+                      - button "Thought for a few seconds" [ref=e376]:
+                        - img [ref=e377]
+                        - paragraph [ref=e385]: Thought for a few seconds
+                        - img [ref=e386]
+                      - generic [ref=e388]:
+                        - button "calculate Completed" [expanded] [ref=e389]:
+                          - generic [ref=e390]:
+                            - img [ref=e391]
+                            - generic [ref=e393]: calculate
+                            - generic [ref=e394]:
+                              - img
+                              - text: Completed
+                          - img [ref=e395]
+                        - generic [ref=e397]:
+                          - generic [ref=e398]:
+                            - heading "Parameters" [level=4] [ref=e399]
+                            - code [ref=e404]:
+                              - generic [ref=e405]: "{"
+                              - generic [ref=e406]: "\"expression\": \"2 + 2\""
+                              - generic [ref=e407]: "}"
+                          - generic [ref=e408]:
+                            - heading "Result" [level=4] [ref=e409]
+                            - code [ref=e414]:
+                              - generic [ref=e415]: "{"
+                              - generic [ref=e416]: "\"expression\": \"2 + 2\","
+                              - generic [ref=e417]: "\"result\": 4"
+                              - generic [ref=e418]: "}"
+                      - button "Thought for a few seconds" [ref=e420]:
+                        - img [ref=e421]
+                        - paragraph [ref=e429]: Thought for a few seconds
+                        - img [ref=e430]
+                      - paragraph [ref=e433]: 2 + 2 = 4
+                  - generic [ref=e434]:
+                    - button "Copy" [ref=e435]:
+                      - img
+                      - text: Copy
+                    - button "Regenerate" [ref=e436]:
+                      - img
+                      - text: Regenerate
+                    - generic [ref=e437]: "@cf/moonshotai/kimi-k2.5 · 15,005 tokens · 4.0s"
+            - group [ref=e325]:
+              - textbox "Reply to the AI..." [ref=e438]
+              - group [ref=e327]:
+                - generic [ref=e328]:
+                  - button [ref=e329]:
+                    - img
+                  - button "Record audio" [ref=e330]:
+                    - img
+                  - combobox [ref=e331]:
+                    - generic: Kimi K2.5
+                    - img
+                  - combobox [ref=e332]
+                - button "Submit" [ref=e333]:
+                  - img
+  - region "Notifications alt+T"

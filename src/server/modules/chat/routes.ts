@@ -13,6 +13,7 @@ import { desc, eq, sql } from 'drizzle-orm'
 import { authMiddleware, requireScopes, type AuthContext } from '@/server/middleware/auth'
 import { DEFAULT_MODEL, getModel, resolveModel, buildChatAgent } from '@/server/lib/ai'
 import { createD1ChatStorage } from '@/server/modules/conversations/storage'
+import { logActivityFromContext } from '@/server/modules/activity/log'
 import { aiUsageLogs } from './db/schema'
 
 const app = new Hono<AuthContext>()
@@ -64,6 +65,13 @@ app.post('/', async (c) => {
         title: extractTitle(firstUserMsg),
         model: requestedModel || DEFAULT_MODEL,
         systemPrompt,
+      })
+      await logActivityFromContext(c, {
+        action: 'create',
+        entityType: 'conversation',
+        entityId: conversationId,
+        entityName: extractTitle(firstUserMsg),
+        metadata: { model: requestedModel || DEFAULT_MODEL },
       })
     }
 

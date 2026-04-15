@@ -1,0 +1,10 @@
+- generic [ref=e2]:
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]: Registration Closed
+      - generic [ref=e8]: New account registration is currently disabled.
+    - paragraph [ref=e10]:
+      - text: Already have an account?
+      - link "Sign in" [ref=e11] [cursor=pointer]:
+        - /url: /sign-in
+  - region "Notifications alt+T"

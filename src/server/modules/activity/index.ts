@@ -7,3 +7,5 @@
 export { activityLogs, activityLogsRelations, ACTIVITY_ACTIONS } from './db/schema'
 export type { ActivityLog, NewActivityLog, ActivityAction } from './db/schema'
 export { default as activityRoutes } from './routes'
+export { logActivity, logActivityFromContext } from './log'
+export type { LogActivityInput } from './log'

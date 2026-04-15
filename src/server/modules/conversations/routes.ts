@@ -10,6 +10,7 @@ import { z } from 'zod'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import { createD1ChatStorage } from './storage'
 import { searchFTS } from '@/server/lib/search'
+import { logActivityFromContext } from '@/server/modules/activity/log'
 
 const app = new Hono<AuthContext>()
 app.use('*', authMiddleware)
@@ -99,6 +100,11 @@ app.delete('/:id', async (c) => {
   const storage = createD1ChatStorage(c.env.DB)
 
   await storage.deleteConversation(conversationId, userId)
+  await logActivityFromContext(c, {
+    action: 'delete',
+    entityType: 'conversation',
+    entityId: conversationId,
+  })
   return c.json({ success: true })
 })
 

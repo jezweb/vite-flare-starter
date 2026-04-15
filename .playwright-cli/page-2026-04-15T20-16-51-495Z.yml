@@ -1,0 +1,193 @@
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - generic [ref=e7]:
+      - list [ref=e9]:
+        - listitem [ref=e10]:
+          - link "V Vite Flare Starter" [ref=e11] [cursor=pointer]:
+            - /url: /
+            - generic [ref=e13]: V
+            - generic [ref=e15]: Vite Flare Starter
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - generic [ref=e18]: Main
+          - list [ref=e20]:
+            - listitem [ref=e21]:
+              - link "Home" [ref=e22] [cursor=pointer]:
+                - /url: /dashboard
+                - img [ref=e23]
+                - generic [ref=e26]: Home
+            - listitem [ref=e27]:
+              - link "AI Chat" [ref=e28] [cursor=pointer]:
+                - /url: /dashboard/chat
+                - img [ref=e29]
+                - generic [ref=e31]: AI Chat
+            - listitem [ref=e32]:
+              - link "Extract" [ref=e33] [cursor=pointer]:
+                - /url: /dashboard/extract
+                - img [ref=e34]
+                - generic [ref=e37]: Extract
+            - listitem [ref=e38]:
+              - link "Activity" [ref=e39] [cursor=pointer]:
+                - /url: /dashboard/activity
+                - img [ref=e40]
+                - generic [ref=e42]: Activity
+            - listitem [ref=e43]:
+              - link "Files" [ref=e44] [cursor=pointer]:
+                - /url: /dashboard/files
+                - img [ref=e45]
+                - generic [ref=e47]: Files
+        - generic [ref=e48]:
+          - generic [ref=e49]: Dev Tools
+          - list [ref=e51]:
+            - listitem [ref=e52]:
+              - link "Components" [ref=e53] [cursor=pointer]:
+                - /url: /dashboard/components
+                - img [ref=e54]
+                - generic [ref=e59]: Components
+            - listitem [ref=e60]:
+              - link "Style Guide" [ref=e61] [cursor=pointer]:
+                - /url: /dashboard/style-guide
+                - img [ref=e62]
+                - generic [ref=e68]: Style Guide
+      - list [ref=e70]:
+        - listitem [ref=e71]:
+          - button "TA Test Admin test@example.com" [ref=e72]:
+            - generic [ref=e74]: TA
+            - generic [ref=e75]:
+              - generic [ref=e76]: Test Admin
+              - generic [ref=e77]: test@example.com
+            - img [ref=e78]
+      - button "Toggle Sidebar" [ref=e82]
+    - generic [ref=e83]:
+      - heading "Command Palette" [level=2] [ref=e84]
+      - paragraph [ref=e85]: Search for a command to run...
+    - main [ref=e86]:
+      - generic [ref=e88]:
+        - button "Toggle Sidebar" [ref=e89]:
+          - img
+          - generic [ref=e90]: Toggle Sidebar
+        - generic [ref=e91]:
+          - button "Notifications" [ref=e92]:
+            - img
+            - generic [ref=e93]: Notifications
+          - button "Toggle theme" [ref=e94]:
+            - img
+            - generic [ref=e95]: Toggle theme
+      - alert [ref=e96]:
+        - img [ref=e97]
+        - generic [ref=e100]:
+          - generic [ref=e101]: Please verify your email address to access all features.
+          - generic [ref=e102]:
+            - button "Resend Email" [ref=e103]
+            - button [ref=e104]:
+              - img
+      - main [ref=e105]:
+        - generic [ref=e107]:
+          - generic [ref=e108]:
+            - heading "Welcome, Test" [level=1] [ref=e109]
+            - paragraph [ref=e110]: AI agent starter kit with 60+ tools, conversation persistence, and full Cloudflare edge platform integration.
+          - generic [ref=e111]:
+            - generic [ref=e112]:
+              - generic [ref=e113]:
+                - generic [ref=e114]:
+                  - img [ref=e115]
+                  - text: AI Chat
+                - generic [ref=e117]: Multi-model streaming chat with tool calling, conversation history, and inline UI.
+              - link "Open chat" [ref=e119] [cursor=pointer]:
+                - /url: /dashboard/chat
+                - text: Open chat
+                - img
+            - generic [ref=e120]:
+              - generic [ref=e121]:
+                - generic [ref=e122]:
+                  - img [ref=e123]
+                  - text: Extract
+                - generic [ref=e126]: Structured data extraction with streaming output. Summary, entities, sentiment.
+              - link "Try extract" [ref=e128] [cursor=pointer]:
+                - /url: /dashboard/extract
+                - text: Try extract
+                - img
+            - generic [ref=e129]:
+              - generic [ref=e130]:
+                - generic [ref=e131]:
+                  - img [ref=e132]
+                  - text: Settings
+                - generic [ref=e135]: Profile, password, appearance, sessions, and data export.
+              - link "Open settings" [ref=e137] [cursor=pointer]:
+                - /url: /dashboard/settings
+                - text: Open settings
+                - img
+          - generic [ref=e138]:
+            - generic [ref=e139]:
+              - generic [ref=e141]:
+                - img [ref=e142]
+                - text: AI SDK v6
+              - list [ref=e151]:
+                - listitem [ref=e152]: ToolLoopAgent pattern
+                - listitem [ref=e154]: Multi-provider factory
+                - listitem [ref=e156]: Streaming + reasoning
+                - listitem [ref=e158]: Conversation persistence
+            - generic [ref=e160]:
+              - generic [ref=e162]:
+                - img [ref=e163]
+                - text: 60+ Agent Tools
+              - list [ref=e166]:
+                - listitem [ref=e167]: Browser, search, memory, files
+                - listitem [ref=e169]: Code execution, delegation
+                - listitem [ref=e171]: Scheduling, audio, UI tools
+                - listitem [ref=e173]: Skills system (14 bundled)
+            - generic [ref=e175]:
+              - generic [ref=e177]:
+                - img [ref=e178]
+                - text: Image Processing
+              - list [ref=e183]:
+                - listitem [ref=e184]: Resize, crop, format convert
+                - listitem [ref=e186]: AI background removal
+                - listitem [ref=e188]: AI face detection
+                - listitem [ref=e190]: Image generation (FLUX/GPT)
+            - generic [ref=e192]:
+              - generic [ref=e194]:
+                - img [ref=e195]
+                - text: Video Processing
+              - list [ref=e199]:
+                - listitem [ref=e200]: Clip and resize
+                - listitem [ref=e202]: Frame extraction
+                - listitem [ref=e204]: Audio extraction
+                - listitem [ref=e206]: Spritesheet generation
+            - generic [ref=e208]:
+              - generic [ref=e210]:
+                - img [ref=e211]
+                - text: Semantic Search
+              - list [ref=e215]:
+                - listitem [ref=e216]: AI SDK embeddings
+                - listitem [ref=e218]: Vectorize-ready
+                - listitem [ref=e220]: Cosine similarity
+                - listitem [ref=e222]: In-memory fallback
+            - generic [ref=e224]:
+              - generic [ref=e226]:
+                - img [ref=e227]
+                - text: Business Modules
+              - list [ref=e231]:
+                - listitem [ref=e232]: Comments, tags, watchers
+                - listitem [ref=e234]: Favourites, recent views
+                - listitem [ref=e236]: Soft delete + trash
+                - listitem [ref=e238]: CSV import/export
+            - generic [ref=e240]:
+              - generic [ref=e242]:
+                - img [ref=e243]
+                - text: Auth + Admin
+              - list [ref=e246]:
+                - listitem [ref=e247]: Google OAuth + email/password
+                - listitem [ref=e249]: Role-based access
+                - listitem [ref=e251]: API tokens with scopes
+                - listitem [ref=e253]: Session management
+            - generic [ref=e255]:
+              - generic [ref=e257]:
+                - img [ref=e258]
+                - text: UI Library
+              - list [ref=e262]:
+                - listitem [ref=e263]: 59 shadcn/ui components
+                - listitem [ref=e265]: Milkdown markdown editor
+                - listitem [ref=e267]: DataTable (TanStack Table)
+                - listitem [ref=e269]: Dark/light + 8 themes
+  - region "Notifications alt+T"

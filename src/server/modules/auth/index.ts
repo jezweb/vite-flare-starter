@@ -2,6 +2,7 @@ import { betterAuth } from 'better-auth'
 import type { D1Database } from '@cloudflare/workers-types'
 import { Resend } from 'resend'
 import { SESSION } from '@/shared/config/constants'
+import { logActivity } from '@/server/modules/activity/log'
 
 /** Default trusted origins (always included) */
 const DEFAULT_TRUSTED_ORIGINS = ['http://localhost:5173']
@@ -135,6 +136,42 @@ export function createAuth(
       },
     },
 
+    // Audit trail — log signups and logins to the activity feed.
+    // Hooks fire after the DB write so the user/session id exists.
+    databaseHooks: {
+      user: {
+        create: {
+          after: async (newUser) => {
+            await logActivity(d1, {
+              userId: newUser.id,
+              action: 'create',
+              entityType: 'user',
+              entityId: newUser.id,
+              entityName: newUser.email,
+              metadata: { event: 'signup' },
+            })
+          },
+        },
+      },
+      session: {
+        create: {
+          after: async (newSession) => {
+            await logActivity(d1, {
+              userId: newSession.userId,
+              action: 'create',
+              entityType: 'session',
+              entityId: newSession.id,
+              metadata: {
+                event: 'login',
+                ipAddress: newSession.ipAddress ?? null,
+                userAgent: newSession.userAgent ?? null,
+              },
+            })
+          },
+        },
+      },
+    },
+
     // Email verification configuration
     emailVerification: {
       sendVerificationEmail: async ({ user, url }) => {
@@ -195,6 +232,20 @@ export function createAuth(
 
     // User management features
     user: {
+      // Expose `role` to /api/auth/get-session and the signed session cookie so
+      // client-side code (sidebar `minRole`, admin gates) can read it without a
+      // separate /api/admin/status round-trip.
+      // - `input: false` prevents users from setting their own role on signup.
+      // - `defaultValue: 'user'` matches the SQL default in the user table.
+      additionalFields: {
+        role: {
+          type: 'string',
+          required: false,
+          defaultValue: 'user',
+          input: false,
+        },
+      },
+
       // Email change with verification
       changeEmail: {
         enabled: true,

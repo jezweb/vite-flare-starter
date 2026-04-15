@@ -1,0 +1,22 @@
+- generic [ref=e2]:
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]: No auth method configured
+      - generic [ref=e8]:
+        - text: The server has no enabled login methods. Set one of these in
+        - code [ref=e9]: .dev.vars
+        - text: "(local) or wrangler secrets (production):"
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - generic [ref=e12]: Email + password
+        - generic [ref=e13]: ENABLE_EMAIL_LOGIN=true ENABLE_EMAIL_SIGNUP=true
+      - generic [ref=e14]:
+        - generic [ref=e15]: Google OAuth
+        - generic [ref=e16]: GOOGLE_CLIENT_ID=... GOOGLE_CLIENT_SECRET=...
+      - paragraph [ref=e17]:
+        - text: After updating, restart
+        - code [ref=e18]: pnpm dev
+        - text: and reload this page. See the README and
+        - code [ref=e19]: .dev.vars.example
+        - text: for the full setup.
+  - region "Notifications alt+T"

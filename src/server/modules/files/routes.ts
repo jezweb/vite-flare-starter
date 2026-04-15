@@ -5,6 +5,7 @@ import { eq, and, desc } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import { files, type File } from './db/schema'
+import { logActivityFromContext } from '@/server/modules/activity/log'
 
 // Constants
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
@@ -182,6 +183,14 @@ app.post('/', async (c) => {
     })
     .returning()
 
+  await logActivityFromContext(c, {
+    action: 'create',
+    entityType: 'file',
+    entityId: fileId,
+    entityName: file.name,
+    metadata: { mimeType: file.type, size: file.size, folder },
+  })
+
   return c.json({ file: newFile }, 201)
 })
 
@@ -254,6 +263,13 @@ app.delete('/:id', async (c) => {
 
   // Delete database record
   await db.delete(files).where(eq(files.id, fileId))
+
+  await logActivityFromContext(c, {
+    action: 'delete',
+    entityType: 'file',
+    entityId: fileId,
+    entityName: file.name,
+  })
 
   return c.json({ success: true })
 })

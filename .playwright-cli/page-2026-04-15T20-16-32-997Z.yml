@@ -1,0 +1,23 @@
+- generic [ref=e2]:
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]: Login to your account
+      - generic [ref=e8]: Enter your email below to login to your account
+    - generic [ref=e11]:
+      - group [ref=e12]:
+        - generic [ref=e13]: Email
+        - textbox "Email" [ref=e14]:
+          - /placeholder: m@example.com
+      - group [ref=e15]:
+        - generic [ref=e16]:
+          - generic [ref=e17]: Password
+          - link "Forgot your password?" [ref=e18] [cursor=pointer]:
+            - /url: /forgot-password
+        - textbox "Password" [ref=e19]
+      - group [ref=e20]:
+        - button "Login" [ref=e21]
+        - paragraph [ref=e22]:
+          - text: Don't have an account?
+          - link "Sign up" [ref=e23] [cursor=pointer]:
+            - /url: /sign-up
+  - region "Notifications alt+T"

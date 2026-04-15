@@ -120,6 +120,39 @@ export function SignInPage() {
     )
   }
 
+  // Misconfigured: no auth method enabled. Render an actionable warning so a
+  // fresh clone with no .dev.vars doesn't show a silently-broken email form.
+  if (!authConfig?.emailLoginEnabled && !authConfig?.googleEnabled) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="flex flex-col gap-6 w-full max-w-lg">
+          <Card>
+            <CardHeader>
+              <CardTitle>No auth method configured</CardTitle>
+              <CardDescription>
+                The server has no enabled login methods. Set one of these in <code>.dev.vars</code> (local) or wrangler secrets (production):
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm">
+              <div>
+                <div className="font-medium mb-1">Email + password</div>
+                <pre className="bg-muted px-3 py-2 rounded text-xs overflow-x-auto">{`ENABLE_EMAIL_LOGIN=true\nENABLE_EMAIL_SIGNUP=true`}</pre>
+              </div>
+              <div>
+                <div className="font-medium mb-1">Google OAuth</div>
+                <pre className="bg-muted px-3 py-2 rounded text-xs overflow-x-auto">{`GOOGLE_CLIENT_ID=...\nGOOGLE_CLIENT_SECRET=...`}</pre>
+              </div>
+              <p className="text-muted-foreground">
+                After updating, restart <code>pnpm dev</code> and reload this page.
+                See the README and <code>.dev.vars.example</code> for the full setup.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
   // Google-only mode (no email login)
   if (!authConfig?.emailLoginEnabled && authConfig?.googleEnabled) {
     return (
