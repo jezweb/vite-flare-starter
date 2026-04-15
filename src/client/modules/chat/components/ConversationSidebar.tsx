@@ -25,6 +25,39 @@ function timeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString()
 }
 
+interface ConversationSummary {
+  id: string
+  title: string | null
+  model: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+/** Group conversations into Today / Yesterday / Last 7 days / Older */
+function groupByDate(conversations: ConversationSummary[]) {
+  const now = new Date()
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const yesterdayStart = todayStart - 86400000
+  const weekStart = todayStart - 7 * 86400000
+
+  const groups: { label: string; items: ConversationSummary[] }[] = [
+    { label: 'Today', items: [] },
+    { label: 'Yesterday', items: [] },
+    { label: 'Last 7 days', items: [] },
+    { label: 'Older', items: [] },
+  ]
+
+  for (const conv of conversations) {
+    const ts = new Date(conv.updatedAt).getTime()
+    if (ts >= todayStart) groups[0]!.items.push(conv)
+    else if (ts >= yesterdayStart) groups[1]!.items.push(conv)
+    else if (ts >= weekStart) groups[2]!.items.push(conv)
+    else groups[3]!.items.push(conv)
+  }
+
+  return groups.filter((g) => g.items.length > 0)
+}
+
 export function ConversationSidebar({ activeConversationId }: Props) {
   const navigate = useNavigate()
   const { data, isLoading } = useConversationList()
@@ -108,46 +141,55 @@ export function ConversationSidebar({ activeConversationId }: Props) {
             No conversations yet
           </div>
         ) : (
-          <div className="p-1.5 space-y-0.5">
-            {conversations.map((conv) => (
-              <div
-                key={conv.id}
-                className={cn(
-                  'group flex items-center gap-2 rounded-md px-2.5 py-2 cursor-pointer transition-colors',
-                  conv.id === activeConversationId
-                    ? 'bg-accent text-accent-foreground'
-                    : 'hover:bg-muted'
-                )}
-                onClick={() => navigate(`/dashboard/chat/${conv.id}`)}
-                onMouseEnter={() => setHoveredId(conv.id)}
-                onMouseLeave={() => setHoveredId(null)}
-              >
-                <MessageSquare className="size-3.5 shrink-0 text-muted-foreground" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm truncate">
-                    {conv.title || 'Untitled'}
-                  </div>
-                  <div className="text-[10px] text-muted-foreground">
-                    {timeAgo(conv.updatedAt)}
-                  </div>
+          <div className="p-1.5 space-y-2">
+            {groupByDate(conversations).map((group) => (
+              <div key={group.label}>
+                <div className="px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60">
+                  {group.label}
                 </div>
-                {hoveredId === conv.id && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-6 shrink-0 opacity-0 group-hover:opacity-100"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      deleteConversation.mutate(conv.id)
-                      if (conv.id === activeConversationId) {
-                        navigate('/dashboard/chat')
-                      }
-                    }}
-                    title="Delete conversation"
-                  >
-                    <Trash2 className="size-3" />
-                  </Button>
-                )}
+                <div className="space-y-0.5">
+                  {group.items.map((conv) => (
+                    <div
+                      key={conv.id}
+                      className={cn(
+                        'group flex items-center gap-2 rounded-md px-2.5 py-2 cursor-pointer transition-colors',
+                        conv.id === activeConversationId
+                          ? 'bg-accent text-accent-foreground'
+                          : 'hover:bg-muted'
+                      )}
+                      onClick={() => navigate(`/dashboard/chat/${conv.id}`)}
+                      onMouseEnter={() => setHoveredId(conv.id)}
+                      onMouseLeave={() => setHoveredId(null)}
+                    >
+                      <MessageSquare className="size-3.5 shrink-0 text-muted-foreground" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm truncate">
+                          {conv.title || 'Untitled'}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground">
+                          {timeAgo(conv.updatedAt)}
+                        </div>
+                      </div>
+                      {hoveredId === conv.id && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-6 shrink-0 opacity-0 group-hover:opacity-100"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            deleteConversation.mutate(conv.id)
+                            if (conv.id === activeConversationId) {
+                              navigate('/dashboard/chat')
+                            }
+                          }}
+                          title="Delete conversation"
+                        >
+                          <Trash2 className="size-3" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>

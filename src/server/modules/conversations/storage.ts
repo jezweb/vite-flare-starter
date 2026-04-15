@@ -58,13 +58,34 @@ export function createD1ChatStorage(db: D1Database): ChatStorage {
         .where(eq(conversationMessages.conversationId, conversationId))
         .orderBy(conversationMessages.createdAt)
 
-      return rows.map((row) => ({
-        id: row.id,
-        role: row.role as UIMessage['role'],
-        parts: JSON.parse(row.parts),
-        ...(row.metadata ? { metadata: JSON.parse(row.metadata) } : {}),
-        createdAt: row.createdAt ? new Date(row.createdAt as unknown as number) : new Date(),
-      })) as UIMessage[]
+      return rows.map((row) => {
+        // Defensive parsing: parts might be a string (from D1 text column) or already parsed
+        let parts: unknown[]
+        try {
+          parts = typeof row.parts === 'string' ? JSON.parse(row.parts) : row.parts
+          if (!Array.isArray(parts)) parts = []
+        } catch {
+          parts = []
+        }
+
+        // Defensive parsing for metadata
+        let metadata: Record<string, unknown> | undefined
+        if (row.metadata) {
+          try {
+            metadata = typeof row.metadata === 'string' ? JSON.parse(row.metadata) : row.metadata
+          } catch {
+            metadata = undefined
+          }
+        }
+
+        return {
+          id: row.id,
+          role: row.role as UIMessage['role'],
+          parts,
+          ...(metadata ? { metadata } : {}),
+          createdAt: row.createdAt ? new Date(row.createdAt as unknown as number) : new Date(),
+        }
+      }) as UIMessage[]
     },
 
     async saveChat({ conversationId, messages }) {
@@ -86,15 +107,22 @@ export function createD1ChatStorage(db: D1Database): ChatStorage {
       for (let i = 0; i < newMessages.length; i += BATCH_SIZE) {
         const batch = newMessages.slice(i, i + BATCH_SIZE)
         await d.insert(conversationMessages).values(
-          batch.map((m) => ({
-            id: m.id,
-            conversationId,
-            role: m.role,
-            parts: JSON.stringify(m.parts ?? []),
-            metadata: (m as unknown as Record<string, unknown>)['metadata']
-              ? JSON.stringify((m as unknown as Record<string, unknown>)['metadata'])
-              : null,
-          }))
+          batch.map((m) => {
+            // Defensive: ensure parts is serialised as a JSON string, never double-encoded
+            const rawParts = m.parts ?? []
+            const partsStr = typeof rawParts === 'string' ? rawParts : JSON.stringify(rawParts)
+            const rawMeta = (m as unknown as Record<string, unknown>)['metadata']
+            const metaStr = rawMeta
+              ? (typeof rawMeta === 'string' ? rawMeta : JSON.stringify(rawMeta))
+              : null
+            return {
+              id: m.id,
+              conversationId,
+              role: m.role,
+              parts: partsStr,
+              metadata: metaStr,
+            }
+          })
         )
       }
 

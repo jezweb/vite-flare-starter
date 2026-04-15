@@ -71,7 +71,7 @@ app.post('/', async (c) => {
       systemPrompt,
     })
 
-    // Pre-process file attachments: convert non-image files (PDFs, etc.) to text
+    // Pre-process file attachments: convert non-image files to text/transcription
     // so they work with models that only accept image file parts.
     for (const msg of messages) {
       if (msg.role !== 'user' || !msg.parts) continue
@@ -82,28 +82,43 @@ app.post('/', async (c) => {
         const mime = part.mediaType || ''
         // Images pass through — models handle them natively
         if (mime.startsWith('image/')) continue
-        // Non-image files (PDF, etc.): convert to markdown text via toMarkdown or TextDecoder
         try {
+          if (!part.url?.startsWith('data:')) continue
+          const base64 = part.url.split(',')[1] || ''
+          const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))
+
           let textContent = ''
-          if (part.url?.startsWith('data:')) {
-            const base64 = part.url.split(',')[1] || ''
-            const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))
-            if (mime === 'application/pdf' || mime.startsWith('image/')) {
+
+          // Audio files: transcribe via Workers AI (Deepgram Nova 3)
+          if (mime.startsWith('audio/')) {
+            try {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const ai = c.env.AI as any
-              if (typeof ai?.toMarkdown === 'function') {
-                const result = await ai.toMarkdown([{ name: 'upload', blob: new Blob([bytes], { type: mime }) }])
-                textContent = result?.[0]?.data || new TextDecoder().decode(bytes)
-              } else {
-                textContent = new TextDecoder().decode(bytes)
+              const result = await (c.env.AI as any).run('@cf/deepgram/nova-3', { audio: [...bytes] })
+              textContent = result?.text || result?.vtt || ''
+              if (textContent) {
+                textContent = `[Audio transcription]:\n\n${textContent}`
               }
-            } else {
-              textContent = new TextDecoder().decode(bytes)
+            } catch (err) {
+              console.warn('Audio transcription failed:', err)
+              textContent = '[Audio file attached but transcription failed. Use the transcribe_audio tool to retry.]'
             }
+          // PDFs: convert to markdown via toMarkdown
+          } else if (mime === 'application/pdf') {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const ai = c.env.AI as any
+            if (typeof ai?.toMarkdown === 'function') {
+              const result = await ai.toMarkdown([{ name: 'upload', blob: new Blob([bytes], { type: mime }) }])
+              textContent = `[Attached file content]:\n\n${result?.[0]?.data || new TextDecoder().decode(bytes)}`
+            } else {
+              textContent = `[Attached file content]:\n\n${new TextDecoder().decode(bytes)}`
+            }
+          // Other text-ish files: decode as UTF-8
+          } else {
+            textContent = `[Attached file content]:\n\n${new TextDecoder().decode(bytes)}`
           }
+
           if (textContent) {
-            // Replace the file part with a text part containing the extracted content
-            parts[i] = { type: 'text', text: `[Attached file content]:\n\n${textContent}` } as typeof part
+            parts[i] = { type: 'text', text: textContent } as typeof part
           }
         } catch (err) {
           console.warn('Failed to convert file attachment:', err)

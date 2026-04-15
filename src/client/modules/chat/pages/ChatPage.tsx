@@ -27,6 +27,8 @@ import {
 } from '@/components/ai-elements/prompt-input'
 import { Suggestion } from '@/components/ai-elements/suggestion'
 import { Plus, MessageSquare, PanelLeft, PanelLeftClose, Sparkles, Download } from 'lucide-react'
+import { Sheet, SheetContent } from '@/components/ui/sheet'
+import { useMediaQuery } from '@/client/hooks/useMediaQuery'
 import { useChat, type Message } from '../hooks/useChat'
 import { useConversationMessages } from '../hooks/useConversations'
 import { ConversationSidebar } from '../components/ConversationSidebar'
@@ -53,6 +55,7 @@ export function ChatPage() {
   const { data: session } = useSession()
   const [model, setModel] = useState<string>(DEFAULT_MODEL_ID)
   const [showSidebar, setShowSidebar] = useState(false)
+  const isDesktop = useMediaQuery('(min-width: 768px)')
 
   // Share Target: when shared from mobile, params arrive as ?title=&text=&url=
   const sharedText = searchParams.get('text') || searchParams.get('title') || searchParams.get('url')
@@ -86,12 +89,23 @@ export function ChatPage() {
     }
   }, [conversationId, urlConversationId, messages.length, navigate])
 
-  // Hydrate messages when the conversation loads (useChat ignores initialMessages after mount)
+  // Hydrate messages when the conversation loads (useChat ignores initialMessages after mount).
+  // Messages from the API have createdAt as ISO string (JSON serialisation); convert back to Date
+  // so the AI SDK's internal comparison/cloning works correctly.
   useEffect(() => {
-    const loaded = existingConversation?.messages as Message[] | undefined
-    if (loaded && loaded.length > 0 && messages.length === 0) {
-      setMessages(loaded)
-    }
+    const raw = existingConversation?.messages as Message[] | undefined
+    if (!raw || raw.length === 0 || messages.length > 0) return
+    const hydrated = raw.map((m) => {
+      const msg = m as Message & { createdAt?: unknown }
+      return {
+        ...m,
+        parts: Array.isArray(m.parts) ? m.parts : [],
+        ...(msg.createdAt != null
+          ? { createdAt: msg.createdAt instanceof Date ? msg.createdAt : new Date(msg.createdAt as string) }
+          : {}),
+      }
+    })
+    setMessages(hydrated as Message[])
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [existingConversation?.messages])
 
@@ -242,8 +256,17 @@ export function ChatPage() {
 
   return (
     <div className="flex h-[calc(100svh-7rem)] min-h-[500px] overflow-hidden">
-      {/* Conversation sidebar (toggleable) */}
-      {showSidebar && <ConversationSidebar activeConversationId={urlConversationId} />}
+      {/* Conversation sidebar: inline on desktop, Sheet on mobile */}
+      {showSidebar && isDesktop && (
+        <ConversationSidebar activeConversationId={urlConversationId} />
+      )}
+      {showSidebar && !isDesktop && (
+        <Sheet open onOpenChange={(open) => { if (!open) setShowSidebar(false) }}>
+          <SheetContent side="left" className="w-64 p-0">
+            <ConversationSidebar activeConversationId={urlConversationId} />
+          </SheetContent>
+        </Sheet>
+      )}
 
       {/* Chat area */}
       <div className="flex flex-1 flex-col min-w-0">

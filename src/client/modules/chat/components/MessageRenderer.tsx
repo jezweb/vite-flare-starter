@@ -20,7 +20,7 @@ import { extractUIResources, ToolUIResource } from './ToolUIResource'
 import { ToolApproval } from './chat-ui/ToolApproval'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Textarea } from '@/components/ui/textarea'
-import { Loader2, RotateCcw, Pencil } from 'lucide-react'
+import { Loader2, RotateCcw, Pencil, Copy, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -50,7 +50,20 @@ export const MessageRenderer = memo(function MessageRenderer({
   const isUser = message.role === 'user'
   const metadata = (message as unknown as { metadata?: MessageMetadata }).metadata
   const [editing, setEditing] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [editText, setEditText] = useState('')
+
+  const copyMessage = useCallback(() => {
+    const text = (message.parts ?? [])
+      .filter((p): p is { type: 'text'; text: string } => (p as { type: string }).type === 'text')
+      .map((p) => p.text)
+      .join('\n')
+    if (text) {
+      navigator.clipboard.writeText(text)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }, [message.parts])
 
   const startEdit = useCallback(() => {
     const text = (message.parts ?? [])
@@ -69,8 +82,16 @@ export const MessageRenderer = memo(function MessageRenderer({
     setEditing(false)
   }, [editText, message.id, onEdit])
 
+  // Format timestamp for hover tooltip
+  const timestamp = (() => {
+    const raw = (message as unknown as { createdAt?: unknown }).createdAt
+    if (!raw) return undefined
+    const d = raw instanceof Date ? raw : new Date(raw as string)
+    return isNaN(d.getTime()) ? undefined : d.toLocaleString()
+  })()
+
   return (
-    <Message from={message.role} className="gap-3">
+    <Message from={message.role} className="gap-3" title={timestamp}>
       {/* Avatar for assistant messages */}
       {isAssistant && (
         <div className="flex items-start gap-3">
@@ -136,9 +157,19 @@ export const MessageRenderer = memo(function MessageRenderer({
         />
       )}
 
-      {/* Regenerate button + metadata, only on the last assistant message */}
+      {/* Actions + metadata, only on the last assistant message */}
       {isAssistant && isLast && !isLoading && onRegenerate && (
-        <div className="flex items-center gap-2 ml-10 mt-1 text-xs text-muted-foreground/70">
+        <div className="flex items-center gap-1 ml-10 mt-1 text-xs text-muted-foreground/70">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 gap-1 text-xs"
+            onClick={copyMessage}
+            title="Copy response"
+          >
+            {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
+            {copied ? 'Copied' : 'Copy'}
+          </Button>
           <Button
             variant="ghost"
             size="sm"
@@ -180,7 +211,17 @@ function MessageBody({
   onToolApproval?: (params: { toolCallId: string; toolName: string; result: 'approve' | 'deny' }) => void
   userImage?: string | null
 }) {
-  const parts = message.parts ?? []
+  // Defensive: parts must be an array. If it's a string (e.g. double-serialised JSON),
+  // try to parse it; otherwise wrap in a single text part so something renders.
+  let parts = message.parts ?? []
+  if (!Array.isArray(parts)) {
+    try {
+      const parsed = typeof parts === 'string' ? JSON.parse(parts as unknown as string) : null
+      parts = Array.isArray(parsed) ? parsed : [{ type: 'text', text: String(parts) }]
+    } catch {
+      parts = [{ type: 'text', text: String(parts) }]
+    }
+  }
   const hasVisibleText = parts.some((p) => p.type === 'text')
   const isUser = message.role === 'user'
 
@@ -326,8 +367,10 @@ function MessageBody({
           }
 
           // 4g. Fallback: generic Tool accordion from AI Elements
+          // Collapsed by default for completed tools; open only while actively streaming
+          const isActivelyRunning = state === 'input-available' || state === 'input-streaming'
           return (
-            <Tool key={i} defaultOpen={state === 'input-available' || state === 'input-streaming'}>
+            <Tool key={i} defaultOpen={isActivelyRunning}>
               <ToolHeader
                 type={part.type as `tool-${string}`}
                 state={state as 'input-available' | 'output-available' | 'output-error' | 'input-streaming' | 'approval-requested' | 'approval-responded' | 'output-denied'}
@@ -348,10 +391,18 @@ function MessageBody({
 
       {/* Thinking indicator when assistant is loading with no text yet */}
       {!isUser && isLoading && isLast && !hasVisibleText && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="size-3.5 animate-spin" />
-          <span>Thinking...</span>
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <span className="flex gap-0.5">
+            <span className="size-1.5 rounded-full bg-current animate-bounce [animation-delay:0ms]" />
+            <span className="size-1.5 rounded-full bg-current animate-bounce [animation-delay:150ms]" />
+            <span className="size-1.5 rounded-full bg-current animate-bounce [animation-delay:300ms]" />
+          </span>
         </div>
+      )}
+
+      {/* Blinking cursor at end of streaming text */}
+      {!isUser && isLoading && isLast && hasVisibleText && (
+        <span className="inline-block w-0.5 h-4 bg-foreground/70 animate-pulse ml-0.5 align-text-bottom" />
       )}
 
       {/* User avatar shown inline for user messages */}
