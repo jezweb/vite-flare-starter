@@ -77,6 +77,31 @@ app.get('/', zValidator('query', listQuerySchema), async (c) => {
 })
 
 /**
+ * Download a file directly by R2 key (user-scoped).
+ * Used by agent tools (docx generation, image transform, etc.) that write
+ * to R2 without creating a D1 metadata record.
+ * Must be registered BEFORE /:id to avoid Hono's greedy param matching.
+ */
+app.get('/download/*', async (c) => {
+  const userId = c.get('userId')
+  const key = c.req.path.replace(/^\/api\/files\/download\//, '')
+  if (!key || !key.startsWith(`users/${userId}/`)) {
+    return c.json({ error: 'Access denied' }, 403)
+  }
+  const bucket = c.env.FILES as R2Bucket | undefined
+  if (!bucket) return c.json({ error: 'Storage not configured' }, 501)
+  const object = await bucket.get(key)
+  if (!object) return c.json({ error: 'Not found' }, 404)
+  return new Response(object.body, {
+    headers: {
+      'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
+      'Content-Disposition': `inline; filename="${key.split('/').pop()}"`,
+      'Cache-Control': 'private, max-age=3600',
+    },
+  })
+})
+
+/**
  * Get a single file by ID
  */
 app.get('/:id', async (c) => {
