@@ -51,7 +51,6 @@ import { Skeleton } from '@/components/ui/skeleton'
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import {
@@ -70,6 +69,9 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Calendar } from '@/components/ui/calendar'
+import { Separator } from '@/components/ui/separator'
+import { AudioRecorder } from '@/client/components/AudioRecorder'
+import { EmptyState } from '@/client/components/EmptyState'
 import {
   AlertCircle,
   Check,
@@ -77,6 +79,7 @@ import {
   Loader2,
   MoreHorizontal,
   Terminal,
+  Inbox,
 } from 'lucide-react'
 
 /**
@@ -91,21 +94,22 @@ export function ComponentsPage() {
   const [checkboxChecked, setCheckboxChecked] = useState(false)
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Components</h1>
-        <p className="text-muted-foreground">
-          All available shadcn/ui components with live examples.
+        <h1 className="text-2xl font-semibold tracking-tight">Components</h1>
+        <p className="text-sm text-muted-foreground">
+          shadcn/ui components + custom starter components with live examples.
         </p>
       </div>
 
       <Tabs defaultValue="buttons" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="flex w-full overflow-x-auto">
           <TabsTrigger value="buttons">Buttons</TabsTrigger>
           <TabsTrigger value="inputs">Inputs</TabsTrigger>
           <TabsTrigger value="display">Display</TabsTrigger>
           <TabsTrigger value="feedback">Feedback</TabsTrigger>
           <TabsTrigger value="overlay">Overlay</TabsTrigger>
+          <TabsTrigger value="custom">Custom</TabsTrigger>
         </TabsList>
 
         {/* Buttons Tab */}
@@ -179,7 +183,7 @@ export function ComponentsPage() {
             </CardHeader>
             <CardContent>
               <Select>
-                <SelectTrigger className="w-[280px]">
+                <SelectTrigger className="w-full max-w-xs">
                   <SelectValue placeholder="Select a fruit" />
                 </SelectTrigger>
                 <SelectContent>
@@ -229,7 +233,7 @@ export function ComponentsPage() {
                   onValueChange={setSliderValue}
                   max={100}
                   step={1}
-                  className="w-[60%]"
+                  className="w-full max-w-sm"
                 />
                 <p className="text-sm text-muted-foreground">Value: {sliderValue[0]}</p>
               </div>
@@ -292,7 +296,7 @@ export function ComponentsPage() {
               <CardDescription>Progress indicator</CardDescription>
             </CardHeader>
             <CardContent>
-              <Progress value={66} className="w-[60%]" />
+              <Progress value={66} className="w-full max-w-sm" />
             </CardContent>
           </Card>
 
@@ -396,19 +400,17 @@ export function ComponentsPage() {
               <CardDescription>Contextual information on hover</CardDescription>
             </CardHeader>
             <CardContent>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="outline">
-                      <Info className="mr-2 h-4 w-4" />
-                      Hover me
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>This is a tooltip</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline">
+                    <Info className="mr-2 h-4 w-4" />
+                    Hover me
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>This is a tooltip</p>
+                </TooltipContent>
+              </Tooltip>
             </CardContent>
           </Card>
         </TabsContent>
@@ -488,6 +490,61 @@ export function ComponentsPage() {
                   <DropdownMenuItem>Sign out</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Custom Components Tab */}
+        <TabsContent value="custom" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Audio Recorder</CardTitle>
+              <CardDescription>Voice input — full and compact modes</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label className="text-xs text-muted-foreground mb-2 block">Full mode</Label>
+                <AudioRecorder onRecordingComplete={(_blob, ms) => alert(`Recorded ${(ms / 1000).toFixed(1)}s`)} />
+              </div>
+              <Separator />
+              <div>
+                <Label className="text-xs text-muted-foreground mb-2 block">Compact mode (for toolbars)</Label>
+                <AudioRecorder compact onRecordingComplete={(_b, ms) => alert(`Recorded ${(ms / 1000).toFixed(1)}s`)} />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Empty State</CardTitle>
+              <CardDescription>Placeholder for empty lists and pages</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <EmptyState
+                icon={Inbox}
+                title="No items yet"
+                description="Get started by creating your first item."
+                action={{ label: 'Create item', onClick: () => alert('Create clicked') }}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Separator</CardTitle>
+              <CardDescription>Visual divider between content sections</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="text-sm">Content above</p>
+                <Separator className="my-4" />
+                <p className="text-sm">Content below</p>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="text-sm">Left</span>
+                <Separator orientation="vertical" className="h-6" />
+                <span className="text-sm">Right</span>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
