@@ -102,17 +102,28 @@ app.post('/', async (c) => {
 
           let textContent = ''
 
-          // Audio files: transcribe via Workers AI (Deepgram Nova 3)
+          // Audio files: transcribe via Workers AI (Deepgram Nova 3).
+          // Nova 3 expects the multipart input shape: `{ audio: { body, contentType } }`
+          // — raw Uint8Array / number[] / data URL all return `5006: required
+          // properties at '/audio' are 'body,contentType'`.
           if (mime.startsWith('audio/')) {
             try {
+              const form = new FormData()
+              form.append('audio', new Blob([new Uint8Array(bytes)], { type: mime }), 'audio')
+              const formResp = new Response(form)
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const result = await (c.env.AI as any).run('@cf/deepgram/nova-3', { audio: [...bytes] })
-              textContent = result?.text || result?.vtt || ''
-              if (textContent) {
-                textContent = `[Audio transcription]:\n\n${textContent}`
-              }
+              const result: any = await (c.env.AI as any).run('@cf/deepgram/nova-3', {
+                audio: {
+                  body: formResp.body,
+                  contentType: formResp.headers.get('content-type'),
+                },
+              })
+              const transcript = (result?.text || result?.results?.channels?.[0]?.alternatives?.[0]?.transcript || '').trim()
+              textContent = transcript
+                ? `[Audio transcription]:\n\n${transcript}`
+                : '[Audio file attached but transcription returned no text.]'
             } catch (err) {
-              console.warn('Audio transcription failed:', err)
+              console.warn(JSON.stringify({ event: 'audio_transcription_failed', error: String(err) }))
               textContent = '[Audio file attached but transcription failed. Use the transcribe_audio tool to retry.]'
             }
           // PDFs: convert to markdown via toMarkdown
