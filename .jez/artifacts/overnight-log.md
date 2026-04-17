@@ -59,6 +59,9 @@ Pick the next AVAILABLE task in ID order. Mark it in-progress in your iteration 
 
 *(Append entries here. Newest at top.)*
 
+### Bail — 2026-04-17T16:37Z
+Bailed — past 2am local (16:37 UTC > 16:00 UTC cutoff). Next task would have been F52.
+
 ### Iteration 2 (local) — 2026-04-17T14:50Z
 - Task: F47 — Cost-tier dots on model picker
 - Files: src/server/lib/ai/types.ts, src/server/lib/ai/models.ts, src/server/index.ts, src/client/modules/chat/components/ModelSelector.tsx
