@@ -122,6 +122,15 @@ run_model() {
   local r=$(send_with_file "$model" "What is the secret phrase in the attached PDF? Quote it exactly." "$FIXTURES/test-document.pdf" "application/pdf")
   check "$label pdf→markdown" "$r" "LIGHTHOUSE-ORANGE-47"
 
+  # DOCX — Office OpenXML. Before the fix these fell through to TextDecoder
+  # and the model hallucinated from PK zip headers.
+  if [ -f "$FIXTURES/test-document.docx" ]; then
+    echo ""
+    echo "[docx] DOCX with 'CINNAMON-SUBMARINE-88'"
+    local r=$(send_with_file "$model" "What secret phrase appears in the attached Word document? Quote it exactly." "$FIXTURES/test-document.docx" "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+    check "$label docx→markdown" "$r" "CINNAMON-SUBMARINE-88"
+  fi
+
   # Audio — Deepgram Nova 3 transcription on the server then inlined as text.
   # Use webm/opus (matches what AudioRecorder produces in-browser). MP3/WAV
   # are rejected by Workers AI's Deepgram wrapper.

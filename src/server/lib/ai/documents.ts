@@ -35,14 +35,58 @@ export interface ConvertOptions {
   forceVision?: boolean
 }
 
-/** MIME types that env.AI.toMarkdown handles natively. */
+/**
+ * MIME types that env.AI.toMarkdown handles natively.
+ *
+ * Cloudflare's toMarkdown accepts a broad set: PDFs, OOXML office formats
+ * (docx/xlsx/pptx), legacy office (doc/xls/ppt), HTML, CSV/TSV, eBook formats,
+ * images via OCR, and more. See the Workers AI docs for the authoritative list.
+ */
 const TOMARKDOWN_TYPES = new Set([
   'application/pdf',
+  // Microsoft Office — OOXML (ZIP-based)
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
+  // Legacy Office (best-effort)
+  'application/msword', // .doc
+  'application/vnd.ms-excel', // .xls
+  'application/vnd.ms-powerpoint', // .ppt
+  // OpenDocument
+  'application/vnd.oasis.opendocument.text', // .odt
+  'application/vnd.oasis.opendocument.spreadsheet', // .ods
+  'application/vnd.oasis.opendocument.presentation', // .odp
+  // Spreadsheets / data
+  'text/csv',
+  'text/tab-separated-values',
+  // Web / markup
+  'text/html',
+  'application/xhtml+xml',
+  'application/xml',
+  // Rich text
+  'application/rtf',
+  'text/rtf',
+  // eBooks
+  'application/epub+zip',
+  // Images (OCR)
   'image/jpeg',
   'image/png',
   'image/webp',
   'image/gif',
   'image/svg+xml',
+  'image/tiff',
+  'image/bmp',
+])
+
+/** Image MIME types — used to decide whether vision fallback is viable. */
+const IMAGE_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'image/svg+xml',
+  'image/tiff',
+  'image/bmp',
 ])
 
 /** MIME types we can handle (toMarkdown + vision + plain text). */
@@ -50,8 +94,6 @@ const ALL_CONVERTIBLE = new Set([
   ...TOMARKDOWN_TYPES,
   'text/plain',
   'text/markdown',
-  'text/csv',
-  'text/html',
   'application/json',
 ])
 
@@ -76,7 +118,7 @@ export async function convertToMarkdown(
     return new TextDecoder().decode(data)
   }
 
-  // Try Cloudflare's built-in converter (free, handles PDF + images)
+  // Try Cloudflare's built-in converter (free, handles PDF + office + images)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const ai = env.AI as any
   if (!options?.forceVision && TOMARKDOWN_TYPES.has(mimeType) && typeof ai?.toMarkdown === 'function') {
@@ -92,12 +134,30 @@ export async function convertToMarkdown(
         return result[0].data
       }
     } catch (err) {
-      console.warn('toMarkdown failed, falling back to vision model:', err)
+      console.warn(JSON.stringify({
+        event: 'toMarkdown_failed',
+        mimeType,
+        filename: options?.filename,
+        error: err instanceof Error ? err.message : String(err),
+      }))
+      // For non-image binaries (docx, xlsx, pdf) vision fallback can't read the
+      // actual content — it'll hallucinate from ZIP/PDF headers. Return a clear
+      // error instead of producing plausible-but-wrong output.
+      if (!IMAGE_TYPES.has(mimeType)) {
+        return `[Failed to extract content from ${options?.filename || mimeType}. The file may be corrupt or in an unsupported format.]`
+      }
     }
   }
 
-  // Vision model fallback — send as image/file to an LLM
-  return extractWithVision(env, data, mimeType, options)
+  // Vision model fallback — only safe for image types (sending binary office
+  // files to a vision model produces confident-sounding hallucinations).
+  if (IMAGE_TYPES.has(mimeType) || mimeType.startsWith('image/')) {
+    return extractWithVision(env, data, mimeType, options)
+  }
+
+  // Unknown binary format — don't send to an LLM, don't try UTF-8 decode
+  // (that's what produced the "PK..." docx confusion we're fixing).
+  return `[Unsupported file type: ${mimeType}. The model cannot read this format.]`
 }
 
 async function extractWithVision(

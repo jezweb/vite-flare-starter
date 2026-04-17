@@ -12,6 +12,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { desc, eq, sql } from 'drizzle-orm'
 import { authMiddleware, requireScopes, type AuthContext } from '@/server/middleware/auth'
 import { DEFAULT_MODEL, getModel, resolveModel, buildChatAgent } from '@/server/lib/ai'
+import { convertToMarkdown } from '@/server/lib/ai/documents'
 import { createD1ChatStorage } from '@/server/modules/conversations/storage'
 import { logActivityFromContext } from '@/server/modules/activity/log'
 import { aiUsageLogs } from './db/schema'
@@ -126,19 +127,21 @@ app.post('/', async (c) => {
               console.warn(JSON.stringify({ event: 'audio_transcription_failed', error: String(err) }))
               textContent = '[Audio file attached but transcription failed. Use the transcribe_audio tool to retry.]'
             }
-          // PDFs: convert to markdown via toMarkdown
-          } else if (mime === 'application/pdf') {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const ai = c.env.AI as any
-            if (typeof ai?.toMarkdown === 'function') {
-              const result = await ai.toMarkdown([{ name: 'upload', blob: new Blob([bytes], { type: mime }) }])
-              textContent = `[Attached file content]:\n\n${result?.[0]?.data || new TextDecoder().decode(bytes)}`
-            } else {
-              textContent = `[Attached file content]:\n\n${new TextDecoder().decode(bytes)}`
-            }
-          // Other text-ish files: decode as UTF-8
-          } else {
+          // Text-ish formats — inline directly (skip the round-trip through AI)
+          } else if (mime.startsWith('text/') || mime === 'application/json') {
             textContent = `[Attached file content]:\n\n${new TextDecoder().decode(bytes)}`
+          // Everything else (PDF, DOCX, XLSX, PPTX, HTML, RTF, EPUB, legacy Office, etc.)
+          // — delegate to convertToMarkdown which uses env.AI.toMarkdown() with
+          // safe fallbacks. Handles ZIP-based office formats correctly so the
+          // model sees real document text, not PK-header binary garbage.
+          } else {
+            const markdown = await convertToMarkdown(
+              c.env as unknown as Parameters<typeof convertToMarkdown>[0],
+              bytes,
+              mime,
+              { filename: (part as { filename?: string }).filename },
+            )
+            textContent = `[Attached file content]:\n\n${markdown}`
           }
 
           if (textContent) {
