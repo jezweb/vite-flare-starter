@@ -22,7 +22,7 @@ import {
   PromptInputActionAddAttachments,
   PromptInputActionAddScreenshot,
 } from '@/components/ai-elements/prompt-input'
-import { Plus, MessageSquare, MessagesSquare, Download, ArrowDown } from 'lucide-react'
+import { Plus, MessageSquare, MessagesSquare, Download, ArrowDown, Paperclip } from 'lucide-react'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { useMediaQuery } from '@/client/hooks/useMediaQuery'
 import { useChat, type Message } from '../hooks/useChat'
@@ -621,11 +621,12 @@ export function ChatPage() {
                             <PromptInputActionMenuTrigger
                               aria-label="Attach a file or take a screenshot"
                               tooltip="Attach"
-                              // Subtle muted background so the + button reads
-                              // as a distinct action trigger rather than an
-                              // ambient icon that disappears into the card.
+                              size="sm"
                               className="bg-muted hover:bg-muted-foreground/10"
-                            />
+                            >
+                              <Paperclip className="size-4" />
+                              <span className="hidden sm:inline">Attach</span>
+                            </PromptInputActionMenuTrigger>
                             <PromptInputActionMenuContent>
                               <PromptInputActionAddAttachments />
                               <PromptInputActionAddScreenshot />
