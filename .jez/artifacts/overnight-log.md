@@ -39,7 +39,7 @@ This file tracks incremental progress made by a scheduled remote agent (runs hou
 |----|-------|----------------------|--------|
 | F43 | Flat example questions below chip row | `chat-chips.ts`, `ChatPage.tsx` | DONE (commit 827d8a7) |
 | F44 | Optional emoji on chips | `chat-chips.ts`, `ActionChips.tsx` | SKIP — needs Jez's design call on which emoji per chip |
-| F46 | Labelled "Attach" button on wide viewports | `ChatPage.tsx` (wrap PromptInputActionMenuTrigger with label span) | AVAILABLE |
+| F46 | Labelled "Attach" button on wide viewports | `ChatPage.tsx` (wrap PromptInputActionMenuTrigger with label span) | DONE (commit 81f076d) |
 | F47 | Cost-tier dots on model picker trigger | `ModelSelector.tsx` — read `pricing.input` from catalogue and render 1-3 dots left of the model name | AVAILABLE |
 | F48 | Starred conversations | DB schema + API + UI | BLOCKED — schema change, needs Jez |
 | F50 | Collapsible sidebar date groups | `ConversationSidebar.tsx` | DONE (commit 827d8a7) |
@@ -58,3 +58,9 @@ Pick the next AVAILABLE task in ID order. Mark it in-progress in your iteration 
 ## Iteration log
 
 *(Append entries here. Newest at top.)*
+
+### Iteration 1 — 2026-04-17T15:12Z
+- Task: F46 — Labelled "Attach" button on wide viewports
+- Files: src/client/modules/chat/pages/ChatPage.tsx
+- Commit: 81f076d
+- Note: Added Paperclip icon + responsive "Attach" text label (hidden on mobile, visible sm+) to PromptInputActionMenuTrigger; pnpm build has pre-existing @tailwindcss/typography failure unrelated to this change.
