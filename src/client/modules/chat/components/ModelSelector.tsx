@@ -30,6 +30,35 @@ interface Model {
   supportsTools: boolean
   supportsVision: boolean
   isReasoning: boolean
+  /** Derived from input-token pricing server-side — drives the CostTierDots. */
+  costTier?: 'free' | 'low' | 'mid' | 'high'
+}
+
+/** Tiny pricing indicator — 0-3 filled dots next to the model name.
+ *  free = blank, low = 1, mid = 2, high = 3. Muted colour, hint via title.
+ */
+function CostTierDots({ tier, size = 'sm' }: { tier?: Model['costTier']; size?: 'sm' | 'md' }) {
+  if (!tier || tier === 'free') return null
+  const filled = tier === 'low' ? 1 : tier === 'mid' ? 2 : 3
+  const title =
+    tier === 'low' ? '≤ $1 / M tokens (low cost)'
+    : tier === 'mid' ? '$1–$5 / M tokens (mid cost)'
+    : '> $5 / M tokens (flagship / premium)'
+  const dotSize = size === 'md' ? 'size-1.5' : 'size-1'
+  return (
+    <span
+      className="inline-flex items-center gap-0.5 shrink-0"
+      title={title}
+      aria-hidden
+    >
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className={`${dotSize} rounded-full ${i < filled ? 'bg-muted-foreground/60' : 'bg-muted-foreground/15'}`}
+        />
+      ))}
+    </span>
+  )
 }
 
 interface ModelsResponse {
@@ -123,7 +152,10 @@ export function ModelSelector({ value, onChange, disabled }: ModelSelectorProps)
     >
       <SelectTrigger className="w-[160px] max-w-[160px]">
         <SelectValue>
-          <span className="truncate">{selectedModel?.name || 'Select model'}</span>
+          <span className="inline-flex items-center gap-1.5 min-w-0">
+            <span className="truncate">{selectedModel?.name || 'Select model'}</span>
+            <CostTierDots tier={selectedModel?.costTier} />
+          </span>
         </SelectValue>
       </SelectTrigger>
       <SelectContent>
@@ -136,6 +168,7 @@ export function ModelSelector({ value, onChange, disabled }: ModelSelectorProps)
               <SelectItem key={model.id} value={model.id}>
                 <div className="flex items-center gap-2">
                   <span>{model.name}</span>
+                  <CostTierDots tier={model.costTier} size="md" />
                   {/* Only show badges for exceptions, not the common case. */}
                   {!model.supportsTools && (
                     <Badge variant="outline" className="text-[10px] px-1 py-0 font-normal">

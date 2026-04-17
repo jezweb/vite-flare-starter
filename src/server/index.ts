@@ -284,6 +284,7 @@ app.get('/api/ai/models', authMiddleware, requireScopes('ai:use'), async (c) => 
       supportsTools: m.supportsTools,
       supportsVision: m.supportsVision,
       isReasoning: m.isReasoning,
+      costTier: m.costTier,
     })),
     defaultModel: DEFAULT_MODEL,
     providers: getAvailableProviders(c.env),

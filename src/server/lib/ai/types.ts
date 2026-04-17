@@ -56,4 +56,13 @@ export interface ModelConfig {
   apiFormat?: APIFormat
   /** Capability tier for sorting and display */
   tier: ModelTier
+  /**
+   * Cost tier derived from input-token pricing. Drives the tiny pricing
+   * indicator on the UI model-picker trigger (1–3 dots, or none for free).
+   * - free: no inference cost (Workers AI)
+   * - low: ≤ $1 per million input tokens
+   * - mid: > $1 and ≤ $5 per million input tokens
+   * - high: > $5 per million input tokens
+   */
+  costTier: 'free' | 'low' | 'mid' | 'high'
 }

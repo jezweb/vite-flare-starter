@@ -32,6 +32,22 @@ const CATALOGUE = new Map(
 )
 
 /** Convert a CatalogueModel (from flared.au) into our ModelConfig shape. */
+/**
+ * Bucket input-token price ($ per million tokens) into the 4-tier UI indicator
+ * shown on the model picker. Thresholds tuned against the current flared.au
+ * catalogue so the three paid tiers are non-empty:
+ * - free: Workers AI
+ * - low:  cheap chat-tier models (Haiku, GPT mini, Gemini Flash)
+ * - mid:  balanced flagships (Sonnet)
+ * - high: top-end / expensive (Opus, GPT-5 full, Gemini Pro)
+ */
+function costTierFor(priceIn: number, isFree: boolean): ModelConfig['costTier'] {
+  if (isFree || priceIn === 0) return 'free'
+  if (priceIn <= 0.5) return 'low'
+  if (priceIn <= 2.5) return 'mid'
+  return 'high'
+}
+
 function fromCatalogue(m: CatalogueModel & { source?: 'openrouter' | 'workers-ai' }): ModelConfig {
   const caps = m.capabilities
   const priceIn = m.pricing?.input ?? 0
@@ -52,6 +68,7 @@ function fromCatalogue(m: CatalogueModel & { source?: 'openrouter' | 'workers-ai
       `${m.short_name ?? m.name ?? m.id} — ${ctxK}K ctx` +
       (isFree ? ', free via Workers AI' : priceIn > 0 ? `, $${priceIn}/M in` : ''),
     tier: (m.tier as ModelTier) ?? 'balanced',
+    costTier: costTierFor(priceIn, isFree),
   }
 }
 
@@ -78,6 +95,10 @@ export const MODEL_REGISTRY: Record<string, ModelConfig> = (() => {
         defaultMaxTokens: 16384,
         description: `${id} (not in catalogue — run pnpm models:refresh)`,
         tier: 'balanced',
+        // Stubs come from ENABLED_MODEL_IDS with no catalogue match — assume
+        // free since the only models that hit this path are pre-release or
+        // experimental entries added before the catalogue refresh.
+        costTier: id.startsWith('@cf/') || id.startsWith('@hf/') ? 'free' : 'low',
       }
     }
   }

@@ -40,7 +40,7 @@ This file tracks incremental progress made by a scheduled remote agent (runs hou
 | F43 | Flat example questions below chip row | `chat-chips.ts`, `ChatPage.tsx` | DONE (commit 827d8a7) |
 | F44 | Optional emoji on chips | `chat-chips.ts`, `ActionChips.tsx` | SKIP — needs Jez's design call on which emoji per chip |
 | F46 | Labelled "Attach" button on wide viewports | `ChatPage.tsx` (wrap PromptInputActionMenuTrigger with label span) | DONE (commit 81f076d) |
-| F47 | Cost-tier dots on model picker trigger | `ModelSelector.tsx` — read `pricing.input` from catalogue and render 1-3 dots left of the model name | AVAILABLE |
+| F47 | Cost-tier dots on model picker trigger | `ModelSelector.tsx` + server `types.ts` + `models.ts` + `index.ts` — add costTier field, render 3-slot dot indicator | DONE (local iteration 2, version 0e25ca39) |
 | F48 | Starred conversations | DB schema + API + UI | BLOCKED — schema change, needs Jez |
 | F50 | Collapsible sidebar date groups | `ConversationSidebar.tsx` | DONE (commit 827d8a7) |
 | F52 | Per-message aria-label for screen readers | `MessageRenderer.tsx` (add `aria-label` to the Message wrapper with role + first 50 chars of text) | AVAILABLE |
@@ -58,6 +58,12 @@ Pick the next AVAILABLE task in ID order. Mark it in-progress in your iteration 
 ## Iteration log
 
 *(Append entries here. Newest at top.)*
+
+### Iteration 2 (local) — 2026-04-17T14:50Z
+- Task: F47 — Cost-tier dots on model picker
+- Files: src/server/lib/ai/types.ts, src/server/lib/ai/models.ts, src/server/index.ts, src/client/modules/chat/components/ModelSelector.tsx
+- Deployed live (version 0e25ca39) and verified: API returns costTier per model (4 free / 5 low / 5 mid / 2 high). Trigger renders 0-3 filled dots + unfilled slots. Dropdown items show same indicator. Tuned thresholds so Opus/Sonnet hit "high", Haiku+GPT-5.4 hit "mid".
+- Note: Local session with wrangler + Chrome MCP — full verify cycle. Next remote agent run at 16:00 UTC will pick F52.
 
 ### Iteration 1 — 2026-04-17T15:12Z
 - Task: F46 — Labelled "Attach" button on wide viewports
