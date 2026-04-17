@@ -1,10 +1,10 @@
 /**
  * ConversationSidebar — list of past conversations with search + CRUD
  */
-import { useState, useDeferredValue } from 'react'
+import { useState, useEffect, useDeferredValue } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Plus, MoreHorizontal, Pencil, Trash2, Search } from 'lucide-react'
+import { Plus, MoreHorizontal, Pencil, Trash2, Search, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -89,6 +89,29 @@ export function ConversationSidebar({ activeConversationId }: Props) {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const deferredQuery = useDeferredValue(searchQuery)
+  // Collapsed groups persisted per user in localStorage. "Older" starts
+  // collapsed by default — long histories are usually noise until needed.
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set()
+    try {
+      const raw = localStorage.getItem('sidebar.collapsedGroups')
+      if (raw) return new Set(JSON.parse(raw))
+    } catch {}
+    return new Set(['Older'])
+  })
+  useEffect(() => {
+    try {
+      localStorage.setItem('sidebar.collapsedGroups', JSON.stringify([...collapsedGroups]))
+    } catch {}
+  }, [collapsedGroups])
+  const toggleGroup = (label: string) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev)
+      if (next.has(label)) next.delete(label)
+      else next.add(label)
+      return next
+    })
+  }
 
   const conversations = data?.conversations ?? []
 
@@ -166,12 +189,29 @@ export function ConversationSidebar({ activeConversationId }: Props) {
           </div>
         ) : (
           <div className="p-1.5 space-y-2">
-            {groupByDate(conversations).map((group) => (
+            {groupByDate(conversations).map((group) => {
+              const isCollapsed = collapsedGroups.has(group.label)
+              return (
               <div key={group.label}>
-                <div className="px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60">
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(group.label)}
+                  className="flex w-full items-center gap-1 px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                  aria-expanded={!isCollapsed}
+                  aria-label={`Toggle ${group.label} group`}
+                >
+                  <ChevronRight
+                    className={cn(
+                      'size-3 transition-transform',
+                      !isCollapsed && 'rotate-90',
+                    )}
+                  />
                   {group.label}
-                </div>
-                <div className="space-y-0.5">
+                  <span className="ml-auto font-normal normal-case tracking-normal">
+                    {group.items.length}
+                  </span>
+                </button>
+                <div className={cn('space-y-0.5', isCollapsed && 'hidden')}>
                   {group.items.map((conv) => (
                     <Link
                       key={conv.id}
@@ -275,7 +315,8 @@ export function ConversationSidebar({ activeConversationId }: Props) {
                   ))}
                 </div>
               </div>
-            ))}
+            )
+            })}
           </div>
         )}
       </ScrollArea>

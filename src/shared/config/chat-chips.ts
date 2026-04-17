@@ -27,6 +27,21 @@ export interface ChatChip {
   presets: ChipPreset[]
 }
 
+/**
+ * Flat example questions shown beneath the chip row on the empty state.
+ * Click-to-send (doesn't open a menu) — the t3.chat pattern. Lowers
+ * cold-start effort for users who know exactly what to ask.
+ *
+ * Fork: replace with product-specific starters. Set to an empty array to
+ * hide the example-questions row entirely.
+ */
+export const CHAT_EXAMPLES: string[] = [
+  'How does AI work?',
+  'Help me plan a focused 2-hour coding session.',
+  'Summarise today\'s tech news in 5 bullet points.',
+  'What are the trade-offs of server components vs client components?',
+]
+
 export const CHAT_CHIPS: ChatChip[] = [
   {
     label: 'Write',

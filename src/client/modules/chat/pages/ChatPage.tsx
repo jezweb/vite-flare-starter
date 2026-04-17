@@ -33,6 +33,7 @@ import { ModelSelector } from '../components'
 import { AttachmentTiles } from '../components/AttachmentTiles'
 import { DropOverlay } from '../components/DropOverlay'
 import { ActionChips } from '../components/ActionChips'
+import { CHAT_EXAMPLES } from '@/shared/config/chat-chips'
 import { DEFAULT_MODEL_ID } from '@/shared/config/models'
 import { InputTakeover, isTakeoverElement } from '../components/chat-ui/InputTakeover'
 import { hasUiMarker } from '../components/chat-ui/ChatUiElement'
@@ -677,7 +678,32 @@ function EmptyStateBody({
         Ask anything, drop a file, or pick a starter below.
       </p>
       <ActionChips onPick={onPresetPick} onPreview={onPresetPreview} />
+      <ExampleQuestions onPick={onPresetPick} />
     </>
+  )
+}
+
+/**
+ * ExampleQuestions — click-to-insert flat starter prompts shown beneath the
+ * chip row. Matches t3.chat's pattern: gives users who know what they want
+ * a single-click cold start (chips handle the "I want to explore" path).
+ * Config lives in src/shared/config/chat-chips.ts → CHAT_EXAMPLES.
+ */
+function ExampleQuestions({ onPick }: { onPick: (text: string) => void }) {
+  if (CHAT_EXAMPLES.length === 0) return null
+  return (
+    <div className="w-full max-w-2xl mx-auto space-y-1.5 pt-2">
+      {CHAT_EXAMPLES.map((q) => (
+        <button
+          key={q}
+          type="button"
+          onClick={() => onPick(q)}
+          className="block w-full text-left rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
+        >
+          {q}
+        </button>
+      ))}
+    </div>
   )
 }
 
