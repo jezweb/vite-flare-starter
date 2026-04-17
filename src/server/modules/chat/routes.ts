@@ -9,11 +9,12 @@ import { Hono } from 'hono'
 import { generateText, convertToModelMessages, smoothStream, Output, createAgentUIStreamResponse, safeValidateUIMessages, pruneMessages, consumeStream, streamObject } from 'ai'
 import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
-import { desc, eq, sql } from 'drizzle-orm'
+import { and, desc, eq, sql } from 'drizzle-orm'
 import { authMiddleware, requireScopes, type AuthContext } from '@/server/middleware/auth'
 import { DEFAULT_MODEL, getModel, resolveModel, buildChatAgent } from '@/server/lib/ai'
 import { convertToMarkdown } from '@/server/lib/ai/documents'
 import { createD1ChatStorage } from '@/server/modules/conversations/storage'
+import { conversations } from '@/server/modules/conversations/db/schema'
 import { logActivityFromContext } from '@/server/modules/activity/log'
 import { aiUsageLogs } from './db/schema'
 
@@ -37,6 +38,59 @@ function formatBytes(n: number): string {
   if (n < 1024) return `${n} B`
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`
   return `${(n / 1024 / 1024).toFixed(1)} MB`
+}
+
+/**
+ * Auto-generate a short conversation title from the first user/assistant
+ * exchange. Uses Workers AI's free Kimi K2.5 — no external API key, fast.
+ * Falls back to the truncated first-user-message if the LLM call fails.
+ * Fire-and-forget from `onFinish`; client sidebar refreshes on next render.
+ */
+async function autoTitleConversation(
+  env: { AI: Ai; DB: D1Database },
+  conversationId: string,
+  userId: string,
+  messages: Array<{ role: string; parts?: Array<{ type?: string; text?: string }> }>,
+): Promise<void> {
+  try {
+    const firstUser = messages.find((m) => m.role === 'user')
+    const firstAssistant = messages.find((m) => m.role === 'assistant')
+    if (!firstUser || !firstAssistant) return
+    const userText =
+      firstUser.parts?.find((p) => p?.type === 'text')?.text?.slice(0, 500) ?? ''
+    const assistantText =
+      firstAssistant.parts?.find((p) => p?.type === 'text')?.text?.slice(0, 500) ?? ''
+    if (!userText || !assistantText) return
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result: any = await (env.AI as any).run('@cf/moonshotai/kimi-k2.5', {
+      messages: [
+        {
+          role: 'system',
+          content:
+            'Summarise the user\'s intent from this chat exchange into a short, specific title (≤6 words, sentence case, no quotes or trailing punctuation). Reply with ONLY the title text.',
+        },
+        { role: 'user', content: `USER: ${userText}\n\nASSISTANT: ${assistantText}\n\nTitle:` },
+      ],
+      max_tokens: 40,
+    })
+    const raw = (result?.response || result?.text || '').toString().trim()
+    const title = raw
+      .replace(/^["'`]|["'`]$/g, '')
+      .replace(/[.!?]+$/, '')
+      .slice(0, 80)
+    if (!title || title.length < 3) return
+
+    // Update the stored title. We don't use the storage helper here because
+    // updateTitle requires userId ownership — same check; inlined for brevity.
+    await drizzle(env.DB)
+      .update(conversations)
+      .set({ title })
+      .where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)))
+    console.log(JSON.stringify({ event: 'chat_auto_title', conversationId, title }))
+  } catch (err) {
+    console.warn(JSON.stringify({ event: 'chat_auto_title_failed', error: String(err) }))
+  }
 }
 
 /**
@@ -220,6 +274,14 @@ app.post('/', async (c) => {
           }
           await storage.saveChat({ conversationId: conversationId!, messages: finalMessages })
           console.log(JSON.stringify({ event: 'chat_saved', conversationId, messageCount: finalMessages.length }))
+
+          // For brand-new conversations, ask an LLM to summarise the first
+          // exchange into a short, specific title. Fire-and-forget — the
+          // client sidebar will pick up the new title on its next query.
+          if (isNewConversation) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            autoTitleConversation(c.env as any, conversationId!, userId, finalMessages as any)
+          }
         } catch (err) {
           console.error(JSON.stringify({ event: 'chat_save_error', error: String(err), conversationId }))
         }

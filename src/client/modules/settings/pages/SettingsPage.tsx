@@ -5,6 +5,7 @@ import { ProfileSection } from '../components/ProfileSection'
 import { SecuritySection } from '../components/SecuritySection'
 import { SessionsSection } from '../components/SessionsSection'
 import { PreferencesSection } from '../components/PreferencesSection'
+import { ChatPreferencesSection } from '../components/ChatPreferencesSection'
 import { ApiTokensSection } from '../components/ApiTokensSection'
 import { OrganizationSection } from '@/client/modules/organization/components/OrganizationSection'
 import { features } from '@/shared/config/features'
@@ -17,9 +18,17 @@ export function SettingsPage() {
     setSearchParams({ tab: value })
   }
 
-  // Calculate grid columns based on visible tabs
-  const tabCount = features.apiTokens ? 6 : 5
-  const gridCols = tabCount === 6 ? 'grid-cols-3 sm:grid-cols-6' : 'grid-cols-3 sm:grid-cols-5'
+  // Calculate grid columns based on visible tabs. Chat AI tab is shown when
+  // the chat feature is enabled (gates chat preferences together with the
+  // chat module itself).
+  const showChatTab = !!features.chat
+  const tabCount = (features.apiTokens ? 6 : 5) + (showChatTab ? 1 : 0)
+  const gridCols =
+    tabCount === 7
+      ? 'grid-cols-3 sm:grid-cols-7'
+      : tabCount === 6
+        ? 'grid-cols-3 sm:grid-cols-6'
+        : 'grid-cols-3 sm:grid-cols-5'
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -43,6 +52,7 @@ export function SettingsPage() {
           {features.apiTokens && (
             <TabsTrigger value="api-tokens">API Tokens</TabsTrigger>
           )}
+          {showChatTab && <TabsTrigger value="ai">AI</TabsTrigger>}
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
@@ -65,6 +75,12 @@ export function SettingsPage() {
         {features.apiTokens && (
           <TabsContent value="api-tokens">
             <ApiTokensSection />
+          </TabsContent>
+        )}
+
+        {showChatTab && (
+          <TabsContent value="ai">
+            <ChatPreferencesSection />
           </TabsContent>
         )}
 

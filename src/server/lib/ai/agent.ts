@@ -15,6 +15,7 @@
 import { ToolLoopAgent, stepCountIs, hasToolCall, type ToolSet, type PrepareStepResult } from 'ai'
 import { tokenBudgetPrepareStep } from './prepare-step'
 import { drizzle } from 'drizzle-orm/d1'
+import { and, eq } from 'drizzle-orm'
 import { resolveModel } from './providers'
 import { buildModel } from './middleware'
 import { buildSystemPrompt } from './context'
@@ -23,6 +24,7 @@ import { getModel, DEFAULT_MODEL } from './models'
 import { listSkills } from './skills/registry'
 import { buildChatTools } from '@/server/modules/chat/tools'
 import { aiUsageLogs } from '@/server/modules/chat/db/schema'
+import { userMeta } from '@/server/modules/user-meta/db/schema'
 
 interface AgentContext {
   env: Record<string, unknown> & {
@@ -65,15 +67,26 @@ export async function buildChatAgent(ctx: AgentContext): Promise<AgentResult> {
     ? availableSkills.map((s) => `- **${s.name}**: ${s.description}`).join('\n')
     : null
 
-  // Assemble system prompt with user context, date, skills
+  // Load optional chat preferences from user_meta — set via the settings UI.
+  // Stored as JSON under key `chat.preferences` = {preferredName, style, tone}.
+  const chatPrefs = await loadChatPreferences(ctx.env.DB, ctx.userId)
+  const prefsBlock = chatPrefs ? formatChatPreferences(chatPrefs) : null
+
+  const extraSections: Record<string, string> = {}
+  if (skillsCatalog) {
+    extraSections['Available Skills'] = `Use the load_skill tool to get full instructions for any of these:\n\n${skillsCatalog}`
+  }
+  if (prefsBlock) {
+    extraSections['User Preferences'] = prefsBlock
+  }
+
+  // Assemble system prompt with user context, date, skills, and preferences
   const instructions = buildSystemPrompt({
     baseInstructions: ctx.systemPrompt || 'You are a helpful assistant.',
     user: ctx.user ? { name: ctx.user.name, email: ctx.user.email, role: ctx.user.role } : undefined,
     currentDate: true,
     timezone: 'Australia/Sydney',
-    extra: skillsCatalog ? {
-      'Available Skills': `Use the load_skill tool to get full instructions for any of these:\n\n${skillsCatalog}`,
-    } : undefined,
+    extra: Object.keys(extraSections).length > 0 ? extraSections : undefined,
   })
 
   // Build toolkit: core tools + conditional modules + MCP tools
@@ -135,4 +148,61 @@ export async function buildChatAgent(ctx: AgentContext): Promise<AgentResult> {
   })
 
   return { agent, cleanup: mcpCleanup, startTime, modelId }
+}
+
+/**
+ * Chat preferences — per-user personalisation that influences the system
+ * prompt. Stored in `user_meta['chat.preferences']`. All fields optional.
+ */
+export interface ChatPreferences {
+  preferredName?: string
+  /** "concise" | "detailed" — shapes response length guidance */
+  style?: 'concise' | 'detailed'
+  /** "friendly" | "direct" | "academic" — shapes tone guidance */
+  tone?: 'friendly' | 'direct' | 'academic'
+  /** Free-form context the user wants the model to know (role, interests, etc.) */
+  about?: string
+}
+
+async function loadChatPreferences(
+  db: D1Database,
+  userId: string,
+): Promise<ChatPreferences | null> {
+  try {
+    const row = await drizzle(db)
+      .select({ value: userMeta.value })
+      .from(userMeta)
+      .where(and(eq(userMeta.userId, userId), eq(userMeta.key, 'chat.preferences')))
+      .get()
+    if (!row) return null
+    const parsed = JSON.parse(row.value) as ChatPreferences
+    // Only return if there's at least one non-empty field — otherwise we'd
+    // inject an empty section into the system prompt.
+    if (!parsed.preferredName && !parsed.style && !parsed.tone && !parsed.about) return null
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+function formatChatPreferences(p: ChatPreferences): string {
+  const lines: string[] = []
+  if (p.preferredName) lines.push(`- Preferred name: ${p.preferredName}`)
+  if (p.style) {
+    lines.push(
+      p.style === 'concise'
+        ? '- Response style: Concise — keep replies short and focused. Skip preamble.'
+        : '- Response style: Detailed — include context, reasoning, and worked examples.',
+    )
+  }
+  if (p.tone) {
+    const toneMap: Record<string, string> = {
+      friendly: 'warm and conversational',
+      direct: 'direct and matter-of-fact; no hedging',
+      academic: 'precise and formal, with citations where relevant',
+    }
+    lines.push(`- Tone: ${toneMap[p.tone] ?? p.tone}`)
+  }
+  if (p.about) lines.push(`- About the user: ${p.about.slice(0, 500)}`)
+  return lines.join('\n')
 }
