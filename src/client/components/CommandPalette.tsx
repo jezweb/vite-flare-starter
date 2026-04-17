@@ -6,8 +6,9 @@
  *
  * Keyboard: Cmd+K (Mac) or Ctrl+K (Windows/Linux)
  */
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useDeferredValue } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import {
   CommandDialog,
   CommandInput,
@@ -18,16 +19,37 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from '@/components/ui/command'
-import { Moon, Sun, LogOut, Settings } from 'lucide-react'
+import { Moon, Sun, LogOut, Settings, MessagesSquare } from 'lucide-react'
 import { useTheme } from '@/client/components/theme-provider'
 import { authClient } from '@/client/lib/auth'
+import { apiClient } from '@/client/lib/api-client'
 import { NAV_SECTIONS } from '@/shared/config/nav'
 import { features } from '@/shared/config/features'
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const deferredQuery = useDeferredValue(query)
   const navigate = useNavigate()
   const { theme, setTheme } = useTheme()
+
+  // Conversation search — fires once the user has typed at least 2 chars.
+  // Server endpoint already exists at GET /api/conversations/search?q=...
+  const { data: searchResults } = useQuery({
+    queryKey: ['cmd-palette', 'conversations', deferredQuery],
+    queryFn: () =>
+      apiClient.get<{ results: { conversationId: string; snippet: string; role: string }[] }>(
+        `/api/conversations/search?q=${encodeURIComponent(deferredQuery)}`,
+      ),
+    enabled: open && deferredQuery.length >= 2,
+    staleTime: 5_000,
+  })
+  const conversationHits = searchResults?.results ?? []
+
+  // Reset query when the palette closes so the next open starts fresh.
+  useEffect(() => {
+    if (!open) setQuery('')
+  }, [open])
 
   // Cmd+K / Ctrl+K to open
   useEffect(() => {
@@ -56,9 +78,37 @@ export function CommandPalette() {
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
-      <CommandInput placeholder="Type a command or search..." />
+      <CommandInput
+        placeholder="Search conversations or run a command..."
+        value={query}
+        onValueChange={setQuery}
+      />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
+
+        {/* Conversation hits (only when the user has typed a real query) */}
+        {deferredQuery.length >= 2 && conversationHits.length > 0 && (
+          <>
+            <CommandGroup heading="Conversations">
+              {conversationHits.slice(0, 8).map((hit) => (
+                <CommandItem
+                  key={`${hit.conversationId}-${hit.role}`}
+                  value={`${hit.conversationId}-${hit.role}-${hit.snippet}`}
+                  onSelect={() =>
+                    runCommand(() => navigate(`/dashboard/chat/${hit.conversationId}`))
+                  }
+                >
+                  <MessagesSquare className="mr-2 h-4 w-4" />
+                  <span className="truncate">{hit.snippet}</span>
+                  <CommandShortcut>
+                    {hit.role === 'title' ? 'title' : 'message'}
+                  </CommandShortcut>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            <CommandSeparator />
+          </>
+        )}
 
         {/* Navigation */}
         <CommandGroup heading="Navigation">

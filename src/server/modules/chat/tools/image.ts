@@ -49,8 +49,10 @@ export function buildImageTools(ctx: ImageContext) {
             size: (size || '1024x1024') as `${number}x${number}`,
           })
 
-          // Store to R2
-          const key = `generated/${ctx.userId}/${crypto.randomUUID()}.png`
+          // Store to R2. Key MUST start with `users/${userId}/` so that the
+          // /api/files/download/* endpoint's ownership check passes. Previous
+          // `generated/...` prefix silently 403'd every generated image.
+          const key = `users/${ctx.userId}/generated/${crypto.randomUUID()}.png`
           await ctx.env.FILES!.put(key, image.uint8Array, {
             httpMetadata: { contentType: 'image/png' },
             customMetadata: { prompt, provider, userId: ctx.userId },

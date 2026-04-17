@@ -22,6 +22,12 @@ export interface ConversationSummary {
 
 export interface ChatStorage {
   createConversation(userId: string, opts?: { title?: string; model?: string; systemPrompt?: string }): Promise<string>
+  /**
+   * Insert a conversation with a caller-supplied id. Used when the id is
+   * generated upfront (so the client can navigate to the permalink) but the
+   * actual DB row is deferred until first successful message save.
+   */
+  createConversationWithId(id: string, userId: string, opts?: { title?: string; model?: string; systemPrompt?: string }): Promise<void>
   /** Check if a user owns a conversation. Returns false if not found or not owned. */
   isOwner(conversationId: string, userId: string): Promise<boolean>
   loadChat(conversationId: string): Promise<UIMessage[]>
@@ -51,6 +57,20 @@ export function createD1ChatStorage(db: D1Database): ChatStorage {
         systemPrompt: opts?.systemPrompt || null,
       })
       return id
+    },
+
+    async createConversationWithId(id, userId, opts) {
+      // onConflictDoNothing lets this run idempotently for retried streams.
+      await d
+        .insert(conversations)
+        .values({
+          id,
+          userId,
+          title: opts?.title || null,
+          model: opts?.model || null,
+          systemPrompt: opts?.systemPrompt || null,
+        })
+        .onConflictDoNothing()
     },
 
     async isOwner(conversationId, userId) {

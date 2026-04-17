@@ -5,6 +5,7 @@
  * Reads from a central config so shortcuts stay in sync.
  */
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Dialog,
   DialogContent,
@@ -36,6 +37,7 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
     label: 'Actions',
     shortcuts: [
       { keys: '?', description: 'Show keyboard shortcuts' },
+      { keys: '⌘ ⇧ N', description: 'New chat conversation' },
       { keys: 'T', description: 'Toggle theme (light/dark)' },
       { keys: 'Escape', description: 'Close dialog / cancel' },
     ],
@@ -44,13 +46,26 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
 
 export function KeyboardShortcuts() {
   const [open, setOpen] = useState(false)
+  const navigate = useNavigate()
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      // ? key (shift + /) — but not in inputs
       const target = e.target as HTMLElement
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return
+      const inInput =
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
 
+      // Cmd/Ctrl + Shift + N — new chat conversation. Safe inside inputs too
+      // since the modifier is unlikely to collide with typing.
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'N' || e.key === 'n')) {
+        e.preventDefault()
+        navigate('/dashboard/chat')
+        return
+      }
+
+      // ? key (shift + /) — only when NOT in an input
+      if (inInput) return
       if (e.key === '?') {
         e.preventDefault()
         setOpen((prev) => !prev)
@@ -58,7 +73,7 @@ export function KeyboardShortcuts() {
     }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
-  }, [])
+  }, [navigate])
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

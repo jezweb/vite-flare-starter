@@ -2,15 +2,35 @@
  * ConversationSidebar — list of past conversations with search + CRUD
  */
 import { useState, useDeferredValue } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Plus, Trash2, MessageSquare, Search } from 'lucide-react'
+import { Plus, MoreHorizontal, Pencil, Trash2, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { cn } from '@/lib/utils'
 import { apiClient } from '@/client/lib/api-client'
-import { useConversationList, useDeleteConversation } from '../hooks/useConversations'
+import {
+  useConversationList,
+  useDeleteConversation,
+  useUpdateConversationTitle,
+} from '../hooks/useConversations'
 
 interface Props {
   activeConversationId?: string
@@ -62,7 +82,11 @@ export function ConversationSidebar({ activeConversationId }: Props) {
   const navigate = useNavigate()
   const { data, isLoading } = useConversationList()
   const deleteConversation = useDeleteConversation()
-  const [hoveredId, setHoveredId] = useState<string | null>(null)
+  const updateTitle = useUpdateConversationTitle()
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [renamingId, setRenamingId] = useState<string | null>(null)
+  const [renameText, setRenameText] = useState('')
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const deferredQuery = useDeferredValue(searchQuery)
 
@@ -82,7 +106,7 @@ export function ConversationSidebar({ activeConversationId }: Props) {
   const searchHits = searchResults?.results ?? []
 
   return (
-    <div className="flex h-full w-56 flex-col border-r bg-muted/30 shrink-0">
+    <div className="flex h-full w-64 flex-col border-r bg-muted/30 shrink-0">
       <div className="flex items-center justify-between p-3 border-b">
         <span className="text-sm font-medium">Conversations</span>
         <Button
@@ -119,14 +143,14 @@ export function ConversationSidebar({ activeConversationId }: Props) {
           ) : (
             <div className="p-1.5 space-y-0.5">
               {searchHits.map((hit) => (
-                <div
+                <Link
                   key={hit.conversationId}
-                  className="rounded-md px-2.5 py-2 cursor-pointer transition-colors hover:bg-muted"
-                  onClick={() => navigate(`/dashboard/chat/${hit.conversationId}`)}
+                  to={`/dashboard/chat/${hit.conversationId}`}
+                  className="block rounded-md px-2.5 py-2 transition-colors hover:bg-muted"
                 >
                   <div className="text-sm truncate">{hit.snippet}</div>
                   <div className="text-[10px] text-muted-foreground">{hit.role === 'title' ? 'Title match' : 'Message match'}</div>
-                </div>
+                </Link>
               ))}
             </div>
           )
@@ -149,45 +173,105 @@ export function ConversationSidebar({ activeConversationId }: Props) {
                 </div>
                 <div className="space-y-0.5">
                   {group.items.map((conv) => (
-                    <div
+                    <Link
                       key={conv.id}
+                      to={`/dashboard/chat/${conv.id}`}
                       className={cn(
-                        'group flex items-center gap-2 rounded-md px-2.5 py-2 cursor-pointer transition-colors',
+                        'group flex items-center gap-2 rounded-md px-2.5 py-2 transition-colors',
                         conv.id === activeConversationId
                           ? 'bg-accent text-accent-foreground'
                           : 'hover:bg-muted'
                       )}
-                      onClick={() => navigate(`/dashboard/chat/${conv.id}`)}
-                      onMouseEnter={() => setHoveredId(conv.id)}
-                      onMouseLeave={() => setHoveredId(null)}
                     >
-                      <MessageSquare className="size-3.5 shrink-0 text-muted-foreground" />
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm truncate">
-                          {conv.title || 'Untitled'}
-                        </div>
-                        <div className="text-[10px] text-muted-foreground">
-                          {timeAgo(conv.updatedAt)}
-                        </div>
+                        {renamingId === conv.id ? (
+                          <Input
+                            autoFocus
+                            value={renameText}
+                            onChange={(e) => setRenameText(e.target.value)}
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation() }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault()
+                                const t = renameText.trim()
+                                if (t) updateTitle.mutate({ id: conv.id, title: t })
+                                setRenamingId(null)
+                              }
+                              if (e.key === 'Escape') {
+                                e.preventDefault()
+                                setRenamingId(null)
+                              }
+                            }}
+                            onBlur={() => {
+                              const t = renameText.trim()
+                              if (t && t !== (conv.title || '')) {
+                                updateTitle.mutate({ id: conv.id, title: t })
+                              }
+                              setRenamingId(null)
+                            }}
+                            className="h-6 text-sm px-1.5"
+                          />
+                        ) : (
+                          <>
+                            <div className="text-sm truncate">
+                              {conv.title || 'Untitled'}
+                            </div>
+                            <div className="text-[10px] text-muted-foreground">
+                              {timeAgo(conv.updatedAt)}
+                            </div>
+                          </>
+                        )}
                       </div>
-                      {hoveredId === conv.id && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="size-6 shrink-0 opacity-0 group-hover:opacity-100"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            deleteConversation.mutate(conv.id)
-                            if (conv.id === activeConversationId) {
-                              navigate('/dashboard/chat')
-                            }
-                          }}
-                          title="Delete conversation"
+                      {renamingId !== conv.id && (
+                        <DropdownMenu
+                          open={openMenuId === conv.id}
+                          onOpenChange={(open) => setOpenMenuId(open ? conv.id : null)}
                         >
-                          <Trash2 className="size-3" />
-                        </Button>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              // CSS-based hover visibility — always in DOM so
+                              // programmatic interactions work, only visible
+                              // when the row is hovered OR the menu is open.
+                              className={cn(
+                                'size-6 shrink-0 transition-opacity',
+                                openMenuId === conv.id
+                                  ? 'opacity-100'
+                                  : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100',
+                              )}
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation() }}
+                              title="More actions"
+                              aria-label="More actions"
+                            >
+                              <MoreHorizontal className="size-3.5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" onClick={(e) => e.preventDefault()}>
+                            <DropdownMenuItem
+                              onSelect={() => {
+                                setRenameText(conv.title || '')
+                                setRenamingId(conv.id)
+                                setOpenMenuId(null)
+                              }}
+                            >
+                              <Pencil className="mr-2 size-3.5" />
+                              Rename
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onSelect={() => {
+                                setConfirmDeleteId(conv.id)
+                                setOpenMenuId(null)
+                              }}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="mr-2 size-3.5" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       )}
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </div>
@@ -195,6 +279,37 @@ export function ConversationSidebar({ activeConversationId }: Props) {
           </div>
         )}
       </ScrollArea>
+
+      {/* Delete confirmation dialog — reused for whichever conversation the
+          user clicked "Delete" on from the ellipsis menu. */}
+      <AlertDialog
+        open={!!confirmDeleteId}
+        onOpenChange={(open) => !open && setConfirmDeleteId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this conversation?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This can't be undone — messages will be permanently removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (!confirmDeleteId) return
+                const id = confirmDeleteId
+                deleteConversation.mutate(id)
+                if (id === activeConversationId) navigate('/dashboard/chat')
+                setConfirmDeleteId(null)
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

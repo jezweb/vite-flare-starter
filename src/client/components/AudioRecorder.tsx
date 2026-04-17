@@ -126,6 +126,7 @@ export function AudioRecorder({
         disabled={state === 'requesting' || state === 'stopping'}
         className={className}
         title={isRecording ? 'Stop recording' : 'Record audio'}
+        aria-label={isRecording ? 'Stop recording' : 'Record audio'}
       >
         {state === 'requesting' ? (
           <Loader2 className="size-4 animate-spin" />

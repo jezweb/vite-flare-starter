@@ -85,18 +85,32 @@ app.get('/', zValidator('query', listQuerySchema), async (c) => {
  */
 app.get('/download/*', async (c) => {
   const userId = c.get('userId')
-  const key = c.req.path.replace(/^\/api\/files\/download\//, '')
-  if (!key || !key.startsWith(`users/${userId}/`)) {
+  const rawKey = c.req.path.replace(/^\/api\/files\/download\//, '')
+  const decoded = decodeURIComponent(rawKey)
+  // Accept either the current scoped key format `users/${userId}/...` OR the
+  // legacy `generated/${userId}/...` format that earlier versions of the
+  // generate_image tool wrote. Both resolve to the same physical R2 object
+  // when we normalise. See commit fixing the generate_image key prefix.
+  const isScoped = decoded.startsWith(`users/${userId}/`)
+  const isLegacyGenerated = decoded.startsWith(`generated/${userId}/`)
+  if (!decoded || (!isScoped && !isLegacyGenerated)) {
     return c.json({ error: 'Access denied' }, 403)
   }
   const bucket = c.env.FILES as R2Bucket | undefined
   if (!bucket) return c.json({ error: 'Storage not configured' }, 501)
-  const object = await bucket.get(key)
+  // Try the key as given first; fall back to looking under the new location
+  // in case a legacy URL is hit after a re-generation migrated the object.
+  let object = await bucket.get(decoded)
+  if (!object && isLegacyGenerated) {
+    // Also try the new scoped path in case of a future migration.
+    const migrated = `users/${userId}/generated/${decoded.slice(`generated/${userId}/`.length)}`
+    object = await bucket.get(migrated)
+  }
   if (!object) return c.json({ error: 'Not found' }, 404)
   return new Response(object.body, {
     headers: {
       'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
-      'Content-Disposition': `inline; filename="${key.split('/').pop()}"`,
+      'Content-Disposition': `inline; filename="${decoded.split('/').pop()}"`,
       'Cache-Control': 'private, max-age=3600',
     },
   })

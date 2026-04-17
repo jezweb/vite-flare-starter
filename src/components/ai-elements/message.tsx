@@ -54,8 +54,16 @@ export const MessageContent = ({
 }: MessageContentProps) => (
   <div
     className={cn(
+      // [overflow-wrap:anywhere] forces single unbroken strings (raw binary
+      // pasted into a user message, base64 blobs, very long URLs, or the raw
+      // output of a failed file decode) to break at any character instead of
+      // pushing horizontal scroll onto the parent conversation scroller.
+      // Applied to all descendants because overflow-wrap isn't inherited.
       "is-user:dark flex w-fit min-w-0 max-w-full flex-col gap-2 overflow-hidden text-sm",
-      "group-[.is-user]:ml-auto group-[.is-user]:rounded-lg group-[.is-user]:bg-secondary group-[.is-user]:px-4 group-[.is-user]:py-3 group-[.is-user]:text-foreground",
+      "[&_*]:[overflow-wrap:anywhere]",
+      // Pill-like 24px radius on user bubbles — modern chat convention
+      // (claude.ai, ChatGPT, Gemini all use this shape).
+      "group-[.is-user]:ml-auto group-[.is-user]:rounded-[1.5rem] group-[.is-user]:bg-secondary group-[.is-user]:px-4 group-[.is-user]:py-3 group-[.is-user]:text-foreground",
       "group-[.is-assistant]:text-foreground",
       className
     )}

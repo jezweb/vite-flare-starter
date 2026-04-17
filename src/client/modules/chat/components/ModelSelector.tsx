@@ -72,11 +72,14 @@ export function ModelSelector({ value, onChange, disabled }: ModelSelectorProps)
     staleTime: 1000 * 60 * 5,
   })
 
-  if (isLoading) return <Skeleton className="h-9 w-[200px]" />
+  // Compact width (160px cap with truncation) keeps the input-footer row clean
+  // at narrow viewports without losing model identity — shortName is already
+  // used by the server's displayName field.
+  if (isLoading) return <Skeleton className="h-9 w-[160px]" />
   if (error || !data) {
     return (
       <Select disabled>
-        <SelectTrigger className="w-[200px]">
+        <SelectTrigger className="w-[160px]">
           <SelectValue placeholder="Failed to load models" />
         </SelectTrigger>
       </Select>
@@ -118,8 +121,10 @@ export function ModelSelector({ value, onChange, disabled }: ModelSelectorProps)
       onValueChange={onChange}
       disabled={disabled}
     >
-      <SelectTrigger className="w-[200px]">
-        <SelectValue>{selectedModel?.name || 'Select model'}</SelectValue>
+      <SelectTrigger className="w-[160px] max-w-[160px]">
+        <SelectValue>
+          <span className="truncate">{selectedModel?.name || 'Select model'}</span>
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         {orderedEntries.map(([key, models]) => (

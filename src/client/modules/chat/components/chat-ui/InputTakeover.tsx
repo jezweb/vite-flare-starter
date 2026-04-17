@@ -9,7 +9,7 @@
  * number keys for quick selection.
  */
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { X, ChevronRight, Check, ArrowUp, Pencil, Circle } from 'lucide-react'
+import { X, ChevronRight, ChevronLeft, Check, ArrowUp, Pencil, Circle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -65,16 +65,36 @@ export function isTakeoverElement(element: unknown): element is UiElement {
 
 // ─── Shared Header / Footer ─────────────────────────────────────────
 
-function TakeoverHeader({ title, onDismiss, hint }: { title: string; onDismiss: () => void; hint?: string }) {
+function TakeoverHeader({
+  title,
+  onDismiss,
+  hint,
+  progress,
+}: {
+  title: string
+  onDismiss: () => void
+  hint?: string
+  /** e.g. { current: 1, total: 3 } — shows "1 of 3 ›" in the header */
+  progress?: { current: number; total: number }
+}) {
   return (
     <div className="flex items-center justify-between px-4 pt-3 pb-2">
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-foreground">{title}</p>
         {hint && <p className="text-[10px] text-muted-foreground mt-0.5">{hint}</p>}
       </div>
-      <Button variant="ghost" size="icon-sm" onClick={onDismiss} className="text-muted-foreground hover:text-foreground shrink-0">
-        <X className="h-4 w-4" />
-      </Button>
+      <div className="flex items-center gap-1 shrink-0">
+        {progress && progress.total > 1 && (
+          <span className="text-[11px] text-muted-foreground tabular-nums mr-1">
+            <ChevronLeft className="inline h-3 w-3 -mt-px" />
+            {' '}{progress.current} of {progress.total}{' '}
+            <ChevronRight className="inline h-3 w-3 -mt-px" />
+          </span>
+        )}
+        <Button variant="ghost" size="icon-sm" onClick={onDismiss} className="text-muted-foreground hover:text-foreground">
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   )
 }
@@ -203,7 +223,11 @@ function QuestionTakeover({ element, onSubmit, onDismiss }: Props) {
 
   return (
     <div className="border-t border-border bg-card rounded-b-2xl">
-      <TakeoverHeader title={q.question} onDismiss={onDismiss} />
+      <TakeoverHeader
+        title={q.question}
+        onDismiss={onDismiss}
+        progress={{ current: currentIdx + 1, total: questions.length }}
+      />
       <div className="px-4 pb-2 flex flex-col gap-0.5">
         {q.options.map((opt, i) => {
           const isFocused = focusIdx === i

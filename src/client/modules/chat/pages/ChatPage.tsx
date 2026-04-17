@@ -6,15 +6,10 @@
  * attachments. Custom bits (artifacts, documents, inline UI, input
  * takeover, approval UI) are composed inside the AI Elements layout.
  */
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
-import {
-  Conversation,
-  ConversationContent,
-  ConversationScrollButton,
-} from '@/components/ai-elements/conversation'
 import {
   PromptInput,
   PromptInputTextarea,
@@ -25,9 +20,9 @@ import {
   PromptInputActionMenuTrigger,
   PromptInputActionMenuContent,
   PromptInputActionAddAttachments,
+  PromptInputActionAddScreenshot,
 } from '@/components/ai-elements/prompt-input'
-import { Suggestion } from '@/components/ai-elements/suggestion'
-import { Plus, MessageSquare, PanelLeft, PanelLeftClose, Sparkles, Download } from 'lucide-react'
+import { Plus, MessageSquare, MessagesSquare, Download, ArrowDown } from 'lucide-react'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { useMediaQuery } from '@/client/hooks/useMediaQuery'
 import { useChat, type Message } from '../hooks/useChat'
@@ -35,19 +30,52 @@ import { useConversationMessages } from '../hooks/useConversations'
 import { ConversationSidebar } from '../components/ConversationSidebar'
 import { MessageRenderer } from '../components/MessageRenderer'
 import { ModelSelector } from '../components'
+import { AttachmentTiles } from '../components/AttachmentTiles'
+import { DropOverlay } from '../components/DropOverlay'
+import { ActionChips } from '../components/ActionChips'
 import { DEFAULT_MODEL_ID } from '@/shared/config/models'
 import { InputTakeover, isTakeoverElement } from '../components/chat-ui/InputTakeover'
 import { hasUiMarker } from '../components/chat-ui/ChatUiElement'
 import { AudioRecorder } from '@/client/components/AudioRecorder'
 import { usePasteUpload } from '@/client/hooks/usePasteUpload'
 import { useSession } from '@/client/lib/auth'
+import { cn } from '@/lib/utils'
 
-const EXAMPLE_PROMPTS = [
-  'Search the web for the latest news on AI agents',
-  'Remember that my preferred language is TypeScript',
-  'Show me a table comparing the top 5 programming languages',
-  'Help me draft an email about a project update',
-]
+/**
+ * Accept string for the file input. We widened this beyond images so that
+ * docs/PDFs/audio can flow through convertToMarkdown on the server regardless
+ * of whether the current model supports vision. Vision-only models still get
+ * an image-filtered picker via `acceptFor(model)`.
+ */
+const ACCEPT_ALL = [
+  'image/*',
+  'audio/*',
+  'video/*',
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/msword',
+  'application/vnd.ms-excel',
+  'application/vnd.ms-powerpoint',
+  'text/plain',
+  'text/markdown',
+  'text/csv',
+  'text/html',
+  'application/json',
+  'application/xml',
+  'application/rtf',
+  'application/epub+zip',
+].join(',')
+
+function greetingForTime(name: string | undefined): string {
+  const hour = new Date().getHours()
+  const who = name ? `, ${name}` : ''
+  if (hour < 5) return `Good evening${who}`
+  if (hour < 12) return `Good morning${who}`
+  if (hour < 18) return `Good afternoon${who}`
+  return `Good evening${who}`
+}
 
 export function ChatPage() {
   const { conversationId: urlConversationId } = useParams<{ conversationId?: string }>()
@@ -61,9 +89,30 @@ export function ChatPage() {
 
   // Share Target: when shared from mobile, params arrive as ?title=&text=&url=
   const sharedText = searchParams.get('text') || searchParams.get('title') || searchParams.get('url')
-  // Vision support check — accept image attachments for models known to support it.
-  // The API endpoint also validates this server-side.
+  // Vision support check — gates whether we accept image attachments at the picker.
+  // Non-image files (PDF/DOCX/audio/text) flow through convertToMarkdown on the
+  // server and are safe for every model. The API endpoint also validates.
   const supportsVision = model.includes('gemma') || model.includes('gemini') || model.includes('claude') || model.includes('gpt')
+  // Accept is "everything" for vision-capable models, or "everything minus images"
+  // for text-only models. Drop, paste, and the + menu all respect this.
+  const acceptString = supportsVision
+    ? ACCEPT_ALL
+    : ACCEPT_ALL.replace('image/*,', '')
+
+  // Ref to the underlying textarea so preset chips can insert text.
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null)
+  // Single scroll container holding both the transcript and the sticky input.
+  // We manage auto-scroll-to-bottom manually instead of relying on StickToBottom
+  // so the input can be a sticky child of the same scroller (claude.ai layout).
+  const scrollRef = useRef<HTMLDivElement | null>(null)
+  const [isAtBottom, setIsAtBottom] = useState(true)
+  // Track if the user has scrolled up: if yes, don't auto-stick to bottom on
+  // streamed tokens (respect their read position).
+  const stickToBottomRef = useRef(true)
+  // Count of new messages that arrived while the user was scrolled up. Used to
+  // show a "↓ 3 new messages" badge on the scroll-to-latest button.
+  const [unreadCount, setUnreadCount] = useState(0)
+  const lastSeenCountRef = useRef(0)
 
   const { data: existingConversation } = useConversationMessages(urlConversationId)
 
@@ -94,12 +143,25 @@ export function ChatPage() {
     }
   }, [conversationId, urlConversationId, messages.length, navigate, queryClient])
 
-  // Hydrate messages when the conversation loads (useChat ignores initialMessages after mount).
-  // Messages from the API have createdAt as ISO string (JSON serialisation); convert back to Date
-  // so the AI SDK's internal comparison/cloning works correctly.
+  // Reset + hydrate when the conversation URL changes (navigating sidebar
+  // entries). Tracking the last-hydrated conversationId prevents us from
+  // clobbering mid-stream messages for the current conversation.
+  const lastHydratedIdRef = useRef<string | undefined>(undefined)
   useEffect(() => {
+    // Conversation cleared (user clicked "New chat" with no id) — empty the list.
+    if (!urlConversationId) {
+      if (lastHydratedIdRef.current !== undefined) {
+        setMessages([])
+        lastHydratedIdRef.current = undefined
+      }
+      return
+    }
     const raw = existingConversation?.messages as Message[] | undefined
-    if (!raw || raw.length === 0 || messages.length > 0) return
+    // Still loading — don't touch messages.
+    if (!raw) return
+    // Already hydrated this conversation and we're not switching — skip.
+    if (lastHydratedIdRef.current === urlConversationId) return
+
     const hydrated = raw.map((m) => {
       const msg = m as Message & { createdAt?: unknown }
       return {
@@ -111,8 +173,9 @@ export function ChatPage() {
       }
     })
     setMessages(hydrated as Message[])
+    lastHydratedIdRef.current = urlConversationId
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [existingConversation?.messages])
+  }, [urlConversationId, existingConversation?.messages])
 
   // Share Target: auto-send shared text on first load, then clear params
   useEffect(() => {
@@ -193,12 +256,54 @@ export function ChatPage() {
     [addToolApprovalResponse],
   )
 
-  const handleSuggestion = useCallback(
-    (suggestion: string) => {
-      sendMessage({ text: suggestion })
-    },
-    [sendMessage],
-  )
+  // Preview vs pick separation for ActionChips hover:
+  //   - onPreview(text): fill textarea temporarily (remember prior value)
+  //   - onPreview(null): restore the prior value
+  //   - onPick(text):    commit (prior value forgotten)
+  // This lets users glide over presets to see them live in the textarea
+  // without committing, matching claude.ai's chip UX.
+  const priorTextareaRef = useRef<string | null>(null)
+  const setTextareaValue = useCallback((text: string, focus: boolean) => {
+    const ta = textareaRef.current
+    if (!ta) return
+    // Use the native setter so React's synthetic onChange picks up the change.
+    const setter = Object.getOwnPropertyDescriptor(
+      window.HTMLTextAreaElement.prototype,
+      'value',
+    )?.set
+    setter?.call(ta, text)
+    ta.dispatchEvent(new Event('input', { bubbles: true }))
+    if (focus) {
+      ta.focus()
+      requestAnimationFrame(() => ta.setSelectionRange(text.length, text.length))
+    }
+  }, [])
+
+  const handlePresetPreview = useCallback((text: string | null) => {
+    const ta = textareaRef.current
+    if (!ta) return
+    if (text === null) {
+      // Restore — only if the preview was actually in effect (guards against
+      // stray mouseleave events when no preview was active).
+      if (priorTextareaRef.current !== null) {
+        setTextareaValue(priorTextareaRef.current, false)
+        priorTextareaRef.current = null
+      }
+    } else {
+      // Save current value once on first preview, then fill.
+      if (priorTextareaRef.current === null) {
+        priorTextareaRef.current = ta.value
+      }
+      setTextareaValue(text, false)
+    }
+  }, [setTextareaValue])
+
+  const handlePresetPick = useCallback((text: string) => {
+    // Commit — discard the saved prior value so future mouseleave doesn't
+    // undo the user's selection.
+    priorTextareaRef.current = null
+    setTextareaValue(text, true)
+  }, [setTextareaValue])
 
   const handleSubmit = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -247,8 +352,80 @@ export function ChatPage() {
 
   const hasMessages = messages.length > 0
 
+  // Track whether the user is near the bottom of the scroll container so we
+  // can (a) show/hide the scroll-to-bottom button, (b) stop auto-sticking
+  // once they scroll up, and (c) reset the unread count when they return.
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 48
+    setIsAtBottom(nearBottom)
+    stickToBottomRef.current = nearBottom
+    if (nearBottom) {
+      setUnreadCount(0)
+      lastSeenCountRef.current = messages.length
+    }
+  }, [messages.length])
+
+  // Auto-scroll to bottom on new messages / streamed tokens, but only if the
+  // user hasn't scrolled up. Tracks unread count for the scroll-to-latest
+  // badge when they have.
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    if (stickToBottomRef.current) {
+      requestAnimationFrame(() => {
+        el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+      })
+      lastSeenCountRef.current = messages.length
+    } else {
+      // User is scrolled up — anything past the last seen index counts as unread.
+      const delta = messages.length - lastSeenCountRef.current
+      if (delta > 0) setUnreadCount(delta)
+    }
+  }, [messages])
+
+  // While streaming, tokens arrive without a messages[] identity change — so
+  // the effect above doesn't re-fire per token. Run a rAF loop that nudges the
+  // scroll position to the bottom each frame until streaming stops. Gives
+  // claude.ai-style continuous auto-scroll instead of jumpy per-message scroll.
+  useEffect(() => {
+    if (!isLoading) return
+    let rafId = 0
+    const tick = () => {
+      const el = scrollRef.current
+      if (el && stickToBottomRef.current) {
+        // instant, not smooth, because we're running 60fps — smooth would jitter
+        el.scrollTop = el.scrollHeight
+      }
+      rafId = requestAnimationFrame(tick)
+    }
+    rafId = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(rafId)
+  }, [isLoading])
+
+  // Force scroll to bottom (e.g. when user clicks the scroll-down button or
+  // submits a new message). Also clears the unread-message badge.
+  const scrollToBottom = useCallback(() => {
+    const el = scrollRef.current
+    if (!el) return
+    stickToBottomRef.current = true
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+    setUnreadCount(0)
+    lastSeenCountRef.current = messages.length
+  }, [messages.length])
+
   return (
-    <div className="flex h-[calc(100svh-7rem)] min-h-[500px] overflow-hidden">
+    // Break out of DashboardLayout's p-4 md:p-6 wrapper so the scroller fills
+    // the entire <main> region edge-to-edge (claude.ai style — scrollbar hugs
+    // the right edge of the content area, no inset padding). The negative
+    // margin cancels the parent padding exactly; `h-[calc(100svh-3.5rem)]`
+    // accounts for the SiteHeader only (56px, no extra padding now that we've
+    // cancelled the p-4/p-6).
+    <div className="-m-4 md:-m-6 flex h-[calc(100svh-3.5rem)] overflow-hidden">
+      {/* Full-viewport drop overlay while dragging files. Visual only — the
+          actual capture happens inside PromptInput's globalDrop handler. */}
+      <DropOverlay disabled={isLoading} />
       {/* Conversation sidebar: inline on desktop, Sheet on mobile */}
       {showSidebar && isDesktop && (
         <ConversationSidebar activeConversationId={urlConversationId} />
@@ -272,8 +449,11 @@ export function ChatPage() {
               className="size-8"
               onClick={() => setShowSidebar(!showSidebar)}
               title={showSidebar ? 'Hide conversations' : 'Show conversations'}
+              aria-label={showSidebar ? 'Hide conversations' : 'Show conversations'}
             >
-              {showSidebar ? <PanelLeftClose className="size-4" /> : <PanelLeft className="size-4" />}
+              {/* MessagesSquare (plural speech bubbles) distinguishes this from
+                  the dashboard sidebar toggle in SiteHeader which uses PanelLeft. */}
+              <MessagesSquare className="size-4" />
             </Button>
             <MessageSquare className="size-4 text-muted-foreground ml-1" />
             <h1 className="text-sm font-medium">AI Chat</h1>
@@ -308,10 +488,18 @@ export function ChatPage() {
           </div>
         </div>
 
-        {/* Messages — skip consecutive duplicate user messages (from regenerate) */}
-        {hasMessages ? (
-          <Conversation className="flex-1">
-            <ConversationContent className="max-w-3xl mx-auto w-full px-4 py-6">
+        {/* One scroll container holds BOTH the transcript AND the sticky
+            input. Flex-col so the empty-state and sticky input can share
+            vertical space cleanly — without flex-col the empty state needs
+            `min-h-full` which stacks with the 144px sticky input and creates
+            a phantom scrollbar on a fresh conversation. */}
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="flex flex-col flex-1 min-h-0 overflow-y-auto overflow-x-hidden relative"
+        >
+          {hasMessages ? (
+            <div className="max-w-3xl mx-auto w-full px-4 py-6 flex flex-col gap-8">
               {messages.map((message, idx) => {
                 // Hide duplicate user messages left by regenerate
                 if (message.role === 'user' && idx > 0) {
@@ -332,55 +520,126 @@ export function ChatPage() {
                   />
                 )
               })}
-            </ConversationContent>
-            <ConversationScrollButton />
-          </Conversation>
-        ) : (
-          <EmptyState onSuggestion={handleSuggestion} />
-        )}
-
-        {/* Error display */}
-        {error && (
-          <div className="border-t bg-destructive/10 px-4 py-2 text-xs text-destructive">
-            {error}
-          </div>
-        )}
-
-        {/* Input area */}
-        <div className="border-t bg-background">
-          <div className="mx-auto max-w-3xl p-3">
-            {activeTakeover ? (
-              <InputTakeover
-                element={activeTakeover}
-                onSubmit={handleTakeoverSubmit}
-                onDismiss={handleTakeoverDismiss}
-              />
-            ) : (
-              <PromptInput
-                onSubmit={handleSubmit}
-                accept={supportsVision ? 'image/*' : undefined}
-                multiple
-                maxFiles={5}
-                maxFileSize={10 * 1024 * 1024}
-              >
-                <PromptInputTextarea
-                  placeholder={hasMessages ? 'Reply to the AI...' : 'Ask anything...'}
+              {/* Bottom spacer — leaves room for the sticky input so the last
+                  message isn't permanently hidden behind it when scrolled to
+                  the bottom. Matches claude.ai's h-12 spacer pattern. */}
+              <div aria-hidden className="h-48 shrink-0" />
+            </div>
+          ) : (
+            <div className="flex-1 flex items-center justify-center px-4 py-6">
+              <div className="max-w-2xl w-full text-center space-y-6">
+                <EmptyStateBody
+                  userName={session?.user?.name?.split(' ')[0]}
+                  userEmail={session?.user?.email}
+                  onPresetPick={handlePresetPick}
+                  onPresetPreview={handlePresetPreview}
                 />
-                <PromptInputFooter>
-                  <PromptInputTools>
-                    <PromptInputActionMenu>
-                      <PromptInputActionMenuTrigger />
-                      <PromptInputActionMenuContent>
-                        <PromptInputActionAddAttachments />
-                      </PromptInputActionMenuContent>
-                    </PromptInputActionMenu>
-                    <AudioRecorder compact onRecordingComplete={handleAudioRecording} />
-                    <ModelSelector value={model} onChange={setModel} disabled={isLoading} />
-                  </PromptInputTools>
-                  <PromptInputSubmit status={status} onStop={stop} />
-                </PromptInputFooter>
-              </PromptInput>
-            )}
+              </div>
+            </div>
+          )}
+
+          {/* Error display — inside the scroller so it's visible above the input */}
+          {error && (
+            <div className="sticky bottom-28 mx-auto max-w-3xl px-4">
+              <div className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                {error}
+              </div>
+            </div>
+          )}
+
+          {/* Sticky input — pinned to the bottom of the scroll container with
+              a gradient fade so messages scroll nicely behind it. */}
+          <div className="sticky bottom-0 left-0 right-0 z-10">
+            {/* Gradient fade-out so text under the input fades into the bg */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 -top-6 h-6 bg-gradient-to-t from-background to-transparent"
+            />
+            <div className="bg-background px-4 pt-2 pb-4">
+              <div className="mx-auto max-w-3xl">
+                {/* Scroll-to-bottom button floats above the input card */}
+                {!isAtBottom && hasMessages && (
+                  <div className="flex justify-center -mt-2 mb-2">
+                    <Button
+                      size="sm"
+                      onClick={scrollToBottom}
+                      className="h-8 rounded-full shadow-lg bg-foreground text-background hover:bg-foreground/90"
+                    >
+                      <ArrowDown className="size-3.5 mr-1" />
+                      {unreadCount > 0
+                        ? `${unreadCount} new message${unreadCount === 1 ? '' : 's'}`
+                        : 'Scroll to latest'}
+                    </Button>
+                  </div>
+                )}
+                {activeTakeover ? (
+                  <div className="rounded-2xl border bg-card shadow-sm overflow-hidden">
+                    <InputTakeover
+                      element={activeTakeover}
+                      onSubmit={handleTakeoverSubmit}
+                      onDismiss={handleTakeoverDismiss}
+                    />
+                  </div>
+                ) : (
+                  // Outer wrapper owns the border + rounding + focus ring.
+                  // Inner InputGroup has its own border+rounded-md+ring; we
+                  // neutralise those via the `[&_...]` selectors so we don't
+                  // end up with mismatched nested corners (the original bug).
+                  <div
+                    className={cn(
+                      'rounded-2xl border bg-background shadow-sm overflow-hidden transition-all',
+                      // Stronger focus treatment — subtle ring in the primary
+                      // colour plus a slightly brighter border. Still calm
+                      // (20% opacity), but actually perceptible in dark mode.
+                      'focus-within:border-primary/30 focus-within:ring-1 focus-within:ring-primary/20',
+                      // Kill the inner InputGroup chrome so only the outer
+                      // wrapper is visible. Keep the outer radius; drop the
+                      // inner ring + border that were stacking.
+                      '[&_[data-slot=input-group]]:border-0',
+                      '[&_[data-slot=input-group]]:rounded-none',
+                      '[&_[data-slot=input-group]]:shadow-none',
+                      '[&_[data-slot=input-group]]:focus-within:ring-0',
+                    )}
+                  >
+                    <PromptInput
+                      onSubmit={handleSubmit}
+                      accept={acceptString}
+                      multiple
+                      maxFiles={5}
+                      maxFileSize={25 * 1024 * 1024}
+                      globalDrop
+                    >
+                      <AttachmentTiles />
+                      <PromptInputTextarea
+                        ref={textareaRef}
+                        placeholder={hasMessages ? 'Reply to the AI...' : 'Ask anything, or drop a file…'}
+                      />
+                      <PromptInputFooter>
+                        <PromptInputTools>
+                          <PromptInputActionMenu>
+                            <PromptInputActionMenuTrigger
+                              aria-label="Attach a file or take a screenshot"
+                              tooltip="Attach"
+                              // Subtle muted background so the + button reads
+                              // as a distinct action trigger rather than an
+                              // ambient icon that disappears into the card.
+                              className="bg-muted hover:bg-muted-foreground/10"
+                            />
+                            <PromptInputActionMenuContent>
+                              <PromptInputActionAddAttachments />
+                              <PromptInputActionAddScreenshot />
+                            </PromptInputActionMenuContent>
+                          </PromptInputActionMenu>
+                          <AudioRecorder compact onRecordingComplete={handleAudioRecording} />
+                          <ModelSelector value={model} onChange={setModel} disabled={isLoading} />
+                        </PromptInputTools>
+                        <PromptInputSubmit status={status} onStop={stop} />
+                      </PromptInputFooter>
+                    </PromptInput>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -388,26 +647,37 @@ export function ChatPage() {
   )
 }
 
-function EmptyState({ onSuggestion }: { onSuggestion: (s: string) => void }) {
+/**
+ * Empty-state body — no outer scroll wrapper. The parent scroll container in
+ * ChatPage wraps this (and the sticky input) together; we just render the
+ * greeting + chip row here.
+ */
+function EmptyStateBody({
+  userName,
+  userEmail,
+  onPresetPick,
+  onPresetPreview,
+}: {
+  userName?: string
+  userEmail?: string
+  onPresetPick: (text: string) => void
+  onPresetPreview: (text: string | null) => void
+}) {
   return (
-    <div className="flex flex-1 items-center justify-center overflow-y-auto px-4">
-      <div className="max-w-2xl w-full text-center space-y-6">
-        <div className="inline-flex size-12 items-center justify-center rounded-full bg-primary/10 mb-2">
-          <Sparkles className="size-5 text-primary" />
+    <>
+      {(userName || userEmail) && (
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card/50 px-3 py-1 text-xs text-muted-foreground">
+          {userEmail || userName}
         </div>
-        <div className="space-y-2">
-          <h2 className="text-2xl font-semibold tracking-tight">What can I help with?</h2>
-          <p className="text-sm text-muted-foreground">
-            60+ tools including web search, file management, code execution, image and video processing.
-          </p>
-        </div>
-        <div className="flex flex-wrap justify-center gap-2">
-          {EXAMPLE_PROMPTS.map((prompt) => (
-            <Suggestion key={prompt} suggestion={prompt} onClick={onSuggestion} />
-          ))}
-        </div>
-      </div>
-    </div>
+      )}
+      <h2 className="text-3xl font-semibold tracking-tight">
+        {greetingForTime(userName)}
+      </h2>
+      <p className="text-sm text-muted-foreground/60 -mt-3">
+        Ask anything, drop a file, or pick a starter below.
+      </p>
+      <ActionChips onPick={onPresetPick} onPreview={onPresetPreview} />
+    </>
   )
 }
 

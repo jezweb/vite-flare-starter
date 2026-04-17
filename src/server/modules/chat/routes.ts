@@ -23,6 +23,23 @@ app.use('*', authMiddleware)
 app.use('*', requireScopes('chat:write'))
 
 /**
+ * Build the `"<name> (<size>)"` label embedded in the attachment prefix that
+ * the frontend's AttachedFileBlock detects and collapses.
+ * e.g. `invoice.pdf (42 KB)` or `file (1.2 MB)` when no filename is available.
+ */
+function attachmentLabel(part: { filename?: string }, byteLen: number): string {
+  const name = part.filename?.trim() || 'file'
+  const size = formatBytes(byteLen)
+  return `${name} (${size})`
+}
+
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`
+  return `${(n / 1024 / 1024).toFixed(1)} MB`
+}
+
+/**
  * POST /api/chat - Streaming chat endpoint (AI SDK ToolLoopAgent)
  *
  * Accepts AI SDK UIMessage format from useChat hook.
@@ -48,32 +65,26 @@ app.post('/', async (c) => {
     const user = c.get('user') as { name?: string; email?: string; role?: string } | undefined
     const storage = createD1ChatStorage(c.env.DB)
 
-    // Create or reuse conversation
-    let conversationId = existingConversationId as string | undefined
-    if (!conversationId) {
-      // Auto-generate title from first user message — UIMessages use `parts`, not `content`
-      const firstUserMsg = messages.find((m: { role: string }) => m.role === 'user')
-      const extractTitle = (msg: typeof firstUserMsg): string => {
-        if (!msg) return 'New conversation'
-        if (typeof msg.content === 'string' && msg.content.trim()) return msg.content.slice(0, 80)
-        const parts = msg.parts as Array<{ type?: string; text?: string }> | undefined
-        const textPart = parts?.find((p) => p?.type === 'text' && typeof p.text === 'string' && p.text.trim())
-        if (textPart?.text) return textPart.text.slice(0, 80)
-        return 'New conversation'
-      }
+    // Title derived from the first user message — used lazily when we finally
+    // persist the conversation in `onFinish`.
+    const firstUserMsg = messages.find((m: { role: string }) => m.role === 'user')
+    const extractTitle = (msg: typeof firstUserMsg): string => {
+      if (!msg) return 'New conversation'
+      if (typeof msg.content === 'string' && msg.content.trim()) return msg.content.slice(0, 80)
+      const parts = msg.parts as Array<{ type?: string; text?: string }> | undefined
+      const textPart = parts?.find((p) => p?.type === 'text' && typeof p.text === 'string' && p.text.trim())
+      if (textPart?.text) return textPart.text.slice(0, 80)
+      return 'New conversation'
+    }
 
-      conversationId = await storage.createConversation(userId, {
-        title: extractTitle(firstUserMsg),
-        model: requestedModel || DEFAULT_MODEL,
-        systemPrompt,
-      })
-      await logActivityFromContext(c, {
-        action: 'create',
-        entityType: 'conversation',
-        entityId: conversationId,
-        entityName: extractTitle(firstUserMsg),
-        metadata: { model: requestedModel || DEFAULT_MODEL },
-      })
+    // Generate the conversation id upfront so the client can navigate to the
+    // permalink, but DO NOT insert the row until we have real messages to save.
+    // Inserting eagerly caused ghost empty conversations whenever a stream
+    // failed before `onFinish` could persist any messages.
+    let conversationId = existingConversationId as string | undefined
+    const isNewConversation = !conversationId
+    if (!conversationId) {
+      conversationId = crypto.randomUUID()
     }
 
     // Build the agent (model, tools, system prompt, logging — all encapsulated)
@@ -129,7 +140,11 @@ app.post('/', async (c) => {
             }
           // Text-ish formats — inline directly (skip the round-trip through AI)
           } else if (mime.startsWith('text/') || mime === 'application/json') {
-            textContent = `[Attached file content]:\n\n${new TextDecoder().decode(bytes)}`
+            const decoded = new TextDecoder().decode(bytes)
+            // Prefix format `[Attached file: <name> (<size>)]` is detected by
+            // the client's AttachedFileBlock renderer to show a collapsible
+            // card instead of the raw extracted text. Keep this stable.
+            textContent = `[Attached file: ${attachmentLabel(part as { filename?: string }, bytes.length)}]\n\n${decoded}`
           // Everything else (PDF, DOCX, XLSX, PPTX, HTML, RTF, EPUB, legacy Office, etc.)
           // — delegate to convertToMarkdown which uses env.AI.toMarkdown() with
           // safe fallbacks. Handles ZIP-based office formats correctly so the
@@ -141,7 +156,7 @@ app.post('/', async (c) => {
               mime,
               { filename: (part as { filename?: string }).filename },
             )
-            textContent = `[Attached file content]:\n\n${markdown}`
+            textContent = `[Attached file: ${attachmentLabel(part as { filename?: string }, bytes.length)}]\n\n${markdown}`
           }
 
           if (textContent) {
@@ -181,9 +196,28 @@ app.post('/', async (c) => {
         return undefined
       },
       onFinish: async ({ messages: finalMessages }) => {
-        // Persist conversation messages to D1
+        // Persist conversation messages to D1. For brand-new conversations,
+        // insert the parent conversation row LAZILY here — this prevents ghost
+        // empty conversations whenever streaming fails before any message
+        // completes. If onFinish never fires, nothing is saved.
         console.log(JSON.stringify({ event: 'chat_onFinish', conversationId, messageCount: finalMessages.length, firstRole: finalMessages[0]?.role }))
         try {
+          if (isNewConversation) {
+            await storage.createConversationWithId(conversationId!, userId, {
+              title: extractTitle(firstUserMsg),
+              model: requestedModel || DEFAULT_MODEL,
+              systemPrompt,
+            })
+            // Activity log moved here too so empty conversations don't pollute
+            // the audit trail.
+            await logActivityFromContext(c, {
+              action: 'create',
+              entityType: 'conversation',
+              entityId: conversationId!,
+              entityName: extractTitle(firstUserMsg),
+              metadata: { model: requestedModel || DEFAULT_MODEL },
+            })
+          }
           await storage.saveChat({ conversationId: conversationId!, messages: finalMessages })
           console.log(JSON.stringify({ event: 'chat_saved', conversationId, messageCount: finalMessages.length }))
         } catch (err) {
