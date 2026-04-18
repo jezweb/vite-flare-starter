@@ -44,7 +44,7 @@ This file tracks incremental progress made by a scheduled remote agent (runs hou
 | F48 | Starred conversations | DB schema + API + UI | BLOCKED — schema change, needs Jez |
 | F50 | Collapsible sidebar date groups | `ConversationSidebar.tsx` | DONE (commit 827d8a7) |
 | F52 | Per-message aria-label for screen readers | `MessageRenderer.tsx` (add `aria-label` to the Message wrapper with role + first 50 chars of text) | DONE (commit fa300a5) |
-| F55 | Plan-mode/confirm-before-tools toggle | `ChatPreferencesSection.tsx` + `agent.ts` (add `confirmationMode` field to `ChatPreferences`, format in system prompt) | AVAILABLE — medium scope, 2 files |
+| F55 | Plan-mode/confirm-before-tools toggle | `ChatPreferencesSection.tsx` + `agent.ts` (add `confirmationMode` field to `ChatPreferences`, format in system prompt) | DONE (commit 9bb7ec6) |
 | X1 | Add FilePen icon to ellipsis "Rename" action | `ConversationSidebar.tsx` (already uses Pencil — this would be a no-op) | SKIP — already done |
 | X2 | Rename "Sources" section header in chat to "References" | search src for "Sources" and rename if only in ui labels | AVAILABLE |
 | X3 | Model selector empty state — show "No models available" when data.models.length === 0 | `ModelSelector.tsx` | AVAILABLE |
@@ -58,6 +58,12 @@ Pick the next AVAILABLE task in ID order. Mark it in-progress in your iteration 
 ## Iteration log
 
 *(Append entries here. Newest at top.)*
+
+### Iteration 4 — 2026-04-18T01:15Z
+- Task: F55 — Plan-mode/confirm-before-tools toggle
+- Files: src/client/modules/settings/components/ChatPreferencesSection.tsx, src/server/lib/ai/agent.ts
+- Commit: 9bb7ec6
+- Note: Added confirmationMode boolean to ChatPreferences interface and formatChatPreferences; Switch toggle in settings UI; type-check clean; build failure is pre-existing @tailwindcss/typography issue (same as prior iterations).
 
 ### Iteration 3 — 2026-04-18T00:51Z
 - Task: F52 — Per-message aria-label for screen readers
