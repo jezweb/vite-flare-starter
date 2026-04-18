@@ -60,6 +60,9 @@ Pick the next AVAILABLE task in ID order. Mark it in-progress in your iteration 
 
 *(Append entries here. Newest at top.)*
 
+### Bail — 2026-04-18T02:24Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
 ### Iteration 5 (local) — 2026-04-18T02:10Z
 - Task: F53 artifact sidebar + X3/X4/X5 polish bundle
 - Files: src/client/modules/chat/components/ArtifactSidebar.tsx (new), src/client/modules/chat/components/MessageRenderer.tsx, src/client/modules/chat/components/ModelSelector.tsx, src/client/modules/chat/pages/ChatPage.tsx
