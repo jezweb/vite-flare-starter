@@ -8,11 +8,12 @@
  * artifact/file into view; click the download icon to save the code as a
  * file with the right extension (.html / .svg / .mmd / original filename).
  */
-import { useMemo, useCallback } from 'react'
-import { FileText, FileCode, FileImage, FileAudio, FileVideo, FileSpreadsheet, FileArchive, File as FileIcon, Download, X } from 'lucide-react'
+import { useMemo, useCallback, useState } from 'react'
+import { FileText, FileCode, FileImage, FileAudio, FileVideo, FileSpreadsheet, FileArchive, File as FileIcon, Download, X, Maximize2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
-import { isArtifact } from './chat-ui/ArtifactViewer'
+import { ArtifactViewer, isArtifact } from './chat-ui/ArtifactViewer'
 import type { Message as UIMessageType } from '../hooks/useChat'
 
 interface CollectedArtifact {
@@ -130,6 +131,8 @@ interface Props {
 export function ArtifactSidebar({ messages, onClose, scrollRoot: _scrollRoot }: Props) {
   const { artifacts, files } = useMemo(() => collect(messages), [messages])
   const hasAny = artifacts.length > 0 || files.length > 0
+  /** Artifact currently open in the full-screen lightbox, if any. */
+  const [lightbox, setLightbox] = useState<CollectedArtifact | null>(null)
 
   const scrollTo = useCallback((id: string) => {
     const el = document.querySelector<HTMLElement>(`[data-artifact-id="${CSS.escape(id)}"]`)
@@ -139,6 +142,25 @@ export function ArtifactSidebar({ messages, onClose, scrollRoot: _scrollRoot }: 
     el.classList.add('ring-2', 'ring-primary/50', 'ring-offset-2', 'ring-offset-background')
     setTimeout(() => el.classList.remove('ring-2', 'ring-primary/50', 'ring-offset-2', 'ring-offset-background'), 1200)
   }, [])
+
+  /**
+   * Artifact cards support two click modes:
+   * - plain click → scroll the inline ArtifactViewer into view
+   * - cmd/ctrl/shift click or middle click → open full-screen lightbox
+   * This matches claude.ai's "open in panel" gesture while keeping the
+   * default click light-weight.
+   */
+  const handleArtifactCardClick = useCallback(
+    (artifact: CollectedArtifact, e: React.MouseEvent) => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey) {
+        e.preventDefault()
+        setLightbox(artifact)
+        return
+      }
+      scrollTo(artifact.id)
+    },
+    [scrollTo],
+  )
 
   const downloadAll = useCallback(() => {
     for (const a of artifacts) {
@@ -193,15 +215,24 @@ export function ArtifactSidebar({ messages, onClose, scrollRoot: _scrollRoot }: 
             {artifacts.map((a) => {
               const Icon = iconForArtifact(a.type)
               return (
-                <button
+                <div
                   key={a.id}
-                  type="button"
-                  onClick={() => scrollTo(a.id)}
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => handleArtifactCardClick(a, e)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      if (e.metaKey || e.ctrlKey) setLightbox(a)
+                      else scrollTo(a.id)
+                    }
+                  }}
                   className={cn(
-                    'w-full group flex items-center gap-2 rounded-lg border border-border bg-background',
+                    'w-full group flex items-center gap-2 rounded-lg border border-border bg-background cursor-pointer',
                     'px-2 py-2 text-left transition-colors hover:bg-accent/50 focus-visible:outline-none',
                     'focus-visible:ring-2 focus-visible:ring-primary/40',
                   )}
+                  title="Click to scroll to · cmd/ctrl-click or use the expand icon to open in a lightbox"
                 >
                   <div className="flex size-9 shrink-0 items-center justify-center rounded bg-muted/70">
                     <Icon className="size-4 text-muted-foreground" />
@@ -212,22 +243,39 @@ export function ArtifactSidebar({ messages, onClose, scrollRoot: _scrollRoot }: 
                       {a.type === 'mermaid' ? 'Diagram' : a.type.toUpperCase()}
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      downloadBlob(safeFilename(a.title, ARTIFACT_EXT[a.type]), a.code, ARTIFACT_MIME[a.type])
-                    }}
-                    className={cn(
-                      'shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-opacity',
-                      'group-hover:opacity-100 hover:bg-muted hover:text-foreground',
-                    )}
-                    title={`Download .${ARTIFACT_EXT[a.type]}`}
-                    aria-label={`Download ${a.title}`}
-                  >
-                    <Download className="size-3.5" />
-                  </button>
-                </button>
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setLightbox(a)
+                      }}
+                      className={cn(
+                        'rounded p-1 text-muted-foreground opacity-0 transition-opacity',
+                        'group-hover:opacity-100 hover:bg-muted hover:text-foreground',
+                      )}
+                      title="Open in lightbox"
+                      aria-label={`Open ${a.title} in lightbox`}
+                    >
+                      <Maximize2 className="size-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        downloadBlob(safeFilename(a.title, ARTIFACT_EXT[a.type]), a.code, ARTIFACT_MIME[a.type])
+                      }}
+                      className={cn(
+                        'rounded p-1 text-muted-foreground opacity-0 transition-opacity',
+                        'group-hover:opacity-100 hover:bg-muted hover:text-foreground',
+                      )}
+                      title={`Download .${ARTIFACT_EXT[a.type]}`}
+                      aria-label={`Download ${a.title}`}
+                    >
+                      <Download className="size-3.5" />
+                    </button>
+                  </div>
+                </div>
               )
             })}
           </section>
@@ -288,6 +336,32 @@ export function ArtifactSidebar({ messages, onClose, scrollRoot: _scrollRoot }: 
           </section>
         )}
       </div>
+
+      {/* Full-screen lightbox — opened via cmd+click on a card or the expand
+          icon. Reuses ArtifactViewer so behaviour stays identical (code toggle,
+          copy, open in new tab for HTML). Wide viewport (80vw) with a generous
+          height so dashboards/mermaids have room to breathe. */}
+      <Dialog open={!!lightbox} onOpenChange={(open) => { if (!open) setLightbox(null) }}>
+        <DialogContent
+          className="max-w-[min(80vw,1200px)] w-[80vw] h-[85vh] p-0 gap-0 overflow-hidden"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
+          <DialogTitle className="sr-only">
+            {lightbox ? `Artifact: ${lightbox.title}` : 'Artifact'}
+          </DialogTitle>
+          {lightbox && (
+            <div className="h-full flex flex-col overflow-auto p-3">
+              {/*
+               * ArtifactViewer caps its own iframe at 800px via the auto-resize
+               * handler. For the lightbox we pass `height` = 70vh so the initial
+               * paint uses the big space; the ResizeObserver inside the iframe
+               * will still clamp to its content height if that's smaller.
+               */}
+              <ArtifactViewer artifact={{ ...lightbox, _artifact: true, height: Math.floor(window.innerHeight * 0.7) }} />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </aside>
   )
 }
