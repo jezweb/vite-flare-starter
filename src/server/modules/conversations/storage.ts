@@ -27,15 +27,21 @@ export interface ConversationSummary {
 }
 
 export interface ChatStorage {
-  createConversation(userId: string, opts?: { title?: string; model?: string; systemPrompt?: string }): Promise<string>
+  createConversation(userId: string, opts?: { title?: string; model?: string; systemPrompt?: string; projectId?: string | null }): Promise<string>
   /**
    * Insert a conversation with a caller-supplied id. Used when the id is
    * generated upfront (so the client can navigate to the permalink) but the
    * actual DB row is deferred until first successful message save.
    */
-  createConversationWithId(id: string, userId: string, opts?: { title?: string; model?: string; systemPrompt?: string }): Promise<void>
+  createConversationWithId(id: string, userId: string, opts?: { title?: string; model?: string; systemPrompt?: string; projectId?: string | null }): Promise<void>
   /** Check if a user owns a conversation. Returns false if not found or not owned. */
   isOwner(conversationId: string, userId: string): Promise<boolean>
+  /**
+   * Fetch the projectId for a conversation (or null if ungrouped / missing).
+   * Used by the chat route to layer project instructions into the system
+   * prompt without trusting the client to pass it.
+   */
+  getProjectId(conversationId: string, userId: string): Promise<string | null>
   loadChat(conversationId: string): Promise<UIMessage[]>
   saveChat(params: { conversationId: string; messages: UIMessage[] }): Promise<void>
   listConversations(userId: string, opts?: { limit?: number; offset?: number }): Promise<ConversationSummary[]>
@@ -70,6 +76,7 @@ export function createD1ChatStorage(db: D1Database): ChatStorage {
         title: opts?.title || null,
         model: opts?.model || null,
         systemPrompt: opts?.systemPrompt || null,
+        projectId: opts?.projectId ?? null,
       })
       return id
     },
@@ -84,8 +91,18 @@ export function createD1ChatStorage(db: D1Database): ChatStorage {
           title: opts?.title || null,
           model: opts?.model || null,
           systemPrompt: opts?.systemPrompt || null,
+          projectId: opts?.projectId ?? null,
         })
         .onConflictDoNothing()
+    },
+
+    async getProjectId(conversationId, userId) {
+      const [row] = await d
+        .select({ projectId: conversations.projectId })
+        .from(conversations)
+        .where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)))
+        .limit(1)
+      return row?.projectId ?? null
     },
 
     async isOwner(conversationId, userId) {

@@ -25,6 +25,7 @@ const SettingsPage = lazy(() => import('./modules/settings/pages/SettingsPage').
 const AdminPage = lazy(() => import('./modules/admin/pages/AdminPage').then(m => ({ default: m.AdminPage })))
 const ChatPage = lazy(() => import('./modules/chat/pages/ChatPage').then(m => ({ default: m.ChatPage })))
 const ExtractPage = lazy(() => import('./modules/chat/pages/ExtractPage').then(m => ({ default: m.ExtractPage })))
+const ProjectPage = lazy(() => import('./modules/projects/pages/ProjectPage').then(m => ({ default: m.ProjectPage })))
 const ActivityPage = lazy(() => import('./modules/activity/pages/ActivityPage').then(m => ({ default: m.ActivityPage })))
 const FilesPage = lazy(() => import('./modules/files/pages/FilesPage').then(m => ({ default: m.FilesPage })))
 const ComponentsPage = lazy(() => import('./pages/ComponentsPage').then(m => ({ default: m.ComponentsPage })))
@@ -79,6 +80,7 @@ function App() {
             {/* AI Chat */}
             <Route path="chat" element={<ChatPage />} />
             <Route path="chat/:conversationId" element={<ChatPage />} />
+            <Route path="projects/:id" element={<ProjectPage />} />
             <Route path="extract" element={<ExtractPage />} />
 
             {/* Activity log */}

@@ -104,6 +104,19 @@ app.post('/', async (c) => {
   try {
     const body = await c.req.json()
     const { model: requestedModel, conversationId: existingConversationId } = body
+    // projectId is accepted from the client ONLY for new conversations — it
+    // tells the server which project this conversation should belong to. For
+    // existing conversations we always trust the stored row, not the payload
+    // (stops a client from flipping project mid-chat to get elevated
+    // instructions). `null` explicitly unbinds at creation.
+    //
+    // Defensive parse: reject anything that isn't a UUID-shaped string to
+    // prevent a malicious client sending a 10MB payload as projectId.
+    const rawProjectId = body.projectId
+    const isUuidLike = typeof rawProjectId === 'string'
+      && rawProjectId.length <= 64
+      && /^[0-9a-f-]+$/i.test(rawProjectId)
+    const clientProjectId: string | null = isUuidLike ? rawProjectId : null
     // systemPrompt is intentionally server-controlled — client cannot override.
     // Fork-users: change this in buildChatAgent's default instructions.
     const systemPrompt = undefined
@@ -141,6 +154,14 @@ app.post('/', async (c) => {
       conversationId = crypto.randomUUID()
     }
 
+    // Resolve the effective projectId. For existing conversations the stored
+    // row wins — trusting the client on this would let a user flip projects
+    // mid-chat and inherit someone else's instructions. For new ones we
+    // accept what the client declared.
+    const effectiveProjectId = isNewConversation
+      ? clientProjectId
+      : await storage.getProjectId(conversationId, userId)
+
     // Build the agent (model, tools, system prompt, logging — all encapsulated)
     const { agent, startTime, modelId } = await buildChatAgent({
       env: c.env as unknown as Parameters<typeof buildChatAgent>[0]['env'],
@@ -148,6 +169,7 @@ app.post('/', async (c) => {
       user: user || undefined,
       modelId: requestedModel,
       systemPrompt,
+      projectId: effectiveProjectId,
     })
 
     // Pre-process file attachments: convert non-image files to text/transcription
@@ -261,6 +283,7 @@ app.post('/', async (c) => {
               title: extractTitle(firstUserMsg),
               model: requestedModel || DEFAULT_MODEL,
               systemPrompt,
+              projectId: effectiveProjectId,
             })
             // Activity log moved here too so empty conversations don't pollute
             // the audit trail.

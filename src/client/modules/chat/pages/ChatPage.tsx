@@ -25,11 +25,13 @@ import {
   PromptInputActionAddScreenshotCountdown,
   PromptInputActionAddScreenCapture,
 } from '../components/ScreenCaptureMenuItems'
-import { Plus, MessageSquare, MessagesSquare, Download, ArrowDown, Paperclip, FileText } from 'lucide-react'
+import { Plus, MessageSquare, MessagesSquare, Download, ArrowDown, Paperclip, FileText, Folder, X } from 'lucide-react'
+import { Link as RouterLink } from 'react-router-dom'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { useMediaQuery } from '@/client/hooks/useMediaQuery'
 import { useChat, type Message } from '../hooks/useChat'
-import { useConversationMessages } from '../hooks/useConversations'
+import { useConversationList, useConversationMessages } from '../hooks/useConversations'
+import { useProjectList, useMoveConversation } from '@/client/modules/projects/hooks/useProjects'
 import { ConversationSidebar } from '../components/ConversationSidebar'
 import { ArtifactSidebar, countArtifactsAndFiles } from '../components/ArtifactSidebar'
 import { MessageRenderer } from '../components/MessageRenderer'
@@ -98,6 +100,11 @@ export function ChatPage() {
 
   // Share Target: when shared from mobile, params arrive as ?title=&text=&url=
   const sharedText = searchParams.get('text') || searchParams.get('title') || searchParams.get('url')
+  // projectId stays in the URL until the first message is sent; on creation
+  // the server stamps the new conversation with the project and the row
+  // becomes source-of-truth. Any further ?projectId= is ignored for existing
+  // conversations (the server re-reads from DB).
+  const urlProjectId = searchParams.get('projectId')
   // Vision support check — gates whether we accept image attachments at the picker.
   // Non-image files (PDF/DOCX/audio/text) flow through convertToMarkdown on the
   // server and are safe for every model. The API endpoint also validates.
@@ -140,6 +147,7 @@ export function ChatPage() {
   } = useChat({
     model,
     conversationId: urlConversationId,
+    projectId: urlProjectId,
     initialMessages: existingConversation?.messages as Message[] | undefined,
   })
 
@@ -395,6 +403,23 @@ export function ChatPage() {
   const { artifactCount, fileCount } = countArtifactsAndFiles(messages)
   const hasArtifactsOrFiles = artifactCount + fileCount > 0
 
+  // Resolve the current conversation's project (if any) for the header pill.
+  // Two paths: (a) new chat launched from a project page — `urlProjectId` set
+  // until the first send persists it; (b) existing conversation — read from
+  // the conversations list cache. The list is already fetched by the sidebar,
+  // so this is a zero-cost subscribe.
+  const { data: conversationListData } = useConversationList()
+  const { data: projectListData } = useProjectList()
+  const moveConversation = useMoveConversation()
+  const storedProjectId =
+    urlConversationId
+      ? conversationListData?.conversations.find((c) => c.id === urlConversationId)?.projectId ?? null
+      : null
+  const activeProjectId = storedProjectId ?? urlProjectId ?? null
+  const activeProject = activeProjectId
+    ? projectListData?.projects.find((p) => p.id === activeProjectId) ?? null
+    : null
+
   // Track whether the user is near the bottom of the scroll container so we
   // can (a) show/hide the scroll-to-bottom button, (b) stop auto-sticking
   // once they scroll up, and (c) reset the unread count when they return.
@@ -500,6 +525,38 @@ export function ChatPage() {
             </Button>
             <MessageSquare className="size-4 text-muted-foreground ml-1" />
             <h1 className="text-sm font-medium">AI Chat</h1>
+            {/* In-project pill: click name → project page; × detaches. For
+                new chats launched from a project page we show the pill
+                immediately (optimistic) even before the first message
+                persists. */}
+            {activeProject && (
+              <div className="ml-2 inline-flex items-center gap-1 rounded-full border border-border bg-muted/50 pl-2 pr-1 py-0.5 text-xs">
+                <Folder className="size-3 text-muted-foreground" />
+                <RouterLink
+                  to={`/dashboard/projects/${activeProject.id}`}
+                  className="font-medium hover:underline underline-offset-2"
+                  title={`Project: ${activeProject.name}`}
+                >
+                  {activeProject.name}
+                </RouterLink>
+                {/* Detach — only for persisted conversations (no server-side
+                    PATCH exists for a not-yet-created chat). If the chat is
+                    only declared via urlProjectId, user can just navigate
+                    away; no "detach" affordance needed yet. */}
+                {urlConversationId && storedProjectId && (
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    className="size-4 rounded-full hover:bg-muted-foreground/10 text-muted-foreground hover:text-foreground"
+                    onClick={() => moveConversation.mutate({ id: urlConversationId, projectId: null })}
+                    title="Remove from project"
+                    aria-label="Remove from project"
+                  >
+                    <X className="size-2.5" />
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-1">
             {hasArtifactsOrFiles && (

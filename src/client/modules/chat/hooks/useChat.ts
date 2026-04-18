@@ -17,6 +17,13 @@ interface ChatOptions {
   model?: string
   systemPrompt?: string
   conversationId?: string
+  /**
+   * When starting a new conversation from a project page ("New chat in
+   * this project"), this stamps the conversation with the project on
+   * first send. Ignored server-side for existing conversations — the
+   * stored row always wins.
+   */
+  projectId?: string | null
   initialMessages?: Message[]
   /** Client-side tool handlers — execute tools in the browser without server round-trip */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -24,17 +31,19 @@ interface ChatOptions {
 }
 
 export function useChat(options: ChatOptions = {}) {
-  const { model, systemPrompt, conversationId, initialMessages, onToolCall } = options
+  const { model, systemPrompt, conversationId, projectId, initialMessages, onToolCall } = options
 
-  // Refs keep prepareSendMessagesRequest reading the LATEST model/systemPrompt/conversationId.
+  // Refs keep prepareSendMessagesRequest reading the LATEST fields.
   // useAIChat memoises the transport internally, so a closure captured at mount would
-  // otherwise pin the request to the model first passed in.
+  // otherwise pin the request to the initial values.
   const modelRef = useRef(model)
   const systemPromptRef = useRef(systemPrompt)
   const conversationIdRef = useRef(conversationId)
+  const projectIdRef = useRef(projectId)
   useEffect(() => { modelRef.current = model }, [model])
   useEffect(() => { systemPromptRef.current = systemPrompt }, [systemPrompt])
   useEffect(() => { conversationIdRef.current = conversationId }, [conversationId])
+  useEffect(() => { projectIdRef.current = projectId }, [projectId])
 
   const transport = useMemo(
     () =>
@@ -51,6 +60,7 @@ export function useChat(options: ChatOptions = {}) {
               model: modelRef.current,
               systemPrompt: systemPromptRef.current,
               conversationId: conversationIdRef.current,
+              projectId: projectIdRef.current,
             },
           }
         },

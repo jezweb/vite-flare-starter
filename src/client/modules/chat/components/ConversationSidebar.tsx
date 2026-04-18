@@ -695,17 +695,23 @@ function ProjectsSection({
             return (
               <div key={project.id}>
                 <div className="group flex items-center gap-1 px-2.5 py-1 text-xs transition-colors hover:bg-muted/50 rounded-md">
+                  {/* Chevron toggle — separate from the name so clicking the
+                      name navigates to the project page (next to claude.ai's
+                      convention) rather than expanding inline. */}
                   <button
                     type="button"
-                    onClick={() => toggleGroup(projectKey)}
-                    className="flex flex-1 items-center gap-1.5 text-left min-w-0"
+                    onClick={(e) => { e.stopPropagation(); toggleGroup(projectKey) }}
+                    className="shrink-0 rounded p-0.5 hover:bg-muted"
                     aria-expanded={!isCollapsed}
+                    aria-label={`Toggle ${project.name}`}
                   >
                     <ChevronRight
-                      className={cn('size-3 shrink-0 transition-transform text-muted-foreground', !isCollapsed && 'rotate-90')}
+                      className={cn('size-3 transition-transform text-muted-foreground', !isCollapsed && 'rotate-90')}
                     />
-                    <Folder className="size-3.5 shrink-0 text-muted-foreground" />
-                    {isRenaming ? (
+                  </button>
+                  {isRenaming ? (
+                    <div className="flex flex-1 items-center gap-1.5 min-w-0">
+                      <Folder className="size-3.5 shrink-0 text-muted-foreground" />
                       <Input
                         autoFocus
                         value={projectRenameText}
@@ -730,13 +736,19 @@ function ProjectsSection({
                         }}
                         className="h-5 py-0 px-1 text-xs"
                       />
-                    ) : (
+                    </div>
+                  ) : (
+                    <Link
+                      to={`/dashboard/projects/${project.id}`}
+                      className="flex flex-1 items-center gap-1.5 min-w-0 hover:underline underline-offset-2"
+                    >
+                      <Folder className="size-3.5 shrink-0 text-muted-foreground" />
                       <span className="truncate font-medium" title={project.name}>{project.name}</span>
-                    )}
-                    <span className="ml-auto shrink-0 text-muted-foreground/60 tabular-nums">
-                      {convs.length}
-                    </span>
-                  </button>
+                      <span className="ml-auto shrink-0 text-muted-foreground/60 tabular-nums">
+                        {convs.length}
+                      </span>
+                    </Link>
+                  )}
                   {!isRenaming && (
                     <DropdownMenu
                       open={openProjectMenuId === project.id}

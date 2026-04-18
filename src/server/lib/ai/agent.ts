@@ -25,6 +25,7 @@ import { listSkills } from './skills/registry'
 import { buildChatTools } from '@/server/modules/chat/tools'
 import { aiUsageLogs } from '@/server/modules/chat/db/schema'
 import { userMeta } from '@/server/modules/user-meta/db/schema'
+import { projects } from '@/server/modules/projects/db/schema'
 
 interface AgentContext {
   env: Record<string, unknown> & {
@@ -37,6 +38,14 @@ interface AgentContext {
   user?: { name?: string; email?: string; role?: string }
   modelId?: string
   systemPrompt?: string
+  /**
+   * Conversation's project binding (if any). When set, buildChatAgent loads
+   * the project's own system prompt and defaultModel and layers them into
+   * the cascade between user About-Me and the chat-level systemPrompt.
+   * Server-owned — the client never sends this; the chat route reads it
+   * from the stored conversation row.
+   */
+  projectId?: string | null
 }
 
 interface AgentResult {
@@ -53,7 +62,18 @@ interface AgentResult {
  * The caller is responsible for calling cleanup() after streaming completes.
  */
 export async function buildChatAgent(ctx: AgentContext): Promise<AgentResult> {
-  const modelId = ctx.modelId || DEFAULT_MODEL
+  // Load the conversation's project (if any) first — its defaultModel feeds
+  // into model resolution and its systemPrompt feeds into the cascade. All
+  // server-owned: the chat route passes projectId from the stored
+  // conversation row, never from the client.
+  const project = ctx.projectId
+    ? await loadProject(ctx.env.DB, ctx.projectId, ctx.userId)
+    : null
+
+  // Model precedence: explicit client choice → project default → user default.
+  // DEFAULT_MODEL is the very last fallback (matches what the starter uses
+  // when nothing else is set).
+  const modelId = ctx.modelId || project?.defaultModel || DEFAULT_MODEL
   const modelConfig = getModel(modelId)
   const startTime = Date.now()
 
@@ -78,6 +98,15 @@ export async function buildChatAgent(ctx: AgentContext): Promise<AgentResult> {
   }
   if (prefsBlock) {
     extraSections['User Preferences'] = prefsBlock
+  }
+  // Project instructions — highest-specificity prompt layer (above user
+  // About-Me, below the chat-level systemPrompt override). Only appears
+  // when the conversation is assigned to a project AND the project has
+  // instructions set. We include the project name so the model can
+  // reference it naturally ("for the Jezweb website project…").
+  if (project?.systemPrompt) {
+    const header = project.name ? `Project: ${project.name}` : 'Project instructions'
+    extraSections['Project instructions'] = `${header}\n\n${project.systemPrompt}`
   }
 
   // Assemble system prompt with user context, date, skills, and preferences
@@ -164,6 +193,34 @@ export interface ChatPreferences {
   about?: string
   /** When true: describe the plan and ask for confirmation before calling tools */
   confirmationMode?: boolean
+}
+
+/**
+ * Load a project row scoped to the user. Scoped by userId to stop cross-user
+ * reads if a malicious client ever passes a different user's projectId —
+ * though in practice the chat route already resolves projectId from the
+ * conversation's server-stored row, so the FK + owner check is redundant
+ * belt-and-braces.
+ */
+async function loadProject(
+  db: D1Database,
+  projectId: string,
+  userId: string,
+): Promise<{ name: string; systemPrompt: string | null; defaultModel: string | null } | null> {
+  try {
+    const row = await drizzle(db)
+      .select({
+        name: projects.name,
+        systemPrompt: projects.systemPrompt,
+        defaultModel: projects.defaultModel,
+      })
+      .from(projects)
+      .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
+      .get()
+    return row ?? null
+  } catch {
+    return null
+  }
 }
 
 async function loadChatPreferences(
