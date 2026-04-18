@@ -266,12 +266,16 @@ export function ConversationSidebar({ activeConversationId }: Props) {
                           />
                         ) : (
                           <>
-                            <div className="text-sm truncate font-medium" title={conv.title || 'Untitled'}>
+                            {/* Wrap titles to 2 lines max. Beats `truncate` at
+                                narrow widths (256px sidebar) where most
+                                titles get cut mid-word; the `title` attr still
+                                gives a hover tooltip with the full text. */}
+                            <div className="text-sm font-medium line-clamp-2 leading-snug" title={conv.title || 'Untitled'}>
                               {conv.title || 'Untitled'}
                             </div>
-                            <div className="text-[10px] text-muted-foreground truncate" title={conv.summary ?? undefined}>
-                              {timeAgo(conv.updatedAt)}
-                              {conv.summary && <span className="ml-1 opacity-80">· {conv.summary}</span>}
+                            <div className="text-[10px] text-muted-foreground line-clamp-2 leading-snug mt-0.5" title={conv.summary ?? undefined}>
+                              <span className="whitespace-nowrap">{timeAgo(conv.updatedAt)}</span>
+                              {conv.summary && <span className="opacity-80"> · {conv.summary}</span>}
                             </div>
                           </>
                         )}
