@@ -109,8 +109,18 @@ export const MessageRenderer = memo(function MessageRenderer({
     return isNaN(d.getTime()) ? undefined : d.toLocaleString()
   })()
 
+  const ariaLabel = (() => {
+    const textPart = (message.parts ?? []).find(
+      (p): p is { type: 'text'; text: string } => (p as { type: string }).type === 'text',
+    )
+    const snippet = textPart?.text?.trim() ?? ''
+    const truncated = snippet.length > 50 ? snippet.slice(0, 50) + '…' : snippet
+    const speaker = message.role === 'assistant' ? 'Assistant' : 'You'
+    return truncated ? `${speaker}: ${truncated}` : `${speaker} message`
+  })()
+
   return (
-    <Message from={message.role} className="gap-3" title={timestamp}>
+    <Message from={message.role} className="gap-3" title={timestamp} aria-label={ariaLabel}>
       {/* Avatar for assistant messages — Sparkles icon inside primary/10 circle.
           Fork: replace with a branded logo via AvatarImage if desired. */}
       {isAssistant && (
