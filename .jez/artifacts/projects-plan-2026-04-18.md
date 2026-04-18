@@ -1,8 +1,21 @@
 # Projects / Folders — design + plan
 
-**Status**: plan, not yet built
+**Status**: **Phase 0, 1, 2 shipped.** Phase 3 (knowledge files) and Phase 4 (vectorised knowledge) still pending.
 **Target audience**: Jez + future sessions
 **Scope**: grouping conversations by topic/client/context, with shared instructions and (later) shared files
+
+## Shipped as of 2026-04-18
+
+| Phase | Commit | Notes |
+|-------|--------|-------|
+| Phase 0 — About Me bump | `6c44a58` | Settings → Chat Prefs → About You, 2000 chars, markdown-preserved |
+| Phase 1 — Schema + CRUD + sidebar | `298e281` + `d3875b3` | Migration 0013, projects table, sidebar section, move-to-project submenu, delete w/ count |
+| Phase 2 — Project page + inheritance | `11342b9` (rebased `4625698`) | /dashboard/projects/:id, server-side system-prompt + model cascade, in-project pill with detach |
+| Phase 2 polish — colours + native scrollbar | `949e718` | 6-colour picker, swapped Radix ScrollArea for native overflow-y-auto |
+
+**Live now**: deploy version `ac73590d-ebbb-4e20-8cb1-6f65af272eb8`.
+
+**Still pending**: Phase 3 (knowledge files), Phase 4 (vectorised knowledge), stretch items (team projects, templates, project-level MCP).
 
 ## Why
 
