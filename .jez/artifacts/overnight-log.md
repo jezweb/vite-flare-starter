@@ -43,7 +43,7 @@ This file tracks incremental progress made by a scheduled remote agent (runs hou
 | F47 | Cost-tier dots on model picker trigger | `ModelSelector.tsx` + server `types.ts` + `models.ts` + `index.ts` — add costTier field, render 3-slot dot indicator | DONE (local iteration 2, version 0e25ca39) |
 | F48 | Starred conversations | DB schema + API + UI | BLOCKED — schema change, needs Jez |
 | F50 | Collapsible sidebar date groups | `ConversationSidebar.tsx` | DONE (commit 827d8a7) |
-| F52 | Per-message aria-label for screen readers | `MessageRenderer.tsx` (add `aria-label` to the Message wrapper with role + first 50 chars of text) | AVAILABLE |
+| F52 | Per-message aria-label for screen readers | `MessageRenderer.tsx` (add `aria-label` to the Message wrapper with role + first 50 chars of text) | DONE (commit fa300a5) |
 | F55 | Plan-mode/confirm-before-tools toggle | `ChatPreferencesSection.tsx` + `agent.ts` (add `confirmationMode` field to `ChatPreferences`, format in system prompt) | AVAILABLE — medium scope, 2 files |
 | X1 | Add FilePen icon to ellipsis "Rename" action | `ConversationSidebar.tsx` (already uses Pencil — this would be a no-op) | SKIP — already done |
 | X2 | Rename "Sources" section header in chat to "References" | search src for "Sources" and rename if only in ui labels | AVAILABLE |
@@ -58,6 +58,12 @@ Pick the next AVAILABLE task in ID order. Mark it in-progress in your iteration 
 ## Iteration log
 
 *(Append entries here. Newest at top.)*
+
+### Iteration 3 — 2026-04-18T00:51Z
+- Task: F52 — Per-message aria-label for screen readers
+- Files: src/client/modules/chat/components/MessageRenderer.tsx
+- Commit: fa300a5
+- Note: Added ariaLabel computed from message.role + first 50 chars of first text part; passes through Message's HTMLAttributes spread; type-check clean; build failure is pre-existing @tailwindcss/typography issue unrelated to this change.
 
 ### Bail — 2026-04-17T23:03Z
 Bailed — past 2am local (23:03 UTC > 16:00 UTC cutoff). Next task would have been F52.
