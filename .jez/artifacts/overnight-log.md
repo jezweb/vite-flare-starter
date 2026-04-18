@@ -46,10 +46,11 @@ This file tracks incremental progress made by a scheduled remote agent (runs hou
 | F52 | Per-message aria-label for screen readers | `MessageRenderer.tsx` (add `aria-label` to the Message wrapper with role + first 50 chars of text) | DONE (commit fa300a5) |
 | F55 | Plan-mode/confirm-before-tools toggle | `ChatPreferencesSection.tsx` + `agent.ts` (add `confirmationMode` field to `ChatPreferences`, format in system prompt) | DONE (commit 9bb7ec6) |
 | X1 | Add FilePen icon to ellipsis "Rename" action | `ConversationSidebar.tsx` (already uses Pencil — this would be a no-op) | SKIP — already done |
-| X2 | Rename "Sources" section header in chat to "References" | search src for "Sources" and rename if only in ui labels | AVAILABLE |
-| X3 | Model selector empty state — show "No models available" when data.models.length === 0 | `ModelSelector.tsx` | AVAILABLE |
-| X4 | Tighten copy on error display in input area | `ChatPage.tsx` — the `<div className="rounded-md border border-destructive/50...">` — make messages more actionable | AVAILABLE |
-| X5 | Add title tooltip to attached-file pill in transcript | `MessageRenderer.tsx` — `TranscriptFilePill` component — add `title={name}` attribute | AVAILABLE |
+| X2 | Rename "Sources" section header in chat to "References" | search src for "Sources" and rename if only in ui labels | SKIP — no matches in client for "Sources" label; was already renamed or doesn't exist |
+| X3 | Model selector empty state — show "No models available" when data.models.length === 0 | `ModelSelector.tsx` | DONE (commit e17ab0c) |
+| X4 | Tighten copy on error display in input area | `ChatPage.tsx` — the `<div className="rounded-md border border-destructive/50...">` — make messages more actionable | DONE (commit e17ab0c) |
+| X5 | Add title tooltip to attached-file pill in transcript | `MessageRenderer.tsx` — `TranscriptFilePill` component — add `title={name}` attribute | DONE (commit e17ab0c) |
+| F53 | Artifact sidebar (claude.ai-style right panel) | `ArtifactSidebar.tsx` (new), `ChatPage.tsx`, `MessageRenderer.tsx` — zero-schema-change derivation over messages, lists artifacts + file attachments with download, click-to-scroll | DONE (commit e17ab0c) |
 
 Pick the next AVAILABLE task in ID order. Mark it in-progress in your iteration log; only mark DONE here if your commit succeeds.
 
@@ -58,6 +59,13 @@ Pick the next AVAILABLE task in ID order. Mark it in-progress in your iteration 
 ## Iteration log
 
 *(Append entries here. Newest at top.)*
+
+### Iteration 5 (local) — 2026-04-18T02:10Z
+- Task: F53 artifact sidebar + X3/X4/X5 polish bundle
+- Files: src/client/modules/chat/components/ArtifactSidebar.tsx (new), src/client/modules/chat/components/MessageRenderer.tsx, src/client/modules/chat/components/ModelSelector.tsx, src/client/modules/chat/pages/ChatPage.tsx
+- Commit: e17ab0c
+- Deployed live (version da7de3c1) and verified: created 2 artifacts (Mermaid "Build loop" + SVG "Blue circle") in a fresh conversation. Panel toggle appeared in header, panel docked right (288px wide), cards rendered with correct icons/titles/types, click-to-scroll highlighted target with ring flash, Download all + X close buttons present. Backlog now empty modulo deferred features (F44/F45/F48/F29/F33 which need design input or schema changes).
+- Note: Local session with wrangler + Chrome MCP — full verify cycle.
 
 ### Iteration 4 — 2026-04-18T01:15Z
 - Task: F55 — Plan-mode/confirm-before-tools toggle
