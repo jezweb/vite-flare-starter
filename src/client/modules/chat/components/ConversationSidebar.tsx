@@ -522,8 +522,18 @@ export function ConversationSidebar({ activeConversationId }: Props) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this project?</AlertDialogTitle>
             <AlertDialogDescription>
-              Its conversations will be moved back to the main list. You can
-              re-group them later.
+              {(() => {
+                // Surface the conversation count so users know what they're
+                // releasing. N chats "return to the flat list" via the
+                // ON DELETE SET NULL FK — the project row goes away but the
+                // data stays.
+                const count = confirmDeleteProjectId
+                  ? byProject.get(confirmDeleteProjectId)?.length ?? 0
+                  : 0
+                if (count === 0) return 'The project is empty. It will be removed from the sidebar.'
+                if (count === 1) return '1 conversation will return to the main list. You can re-group it later.'
+                return `${count} conversations will return to the main list. You can re-group them later.`
+              })()}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -589,8 +599,6 @@ function ProjectsSection({
   requestDeleteProject,
 }: ProjectsSectionProps) {
   const [openProjectMenuId, setOpenProjectMenuId] = useState<string | null>(null)
-
-  const hasAny = projects.length > 0 || creatingProject
 
   // Keep the section collapsed/expanded toggle on the parent's localStorage.
   const sectionKey = 'Projects'
@@ -665,7 +673,7 @@ function ProjectsSection({
             </div>
           )}
 
-          {!hasAny && (
+          {projects.length === 0 && !creatingProject && (
             <div className="px-2.5 py-2 text-[11px] text-muted-foreground/70">
               No projects yet.{' '}
               <button
@@ -781,7 +789,7 @@ function ProjectsSection({
                   <div className="ml-4 space-y-0.5 border-l border-border/40 pl-2">
                     {convs.length === 0 ? (
                       <div className="px-2 py-1.5 text-[11px] text-muted-foreground/50">
-                        Empty — move chats here from the menu.
+                        Empty — use a chat's ⋯ menu → Move to project.
                       </div>
                     ) : (
                       convs.map((conv) => renderConversationRow(conv))
