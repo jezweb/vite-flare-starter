@@ -41,6 +41,9 @@ export { scheduledJobs } from '@/server/modules/chat/tools/schedule'
 // Conversations (chat persistence)
 export { conversations, conversationMessages } from '@/server/modules/conversations/db/schema'
 
+// Projects — groupings of conversations with shared instructions
+export { projects } from '@/server/modules/projects/db/schema'
+
 // Polymorphic modules (entity_type + entity_id pattern)
 export { comments } from '@/server/modules/comments/db/schema'
 export { tags, entityTags } from '@/server/modules/tags/db/schema'

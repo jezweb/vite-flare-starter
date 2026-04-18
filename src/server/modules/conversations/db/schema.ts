@@ -1,9 +1,16 @@
 import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core'
 import { user } from '@/server/modules/auth/db/schema'
+import { projects } from '@/server/modules/projects/db/schema'
 
 export const conversations = sqliteTable('conversations', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  /**
+   * Optional project grouping. Nullable — null means "ungrouped / personal".
+   * ON DELETE SET NULL so removing a project returns conversations to the
+   * flat list rather than deleting them.
+   */
+  projectId: text('project_id').references(() => projects.id, { onDelete: 'set null' }),
   title: text('title'),
   /**
    * One-line sidebar summary (~120 chars). Generated after the first
@@ -26,6 +33,8 @@ export const conversations = sqliteTable('conversations', {
   index('conversations_updated_at_idx').on(table.updatedAt),
   // Starred rows first, then most-recent — matches the sidebar's sort order.
   index('conversations_user_starred_idx').on(table.userId, table.starred, table.updatedAt),
+  // Fetch all conversations for a project (used by the project page).
+  index('conversations_project_id_idx').on(table.projectId),
 ])
 
 export const conversationMessages = sqliteTable('conversation_messages', {

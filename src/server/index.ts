@@ -21,6 +21,7 @@ import webhookRoutes from './modules/webhooks/routes'
 import userMetaRoutes from './modules/user-meta/routes'
 import skillsRoutes from './modules/skills/routes'
 import conversationsRoutes from './modules/conversations/routes'
+import projectsRoutes from './modules/projects/routes'
 import commentsRoutes from './modules/comments/routes'
 import tagsRoutes from './modules/tags/routes'
 import watchersRoutes from './modules/watchers/routes'
@@ -253,6 +254,7 @@ app.route('/api/webhooks', webhookRoutes)
 app.route('/api/user-meta', userMetaRoutes)
 app.route('/api/skills', skillsRoutes)
 app.route('/api/conversations', conversationsRoutes)
+app.route('/api/projects', projectsRoutes)
 app.route('/api/comments', commentsRoutes)
 app.route('/api/tags', tagsRoutes)
 app.route('/api/watchers', watchersRoutes)

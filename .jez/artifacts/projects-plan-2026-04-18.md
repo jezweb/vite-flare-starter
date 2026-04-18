@@ -168,6 +168,44 @@ Click the pill → navigate to the project page.
 
 Ellipsis menu in the existing sidebar gets a new "Move to project..." item → small dropdown listing user's projects + "Remove from project" + "New project..." as the last item.
 
+## Context cascade (added 2026-04-18 review)
+
+Projects are **not** hard isolated. Context layers like CSS, most-specific wins but earlier layers still contribute. Every layer is opt-out per chat.
+
+```
+Chat-level system prompt          ← highest priority (if set)
+  ↓
+Project system prompt             ← when chat has projectId
+  ↓
+User "About me" profile           ← always, unless chat opts out
+  ↓
+Chat Preferences (tone/format)    ← existing starter feature
+  ↓
+Base system prompt                ← fork-wide default
+```
+
+All layers are concatenated (newline-separated) into the outgoing system prompt. The agent sees the whole stack.
+
+### User "About me" profile
+
+Analogous to ChatGPT's "Custom Instructions" and claude.ai's "Your traits". Free-text field in Settings → Chat Preferences. Up to ~2 KB of markdown. Injected into every chat's system prompt below project-level instructions and above the base.
+
+Example value:
+
+> I'm Jeremy Dawes, CEO of Jezweb. Building on Cloudflare Workers + D1. EN-AU spelling, no em-dashes, warm + direct tone. Prefer React 19 + Tailwind v4. Default to the latest model from each provider.
+
+Stored on existing `user_meta` table (no schema change). Ships **standalone, before any Projects work** — it's a 30-min job and useful on day 1 for every chat.
+
+Per-chat override: a "Include my profile" toggle on the compose footer — default on, sticky. If off, the About-Me layer is skipped for that chat only.
+
+### Three ways to escape project context
+
+Strict isolation kills legitimate use cases. These three escape hatches are explicit, so users never get surprised by stale context leaking in:
+
+1. **`@chat-ref` injection** — typing `@` in the compose box shows recent conversations across *all* projects. Picking one injects that chat's summary + last N turns into the current message only (one-turn window, not permanent).
+2. **Cross-project search tool** — alongside `search_this_project` (current project's knowledge), the agent gets `search_my_knowledge` that queries every project's vector index for the current user. The user sees the tool call in the transcript — no silent context bleeding.
+3. **Detach from project mid-chat** — the project pill in the chat header has a "×". Click it, `projectId` is cleared for that chat, the project's system prompt stops applying from the next turn. Inverse: a "move to project" menu item to attach.
+
 ## Integration points
 
 | Existing feature | How it interacts |
@@ -178,8 +216,20 @@ Ellipsis menu in the existing sidebar gets a new "Move to project..." item → s
 | Web search + tools | Unchanged — tools are per-user. |
 | MCP tools | Phase 3 stretch: per-project MCP servers (each project can enable different tools). |
 | Skills | Phase 3 stretch: per-project skill preferences (which skills auto-load). |
+| Chat Preferences | About-Me field added as free text. Existing tone/format settings unchanged. |
 
 ## Phases
+
+### Phase 0 — User "About me" profile (standalone, 30-45 min)
+
+Ships before any Projects work. Useful on its own from day 1.
+
+- Extend ChatPreferences schema (or `user_meta` `profile` key) with an `aboutMe` string
+- Add a `<textarea>` to `ChatPreferencesSection.tsx` with placeholder example + character count
+- Server: `buildChatAgent()` reads user's About-Me and prepends to `baseInstructions` when the conversation didn't opt out
+- Per-chat "Include profile" toggle on the compose footer (localStorage sticky)
+
+**Ship criteria:** setting "About you: I'm Jez, use EN-AU" in settings causes a fresh chat to follow that preference without restating it.
 
 ### Phase 1 — Schema + MVP sidebar (3-4 hours)
 

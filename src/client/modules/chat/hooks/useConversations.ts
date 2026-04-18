@@ -10,6 +10,8 @@ interface ConversationSummary {
   title: string | null
   summary: string | null
   starred: number
+  /** null = ungrouped; set when the chat belongs to a project. */
+  projectId: string | null
   model: string | null
   createdAt: string
   updatedAt: string

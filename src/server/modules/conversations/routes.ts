@@ -257,19 +257,43 @@ app.delete('/:id/star', async (c) => {
   return c.json({ success: true, starred: false })
 })
 
-/** PATCH /api/conversations/:id — update title */
+/**
+ * PATCH /api/conversations/:id
+ *
+ * Partial update. Supported fields:
+ *   - title: rename
+ *   - projectId: move between projects (null = ungroup)
+ *
+ * Only fields explicitly passed are changed. Undefined means "leave alone";
+ * null on projectId specifically clears the grouping.
+ */
 app.patch(
   '/:id',
-  zValidator('json', z.object({ title: z.string().max(200) })),
+  zValidator(
+    'json',
+    z.object({
+      title: z.string().max(200).optional(),
+      projectId: z.string().nullable().optional(),
+    }),
+  ),
   async (c) => {
     const conversationId = c.req.param('id')
     const userId = c.get('userId')
-    const { title } = c.req.valid('json')
+    const input = c.req.valid('json')
     const storage = createD1ChatStorage(c.env.DB)
 
-    await storage.updateTitle(conversationId, userId, title)
+    if (!(await storage.isOwner(conversationId, userId))) {
+      return c.json({ error: 'Not found' }, 404)
+    }
+
+    if (input.title !== undefined) {
+      await storage.updateTitle(conversationId, userId, input.title)
+    }
+    if (input.projectId !== undefined) {
+      await storage.updateProject(conversationId, userId, input.projectId)
+    }
     return c.json({ success: true })
-  }
+  },
 )
 
 export default app
