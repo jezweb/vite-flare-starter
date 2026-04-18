@@ -44,17 +44,61 @@ export function useProject(projectId: string | undefined) {
   })
 }
 
+interface CreateContext {
+  prev?: { projects: Project[] }
+}
+
+/**
+ * Optimistically prepends a new project so the sidebar re-sorts instantly,
+ * then reconciles with the real row on settle. Without this, the row
+ * appears at the *bottom* of the cached list for the ~200ms between
+ * POST and refetch (server sets position=0, but our cache still has the
+ * old positions). Reported as M3 in ux-audit-2026-04-18-projects.md.
+ */
 export function useCreateProject() {
   const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (input: {
-      name: string
-      description?: string
-      systemPrompt?: string
-      defaultModel?: string
-      color?: string
-    }) => apiClient.post<{ id: string; success: boolean }>('/api/projects', input),
-    onSuccess: () => {
+  return useMutation<
+    { id: string; success: boolean },
+    Error,
+    { name: string; description?: string; systemPrompt?: string; defaultModel?: string; color?: string },
+    CreateContext
+  >({
+    mutationFn: (input) =>
+      apiClient.post<{ id: string; success: boolean }>('/api/projects', input),
+    onMutate: async (input) => {
+      await queryClient.cancelQueries({ queryKey: ['projects'] })
+      const prev = queryClient.getQueryData<{ projects: Project[] }>(['projects'])
+      if (prev) {
+        // Stub project: the server will return the real UUID shortly and
+        // invalidate this cache. Until then the row renders with a temp id
+        // so React keys don't collide on refetch.
+        const now = new Date().toISOString()
+        const optimistic: Project = {
+          id: `optimistic-${now}`,
+          name: input.name,
+          description: input.description ?? null,
+          systemPrompt: input.systemPrompt ?? null,
+          defaultModel: input.defaultModel ?? null,
+          color: input.color ?? null,
+          position: 0,
+          archived: 0,
+          conversationCount: 0,
+          createdAt: now,
+          updatedAt: now,
+        }
+        queryClient.setQueryData(['projects'], {
+          projects: [
+            optimistic,
+            ...prev.projects.map((p) => ({ ...p, position: p.position + 1 })),
+          ],
+        })
+      }
+      return { prev }
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(['projects'], ctx.prev)
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] })
     },
   })
