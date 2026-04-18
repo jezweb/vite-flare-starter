@@ -162,6 +162,8 @@ export interface ChatPreferences {
   tone?: 'friendly' | 'direct' | 'academic'
   /** Free-form context the user wants the model to know (role, interests, etc.) */
   about?: string
+  /** When true: describe the plan and ask for confirmation before calling tools */
+  confirmationMode?: boolean
 }
 
 async function loadChatPreferences(
@@ -178,7 +180,7 @@ async function loadChatPreferences(
     const parsed = JSON.parse(row.value) as ChatPreferences
     // Only return if there's at least one non-empty field — otherwise we'd
     // inject an empty section into the system prompt.
-    if (!parsed.preferredName && !parsed.style && !parsed.tone && !parsed.about) return null
+    if (!parsed.preferredName && !parsed.style && !parsed.tone && !parsed.about && !parsed.confirmationMode) return null
     return parsed
   } catch {
     return null
@@ -204,5 +206,10 @@ function formatChatPreferences(p: ChatPreferences): string {
     lines.push(`- Tone: ${toneMap[p.tone] ?? p.tone}`)
   }
   if (p.about) lines.push(`- About the user: ${p.about.slice(0, 500)}`)
+  if (p.confirmationMode) {
+    lines.push(
+      '- Confirmation mode: ON — before calling any tool, briefly describe your plan in one sentence and ask the user to confirm. Only proceed after the user says yes (or equivalent).',
+    )
+  }
   return lines.join('\n')
 }

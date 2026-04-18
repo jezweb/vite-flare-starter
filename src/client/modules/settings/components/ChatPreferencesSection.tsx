@@ -10,10 +10,11 @@
  * - style: concise | detailed
  * - tone: friendly | direct | academic
  * - about: free-form "what should the model know about me"
+ * - confirmationMode: ask AI to confirm before calling tools
  */
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Sparkles, Loader2, Check } from 'lucide-react'
+import { Sparkles, Loader2, Check, ShieldCheck } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -26,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 import { apiClient } from '@/client/lib/api-client'
 
 interface ChatPreferences {
@@ -33,6 +35,7 @@ interface ChatPreferences {
   style?: 'concise' | 'detailed' | ''
   tone?: 'friendly' | 'direct' | 'academic' | ''
   about?: string
+  confirmationMode?: boolean
 }
 
 const KEY = 'chat.preferences'
@@ -75,6 +78,7 @@ export function ChatPreferencesSection() {
       ...(prefs.style ? { style: prefs.style } : {}),
       ...(prefs.tone ? { tone: prefs.tone } : {}),
       ...(prefs.about?.trim() ? { about: prefs.about.trim() } : {}),
+      ...(prefs.confirmationMode ? { confirmationMode: true } : {}),
     }
     save.mutate(clean)
   }
@@ -148,6 +152,25 @@ export function ChatPreferencesSection() {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+          <div className="flex items-start gap-3 rounded-md border p-3">
+            <ShieldCheck className="size-4 mt-0.5 shrink-0 text-muted-foreground" />
+            <div className="flex-1 space-y-0.5">
+              <Label htmlFor="confirmationMode" className="cursor-pointer">
+                Confirmation mode
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Ask the AI to describe its plan and request your approval before calling any tool.
+              </p>
+            </div>
+            <Switch
+              id="confirmationMode"
+              checked={prefs.confirmationMode ?? false}
+              onCheckedChange={(checked) =>
+                setPrefs((p) => ({ ...p, confirmationMode: checked }))
+              }
+              disabled={isLoading}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="about">About you</Label>
