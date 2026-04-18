@@ -142,7 +142,7 @@ export function ConversationSidebar({ activeConversationId }: Props) {
   const searchHits = searchResults?.results ?? []
 
   return (
-    <div className="flex h-full w-64 flex-col border-r bg-muted/30 shrink-0">
+    <div className="flex h-full w-72 flex-col border-r bg-muted/30 shrink-0">
       <div className="flex items-center justify-between p-3 border-b">
         <span className="text-sm font-medium">Conversations</span>
         <Button

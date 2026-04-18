@@ -85,6 +85,13 @@
       "when": 1776481294024,
       "tag": "0011_add_summary_starred_to_conversations",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1776495000000,
+      "tag": "0012_conversation_messages_fts",
+      "breakpoints": true
     }
   ]
 }
