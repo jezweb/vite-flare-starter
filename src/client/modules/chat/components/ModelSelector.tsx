@@ -114,6 +114,18 @@ export function ModelSelector({ value, onChange, disabled }: ModelSelectorProps)
       </Select>
     )
   }
+  // Empty-state: the models endpoint returned OK but no models are enabled.
+  // Happens when an admin disables every entry in shared/config/models.ts.
+  // Show a disabled trigger so the user isn't confused by an empty dropdown.
+  if (data.models.length === 0) {
+    return (
+      <Select disabled>
+        <SelectTrigger className="w-[160px]" title="Enable at least one model in src/shared/config/models.ts">
+          <SelectValue placeholder="No models available" />
+        </SelectTrigger>
+      </Select>
+    )
+  }
 
   const selectedModel = data.models.find((m) => m.id === value)
 

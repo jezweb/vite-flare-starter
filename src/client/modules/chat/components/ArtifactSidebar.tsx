@@ -1,0 +1,299 @@
+/**
+ * ArtifactSidebar — claude.ai-style right-panel listing artifacts and file
+ * attachments from the current conversation.
+ *
+ * Pure derivation over `messages` — no schema change. Scans each message's
+ * tool-result parts for `_artifact: true` (via isArtifact) and each user
+ * message's `file` parts for attachments. Click a card to scroll the inline
+ * artifact/file into view; click the download icon to save the code as a
+ * file with the right extension (.html / .svg / .mmd / original filename).
+ */
+import { useMemo, useCallback } from 'react'
+import { FileText, FileCode, FileImage, FileAudio, FileVideo, FileSpreadsheet, FileArchive, File as FileIcon, Download, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+import { isArtifact } from './chat-ui/ArtifactViewer'
+import type { Message as UIMessageType } from '../hooks/useChat'
+
+interface CollectedArtifact {
+  id: string
+  title: string
+  type: 'html' | 'svg' | 'mermaid'
+  code: string
+}
+
+interface CollectedFile {
+  id: string
+  name: string
+  mediaType?: string
+  url?: string
+}
+
+const ARTIFACT_EXT: Record<CollectedArtifact['type'], string> = {
+  html: 'html',
+  svg: 'svg',
+  mermaid: 'mmd',
+}
+
+const ARTIFACT_MIME: Record<CollectedArtifact['type'], string> = {
+  html: 'text/html',
+  svg: 'image/svg+xml',
+  mermaid: 'text/plain',
+}
+
+/**
+ * Walk the message tree and return every artifact + file part we can surface.
+ * Keep the identity stable across re-renders so React keys don't thrash.
+ */
+function collect(messages: UIMessageType[]): { artifacts: CollectedArtifact[]; files: CollectedFile[] } {
+  const artifacts: CollectedArtifact[] = []
+  const files: CollectedFile[] = []
+  for (const message of messages) {
+    const parts = Array.isArray(message.parts) ? message.parts : []
+    parts.forEach((part, idx) => {
+      if (part.type === 'file' && message.role === 'user') {
+        const p = part as { url?: string; mediaType?: string; filename?: string }
+        files.push({
+          id: `${message.id}-${idx}`,
+          name: p.filename || `file-${idx}`,
+          mediaType: p.mediaType,
+          url: p.url,
+        })
+        return
+      }
+      if (part.type.startsWith('tool-') || part.type === 'dynamic-tool') {
+        const p = part as Record<string, unknown>
+        const output = p['output']
+        if (isArtifact(output)) {
+          artifacts.push({
+            id: `${message.id}-${idx}`,
+            title: output.title,
+            type: output.type,
+            code: output.code,
+          })
+        }
+      }
+    })
+  }
+  return { artifacts, files }
+}
+
+function iconForMime(mediaType?: string) {
+  if (!mediaType) return FileIcon
+  if (mediaType.startsWith('image/')) return FileImage
+  if (mediaType.startsWith('audio/')) return FileAudio
+  if (mediaType.startsWith('video/')) return FileVideo
+  if (mediaType === 'application/pdf') return FileText
+  if (mediaType.includes('spreadsheet') || mediaType.includes('excel') || mediaType === 'text/csv') return FileSpreadsheet
+  if (mediaType.includes('wordprocessingml') || mediaType === 'application/msword') return FileText
+  if (mediaType.startsWith('text/') || mediaType === 'application/json' || mediaType === 'application/xml') return FileCode
+  if (mediaType === 'application/zip' || mediaType === 'application/epub+zip') return FileArchive
+  return FileIcon
+}
+
+function iconForArtifact(type: CollectedArtifact['type']) {
+  if (type === 'svg') return FileImage
+  if (type === 'mermaid') return FileCode
+  return FileText
+}
+
+function safeFilename(title: string, ext: string): string {
+  const slug = title.trim().toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').slice(0, 60) || 'artifact'
+  return `${slug}.${ext}`
+}
+
+/**
+ * Trigger a download of a text/blob by creating a transient <a href="blob:"> and
+ * clicking it. We revoke the object URL on the next tick so the download starts
+ * before the blob is GC'd.
+ */
+function downloadBlob(filename: string, content: string | Blob, mime: string) {
+  const blob = content instanceof Blob ? content : new Blob([content], { type: mime })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.rel = 'noopener'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+interface Props {
+  messages: UIMessageType[]
+  onClose?: () => void
+  /** Scroll target parent — defaults to the document if omitted. */
+  scrollRoot?: HTMLElement | null
+}
+
+export function ArtifactSidebar({ messages, onClose, scrollRoot: _scrollRoot }: Props) {
+  const { artifacts, files } = useMemo(() => collect(messages), [messages])
+  const hasAny = artifacts.length > 0 || files.length > 0
+
+  const scrollTo = useCallback((id: string) => {
+    const el = document.querySelector<HTMLElement>(`[data-artifact-id="${CSS.escape(id)}"]`)
+    if (!el) return
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    // Brief highlight flash so users can see which one they clicked.
+    el.classList.add('ring-2', 'ring-primary/50', 'ring-offset-2', 'ring-offset-background')
+    setTimeout(() => el.classList.remove('ring-2', 'ring-primary/50', 'ring-offset-2', 'ring-offset-background'), 1200)
+  }, [])
+
+  const downloadAll = useCallback(() => {
+    for (const a of artifacts) {
+      downloadBlob(safeFilename(a.title, ARTIFACT_EXT[a.type]), a.code, ARTIFACT_MIME[a.type])
+    }
+  }, [artifacts])
+
+  return (
+    <aside
+      aria-label="Artifacts and attachments"
+      className="w-72 shrink-0 border-l bg-muted/30 flex flex-col h-full overflow-hidden"
+    >
+      <div className="flex items-center justify-between px-3 py-2 border-b">
+        <h2 className="text-sm font-medium">Artifacts</h2>
+        <div className="flex items-center gap-0.5">
+          {artifacts.length > 1 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1 h-7 text-xs text-muted-foreground hover:text-foreground"
+              onClick={downloadAll}
+              title="Download all artifacts"
+            >
+              <Download className="size-3" />
+              Download all
+            </Button>
+          )}
+          {onClose && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="text-muted-foreground hover:text-foreground"
+              onClick={onClose}
+              aria-label="Close artifact panel"
+              title="Close"
+            >
+              <X className="size-3.5" />
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className="flex-1 min-h-0 overflow-y-auto px-2 py-2 space-y-4">
+        {!hasAny && (
+          <div className="px-2 py-8 text-xs text-muted-foreground text-center">
+            No artifacts or files yet. Ask the AI for a chart, dashboard, diagram, or drop a file into the chat.
+          </div>
+        )}
+
+        {artifacts.length > 0 && (
+          <section className="space-y-1.5">
+            {artifacts.map((a) => {
+              const Icon = iconForArtifact(a.type)
+              return (
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={() => scrollTo(a.id)}
+                  className={cn(
+                    'w-full group flex items-center gap-2 rounded-lg border border-border bg-background',
+                    'px-2 py-2 text-left transition-colors hover:bg-accent/50 focus-visible:outline-none',
+                    'focus-visible:ring-2 focus-visible:ring-primary/40',
+                  )}
+                >
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded bg-muted/70">
+                    <Icon className="size-4 text-muted-foreground" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-xs font-medium">{a.title}</div>
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                      {a.type === 'mermaid' ? 'Diagram' : a.type.toUpperCase()}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      downloadBlob(safeFilename(a.title, ARTIFACT_EXT[a.type]), a.code, ARTIFACT_MIME[a.type])
+                    }}
+                    className={cn(
+                      'shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-opacity',
+                      'group-hover:opacity-100 hover:bg-muted hover:text-foreground',
+                    )}
+                    title={`Download .${ARTIFACT_EXT[a.type]}`}
+                    aria-label={`Download ${a.title}`}
+                  >
+                    <Download className="size-3.5" />
+                  </button>
+                </button>
+              )
+            })}
+          </section>
+        )}
+
+        {files.length > 0 && (
+          <section className="space-y-1.5">
+            <h3 className="px-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Content
+            </h3>
+            {files.map((f) => {
+              const Icon = iconForMime(f.mediaType)
+              const isImage = f.mediaType?.startsWith('image/')
+              return (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => scrollTo(f.id)}
+                  className={cn(
+                    'w-full group flex items-center gap-2 rounded-lg border border-border bg-background',
+                    'px-2 py-2 text-left transition-colors hover:bg-accent/50 focus-visible:outline-none',
+                    'focus-visible:ring-2 focus-visible:ring-primary/40',
+                  )}
+                  title={f.name}
+                >
+                  <div className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded bg-muted/70">
+                    {isImage && f.url ? (
+                      // eslint-disable-next-line jsx-a11y/alt-text
+                      <img src={f.url} alt="" className="size-full object-cover" />
+                    ) : (
+                      <Icon className="size-4 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-xs font-medium">{f.name}</div>
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                      {f.mediaType?.split('/')[1]?.slice(0, 20) || 'FILE'}
+                    </div>
+                  </div>
+                  {f.url && (
+                    <a
+                      href={f.url}
+                      download={f.name}
+                      onClick={(e) => e.stopPropagation()}
+                      className={cn(
+                        'shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-opacity',
+                        'group-hover:opacity-100 hover:bg-muted hover:text-foreground',
+                      )}
+                      title={`Download ${f.name}`}
+                      aria-label={`Download ${f.name}`}
+                    >
+                      <Download className="size-3.5" />
+                    </a>
+                  )}
+                </button>
+              )
+            })}
+          </section>
+        )}
+      </div>
+    </aside>
+  )
+}
+
+/** Expose the collector so the chat page can decide whether to show the toggle. */
+export function countArtifactsAndFiles(messages: UIMessageType[]): { artifactCount: number; fileCount: number } {
+  const { artifacts, files } = collect(messages)
+  return { artifactCount: artifacts.length, fileCount: files.length }
+}

@@ -22,12 +22,13 @@ import {
   PromptInputActionAddAttachments,
   PromptInputActionAddScreenshot,
 } from '@/components/ai-elements/prompt-input'
-import { Plus, MessageSquare, MessagesSquare, Download, ArrowDown, Paperclip } from 'lucide-react'
+import { Plus, MessageSquare, MessagesSquare, Download, ArrowDown, Paperclip, FileText } from 'lucide-react'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { useMediaQuery } from '@/client/hooks/useMediaQuery'
 import { useChat, type Message } from '../hooks/useChat'
 import { useConversationMessages } from '../hooks/useConversations'
 import { ConversationSidebar } from '../components/ConversationSidebar'
+import { ArtifactSidebar, countArtifactsAndFiles } from '../components/ArtifactSidebar'
 import { MessageRenderer } from '../components/MessageRenderer'
 import { ModelSelector } from '../components'
 import { AttachmentTiles } from '../components/AttachmentTiles'
@@ -86,7 +87,11 @@ export function ChatPage() {
   const { data: session } = useSession()
   const [model, setModel] = useState<string>(DEFAULT_MODEL_ID)
   const [showSidebar, setShowSidebar] = useState(false)
+  const [showArtifactPanel, setShowArtifactPanel] = useState(false)
   const isDesktop = useMediaQuery('(min-width: 768px)')
+  // Collapse the artifact panel into a Sheet on mobile — same pattern as the
+  // conversation sidebar. On tablets (768px+) it docks inline on the right.
+  const isLargeScreen = useMediaQuery('(min-width: 1024px)')
 
   // Share Target: when shared from mobile, params arrive as ?title=&text=&url=
   const sharedText = searchParams.get('text') || searchParams.get('title') || searchParams.get('url')
@@ -352,6 +357,10 @@ export function ChatPage() {
   )
 
   const hasMessages = messages.length > 0
+  // Derive whether the artifact panel toggle should appear at all. Recomputed
+  // per render — cheap walk, no need for useMemo.
+  const { artifactCount, fileCount } = countArtifactsAndFiles(messages)
+  const hasArtifactsOrFiles = artifactCount + fileCount > 0
 
   // Track whether the user is near the bottom of the scroll container so we
   // can (a) show/hide the scroll-to-bottom button, (b) stop auto-sticking
@@ -440,7 +449,7 @@ export function ChatPage() {
       )}
 
       {/* Chat area */}
-      <div className="flex flex-1 flex-col min-w-0">
+      <div className="flex flex-1 flex-col min-w-0 relative">
         {/* Header */}
         <div className="flex items-center justify-between border-b px-4 py-2">
           <div className="flex items-center gap-1.5">
@@ -460,6 +469,22 @@ export function ChatPage() {
             <h1 className="text-sm font-medium">AI Chat</h1>
           </div>
           <div className="flex items-center gap-1">
+            {hasArtifactsOrFiles && (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className={cn(
+                  'text-muted-foreground',
+                  showArtifactPanel && 'bg-accent text-foreground ring-1 ring-primary/30',
+                )}
+                onClick={() => setShowArtifactPanel((v) => !v)}
+                title={showArtifactPanel ? 'Hide artifact panel' : `Artifacts (${artifactCount}) & files (${fileCount})`}
+                aria-label={showArtifactPanel ? 'Hide artifact panel' : 'Show artifact panel'}
+                aria-pressed={showArtifactPanel}
+              >
+                <FileText className="size-3.5" />
+              </Button>
+            )}
             {hasMessages && conversationId && (
               <Button
                 variant="ghost"
@@ -539,11 +564,28 @@ export function ChatPage() {
             </div>
           )}
 
-          {/* Error display — inside the scroller so it's visible above the input */}
+          {/* Error display — inside the scroller so it's visible above the input.
+              Puts the error text beside a compact action row so users have a
+              one-click path to recover (retry the last message, or switch model
+              via the selector below). */}
           {error && (
             <div className="sticky bottom-28 mx-auto max-w-3xl px-4">
-              <div className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-                {error}
+              <div className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive flex items-start gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium">Something went wrong.</div>
+                  <div className="mt-0.5 text-destructive/80 break-words">{error}</div>
+                </div>
+                {lastAssistantIdx === -1 && messages.some((m) => m.role === 'user') && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 shrink-0 border-destructive/50 text-destructive hover:bg-destructive/10"
+                    onClick={handleRegenerate}
+                    disabled={isLoading}
+                  >
+                    Retry
+                  </Button>
+                )}
               </div>
             </div>
           )}
@@ -645,6 +687,20 @@ export function ChatPage() {
           </div>
         </div>
       </div>
+
+      {/* Right-side artifact panel: inline on large screens, Sheet on mobile.
+          Zero-schema derivation — ArtifactSidebar walks `messages` itself for
+          artifacts (_artifact tool results) and user file parts. */}
+      {showArtifactPanel && isLargeScreen && (
+        <ArtifactSidebar messages={messages} onClose={() => setShowArtifactPanel(false)} />
+      )}
+      {showArtifactPanel && !isLargeScreen && (
+        <Sheet open onOpenChange={(open) => { if (!open) setShowArtifactPanel(false) }}>
+          <SheetContent side="right" className="w-80 p-0">
+            <ArtifactSidebar messages={messages} onClose={() => setShowArtifactPanel(false)} />
+          </SheetContent>
+        </Sheet>
+      )}
     </div>
   )
 }

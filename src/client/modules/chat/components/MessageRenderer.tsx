@@ -336,6 +336,10 @@ function MessageBody({
         // 3. File attachments (user uploads)
         if (part.type === 'file') {
           const p = part as { url?: string; mediaType?: string; filename?: string }
+          // data-artifact-id lets ArtifactSidebar scroll this attachment into
+          // view when the corresponding card is clicked. Key shape matches the
+          // sidebar's collector: `${message.id}-${partIndex}`.
+          const anchorId = `${message.id}-${i}`
           if (p.mediaType?.startsWith('image/')) {
             return (
               // eslint-disable-next-line jsx-a11y/alt-text
@@ -343,7 +347,8 @@ function MessageBody({
                 key={i}
                 src={p.url}
                 alt={p.filename ?? 'uploaded'}
-                className="max-w-xs max-h-64 rounded-lg border"
+                className="max-w-xs max-h-64 rounded-lg border transition-shadow"
+                data-artifact-id={anchorId}
               />
             )
           }
@@ -352,12 +357,13 @@ function MessageBody({
           // pre-send AttachmentTiles look so attachments feel consistent end to
           // end.
           return (
-            <TranscriptFilePill
-              key={i}
-              filename={p.filename}
-              mediaType={p.mediaType}
-              url={p.url}
-            />
+            <div key={i} data-artifact-id={anchorId} className="transition-shadow rounded-lg">
+              <TranscriptFilePill
+                filename={p.filename}
+                mediaType={p.mediaType}
+                url={p.url}
+              />
+            </div>
           )
         }
 
@@ -401,9 +407,14 @@ function MessageBody({
 
           const isComplete = state === 'result' || state === 'call' || state === 'output-available' || output != null
 
-          // 4b. Artifacts (HTML/SVG/Mermaid)
+          // 4b. Artifacts (HTML/SVG/Mermaid). Wrap with an anchor id so the
+          // right-side ArtifactSidebar can scroll this into view on click.
           if (isComplete && isArtifact(output)) {
-            return <ArtifactViewer key={i} artifact={output} />
+            return (
+              <div key={i} data-artifact-id={`${message.id}-${i}`} className="transition-shadow rounded-lg">
+                <ArtifactViewer artifact={output} />
+              </div>
+            )
           }
 
           // 4c. Document downloads
@@ -554,7 +565,7 @@ function TranscriptFilePill({
   const ext = extensionForMime(filename, mediaType)
   const name = filename || `file.${ext.toLowerCase()}`
   const inner = (
-    <div className="inline-flex items-center gap-2 rounded-lg border border-border bg-background/60 px-2 py-1.5 text-xs">
+    <div className="inline-flex items-center gap-2 rounded-lg border border-border bg-background/60 px-2 py-1.5 text-xs" title={name}>
       <div className="flex size-8 shrink-0 items-center justify-center rounded bg-muted/70">
         <Icon className="size-4 text-muted-foreground" />
       </div>
@@ -565,7 +576,7 @@ function TranscriptFilePill({
     </div>
   )
   return url ? (
-    <a href={url} target="_blank" rel="noopener noreferrer" className="inline-block hover:opacity-80 transition-opacity">
+    <a href={url} target="_blank" rel="noopener noreferrer" title={name} className="inline-block hover:opacity-80 transition-opacity">
       {inner}
     </a>
   ) : inner
