@@ -112,11 +112,12 @@ app.post('/', async (c) => {
     //
     // Defensive parse: reject anything that isn't a UUID-shaped string to
     // prevent a malicious client sending a 10MB payload as projectId.
+    // Strict v4 UUID regex — won't match "aaa" or "----" which the prior
+    // looser regex allowed.
     const rawProjectId = body.projectId
-    const isUuidLike = typeof rawProjectId === 'string'
-      && rawProjectId.length <= 64
-      && /^[0-9a-f-]+$/i.test(rawProjectId)
-    const clientProjectId: string | null = isUuidLike ? rawProjectId : null
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    const clientProjectId: string | null =
+      typeof rawProjectId === 'string' && UUID_RE.test(rawProjectId) ? rawProjectId : null
     // systemPrompt is intentionally server-controlled — client cannot override.
     // Fork-users: change this in buildChatAgent's default instructions.
     const systemPrompt = undefined

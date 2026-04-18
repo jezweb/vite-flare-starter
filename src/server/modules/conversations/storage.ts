@@ -10,6 +10,7 @@
 import { drizzle } from 'drizzle-orm/d1'
 import { eq, desc, and } from 'drizzle-orm'
 import { conversations, conversationMessages } from './db/schema'
+import { projects } from '@/server/modules/projects/db/schema'
 import type { UIMessage } from 'ai'
 
 export interface ConversationSummary {
@@ -263,6 +264,26 @@ export function createD1ChatStorage(db: D1Database): ChatStorage {
     },
 
     async updateProject(conversationId, userId, projectId) {
+      // Verify the target project belongs to this user before wiring the FK.
+      // Without this check, a malicious client could PATCH a conversation
+      // with another user's project UUID. The bad cross-user instructions
+      // still wouldn't be loaded (agent.loadProject() scopes by userId), but
+      // the conversation row would reference a project it can't display,
+      // corrupting the sidebar grouping and the project page's conversation
+      // count.
+      if (projectId !== null) {
+        const [owned] = await d
+          .select({ id: projects.id })
+          .from(projects)
+          .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
+          .limit(1)
+        if (!owned) {
+          // Silently no-op on invalid project — mirrors the "not found" feel
+          // of all other scoped endpoints without leaking whether the
+          // project exists under a different user.
+          return
+        }
+      }
       await d
         .update(conversations)
         .set({ projectId })
