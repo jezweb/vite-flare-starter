@@ -16,6 +16,7 @@ import { ChatUiElement, hasUiMarker } from './chat-ui/ChatUiElement'
 import { isTakeoverElement } from './chat-ui/InputTakeover'
 import { ArtifactViewer, isArtifact } from './chat-ui/ArtifactViewer'
 import { DocumentDownload, isDocument } from './chat-ui/DocumentDownload'
+import { WebSearchResults, isWebSearchOutput } from './chat-ui/WebSearchResults'
 import { AttachedFileBlock, parseAttachedFile } from './AttachedFileBlock'
 import { extractUIResources, ToolUIResource } from './ToolUIResource'
 import { ToolApproval } from './chat-ui/ToolApproval'
@@ -420,6 +421,14 @@ function MessageBody({
           // 4c. Document downloads
           if (isComplete && isDocument(output)) {
             return <DocumentDownload key={i} doc={output} />
+          }
+
+          // 4c1. Web search results — custom renderer (claude.ai-style
+          // favicon + title + domain rows). Only matches web_search /
+          // search-like tools via the {query, results[]} duck type so it
+          // won't hijack unrelated outputs.
+          if (isComplete && (toolName === 'web_search' || toolName === 'search') && isWebSearchOutput(output)) {
+            return <WebSearchResults key={i} output={output} />
           }
 
           // 4c2. Generated image tool — render the image inline so users
