@@ -140,6 +140,50 @@
   }
 }
 
+/* Thin claude.ai-style scrollbars.
+ *
+ * Applied globally via *, not on body, because the chat scroller and sidebar
+ * list are nested scroll containers — each needs its own styled scrollbar.
+ * Radix ScrollArea components (used in command palette, select dropdowns)
+ * hide the native scrollbar themselves via data-radix-scroll-area-viewport,
+ * so this doesn't conflict with them.
+ *
+ * - 10px wide, transparent track, muted-foreground thumb at 20% opacity
+ * - Hover brightens to 40% so the thumb becomes visible when reaching for it
+ * - scrollbar-gutter: stable avoids the "content reflows when scrollbar
+ *   appears" jump that plagues inset layouts
+ * - Firefox: scrollbar-width: thin + scrollbar-color handles the same idea
+ */
+@supports selector(::-webkit-scrollbar) {
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: color-mix(in hsl, var(--muted-foreground) 20%, transparent);
+    border-radius: 9999px;
+    /* Inset border creates the "pill inside a 10px gutter" effect so the
+       thumb doesn't hug the content edge — same trick claude.ai uses. */
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in hsl, var(--muted-foreground) 40%, transparent);
+  }
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in hsl, var(--muted-foreground) 25%, transparent) transparent;
+}
+
 /* Syntax Highlighting (lowlight/highlight.js) */
 .hljs {
   background: var(--muted);
