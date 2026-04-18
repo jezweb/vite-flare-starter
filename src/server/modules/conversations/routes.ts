@@ -191,30 +191,46 @@ app.post('/:id/summarise', async (c) => {
     const { object } = await generateObject({
       model: workersai('@cf/moonshotai/kimi-k2.5'),
       schema: z.object({
-        title: z.string().min(1).max(80).describe('3-6 word title naming the topic'),
-        summary: z.string().min(1).max(120).describe('One-line summary of what was asked and what was discussed'),
+        title: z.string().min(1).max(60).describe('A short noun phrase naming the topic. 2-5 words. No verbs. No colons.'),
+        summary: z.string().min(1).max(120).describe('A one-sentence description of the exchange, using different words from the title.'),
       }),
-      prompt: `Write a short title and one-line summary for this chat.
+      prompt: `You write sidebar labels for a chat app.
+For the conversation below, produce TWO DIFFERENT strings:
 
-USER (first message):
-${textOf(firstUser)}
+1. "title" — a short noun phrase naming the topic. 2-5 words. Like a bookmark.
+2. "summary" — a single sentence describing what was asked and what the assistant did. Starts with a verb. Must use different words from the title.
 
-ASSISTANT (first reply):
-${textOf(firstAssistant)}
+Examples of good output:
+- {"title":"Drizzle 0.45 migration","summary":"Walked through porting schema defs and flagged two deprecated APIs."}
+- {"title":"Mermaid and SVG artifacts","summary":"Generated a build-loop flowchart and a blue circle SVG for a demo."}
+- {"title":"Norton Commando history","summary":"Compared 750 vs 850 model years and the electric-start variant."}
 
-Rules:
-- Title: 3 to 6 words, naming the topic. Not a full sentence. No quotes.
-- Summary: one line, <= 120 characters, naming the question and the answer. Present tense.
-- Don't repeat the title in the summary.`,
+Never make the summary a copy or close paraphrase of the title.
+
+CONVERSATION:
+---
+USER: ${textOf(firstUser)}
+
+ASSISTANT: ${textOf(firstAssistant)}
+---`,
       maxRetries: 1,
     })
 
+    // Defensive: if the model returned identical or near-identical strings,
+    // drop the summary so the sidebar falls back to showing just the time.
+    // Better to show less than to show noise.
+    const normTitle = object.title.trim().toLowerCase()
+    const normSummary = object.summary.trim().toLowerCase()
+    const summary = (normTitle === normSummary || normSummary.startsWith(normTitle))
+      ? null
+      : object.summary
+
     await storage.updateSummary(conversationId, userId, {
       title: object.title,
-      summary: object.summary,
+      summary,
     })
 
-    return c.json({ title: object.title, summary: object.summary })
+    return c.json({ title: object.title, summary })
   } catch (err) {
     console.error(JSON.stringify({ event: 'summarise_failed', conversationId, error: String(err) }))
     return c.json({ error: 'summarise failed' }, 500)

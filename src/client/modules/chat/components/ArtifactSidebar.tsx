@@ -343,7 +343,10 @@ export function ArtifactSidebar({ messages, onClose, scrollRoot: _scrollRoot }: 
           height so dashboards/mermaids have room to breathe. */}
       <Dialog open={!!lightbox} onOpenChange={(open) => { if (!open) setLightbox(null) }}>
         <DialogContent
-          className="max-w-[min(80vw,1200px)] w-[80vw] h-[85vh] p-0 gap-0 overflow-hidden"
+          // sm: prefix is REQUIRED to override shadcn Dialog's default
+          // `sm:max-w-lg`. See rules/css-patterns.md — breakpoint overrides
+          // need same breakpoint specificity or the default wins.
+          className="w-[95vw] sm:w-[80vw] sm:max-w-[min(80vw,1200px)] h-[85vh] p-0 gap-0 overflow-hidden"
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
           <DialogTitle className="sr-only">
