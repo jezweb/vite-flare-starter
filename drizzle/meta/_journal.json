@@ -78,6 +78,13 @@
       "when": 1776172359010,
       "tag": "0010_add_shared_modules",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1776481294024,
+      "tag": "0011_add_summary_starred_to_conversations",
+      "breakpoints": true
     }
   ]
 }

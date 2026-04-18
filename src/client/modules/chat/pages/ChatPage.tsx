@@ -20,8 +20,11 @@ import {
   PromptInputActionMenuTrigger,
   PromptInputActionMenuContent,
   PromptInputActionAddAttachments,
-  PromptInputActionAddScreenshot,
 } from '@/components/ai-elements/prompt-input'
+import {
+  PromptInputActionAddScreenshotCountdown,
+  PromptInputActionAddScreenCapture,
+} from '../components/ScreenCaptureMenuItems'
 import { Plus, MessageSquare, MessagesSquare, Download, ArrowDown, Paperclip, FileText } from 'lucide-react'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { useMediaQuery } from '@/client/hooks/useMediaQuery'
@@ -148,6 +151,36 @@ export function ChatPage() {
       queryClient.invalidateQueries({ queryKey: ['conversations'] })
     }
   }, [conversationId, urlConversationId, messages.length, navigate, queryClient])
+
+  // After the first assistant response completes, ask the server to generate
+  // a proper title + summary for the sidebar. Fires at most once per
+  // conversationId per tab session. Fire-and-forget — sidebar refreshes on the
+  // next list fetch (next focus or next message).
+  const summarisedIdsRef = useRef<Set<string>>(new Set())
+  useEffect(() => {
+    if (!conversationId) return
+    if (isLoading) return
+    if (summarisedIdsRef.current.has(conversationId)) return
+    // Need at least one user + one assistant message.
+    const hasUser = messages.some((m) => m.role === 'user')
+    const hasAssistant = messages.some((m) => m.role === 'assistant')
+    if (!hasUser || !hasAssistant) return
+    // Must be the FIRST exchange — don't re-summarise mid-conversation.
+    if (messages.length > 3) return
+    summarisedIdsRef.current.add(conversationId)
+    void fetch(`/api/conversations/${conversationId}/summarise`, {
+      method: 'POST',
+      credentials: 'include',
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) {
+          // Refresh the sidebar so the new title/summary appears without a page reload.
+          queryClient.invalidateQueries({ queryKey: ['conversations'] })
+        }
+      })
+      .catch(() => {})
+  }, [conversationId, isLoading, messages, queryClient])
 
   // Reset + hydrate when the conversation URL changes (navigating sidebar
   // entries). Tracking the last-hydrated conversationId prevents us from
@@ -671,7 +704,8 @@ export function ChatPage() {
                             </PromptInputActionMenuTrigger>
                             <PromptInputActionMenuContent>
                               <PromptInputActionAddAttachments />
-                              <PromptInputActionAddScreenshot />
+                              <PromptInputActionAddScreenshotCountdown />
+                              <PromptInputActionAddScreenCapture />
                             </PromptInputActionMenuContent>
                           </PromptInputActionMenu>
                           <AudioRecorder compact onRecordingComplete={handleAudioRecording} />

@@ -7,6 +7,8 @@
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
+import { generateObject } from 'ai'
+import { createWorkersAI } from 'workers-ai-provider'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import { createD1ChatStorage } from './storage'
 import { searchFTS } from '@/server/lib/search'
@@ -146,6 +148,97 @@ app.get('/:id/export', async (c) => {
       'Content-Disposition': `attachment; filename="conversation-${conversationId.slice(0, 8)}.json"`,
     },
   })
+})
+
+/**
+ * POST /api/conversations/:id/summarise
+ *
+ * Generate a short title + one-line sidebar summary from the first user +
+ * first assistant messages. Runs against Workers AI (Kimi K2.5, free) so we
+ * don't burn paid credits every new conversation. Idempotent — safe to call
+ * multiple times but callers should skip when a title is already set.
+ *
+ * The client fires this once, after the first assistant response lands.
+ * Fire-and-forget: the sidebar re-queries on navigation or focus.
+ */
+app.post('/:id/summarise', async (c) => {
+  const conversationId = c.req.param('id')
+  const userId = c.get('userId')
+  const storage = createD1ChatStorage(c.env.DB)
+
+  if (!(await storage.isOwner(conversationId, userId))) {
+    return c.json({ error: 'Not found' }, 404)
+  }
+
+  const messages = await storage.loadChat(conversationId)
+  // Need at least one user + one assistant to summarise. Bail quietly so the
+  // client can call this without checking first.
+  const firstUser = messages.find((m) => m.role === 'user')
+  const firstAssistant = messages.find((m) => m.role === 'assistant')
+  if (!firstUser || !firstAssistant) {
+    return c.json({ skipped: true, reason: 'not-enough-messages' })
+  }
+
+  const textOf = (m: typeof firstUser) =>
+    (m.parts ?? [])
+      .filter((p): p is { type: 'text'; text: string } => (p as { type: string }).type === 'text')
+      .map((p) => p.text)
+      .join('\n')
+      .slice(0, 1500)
+
+  try {
+    const workersai = createWorkersAI({ binding: c.env.AI })
+    const { object } = await generateObject({
+      model: workersai('@cf/moonshotai/kimi-k2.5'),
+      schema: z.object({
+        title: z.string().min(1).max(80).describe('3-6 word title naming the topic'),
+        summary: z.string().min(1).max(120).describe('One-line summary of what was asked and what was discussed'),
+      }),
+      prompt: `Write a short title and one-line summary for this chat.
+
+USER (first message):
+${textOf(firstUser)}
+
+ASSISTANT (first reply):
+${textOf(firstAssistant)}
+
+Rules:
+- Title: 3 to 6 words, naming the topic. Not a full sentence. No quotes.
+- Summary: one line, <= 120 characters, naming the question and the answer. Present tense.
+- Don't repeat the title in the summary.`,
+      maxRetries: 1,
+    })
+
+    await storage.updateSummary(conversationId, userId, {
+      title: object.title,
+      summary: object.summary,
+    })
+
+    return c.json({ title: object.title, summary: object.summary })
+  } catch (err) {
+    console.error(JSON.stringify({ event: 'summarise_failed', conversationId, error: String(err) }))
+    return c.json({ error: 'summarise failed' }, 500)
+  }
+})
+
+/**
+ * POST   /api/conversations/:id/star  — pin to the top of the sidebar
+ * DELETE /api/conversations/:id/star  — unpin
+ */
+app.post('/:id/star', async (c) => {
+  const conversationId = c.req.param('id')
+  const userId = c.get('userId')
+  const storage = createD1ChatStorage(c.env.DB)
+  await storage.setStarred(conversationId, userId, true)
+  return c.json({ success: true, starred: true })
+})
+
+app.delete('/:id/star', async (c) => {
+  const conversationId = c.req.param('id')
+  const userId = c.get('userId')
+  const storage = createD1ChatStorage(c.env.DB)
+  await storage.setStarred(conversationId, userId, false)
+  return c.json({ success: true, starred: false })
 })
 
 /** PATCH /api/conversations/:id — update title */

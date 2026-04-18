@@ -4,7 +4,7 @@
 import { useState, useEffect, useDeferredValue } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Plus, MoreHorizontal, Pencil, Trash2, Search, ChevronRight } from 'lucide-react'
+import { Plus, MoreHorizontal, Pencil, Trash2, Search, ChevronRight, Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -30,6 +30,7 @@ import {
   useConversationList,
   useDeleteConversation,
   useUpdateConversationTitle,
+  useStarConversation,
 } from '../hooks/useConversations'
 
 interface Props {
@@ -48,12 +49,18 @@ function timeAgo(dateStr: string): string {
 interface ConversationSummary {
   id: string
   title: string | null
+  summary?: string | null
+  starred?: number
   model: string | null
   createdAt: string
   updatedAt: string
 }
 
-/** Group conversations into Today / Yesterday / Last 7 days / Older */
+/**
+ * Group conversations by starred → Today → Yesterday → Last 7 days → Older.
+ * Starred conversations appear in their own pinned section at the top,
+ * keeping chronological order within the pinned group.
+ */
 function groupByDate(conversations: ConversationSummary[]) {
   const now = new Date()
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
@@ -61,6 +68,7 @@ function groupByDate(conversations: ConversationSummary[]) {
   const weekStart = todayStart - 7 * 86400000
 
   const groups: { label: string; items: ConversationSummary[] }[] = [
+    { label: 'Starred', items: [] },
     { label: 'Today', items: [] },
     { label: 'Yesterday', items: [] },
     { label: 'Last 7 days', items: [] },
@@ -68,11 +76,15 @@ function groupByDate(conversations: ConversationSummary[]) {
   ]
 
   for (const conv of conversations) {
+    if (conv.starred) {
+      groups[0]!.items.push(conv)
+      continue
+    }
     const ts = new Date(conv.updatedAt).getTime()
-    if (ts >= todayStart) groups[0]!.items.push(conv)
-    else if (ts >= yesterdayStart) groups[1]!.items.push(conv)
-    else if (ts >= weekStart) groups[2]!.items.push(conv)
-    else groups[3]!.items.push(conv)
+    if (ts >= todayStart) groups[1]!.items.push(conv)
+    else if (ts >= yesterdayStart) groups[2]!.items.push(conv)
+    else if (ts >= weekStart) groups[3]!.items.push(conv)
+    else groups[4]!.items.push(conv)
   }
 
   return groups.filter((g) => g.items.length > 0)
@@ -83,6 +95,7 @@ export function ConversationSidebar({ activeConversationId }: Props) {
   const { data, isLoading } = useConversationList()
   const deleteConversation = useDeleteConversation()
   const updateTitle = useUpdateConversationTitle()
+  const starConversation = useStarConversation()
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [renameText, setRenameText] = useState('')
@@ -253,63 +266,89 @@ export function ConversationSidebar({ activeConversationId }: Props) {
                           />
                         ) : (
                           <>
-                            <div className="text-sm truncate">
+                            <div className="text-sm truncate font-medium" title={conv.title || 'Untitled'}>
                               {conv.title || 'Untitled'}
                             </div>
-                            <div className="text-[10px] text-muted-foreground">
+                            <div className="text-[10px] text-muted-foreground truncate" title={conv.summary ?? undefined}>
                               {timeAgo(conv.updatedAt)}
+                              {conv.summary && <span className="ml-1 opacity-80">· {conv.summary}</span>}
                             </div>
                           </>
                         )}
                       </div>
                       {renamingId !== conv.id && (
-                        <DropdownMenu
-                          open={openMenuId === conv.id}
-                          onOpenChange={(open) => setOpenMenuId(open ? conv.id : null)}
-                        >
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              // CSS-based hover visibility — always in DOM so
-                              // programmatic interactions work, only visible
-                              // when the row is hovered OR the menu is open.
-                              className={cn(
-                                'size-6 shrink-0 transition-opacity',
-                                openMenuId === conv.id
-                                  ? 'opacity-100'
-                                  : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100',
-                              )}
-                              onClick={(e) => { e.preventDefault(); e.stopPropagation() }}
-                              title="More actions"
-                              aria-label="More actions"
-                            >
-                              <MoreHorizontal className="size-3.5" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" onClick={(e) => e.preventDefault()}>
-                            <DropdownMenuItem
-                              onSelect={() => {
-                                setRenameText(conv.title || '')
-                                setRenamingId(conv.id)
-                                setOpenMenuId(null)
-                              }}
-                            >
-                              <Pencil className="mr-2 size-3.5" />
-                              Rename
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onSelect={() => {
-                                setConfirmDeleteId(conv.id)
-                                setOpenMenuId(null)
-                              }}
-                              className="text-destructive focus:text-destructive"
-                            >
-                              <Trash2 className="mr-2 size-3.5" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <div className="flex items-center shrink-0">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            // Star button — always rendered on starred rows,
+                            // revealed on hover otherwise. Click stays inside
+                            // the row without navigating.
+                            className={cn(
+                              'size-6 transition-opacity',
+                              conv.starred
+                                ? 'opacity-100 text-yellow-500 hover:text-yellow-600'
+                                : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100 text-muted-foreground hover:text-foreground',
+                            )}
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              starConversation.mutate({ id: conv.id, starred: !conv.starred })
+                            }}
+                            title={conv.starred ? 'Unstar' : 'Star'}
+                            aria-label={conv.starred ? 'Remove star' : 'Star conversation'}
+                            aria-pressed={!!conv.starred}
+                          >
+                            <Star className={cn('size-3.5', conv.starred && 'fill-current')} />
+                          </Button>
+                          <DropdownMenu
+                            open={openMenuId === conv.id}
+                            onOpenChange={(open) => setOpenMenuId(open ? conv.id : null)}
+                          >
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                // CSS-based hover visibility — always in DOM so
+                                // programmatic interactions work, only visible
+                                // when the row is hovered OR the menu is open.
+                                className={cn(
+                                  'size-6 transition-opacity',
+                                  openMenuId === conv.id
+                                    ? 'opacity-100'
+                                    : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100',
+                                )}
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation() }}
+                                title="More actions"
+                                aria-label="More actions"
+                              >
+                                <MoreHorizontal className="size-3.5" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" onClick={(e) => e.preventDefault()}>
+                              <DropdownMenuItem
+                                onSelect={() => {
+                                  setRenameText(conv.title || '')
+                                  setRenamingId(conv.id)
+                                  setOpenMenuId(null)
+                                }}
+                              >
+                                <Pencil className="mr-2 size-3.5" />
+                                Rename
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onSelect={() => {
+                                  setConfirmDeleteId(conv.id)
+                                  setOpenMenuId(null)
+                                }}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="mr-2 size-3.5" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       )}
                     </Link>
                   ))}

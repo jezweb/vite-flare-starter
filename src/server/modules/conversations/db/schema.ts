@@ -5,6 +5,18 @@ export const conversations = sqliteTable('conversations', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
   title: text('title'),
+  /**
+   * One-line sidebar summary (~120 chars). Generated after the first
+   * assistant response by a cheap model (Kimi K2.5 via Workers AI) so the
+   * conversation list shows "what this was about" instead of just a
+   * truncated first message.
+   */
+  summary: text('summary'),
+  /**
+   * 1 when the user has starred this conversation. Starred conversations
+   * render in a pinned section above the date-grouped list.
+   */
+  starred: integer('starred').notNull().default(0),
   model: text('model'),
   systemPrompt: text('system_prompt'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
@@ -12,6 +24,8 @@ export const conversations = sqliteTable('conversations', {
 }, (table) => [
   index('conversations_user_id_idx').on(table.userId),
   index('conversations_updated_at_idx').on(table.updatedAt),
+  // Starred rows first, then most-recent — matches the sidebar's sort order.
+  index('conversations_user_starred_idx').on(table.userId, table.starred, table.updatedAt),
 ])
 
 export const conversationMessages = sqliteTable('conversation_messages', {

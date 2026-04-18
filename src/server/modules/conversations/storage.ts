@@ -15,6 +15,10 @@ import type { UIMessage } from 'ai'
 export interface ConversationSummary {
   id: string
   title: string | null
+  /** One-line sidebar summary, generated after first assistant response. */
+  summary: string | null
+  /** 0 | 1. 1 means the user has pinned this conversation to the top of the sidebar. */
+  starred: number
   model: string | null
   createdAt: string
   updatedAt: string
@@ -35,6 +39,10 @@ export interface ChatStorage {
   listConversations(userId: string, opts?: { limit?: number; offset?: number }): Promise<ConversationSummary[]>
   deleteConversation(conversationId: string, userId: string): Promise<void>
   updateTitle(conversationId: string, userId: string, title: string): Promise<void>
+  /** Write the auto-generated title + sidebar summary after the first assistant turn. */
+  updateSummary(conversationId: string, userId: string, fields: { title?: string | null; summary?: string | null }): Promise<void>
+  /** Toggle the starred flag. No-op if the user doesn't own the conversation. */
+  setStarred(conversationId: string, userId: string, starred: boolean): Promise<void>
 }
 
 /**
@@ -172,19 +180,25 @@ export function createD1ChatStorage(db: D1Database): ChatStorage {
         .select({
           id: conversations.id,
           title: conversations.title,
+          summary: conversations.summary,
+          starred: conversations.starred,
           model: conversations.model,
           createdAt: conversations.createdAt,
           updatedAt: conversations.updatedAt,
         })
         .from(conversations)
         .where(eq(conversations.userId, userId))
-        .orderBy(desc(conversations.updatedAt))
+        // Starred conversations first (1 > 0), then most-recently-updated
+        // within each group.
+        .orderBy(desc(conversations.starred), desc(conversations.updatedAt))
         .limit(limit)
         .offset(offset)
 
       return rows.map((r) => ({
         id: r.id,
         title: r.title,
+        summary: r.summary ?? null,
+        starred: r.starred ?? 0,
         model: r.model,
         createdAt: r.createdAt ? new Date(r.createdAt as unknown as number).toISOString() : new Date().toISOString(),
         updatedAt: r.updatedAt ? new Date(r.updatedAt as unknown as number).toISOString() : new Date().toISOString(),
@@ -201,6 +215,24 @@ export function createD1ChatStorage(db: D1Database): ChatStorage {
       await d
         .update(conversations)
         .set({ title })
+        .where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)))
+    },
+
+    async updateSummary(conversationId, userId, fields) {
+      const patch: { title?: string | null; summary?: string | null } = {}
+      if (fields.title !== undefined) patch.title = fields.title
+      if (fields.summary !== undefined) patch.summary = fields.summary
+      if (Object.keys(patch).length === 0) return
+      await d
+        .update(conversations)
+        .set(patch)
+        .where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)))
+    },
+
+    async setStarred(conversationId, userId, starred) {
+      await d
+        .update(conversations)
+        .set({ starred: starred ? 1 : 0 })
         .where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)))
     },
   }

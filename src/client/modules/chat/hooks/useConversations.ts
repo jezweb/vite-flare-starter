@@ -8,6 +8,8 @@ import type { Message } from './useChat'
 interface ConversationSummary {
   id: string
   title: string | null
+  summary: string | null
+  starred: number
   model: string | null
   createdAt: string
   updatedAt: string
@@ -45,6 +47,48 @@ export function useUpdateConversationTitle() {
     mutationFn: ({ id, title }: { id: string; title: string }) =>
       apiClient.patch<{ success: boolean }>(`/api/conversations/${id}`, { title }),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['conversations'] })
+    },
+  })
+}
+
+/**
+ * Toggle the starred flag on a conversation with optimistic updates. Writes
+ * 1 | 0 immediately to the cached list so the row reorders under the cursor,
+ * then reconciles against the server response.
+ */
+interface StarResponse {
+  success: boolean
+  starred: boolean
+}
+
+interface StarContext {
+  prev?: { conversations: ConversationSummary[] }
+}
+
+export function useStarConversation() {
+  const queryClient = useQueryClient()
+  return useMutation<StarResponse, Error, { id: string; starred: boolean }, StarContext>({
+    mutationFn: ({ id, starred }) =>
+      starred
+        ? apiClient.post<StarResponse>(`/api/conversations/${id}/star`, {})
+        : apiClient.delete<StarResponse>(`/api/conversations/${id}/star`),
+    onMutate: async ({ id, starred }) => {
+      await queryClient.cancelQueries({ queryKey: ['conversations'] })
+      const prev = queryClient.getQueryData<{ conversations: ConversationSummary[] }>(['conversations'])
+      if (prev) {
+        queryClient.setQueryData(['conversations'], {
+          conversations: prev.conversations.map((c) =>
+            c.id === id ? { ...c, starred: starred ? 1 : 0 } : c,
+          ),
+        })
+      }
+      return { prev }
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(['conversations'], ctx.prev)
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['conversations'] })
     },
   })
