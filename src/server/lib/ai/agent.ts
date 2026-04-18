@@ -205,7 +205,13 @@ function formatChatPreferences(p: ChatPreferences): string {
     }
     lines.push(`- Tone: ${toneMap[p.tone] ?? p.tone}`)
   }
-  if (p.about) lines.push(`- About the user: ${p.about.slice(0, 500)}`)
+  if (p.about) {
+    // Free-form user profile. Preserve markdown / line breaks by indenting
+    // as a multi-line block rather than a single bullet. Cap at 2000 chars
+    // to match the client-side textarea limit.
+    const trimmed = p.about.slice(0, 2000).trim()
+    lines.push(`- About the user (markdown):\n\n${trimmed}`)
+  }
   if (p.confirmationMode) {
     lines.push(
       '- Confirmation mode: ON — before calling any tool, briefly describe your plan in one sentence and ask the user to confirm. Only proceed after the user says yes (or equivalent).',
