@@ -7,7 +7,6 @@ import { useQuery } from '@tanstack/react-query'
 import { Plus, MoreHorizontal, Pencil, Trash2, Search, ChevronRight, Star, Folder, FolderPlus, FolderX, FolderMinus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,6 +43,7 @@ import {
   useMoveConversation,
   type Project,
 } from '@/client/modules/projects/hooks/useProjects'
+import { getProjectFillClass } from '@/client/modules/projects/colors'
 
 interface Props {
   activeConversationId?: string
@@ -389,7 +389,12 @@ export function ConversationSidebar({ activeConversationId }: Props) {
         </div>
       </div>
 
-      <ScrollArea className="flex-1">
+      {/* Using native overflow-y-auto rather than Radix's ScrollArea so our
+          global thin-pill scrollbar style (in src/index.css) takes effect.
+          Radix renders its own div-based scrollbar which bypasses
+          ::-webkit-scrollbar. Flexbox direction matters — need flex-col +
+          min-h-0 so this div actually gets bounded height from the parent. */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
         {isSearching ? (
           // Search results
           searchHits.length === 0 ? (
@@ -477,7 +482,7 @@ export function ConversationSidebar({ activeConversationId }: Props) {
             })}
           </div>
         )}
-      </ScrollArea>
+      </div>
 
       {/* Delete confirmation dialog — reused for whichever conversation the
           user clicked "Delete" on from the ellipsis menu. */}
@@ -711,7 +716,7 @@ function ProjectsSection({
                   </button>
                   {isRenaming ? (
                     <div className="flex flex-1 items-center gap-1.5 min-w-0">
-                      <Folder className="size-3.5 shrink-0 text-muted-foreground" />
+                      <Folder className={cn('size-3.5 shrink-0', getProjectFillClass(project.color) ?? 'text-muted-foreground')} />
                       <Input
                         autoFocus
                         value={projectRenameText}
@@ -742,7 +747,7 @@ function ProjectsSection({
                       to={`/dashboard/projects/${project.id}`}
                       className="flex flex-1 items-center gap-1.5 min-w-0 hover:underline underline-offset-2"
                     >
-                      <Folder className="size-3.5 shrink-0 text-muted-foreground" />
+                      <Folder className={cn('size-3.5 shrink-0', getProjectFillClass(project.color) ?? 'text-muted-foreground')} />
                       <span className="truncate font-medium" title={project.name}>{project.name}</span>
                       <span className="ml-auto shrink-0 text-muted-foreground/60 tabular-nums">
                         {convs.length}

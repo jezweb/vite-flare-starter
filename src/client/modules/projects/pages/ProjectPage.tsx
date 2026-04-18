@@ -26,6 +26,8 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { apiClient } from '@/client/lib/api-client'
 import { useProject, useUpdateProject } from '../hooks/useProjects'
+import { PROJECT_COLORS, PROJECT_COLOR_CLASSES, isProjectColor } from '../colors'
+import { cn } from '@/lib/utils'
 
 interface ProjectConversation {
   id: string
@@ -160,7 +162,7 @@ export function ProjectPage() {
       {/* Header — inline editable name + description. Blur saves. */}
       <div className="space-y-3">
         <div className="flex items-center gap-2">
-          <Folder className="size-5 text-muted-foreground shrink-0" />
+          <Folder className={cn('size-5 shrink-0', isProjectColor(project.color) ? PROJECT_COLOR_CLASSES[project.color].fill : 'text-muted-foreground')} />
           <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -180,6 +182,47 @@ export function ProjectPage() {
           maxLength={500}
           className="border-0 shadow-none px-2 focus-visible:ring-1 focus-visible:ring-primary/40 bg-transparent resize-none text-sm text-muted-foreground"
         />
+      </div>
+
+      {/* Colour — a 6-slot picker plus "none". Purely a visual aid in the
+          sidebar; no semantic effect on instructions or behaviour. Clicks
+          fire the same updateProject mutation so the sidebar re-renders
+          immediately via the query invalidation. */}
+      <div className="flex items-center gap-2 px-2">
+        <span className="text-xs text-muted-foreground">Colour</span>
+        <button
+          type="button"
+          onClick={() => {
+            if (!id) return
+            updateProject.mutate({ id, color: null })
+          }}
+          className={cn(
+            'size-5 rounded-full border border-border transition-colors',
+            !project.color ? 'ring-2 ring-primary/40 ring-offset-1 ring-offset-background' : 'hover:bg-muted',
+          )}
+          title="No colour"
+          aria-label="No colour"
+        />
+        {PROJECT_COLORS.map((c) => (
+          <button
+            key={c}
+            type="button"
+            onClick={() => {
+              if (!id) return
+              updateProject.mutate({ id, color: c })
+            }}
+            className={cn(
+              'size-5 rounded-full transition-transform',
+              PROJECT_COLOR_CLASSES[c].dot,
+              project.color === c
+                ? 'ring-2 ring-primary/40 ring-offset-1 ring-offset-background scale-110'
+                : 'hover:scale-110',
+            )}
+            title={PROJECT_COLOR_CLASSES[c].label}
+            aria-label={PROJECT_COLOR_CLASSES[c].label}
+            aria-pressed={project.color === c}
+          />
+        ))}
       </div>
 
       {/* Project instructions — the juice. This becomes the system prompt
