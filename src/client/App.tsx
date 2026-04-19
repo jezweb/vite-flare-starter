@@ -13,6 +13,7 @@ import { LandingPage } from './pages/LandingPage'
 import { DashboardLayout } from './layouts/DashboardLayout'
 import { PublicLayout } from './layouts/PublicLayout'
 import { DashboardPage } from './pages/DashboardPage'
+import { NotFoundPage } from './pages/NotFoundPage'
 
 // Auth pages — small, fast-loading, keep in main bundle
 import { SignInPage } from './modules/auth/SignInPage'
@@ -114,10 +115,15 @@ function App() {
 
             {/* Style guide for development */}
             <Route path="style-guide" element={<StyleGuidePage />} />
+
+            {/* Dashboard catch-all — keeps authed users inside the shell.
+                Silently redirecting to "/" looked like a crash to users who
+                followed a stale bookmark. */}
+            <Route path="*" element={<NotFoundPage />} />
           </Route>
 
-          {/* Catch all - redirect to landing page */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* Public catch-all — same page, unauthed shell. */}
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
         </Suspense>
       </BrowserRouter>

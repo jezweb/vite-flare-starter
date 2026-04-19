@@ -20,6 +20,7 @@ import {
   FolderOpen,
   Component,
   Palette,
+  Shield,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -67,6 +68,12 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { to: '/dashboard/components', label: 'Components', icon: Component, feature: 'components' },
       { to: '/dashboard/style-guide', label: 'Style Guide', icon: Palette, feature: 'styleGuide' },
+    ],
+  },
+  {
+    label: 'Admin',
+    items: [
+      { to: '/dashboard/admin', label: 'Admin Panel', icon: Shield, minRole: 'admin' },
     ],
   },
 ]

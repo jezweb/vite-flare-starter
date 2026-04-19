@@ -25,7 +25,7 @@ import {
   PromptInputActionAddScreenshotCountdown,
   PromptInputActionAddScreenCapture,
 } from '../components/ScreenCaptureMenuItems'
-import { Plus, MessageSquare, MessagesSquare, Download, ArrowDown, Paperclip, FileText, Folder, X } from 'lucide-react'
+import { Plus, MessageSquare, MessagesSquare, Download, ArrowDown, Paperclip, FileText, Folder, X, FileQuestion } from 'lucide-react'
 import { Link as RouterLink } from 'react-router-dom'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 import {
@@ -136,7 +136,17 @@ export function ChatPage() {
   const [unreadCount, setUnreadCount] = useState(0)
   const lastSeenCountRef = useRef(0)
 
-  const { data: existingConversation } = useConversationMessages(urlConversationId)
+  const { data: existingConversation, error: conversationError } =
+    useConversationMessages(urlConversationId)
+
+  // 404 on a URL-supplied conversation means it's been deleted, is on another
+  // account, or never existed. Show a clear not-found state instead of the
+  // empty welcome screen, which makes the situation look like a fresh chat and
+  // confuses users who followed a stale bookmark.
+  const conversationNotFound =
+    !!urlConversationId &&
+    !!conversationError &&
+    (conversationError as { status?: number }).status === 404
 
   const {
     messages,
@@ -683,6 +693,26 @@ export function ChatPage() {
                   message isn't permanently hidden behind it when scrolled to
                   the bottom. Matches claude.ai's h-12 spacer pattern. */}
               <div aria-hidden className="h-48 shrink-0" />
+            </div>
+          ) : conversationNotFound ? (
+            <div className="flex-1 flex items-center justify-center px-4 py-6">
+              <div className="max-w-md w-full text-center space-y-4">
+                <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
+                  <FileQuestion className="h-7 w-7 text-muted-foreground" />
+                </div>
+                <div className="space-y-1">
+                  <h2 className="text-xl font-semibold">Conversation not found</h2>
+                  <p className="text-sm text-muted-foreground">
+                    This chat may have been deleted or belongs to another account.
+                  </p>
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <Button onClick={() => navigate('/dashboard/chat')}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Start a new chat
+                  </Button>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="flex-1 flex items-center justify-center px-4 py-6">
