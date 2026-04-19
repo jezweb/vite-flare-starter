@@ -29,6 +29,14 @@ export function useConversationMessages(conversationId: string | undefined) {
     queryKey: ['conversations', conversationId, 'messages'],
     queryFn: () => apiClient.get<{ messages: Message[] }>(`/api/conversations/${conversationId}`),
     enabled: !!conversationId,
+    // Never retry a 404 — the conversation either exists or it doesn't. Retrying
+    // just delays the "not found" UI for ~7 seconds for no value. Preserve the
+    // default retry behavior for other error classes (network, 5xx).
+    retry: (count, err) => {
+      const status = (err as { status?: number })?.status
+      if (status === 404) return false
+      return count < 3
+    },
   })
 }
 

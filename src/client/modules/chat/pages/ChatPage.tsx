@@ -136,7 +136,7 @@ export function ChatPage() {
   const [unreadCount, setUnreadCount] = useState(0)
   const lastSeenCountRef = useRef(0)
 
-  const { data: existingConversation, error: conversationError } =
+  const { data: existingConversation, error: conversationError, isError: conversationIsError } =
     useConversationMessages(urlConversationId)
 
   // 404 on a URL-supplied conversation means it's been deleted, is on another
@@ -145,8 +145,8 @@ export function ChatPage() {
   // confuses users who followed a stale bookmark.
   const conversationNotFound =
     !!urlConversationId &&
-    !!conversationError &&
-    (conversationError as { status?: number }).status === 404
+    conversationIsError &&
+    (conversationError as { status?: number } | null)?.status === 404
 
   const {
     messages,
