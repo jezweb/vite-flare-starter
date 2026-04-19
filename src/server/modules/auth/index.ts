@@ -79,6 +79,16 @@ export function createAuth(
       skipStateCookieCheck: true,
     },
 
+    // Tell better-auth to prefer Cloudflare's `cf-connecting-ip` header when
+    // capturing the client IP for new sessions. Without this, it falls back
+    // to `x-forwarded-for`, which isn't what the Cloudflare edge sets, and
+    // the Active Sessions UI shows "Unknown IP" for every row.
+    advanced: {
+      ipAddress: {
+        ipAddressHeaders: ['cf-connecting-ip', 'x-forwarded-for'],
+      },
+    },
+
     // Email and password authentication - DISABLED BY DEFAULT
     // See CLAUDE.md for configuration: ENABLE_EMAIL_LOGIN=true, ENABLE_EMAIL_SIGNUP=true
     emailAndPassword: {

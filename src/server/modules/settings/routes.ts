@@ -81,6 +81,28 @@ app.patch('/profile', requireScopes('profile:write'), zValidator('json', updateN
 })
 
 /**
+ * GET /api/settings/auth-providers
+ *
+ * Returns which better-auth providers back this account
+ * (e.g. ["google"] for OAuth-only, ["credential"] for email/password,
+ * ["google","credential"] for both). Used by the Security tab so
+ * OAuth-only users aren't shown a Change Password form they can't use.
+ */
+app.get('/auth-providers', async (c) => {
+  const userId = c.get('userId')
+  const db = drizzle(c.env.DB, { schema })
+  const rows = await db
+    .select({ providerId: schema.account.providerId })
+    .from(schema.account)
+    .where(eq(schema.account.userId, userId))
+  const providers = Array.from(new Set(rows.map((r) => r.providerId)))
+  return c.json({
+    providers,
+    hasPassword: providers.includes('credential'),
+  })
+})
+
+/**
  * GET /api/settings/preferences
  * Fetch user preferences (theme, mode)
  *
