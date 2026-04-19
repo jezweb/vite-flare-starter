@@ -60,6 +60,9 @@ Pick the next AVAILABLE task in ID order. Mark it in-progress in your iteration 
 
 *(Append entries here. Newest at top.)*
 
+### Bail — 2026-04-19T00:13Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED). New UX findings (M1/M3/L2/L4/P1) from April 18 audit are available for Jez to add to candidate table.
+
 ### Bail — 2026-04-18T23:08Z
 Bailed — past 2am local (23:08 UTC > 16:00 UTC cutoff) and no tasks left.
 
