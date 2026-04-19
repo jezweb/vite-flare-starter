@@ -7,14 +7,36 @@
  * - components/nav-user.tsx    → account menu in footer
  * - components/site-header.tsx → top bar
  */
-import type { CSSProperties } from 'react'
-import { Outlet } from 'react-router-dom'
+import { useEffect, type CSSProperties } from 'react'
+import { Outlet, useLocation } from 'react-router-dom'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/app-sidebar'
 import { SiteHeader } from '@/components/site-header'
 import { CommandPalette } from '@/client/components/CommandPalette'
 import { KeyboardShortcuts } from '@/client/components/KeyboardShortcuts'
 import { EmailVerificationBanner } from '@/client/components/EmailVerificationBanner'
+import { NAV_SECTIONS } from '@/shared/config/nav'
+import { appConfig } from '@/shared/config/app'
+
+// Resolve a human-readable label for the current path by matching against the
+// flattened nav config. Longest-prefix wins so `/dashboard/chat/abc` still
+// picks up the "AI Chat" title.
+function resolveTitle(pathname: string): string | null {
+  const items = NAV_SECTIONS.flatMap((s) => s.items)
+  const match = items
+    .filter((i) => pathname === i.to || pathname.startsWith(i.to + '/'))
+    .sort((a, b) => b.to.length - a.to.length)[0]
+  return match?.label ?? null
+}
+
+function DocumentTitleSync() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    const title = resolveTitle(pathname)
+    document.title = title ? `${title} · ${appConfig.name}` : appConfig.name
+  }, [pathname])
+  return null
+}
 
 export function DashboardLayout() {
   return (
@@ -31,6 +53,7 @@ export function DashboardLayout() {
         <AppSidebar />
         <CommandPalette />
         <KeyboardShortcuts />
+        <DocumentTitleSync />
         <SidebarInset className="flex h-full min-w-0 flex-col">
           <SiteHeader />
           <EmailVerificationBanner />

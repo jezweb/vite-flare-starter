@@ -202,10 +202,7 @@ export function ActivityPage() {
               <SelectContent>
                 <SelectItem value="all">All Actions</SelectItem>
                 <SelectItem value="create">Create</SelectItem>
-                <SelectItem value="update">Update</SelectItem>
                 <SelectItem value="delete">Delete</SelectItem>
-                <SelectItem value="view">View</SelectItem>
-                <SelectItem value="export">Export</SelectItem>
               </SelectContent>
             </Select>
           </div>
