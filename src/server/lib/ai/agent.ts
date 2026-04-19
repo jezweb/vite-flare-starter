@@ -136,6 +136,21 @@ export async function buildChatAgent(ctx: AgentContext): Promise<AgentResult> {
   // Prepare step: token budget tracking
   const budgetCheck = tokenBudgetPrepareStep({ maxTotalTokens: 50000 })
 
+  // Anthropic prompt caching via OpenRouter — marks large static content
+  // (system prompt + tool definitions) as cacheable so multi-turn chats
+  // re-read from cache instead of re-billing the full input. Typical
+  // savings are 80%+ on input tokens after the first turn. Workers AI
+  // and other providers ignore this field. Direct @ai-sdk/anthropic
+  // uses the same `cache_control` shape under `anthropic`.
+  // @see https://platform.claude.com/docs/en/build-with-claude/prompt-caching
+  const isAnthropic = modelId.includes('anthropic/') || modelId.startsWith('claude-')
+  const providerOptions = isAnthropic
+    ? {
+        openrouter: { cache_control: { type: 'ephemeral' as const } },
+        anthropic: { cacheControl: { type: 'ephemeral' as const } },
+      }
+    : undefined
+
   // Create the agent
   const agent = new ToolLoopAgent({
     model,
@@ -143,6 +158,7 @@ export async function buildChatAgent(ctx: AgentContext): Promise<AgentResult> {
     tools,
     stopWhen: modelConfig?.supportsTools ? [stepCountIs(5), hasToolCall('done')] : stepCountIs(1),
     maxOutputTokens: modelConfig?.defaultMaxTokens ?? 16384,
+    providerOptions,
     prepareStep: (opts) => {
       try {
         return budgetCheck(opts) as PrepareStepResult

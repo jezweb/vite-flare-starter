@@ -28,6 +28,12 @@ import {
 import { Plus, MessageSquare, MessagesSquare, Download, ArrowDown, Paperclip, FileText, Folder, X } from 'lucide-react'
 import { Link as RouterLink } from 'react-router-dom'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { useMediaQuery } from '@/client/hooks/useMediaQuery'
 import { useChat, type Message } from '../hooks/useChat'
 import { useConversationList, useConversationMessages } from '../hooks/useConversations'
@@ -581,16 +587,41 @@ export function ChatPage() {
               </Button>
             )}
             {hasMessages && conversationId && (
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                className="text-muted-foreground"
-                onClick={() => window.open(`/api/conversations/${conversationId}/export?format=md`, '_blank')}
-                title="Export as Markdown"
-                aria-label="Export conversation as Markdown"
-              >
-                <Download className="size-3.5" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="text-muted-foreground"
+                    title="Export conversation"
+                    aria-label="Export conversation"
+                  >
+                    <Download className="size-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() =>
+                      window.open(
+                        `/api/conversations/${conversationId}/export?format=md`,
+                        '_blank',
+                      )
+                    }
+                  >
+                    Export as Markdown
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      window.open(
+                        `/api/conversations/${conversationId}/export?format=json`,
+                        '_blank',
+                      )
+                    }
+                  >
+                    Export as JSON
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
             {hasMessages && (
               <Button
