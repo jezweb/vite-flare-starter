@@ -2,7 +2,7 @@
  * ConversationSidebar — list of past conversations with search + CRUD
  */
 import { useState, useEffect, useDeferredValue, useMemo } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation, useParams, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Plus, MoreHorizontal, Pencil, Trash2, Search, ChevronRight, Star, Folder, FolderPlus, FolderX, FolderMinus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -106,6 +106,14 @@ function groupByDate(conversations: ConversationSummary[]) {
 
 export function ConversationSidebar({ activeConversationId }: Props) {
   const navigate = useNavigate()
+  // Detect the active project context so the "+ New chat" button can preserve
+  // it. Two sources: /dashboard/projects/:id (project page), or
+  // /dashboard/chat/:id where the conversation belongs to a project (list
+  // cache). Either way we route the "+" to /dashboard/chat?projectId=... so
+  // the new conversation lands inside the project.
+  const location = useLocation()
+  const routeParams = useParams<{ id?: string; conversationId?: string }>()
+  const [searchParams] = useSearchParams()
   const { data, isLoading } = useConversationList()
   const { data: projectData } = useProjectList()
   const deleteConversation = useDeleteConversation()
@@ -152,6 +160,18 @@ export function ConversationSidebar({ activeConversationId }: Props) {
 
   const conversations = data?.conversations ?? []
   const projects = projectData?.projects ?? []
+
+  // Project context for the "+ New chat" button:
+  //   /dashboard/projects/:id        → routeParams.id is the project
+  //   /dashboard/chat/:conversationId → look up the convo's projectId
+  //   /dashboard/chat?projectId=X    → URL param (pre-send state)
+  const onProjectPage = location.pathname.startsWith('/dashboard/projects/')
+  const activeConversationProjectId = routeParams.conversationId
+    ? conversations.find((c) => c.id === routeParams.conversationId)?.projectId ?? null
+    : null
+  const newChatProjectId = onProjectPage
+    ? routeParams.id ?? null
+    : activeConversationProjectId ?? searchParams.get('projectId')
 
   // Partition conversations into project buckets + ungrouped. Project buckets
   // keep starred-then-recent order (the server already sorts the list that
@@ -369,8 +389,13 @@ export function ConversationSidebar({ activeConversationId }: Props) {
           variant="ghost"
           size="icon"
           className="size-7"
-          onClick={() => navigate('/dashboard/chat')}
-          title="New conversation"
+          onClick={() => {
+            const dest = newChatProjectId
+              ? `/dashboard/chat?projectId=${newChatProjectId}`
+              : '/dashboard/chat'
+            navigate(dest)
+          }}
+          title={newChatProjectId ? 'New chat in this project' : 'New conversation'}
         >
           <Plus className="size-4" />
         </Button>

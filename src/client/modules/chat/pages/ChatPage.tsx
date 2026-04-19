@@ -151,14 +151,17 @@ export function ChatPage() {
     initialMessages: existingConversation?.messages as Message[] | undefined,
   })
 
-  // Navigate to conversation URL when a new conversation is created
+  // Navigate to conversation URL when a new conversation is created.
+  // Preserve ?projectId= across the navigate so the in-project pill doesn't
+  // briefly vanish while the conversations list refetches. The pill falls
+  // back to urlProjectId until storedProjectId resolves from the list cache.
   useEffect(() => {
     if (conversationId && !urlConversationId && messages.length > 0) {
-      navigate(`/dashboard/chat/${conversationId}`, { replace: true })
-      // Refresh sidebar so the new conversation appears
+      const projectSuffix = urlProjectId ? `?projectId=${urlProjectId}` : ''
+      navigate(`/dashboard/chat/${conversationId}${projectSuffix}`, { replace: true })
       queryClient.invalidateQueries({ queryKey: ['conversations'] })
     }
-  }, [conversationId, urlConversationId, messages.length, navigate, queryClient])
+  }, [conversationId, urlConversationId, urlProjectId, messages.length, navigate, queryClient])
 
   // After the first assistant response completes, ask the server to generate
   // a proper title + summary for the sidebar. Fires at most once per
@@ -592,8 +595,14 @@ export function ChatPage() {
                 size="sm"
                 className="gap-1.5 h-8"
                 onClick={() => {
+                  // Preserve current project context — if this chat belongs
+                  // to a project, "New chat" should create another one in
+                  // the same project, not kick the user back to ungrouped.
                   clearMessages()
-                  navigate('/dashboard/chat')
+                  const dest = activeProjectId
+                    ? `/dashboard/chat?projectId=${activeProjectId}`
+                    : '/dashboard/chat'
+                  navigate(dest)
                 }}
                 disabled={isLoading}
               >
