@@ -5,6 +5,7 @@ import { ScrollToTop } from './components/shared/ScrollToTop'
 import { ErrorBoundary } from './components/shared/ErrorBoundary'
 import { createErrorHandler } from './lib/error-reporting'
 import { ProtectedRoute } from './components/shared/ProtectedRoute'
+import { PublicOnlyRoute } from './components/shared/PublicOnlyRoute'
 import { Loader2 } from 'lucide-react'
 
 // Critical-path imports (always in the main bundle)
@@ -52,9 +53,25 @@ function App() {
             <Route path="/" element={<LandingPage />} />
           </Route>
 
-          {/* Auth routes (standalone, no layout) */}
-          <Route path="/sign-in" element={<SignInPage />} />
-          <Route path="/sign-up" element={<SignUpPage />} />
+          {/* Auth routes (standalone, no layout) — bounce already-signed-in
+              users back to the dashboard so /sign-in and /sign-up never show
+              a confusing form to a returning user. */}
+          <Route
+            path="/sign-in"
+            element={
+              <PublicOnlyRoute>
+                <SignInPage />
+              </PublicOnlyRoute>
+            }
+          />
+          <Route
+            path="/sign-up"
+            element={
+              <PublicOnlyRoute>
+                <SignUpPage />
+              </PublicOnlyRoute>
+            }
+          />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />

@@ -414,10 +414,10 @@ export function ChatPage() {
   const { data: conversationListData } = useConversationList()
   const { data: projectListData } = useProjectList()
   const moveConversation = useMoveConversation()
-  const storedProjectId =
-    urlConversationId
-      ? conversationListData?.conversations.find((c) => c.id === urlConversationId)?.projectId ?? null
-      : null
+  const activeConversation = urlConversationId
+    ? conversationListData?.conversations.find((c) => c.id === urlConversationId)
+    : undefined
+  const storedProjectId = activeConversation?.projectId ?? null
   const activeProjectId = storedProjectId ?? urlProjectId ?? null
   const activeProject = activeProjectId
     ? projectListData?.projects.find((p) => p.id === activeProjectId) ?? null
@@ -527,7 +527,9 @@ export function ChatPage() {
               <MessagesSquare className="size-4" />
             </Button>
             <MessageSquare className="size-4 text-muted-foreground ml-1" />
-            <h1 className="text-sm font-medium">AI Chat</h1>
+            <h1 className="text-sm font-medium truncate max-w-[28rem]" title={activeConversation?.title ?? 'AI Chat'}>
+              {activeConversation?.title ?? 'AI Chat'}
+            </h1>
             {/* In-project pill: click name → project page; × detaches. For
                 new chats launched from a project page we show the pill
                 immediately (optimistic) even before the first message

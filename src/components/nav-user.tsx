@@ -17,7 +17,7 @@ import {
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar'
 import { useSession, authClient } from '@/client/lib/auth'
 import { useAdminStatus } from '@/client/modules/admin/hooks/useAdminStatus'
-import { Bell, KeyRound, LogOut, MoreVertical, Settings, Shield, UserCircle } from 'lucide-react'
+import { LogOut, MoreVertical, Settings, Shield } from 'lucide-react'
 
 export function NavUser() {
   const { data: session } = useSession()
@@ -77,21 +77,9 @@ export function NavUser() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => navigate('/dashboard/profile')}>
-                <UserCircle className="mr-2 h-4 w-4" />
-                Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/dashboard/settings?tab=security')}>
-                <KeyRound className="mr-2 h-4 w-4" />
-                Security
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/dashboard/settings?tab=preferences')}>
+              <DropdownMenuItem onClick={() => navigate('/dashboard/settings?tab=profile')}>
                 <Settings className="mr-2 h-4 w-4" />
-                Preferences
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/dashboard/settings?tab=notifications')}>
-                <Bell className="mr-2 h-4 w-4" />
-                Notifications
+                Settings
               </DropdownMenuItem>
             </DropdownMenuGroup>
             {isAdmin && (
