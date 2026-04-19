@@ -585,6 +585,7 @@ export function ChatPage() {
                 className="text-muted-foreground"
                 onClick={() => window.open(`/api/conversations/${conversationId}/export?format=md`, '_blank')}
                 title="Export as Markdown"
+                aria-label="Export conversation as Markdown"
               >
                 <Download className="size-3.5" />
               </Button>

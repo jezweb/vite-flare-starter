@@ -27,9 +27,6 @@ export function PublicLayout() {
             <Button variant="ghost" asChild>
               <Link to="/sign-in">Sign In</Link>
             </Button>
-            <Button asChild>
-              <Link to="/sign-up">Get Started</Link>
-            </Button>
           </div>
         </div>
       </header>

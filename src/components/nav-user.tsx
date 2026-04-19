@@ -85,9 +85,9 @@ export function NavUser() {
                 <KeyRound className="mr-2 h-4 w-4" />
                 Security
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/dashboard/settings?tab=settings')}>
+              <DropdownMenuItem onClick={() => navigate('/dashboard/settings?tab=preferences')}>
                 <Settings className="mr-2 h-4 w-4" />
-                Settings
+                Preferences
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate('/dashboard/settings?tab=notifications')}>
                 <Bell className="mr-2 h-4 w-4" />
