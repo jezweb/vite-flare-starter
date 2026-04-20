@@ -1,21 +1,24 @@
 import { useEffect, useRef } from 'react'
 import { toast } from 'sonner'
-import { applyTheme, decodeThemeFromURL } from '@/lib/themes'
+import { applyTheme, decodeThemeFromURL, mergeThemeEnvelope } from '@/lib/themes'
+import { useSession } from '@/client/lib/auth'
 import { usePreferences, useUpdatePreferences } from '@/client/modules/settings/hooks/useSettings'
-import { defaultPreferences, type CustomThemeColors } from '@/shared/schemas/preferences.schema'
+import { defaultPreferences } from '@/shared/schemas/preferences.schema'
 
 /**
  * Applies a theme from the current URL (`?theme=<base64>`) on mount.
  *
- * Visual apply happens immediately so anonymous visitors see the shared theme.
- * If the visitor is signed in, the theme is also saved to their preferences.
- * Either way the `?theme=` param is cleared from the URL afterwards.
+ * If the visitor is signed in, the handler waits for preferences to load so
+ * it can save the imported theme immediately — otherwise the ThemeProvider's
+ * own useEffect would re-apply the stale saved theme on top of it. Anonymous
+ * visitors get a visual apply only; the param is stripped either way.
  *
  * Render this once, high in the tree.
  */
 export function ThemeURLHandler() {
   const handled = useRef(false)
-  const { data: preferences } = usePreferences()
+  const { data: session, isPending: sessionPending } = useSession()
+  const { data: preferences, isLoading: preferencesLoading } = usePreferences()
   const updatePreferences = useUpdatePreferences()
 
   useEffect(() => {
@@ -25,6 +28,12 @@ export function ThemeURLHandler() {
     const params = new URLSearchParams(window.location.search)
     const encoded = params.get('theme')
     if (!encoded) return
+
+    // Wait for session to settle so we can decide whether to save.
+    if (sessionPending) return
+    // If signed in, wait for preferences to load before we apply — otherwise
+    // the ThemeProvider's useEffect will overwrite us with the stale theme.
+    if (session && preferencesLoading) return
 
     handled.current = true
     const result = decodeThemeFromURL(encoded)
@@ -39,24 +48,20 @@ export function ThemeURLHandler() {
       return
     }
 
-    const customTheme = {
-      light: (result.envelope.light ?? result.envelope.dark) as CustomThemeColors,
-      dark: (result.envelope.dark ?? result.envelope.light) as CustomThemeColors,
-    }
+    const customTheme = mergeThemeEnvelope(result.envelope, preferences?.customTheme)
 
     const mode = preferences?.mode ?? defaultPreferences.mode
     applyTheme('custom', mode, customTheme)
 
-    // Try to save — will no-op / 401 if not signed in, which is fine
-    if (preferences) {
+    if (session && preferences) {
       updatePreferences
         .mutateAsync({ ...preferences, theme: 'custom', customTheme })
         .then(() => toast.success('Theme loaded from link and saved'))
-        .catch(() => toast.success('Theme applied. Sign in to save it.'))
+        .catch(() => toast.success('Theme applied. Could not save it.'))
     } else {
       toast.success('Theme applied. Sign in to save it.')
     }
-  }, [preferences, updatePreferences])
+  }, [session, sessionPending, preferences, preferencesLoading, updatePreferences])
 
   return null
 }

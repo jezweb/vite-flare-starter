@@ -48,6 +48,7 @@ import {
   serializeThemeExport,
   parseThemeImport,
   encodeThemeToURL,
+  mergeThemeEnvelope,
   THEME_EXPORT_FILENAME,
   THEME_EXPORT_MIME,
 } from '@/lib/themes'
@@ -266,10 +267,7 @@ export function PreferencesSection() {
   const applyImportedEnvelope = async (
     envelope: { light?: Partial<CustomThemeColors>; dark?: Partial<CustomThemeColors> },
   ) => {
-    const customTheme = {
-      light: (envelope.light ?? envelope.dark) as CustomThemeColors,
-      dark: (envelope.dark ?? envelope.light) as CustomThemeColors,
-    }
+    const customTheme = mergeThemeEnvelope(envelope, currentPrefs.customTheme)
     applyTheme('custom', currentMode, customTheme)
     try {
       await updatePreferences.mutateAsync({

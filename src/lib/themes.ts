@@ -738,6 +738,26 @@ export const THEME_EXPORT_FILENAME = 'vfs-theme.json'
 export const THEME_EXPORT_MIME = 'application/json'
 
 /**
+ * Merge a possibly-partial imported envelope with a base (the user's current
+ * custom theme if any, otherwise the default theme) so we always produce a
+ * complete 19-key CustomThemeColors on both sides. Lets shared links carry
+ * just the vars that differ — handy for "share my primary" links.
+ */
+export function mergeThemeEnvelope(
+  envelope: { light?: Partial<CustomThemeColors>; dark?: Partial<CustomThemeColors> },
+  base?: { light?: CustomThemeColors; dark?: CustomThemeColors },
+): { light: CustomThemeColors; dark: CustomThemeColors } {
+  const baseLight = (base?.light ?? themes['default'].light) as unknown as CustomThemeColors
+  const baseDark = (base?.dark ?? themes['default'].dark) as unknown as CustomThemeColors
+  const fromEnvLight = envelope.light ?? envelope.dark ?? {}
+  const fromEnvDark = envelope.dark ?? envelope.light ?? {}
+  return {
+    light: { ...baseLight, ...fromEnvLight } as CustomThemeColors,
+    dark: { ...baseDark, ...fromEnvDark } as CustomThemeColors,
+  }
+}
+
+/**
  * Build an export envelope from the user's current custom theme colours.
  * Either mode can be omitted — callers commonly have both.
  */
