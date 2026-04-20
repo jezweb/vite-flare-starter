@@ -8,7 +8,8 @@
  */
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { apiClient } from '@/client/lib/api-client'
 import { Button } from '@/components/ui/button'
 import {
   PromptInput,
@@ -108,7 +109,17 @@ export function ChatPage() {
   // Vision support check — gates whether we accept image attachments at the picker.
   // Non-image files (PDF/DOCX/audio/text) flow through convertToMarkdown on the
   // server and are safe for every model. The API endpoint also validates.
-  const supportsVision = model.includes('gemma') || model.includes('gemini') || model.includes('claude') || model.includes('gpt')
+  //
+  // Read the authoritative `supportsVision` flag from the server's model
+  // catalogue (shared ['ai-models'] TanStack cache with ModelSelector — no
+  // extra request). Default to `true` on first paint before the catalogue
+  // loads so the server, not the UI, has the final say.
+  const { data: modelsData } = useQuery({
+    queryKey: ['ai-models'],
+    queryFn: () => apiClient.get<{ models: Array<{ id: string; supportsVision: boolean }>; recommended: string }>('/api/ai/models'),
+    staleTime: 5 * 60 * 1000,
+  })
+  const supportsVision = modelsData?.models.find((m) => m.id === model)?.supportsVision ?? true
   // Accept is "everything" for vision-capable models, or "everything minus images"
   // for text-only models. Drop, paste, and the + menu all respect this.
   const acceptString = supportsVision
