@@ -41,7 +41,7 @@ export function buildSkillsTools(ctx: SkillsContext) {
     }),
 
     load_skill: tool({
-      description: "Load the full instructions for a skill by name. Use when you need to follow a specific procedure. The system prompt lists available skills — call this to get the detailed step-by-step instructions.",
+      description: "Load the full instructions for a skill by name. Use when a task matches a skill's description from the catalog. Returns the skill body wrapped in <skill_content> tags, the skill directory (for resolving relative paths), and a list of sibling resources you can read on demand.",
       inputSchema: z.object({
         name: z.string().describe('The skill name (e.g. "web-research", "morning-brief")'),
       }),
@@ -49,14 +49,62 @@ export function buildSkillsTools(ctx: SkillsContext) {
         try {
           const skill = await loadSkill(ctx.env, name)
           if (!skill) return { name, error: `Skill "${name}" not found` }
+
+          // Structured wrapping per agentskills.io client-implementation guide:
+          // the agent sees a self-describing block it can distinguish from
+          // other tool outputs, and a resource listing it can load on demand.
+          const resourceBlock = skill.resources.length > 0
+            ? `\n\n<skill_resources>\n${skill.resources.map((r) => `  <file>${r}</file>`).join('\n')}\n</skill_resources>`
+            : ''
+          const content = [
+            `<skill_content name="${skill.name}" directory="${skill.directory}">`,
+            skill.body,
+            '',
+            `Skill directory: ${skill.directory}`,
+            'Relative paths in this skill resolve against the skill directory. Use the read_skill_resource tool (with the same skill name and the relative path) to load any listed resource on demand.',
+            resourceBlock ? resourceBlock.trim() : '',
+            '</skill_content>',
+          ].filter(Boolean).join('\n')
+
           return {
-            name: skill.frontmatter.name,
+            name: skill.name,
             description: skill.frontmatter.description,
-            instructions: skill.body,
-            metadata: skill.frontmatter,
+            directory: skill.directory,
+            resources: skill.resources,
+            content,
+            frontmatter: skill.frontmatter,
+            warnings: skill.warnings,
           }
         } catch (error) {
           return { name, error: error instanceof Error ? error.message : String(error) }
+        }
+      },
+    }),
+
+    read_skill_resource: tool({
+      description: "Read a resource file (script, reference, asset) bundled with a skill. The skill's load_skill result lists available resources under <skill_resources>. Use this to pull a specific file's content — do NOT eagerly read everything listed.",
+      inputSchema: z.object({
+        name: z.string().describe('The skill name'),
+        path: z.string().describe('The resource path relative to the skill directory, e.g. "scripts/extract.py" or "references/spec.md"'),
+      }),
+      execute: async ({ name, path }) => {
+        try {
+          const skill = await loadSkill(ctx.env, name)
+          if (!skill) return { name, path, error: `Skill "${name}" not found` }
+          if (!skill.resources.includes(path)) {
+            return {
+              name,
+              path,
+              error: `"${path}" is not a listed resource of skill "${name}". Available: ${skill.resources.join(', ') || '(none)'}`,
+            }
+          }
+          const content = await skill.fetchResource(path)
+          if (content === null) {
+            return { name, path, error: `Resource "${path}" could not be loaded.` }
+          }
+          return { name, path, content }
+        } catch (error) {
+          return { name, path, error: error instanceof Error ? error.message : String(error) }
         }
       },
     }),

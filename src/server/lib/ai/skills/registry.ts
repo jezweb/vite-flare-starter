@@ -15,7 +15,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { eq } from 'drizzle-orm'
 import { skills } from '@/server/modules/skills/db/schema'
 import { parseSkill, type ParsedSkill } from './loader'
-import { getBundledSkill, listBundledSkills } from './bundled'
+import { getBundledSkill, getBundledSkillResource, listBundledSkills } from './bundled'
 
 interface SkillsEnv {
   DB: D1Database
@@ -26,6 +26,28 @@ export interface SkillSummary {
   name: string
   description: string
   source: 'bundled' | 'r2' | 'github'
+  /** Skills with disable_model_invocation=true are hidden from the model catalog. */
+  disableModelInvocation?: boolean
+}
+
+/**
+ * A skill loaded with enough context for the agent to act on it:
+ * parsed body + frontmatter, resource listing, and a stable directory
+ * identifier the agent can use for relative-path resolution.
+ *
+ * `directory` is a logical identifier — it points at a bundled glob
+ * path, an R2 prefix, or a GitHub URL depending on the source. The
+ * `fetchResource` closure knows how to resolve a relative path within
+ * that directory back to raw content.
+ */
+export interface LoadedSkill extends ParsedSkill {
+  name: string
+  source: 'bundled' | 'r2' | 'github'
+  directory: string
+  /** Paths relative to the skill directory for all sibling files. */
+  resources: string[]
+  /** Load a sibling resource by its relative path. */
+  fetchResource: (relativePath: string) => Promise<string | null>
 }
 
 // Module-level sync flag — auto-sync bundled skills once per worker isolate
@@ -49,22 +71,40 @@ export async function listSkills(env: SkillsEnv): Promise<SkillSummary[]> {
   }
 
   const rows = await db
-    .select({ name: skills.name, description: skills.description, source: skills.source })
+    .select({
+      name: skills.name,
+      description: skills.description,
+      source: skills.source,
+      metadata: skills.metadata,
+    })
     .from(skills)
     .where(eq(skills.enabled, true))
 
-  return rows.map((r) => ({
-    name: r.name,
-    description: r.description,
-    source: r.source,
-  }))
+  return rows.map((r) => {
+    let disableModelInvocation = false
+    try {
+      const fm = JSON.parse(r.metadata || '{}') as { disable_model_invocation?: boolean }
+      disableModelInvocation = fm.disable_model_invocation === true
+    } catch {
+      // ignore malformed metadata
+    }
+    return {
+      name: r.name,
+      description: r.description,
+      source: r.source,
+      disableModelInvocation,
+    }
+  })
 }
 
 /**
- * Load a specific skill's full content (frontmatter + body).
- * Resolves from the appropriate source.
+ * Load a specific skill with its content + resource listing.
+ *
+ * Returns an object shaped for agentskills.io structured activation:
+ * body, directory identifier, and a list of sibling resources the model
+ * can request on demand via fs tools.
  */
-export async function loadSkill(env: SkillsEnv, name: string): Promise<ParsedSkill | null> {
+export async function loadSkill(env: SkillsEnv, name: string): Promise<LoadedSkill | null> {
   const db = drizzle(env.DB)
   const row = await db
     .select()
@@ -75,43 +115,78 @@ export async function loadSkill(env: SkillsEnv, name: string): Promise<ParsedSki
   if (!row || !row.enabled) return null
 
   let content: string
-  switch (row.source) {
-    case 'bundled':
-      content = await getBundledSkill(row.path)
-      break
+  let directory: string
+  let resources: string[] = []
+  let fetchResource: (relativePath: string) => Promise<string | null>
 
-    case 'r2':
+  switch (row.source) {
+    case 'bundled': {
+      content = await getBundledSkill(row.path)
+      directory = `bundled:${row.name}`
+      const bundled = (await listBundledSkills()).find((s) => s.name === row.name)
+      resources = bundled?.resources ?? []
+      fetchResource = (rel) => getBundledSkillResource(row.name, rel)
+      break
+    }
+
+    case 'r2': {
       if (!env.SKILLS) throw new Error('SKILLS R2 bucket not configured')
       const obj = await env.SKILLS.get(row.path)
       if (!obj) return null
       content = await obj.text()
+      // R2 skills live under `${name}/...` — list siblings under that prefix.
+      const prefix = row.path.replace(/\/SKILL\.md$/, '/')
+      directory = `r2:${prefix}`
+      const list = await env.SKILLS.list({ prefix })
+      resources = list.objects
+        .map((o) => o.key.slice(prefix.length))
+        .filter((k) => k && k !== 'SKILL.md')
+      fetchResource = async (rel) => {
+        const obj = await env.SKILLS!.get(`${prefix}${rel}`)
+        return obj ? obj.text() : null
+      }
       break
+    }
 
-    case 'github':
+    case 'github': {
       // Fetch with simple cache via R2 if available
       if (env.SKILLS) {
         const cacheKey = `github-cache/${row.path.replace(/[^a-zA-Z0-9-]/g, '_')}`
         const cached = await env.SKILLS.get(cacheKey)
         if (cached) {
           content = await cached.text()
-          break
+        } else {
+          const response = await fetch(row.path)
+          if (!response.ok) throw new Error(`Failed to fetch skill from ${row.path}: ${response.status}`)
+          content = await response.text()
+          await env.SKILLS.put(cacheKey, content)
         }
+      } else {
+        const response = await fetch(row.path)
+        if (!response.ok) throw new Error(`Failed to fetch skill from ${row.path}: ${response.status}`)
+        content = await response.text()
       }
-      const response = await fetch(row.path)
-      if (!response.ok) throw new Error(`Failed to fetch skill from ${row.path}: ${response.status}`)
-      content = await response.text()
-      // Cache for next time
-      if (env.SKILLS) {
-        const cacheKey = `github-cache/${row.path.replace(/[^a-zA-Z0-9-]/g, '_')}`
-        await env.SKILLS.put(cacheKey, content)
-      }
+      directory = `github:${row.path}`
+      // Flat-file GitHub fetch — no sibling resources today. Directory
+      // import (phase 1b) will populate resources by listing the tree.
+      resources = []
+      fetchResource = async () => null
       break
+    }
 
     default:
       return null
   }
 
-  return parseSkill(content)
+  const parsed = parseSkill(content, { expectedName: row.name })
+  return {
+    ...parsed,
+    name: row.name,
+    source: row.source,
+    directory,
+    resources,
+    fetchResource,
+  }
 }
 
 /**

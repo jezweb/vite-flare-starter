@@ -81,8 +81,12 @@ export async function buildChatAgent(ctx: AgentContext): Promise<AgentResult> {
   const baseModel = resolveModel(ctx.env as Parameters<typeof resolveModel>[0], modelId)
   const model = buildModel(baseModel, modelId)
 
-  // Load skill catalog for system prompt injection (Level 1 progressive disclosure)
-  const availableSkills = await listSkills(ctx.env as { DB: D1Database; SKILLS?: R2Bucket })
+  // Load skill catalog for system prompt injection (Level 1 progressive disclosure).
+  // Skills with `disable_model_invocation: true` are user-invocable only, so
+  // they're hidden from this catalog per the agentskills.io spec — the model
+  // shouldn't discover or auto-load them.
+  const availableSkills = (await listSkills(ctx.env as { DB: D1Database; SKILLS?: R2Bucket }))
+    .filter((s) => !s.disableModelInvocation)
   const skillsCatalog = availableSkills.length > 0
     ? availableSkills.map((s) => `- **${s.name}**: ${s.description}`).join('\n')
     : null
@@ -94,7 +98,15 @@ export async function buildChatAgent(ctx: AgentContext): Promise<AgentResult> {
 
   const extraSections: Record<string, string> = {}
   if (skillsCatalog) {
-    extraSections['Available Skills'] = `Use the load_skill tool to get full instructions for any of these:\n\n${skillsCatalog}`
+    // Behavioural block recommended by agentskills.io — tells the model
+    // when to auto-load a skill and how the tool result is structured.
+    extraSections['Available Skills'] = [
+      'The following skills provide specialised instructions for specific tasks.',
+      'When a task matches a skill\'s description, call the load_skill tool with the skill name to load its full instructions.',
+      'The tool returns a <skill_content> block; follow its instructions, and use fs tools to load any listed resources on demand.',
+      '',
+      skillsCatalog,
+    ].join('\n')
   }
   if (prefsBlock) {
     extraSections['User Preferences'] = prefsBlock

@@ -34,16 +34,20 @@ app.get('/summary', async (c) => {
   return c.json({ skills: items, count: items.length })
 })
 
-/** GET /:name — get full skill content */
+/** GET /:name — get full skill content + resource listing */
 app.get('/:name', async (c) => {
   const name = c.req.param('name')
   const skill = await loadSkill(c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket }, name)
   if (!skill) return c.json({ error: 'Skill not found' }, 404)
   return c.json({
-    name: skill.frontmatter.name,
+    name: skill.name,
     description: skill.frontmatter.description,
+    source: skill.source,
+    directory: skill.directory,
+    resources: skill.resources,
     frontmatter: skill.frontmatter,
     body: skill.body,
+    warnings: skill.warnings,
   })
 })
 
