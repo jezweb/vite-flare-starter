@@ -39,6 +39,9 @@ export const features = {
   /** API token management in settings */
   apiTokens: isEnabled('VITE_FEATURE_API_TOKENS'),
 
+  /** Skills dashboard + slash-command activation in chat */
+  skills: isEnabled('VITE_FEATURE_SKILLS'),
+
   // ── UI Features ────────────────────────────────────────────────────────
 
   /** Theme/colour picker in preferences */

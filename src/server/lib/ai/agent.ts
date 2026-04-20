@@ -87,6 +87,9 @@ export async function buildChatAgent(ctx: AgentContext): Promise<AgentResult> {
   // shouldn't discover or auto-load them.
   const availableSkills = (await listSkills(ctx.env as { DB: D1Database; SKILLS?: R2Bucket }))
     .filter((s) => !s.disableModelInvocation)
+  // Empty array → no catalog block, no behavioural instructions, and the
+  // load_skill tool degrades to free-form string (harmless since nothing
+  // is callable). Matches the guide's "if no skills, omit entirely" rule.
   const skillsCatalog = availableSkills.length > 0
     ? availableSkills.map((s) => `- **${s.name}**: ${s.description}`).join('\n')
     : null
@@ -139,6 +142,7 @@ export async function buildChatAgent(ctx: AgentContext): Promise<AgentResult> {
       env: ctx.env as Parameters<typeof buildChatTools>[0]['env'],
       userId: ctx.userId,
       defaultModel: modelId,
+      availableSkillNames: availableSkills.map((s) => s.name),
     })
     const { tools: mcpTools, cleanup } = await getMCPTools(ctx.env)
     mcpCleanup = cleanup

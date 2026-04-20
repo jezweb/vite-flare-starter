@@ -45,6 +45,10 @@
     {
       "binding": "FILES",
       "bucket_name": "vite-flare-starter-files"
+    },
+    {
+      "binding": "SKILLS",
+      "bucket_name": "vite-flare-starter-skills"
     }
   ],
 

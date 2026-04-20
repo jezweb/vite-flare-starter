@@ -51,6 +51,12 @@ interface ChatToolsContext {
   }
   userId: string
   defaultModel: string
+  /**
+   * Names of skills available this session — used to constrain load_skill's
+   * `name` parameter to a Zod enum so the model can't invent skill names.
+   * Per agentskills.io client-implementation guide (Step 4).
+   */
+  availableSkillNames?: string[]
 }
 
 /**
@@ -67,7 +73,7 @@ export function buildChatTools(ctx: ChatToolsContext) {
     ...artifactTools,
     ...buildDocumentTools({ bucket: ctx.env.FILES, userId: ctx.userId }),
     ...buildMemoryTools({ db: ctx.env.DB, userId: ctx.userId }),
-    ...buildSkillsTools({ env: ctx.env }),
+    ...buildSkillsTools({ env: ctx.env, userId: ctx.userId, availableSkillNames: ctx.availableSkillNames }),
     ...buildCodeTools({ env: ctx.env, userId: ctx.userId }),
     ...buildDelegateTool({ env: ctx.env as Parameters<typeof buildDelegateTool>[0]['env'], defaultModel: ctx.defaultModel, userId: ctx.userId }),
     ...buildAudioTools({ env: ctx.env }),

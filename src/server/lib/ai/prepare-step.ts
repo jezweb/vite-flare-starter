@@ -3,6 +3,15 @@
  *
  * Called before each step in the ToolLoopAgent loop.
  * Used for token budget tracking and dynamic tool management.
+ *
+ * ## Skill content protection
+ *
+ * Per agentskills.io client-implementation guide, Step 5: if you add
+ * message-level compaction here in future, SKIP any assistant/tool message
+ * whose content contains `<skill_content`. That marker identifies activated
+ * skill bodies — losing them mid-conversation silently degrades the agent
+ * without any visible error. See `SKILL_CONTENT_MARKER` in
+ * `server/modules/chat/tools/skills.ts`.
  */
 import type { ToolSet } from 'ai'
 

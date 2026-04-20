@@ -56,3 +56,4 @@ SESSION.md
 .jez/screenshots/
 .jez/screenshots-audit/
 .jez/**/*.{mov,mp4,webm}
+worker-configuration.d.ts

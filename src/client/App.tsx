@@ -31,6 +31,7 @@ const ExtractPage = lazy(() => import('./modules/chat/pages/ExtractPage').then(m
 const ProjectPage = lazy(() => import('./modules/projects/pages/ProjectPage').then(m => ({ default: m.ProjectPage })))
 const ActivityPage = lazy(() => import('./modules/activity/pages/ActivityPage').then(m => ({ default: m.ActivityPage })))
 const FilesPage = lazy(() => import('./modules/files/pages/FilesPage').then(m => ({ default: m.FilesPage })))
+const SkillsPage = lazy(() => import('./modules/skills/pages/SkillsPage').then(m => ({ default: m.SkillsPage })))
 const ComponentsPage = lazy(() => import('./pages/ComponentsPage').then(m => ({ default: m.ComponentsPage })))
 const StyleGuidePage = lazy(() => import('./pages/StyleGuidePage').then(m => ({ default: m.StyleGuidePage })))
 
@@ -108,6 +109,9 @@ function App() {
 
             {/* Files */}
             <Route path="files" element={<FilesPage />} />
+
+            {/* Skills — agentskills.io registry UI */}
+            <Route path="skills" element={<SkillsPage />} />
 
             {/* Profile redirects to Settings (Profile tab is default) */}
             <Route path="profile" element={<Navigate to="/dashboard/settings" replace />} />

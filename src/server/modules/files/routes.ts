@@ -87,13 +87,15 @@ app.get('/download/*', async (c) => {
   const userId = c.get('userId')
   const rawKey = c.req.path.replace(/^\/api\/files\/download\//, '')
   const decoded = decodeURIComponent(rawKey)
-  // Accept either the current scoped key format `users/${userId}/...` OR the
-  // legacy `generated/${userId}/...` format that earlier versions of the
-  // generate_image tool wrote. Both resolve to the same physical R2 object
-  // when we normalise. See commit fixing the generate_image key prefix.
+  // Accept the current scoped key format `users/${userId}/...` plus two
+  // legacy formats that may still be in some R2 buckets:
+  // - `generated/${userId}/...` from very old generate_image tool
+  // - `files/${userId}/...` from uploads before the 2026-04-20 migration
+  // All resolve to the same physical R2 object when we normalise.
   const isScoped = decoded.startsWith(`users/${userId}/`)
   const isLegacyGenerated = decoded.startsWith(`generated/${userId}/`)
-  if (!decoded || (!isScoped && !isLegacyGenerated)) {
+  const isLegacyUpload = decoded.startsWith(`files/${userId}/`)
+  if (!decoded || (!isScoped && !isLegacyGenerated && !isLegacyUpload)) {
     return c.json({ error: 'Access denied' }, 403)
   }
   const bucket = c.env.FILES as R2Bucket | undefined
@@ -164,10 +166,13 @@ app.post('/', async (c) => {
     return c.json({ error: `File type not allowed: ${file.type}` }, 400)
   }
 
-  // Generate unique key for R2
+  // Generate unique key for R2. Lives under users/<userId>/uploads/ so the
+  // agent's fs_* tools (scoped to users/<userId>/) can see UI-uploaded files
+  // alongside agent outputs. Legacy keys at files/<userId>/... are handled
+  // by the migration script and the download route's backward-compat check.
   const fileId = crypto.randomUUID()
   const ext = file.name.split('.').pop() || 'bin'
-  const key = `files/${userId}/${fileId}.${ext}`
+  const key = `users/${userId}/uploads/${fileId}.${ext}`
 
   // Upload to R2
   const arrayBuffer = await file.arrayBuffer()

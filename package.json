@@ -99,6 +99,7 @@
     "docx": "^9.6.1",
     "drizzle-orm": "^0.45.2",
     "embla-carousel-react": "^8.6.0",
+    "fflate": "^0.8.2",
     "hono": "^4.12.14",
     "input-otp": "^1.4.2",
     "lucide-react": "^1.8.0",

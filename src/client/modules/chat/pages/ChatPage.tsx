@@ -47,6 +47,8 @@ import { DropOverlay } from '../components/DropOverlay'
 import { ActionChips } from '../components/ActionChips'
 import { CHAT_EXAMPLES } from '@/shared/config/chat-chips'
 import { DEFAULT_MODEL_ID } from '@/shared/config/models'
+import { features } from '@/shared/config/features'
+import { apiClient } from '@/client/lib/api-client'
 import { InputTakeover, isTakeoverElement } from '../components/chat-ui/InputTakeover'
 import { hasUiMarker } from '../components/chat-ui/ChatUiElement'
 import { AudioRecorder } from '@/client/components/AudioRecorder'
@@ -373,9 +375,49 @@ export function ChatPage() {
 
   const handleSubmit = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (message: { text?: string; files?: any[] }) => {
+    async (message: { text?: string; files?: any[] }) => {
       const text = message.text?.trim()
       if (!text && !message.files?.length) return
+
+      // Slash-command activation (phase 2). When the user starts with `/` and
+      // the first token matches a skill, we fetch the skill body and prepend
+      // it as a <skill_content> block so the model receives the activated
+      // skill without having to call load_skill. The user's remaining text
+      // after the slash command becomes their actual prompt.
+      if (text && text.startsWith('/') && features.skills) {
+        const firstSpace = text.indexOf(' ')
+        const skillName = (firstSpace === -1 ? text.slice(1) : text.slice(1, firstSpace)).trim()
+        const rest = firstSpace === -1 ? '' : text.slice(firstSpace + 1).trim()
+        if (skillName && /^[a-z0-9-]+$/.test(skillName)) {
+          try {
+            const detail = await apiClient.get<{
+              name: string
+              directory: string
+              body: string
+              resources: string[]
+            }>(`/api/skills/${skillName}`)
+            const resourceBlock = detail.resources.length > 0
+              ? `\n\n<skill_resources>\n${detail.resources.map((r) => `  <file>${r}</file>`).join('\n')}\n</skill_resources>`
+              : ''
+            const wrapper = [
+              `<skill_content name="${detail.name}" directory="${detail.directory}">`,
+              detail.body,
+              '',
+              `Skill directory: ${detail.directory}`,
+              'Relative paths resolve against the skill directory. Use read_skill_resource or run_skill_script for any listed resource.',
+              resourceBlock.trim(),
+              '</skill_content>',
+            ].filter(Boolean).join('\n')
+            const finalText = `${wrapper}\n\n${rest || `Using the ${detail.name} skill.`}`
+            sendMessage({ text: finalText, files: message.files as never })
+            return
+          } catch {
+            // Skill not found — fall through to send the raw slash text
+            // so the user sees a normal error rather than a silent no-op.
+          }
+        }
+      }
+
       if (message.files && message.files.length > 0) {
         sendMessage({ text: text || '', files: message.files })
       } else if (text) {

@@ -38,7 +38,7 @@ async function storeAndReturn(
   if (ctx.bucket) {
     const key = `users/${ctx.userId}/documents/${filename}`
     await ctx.bucket.put(key, bytes, { httpMetadata: { contentType: mimeType } })
-    return { filename, sizeBytes: bytes.length, downloadUrl: `/api/files/${encodeURIComponent(key)}` }
+    return { filename, sizeBytes: bytes.length, downloadUrl: `/api/files/download/${encodeURIComponent(key)}` }
   }
 
   // No R2 — return base64 for client-side download

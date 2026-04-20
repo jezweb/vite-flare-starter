@@ -277,6 +277,249 @@ export async function addGitHubSkill(env: SkillsEnv, url: string): Promise<{ nam
 }
 
 /**
+ * Register a skill from a GitHub **directory** URL, pulling SKILL.md plus
+ * all sibling files (scripts/, references/, assets/). Cached into R2 so
+ * subsequent loads don't re-fetch. Matches the phase 1B spec: makes any
+ * `anthropics/skills/<name>` style directory install unmodified.
+ *
+ * Accepted URL formats:
+ *   https://github.com/{owner}/{repo}/tree/{ref}/{path}
+ *   https://github.com/{owner}/{repo}/blob/{ref}/{path}/SKILL.md
+ *   owner/repo/{path}                    (defaults ref = main)
+ *   owner/repo#{ref}/{path}              (explicit ref)
+ *
+ * Requires the SKILLS R2 bucket to be bound (it's where siblings land).
+ */
+export async function addGitHubSkillDirectory(
+  env: SkillsEnv,
+  input: string,
+): Promise<{ name: string; description: string; files: string[] }> {
+  if (!env.SKILLS) throw new Error('SKILLS R2 bucket required for directory imports — bind it in wrangler.jsonc')
+
+  const spec = parseGitHubSpec(input)
+  if (!spec) throw new Error(`Could not parse GitHub directory URL: ${input}`)
+
+  // Walk the tree at {owner}/{repo}/{path}@{ref}
+  const files = await listGitHubTree(spec)
+  const skillMd = files.find((f) => f.path === 'SKILL.md')
+  if (!skillMd) throw new Error(`No SKILL.md found at ${spec.owner}/${spec.repo}/${spec.path} (ref: ${spec.ref})`)
+
+  // Fetch SKILL.md first to validate and get the skill name
+  const skillMdContent = await fetchGitHubBlob(spec, skillMd.path)
+  const parsed = parseSkill(skillMdContent)
+  const skillName = parsed.frontmatter.name
+
+  // Cap total download size at 10 MB to keep runaway repos from draining
+  // the R2 bucket. If this proves too low for real skills we can raise it.
+  const MAX_TOTAL = 10 * 1024 * 1024
+  let totalBytes = 0
+
+  // Upload every file into R2 under `${skillName}/<relativePath>`
+  for (const file of files) {
+    const content = await fetchGitHubBlob(spec, file.path)
+    totalBytes += content.length
+    if (totalBytes > MAX_TOTAL) {
+      throw new Error(`Directory exceeds 10 MB limit; import aborted at ${file.path}.`)
+    }
+    const r2Key = `${skillName}/${file.path}`
+    await env.SKILLS.put(r2Key, content, { httpMetadata: { contentType: guessMimeType(file.path) } })
+  }
+
+  // Register the skill pointing to R2 source (`<skillName>/SKILL.md`)
+  const db = drizzle(env.DB)
+  const existing = await db.select().from(skills).where(eq(skills.name, skillName)).get()
+  const values = {
+    description: parsed.frontmatter.description,
+    source: 'r2' as const,
+    path: `${skillName}/SKILL.md`,
+    metadata: JSON.stringify({
+      ...parsed.frontmatter,
+      _origin: `github:${spec.owner}/${spec.repo}@${spec.ref}/${spec.path}`,
+    }),
+  }
+  if (existing) {
+    await db.update(skills).set({ ...values, updatedAt: new Date() }).where(eq(skills.id, existing.id))
+  } else {
+    await db.insert(skills).values({ name: skillName, ...values })
+  }
+
+  return {
+    name: skillName,
+    description: parsed.frontmatter.description,
+    files: files.map((f) => f.path),
+  }
+}
+
+/**
+ * Import a skill from an uploaded ZIP archive. Expects the zip to contain
+ * exactly one skill at the root: `SKILL.md` plus any number of sibling
+ * files/folders. Returns the parsed name + file list.
+ *
+ * Workers-friendly: uses fflate (no native deps) and stays in memory.
+ */
+export async function addSkillFromZip(
+  env: SkillsEnv,
+  zipBytes: Uint8Array,
+): Promise<{ name: string; description: string; files: string[] }> {
+  if (!env.SKILLS) throw new Error('SKILLS R2 bucket required for zip imports — bind it in wrangler.jsonc')
+
+  const { unzipSync, strFromU8 } = await import('fflate')
+  const unzipped = unzipSync(zipBytes)
+  const entries = Object.entries(unzipped)
+  if (entries.length === 0) throw new Error('Zip file is empty')
+
+  // Some archivers include a wrapping folder. Detect and strip it.
+  const firstSegments = new Set(entries.map(([p]) => p.split('/')[0]))
+  const wrapper = firstSegments.size === 1 ? `${[...firstSegments][0]}/` : ''
+
+  const filesByPath: Record<string, Uint8Array> = {}
+  for (const [p, content] of entries) {
+    if (p.endsWith('/')) continue // skip directory entries
+    const rel = wrapper && p.startsWith(wrapper) ? p.slice(wrapper.length) : p
+    if (!rel) continue
+    filesByPath[rel] = content
+  }
+
+  const skillMd = filesByPath['SKILL.md']
+  if (!skillMd) throw new Error('Zip must contain SKILL.md at the root (or inside a single wrapping folder).')
+
+  const skillMdText = strFromU8(skillMd)
+  const parsed = parseSkill(skillMdText)
+  const skillName = parsed.frontmatter.name
+
+  // 10 MB cap — same as GitHub import
+  const MAX_TOTAL = 10 * 1024 * 1024
+  let totalBytes = 0
+  for (const buf of Object.values(filesByPath)) totalBytes += buf.length
+  if (totalBytes > MAX_TOTAL) throw new Error(`Zip contents exceed 10 MB limit (${(totalBytes / 1024 / 1024).toFixed(1)} MB)`)
+
+  // Upload each file into R2 under `${skillName}/<rel>`
+  for (const [rel, buf] of Object.entries(filesByPath)) {
+    const r2Key = `${skillName}/${rel}`
+    await env.SKILLS.put(r2Key, buf, { httpMetadata: { contentType: guessMimeType(rel) } })
+  }
+
+  // Register the skill
+  const db = drizzle(env.DB)
+  const existing = await db.select().from(skills).where(eq(skills.name, skillName)).get()
+  const values = {
+    description: parsed.frontmatter.description,
+    source: 'r2' as const,
+    path: `${skillName}/SKILL.md`,
+    metadata: JSON.stringify({ ...parsed.frontmatter, _origin: 'zip-upload' }),
+  }
+  if (existing) {
+    await db.update(skills).set({ ...values, updatedAt: new Date() }).where(eq(skills.id, existing.id))
+  } else {
+    await db.insert(skills).values({ name: skillName, ...values })
+  }
+
+  return {
+    name: skillName,
+    description: parsed.frontmatter.description,
+    files: Object.keys(filesByPath),
+  }
+}
+
+// =======================================================================
+// GitHub helpers — shared between directory import and single-file import
+// =======================================================================
+
+interface GitHubSpec {
+  owner: string
+  repo: string
+  ref: string
+  /** The path inside the repo (directory, not including trailing slash) */
+  path: string
+}
+
+/**
+ * Parse several input formats down to a GitHubSpec. Returns null if none match.
+ */
+function parseGitHubSpec(input: string): GitHubSpec | null {
+  const trimmed = input.trim().replace(/\/+$/, '')
+
+  // https://github.com/{owner}/{repo}/(tree|blob)/{ref}/{path}
+  const urlMatch = trimmed.match(/^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/(tree|blob)\/([^/]+)\/(.+)$/)
+  if (urlMatch) {
+    const [, owner, repo, kind, ref, rest] = urlMatch
+    // If the user linked to the SKILL.md itself, trim back to the parent dir
+    const path = kind === 'blob' && rest!.endsWith('SKILL.md')
+      ? rest!.replace(/\/SKILL\.md$/, '')
+      : rest!
+    return { owner: owner!, repo: repo!, ref: ref!, path }
+  }
+
+  // owner/repo/path or owner/repo#ref/path
+  const shorthand = trimmed.match(/^([^/]+)\/([^/#]+)(?:#([^/]+))?\/(.+)$/)
+  if (shorthand) {
+    const [, owner, repo, ref, path] = shorthand
+    return { owner: owner!, repo: repo!, ref: ref || 'main', path: path! }
+  }
+
+  return null
+}
+
+interface GitHubFile {
+  path: string  // relative to spec.path
+  sha: string
+  size: number
+}
+
+/**
+ * List every file under {spec.path} in the repo at the given ref using the
+ * GitHub Git Trees API. Recursive. Capped at 1000 entries per GitHub limits.
+ */
+async function listGitHubTree(spec: GitHubSpec): Promise<GitHubFile[]> {
+  const treeUrl = `https://api.github.com/repos/${spec.owner}/${spec.repo}/git/trees/${spec.ref}?recursive=1`
+  const resp = await fetch(treeUrl, {
+    headers: {
+      Accept: 'application/vnd.github.v3+json',
+      'User-Agent': 'vite-flare-starter-skills',
+    },
+  })
+  if (!resp.ok) throw new Error(`GitHub tree fetch failed: ${resp.status} ${resp.statusText}`)
+  const data = await resp.json() as { tree: Array<{ path: string; type: string; sha: string; size?: number }>; truncated?: boolean }
+  if (data.truncated) {
+    console.warn(`GitHub tree response truncated for ${spec.owner}/${spec.repo}@${spec.ref}; some files may be missing.`)
+  }
+  const prefix = spec.path ? `${spec.path}/` : ''
+  return data.tree
+    .filter((e) => e.type === 'blob' && (prefix === '' || e.path.startsWith(prefix)))
+    .map((e) => ({
+      path: prefix ? e.path.slice(prefix.length) : e.path,
+      sha: e.sha,
+      size: e.size ?? 0,
+    }))
+    .filter((e) => e.path.length > 0)
+}
+
+/**
+ * Fetch a single file's raw content from a GitHub repo at the given ref.
+ */
+async function fetchGitHubBlob(spec: GitHubSpec, relPath: string): Promise<string> {
+  const fullPath = spec.path ? `${spec.path}/${relPath}` : relPath
+  const rawUrl = `https://raw.githubusercontent.com/${spec.owner}/${spec.repo}/${spec.ref}/${fullPath}`
+  const resp = await fetch(rawUrl, { headers: { 'User-Agent': 'vite-flare-starter-skills' } })
+  if (!resp.ok) throw new Error(`Failed to fetch ${rawUrl}: ${resp.status}`)
+  return resp.text()
+}
+
+/** Best-effort MIME type from extension. Defaults to octet-stream. */
+function guessMimeType(path: string): string {
+  const ext = path.toLowerCase().split('.').pop() || ''
+  const map: Record<string, string> = {
+    md: 'text/markdown', txt: 'text/plain', json: 'application/json',
+    yaml: 'application/yaml', yml: 'application/yaml',
+    py: 'text/x-python', sh: 'text/x-shellscript', bash: 'text/x-shellscript',
+    js: 'text/javascript', mjs: 'text/javascript', ts: 'text/typescript',
+    csv: 'text/csv', html: 'text/html', xml: 'application/xml',
+    png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', svg: 'image/svg+xml',
+  }
+  return map[ext] || 'application/octet-stream'
+}
+
+/**
  * Upload a skill to R2.
  */
 export async function uploadSkillToR2(

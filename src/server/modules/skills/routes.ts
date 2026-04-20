@@ -14,6 +14,8 @@ import {
   loadSkill,
   syncBundledSkills,
   addGitHubSkill,
+  addGitHubSkillDirectory,
+  addSkillFromZip,
   uploadSkillToR2,
 } from '@/server/lib/ai/skills/registry'
 
@@ -57,12 +59,43 @@ app.post('/sync', async (c) => {
   return c.json({ success: true, ...result })
 })
 
-/** POST /github — add a skill from a GitHub URL */
+/**
+ * POST /github — add a skill from a GitHub URL. Auto-detects format:
+ *  - Raw URL ending in SKILL.md → single-file import (flat, no siblings)
+ *  - Directory URL (tree/blob) OR shorthand (owner/repo/path) → full
+ *    directory import with scripts/references/assets copied into R2.
+ */
 app.post('/github', async (c) => {
-  const body = await c.req.json() as { url?: string }
+  const body = await c.req.json() as { url?: string; mode?: 'auto' | 'single' | 'directory' }
   if (!body.url) return c.json({ error: 'url required' }, 400)
+  const mode = body.mode ?? 'auto'
+  const looksLikeRawSingle = /raw\.githubusercontent\.com\/.+\/SKILL\.md(\?.*)?$/i.test(body.url)
+  const useDirectory = mode === 'directory' || (mode === 'auto' && !looksLikeRawSingle)
   try {
+    if (useDirectory) {
+      const result = await addGitHubSkillDirectory(c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket }, body.url)
+      return c.json({ success: true, mode: 'directory', ...result })
+    }
     const result = await addGitHubSkill(c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket }, body.url)
+    return c.json({ success: true, mode: 'single', ...result })
+  } catch (error) {
+    return c.json({ error: error instanceof Error ? error.message : String(error) }, 500)
+  }
+})
+
+/**
+ * POST /upload-zip — upload a zip archive containing a skill directory.
+ * Expects multipart form-data with field `file`. The zip must contain
+ * SKILL.md at the root (or inside a single wrapping folder).
+ */
+app.post('/upload-zip', async (c) => {
+  try {
+    const formData = await c.req.formData()
+    const file = formData.get('file')
+    if (!(file instanceof File)) return c.json({ error: 'file field required (multipart)' }, 400)
+    if (file.size > 20 * 1024 * 1024) return c.json({ error: 'zip exceeds 20 MB' }, 400)
+    const bytes = new Uint8Array(await file.arrayBuffer())
+    const result = await addSkillFromZip(c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket }, bytes)
     return c.json({ success: true, ...result })
   } catch (error) {
     return c.json({ error: error instanceof Error ? error.message : String(error) }, 500)
