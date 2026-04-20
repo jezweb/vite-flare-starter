@@ -6,6 +6,7 @@ import { ErrorBoundary } from './components/shared/ErrorBoundary'
 import { createErrorHandler } from './lib/error-reporting'
 import { ProtectedRoute } from './components/shared/ProtectedRoute'
 import { PublicOnlyRoute } from './components/shared/PublicOnlyRoute'
+import { ThemeURLHandler } from './components/ThemeURLHandler'
 import { Loader2 } from 'lucide-react'
 
 // Critical-path imports (always in the main bundle)
@@ -47,6 +48,7 @@ function App() {
       <TooltipProvider delayDuration={200}>
       <BrowserRouter>
         <ScrollToTop />
+        <ThemeURLHandler />
         <Suspense fallback={<PageSpinner />}>
         <Routes>
           {/* Public marketing pages with header/footer */}

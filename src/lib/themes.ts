@@ -1,7 +1,9 @@
-import type {
-  ThemeScheme,
-  ThemeMode,
-  CustomThemeColors,
+import {
+  themeExportEnvelopeSchema,
+  type ThemeScheme,
+  type ThemeMode,
+  type CustomThemeColors,
+  type ThemeExportEnvelope,
 } from '@/shared/schemas/preferences.schema'
 
 /**
@@ -726,4 +728,96 @@ export function getThemeCSSTemplate(): string {
   --input: 240 3.7% 15.9%;
   --ring: 240 4.9% 83.9%;
 }`
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Theme export / import (JSON files + shareable URLs)
+// ─────────────────────────────────────────────────────────────────────────
+
+export const THEME_EXPORT_FILENAME = 'vfs-theme.json'
+export const THEME_EXPORT_MIME = 'application/json'
+
+/**
+ * Build an export envelope from the user's current custom theme colours.
+ * Either mode can be omitted — callers commonly have both.
+ */
+export function buildThemeExport(
+  customTheme: { light?: Partial<CustomThemeColors>; dark?: Partial<CustomThemeColors> } | undefined,
+  name?: string,
+): ThemeExportEnvelope {
+  return {
+    version: 1,
+    ...(name ? { name } : {}),
+    createdAt: new Date().toISOString(),
+    ...(customTheme?.light ? { light: customTheme.light } : {}),
+    ...(customTheme?.dark ? { dark: customTheme.dark } : {}),
+  }
+}
+
+/**
+ * Serialize an export envelope to pretty JSON (for file download)
+ */
+export function serializeThemeExport(envelope: ThemeExportEnvelope): string {
+  return JSON.stringify(envelope, null, 2)
+}
+
+/**
+ * Parse an import JSON string into an envelope. Returns a discriminated result
+ * so callers can show targeted error messages.
+ */
+export function parseThemeImport(
+  json: string,
+): { ok: true; envelope: ThemeExportEnvelope } | { ok: false; error: string } {
+  let raw: unknown
+  try {
+    raw = JSON.parse(json)
+  } catch {
+    return { ok: false, error: 'File is not valid JSON.' }
+  }
+
+  const parsed = themeExportEnvelopeSchema.safeParse(raw)
+  if (!parsed.success) {
+    const first = parsed.error.issues[0]
+    const path = first?.path.join('.') || 'envelope'
+    return { ok: false, error: `${path}: ${first?.message ?? 'invalid shape'}` }
+  }
+
+  if (!parsed.data.light && !parsed.data.dark) {
+    return { ok: false, error: 'Envelope is missing both light and dark colours.' }
+  }
+
+  return { ok: true, envelope: parsed.data }
+}
+
+/**
+ * Encode an envelope into a URL-safe base64 string (for ?theme=<…>)
+ *
+ * No compression yet — a custom theme fits in ~2KB base64, well under the
+ * browser URL limit. If we ever need shorter, swap in lz-string here.
+ */
+export function encodeThemeToURL(envelope: ThemeExportEnvelope): string {
+  const json = JSON.stringify(envelope)
+  const b64 = typeof btoa === 'function'
+    ? btoa(unescape(encodeURIComponent(json)))
+    : Buffer.from(json, 'utf-8').toString('base64')
+  return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+/**
+ * Decode an envelope from a URL-safe base64 string. Safe to call with
+ * untrusted input; returns an error rather than throwing.
+ */
+export function decodeThemeFromURL(
+  encoded: string,
+): { ok: true; envelope: ThemeExportEnvelope } | { ok: false; error: string } {
+  try {
+    const b64 = encoded.replace(/-/g, '+').replace(/_/g, '/')
+    const pad = b64.length % 4 === 0 ? '' : '='.repeat(4 - (b64.length % 4))
+    const json = typeof atob === 'function'
+      ? decodeURIComponent(escape(atob(b64 + pad)))
+      : Buffer.from(b64 + pad, 'base64').toString('utf-8')
+    return parseThemeImport(json)
+  } catch {
+    return { ok: false, error: 'Theme link is corrupt or incomplete.' }
+  }
 }

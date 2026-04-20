@@ -65,6 +65,22 @@ export const customThemeColorsSchema = z.object({
 export type CustomThemeColors = z.infer<typeof customThemeColorsSchema>
 
 /**
+ * Theme export envelope — the on-disk / over-the-wire format for custom themes
+ *
+ * Versioned so future schema changes don't break older files or shared URLs.
+ * Used by file export/import and the shareable URL (?theme=<base64>).
+ */
+export const themeExportEnvelopeSchema = z.object({
+  version: z.literal(1),
+  name: z.string().max(80).optional(),
+  createdAt: z.string().optional(),
+  light: customThemeColorsSchema.partial().optional(),
+  dark: customThemeColorsSchema.partial().optional(),
+})
+
+export type ThemeExportEnvelope = z.infer<typeof themeExportEnvelopeSchema>
+
+/**
  * User preferences schema
  * Includes appearance settings, timezone, and date/time formatting preferences
  */
