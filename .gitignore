@@ -49,3 +49,9 @@ SESSION.md
 
 # Playwright CLI session captures (ephemeral page snapshots)
 .playwright-cli/
+
+# .jez artifacts — commit markdown, gitignore one-off binaries
+# (UX extract screenshots are kept — they're part of curated references)
+.jez/screenshots/
+.jez/screenshots-audit/
+.jez/**/*.{mov,mp4,webm}
