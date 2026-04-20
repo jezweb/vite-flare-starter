@@ -24,7 +24,7 @@ type ThemeColors = {
 /**
  * Required CSS variable names for a complete theme
  */
-export const THEME_CSS_VARIABLES = [
+export const THEME_CORE_VARIABLES = [
   'background',
   'foreground',
   'card',
@@ -44,6 +44,29 @@ export const THEME_CSS_VARIABLES = [
   'border',
   'input',
   'ring',
+] as const
+
+/** Optional — charts and the sidebar surface. Custom themes may set these. */
+export const THEME_OPTIONAL_VARIABLES = [
+  'chart-1',
+  'chart-2',
+  'chart-3',
+  'chart-4',
+  'chart-5',
+  'sidebar',
+  'sidebar-foreground',
+  'sidebar-primary',
+  'sidebar-primary-foreground',
+  'sidebar-accent',
+  'sidebar-accent-foreground',
+  'sidebar-border',
+  'sidebar-ring',
+] as const
+
+/** All theme variables (core + optional). Kept for backwards-compat. */
+export const THEME_CSS_VARIABLES = [
+  ...THEME_CORE_VARIABLES,
+  ...THEME_OPTIONAL_VARIABLES,
 ] as const
 
 const themes: Record<ThemeScheme, ThemeColors> = {
@@ -495,6 +518,11 @@ export function applyTheme(
     colors = themes[scheme][effectiveMode]
   }
 
+  // Clear any inline overrides first so keys the new scheme doesn't set
+  // fall back to the :root defaults in index.css (important for chart/sidebar
+  // when switching from a custom theme that set them to a preset that doesn't).
+  THEME_CSS_VARIABLES.forEach((key) => root.style.removeProperty(`--${key}`))
+
   // Update CSS variables on :root (wrap with hsl() for Tailwind v4)
   Object.entries(colors).forEach(([key, value]) => {
     root.style.setProperty(`--${key}`, `hsl(${value})`)
@@ -667,13 +695,14 @@ function parseColorValue(value: string): string | null {
 }
 
 /**
- * Validate that parsed colors have all required variables
+ * Validate that parsed colors have all required (core) variables.
+ * Chart and sidebar vars are optional — their absence doesn't fail validation.
  */
 export function validateThemeColors(colors: Partial<CustomThemeColors>): {
   valid: boolean
   missing: string[]
 } {
-  const missing = THEME_CSS_VARIABLES.filter((v) => !colors[v as keyof CustomThemeColors])
+  const missing = THEME_CORE_VARIABLES.filter((v) => !colors[v as keyof CustomThemeColors])
   return {
     valid: missing.length === 0,
     missing,
