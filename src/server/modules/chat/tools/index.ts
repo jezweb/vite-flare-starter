@@ -25,6 +25,7 @@ import { buildMediaTools } from './media'
 import { buildSessionTools } from './session'
 import { buildPlacesTools } from './places'
 import { buildEmailTools } from './email'
+import { buildSearchFilesTools } from './search-files'
 
 interface ChatToolsContext {
   env: {
@@ -98,6 +99,7 @@ export function buildChatTools(ctx: ChatToolsContext) {
     ...buildScheduleTools({ db: ctx.env.DB, userId: ctx.userId }),
     ...buildSessionTools({ db: ctx.env.DB, userId: ctx.userId }),
     ...buildSemanticSearchTools({ env: ctx.env as unknown as Parameters<typeof buildSemanticSearchTools>[0]['env'], userId: ctx.userId }),
+    ...buildSearchFilesTools({ env: ctx.env as unknown as Parameters<typeof buildSearchFilesTools>[0]['env'], userId: ctx.userId }),
   }
 
   if (ctx.env.CLOUDFLARE_ACCOUNT_ID && ctx.env.CLOUDFLARE_API_TOKEN) {

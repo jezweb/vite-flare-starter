@@ -210,6 +210,27 @@ app.post('/', async (c) => {
     metadata: { mimeType: file.type, size: file.size, folder },
   })
 
+  // Fire-and-forget ingest into Vectorize. Runs in the background via
+  // executionCtx.waitUntil so the upload response returns immediately
+  // while chunking + embedding happen after the request ends.
+  // Falls back to a direct await when waitUntil isn't available (tests).
+  if ((c.env as unknown as { VECTORS?: VectorizeIndex }).VECTORS) {
+    const { ingestFile } = await import('./ingest')
+    const task = ingestFile(
+      c.env as unknown as Parameters<typeof ingestFile>[0],
+      fileId,
+      userId,
+    ).catch((err) => {
+      console.error(JSON.stringify({ event: 'ingest_failed_async', fileId, error: String(err) }))
+    })
+    try {
+      c.executionCtx.waitUntil(task)
+    } catch {
+      // waitUntil not available — let it run to completion.
+      await task
+    }
+  }
+
   return c.json({ file: newFile }, 201)
 })
 
@@ -280,6 +301,20 @@ app.delete('/:id', async (c) => {
   // Delete from R2
   await c.env.FILES.delete(file.key)
 
+  // Delete ingested vectors before dropping the row (needs indexChunks).
+  if ((c.env as unknown as { VECTORS?: VectorizeIndex }).VECTORS && file.indexStatus === 'indexed') {
+    try {
+      const { deleteFileVectors } = await import('./ingest')
+      await deleteFileVectors(
+        c.env as unknown as Parameters<typeof deleteFileVectors>[0],
+        fileId,
+        userId,
+      )
+    } catch (err) {
+      console.error(JSON.stringify({ event: 'vector_cleanup_failed', fileId, error: String(err) }))
+    }
+  }
+
   // Delete database record
   await db.delete(files).where(eq(files.id, fileId))
 
@@ -291,6 +326,31 @@ app.delete('/:id', async (c) => {
   })
 
   return c.json({ success: true })
+})
+
+/**
+ * POST /:id/reindex — re-run the ingest pipeline for a file.
+ * Handy when the content changed (file rename doesn't trigger) or when
+ * the initial ingest failed (e.g. Vectorize not yet configured).
+ */
+app.post('/:id/reindex', async (c) => {
+  const userId = c.get('userId')
+  const fileId = c.req.param('id')
+
+  if (!(c.env as unknown as { VECTORS?: VectorizeIndex }).VECTORS) {
+    return c.json({ error: 'Vectorize not configured' }, 501)
+  }
+
+  const { ingestFile } = await import('./ingest')
+  const result = await ingestFile(
+    c.env as unknown as Parameters<typeof ingestFile>[0],
+    fileId,
+    userId,
+  )
+  if (result.status === 'failed') {
+    return c.json({ error: result.error ?? 'Reindex failed' }, 500)
+  }
+  return c.json({ success: true, ...result })
 })
 
 /**
