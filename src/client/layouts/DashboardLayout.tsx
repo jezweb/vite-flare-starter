@@ -20,13 +20,21 @@ import { appConfig } from '@/shared/config/app'
 
 // Resolve a human-readable label for the current path by matching against the
 // flattened nav config. Longest-prefix wins so `/dashboard/chat/abc` still
-// picks up the "AI Chat" title.
+// picks up the "AI Chat" title. Falls back to a Title-Cased derivation from
+// the last non-dashboard path segment so routes without nav entries still
+// produce a sensible tab title.
 function resolveTitle(pathname: string): string | null {
   const items = NAV_SECTIONS.flatMap((s) => s.items)
   const match = items
     .filter((i) => pathname === i.to || pathname.startsWith(i.to + '/'))
     .sort((a, b) => b.to.length - a.to.length)[0]
-  return match?.label ?? null
+  if (match) return match.label
+  const segments = pathname.split('/').filter(Boolean)
+  const last = segments[segments.length - 1]
+  if (!last || last === 'dashboard') return null
+  return last
+    .replace(/[-_]+/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
 function DocumentTitleSync() {

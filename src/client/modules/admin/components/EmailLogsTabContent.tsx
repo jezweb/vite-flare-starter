@@ -242,6 +242,13 @@ function TestSendDialog({ onSent }: { onSent: () => void }) {
         toast.success('Test email sent', { description: `${data.provider} → ${toAddr}` })
         setOpen(false)
         onSent()
+      } else if (data.status === 'skipped') {
+        toast.info('Logged to console — no email provider configured', {
+          description:
+            'Set EMAIL_API_KEY (Resend) or bind EMAIL / SEND_EMAIL in wrangler.jsonc, then redeploy.',
+        })
+        setOpen(false)
+        onSent()
       } else {
         toast.error(`Send ${data.status}`, { description: data.error ?? data.provider })
       }

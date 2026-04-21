@@ -68,8 +68,17 @@ export function useChat(options: ChatOptions = {}) {
     [],
   )
 
+  // Seed useAIChat ONCE at mount. Without this, a later prop update to
+  // `initialMessages` (triggered when /chat transitions to /chat/:id and
+  // useConversationMessages refetches) clobbers the in-flight streaming
+  // state, blanking the transcript until reload (C1 in the 2026-04-22
+  // audit). After mount we sync stored messages explicitly with
+  // setMessages only when chat state is empty — never when a stream is in
+  // flight.
+  const seedRef = useRef(initialMessages)
+
   const chat = useAIChat({
-    messages: initialMessages,
+    messages: seedRef.current,
     messageMetadataSchema,
     transport,
     onToolCall,
@@ -77,6 +86,15 @@ export function useChat(options: ChatOptions = {}) {
       console.error('Chat error:', error)
     },
   })
+
+  // Adopt stored messages on later mounts (e.g. navigating from one
+  // conversation to another). Only when chat.messages is empty — so we
+  // never overwrite a live stream or optimistic user message.
+  useEffect(() => {
+    if (!initialMessages || initialMessages.length === 0) return
+    if (chat.messages.length > 0) return
+    chat.setMessages(initialMessages)
+  }, [initialMessages, chat])
 
   // Extract conversationId from the latest assistant message metadata
   const latestConversationId = (() => {

@@ -70,7 +70,17 @@ export function ConnectorsPage() {
     return () => window.removeEventListener('message', onMessage)
   }, [qc])
 
-  const connectedIds = new Set(connections.map((c) => c.connectorId))
+  // Only connectors whose status is "active" are fully connected. Pending
+  // OAuth rows stay in the catalogue modal as connectable ("Resume" / "Retry")
+  // so users aren't locked out when a popup is blocked. (Cn2 fix)
+  const connectedIds = new Set(
+    connections.filter((c) => c.status === 'active').map((c) => c.connectorId),
+  )
+  const pendingByConnector = new Map(
+    connections
+      .filter((c) => c.status === 'pending')
+      .map((c) => [c.connectorId, c] as const),
+  )
 
   return (
     <div className="container mx-auto max-w-4xl py-8 px-4 space-y-6">
@@ -136,6 +146,11 @@ export function ConnectorsPage() {
         onOpenChange={setBrowseOpen}
         catalog={catalog}
         connectedIds={connectedIds}
+        pendingByConnector={pendingByConnector}
+        onOpenConnection={(id) => {
+          setBrowseOpen(false)
+          setDetailId(id)
+        }}
       />
 
       <CustomConnectorDialog open={customOpen} onOpenChange={setCustomOpen} />
@@ -217,22 +232,29 @@ function BrowseDialog({
   onOpenChange,
   catalog,
   connectedIds,
+  pendingByConnector,
+  onOpenConnection,
 }: {
   open: boolean
   onOpenChange: (v: boolean) => void
   catalog: CatalogEntry[]
   connectedIds: Set<string>
+  pendingByConnector: Map<string, McpConnection>
+  onOpenConnection: (id: string) => void
 }) {
   const [query, setQuery] = useState('')
   const connect = useConnect()
+  // Sort by popularity (descending) so most-used connectors surface first.
+  // Filter drops the sort out of the way when a query is active.
+  const sorted = [...catalog].sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0))
   const filtered = query
-    ? catalog.filter(
+    ? sorted.filter(
         (e) =>
           e.name.toLowerCase().includes(query.toLowerCase()) ||
           e.description.toLowerCase().includes(query.toLowerCase()) ||
           e.category.toLowerCase().includes(query.toLowerCase()),
       )
-    : catalog
+    : sorted
 
   const handleConnect = useCallback(
     (entry: CatalogEntry) => {
@@ -241,15 +263,23 @@ function BrowseDialog({
         {
           onSuccess: (data) => {
             if (data.authType === 'oauth' && data.authorizationUrl) {
-              window.open(data.authorizationUrl, 'mcp-oauth', 'width=600,height=700,noopener=no')
-            } else if (data.authType === 'none') {
+              // Popup-safe full-page redirect. window.open inside a dialog
+              // chain is silently blocked by Chrome (loss of user gesture),
+              // stranding the user with a pending connection. A top-level
+              // navigation reliably works; the callback page closes itself
+              // and the connection refresh fires on return. (Cn1 fix)
+              window.location.href = data.authorizationUrl
+              return
+            }
+            if (data.authType === 'none') {
               toast.success(`${entry.name} connected`)
               onOpenChange(false)
             } else if (data.authType === 'bearer') {
               toast.info('Bearer token required', {
-                description: 'Open the connection details to paste your token.',
+                description: 'Paste your API token in the Configure panel to finish.',
               })
               onOpenChange(false)
+              onOpenConnection(data.connectionId)
             }
           },
           onError: (err) => {
@@ -260,7 +290,7 @@ function BrowseDialog({
         },
       )
     },
-    [connect, onOpenChange],
+    [connect, onOpenChange, onOpenConnection],
   )
 
   return (
@@ -297,14 +327,30 @@ function BrowseDialog({
                 </div>
                 <p className="text-xs text-muted-foreground">{entry.description}</p>
               </div>
-              <Button
-                size="sm"
-                variant={connectedIds.has(entry.id) ? 'outline' : 'default'}
-                disabled={connectedIds.has(entry.id) || connect.isPending}
-                onClick={() => handleConnect(entry)}
-              >
-                {connectedIds.has(entry.id) ? 'Connected' : 'Connect'}
-              </Button>
+              {connectedIds.has(entry.id) ? (
+                <Button size="sm" variant="outline" disabled>
+                  Connected
+                </Button>
+              ) : pendingByConnector.has(entry.id) ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const pending = pendingByConnector.get(entry.id)
+                    if (pending) onOpenConnection(pending.id)
+                  }}
+                >
+                  Resume
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  disabled={connect.isPending}
+                  onClick={() => handleConnect(entry)}
+                >
+                  Connect
+                </Button>
+              )}
             </div>
           ))}
           {filtered.length === 0 && (
@@ -344,15 +390,18 @@ function CustomConnectorDialog({
       {
         onSuccess: (data) => {
           if (data.authType === 'oauth' && data.authorizationUrl) {
-            window.open(data.authorizationUrl, 'mcp-oauth', 'width=600,height=700')
-            onOpenChange(false)
-            reset()
-          } else if (data.authType === 'none') {
+            // Top-level redirect to avoid popup blocking (Cn1).
+            window.location.href = data.authorizationUrl
+            return
+          }
+          if (data.authType === 'none') {
             toast.success('Connected')
             onOpenChange(false)
             reset()
           } else {
-            toast.info('Bearer token required')
+            toast.info('Bearer token required', {
+              description: 'Paste your API token in the Configure panel to finish.',
+            })
             onOpenChange(false)
             reset()
           }

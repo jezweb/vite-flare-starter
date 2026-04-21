@@ -125,3 +125,17 @@ export function useProbeMcp() {
       }>('/api/mcp-connections/probe', { url }),
   })
 }
+
+/**
+ * Re-issue an OAuth authorization URL for a pending connection. Used by the
+ * Resume flow when the popup was blocked or closed mid-handshake (Cn3 fix).
+ */
+export function useAuthorizeConnection() {
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiClient.post<{ authorizationUrl: string }>(
+        `/api/mcp-connections/${id}/authorize`,
+        {},
+      ),
+  })
+}

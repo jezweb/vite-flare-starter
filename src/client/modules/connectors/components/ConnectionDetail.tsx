@@ -6,7 +6,7 @@
  * (heuristic: tool name contains create/update/delete/send/post → write).
  */
 import { useMemo, useState, useEffect } from 'react'
-import { Loader2, Shield, Trash2, KeyRound } from 'lucide-react'
+import { Loader2, Shield, Trash2, KeyRound, ExternalLink } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,6 +20,7 @@ import {
   useConnections,
   useDisconnect,
   useSaveBearer,
+  useAuthorizeConnection,
   type ConnectionTool,
 } from '../hooks/useConnectors'
 
@@ -112,6 +113,10 @@ export function ConnectionDetail({
           <BearerTokenPanel connectionId={connectionId} />
         )}
 
+        {connection?.authType === 'oauth' && connection.status === 'pending' && (
+          <ResumeOAuthPanel connectionId={connectionId} />
+        )}
+
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -119,7 +124,7 @@ export function ConnectionDetail({
         ) : tools.length === 0 ? (
           <div className="text-sm text-muted-foreground py-8 text-center">
             {connection?.status === 'pending'
-              ? 'Finish the connection flow to discover tools.'
+              ? 'Finish the connection flow above to discover tools.'
               : 'No tools exposed by this server (or discovery failed).'}
           </div>
         ) : (
@@ -278,6 +283,47 @@ function BearerTokenPanel({ connectionId }: { connectionId: string }) {
         }
       >
         {save.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save token'}
+      </Button>
+    </div>
+  )
+}
+
+function ResumeOAuthPanel({ connectionId }: { connectionId: string }) {
+  const authorize = useAuthorizeConnection()
+
+  const onResume = () => {
+    authorize.mutate(connectionId, {
+      onSuccess: (data) => {
+        // Top-level navigation — popup-safe. The callback closes this tab's
+        // OAuth page and returns the user to /dashboard/connectors.
+        window.location.href = data.authorizationUrl
+      },
+      onError: (err) => {
+        toast.error('Could not re-issue OAuth URL', {
+          description: err instanceof Error ? err.message : String(err),
+        })
+      },
+    })
+  }
+
+  return (
+    <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 mt-6 space-y-3">
+      <div className="flex items-center gap-2 text-sm font-medium">
+        <ExternalLink className="h-4 w-4" />
+        Finish OAuth sign-in
+      </div>
+      <p className="text-xs text-muted-foreground">
+        The authorization step didn't complete. Click below to resume — you'll be redirected to the provider and returned here once done.
+      </p>
+      <Button size="sm" onClick={onResume} disabled={authorize.isPending}>
+        {authorize.isPending ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <>
+            <ExternalLink className="mr-2 h-4 w-4" />
+            Resume OAuth
+          </>
+        )}
       </Button>
     </div>
   )

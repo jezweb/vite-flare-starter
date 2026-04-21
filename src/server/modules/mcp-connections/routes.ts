@@ -352,6 +352,52 @@ app.post(
   },
 )
 
+/**
+ * POST /:id/authorize — re-issue an OAuth authorization URL for a pending
+ * connection. Used by the Resume flow (Cn3 fix) when the popup was blocked
+ * or the user closed it. Generates fresh PKCE + state cookies.
+ */
+app.post('/:id/authorize', async (c) => {
+  const userId = c.get('userId')
+  const id = c.req.param('id')
+  const db = drizzle(c.env.DB)
+
+  const [conn] = await db
+    .select()
+    .from(userMcpConnections)
+    .where(and(eq(userMcpConnections.id, id), eq(userMcpConnections.userId, userId)))
+    .limit(1)
+
+  if (!conn) return c.json({ error: 'Not found' }, 404)
+  if (conn.authType !== 'oauth' || !conn.authorizationEndpoint || !conn.oauthClientId) {
+    return c.json({ error: 'Connection does not use OAuth' }, 400)
+  }
+
+  const redirectUri = new URL('/api/mcp-connections/callback', c.env.BETTER_AUTH_URL).toString()
+  const { verifier, challenge } = await generatePkcePair()
+  const state = randomToken()
+
+  const authUrl = new URL(conn.authorizationEndpoint)
+  authUrl.searchParams.set('response_type', 'code')
+  authUrl.searchParams.set('client_id', conn.oauthClientId)
+  authUrl.searchParams.set('redirect_uri', redirectUri)
+  authUrl.searchParams.set('code_challenge', challenge)
+  authUrl.searchParams.set('code_challenge_method', 'S256')
+  authUrl.searchParams.set('state', state)
+  if (conn.scope) authUrl.searchParams.set('scope', conn.scope)
+
+  const cookieBase = `Path=/; Max-Age=600; HttpOnly; SameSite=Lax`
+  const secure = c.env.BETTER_AUTH_URL?.startsWith('https://') ? '; Secure' : ''
+  const headers = new Headers({ 'Content-Type': 'application/json' })
+  headers.append('Set-Cookie', `mcp_pkce=${encodeURIComponent(verifier)}; ${cookieBase}${secure}`)
+  headers.append('Set-Cookie', `mcp_conn=${encodeURIComponent(id)}; ${cookieBase}${secure}`)
+
+  return new Response(
+    JSON.stringify({ authorizationUrl: authUrl.toString() }),
+    { headers },
+  )
+})
+
 /** DELETE /:id — disconnect. Cascades to tool policies. */
 app.delete('/:id', async (c) => {
   const userId = c.get('userId')

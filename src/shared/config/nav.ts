@@ -23,6 +23,8 @@ import {
   Shield,
   Zap,
   Plug,
+  Settings as SettingsIcon,
+  Bell,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -64,6 +66,13 @@ export const NAV_SECTIONS: NavSection[] = [
       { to: '/dashboard/files', label: 'Files', icon: FolderOpen, feature: 'files' },
       { to: '/dashboard/skills', label: 'Skills', icon: Zap, feature: 'skills' },
       { to: '/dashboard/connectors', label: 'Connectors', icon: Plug, feature: 'connectors' },
+    ],
+  },
+  {
+    label: 'You',
+    items: [
+      { to: '/dashboard/notifications', label: 'Notifications', icon: Bell, feature: 'notifications' },
+      { to: '/dashboard/settings', label: 'Settings', icon: SettingsIcon },
     ],
   },
   {
