@@ -99,6 +99,13 @@
       "when": 1776498000000,
       "tag": "0013_projects",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1776777944703,
+      "tag": "0014_add_email_log",
+      "breakpoints": true
     }
   ]
 }

@@ -24,6 +24,7 @@ import { buildImageTransformTools } from './image-transform'
 import { buildMediaTools } from './media'
 import { buildSessionTools } from './session'
 import { buildPlacesTools } from './places'
+import { buildEmailTools } from './email'
 
 interface ChatToolsContext {
   env: {
@@ -46,12 +47,26 @@ interface ChatToolsContext {
     OPENROUTER_API_KEY?: string
     GOOGLE_PLACES_API_KEY?: string
     VECTORS?: VectorizeIndex
+    // Email bindings — at least one enables the send_email agent tool.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    EMAIL?: any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    SEND_EMAIL?: any
+    EMAIL_API_KEY?: string
+    EMAIL_FROM?: string
+    APP_NAME?: string
+    APP_URL?: string
+    BETTER_AUTH_URL?: string
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     IMAGES?: any
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     MEDIA?: any
   }
   userId: string
+  /** Optional — populated when we know the caller's email/name for
+   *  send_email Reply-To and agent-tool signing. */
+  userEmail?: string
+  userName?: string
   defaultModel: string
   /**
    * Names of skills available this session — used to constrain load_skill's
@@ -95,6 +110,18 @@ export function buildChatTools(ctx: ChatToolsContext) {
 
   Object.assign(tools, buildPlacesTools(ctx.env))
 
+  // send_email — only included when an email provider is configured.
+  // Guarded with needsApproval:true so the UI prompts before sending.
+  Object.assign(
+    tools,
+    buildEmailTools({
+      env: ctx.env,
+      userId: ctx.userId,
+      userEmail: ctx.userEmail,
+      userName: ctx.userName,
+    }),
+  )
+
   if (ctx.env.FILES) {
     Object.assign(tools, buildFileTools({ bucket: ctx.env.FILES, userId: ctx.userId }))
     Object.assign(tools, buildImageTools({ env: ctx.env as Parameters<typeof buildImageTools>[0]['env'], userId: ctx.userId }))
@@ -118,4 +145,5 @@ export {
   buildAudioTools,
   buildTodoTools,
   buildPlacesTools,
+  buildEmailTools,
 }

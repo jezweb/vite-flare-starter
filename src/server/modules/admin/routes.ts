@@ -438,6 +438,61 @@ adminRoutes.post('/migrate-file-prefix', async (c) => {
   return c.json({ migrated, skipped, errors, total: rows.length, failures })
 })
 
+/**
+ * POST /invites — send an invite email to a prospective user.
+ *
+ * This doesn't create a user row (better-auth does that on first sign-in).
+ * Just fires the `invite` template with a sign-up URL the invitee can use.
+ * Send history is visible in the admin email-log view.
+ */
+adminRoutes.post('/invites', zValidator('json', (await import('zod')).z.object({
+  email: (await import('zod')).z.string().email(),
+  organizationName: (await import('zod')).z.string().min(1).max(100).optional(),
+  message: (await import('zod')).z.string().max(1000).optional(),
+})), async (c) => {
+  const input = c.req.valid('json')
+  const currentUser = c.get('user')
+  const env = c.env as unknown as Record<string, unknown>
+  const { sendEmail } = await import('@/server/modules/email/service')
+
+  const appUrl = (env['APP_URL'] as string | undefined) || (env['BETTER_AUTH_URL'] as string | undefined) || ''
+  const appName = (env['APP_NAME'] as string | undefined) || 'App'
+  const signUpUrl = `${appUrl}/sign-up?invite=${encodeURIComponent(input.email)}`
+
+  const result = await sendEmail(
+    {
+      DB: c.env.DB,
+      EMAIL: env['EMAIL'] as never,
+      SEND_EMAIL: env['SEND_EMAIL'] as never,
+      EMAIL_API_KEY: env['EMAIL_API_KEY'] as string | undefined,
+      EMAIL_FROM: env['EMAIL_FROM'] as string | undefined,
+      APP_NAME: appName,
+      APP_URL: appUrl,
+      BETTER_AUTH_URL: env['BETTER_AUTH_URL'] as string | undefined,
+    },
+    {
+      to: input.email,
+      userId: currentUser.id,
+      template: 'invite',
+      templateData: {
+        inviterName: currentUser.name || currentUser.email,
+        inviterEmail: currentUser.email,
+        organizationName: input.organizationName || appName,
+        signUpUrl,
+        message: input.message,
+        appName,
+      },
+      tags: ['admin-invite', `by:${currentUser.id}`],
+    },
+  )
+
+  if (result.status === 'failed') {
+    return c.json({ error: result.error ?? 'Failed to send invite' }, 500)
+  }
+
+  return c.json({ success: true, status: result.status, provider: result.provider })
+})
+
 // Mount admin routes under root
 app.route('/', adminRoutes)
 

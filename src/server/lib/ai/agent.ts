@@ -141,6 +141,8 @@ export async function buildChatAgent(ctx: AgentContext): Promise<AgentResult> {
     const chatTools = buildChatTools({
       env: ctx.env as Parameters<typeof buildChatTools>[0]['env'],
       userId: ctx.userId,
+      userEmail: ctx.user?.email,
+      userName: ctx.user?.name,
       defaultModel: modelId,
       availableSkillNames: availableSkills.map((s) => s.name),
     })

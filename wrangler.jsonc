@@ -100,6 +100,20 @@
     "crons": ["*/15 * * * *"]
   },
 
+  // Email Sending
+  // Two paths wrapped by src/server/modules/email/service.ts:
+  //  - Cloudflare Email Service binding (EMAIL) — transactional, any recipient,
+  //    requires Email Sending domain onboarding. Uncomment when ready.
+  //  - Cloudflare Email Routing SendEmail binding (SEND_EMAIL) — dev / internal,
+  //    verified destinations only. Uncomment and set destination_address.
+  //  - Resend HTTP fallback — uses EMAIL_API_KEY secret, works anywhere.
+  // The service picks the first available in that order and falls back
+  // to console.log in development when none is configured.
+  // "send_email": [
+  //   { "name": "EMAIL", "type": "service" },
+  //   { "name": "SEND_EMAIL", "destination_address": "you@example.com" }
+  // ],
+
   // Observability
   "observability": {
     "enabled": true
