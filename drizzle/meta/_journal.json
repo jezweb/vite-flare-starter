@@ -113,6 +113,13 @@
       "when": 1776778500192,
       "tag": "0015_files_index_status",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1776778929087,
+      "tag": "0016_mcp_connections",
+      "breakpoints": true
     }
   ]
 }

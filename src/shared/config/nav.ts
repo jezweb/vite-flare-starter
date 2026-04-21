@@ -22,6 +22,7 @@ import {
   Palette,
   Shield,
   Zap,
+  Plug,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -62,6 +63,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { to: '/dashboard/activity', label: 'Activity', icon: Activity, feature: 'activity' },
       { to: '/dashboard/files', label: 'Files', icon: FolderOpen, feature: 'files' },
       { to: '/dashboard/skills', label: 'Skills', icon: Zap, feature: 'skills' },
+      { to: '/dashboard/connectors', label: 'Connectors', icon: Plug, feature: 'connectors' },
     ],
   },
   {

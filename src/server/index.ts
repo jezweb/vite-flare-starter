@@ -30,6 +30,7 @@ import recentViewsRoutes from './modules/recent-views/routes'
 import imagesRoutes from './modules/images/routes'
 import mediaRoutes from './modules/media/routes'
 import emailRoutes from './modules/email/routes'
+import mcpConnectionsRoutes from './modules/mcp-connections/routes'
 import { securityHeaders } from './middleware/security'
 import { rateLimiter } from './middleware/rate-limit'
 import { authMiddleware, requireScopes } from './middleware/auth'
@@ -264,6 +265,7 @@ app.route('/api/recent', recentViewsRoutes)
 app.route('/api/images', imagesRoutes)
 app.route('/api/media', mediaRoutes)
 app.route('/api/email', emailRoutes)
+app.route('/api/mcp-connections', mcpConnectionsRoutes)
 
 // =============================================================================
 // AI TEST ENDPOINT

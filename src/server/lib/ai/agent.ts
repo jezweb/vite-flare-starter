@@ -147,8 +147,20 @@ export async function buildChatAgent(ctx: AgentContext): Promise<AgentResult> {
       availableSkillNames: availableSkills.map((s) => s.name),
     })
     const { tools: mcpTools, cleanup } = await getMCPTools(ctx.env)
-    mcpCleanup = cleanup
-    tools = { ...chatTools, ...mcpTools } as ToolSet
+    // Per-user MCP connections (Phase 5). Layered over env-configured MCPs
+    // so if the user also connects e.g. Gmail via OAuth, their tools sit
+    // alongside global ones. Tool names are prefixed by connector id to
+    // avoid collisions.
+    const { getUserMcpTools } = await import('./user-mcp')
+    const userMcp = await getUserMcpTools(
+      ctx.env as unknown as Parameters<typeof getUserMcpTools>[0],
+      ctx.userId,
+    )
+    mcpCleanup = async () => {
+      await cleanup()
+      await userMcp.cleanup()
+    }
+    tools = { ...chatTools, ...mcpTools, ...userMcp.tools } as ToolSet
   }
 
   // If a places-capable tool is available (native places_search, or an MCP
