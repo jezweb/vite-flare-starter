@@ -230,6 +230,9 @@ return createAgentUIStreamResponse({
 // Uses refs for model/systemPrompt/conversationId to avoid stale-closure bugs
 // when switching models in the UI. The transport is memoised once; refs update
 // on each render so prepareSendMessagesRequest always reads the latest values.
+// initialMessages is frozen at mount — later changes from useConversationMessages
+// are adopted via setMessages only when chat.messages is empty, so a URL
+// transition from /chat to /chat/:id never clobbers in-flight streaming state.
 import { useChat } from '@/client/modules/chat/hooks/useChat'
 const { messages, sendMessage, isLoading, conversationId, addToolApprovalResponse } = useChat({
   model: 'anthropic/claude-sonnet-4.6',  // or any id from src/shared/config/models.ts
@@ -239,6 +242,8 @@ sendMessage({ text: 'Hello' })
 ```
 
 **Reference:** `src/server/lib/ai/agent.ts` (agent factory), `src/server/modules/chat/routes.ts` (streaming endpoint)
+
+**Gotcha (fixed 2026-04-22):** Do NOT pass a reactive `initialMessages` prop directly to `useAIChat` — the SDK treats the prop as a re-seed signal. When `useConversationMessages(urlConversationId)` resolves after the URL transitions from `/chat` to `/chat/:id`, it clobbers in-flight streaming state and the transcript goes blank until reload. The `useChat` wrapper in this repo freezes `initialMessages` at mount and only adopts later loads via `chat.setMessages` when `chat.messages.length === 0`.
 
 ### Pattern 4b: Conversation Persistence
 
@@ -303,6 +308,10 @@ const result = streamText({
 ```
 
 **Install:** `pnpm add @ai-sdk/mcp`
+
+**Per-user MCP connectors (Phase 5):** `src/server/modules/mcp-connections/` exposes a catalogue + OAuth (PKCE + DCR) + bearer fallback. Connections live in D1 (`user_mcp_connections`), tokens AES-GCM encrypted at rest via `TOKEN_ENCRYPTION_KEY`. Per-tool policies (always/ask/never) in `user_mcp_tool_policies`. The chat agent loads user connections via `getUserMcpTools(env, userId)` in `src/server/lib/ai/user-mcp.ts`.
+
+**OAuth redirect gotcha (fixed 2026-04-22):** Never use `window.open(authorizationUrl)` for the provider redirect — Chrome silently blocks popups fired inside React dialog event chains (the user-gesture chain is lost when the dialog defers). Always use `window.location.href = authorizationUrl` for the initial hand-off. The OAuth callback page closes itself and `window.opener.postMessage` is still available if you need to message the parent tab on return. A `POST /api/mcp-connections/:id/authorize` endpoint re-issues a fresh `authorizationUrl` for pending connections so users can retry if the flow is interrupted.
 
 ### Pattern 7: R2 File Upload
 
