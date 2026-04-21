@@ -7,7 +7,7 @@
  *   github   — fetched from a GitHub URL (single file or directory tree)
  */
 import { useState } from 'react'
-import { Upload, Code2 as GithubIcon, RefreshCw, Trash2, Eye, ExternalLink } from 'lucide-react'
+import { Upload, Code2 as GithubIcon, RefreshCw, Trash2, Eye, FileText, ChevronDown, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
@@ -65,16 +65,12 @@ export function SkillsPage() {
 
   return (
     <div className="container mx-auto py-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Skills</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Reusable agent procedures — compatible with the{' '}
-            <a href="https://agentskills.io/specification" target="_blank" rel="noreferrer" className="underline">agentskills.io spec</a>.
-            Use <code className="px-1 rounded bg-muted">/skill-name</code> in chat to activate one explicitly.
-          </p>
-        </div>
-        <div className="flex gap-2">
+      {/* Top row: title + action buttons on one line; description below so
+          it can't collide with the buttons at narrower widths. Fix for
+          UX audit findings M2 + L5 (orphaned period after the anchor). */}
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <h1 className="text-2xl font-bold">Skills</h1>
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => sync.mutate()} disabled={sync.isPending}>
             <RefreshCw className={`size-4 mr-2 ${sync.isPending ? 'animate-spin' : ''}`} />
             Sync bundled
@@ -87,6 +83,13 @@ export function SkillsPage() {
           </Button>
         </div>
       </div>
+      <p className="text-muted-foreground text-sm max-w-prose">
+        Reusable agent procedures — compatible with the{' '}
+        <a href="https://agentskills.io/specification" target="_blank" rel="noreferrer" className="underline">
+          agentskills.io spec
+        </a>
+        . Use <code className="px-1 rounded bg-muted">/skill-name</code> in chat to activate one explicitly.
+      </p>
 
       {isLoading ? (
         <Card><CardContent className="py-12 text-center text-muted-foreground">Loading…</CardContent></Card>
@@ -162,9 +165,23 @@ export function SkillsPage() {
               id="github-url"
               value={githubUrl}
               onChange={(e) => setGithubUrl(e.target.value)}
-              placeholder="https://github.com/anthropics/skills/tree/main/pdf"
+              placeholder="https://github.com/anthropics/skills/tree/main/skills/pdf"
               autoFocus
             />
+            {/* Best-effort collision check — compare the last path segment
+                against existing skill names. Not authoritative (the SKILL.md
+                frontmatter may declare a different name) but catches the
+                common case where the directory name matches the skill name. */}
+            {(() => {
+              const guessedName = githubUrl.trim().replace(/\/+$/, '').split('/').pop()?.toLowerCase()
+              const existing = guessedName && skills.find((s) => s.name === guessedName)
+              if (!existing) return null
+              return (
+                <p className="text-xs text-amber-500">
+                  ⚠ A skill named <code>/{guessedName}</code> already exists ({existing.source}). Installing may overwrite or collide.
+                </p>
+              )
+            })()}
             {install.isError && (
               <p className="text-sm text-destructive">{(install.error as Error).message}</p>
             )}
@@ -178,7 +195,10 @@ export function SkillsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Upload dialog — zip file OR inline SKILL.md paste */}
+      {/* Upload dialog — zip file OR inline SKILL.md paste. The zip mode
+          uploads as soon as the user picks a file (no separate submit button);
+          the inline mode has a submit at the bottom. Labels make this clear
+          per UX audit M3. */}
       <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
         <DialogContent>
           <DialogHeader>
@@ -197,6 +217,9 @@ export function SkillsPage() {
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleZip(f) }}
                 disabled={uploadZip.isPending}
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                {uploadZip.isPending ? 'Uploading zip…' : 'Uploads automatically when you pick a file.'}
+              </p>
               {uploadZip.isError && (
                 <p className="text-sm text-destructive mt-1">{(uploadZip.error as Error).message}</p>
               )}
@@ -229,7 +252,7 @@ export function SkillsPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setUploadOpen(false)}>Cancel</Button>
             <Button onClick={handleInline} disabled={uploadContent.isPending || !inlineContent.trim()}>
-              {uploadContent.isPending ? 'Uploading…' : 'Upload SKILL.md'}
+              {uploadContent.isPending ? 'Uploading…' : 'Upload pasted SKILL.md'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -269,19 +292,19 @@ function SkillPreviewDialog({ name, onClose }: { name: string | null; onClose: (
             )}
             {data.resources.length > 0 && (
               <div>
-                <p className="text-xs font-medium text-muted-foreground mb-1">Resources</p>
+                <p className="text-xs font-medium text-muted-foreground mb-1">
+                  Resources — click to view file contents
+                </p>
                 <ul className="text-xs font-mono space-y-0.5">
                   {data.resources.map((r) => (
-                    <li key={r} className="flex items-center gap-1">
-                      <ExternalLink className="size-3" />{r}
-                    </li>
+                    <ResourceRow key={r} skillName={data.name} path={r} />
                   ))}
                 </ul>
               </div>
             )}
             <div>
               <p className="text-xs font-medium text-muted-foreground mb-1">Body</p>
-              <pre className="text-xs whitespace-pre-wrap bg-muted rounded p-3 font-mono leading-relaxed max-h-[40vh] overflow-y-auto">
+              <pre className="text-xs whitespace-pre-wrap bg-muted rounded p-3 font-mono leading-relaxed">
                 {data.body}
               </pre>
             </div>
@@ -289,6 +312,75 @@ function SkillPreviewDialog({ name, onClose }: { name: string | null; onClose: (
         ) : null}
       </DialogContent>
     </Dialog>
+  )
+}
+
+/**
+ * ResourceRow — one row in the Resources list inside SkillPreviewDialog.
+ * Click the filename to expand and fetch its content via read_skill_resource
+ * (through the /api/skills/:name/resources/:path endpoint — wired indirectly
+ * via a fetch for simplicity). Content caches per-expand so re-opening the
+ * same row doesn't re-fetch.
+ */
+function ResourceRow({ skillName, path }: { skillName: string; path: string }) {
+  const [expanded, setExpanded] = useState(false)
+  const [content, setContent] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const toggle = async () => {
+    if (expanded) { setExpanded(false); return }
+    setExpanded(true)
+    if (content !== null) return
+    setLoading(true)
+    setError(null)
+    try {
+      // Re-fetch the skill full body — cheapest path since the skill detail
+      // endpoint already returns resources metadata; but we need actual
+      // content, which we load via the loader tool directly on the server.
+      // Use a small fetch helper that pokes loadSkill via /api/skills/:name
+      // then reads the resource from the skill's registry (bundled skills
+      // ship in the bundle; r2/github read from R2). For now, fetch via
+      // a thin endpoint.
+      const resp = await fetch(
+        `/api/skills/${encodeURIComponent(skillName)}/resources/${encodeURIComponent(path)}`,
+        { credentials: 'include' },
+      )
+      if (!resp.ok) throw new Error(`Failed to load (${resp.status})`)
+      const data = await resp.json() as { content?: string; error?: string }
+      if (data.error) throw new Error(data.error)
+      setContent(data.content ?? '')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={() => void toggle()}
+        className="flex w-full items-center gap-1 rounded px-1 py-0.5 text-left hover:bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary/40"
+        aria-expanded={expanded}
+      >
+        {expanded ? <ChevronDown className="size-3 shrink-0" /> : <ChevronRight className="size-3 shrink-0" />}
+        <FileText className="size-3 shrink-0 text-muted-foreground" />
+        <span className="truncate">{path}</span>
+      </button>
+      {expanded && (
+        <div className="ml-5 mt-1 mb-2">
+          {loading && <p className="text-muted-foreground italic">Loading…</p>}
+          {error && <p className="text-destructive">{error}</p>}
+          {content !== null && !loading && !error && (
+            <pre className="whitespace-pre-wrap bg-muted/50 rounded p-2 text-[11px] leading-relaxed">
+              {content || '(empty file)'}
+            </pre>
+          )}
+        </div>
+      )}
+    </li>
   )
 }
 

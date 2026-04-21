@@ -54,6 +54,24 @@ export interface LoadedSkill extends ParsedSkill {
 let bundledSyncedThisIsolate = false
 
 /**
+ * Sync bundled skills to D1 exactly once per worker isolate. Idempotent.
+ * Call from any endpoint that needs the registry to reflect the current
+ * set of bundled skills (dashboard list, system-prompt catalog, etc.).
+ *
+ * Silent on failure — never throws — so this is safe to call without
+ * try/catch from hot paths.
+ */
+export async function ensureBundledSynced(env: SkillsEnv): Promise<void> {
+  if (bundledSyncedThisIsolate) return
+  try {
+    await syncBundledSkills(env)
+    bundledSyncedThisIsolate = true
+  } catch (error) {
+    console.error('Failed to auto-sync bundled skills:', error)
+  }
+}
+
+/**
  * Get all enabled skills (metadata only) for system prompt injection.
  *
  * Auto-syncs bundled skills on first call per isolate. Idempotent.
@@ -61,14 +79,7 @@ let bundledSyncedThisIsolate = false
 export async function listSkills(env: SkillsEnv): Promise<SkillSummary[]> {
   const db = drizzle(env.DB)
 
-  if (!bundledSyncedThisIsolate) {
-    try {
-      await syncBundledSkills(env)
-      bundledSyncedThisIsolate = true
-    } catch (error) {
-      console.error('Failed to auto-sync bundled skills:', error)
-    }
-  }
+  await ensureBundledSynced(env)
 
   const rows = await db
     .select({
@@ -297,7 +308,13 @@ export async function addGitHubSkillDirectory(
   if (!env.SKILLS) throw new Error('SKILLS R2 bucket required for directory imports — bind it in wrangler.jsonc')
 
   const spec = parseGitHubSpec(input)
-  if (!spec) throw new Error(`Could not parse GitHub directory URL: ${input}`)
+  if (!spec) {
+    throw new Error(
+      `Could not parse GitHub directory URL: "${input}". Try a format like ` +
+      `"https://github.com/owner/repo/tree/main/skill-name" or the shorthand ` +
+      `"owner/repo/skill-name".`,
+    )
+  }
 
   // Walk the tree at {owner}/{repo}/{path}@{ref}
   const files = await listGitHubTree(spec)

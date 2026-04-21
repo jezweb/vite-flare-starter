@@ -13,6 +13,7 @@ import {
   listSkills,
   loadSkill,
   syncBundledSkills,
+  ensureBundledSynced,
   addGitHubSkill,
   addGitHubSkillDirectory,
   addSkillFromZip,
@@ -23,8 +24,15 @@ const app = new Hono<AuthContext>()
 
 app.use('*', authMiddleware)
 
-/** GET / — list all skills */
+/**
+ * GET / — list all skills (including disabled).
+ *
+ * Uses ensureBundledSynced (idempotent per worker isolate) so freshly-
+ * deployed bundled skills show up without the user having to hit
+ * "Sync bundled" manually.
+ */
 app.get('/', async (c) => {
+  await ensureBundledSynced(c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket })
   const db = drizzle(c.env.DB)
   const all = await db.select().from(skills)
   return c.json({ skills: all, count: all.length })
@@ -34,6 +42,37 @@ app.get('/', async (c) => {
 app.get('/summary', async (c) => {
   const items = await listSkills(c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket })
   return c.json({ skills: items, count: items.length })
+})
+
+/**
+ * GET /:name/resources/* — read a bundled resource (script, reference,
+ * asset) by relative path. Path is the rest of the URL after `/resources/`;
+ * we accept slashes so `scripts/extract.py` works without extra encoding.
+ *
+ * MUST be declared BEFORE `/:name` so Hono doesn't match this as a skill
+ * name like "foo/resources/bar.py".
+ */
+app.get('/:name/resources/*', async (c) => {
+  const name = c.req.param('name')
+  const fullPath = c.req.path
+  const marker = `/skills/${name}/resources/`
+  const idx = fullPath.indexOf(marker)
+  if (idx === -1) return c.json({ error: 'Malformed resource path' }, 400)
+  const rawPath = fullPath.slice(idx + marker.length)
+  const relPath = decodeURIComponent(rawPath)
+  const skill = await loadSkill(c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket }, name)
+  if (!skill) return c.json({ error: 'Skill not found' }, 404)
+  if (!skill.resources.includes(relPath)) {
+    return c.json({
+      error: `"${relPath}" is not a listed resource of skill "${name}".`,
+      available: skill.resources,
+    }, 404)
+  }
+  const content = await skill.fetchResource(relPath)
+  if (content === null) {
+    return c.json({ error: `Resource "${relPath}" could not be loaded.` }, 500)
+  }
+  return c.json({ name, path: relPath, content })
 })
 
 /** GET /:name — get full skill content + resource listing */
