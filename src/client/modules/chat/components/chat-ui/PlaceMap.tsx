@@ -52,7 +52,22 @@ const markerIcon = L.divIcon({
 function FocusController({ focus }: { focus: { lat: number; lng: number; zoom?: number } | null }) {
   const map = useMap()
   useEffect(() => {
-    if (focus) map.flyTo([focus.lat, focus.lng], focus.zoom ?? Math.max(map.getZoom(), 14), { duration: 0.6 })
+    if (!focus) return
+    // MAP-5 fix: don't force-zoom up — that loses context of the other
+    // markers. Instead: if the target is already visible, just pan; only
+    // zoom in when it's off-screen, and cap the zoom at 13 (overview
+    // level) rather than 14+ (street level).
+    const target = L.latLng(focus.lat, focus.lng)
+    const bounds = map.getBounds()
+    const isVisible = bounds.contains(target)
+    if (focus.zoom !== undefined) {
+      map.flyTo(target, focus.zoom, { duration: 0.6 })
+    } else if (isVisible) {
+      map.panTo(target, { duration: 0.4 })
+    } else {
+      // Off-screen: soft zoom to 13 (overview) rather than 14 (street).
+      map.flyTo(target, Math.max(map.getZoom(), 13), { duration: 0.6 })
+    }
   }, [focus, map])
   return null
 }

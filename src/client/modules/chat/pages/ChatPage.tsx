@@ -55,6 +55,8 @@ import { AudioRecorder } from '@/client/components/AudioRecorder'
 import { usePasteUpload } from '@/client/hooks/usePasteUpload'
 import { useSession } from '@/client/lib/auth'
 import { cn } from '@/lib/utils'
+import { SkillsSlashMenu, parseSlashQuery } from '../components/SkillsSlashMenu'
+import { useSkillSummary, type SkillSummary } from '@/client/modules/skills/hooks/useSkills'
 
 /**
  * Accept string for the file input. We widened this beyond images so that
@@ -125,6 +127,13 @@ export function ChatPage() {
 
   // Ref to the underlying textarea so preset chips can insert text.
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
+  // Mirror the uncontrolled textarea value in state so the slash-command
+  // menu can react to every keystroke without forcing the input to be
+  // fully controlled (which would break ai-elements' PromptInput).
+  const [inputValue, setInputValue] = useState('')
+  const [slashIndex, setSlashIndex] = useState(0)
+  const [activatingSkill, setActivatingSkill] = useState<string | null>(null)
+  const { data: skillSummary } = useSkillSummary()
   // Single scroll container holding both the transcript and the sticky input.
   // We manage auto-scroll-to-bottom manually instead of relying on StickToBottom
   // so the input can be a sticky child of the same scroller (claude.ai layout).
@@ -373,6 +382,39 @@ export function ChatPage() {
     setTextareaValue(text, true)
   }, [setTextareaValue])
 
+  /**
+   * Fetch a skill body and wrap it in <skill_content> tags so the model
+   * receives the activated skill in the first user message. Returns the
+   * final text + body for the UI to send or null if the skill is missing.
+   */
+  const activateSkill = useCallback(async (skillName: string, rest: string, files: unknown) => {
+    try {
+      const detail = await apiClient.get<{
+        name: string
+        directory: string
+        body: string
+        resources: string[]
+      }>(`/api/skills/${skillName}`)
+      const resourceBlock = detail.resources.length > 0
+        ? `\n\n<skill_resources>\n${detail.resources.map((r) => `  <file>${r}</file>`).join('\n')}\n</skill_resources>`
+        : ''
+      const wrapper = [
+        `<skill_content name="${detail.name}" directory="${detail.directory}">`,
+        detail.body,
+        '',
+        `Skill directory: ${detail.directory}`,
+        'Relative paths resolve against the skill directory. Use read_skill_resource or run_skill_script for any listed resource.',
+        resourceBlock.trim(),
+        '</skill_content>',
+      ].filter(Boolean).join('\n')
+      const finalText = `${wrapper}\n\n${rest || `Using the ${detail.name} skill.`}`
+      sendMessage({ text: finalText, files: files as never })
+      return true
+    } catch {
+      return false
+    }
+  }, [sendMessage])
+
   const handleSubmit = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async (message: { text?: string; files?: any[] }) => {
@@ -380,41 +422,17 @@ export function ChatPage() {
       if (!text && !message.files?.length) return
 
       // Slash-command activation (phase 2). When the user starts with `/` and
-      // the first token matches a skill, we fetch the skill body and prepend
-      // it as a <skill_content> block so the model receives the activated
-      // skill without having to call load_skill. The user's remaining text
-      // after the slash command becomes their actual prompt.
+      // the first token matches a skill, we activate the skill so the model
+      // receives the full instructions without having to call load_skill.
       if (text && text.startsWith('/') && features.skills) {
         const firstSpace = text.indexOf(' ')
         const skillName = (firstSpace === -1 ? text.slice(1) : text.slice(1, firstSpace)).trim()
         const rest = firstSpace === -1 ? '' : text.slice(firstSpace + 1).trim()
         if (skillName && /^[a-z0-9-]+$/.test(skillName)) {
-          try {
-            const detail = await apiClient.get<{
-              name: string
-              directory: string
-              body: string
-              resources: string[]
-            }>(`/api/skills/${skillName}`)
-            const resourceBlock = detail.resources.length > 0
-              ? `\n\n<skill_resources>\n${detail.resources.map((r) => `  <file>${r}</file>`).join('\n')}\n</skill_resources>`
-              : ''
-            const wrapper = [
-              `<skill_content name="${detail.name}" directory="${detail.directory}">`,
-              detail.body,
-              '',
-              `Skill directory: ${detail.directory}`,
-              'Relative paths resolve against the skill directory. Use read_skill_resource or run_skill_script for any listed resource.',
-              resourceBlock.trim(),
-              '</skill_content>',
-            ].filter(Boolean).join('\n')
-            const finalText = `${wrapper}\n\n${rest || `Using the ${detail.name} skill.`}`
-            sendMessage({ text: finalText, files: message.files as never })
-            return
-          } catch {
-            // Skill not found — fall through to send the raw slash text
-            // so the user sees a normal error rather than a silent no-op.
-          }
+          const activated = await activateSkill(skillName, rest, message.files)
+          if (activated) return
+          // Fall through on miss so the user sees a normal error rather
+          // than a silent no-op.
         }
       }
 
@@ -424,8 +442,74 @@ export function ChatPage() {
         sendMessage({ text })
       }
     },
-    [sendMessage],
+    [sendMessage, activateSkill],
   )
+
+  // Observe the uncontrolled PromptInputTextarea so the slash-command menu
+  // can react to every keystroke without fighting the AI Elements component.
+  useEffect(() => {
+    const ta = textareaRef.current
+    if (!ta) return
+    const onInput = () => setInputValue(ta.value)
+    ta.addEventListener('input', onInput)
+    // Catch programmatic value changes too (preset chips dispatch their own
+    // input event via setTextareaValue — this listener will pick them up).
+    setInputValue(ta.value)
+    return () => ta.removeEventListener('input', onInput)
+  }, [])
+
+  // Reset slash-menu highlight whenever the query changes.
+  const slashParsed = features.skills ? parseSlashQuery(inputValue) : null
+  const slashMatches = useMemo<SkillSummary[]>(() => {
+    if (!features.skills || !slashParsed || !skillSummary) return []
+    const q = slashParsed.query.toLowerCase()
+    if (!q) return skillSummary.skills.slice(0, 8)
+    return skillSummary.skills
+      .filter((s) => s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q))
+      .slice(0, 8)
+  }, [slashParsed, skillSummary])
+  const slashMenuOpen = !!slashParsed && slashMatches.length > 0
+  useEffect(() => { setSlashIndex(0) }, [slashParsed?.query])
+
+  const handleSelectSkill = useCallback(async (skill: SkillSummary) => {
+    if (!slashParsed) return
+    setActivatingSkill(skill.name)
+    const rest = slashParsed.rest.trim()
+    const ok = await activateSkill(skill.name, rest, undefined)
+    setActivatingSkill(null)
+    if (ok) {
+      // Clear the input — the message is in flight.
+      setTextareaValue('', true)
+      setInputValue('')
+    }
+  }, [slashParsed, activateSkill, setTextareaValue])
+
+  /**
+   * Keyboard navigation for the slash menu. Intercepts Arrow/Enter/Tab/Esc
+   * when the menu is open; otherwise lets the textarea handle them normally
+   * (Enter submits via PromptInput, Esc does nothing).
+   */
+  const handleTextareaKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (!slashMenuOpen) return
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setSlashIndex((i) => (i + 1) % slashMatches.length)
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setSlashIndex((i) => (i - 1 + slashMatches.length) % slashMatches.length)
+    } else if (e.key === 'Enter' || e.key === 'Tab') {
+      const skill = slashMatches[slashIndex]
+      if (skill) {
+        e.preventDefault()
+        e.stopPropagation()
+        void handleSelectSkill(skill)
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      setTextareaValue('', true)
+      setInputValue('')
+    }
+  }, [slashMenuOpen, slashMatches, slashIndex, handleSelectSkill, setTextareaValue])
 
   // Helper: convert File/Blob → data URL for AI SDK's FileUIPart
   const toDataUrl = useCallback((blob: Blob): Promise<string> => {
@@ -458,7 +542,12 @@ export function ChatPage() {
     [sendMessage, toDataUrl],
   )
 
-  const hasMessages = messages.length > 0
+  // hasMessages gates the empty "Good evening" screen. We treat "streaming
+  // with no messages yet" as "has messages" so the welcome state doesn't
+  // briefly flash between send and the first optimistic append, or while a
+  // regenerate is rebuilding the transcript. Empty state shows ONLY when
+  // the transcript is genuinely empty AND we're not mid-request.
+  const hasMessages = messages.length > 0 || isLoading
   // Derive whether the artifact panel toggle should appear at all. Recomputed
   // per render — cheap walk, no need for useMemo.
   const { artifactCount, fileCount } = countArtifactsAndFiles(messages)
@@ -833,6 +922,21 @@ export function ChatPage() {
                   // Inner InputGroup has its own border+rounded-md+ring; we
                   // neutralise those via the `[&_...]` selectors so we don't
                   // end up with mismatched nested corners (the original bug).
+                  // `relative` anchors the SkillsSlashMenu popover below.
+                  <div className="relative">
+                    {slashMenuOpen && (
+                      <SkillsSlashMenu
+                        input={inputValue}
+                        activeIndex={slashIndex}
+                        setActiveIndex={setSlashIndex}
+                        onSelect={handleSelectSkill}
+                      />
+                    )}
+                    {activatingSkill && (
+                      <div className="absolute bottom-full left-0 right-0 mb-2 mx-4 rounded-md border bg-popover p-2 text-xs text-muted-foreground shadow-md z-20">
+                        Activating <span className="font-mono">/{activatingSkill}</span>…
+                      </div>
+                    )}
                   <div
                     className={cn(
                       'rounded-2xl border bg-background shadow-sm overflow-hidden transition-all',
@@ -861,6 +965,7 @@ export function ChatPage() {
                       <PromptInputTextarea
                         ref={textareaRef}
                         placeholder={hasMessages ? 'Reply to the AI...' : 'Ask anything, or drop a file…'}
+                        onKeyDown={handleTextareaKeyDown}
                       />
                       <PromptInputFooter>
                         <PromptInputTools>
@@ -886,6 +991,7 @@ export function ChatPage() {
                         <PromptInputSubmit status={status} onStop={stop} />
                       </PromptInputFooter>
                     </PromptInput>
+                  </div>
                   </div>
                 )}
               </div>

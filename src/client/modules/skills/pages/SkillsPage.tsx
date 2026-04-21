@@ -88,7 +88,7 @@ export function SkillsPage() {
         <a href="https://agentskills.io/specification" target="_blank" rel="noreferrer" className="underline">
           agentskills.io spec
         </a>
-        . Use <code className="px-1 rounded bg-muted">/skill-name</code> in chat to activate one explicitly.
+        . Use <code className="px-1 rounded bg-muted whitespace-nowrap">/skill-name</code> in chat to activate one explicitly.
       </p>
 
       {isLoading ? (
@@ -178,7 +178,7 @@ export function SkillsPage() {
               if (!existing) return null
               return (
                 <p className="text-xs text-amber-500">
-                  ⚠ A skill named <code>/{guessedName}</code> already exists ({existing.source}). Installing may overwrite or collide.
+                  ⚠ A skill named <code className="whitespace-nowrap">/{guessedName}</code> already exists ({existing.source}). Installing may overwrite or collide.
                 </p>
               )
             })()}

@@ -90,11 +90,15 @@
   //   }
   // ],
 
-  // Cron Triggers (scheduled tasks — processes due jobs from scheduled_jobs table)
-  // Uncomment to enable. The scheduled() handler is already wired up in src/server/index.ts.
-  // "triggers": {
-  //   "crons": ["*/5 * * * *"]
-  // },
+  // Cron Triggers (scheduled tasks)
+  // Runs every 15 minutes:
+  //  - processes due jobs from scheduled_jobs table (agent reminders)
+  //  - cleans up expired better-auth sessions + verification tokens
+  //  - hourly: 30-day backstop for orphaned session rows
+  // The scheduled() handler is wired up in src/server/index.ts.
+  "triggers": {
+    "crons": ["*/15 * * * *"]
+  },
 
   // Observability
   "observability": {

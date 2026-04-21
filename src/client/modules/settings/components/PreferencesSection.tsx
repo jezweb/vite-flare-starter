@@ -597,6 +597,9 @@ export function PreferencesSection() {
                       ))}
                     </div>
 
+                    <p className="text-xs text-muted-foreground">
+                      Paste CSS from a generator above. We extract every <code className="px-1 rounded bg-muted">--name</code> variable from <code className="px-1 rounded bg-muted">:root</code> (light) and <code className="px-1 rounded bg-muted">.dark</code> (dark) blocks. Example format shown as placeholder.
+                    </p>
                     <Textarea
                       placeholder={`:root {
   --background: 0 0% 100%;

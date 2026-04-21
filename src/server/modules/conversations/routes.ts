@@ -179,10 +179,19 @@ app.post('/:id/summarise', async (c) => {
     return c.json({ skipped: true, reason: 'not-enough-messages' })
   }
 
+  // Strip <skill_content …>…</skill_content> wrappers so the summariser
+  // doesn't see the skill body (which biases titles toward the skill name
+  // rather than the user's actual question). Keep whatever the user wrote
+  // after the wrapper.
+  const stripSkillContent = (text: string): string => {
+    return text.replace(/<skill_content\b[^>]*>[\s\S]*?<\/skill_content>\s*/gi, '').trim()
+  }
+
   const textOf = (m: typeof firstUser) =>
     (m.parts ?? [])
       .filter((p): p is { type: 'text'; text: string } => (p as { type: string }).type === 'text')
-      .map((p) => p.text)
+      .map((p) => stripSkillContent(p.text))
+      .filter(Boolean)
       .join('\n')
       .slice(0, 1500)
 

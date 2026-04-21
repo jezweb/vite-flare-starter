@@ -134,14 +134,24 @@ app.post('/', async (c) => {
     const storage = createD1ChatStorage(c.env.DB)
 
     // Title derived from the first user message — used lazily when we finally
-    // persist the conversation in `onFinish`.
+    // persist the conversation in `onFinish`. Strips <skill_content> wrappers
+    // so slash-activated skills (e.g. /plan-task) don't leak XML into the
+    // breadcrumb or activity feed.
     const firstUserMsg = messages.find((m: { role: string }) => m.role === 'user')
+    const stripSkillWrapper = (text: string): string =>
+      text.replace(/<skill_content\b[^>]*>[\s\S]*?<\/skill_content>\s*/gi, '').trim()
     const extractTitle = (msg: typeof firstUserMsg): string => {
       if (!msg) return 'New conversation'
-      if (typeof msg.content === 'string' && msg.content.trim()) return msg.content.slice(0, 80)
+      if (typeof msg.content === 'string' && msg.content.trim()) {
+        const cleaned = stripSkillWrapper(msg.content)
+        if (cleaned) return cleaned.slice(0, 80)
+      }
       const parts = msg.parts as Array<{ type?: string; text?: string }> | undefined
       const textPart = parts?.find((p) => p?.type === 'text' && typeof p.text === 'string' && p.text.trim())
-      if (textPart?.text) return textPart.text.slice(0, 80)
+      if (textPart?.text) {
+        const cleaned = stripSkillWrapper(textPart.text)
+        if (cleaned) return cleaned.slice(0, 80)
+      }
       return 'New conversation'
     }
 

@@ -21,17 +21,25 @@ interface SkillActivationBlockProps {
 /**
  * Detect and parse a `<skill_content name="…" …>…</skill_content>` wrapper
  * at the start of a text part. Returns null if no wrapper is found.
+ *
+ * Lenient on whitespace (leading newlines, tab indentation) and attribute
+ * order — the server or client may arrange `name` and `directory` in any
+ * order. We scan the opening tag for `name="…"` rather than requiring it
+ * to be the first attribute.
  */
 export function parseSkillActivation(text: string): SkillActivationBlockProps | null {
-  if (!text.startsWith('<skill_content')) return null
-  const openMatch = text.match(/^<skill_content\s+name="([a-z0-9-]+)"[^>]*>\n?/)
+  const trimmed = text.trimStart()
+  if (!trimmed.startsWith('<skill_content')) return null
+  const openMatch = trimmed.match(/^<skill_content\b([^>]*)>\n?/)
   if (!openMatch) return null
-  const closeIdx = text.indexOf('</skill_content>')
+  const nameMatch = openMatch[1]!.match(/\bname="([a-z0-9-]+)"/i)
+  if (!nameMatch) return null
+  const closeIdx = trimmed.indexOf('</skill_content>')
   if (closeIdx === -1) return null
-  const body = text.slice(openMatch[0].length, closeIdx).trim()
-  const rest = text.slice(closeIdx + '</skill_content>'.length).trim()
+  const body = trimmed.slice(openMatch[0].length, closeIdx).trim()
+  const rest = trimmed.slice(closeIdx + '</skill_content>'.length).trim()
   return {
-    skillName: openMatch[1]!,
+    skillName: nameMatch[1]!,
     skillBody: body,
     userText: rest,
   }

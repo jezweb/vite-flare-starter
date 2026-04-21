@@ -254,12 +254,18 @@ function ColorRow({
 
   return (
     <div className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-2">
-      <Label className="text-xs w-28 truncate">{label}</Label>
+      <Label
+        className="text-xs w-28 truncate"
+        title={TOKEN_DESCRIPTIONS[label] ?? 'CSS variable — applies across the UI'}
+      >
+        {label}
+      </Label>
       <Input
         type="text"
         value={textValue}
-        placeholder="empty — uses default"
+        placeholder="hue saturation% lightness%"
         className="h-8 font-mono text-xs"
+        title="Format: 'hue saturation% lightness%' (e.g. '222 47% 11%')"
         onChange={(e) => setTextValue(e.target.value)}
         onBlur={() => {
           // Accept the edit on blur if it parses, otherwise snap back
@@ -298,6 +304,46 @@ function ColorRow({
 
 function formatLabel(key: string): string {
   return key.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
+/**
+ * Short descriptions surfaced as title tooltips on token labels. Helps
+ * designers who don't live in shadcn/ui tokens know what each variable
+ * actually controls — T2 from the UX audit.
+ */
+const TOKEN_DESCRIPTIONS: Record<string, string> = {
+  'Background': 'Main page background colour',
+  'Foreground': 'Default text colour on the main background',
+  'Card': 'Background for cards and panels',
+  'Card Foreground': 'Text colour on cards and panels',
+  'Popover': 'Background for popovers, dropdowns, and menus',
+  'Popover Foreground': 'Text colour on popovers and dropdowns',
+  'Secondary': 'Secondary button background (lower emphasis actions)',
+  'Secondary Foreground': 'Text on secondary buttons',
+  'Muted': 'Background for badges, chips, and subtle surfaces',
+  'Muted Foreground': 'De-emphasised text (helper text, timestamps)',
+  'Accent': 'Hover / focus background on list rows and dropdown items',
+  'Accent Foreground': 'Text on accent-coloured surfaces',
+  'Primary': 'Primary button background — the brand action colour',
+  'Primary Foreground': 'Text on primary buttons',
+  'Destructive': 'Danger button background (delete, remove)',
+  'Destructive Foreground': 'Text on destructive buttons',
+  'Ring': 'Focus ring around inputs, buttons, and dialogs',
+  'Border': 'Hairlines between cards, rows, and sections',
+  'Input': 'Border colour around text inputs and selects',
+  'Chart 1': 'First series colour in charts',
+  'Chart 2': 'Second series colour in charts',
+  'Chart 3': 'Third series colour in charts',
+  'Chart 4': 'Fourth series colour in charts',
+  'Chart 5': 'Fifth series colour in charts',
+  'Sidebar': 'Sidebar background',
+  'Sidebar Foreground': 'Default text in the sidebar',
+  'Sidebar Primary': 'Active nav-item background',
+  'Sidebar Primary Foreground': 'Active nav-item text',
+  'Sidebar Accent': 'Hover background in the sidebar',
+  'Sidebar Accent Foreground': 'Text on hovered sidebar items',
+  'Sidebar Border': 'Border between sidebar sections',
+  'Sidebar Ring': 'Focus ring on sidebar items',
 }
 
 // Ensure THEME_CORE_VARIABLES and THEME_OPTIONAL_VARIABLES stay referenced —
