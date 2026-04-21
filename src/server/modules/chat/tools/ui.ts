@@ -197,4 +197,30 @@ export const uiTools = {
     }),
     execute: async (args) => ({ _ui: 'collect_text', ...args }),
   }),
+
+  show_map: tool({
+    description: 'Display a map with business/place markers and a scrollable side panel of result cards. Use AFTER calling google_local_places (or similar) when the user asks for local businesses, venues, or any places with a location. Cards show name, rating, address, and phone. Clicking a card focuses that marker on the map.',
+    inputSchema: z.object({
+      title: z.string().optional().describe('Heading shown above the map (e.g. "Wreckers in Newcastle")'),
+      places: z.array(
+        z.object({
+          name: z.string().describe('Business or place name'),
+          lat: z.number().describe('Latitude'),
+          lng: z.number().describe('Longitude'),
+          address: z.string().optional(),
+          phone: z.string().optional(),
+          website: z.string().optional(),
+          rating: z.number().optional().describe('Star rating 0-5'),
+          reviewCount: z.number().optional(),
+          snippet: z.string().optional().describe('One-line description or review highlight'),
+          photoUrl: z.string().optional().describe('Thumbnail image URL'),
+          placeId: z.string().optional().describe('Google Place ID for deep-linking'),
+          type: z.string().optional().describe('Business category (e.g. "Auto Parts")'),
+        })
+      ).describe('Places to show on the map'),
+      center: z.object({ lat: z.number(), lng: z.number() }).optional().describe('Map centre point (defaults to mean of places)'),
+      zoom: z.number().optional().describe('Map zoom level 1-18 (default 12)'),
+    }),
+    execute: async (args) => ({ _ui: 'show_map', ...args }),
+  }),
 }

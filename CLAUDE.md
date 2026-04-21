@@ -531,7 +531,7 @@ The chat module ships with a **modular agent toolkit** in `src/server/modules/ch
 |--------|-------|-----------------|
 | **core** | `get_server_time`, `get_model_info`, `calculate` | Yes |
 | **memory** | `remember`, `recall`, `search_memory`, `forget` | Yes (uses user_meta D1 table) |
-| **ui** | `offer_choices`, `show_alert`, `show_contact`, `collect_info`, `ask_questions`, `show_data_table`, `show_metric_cards`, `show_timeline`, `show_progress`, `show_comparison`, `confirm_action` | Yes (rendered as inline React components) |
+| **ui** | `offer_choices`, `show_alert`, `show_contact`, `collect_info`, `ask_questions`, `show_data_table`, `show_metric_cards`, `show_timeline`, `show_progress`, `show_comparison`, `confirm_action`, `show_map` | Yes (rendered as inline React components) |
 | **skills** | `load_skill` | Yes |
 | **code** | `run_python`, `run_shell`, `run_js` | Yes (returns setup msg if SANDBOX missing) |
 | **delegate** | `delegate` | Yes (subagent pattern) |
@@ -539,6 +539,7 @@ The chat module ships with a **modular agent toolkit** in `src/server/modules/ch
 | **todo** | `todo_add`, `todo_update`, `todo_list`, `todo_clear` | Yes (Hermes-style session task list, persisted via user_meta) |
 | **browser** | `browser_markdown`, `browser_extract`, `browser_screenshot`, `browser_links`, `browser_content` | Only if `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_API_TOKEN` set |
 | **search** | `web_search` | Only if a provider key is set |
+| **places** | `places_search`, `places_details` | Only if `GOOGLE_PLACES_API_KEY` set |
 | **files** | `fs_list`, `fs_read`, `fs_write`, `fs_delete` | Only if `FILES` R2 bucket bound |
 
 **Adding a new tool**: create a new file in `tools/`, export a `buildXxxTools(ctx)` function, add to `tools/index.ts` aggregator. Use existing tools as reference.
@@ -548,6 +549,12 @@ The chat module ships with a **modular agent toolkit** in `src/server/modules/ch
 Use Cloudflare Browser Rendering's REST API directly — no Puppeteer/Playwright. Set up an API token at https://dash.cloudflare.com/profile/api-tokens with "Browser Rendering - Edit" permission, then set `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`.
 
 `browser_extract` is particularly powerful — uses the `/json` endpoint which runs Workers AI extraction natively, so you can pass natural-language prompts like "Extract product name, price, availability".
+
+### Places tools (Google Places API)
+
+`places_search` and `places_details` use the Google Places API (New). Set `GOOGLE_PLACES_API_KEY` (create one at https://console.cloud.google.com → enable "Places API (New)", restrict to your Worker routes in production).
+
+The agent is auto-nudged via the system prompt to pair `places_search` with the `show_map` UI tool — so local-business queries render as a Leaflet map + scrollable card list (like claude.ai's map answers) instead of a wall of text. Same nudge fires if an MCP server exposes a tool named `google_local_places`, so you can swap to an MCP without touching the prompt.
 
 ### Search providers
 

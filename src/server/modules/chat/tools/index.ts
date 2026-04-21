@@ -23,6 +23,7 @@ import { buildImageTools } from './image'
 import { buildImageTransformTools } from './image-transform'
 import { buildMediaTools } from './media'
 import { buildSessionTools } from './session'
+import { buildPlacesTools } from './places'
 
 interface ChatToolsContext {
   env: {
@@ -43,6 +44,7 @@ interface ChatToolsContext {
     OPENAI_API_KEY?: string
     GOOGLE_AI_API_KEY?: string
     OPENROUTER_API_KEY?: string
+    GOOGLE_PLACES_API_KEY?: string
     VECTORS?: VectorizeIndex
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     IMAGES?: any
@@ -91,6 +93,8 @@ export function buildChatTools(ctx: ChatToolsContext) {
     Object.assign(tools, buildSearchTools(ctx.env))
   }
 
+  Object.assign(tools, buildPlacesTools(ctx.env))
+
   if (ctx.env.FILES) {
     Object.assign(tools, buildFileTools({ bucket: ctx.env.FILES, userId: ctx.userId }))
     Object.assign(tools, buildImageTools({ env: ctx.env as Parameters<typeof buildImageTools>[0]['env'], userId: ctx.userId }))
@@ -113,4 +117,5 @@ export {
   buildDelegateTool,
   buildAudioTools,
   buildTodoTools,
+  buildPlacesTools,
 }

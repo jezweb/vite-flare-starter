@@ -18,6 +18,7 @@ import { Timeline } from './Timeline'
 import { ProgressTracker } from './ProgressTracker'
 import { ComparisonCards } from './ComparisonCards'
 import { ConfirmAction } from './ConfirmAction'
+import { PlaceMap, type Place } from './PlaceMap'
 
 interface UiElement {
   _ui: string
@@ -151,6 +152,16 @@ export function ChatUiElement({ element, onSendMessage, disabled }: Props) {
           destructive={data['destructive'] as boolean | undefined}
           onConfirm={(yes) => onSendMessage?.(yes ? 'Yes, confirm' : 'No, cancel')}
           disabled={disabled}
+        />
+      )
+
+    case 'show_map':
+      return (
+        <PlaceMap
+          title={data['title'] as string | undefined}
+          places={(data['places'] as Place[]) || []}
+          center={data['center'] as { lat: number; lng: number } | undefined}
+          zoom={data['zoom'] as number | undefined}
         />
       )
 

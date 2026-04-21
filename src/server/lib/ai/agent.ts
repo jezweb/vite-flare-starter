@@ -149,6 +149,18 @@ export async function buildChatAgent(ctx: AgentContext): Promise<AgentResult> {
     tools = { ...chatTools, ...mcpTools } as ToolSet
   }
 
+  // If a places-capable tool is available (native places_search, or an MCP
+  // that exposes one), nudge the agent to pair it with the show_map UI tool
+  // so a JSON list of businesses renders as a proper map + cards view.
+  const hasPlacesTool = Object.keys(tools).some((t) => {
+    const lower = t.toLowerCase()
+    return lower === 'places_search' || lower.includes('google_local_places') || lower === 'places'
+  })
+  let finalInstructions = instructions
+  if (hasPlacesTool) {
+    finalInstructions += `\n\n## Local business answers\n\nWhen the user asks for local businesses, shops, wreckers, venues, or any places with a location, follow this flow:\n1. Call the places search tool (prefer \`places_search\` when available) with a specific query that includes the suburb/city.\n2. Pass the returned places (top 3-8) to the \`show_map\` tool — include name, lat, lng, address, phone, website, rating, reviewCount, type.\n3. Write a short 1-2 sentence intro above the map ("Best bet first: X specialises in Y"). Do not repeat every business in prose — the map cards already show it.`
+  }
+
   // Prepare step: token budget tracking
   const budgetCheck = tokenBudgetPrepareStep({ maxTotalTokens: 50000 })
 
@@ -170,7 +182,7 @@ export async function buildChatAgent(ctx: AgentContext): Promise<AgentResult> {
   // Create the agent
   const agent = new ToolLoopAgent({
     model,
-    instructions,
+    instructions: finalInstructions,
     tools,
     stopWhen: modelConfig?.supportsTools ? [stepCountIs(5), hasToolCall('done')] : stepCountIs(1),
     maxOutputTokens: modelConfig?.defaultMaxTokens ?? 16384,
