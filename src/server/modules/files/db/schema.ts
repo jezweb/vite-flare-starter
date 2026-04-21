@@ -22,6 +22,13 @@ export const files = sqliteTable('files', {
   isPublic: integer('isPublic', { mode: 'boolean' }).default(false),
   publicUrl: text('publicUrl'), // generated public URL if isPublic
 
+  // RAG indexing (Phase 4) — 'pending' | 'indexed' | 'failed' | null (never attempted)
+  // Tracks whether the file's content has been chunked + embedded into Vectorize.
+  indexStatus: text('index_status'),
+  indexedAt: integer('indexed_at', { mode: 'timestamp' }),
+  indexChunks: integer('index_chunks'), // number of chunks produced
+  indexError: text('index_error'),
+
   // Timestamps
   createdAt: integer('createdAt', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
   updatedAt: integer('updatedAt', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),

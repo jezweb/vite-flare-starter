@@ -32,11 +32,21 @@ export function SiteHeader() {
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
-        <SidebarTrigger className="-ml-1" />
+        <SidebarTrigger
+          className="-ml-1"
+          title="Toggle sidebar (Ctrl/Cmd + B)"
+          aria-label="Toggle sidebar"
+        />
         <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
         <div className="ml-auto flex items-center gap-2">
           {features.notifications && <NotificationBell />}
-          <Button variant="ghost" size="icon" onClick={toggleTheme}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
             {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             <span className="sr-only">Toggle theme</span>
           </Button>

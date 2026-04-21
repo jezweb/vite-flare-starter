@@ -21,6 +21,7 @@ import webhookRoutes from './modules/webhooks/routes'
 import userMetaRoutes from './modules/user-meta/routes'
 import skillsRoutes from './modules/skills/routes'
 import conversationsRoutes from './modules/conversations/routes'
+import projectsRoutes from './modules/projects/routes'
 import commentsRoutes from './modules/comments/routes'
 import tagsRoutes from './modules/tags/routes'
 import watchersRoutes from './modules/watchers/routes'
@@ -28,6 +29,8 @@ import favouritesRoutes from './modules/favourites/routes'
 import recentViewsRoutes from './modules/recent-views/routes'
 import imagesRoutes from './modules/images/routes'
 import mediaRoutes from './modules/media/routes'
+import emailRoutes from './modules/email/routes'
+import mcpConnectionsRoutes from './modules/mcp-connections/routes'
 import { securityHeaders } from './middleware/security'
 import { rateLimiter } from './middleware/rate-limit'
 import { authMiddleware, requireScopes } from './middleware/auth'
@@ -253,6 +256,7 @@ app.route('/api/webhooks', webhookRoutes)
 app.route('/api/user-meta', userMetaRoutes)
 app.route('/api/skills', skillsRoutes)
 app.route('/api/conversations', conversationsRoutes)
+app.route('/api/projects', projectsRoutes)
 app.route('/api/comments', commentsRoutes)
 app.route('/api/tags', tagsRoutes)
 app.route('/api/watchers', watchersRoutes)
@@ -260,6 +264,8 @@ app.route('/api/favourites', favouritesRoutes)
 app.route('/api/recent', recentViewsRoutes)
 app.route('/api/images', imagesRoutes)
 app.route('/api/media', mediaRoutes)
+app.route('/api/email', emailRoutes)
+app.route('/api/mcp-connections', mcpConnectionsRoutes)
 
 // =============================================================================
 // AI TEST ENDPOINT
@@ -374,14 +380,48 @@ app.onError((err, c) => {
 // Add a cron trigger in wrangler.jsonc to enable:
 //   "triggers": { "crons": ["*/5 * * * *"] }   // every 5 minutes
 //
-// The handler processes due jobs from the scheduled_jobs D1 table.
+// The handler runs three jobs each tick:
+//   1. processDueJobs      — fires AI agent reminders / scheduled tools
+//   2. cleanupExpiredAuth  — purges dead sessions + verification tokens
+//   3. purgeStaleSessions  — 30-day backstop for orphans (hourly only)
+//
+// Session cleanup fixes ADM2 (morning audit): "Active Sessions: 8 vs Total
+// Users: 4" — better-auth doesn't reap expired rows itself, so without
+// this the admin dashboard drifts over time.
 export default {
   fetch: app.fetch,
   async scheduled(event: ScheduledEvent, env: Env) {
-    const { processDueJobs } = await import('./modules/chat/tools/schedule')
-    const processed = await processDueJobs(env.DB, env as unknown as Record<string, unknown>)
-    if (processed > 0) {
-      console.log(JSON.stringify({ event: 'cron_tick', processed, trigger: event.cron }))
+    const logs: Record<string, unknown> = { trigger: event.cron }
+
+    // 1. Due agent jobs (existing behaviour)
+    try {
+      const { processDueJobs } = await import('./modules/chat/tools/schedule')
+      const processed = await processDueJobs(env.DB, env as unknown as Record<string, unknown>)
+      if (processed > 0) logs['jobsProcessed'] = processed
+    } catch (err) {
+      logs['jobsError'] = err instanceof Error ? err.message : String(err)
+    }
+
+    // 2. Cleanup expired auth rows on every tick — cheap delete, no sweep needed.
+    try {
+      const { cleanupExpiredAuthRows, purgeStaleSessions } = await import('./modules/auth/cleanup')
+      const { sessionsDeleted, verificationsDeleted } = await cleanupExpiredAuthRows(env.DB)
+      if (sessionsDeleted > 0) logs['sessionsDeleted'] = sessionsDeleted
+      if (verificationsDeleted > 0) logs['verificationsDeleted'] = verificationsDeleted
+
+      // 3. Hourly backstop (minute 0 of the hour) — guards against stuck rows
+      // whose expiresAt somehow stayed in the future.
+      const now = new Date()
+      if (now.getMinutes() < 5) {
+        const purged = await purgeStaleSessions(env.DB, 30)
+        if (purged > 0) logs['stalePurged'] = purged
+      }
+    } catch (err) {
+      logs['cleanupError'] = err instanceof Error ? err.message : String(err)
+    }
+
+    if (Object.keys(logs).length > 1) {
+      console.log(JSON.stringify({ event: 'cron_tick', ...logs }))
     }
   },
 }

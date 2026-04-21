@@ -39,6 +39,11 @@ export const timeFormats = ['12h', '24h'] as const
 /**
  * Custom theme colors schema
  * HSL values without the hsl() wrapper, e.g., "220 90% 56%"
+ *
+ * The 19 core vars are required — every custom theme sets these.
+ * The 13 chart + sidebar vars are optional — included by themes that
+ * want to style those surfaces, left undefined otherwise (the app
+ * falls back to whatever index.css :root defines).
  */
 export const customThemeColorsSchema = z.object({
   background: z.string(),
@@ -60,9 +65,38 @@ export const customThemeColorsSchema = z.object({
   border: z.string(),
   input: z.string(),
   ring: z.string(),
+  'chart-1': z.string().optional(),
+  'chart-2': z.string().optional(),
+  'chart-3': z.string().optional(),
+  'chart-4': z.string().optional(),
+  'chart-5': z.string().optional(),
+  sidebar: z.string().optional(),
+  'sidebar-foreground': z.string().optional(),
+  'sidebar-primary': z.string().optional(),
+  'sidebar-primary-foreground': z.string().optional(),
+  'sidebar-accent': z.string().optional(),
+  'sidebar-accent-foreground': z.string().optional(),
+  'sidebar-border': z.string().optional(),
+  'sidebar-ring': z.string().optional(),
 })
 
 export type CustomThemeColors = z.infer<typeof customThemeColorsSchema>
+
+/**
+ * Theme export envelope — the on-disk / over-the-wire format for custom themes
+ *
+ * Versioned so future schema changes don't break older files or shared URLs.
+ * Used by file export/import and the shareable URL (?theme=<base64>).
+ */
+export const themeExportEnvelopeSchema = z.object({
+  version: z.literal(1),
+  name: z.string().max(80).optional(),
+  createdAt: z.string().optional(),
+  light: customThemeColorsSchema.partial().optional(),
+  dark: customThemeColorsSchema.partial().optional(),
+})
+
+export type ThemeExportEnvelope = z.infer<typeof themeExportEnvelopeSchema>
 
 /**
  * User preferences schema

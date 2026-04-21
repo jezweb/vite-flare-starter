@@ -104,6 +104,20 @@ app.post('/', async (c) => {
   try {
     const body = await c.req.json()
     const { model: requestedModel, conversationId: existingConversationId } = body
+    // projectId is accepted from the client ONLY for new conversations — it
+    // tells the server which project this conversation should belong to. For
+    // existing conversations we always trust the stored row, not the payload
+    // (stops a client from flipping project mid-chat to get elevated
+    // instructions). `null` explicitly unbinds at creation.
+    //
+    // Defensive parse: reject anything that isn't a UUID-shaped string to
+    // prevent a malicious client sending a 10MB payload as projectId.
+    // Strict v4 UUID regex — won't match "aaa" or "----" which the prior
+    // looser regex allowed.
+    const rawProjectId = body.projectId
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    const clientProjectId: string | null =
+      typeof rawProjectId === 'string' && UUID_RE.test(rawProjectId) ? rawProjectId : null
     // systemPrompt is intentionally server-controlled — client cannot override.
     // Fork-users: change this in buildChatAgent's default instructions.
     const systemPrompt = undefined
@@ -120,14 +134,24 @@ app.post('/', async (c) => {
     const storage = createD1ChatStorage(c.env.DB)
 
     // Title derived from the first user message — used lazily when we finally
-    // persist the conversation in `onFinish`.
+    // persist the conversation in `onFinish`. Strips <skill_content> wrappers
+    // so slash-activated skills (e.g. /plan-task) don't leak XML into the
+    // breadcrumb or activity feed.
     const firstUserMsg = messages.find((m: { role: string }) => m.role === 'user')
+    const stripSkillWrapper = (text: string): string =>
+      text.replace(/<skill_content\b[^>]*>[\s\S]*?<\/skill_content>\s*/gi, '').trim()
     const extractTitle = (msg: typeof firstUserMsg): string => {
       if (!msg) return 'New conversation'
-      if (typeof msg.content === 'string' && msg.content.trim()) return msg.content.slice(0, 80)
+      if (typeof msg.content === 'string' && msg.content.trim()) {
+        const cleaned = stripSkillWrapper(msg.content)
+        if (cleaned) return cleaned.slice(0, 80)
+      }
       const parts = msg.parts as Array<{ type?: string; text?: string }> | undefined
       const textPart = parts?.find((p) => p?.type === 'text' && typeof p.text === 'string' && p.text.trim())
-      if (textPart?.text) return textPart.text.slice(0, 80)
+      if (textPart?.text) {
+        const cleaned = stripSkillWrapper(textPart.text)
+        if (cleaned) return cleaned.slice(0, 80)
+      }
       return 'New conversation'
     }
 
@@ -141,6 +165,14 @@ app.post('/', async (c) => {
       conversationId = crypto.randomUUID()
     }
 
+    // Resolve the effective projectId. For existing conversations the stored
+    // row wins — trusting the client on this would let a user flip projects
+    // mid-chat and inherit someone else's instructions. For new ones we
+    // accept what the client declared.
+    const effectiveProjectId = isNewConversation
+      ? clientProjectId
+      : await storage.getProjectId(conversationId, userId)
+
     // Build the agent (model, tools, system prompt, logging — all encapsulated)
     const { agent, startTime, modelId } = await buildChatAgent({
       env: c.env as unknown as Parameters<typeof buildChatAgent>[0]['env'],
@@ -148,6 +180,7 @@ app.post('/', async (c) => {
       user: user || undefined,
       modelId: requestedModel,
       systemPrompt,
+      projectId: effectiveProjectId,
     })
 
     // Pre-process file attachments: convert non-image files to text/transcription
@@ -261,6 +294,7 @@ app.post('/', async (c) => {
               title: extractTitle(firstUserMsg),
               model: requestedModel || DEFAULT_MODEL,
               systemPrompt,
+              projectId: effectiveProjectId,
             })
             // Activity log moved here too so empty conversations don't pollute
             // the audit trail.

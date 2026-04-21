@@ -14,10 +14,11 @@ import { useAdminStatus } from '../hooks/useAdminStatus'
 import { AdminStats } from '../components/AdminStats'
 import { UsersTabContent } from '../components/UsersTabContent'
 import { FeaturesTabContent } from '../components/FeaturesTabContent'
+import { EmailLogsTabContent } from '../components/EmailLogsTabContent'
 import { ApiTokensSection } from '@/client/modules/settings/components/ApiTokensSection'
-import { Shield, Users, Flag, Key, ArrowLeft } from 'lucide-react'
+import { Shield, Users, Flag, Key, ArrowLeft, Mail } from 'lucide-react'
 
-const TABS = ['users', 'features', 'tokens'] as const
+const TABS = ['users', 'features', 'tokens', 'emails'] as const
 type TabValue = (typeof TABS)[number]
 
 function isValidTab(tab: string | null): tab is TabValue {
@@ -130,6 +131,10 @@ export function AdminPage() {
             <Key className="h-4 w-4" />
             API Tokens
           </TabsTrigger>
+          <TabsTrigger value="emails" className="gap-2">
+            <Mail className="h-4 w-4" />
+            Emails
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="users" className="space-y-4">
@@ -152,6 +157,10 @@ export function AdminPage() {
               <ApiTokensSection />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="emails" className="space-y-4">
+          <EmailLogsTabContent />
         </TabsContent>
       </Tabs>
     </div>

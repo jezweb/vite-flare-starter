@@ -41,6 +41,18 @@ export { scheduledJobs } from '@/server/modules/chat/tools/schedule'
 // Conversations (chat persistence)
 export { conversations, conversationMessages } from '@/server/modules/conversations/db/schema'
 
+// Projects — groupings of conversations with shared instructions
+export { projects } from '@/server/modules/projects/db/schema'
+
+// Email log — every outbound email attempt with provider + status
+export { emailLog } from '@/server/modules/email/db/schema'
+
+// MCP Connectors (Phase 5) — per-user OAuth-connected MCP servers
+export {
+  userMcpConnections,
+  userMcpToolPolicies,
+} from '@/server/modules/mcp-connections/db/schema'
+
 // Polymorphic modules (entity_type + entity_id pattern)
 export { comments } from '@/server/modules/comments/db/schema'
 export { tags, entityTags } from '@/server/modules/tags/db/schema'

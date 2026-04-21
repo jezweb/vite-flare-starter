@@ -25,6 +25,7 @@ import { authClient } from '@/client/lib/auth'
 import { apiClient } from '@/client/lib/api-client'
 import { NAV_SECTIONS } from '@/shared/config/nav'
 import { features } from '@/shared/config/features'
+import { announceGlobalModalOpen, subscribeGlobalModal } from '@/client/lib/global-modals'
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false)
@@ -56,12 +57,19 @@ export function CommandPalette() {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
-        setOpen((prev) => !prev)
+        setOpen((prev) => {
+          const next = !prev
+          if (next) announceGlobalModalOpen('command-palette')
+          return next
+        })
       }
     }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
   }, [])
+
+  // Close if any other global modal opens — one-at-a-time policy.
+  useEffect(() => subscribeGlobalModal('command-palette', () => setOpen(false)), [])
 
   const runCommand = useCallback((command: () => void) => {
     setOpen(false)

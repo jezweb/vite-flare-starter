@@ -53,7 +53,7 @@ export function SettingsPage() {
             <TabsTrigger value="api-tokens">API Tokens</TabsTrigger>
           )}
           {showChatTab && <TabsTrigger value="ai">AI</TabsTrigger>}
-          <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="preferences">Preferences</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile">
@@ -84,7 +84,7 @@ export function SettingsPage() {
           </TabsContent>
         )}
 
-        <TabsContent value="settings">
+        <TabsContent value="preferences">
           <PreferencesSection />
         </TabsContent>
       </Tabs>

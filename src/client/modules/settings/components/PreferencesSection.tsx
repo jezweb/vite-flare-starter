@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Moon,
   Sun,
@@ -11,7 +11,11 @@ import {
   Wand2,
   AlertCircle,
   Check,
+  Download,
+  Upload,
+  Link2,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -34,9 +38,22 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ThemeVisualEditor } from './ThemeVisualEditor'
 import { cn } from '@/lib/utils'
 import { usePreferences, useUpdatePreferences } from '../hooks/useSettings'
-import { applyTheme, parseThemeCSS, validateThemeColors } from '@/lib/themes'
+import {
+  applyTheme,
+  parseThemeCSS,
+  validateThemeColors,
+  buildThemeExport,
+  serializeThemeExport,
+  parseThemeImport,
+  encodeThemeToURL,
+  mergeThemeEnvelope,
+  THEME_EXPORT_FILENAME,
+  THEME_EXPORT_MIME,
+} from '@/lib/themes'
 import {
   defaultPreferences,
   dateFormats,
@@ -156,6 +173,8 @@ export function PreferencesSection() {
   const [customCSSInput, setCustomCSSInput] = useState('')
   const [parseError, setParseError] = useState<string | null>(null)
   const [parseSuccess, setParseSuccess] = useState(false)
+  const importFileInputRef = useRef<HTMLInputElement>(null)
+  const hasCurrentCustomTheme = currentScheme === 'custom' && !!currentPrefs.customTheme
 
   // Update current time every minute for live preview
   useEffect(() => {
@@ -242,6 +261,82 @@ export function PreferencesSection() {
       // Revert to previous theme on error
       applyTheme(currentPrefs.theme, currentMode, currentPrefs.customTheme)
       setParseError('Failed to save custom theme. Please try again.')
+    }
+  }
+
+  // Apply a theme envelope (from file import or a shared URL) without going
+  // through the CSS paste path.
+  const applyImportedEnvelope = async (
+    envelope: { light?: Partial<CustomThemeColors>; dark?: Partial<CustomThemeColors> },
+  ) => {
+    const customTheme = mergeThemeEnvelope(envelope, currentPrefs.customTheme)
+    applyTheme('custom', currentMode, customTheme)
+    try {
+      await updatePreferences.mutateAsync({
+        ...currentPrefs,
+        theme: 'custom',
+        customTheme,
+      })
+      toast.success('Theme imported')
+      setCustomThemeDialogOpen(false)
+    } catch (error) {
+      console.error('Failed to apply imported theme:', error)
+      applyTheme(currentPrefs.theme, currentMode, currentPrefs.customTheme)
+      toast.error('Could not save imported theme. Please try again.')
+    }
+  }
+
+  // Export current custom theme as a JSON file
+  const handleExportJSON = () => {
+    if (!currentPrefs.customTheme) return
+    const envelope = buildThemeExport(currentPrefs.customTheme)
+    const blob = new Blob([serializeThemeExport(envelope)], { type: THEME_EXPORT_MIME })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = THEME_EXPORT_FILENAME
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    toast.success('Theme exported to ' + THEME_EXPORT_FILENAME)
+  }
+
+  // Copy a shareable URL (?theme=<base64>) to the clipboard
+  const handleCopyShareLink = async () => {
+    if (!currentPrefs.customTheme) return
+    const envelope = buildThemeExport(currentPrefs.customTheme)
+    const encoded = encodeThemeToURL(envelope)
+    const url = `${window.location.origin}${window.location.pathname}?theme=${encoded}`
+    try {
+      await navigator.clipboard.writeText(url)
+      toast.success('Shareable link copied to clipboard')
+    } catch {
+      // Fallback: show in a prompt so the user can copy manually
+      window.prompt('Copy this link to share your theme:', url)
+    }
+  }
+
+  // Trigger the hidden file input
+  const handleOpenImportPicker = () => importFileInputRef.current?.click()
+
+  // Handle file selection for import
+  const handleImportFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    try {
+      const text = await file.text()
+      const result = parseThemeImport(text)
+      if (!result.ok) {
+        setParseError(result.error)
+        toast.error(result.error)
+        return
+      }
+      await applyImportedEnvelope(result.envelope)
+    } catch (error) {
+      console.error('Failed to read theme file:', error)
+      toast.error('Could not read the theme file.')
     }
   }
 
@@ -413,37 +508,100 @@ export function PreferencesSection() {
                 </button>
               </DialogTrigger>
 
-              <DialogContent className="sm:max-w-[600px]">
+              <DialogContent className="sm:max-w-[720px]">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
                     <Wand2 className="h-5 w-5" />
-                    Import Custom Theme
+                    Custom Theme
                   </DialogTitle>
                   <DialogDescription>
-                    Paste CSS from a theme generator. Supports HSL, hsl(), and oklch() formats.
+                    Tweak colours live, paste CSS from a generator, or import from a file.
                   </DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-4 py-4">
-                  {/* Theme generator links */}
-                  <div className="flex flex-wrap gap-2">
-                    {THEME_GENERATORS.map((gen) => (
-                      <a
-                        key={gen.name}
-                        href={gen.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        <ExternalLink className="h-3 w-3" />
-                        {gen.name}
-                      </a>
-                    ))}
-                  </div>
+                {/* Import / export / share toolbar — applies to both tabs */}
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleOpenImportPicker}
+                  >
+                    <Upload className="h-3.5 w-3.5" />
+                    Import JSON
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleExportJSON}
+                    disabled={!hasCurrentCustomTheme}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Export JSON
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopyShareLink}
+                    disabled={!hasCurrentCustomTheme}
+                  >
+                    <Link2 className="h-3.5 w-3.5" />
+                    Copy share link
+                  </Button>
+                  <input
+                    ref={importFileInputRef}
+                    type="file"
+                    accept=".json,application/json"
+                    className="hidden"
+                    onChange={handleImportFileChange}
+                  />
+                </div>
 
-                  {/* CSS Input */}
-                  <Textarea
-                    placeholder={`:root {
+                <Tabs defaultValue="visual" className="mt-2">
+                  <TabsList>
+                    <TabsTrigger value="visual">Visual editor</TabsTrigger>
+                    <TabsTrigger value="paste">Paste CSS</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="visual" className="py-2">
+                    <ThemeVisualEditor
+                      current={currentPrefs.customTheme}
+                      baseScheme={currentScheme === 'custom' ? 'default' : currentScheme}
+                      isSaving={updatePreferences.isPending}
+                      onPersist={(next) => {
+                        updatePreferences.mutate({
+                          ...currentPrefs,
+                          theme: 'custom',
+                          customTheme: next,
+                        })
+                      }}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="paste" className="py-2 space-y-4">
+                    {/* Theme generator links */}
+                    <div className="flex flex-wrap gap-2">
+                      {THEME_GENERATORS.map((gen) => (
+                        <a
+                          key={gen.name}
+                          href={gen.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          {gen.name}
+                        </a>
+                      ))}
+                    </div>
+
+                    <p className="text-xs text-muted-foreground">
+                      Paste CSS from a generator above. We extract every <code className="px-1 rounded bg-muted">--name</code> variable from <code className="px-1 rounded bg-muted">:root</code> (light) and <code className="px-1 rounded bg-muted">.dark</code> (dark) blocks. Example format shown as placeholder.
+                    </p>
+                    <Textarea
+                      placeholder={`:root {
   --background: 0 0% 100%;
   --foreground: 240 10% 3.9%;
   --primary: 220 90% 56%;
@@ -454,48 +612,48 @@ export function PreferencesSection() {
   --background: 240 10% 3.9%;
   /* ... dark mode variables */
 }`}
-                    value={customCSSInput}
-                    onChange={(e) => {
-                      setCustomCSSInput(e.target.value)
-                      setParseError(null)
-                      setParseSuccess(false)
-                    }}
-                    className="font-mono text-sm min-h-[200px] max-h-[300px] resize-y"
-                  />
+                      value={customCSSInput}
+                      onChange={(e) => {
+                        setCustomCSSInput(e.target.value)
+                        setParseError(null)
+                        setParseSuccess(false)
+                      }}
+                      className="font-mono text-sm min-h-[200px] max-h-[300px] resize-y"
+                    />
 
-                  {/* Parse status */}
-                  {parseError && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{parseError}</AlertDescription>
-                    </Alert>
-                  )}
+                    {parseError && (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>{parseError}</AlertDescription>
+                      </Alert>
+                    )}
 
-                  {parseSuccess && (
-                    <Alert>
-                      <Check className="h-4 w-4 text-green-500" />
-                      <AlertDescription>
-                        Theme parsed successfully! Click "Apply Theme" to use it.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                </div>
+                    {parseSuccess && (
+                      <Alert>
+                        <Check className="h-4 w-4 text-green-500" />
+                        <AlertDescription>
+                          Theme parsed successfully. Click Apply to save.
+                        </AlertDescription>
+                      </Alert>
+                    )}
 
-                <DialogFooter className="gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={handleParseCustomCSS}
-                    disabled={!customCSSInput.trim()}
-                  >
-                    Validate CSS
-                  </Button>
-                  <Button
-                    onClick={handleApplyCustomTheme}
-                    disabled={!parseSuccess || updatePreferences.isPending}
-                  >
-                    {updatePreferences.isPending ? 'Applying...' : 'Apply Theme'}
-                  </Button>
-                </DialogFooter>
+                    <DialogFooter className="gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={handleParseCustomCSS}
+                        disabled={!customCSSInput.trim()}
+                      >
+                        Validate CSS
+                      </Button>
+                      <Button
+                        onClick={handleApplyCustomTheme}
+                        disabled={!parseSuccess || updatePreferences.isPending}
+                      >
+                        {updatePreferences.isPending ? 'Applying...' : 'Apply Theme'}
+                      </Button>
+                    </DialogFooter>
+                  </TabsContent>
+                </Tabs>
               </DialogContent>
             </Dialog>
           </div>

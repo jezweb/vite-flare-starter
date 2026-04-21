@@ -10,6 +10,7 @@
 import { drizzle } from 'drizzle-orm/d1'
 import { eq, desc, and } from 'drizzle-orm'
 import { conversations, conversationMessages } from './db/schema'
+import { projects } from '@/server/modules/projects/db/schema'
 import type { UIMessage } from 'ai'
 
 export interface ConversationSummary {
@@ -19,21 +20,29 @@ export interface ConversationSummary {
   summary: string | null
   /** 0 | 1. 1 means the user has pinned this conversation to the top of the sidebar. */
   starred: number
+  /** Project grouping — null = ungrouped / personal. */
+  projectId: string | null
   model: string | null
   createdAt: string
   updatedAt: string
 }
 
 export interface ChatStorage {
-  createConversation(userId: string, opts?: { title?: string; model?: string; systemPrompt?: string }): Promise<string>
+  createConversation(userId: string, opts?: { title?: string; model?: string; systemPrompt?: string; projectId?: string | null }): Promise<string>
   /**
    * Insert a conversation with a caller-supplied id. Used when the id is
    * generated upfront (so the client can navigate to the permalink) but the
    * actual DB row is deferred until first successful message save.
    */
-  createConversationWithId(id: string, userId: string, opts?: { title?: string; model?: string; systemPrompt?: string }): Promise<void>
+  createConversationWithId(id: string, userId: string, opts?: { title?: string; model?: string; systemPrompt?: string; projectId?: string | null }): Promise<void>
   /** Check if a user owns a conversation. Returns false if not found or not owned. */
   isOwner(conversationId: string, userId: string): Promise<boolean>
+  /**
+   * Fetch the projectId for a conversation (or null if ungrouped / missing).
+   * Used by the chat route to layer project instructions into the system
+   * prompt without trusting the client to pass it.
+   */
+  getProjectId(conversationId: string, userId: string): Promise<string | null>
   loadChat(conversationId: string): Promise<UIMessage[]>
   saveChat(params: { conversationId: string; messages: UIMessage[] }): Promise<void>
   listConversations(userId: string, opts?: { limit?: number; offset?: number }): Promise<ConversationSummary[]>
@@ -43,6 +52,11 @@ export interface ChatStorage {
   updateSummary(conversationId: string, userId: string, fields: { title?: string | null; summary?: string | null }): Promise<void>
   /** Toggle the starred flag. No-op if the user doesn't own the conversation. */
   setStarred(conversationId: string, userId: string, starred: boolean): Promise<void>
+  /**
+   * Move the conversation into / out of a project. Pass null to clear
+   * (return to the ungrouped flat list).
+   */
+  updateProject(conversationId: string, userId: string, projectId: string | null): Promise<void>
 }
 
 /**
@@ -63,6 +77,7 @@ export function createD1ChatStorage(db: D1Database): ChatStorage {
         title: opts?.title || null,
         model: opts?.model || null,
         systemPrompt: opts?.systemPrompt || null,
+        projectId: opts?.projectId ?? null,
       })
       return id
     },
@@ -77,8 +92,18 @@ export function createD1ChatStorage(db: D1Database): ChatStorage {
           title: opts?.title || null,
           model: opts?.model || null,
           systemPrompt: opts?.systemPrompt || null,
+          projectId: opts?.projectId ?? null,
         })
         .onConflictDoNothing()
+    },
+
+    async getProjectId(conversationId, userId) {
+      const [row] = await d
+        .select({ projectId: conversations.projectId })
+        .from(conversations)
+        .where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)))
+        .limit(1)
+      return row?.projectId ?? null
     },
 
     async isOwner(conversationId, userId) {
@@ -182,6 +207,7 @@ export function createD1ChatStorage(db: D1Database): ChatStorage {
           title: conversations.title,
           summary: conversations.summary,
           starred: conversations.starred,
+          projectId: conversations.projectId,
           model: conversations.model,
           createdAt: conversations.createdAt,
           updatedAt: conversations.updatedAt,
@@ -199,6 +225,7 @@ export function createD1ChatStorage(db: D1Database): ChatStorage {
         title: r.title,
         summary: r.summary ?? null,
         starred: r.starred ?? 0,
+        projectId: r.projectId ?? null,
         model: r.model,
         createdAt: r.createdAt ? new Date(r.createdAt as unknown as number).toISOString() : new Date().toISOString(),
         updatedAt: r.updatedAt ? new Date(r.updatedAt as unknown as number).toISOString() : new Date().toISOString(),
@@ -233,6 +260,33 @@ export function createD1ChatStorage(db: D1Database): ChatStorage {
       await d
         .update(conversations)
         .set({ starred: starred ? 1 : 0 })
+        .where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)))
+    },
+
+    async updateProject(conversationId, userId, projectId) {
+      // Verify the target project belongs to this user before wiring the FK.
+      // Without this check, a malicious client could PATCH a conversation
+      // with another user's project UUID. The bad cross-user instructions
+      // still wouldn't be loaded (agent.loadProject() scopes by userId), but
+      // the conversation row would reference a project it can't display,
+      // corrupting the sidebar grouping and the project page's conversation
+      // count.
+      if (projectId !== null) {
+        const [owned] = await d
+          .select({ id: projects.id })
+          .from(projects)
+          .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
+          .limit(1)
+        if (!owned) {
+          // Silently no-op on invalid project — mirrors the "not found" feel
+          // of all other scoped endpoints without leaking whether the
+          // project exists under a different user.
+          return
+        }
+      }
+      await d
+        .update(conversations)
+        .set({ projectId })
         .where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)))
     },
   }

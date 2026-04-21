@@ -47,6 +47,25 @@ app.post('/transcribe', async (c) => {
     ).trim()
     return c.json({ text })
   } catch (err) {
+    // Deepgram Nova 3 throws on audio it can't transcribe — silent WAVs
+    // arrive as "AiError: 3030: ... failed to process audio: corrupt or
+    // unsupported data" (observed in prod logs on pure-silence samples).
+    // For a voice-narration feature, any "unusable audio" outcome should
+    // be an empty transcript rather than a 500 — callers already handle
+    // empty strings by not prepending anything to the textarea.
+    const msg = String(err).toLowerCase()
+    const benign =
+      msg.includes('no speech') ||
+      msg.includes('no audio') ||
+      msg.includes('no content') ||
+      msg.includes('silence') ||
+      msg.includes('too short') ||
+      msg.includes('failed to process audio') ||
+      msg.includes('corrupt or unsupported') ||
+      msg.includes('3030')
+    if (benign) {
+      return c.json({ text: '' })
+    }
     console.error(JSON.stringify({ event: 'audio_transcribe_failed', error: String(err) }))
     return c.json({ error: 'transcription failed' }, 500)
   }

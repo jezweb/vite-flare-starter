@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog'
+import { announceGlobalModalOpen, subscribeGlobalModal } from '@/client/lib/global-modals'
 
 interface Shortcut {
   keys: string
@@ -68,12 +69,19 @@ export function KeyboardShortcuts() {
       if (inInput) return
       if (e.key === '?') {
         e.preventDefault()
-        setOpen((prev) => !prev)
+        setOpen((prev) => {
+          const next = !prev
+          if (next) announceGlobalModalOpen('keyboard-shortcuts')
+          return next
+        })
       }
     }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
   }, [navigate])
+
+  // Close if any other global modal opens — one-at-a-time policy.
+  useEffect(() => subscribeGlobalModal('keyboard-shortcuts', () => setOpen(false)), [])
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

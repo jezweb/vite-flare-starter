@@ -12,9 +12,11 @@ import { Badge } from '@/components/ui/badge'
 import { useAdminFeatures, useToggleFeature, useSyncFeatures } from '@/client/hooks/useFeatures'
 import type { FeatureFlag } from '@/client/hooks/useFeatures'
 import { toast } from 'sonner'
-import { Flag, RefreshCw, Loader2 } from 'lucide-react'
+import { Flag, RefreshCw, Loader2, Lock, Check, X } from 'lucide-react'
 import * as LucideIcons from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import { features as buildTimeFeatures } from '@/shared/config/features'
+import { cn } from '@/lib/utils'
 
 const CATEGORY_INFO: Record<string, { label: string; description: string }> = {
   core: { label: 'Core Features', description: 'Essential application features' },
@@ -204,6 +206,47 @@ export function FeaturesTabContent() {
           </Card>
         )
       })}
+
+      {/* Deploy-time flags — read-only, source of truth is .dev.vars and
+          wrangler secrets at build time. Useful for verifying what the
+          deployed app actually sees vs what's in the DB-backed flags above. */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Lock className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-lg">Deploy-time flags</CardTitle>
+          </div>
+          <CardDescription>
+            Compiled in at build time from <code className="px-1 rounded bg-muted text-xs">VITE_FEATURE_*</code> env vars.
+            Read-only here — change them in <code className="px-1 rounded bg-muted text-xs">.dev.vars</code> (dev) or{' '}
+            <code className="px-1 rounded bg-muted text-xs">wrangler.jsonc</code> / secrets (prod) and redeploy.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-1">
+          {Object.entries(buildTimeFeatures).map(([key, enabled]) => (
+            <div
+              key={key}
+              className="flex items-center justify-between rounded-md px-3 py-2 hover:bg-muted/50"
+            >
+              <div className="flex items-center gap-3">
+                <code className="text-xs text-muted-foreground font-mono">
+                  VITE_FEATURE_{key.replace(/([A-Z])/g, '_$1').toUpperCase()}
+                </code>
+              </div>
+              <Badge
+                variant={enabled ? 'default' : 'outline'}
+                className={cn(
+                  'gap-1 font-mono text-xs',
+                  enabled ? 'bg-green-600/10 text-green-700 border-green-600/20 hover:bg-green-600/10 dark:text-green-400' : '',
+                )}
+              >
+                {enabled ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                {enabled ? 'enabled' : 'disabled'}
+              </Badge>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
 
       {/* Empty State */}
       {features?.length === 0 && (

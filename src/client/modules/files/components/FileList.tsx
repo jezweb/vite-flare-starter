@@ -180,6 +180,30 @@ export function FileList({ files, isLoading }: FileListProps) {
                   ) : (
                     <Lock className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                   )}
+                  {file.indexStatus === 'indexed' && (
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full bg-green-500/10 dark:bg-green-500/15 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:text-green-400 flex-shrink-0"
+                      title={`Indexed for semantic search (${file.indexChunks ?? 0} chunks)`}
+                    >
+                      Indexed
+                    </span>
+                  )}
+                  {file.indexStatus === 'pending' && (
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground flex-shrink-0"
+                      title="Indexing in progress — will be searchable shortly"
+                    >
+                      Indexing…
+                    </span>
+                  )}
+                  {file.indexStatus === 'failed' && (
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive flex-shrink-0"
+                      title={file.indexError ?? 'Indexing failed'}
+                    >
+                      Index failed
+                    </span>
+                  )}
                 </div>
                 <p className="text-sm text-muted-foreground">
                   {formatFileSize(file.size)} • {new Date(file.createdAt).toLocaleDateString()}

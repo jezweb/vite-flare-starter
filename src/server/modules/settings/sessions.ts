@@ -3,11 +3,33 @@ import { drizzle } from 'drizzle-orm/d1'
 import { eq, ne, and, desc } from 'drizzle-orm'
 import { UAParser } from 'ua-parser-js'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
+import { createAuth } from '@/server/modules/auth'
 import * as schema from '@/server/db/schema'
 
 const app = new Hono<AuthContext>()
 
 app.use('/*', authMiddleware)
+
+/**
+ * Resolve the current session token via better-auth's server API.
+ *
+ * Parsing the Cookie header directly doesn't work in production because
+ * better-auth uses the `__Secure-` prefix over HTTPS, and cookie values
+ * are signed (`{token}.{signature}`). Ask better-auth for the session
+ * object and use its session id instead — reliable on any deployment.
+ */
+async function getCurrentSessionId(c: any): Promise<string | null> {
+  const auth = createAuth(c.env.DB, {
+    BETTER_AUTH_SECRET: c.env.BETTER_AUTH_SECRET,
+    BETTER_AUTH_URL: c.env.BETTER_AUTH_URL,
+    GOOGLE_CLIENT_ID: c.env.GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET: c.env.GOOGLE_CLIENT_SECRET,
+    EMAIL_API_KEY: c.env.EMAIL_API_KEY,
+    EMAIL_FROM: c.env.EMAIL_FROM,
+  })
+  const session = await auth.api.getSession({ headers: c.req.raw.headers })
+  return session?.session?.id ?? null
+}
 
 interface SessionInfo {
   id: string
@@ -52,10 +74,7 @@ app.get('/', async (c) => {
   const userId = c.get('userId')
   const db = drizzle(c.env.DB, { schema })
 
-  // Get current session token from cookie
-  const cookies = c.req.header('Cookie') || ''
-  const sessionTokenMatch = cookies.match(/better-auth\.session_token=([^;]+)/)
-  const currentSessionToken = sessionTokenMatch?.[1]
+  const currentSessionId = await getCurrentSessionId(c)
 
   // Fetch all sessions for user
   const sessions = await db
@@ -78,7 +97,7 @@ app.get('/', async (c) => {
         ipAddress: session.ipAddress,
         lastActive: session.updatedAt.getTime(),
         createdAt: session.createdAt.getTime(),
-        isCurrent: session.token === currentSessionToken,
+        isCurrent: session.id === currentSessionId,
       }
     })
 
@@ -94,10 +113,7 @@ app.delete('/:id', async (c) => {
   const sessionId = c.req.param('id')
   const db = drizzle(c.env.DB, { schema })
 
-  // Get current session token
-  const cookies = c.req.header('Cookie') || ''
-  const sessionTokenMatch = cookies.match(/better-auth\.session_token=([^;]+)/)
-  const currentSessionToken = sessionTokenMatch?.[1]
+  const currentSessionId = await getCurrentSessionId(c)
 
   // Find the session to delete
   const targetSession = await db
@@ -111,7 +127,7 @@ app.delete('/:id', async (c) => {
   }
 
   // Prevent revoking current session via this endpoint
-  if (targetSession.token === currentSessionToken) {
+  if (targetSession.id === currentSessionId) {
     return c.json({ error: 'Cannot revoke current session. Use sign out instead.' }, 400)
   }
 
@@ -129,19 +145,16 @@ app.delete('/', async (c) => {
   const userId = c.get('userId')
   const db = drizzle(c.env.DB, { schema })
 
-  // Get current session token
-  const cookies = c.req.header('Cookie') || ''
-  const sessionTokenMatch = cookies.match(/better-auth\.session_token=([^;]+)/)
-  const currentSessionToken = sessionTokenMatch?.[1]
+  const currentSessionId = await getCurrentSessionId(c)
 
-  if (!currentSessionToken) {
+  if (!currentSessionId) {
     return c.json({ error: 'Current session not found' }, 400)
   }
 
   // Delete all sessions except current
   await db
     .delete(schema.session)
-    .where(and(eq(schema.session.userId, userId), ne(schema.session.token, currentSessionToken)))
+    .where(and(eq(schema.session.userId, userId), ne(schema.session.id, currentSessionId)))
 
   return c.json({
     success: true,
