@@ -11,8 +11,8 @@
  *
  * The UI automatically shows/hides email form based on server config.
  */
-import { useState, useEffect, FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useEffect, useMemo, FormEvent } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { authClient } from '@/client/lib/auth'
 import { Button } from '@/components/ui/button'
 import {
@@ -37,7 +37,28 @@ interface AuthConfig {
   googleEnabled: boolean
 }
 
+/**
+ * Resolve the post-login destination from ?next=. Validates that the
+ * target is a same-origin dashboard path — blocks open-redirects to
+ * external URLs or to root/auth routes that'd loop. Defaults to /dashboard.
+ */
+function resolveNextUrl(raw: string | null): string {
+  if (!raw) return '/dashboard'
+  try {
+    const decoded = decodeURIComponent(raw)
+    // Must be an absolute path starting with /dashboard (no protocol, no host)
+    if (!decoded.startsWith('/dashboard')) return '/dashboard'
+    // Block URLs that'd loop back to sign-in
+    if (decoded.includes('/sign-in') || decoded.includes('/login')) return '/dashboard'
+    return decoded
+  } catch {
+    return '/dashboard'
+  }
+}
+
 export function SignInPage() {
+  const [searchParams] = useSearchParams()
+  const nextUrl = useMemo(() => resolveNextUrl(searchParams.get('next')), [searchParams])
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -47,9 +68,13 @@ export function SignInPage() {
   const [authConfig, setAuthConfig] = useState<AuthConfig | null>(null)
   const [configLoading, setConfigLoading] = useState(true)
 
-  // Fetch auth config on mount
+  // Fetch auth config on mount — with a 5s timeout so a slow/stuck server
+  // doesn't leave the page on skeletons forever. Falls back to "show all"
+  // on both timeout and fetch error.
   useEffect(() => {
-    fetch('/api/auth/config')
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 5000)
+    fetch('/api/auth/config', { signal: controller.signal })
       .then((res) => {
         if (!res.ok) throw new Error('Config fetch failed')
         return res.json()
@@ -59,10 +84,14 @@ export function SignInPage() {
         setConfigLoading(false)
       })
       .catch(() => {
-        // Default to showing all options if config fails
         setAuthConfig({ emailLoginEnabled: true, emailSignupEnabled: true, googleEnabled: true })
         setConfigLoading(false)
       })
+      .finally(() => clearTimeout(timeout))
+    return () => {
+      clearTimeout(timeout)
+      controller.abort()
+    }
   }, [])
 
   const handleSubmit = async (e: FormEvent) => {
@@ -78,7 +107,7 @@ export function SignInPage() {
 
       // Full page reload so useSession() picks up the new auth cookie.
       // navigate() does a client-side transition that doesn't re-read cookies.
-      window.location.href = '/dashboard'
+      window.location.href = nextUrl
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to sign in')
     } finally {
@@ -91,7 +120,7 @@ export function SignInPage() {
     try {
       await authClient.signIn.social({
         provider: 'google',
-        callbackURL: '/dashboard',
+        callbackURL: nextUrl,
       })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to sign in with Google')

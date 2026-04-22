@@ -84,17 +84,27 @@ export function AdminPage() {
             <CardTitle>Access Denied</CardTitle>
           </div>
           <CardDescription>
-            You don't have permission to access the admin panel.
-            Contact an administrator if you believe this is an error.
+            You don't have permission to access the admin panel. Only users
+            with the admin role can manage users and feature flags. If you
+            believe this is an error, ask the site administrator to grant
+            you admin access — they can do this by adding your email to
+            the <code className="font-mono text-xs">ADMIN_EMAILS</code> env
+            var on the Worker.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
           <Button asChild variant="outline">
             <Link to="/dashboard">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Dashboard
+              Back to dashboard
             </Link>
           </Button>
+          <p className="text-xs text-muted-foreground">
+            Not on the right account?{' '}
+            <Link to="/sign-in" className="underline underline-offset-2 hover:text-foreground">
+              Switch accounts
+            </Link>
+          </p>
         </CardContent>
       </Card>
     )

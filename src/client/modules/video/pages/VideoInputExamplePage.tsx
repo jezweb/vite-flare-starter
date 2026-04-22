@@ -108,7 +108,26 @@ export function VideoInputExamplePage() {
       setTimeout(() => void sampleAndSend(), 500)
       sampleTimer.current = setInterval(() => void sampleAndSend(), SAMPLE_INTERVAL_MS)
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      // Translate DOMException error names into actionable guidance so
+      // the user knows whether to fix permissions, plug in a camera, or
+      // try again.
+      if (err instanceof Error) {
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          setError(
+            "Camera access denied. Grant permission in your browser's site settings, then click Start again.",
+          )
+        } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+          setError('No camera found. Connect a camera or use a device with one.')
+        } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+          setError('Camera is in use by another application. Close other apps that might be using it.')
+        } else if (err.name === 'OverconstrainedError') {
+          setError('No camera matching the requested settings. Try a different device.')
+        } else {
+          setError(err.message || String(err))
+        }
+      } else {
+        setError(String(err))
+      }
     }
   }
 

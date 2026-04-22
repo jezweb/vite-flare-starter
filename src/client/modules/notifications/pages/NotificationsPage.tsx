@@ -75,8 +75,12 @@ export function NotificationsPage() {
 
       <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
         <TabsList>
-          <TabsTrigger value="all">All{data ? ` (${data.count})` : ''}</TabsTrigger>
-          <TabsTrigger value="unread">Unread{unreadCount > 0 ? ` (${unreadCount})` : ''}</TabsTrigger>
+          {/* Show an em-dash placeholder while counts are loading so the
+              tab width doesn't shift on first paint. */}
+          <TabsTrigger value="all">All ({data ? data.count : '—'})</TabsTrigger>
+          <TabsTrigger value="unread">
+            Unread ({data ? unreadCount : '—'})
+          </TabsTrigger>
         </TabsList>
       </Tabs>
 

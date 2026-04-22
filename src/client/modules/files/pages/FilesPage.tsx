@@ -129,7 +129,7 @@ export function FilesPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <FileList files={files} isLoading={isLoading} />
+          <FileList files={files} isLoading={isLoading} folder={currentFolder} />
         </CardContent>
       </Card>
     </div>

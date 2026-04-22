@@ -11,6 +11,16 @@ import { Upload, Code2 as GithubIcon, RefreshCw, Trash2, Eye, FileText, ChevronD
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
@@ -38,6 +48,7 @@ export function SkillsPage() {
 
   const [installOpen, setInstallOpen] = useState(false)
   const [uploadOpen, setUploadOpen] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const [previewName, setPreviewName] = useState<string | null>(null)
   const [githubUrl, setGithubUrl] = useState('')
   const [inlineContent, setInlineContent] = useState('')
@@ -132,11 +143,7 @@ export function SkillsPage() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => {
-                        if (confirm(`Delete skill "${s.name}"? This removes it from the registry and R2.`)) {
-                          remove.mutate(s.name)
-                        }
-                      }}
+                      onClick={() => setDeleteTarget(s.name)}
                       aria-label="Delete"
                     >
                       <Trash2 className="size-4 text-destructive" />
@@ -260,6 +267,32 @@ export function SkillsPage() {
 
       {/* Preview dialog */}
       <SkillPreviewDialog name={previewName} onClose={() => setPreviewName(null)} />
+
+      {/* Delete confirmation — replaces a native confirm() dialog */}
+      <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete skill "{deleteTarget}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes the skill from the registry and R2. Existing conversations
+              that used it won't be affected, but you won't be able to activate it
+              in new chats. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteTarget) remove.mutate(deleteTarget)
+                setDeleteTarget(null)
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

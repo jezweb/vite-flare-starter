@@ -88,10 +88,12 @@ const ACCEPT_ALL = [
 function greetingForTime(name: string | undefined): string {
   const hour = new Date().getHours()
   const who = name ? `, ${name}` : ''
-  if (hour < 5) return `Good evening${who}`
+  // 0-4 night · 5-11 morning · 12-16 afternoon · 17-20 evening · 21-23 night
+  if (hour < 5) return `Good night${who}`
   if (hour < 12) return `Good morning${who}`
-  if (hour < 18) return `Good afternoon${who}`
-  return `Good evening${who}`
+  if (hour < 17) return `Good afternoon${who}`
+  if (hour < 21) return `Good evening${who}`
+  return `Good night${who}`
 }
 
 export function ChatPage() {
@@ -884,10 +886,28 @@ export function ChatPage() {
                   </p>
                 </div>
                 <div className="flex items-center justify-center gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      navigate('/dashboard/chat')
+                      setShowSidebar(true)
+                    }}
+                  >
+                    <MessagesSquare className="mr-2 h-4 w-4" />
+                    Browse conversations
+                  </Button>
                   <Button onClick={() => navigate('/dashboard/chat')}>
                     <Plus className="mr-2 h-4 w-4" />
                     Start a new chat
                   </Button>
+                </div>
+                <div className="pt-2">
+                  <RouterLink
+                    to="/dashboard"
+                    className="text-xs text-muted-foreground hover:text-foreground hover:underline underline-offset-2"
+                  >
+                    Back to dashboard
+                  </RouterLink>
                 </div>
               </div>
             </div>

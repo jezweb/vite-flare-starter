@@ -48,6 +48,12 @@ import { toast } from 'sonner'
 interface FileListProps {
   files: FileItem[]
   isLoading?: boolean
+  /**
+   * Current folder filter label, used to shape the empty-state copy.
+   * 'all' | '/' (root) | a specific folder name. When set to a specific
+   * folder, the empty state clarifies the filter is narrowing the view.
+   */
+  folder?: string
 }
 
 const iconMap = {
@@ -58,7 +64,7 @@ const iconMap = {
   file: FileIcon,
 }
 
-export function FileList({ files, isLoading }: FileListProps) {
+export function FileList({ files, isLoading, folder }: FileListProps) {
   const [deleteTarget, setDeleteTarget] = useState<FileItem | null>(null)
   const [editTarget, setEditTarget] = useState<FileItem | null>(null)
   const [editName, setEditName] = useState('')
@@ -136,11 +142,19 @@ export function FileList({ files, isLoading }: FileListProps) {
   }
 
   if (files.length === 0) {
+    const isFiltered = !!folder && folder !== 'all'
+    const folderLabel = folder === '/' ? 'the root folder' : `"${folder}"`
     return (
       <div className="text-center py-12 text-muted-foreground">
         <FileIcon className="mx-auto h-12 w-12 mb-4 opacity-50" />
-        <p className="text-lg font-medium">No files yet</p>
-        <p className="text-sm">Upload your first file to get started</p>
+        <p className="text-lg font-medium">
+          {isFiltered ? `No files in ${folderLabel}` : 'No files yet'}
+        </p>
+        <p className="text-sm">
+          {isFiltered
+            ? 'Try a different folder, or upload a file here.'
+            : 'Upload your first file to get started.'}
+        </p>
       </div>
     )
   }

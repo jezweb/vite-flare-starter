@@ -734,10 +734,10 @@ function AudioRecorderChunkDemo() {
           setChunkCount((n) => n + 1)
           setTotalBytes((b) => b + chunk.size)
         }}
-        onRecordingComplete={(blob, ms) => {
+        onRecordingComplete={(_blob, ms) => {
+          // Demo page: we just track the duration. A real consumer would
+          // keep the blob for archive / upload / transcription.
           setLastDuration(ms)
-          // In production you'd keep the blob for archive; we just log size.
-          console.log(`Final blob: ${blob.size} bytes, ${ms}ms`)
         }}
       />
       <div className="text-xs text-muted-foreground font-mono tabular-nums">

@@ -59,22 +59,50 @@ const DETAIL_FIELD_MASK = [
   'reviews',
 ].join(',')
 
-interface NormalisedPlace {
-  placeId: string
-  name: string
-  address?: string
-  phone?: string
-  website?: string
-  googleMapsUrl?: string
-  lat?: number
-  lng?: number
-  rating?: number
-  reviewCount?: number
-  priceLevel?: string
-  type?: string
-  types?: string[]
-  status?: string
-}
+const NormalisedPlaceSchema = z.object({
+  placeId: z.string(),
+  name: z.string(),
+  address: z.string().optional(),
+  phone: z.string().optional(),
+  website: z.string().optional(),
+  googleMapsUrl: z.string().optional(),
+  lat: z.number().optional(),
+  lng: z.number().optional(),
+  rating: z.number().optional(),
+  reviewCount: z.number().optional(),
+  priceLevel: z.string().optional(),
+  type: z.string().optional(),
+  types: z.array(z.string()).optional(),
+  status: z.string().optional(),
+})
+
+export type NormalisedPlace = z.infer<typeof NormalisedPlaceSchema>
+
+const PlacesSearchOutput = z.union([
+  z.object({ count: z.number(), places: z.array(NormalisedPlaceSchema) }),
+  z.object({ error: z.string() }),
+])
+export type PlacesSearchOutput = z.infer<typeof PlacesSearchOutput>
+
+const PlaceDetailsOutput = z.union([
+  NormalisedPlaceSchema.extend({
+    hours: z.object({
+      openNow: z.boolean().optional(),
+      weekdayDescriptions: z.array(z.string()).optional(),
+    }).optional(),
+    reviews: z.array(
+      z.object({
+        author: z.string().optional(),
+        rating: z.number().optional(),
+        text: z.string().optional(),
+        time: z.string().optional(),
+      }),
+    ).optional(),
+    editorialSummary: z.string().optional(),
+  }),
+  z.object({ error: z.string() }),
+])
+export type PlaceDetailsOutput = z.infer<typeof PlaceDetailsOutput>
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function normalise(place: any): NormalisedPlace {
@@ -194,7 +222,7 @@ export const placesSearchDefinition: ToolDefinition<
     type?: string
     region?: string
   },
-  unknown
+  PlacesSearchOutput
 > = {
   name: 'places_search',
   description:
@@ -212,7 +240,7 @@ export const placesSearchDefinition: ToolDefinition<
     type: z.string().optional().describe('Filter by Google place type (e.g. "restaurant", "car_repair")'),
     region: z.string().optional().describe('ISO country code for region bias (default "AU")'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: PlacesSearchOutput,
   isAvailable: (ctx) => !!getPlacesEnv(ctx).GOOGLE_PLACES_API_KEY,
   execute: async (args, ctx) => {
     const apiKey = getPlacesEnv(ctx).GOOGLE_PLACES_API_KEY!
@@ -235,14 +263,14 @@ export const placesSearchDefinition: ToolDefinition<
     icon: MapPin,
     displayName: 'Places Search',
     summary: (output) => {
-      const o = output as { count?: number; error?: string } | undefined
-      if (!o || o.error) return null
-      return `${o.count ?? 0} places`
+      if (!output) return null
+      if ('error' in output) return 'failed'
+      return `${output.count} ${output.count === 1 ? 'place' : 'places'}`
     },
   },
 }
 
-export const placesDetailsDefinition: ToolDefinition<{ place_id: string }, unknown> = {
+export const placesDetailsDefinition: ToolDefinition<{ place_id: string }, PlaceDetailsOutput> = {
   name: 'places_details',
   description:
     'Get full details for a specific place — opening hours, reviews, editorial summary, full address. ' +
@@ -250,7 +278,7 @@ export const placesDetailsDefinition: ToolDefinition<{ place_id: string }, unkno
   inputSchema: z.object({
     place_id: z.string().describe('Google Place ID (from places_search results)'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: PlaceDetailsOutput,
   isAvailable: (ctx) => !!getPlacesEnv(ctx).GOOGLE_PLACES_API_KEY,
   execute: async (args, ctx) => {
     const apiKey = getPlacesEnv(ctx).GOOGLE_PLACES_API_KEY!
