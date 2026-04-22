@@ -376,6 +376,88 @@ await rebuildFTSIndex(db, 'conversation_messages_fts')
 
 **Reference:** `src/server/lib/search/fts.ts`, wired in `src/server/modules/conversations/routes.ts` (`GET /search`)
 
+### Pattern 10: Durable Object Agent (voice / streaming WS)
+
+For features that need a persistent stateful connection per-session — voice capture, live collaboration, multiplayer, real-time dashboards — use a Durable Object wired via the `agents` SDK.
+
+Four pieces to get right:
+
+```typescript
+// 1. Define the DO class — extend Agent (or a mixin like withVoiceInput)
+// src/server/modules/voice/voice-agent.ts
+import { Agent, type Connection, type ConnectionContext } from 'agents'
+import { withVoiceInput, WorkersAINova3STT } from '@cloudflare/voice'
+
+const InputAgent = withVoiceInput(Agent)
+
+export class VoiceInputExample extends InputAgent<any> {
+  transcriber = new WorkersAINova3STT((this.env as { AI: Ai }).AI)
+
+  async onConnect(conn: Connection, _ctx: ConnectionContext) {
+    conn.send(JSON.stringify({ type: 'welcome' }))
+  }
+
+  async onTranscript(text: string, _conn: Connection) {
+    this.broadcast(JSON.stringify({ type: 'utterance', text }))
+  }
+}
+```
+
+```typescript
+// 2. Re-export from Worker entry + wrap fetch with routeAgentRequest
+// src/server/index.ts
+import { routeAgentRequest } from 'agents'
+export { VoiceInputExample } from './modules/voice/voice-agent'
+
+export default {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
+    const agentResponse = await routeAgentRequest(request, env)
+    if (agentResponse) return agentResponse
+    return app.fetch(request, env, ctx)
+  },
+}
+```
+
+```jsonc
+// 3. wrangler.jsonc — DO binding + SQLite migration + /agents/* routing
+{
+  "assets": {
+    "run_worker_first": ["/api/*", "/agents/*"]
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "VoiceInputExample", "class_name": "VoiceInputExample" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["VoiceInputExample"] }
+  ]
+}
+```
+
+```tsx
+// 4. Client: use the hook, set instance name = your session id
+// src/client/modules/voice/pages/VoiceInputExamplePage.tsx
+import { useVoiceInput } from '@cloudflare/voice/react'
+
+const { transcript, interimTranscript, audioLevel, start, stop, toggleMute } =
+  useVoiceInput({ agent: 'VoiceInputExample', name: sessionId })
+```
+
+**Gotchas that cost 30 min if missed:**
+
+| Gotcha | Symptom |
+|---|---|
+| Forgot to add `/agents/*` to `run_worker_first` | WS requests hit static assets → 404, DO never touched |
+| Forgot to `export { VoiceInputExample }` from Worker entry | `wrangler deploy` errors "Durable Object class not found" |
+| Class in bindings but missing from `migrations.new_sqlite_classes` | Deploy ok, but first request errors "DO storage not provisioned" |
+| `useVoiceInput` hook `isListening` stays false during recording | Not a bug — it flips true only once real audio is flowing. Use your own local phase state for the status label. |
+| Browser WS URL wrong | Path is `/agents/{kebab-case-class-name}/{instance-name}` — the SDK auto-converts the `agent:` prop to kebab-case |
+
+**When to use this over polling or a Hono endpoint:** anything that needs >1 message/sec, server→client push, or per-session CPU state. For plain REST CRUD or infrequent updates, Hono + TanStack Query is simpler.
+
+**Reference:** `src/server/modules/voice/voice-agent.ts` + `src/client/modules/voice/pages/VoiceInputExamplePage.tsx`. Gated by `voiceAgent` feature flag (default OFF — set `VITE_FEATURE_VOICE_AGENT=true` to enable the nav item). The DO itself is always compiled so the pattern works as a pure code reference even when disabled.
+
 ---
 
 ## UI Patterns
@@ -424,13 +506,8 @@ The starter uses D1, R2, and Workers AI. Here's when to reach for other Cloudfla
 
 ### Add When You Need It
 
-**Durable Objects** — stateful agents, WebSocket sessions, per-user state
-```jsonc
-// wrangler.jsonc
-"durable_objects": {
-  "bindings": [{ "name": "AGENT", "class_name": "AgentDO" }]
-}
-```
+**Durable Objects** — stateful agents, WebSocket sessions, per-user state. **Already scaffolded** via the `VoiceInputExample` reference (enable with `VITE_FEATURE_VOICE_AGENT=true`). See "Pattern 10: Durable Object Agent" above for the full wiring — the scaffold saves you getting the 4 pieces (binding, migration, fetch-handler, Worker-entry export) aligned the first time.
+
 Use for: AI agent conversation loops, real-time collaboration, scheduled tasks via DO.alarm(), WebSocket hibernation (80-95% cost reduction). Every AI assistant project (Apollo, Athena, Claq, l2chat) uses this pattern.
 
 **Queues** — async job processing

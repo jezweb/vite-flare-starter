@@ -45,6 +45,13 @@ export const features = {
   /** MCP Connectors — per-user OAuth/bearer connections to external MCP servers */
   connectors: isEnabled('VITE_FEATURE_CONNECTORS'),
 
+  /**
+   * Voice agent example page (@cloudflare/voice + agents SDK).
+   * Default OFF — opt-in by setting VITE_FEATURE_VOICE_AGENT=true.
+   * This demo shows the pattern; not every fork needs a voice UI.
+   */
+  voiceAgent: import.meta.env['VITE_FEATURE_VOICE_AGENT'] === 'true',
+
   // ── UI Features ────────────────────────────────────────────────────────
 
   /** Theme/colour picker in preferences */
