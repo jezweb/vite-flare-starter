@@ -60,6 +60,9 @@ Pick the next AVAILABLE task in ID order. Mark it in-progress in your iteration 
 
 *(Append entries here. Newest at top.)*
 
+### Bail — 2026-04-22T20:11Z
+Bailed — past 2am local (20:11 UTC > 16:00 UTC cutoff) and no tasks left.
+
 ### Bail — 2026-04-22T19:04Z
 Bailed — past 2am local (19:04 UTC > 16:00 UTC cutoff) and no tasks left.
 
