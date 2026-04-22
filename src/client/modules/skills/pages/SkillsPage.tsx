@@ -103,14 +103,41 @@ export function SkillsPage() {
       </p>
 
       {isLoading ? (
-        <Card><CardContent className="py-12 text-center text-muted-foreground">Loading…</CardContent></Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Skeleton cards match the grid layout below so the perceived
+              delay is smoother than a centered "Loading…" message. */}
+          {[0, 1, 2].map((i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader className="pb-3">
+                <div className="h-4 w-24 bg-muted rounded" />
+                <div className="h-3 w-full bg-muted/50 rounded mt-3" />
+                <div className="h-3 w-4/5 bg-muted/50 rounded mt-1" />
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="h-8 w-16 bg-muted rounded" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       ) : skills.length === 0 ? (
         <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">No skills yet.</p>
-            <p className="text-sm text-muted-foreground mt-2">
-              Install one from GitHub or upload a SKILL.md / zip to get started.
-            </p>
+          <CardContent className="py-12 text-center space-y-4">
+            <div>
+              <p className="text-muted-foreground">No skills yet.</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Install one from GitHub or upload a SKILL.md / zip to get started.
+              </p>
+            </div>
+            <div className="flex items-center justify-center gap-2">
+              <Button onClick={() => setUploadOpen(true)}>
+                <Upload className="mr-2 h-4 w-4" />
+                Add skill
+              </Button>
+              <Button variant="outline" onClick={() => setInstallOpen(true)}>
+                <GithubIcon className="mr-2 h-4 w-4" />
+                Install from GitHub
+              </Button>
+            </div>
           </CardContent>
         </Card>
       ) : (
