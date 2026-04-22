@@ -374,3 +374,12 @@
 .tiptap table .selectedCell {
   background-color: var(--accent);
 }
+
+/* Subtle placeholders — bright placeholders look like real content and
+   confuse the eye, especially in dark mode. Kept at 40% so the hint is
+   legible but never mistaken for a filled-in value. */
+::placeholder,
+::-webkit-input-placeholder {
+  color: color-mix(in oklch, var(--muted-foreground), transparent 60%);
+  opacity: 1;
+}

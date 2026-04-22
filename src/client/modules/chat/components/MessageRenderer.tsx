@@ -18,6 +18,7 @@ import { ArtifactViewer, isArtifact } from './chat-ui/ArtifactViewer'
 import { DocumentDownload, isDocument } from './chat-ui/DocumentDownload'
 import { WebSearchResults, isWebSearchOutput } from './chat-ui/WebSearchResults'
 import { AttachedFileBlock, parseAttachedFile } from './AttachedFileBlock'
+import { SkillActivationBlock, parseSkillActivation } from './SkillActivationBlock'
 import { extractUIResources, ToolUIResource } from './ToolUIResource'
 import { ToolApproval } from './chat-ui/ToolApproval'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -315,6 +316,14 @@ function MessageBody({
           const attached = parseAttachedFile(text)
           if (attached) {
             return <AttachedFileBlock key={i} parsed={attached} />
+          }
+          // Detect a slash-command skill activation: the text starts with
+          // `<skill_content name="..." ...>…</skill_content>` followed by the
+          // user's actual question. Collapse the wrapper into a small pill
+          // so the user's bubble doesn't become a 3-screen wall of markdown.
+          const skillActivation = parseSkillActivation(text)
+          if (skillActivation) {
+            return <SkillActivationBlock key={i} {...skillActivation} />
           }
           return (
             <MessageResponse key={i}>

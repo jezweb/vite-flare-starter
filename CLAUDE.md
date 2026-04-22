@@ -230,6 +230,9 @@ return createAgentUIStreamResponse({
 // Uses refs for model/systemPrompt/conversationId to avoid stale-closure bugs
 // when switching models in the UI. The transport is memoised once; refs update
 // on each render so prepareSendMessagesRequest always reads the latest values.
+// initialMessages is frozen at mount — later changes from useConversationMessages
+// are adopted via setMessages only when chat.messages is empty, so a URL
+// transition from /chat to /chat/:id never clobbers in-flight streaming state.
 import { useChat } from '@/client/modules/chat/hooks/useChat'
 const { messages, sendMessage, isLoading, conversationId, addToolApprovalResponse } = useChat({
   model: 'anthropic/claude-sonnet-4.6',  // or any id from src/shared/config/models.ts
@@ -239,6 +242,8 @@ sendMessage({ text: 'Hello' })
 ```
 
 **Reference:** `src/server/lib/ai/agent.ts` (agent factory), `src/server/modules/chat/routes.ts` (streaming endpoint)
+
+**Gotcha (fixed 2026-04-22):** Do NOT pass a reactive `initialMessages` prop directly to `useAIChat` — the SDK treats the prop as a re-seed signal. When `useConversationMessages(urlConversationId)` resolves after the URL transitions from `/chat` to `/chat/:id`, it clobbers in-flight streaming state and the transcript goes blank until reload. The `useChat` wrapper in this repo freezes `initialMessages` at mount and only adopts later loads via `chat.setMessages` when `chat.messages.length === 0`.
 
 ### Pattern 4b: Conversation Persistence
 
@@ -303,6 +308,10 @@ const result = streamText({
 ```
 
 **Install:** `pnpm add @ai-sdk/mcp`
+
+**Per-user MCP connectors (Phase 5):** `src/server/modules/mcp-connections/` exposes a catalogue + OAuth (PKCE + DCR) + bearer fallback. Connections live in D1 (`user_mcp_connections`), tokens AES-GCM encrypted at rest via `TOKEN_ENCRYPTION_KEY`. Per-tool policies (always/ask/never) in `user_mcp_tool_policies`. The chat agent loads user connections via `getUserMcpTools(env, userId)` in `src/server/lib/ai/user-mcp.ts`.
+
+**OAuth redirect gotcha (fixed 2026-04-22):** Never use `window.open(authorizationUrl)` for the provider redirect — Chrome silently blocks popups fired inside React dialog event chains (the user-gesture chain is lost when the dialog defers). Always use `window.location.href = authorizationUrl` for the initial hand-off. The OAuth callback page closes itself and `window.opener.postMessage` is still available if you need to message the parent tab on return. A `POST /api/mcp-connections/:id/authorize` endpoint re-issues a fresh `authorizationUrl` for pending connections so users can retry if the flow is interrupted.
 
 ### Pattern 7: R2 File Upload
 
@@ -531,7 +540,7 @@ The chat module ships with a **modular agent toolkit** in `src/server/modules/ch
 |--------|-------|-----------------|
 | **core** | `get_server_time`, `get_model_info`, `calculate` | Yes |
 | **memory** | `remember`, `recall`, `search_memory`, `forget` | Yes (uses user_meta D1 table) |
-| **ui** | `offer_choices`, `show_alert`, `show_contact`, `collect_info`, `ask_questions`, `show_data_table`, `show_metric_cards`, `show_timeline`, `show_progress`, `show_comparison`, `confirm_action` | Yes (rendered as inline React components) |
+| **ui** | `offer_choices`, `show_alert`, `show_contact`, `collect_info`, `ask_questions`, `show_data_table`, `show_metric_cards`, `show_timeline`, `show_progress`, `show_comparison`, `confirm_action`, `show_map` | Yes (rendered as inline React components) |
 | **skills** | `load_skill` | Yes |
 | **code** | `run_python`, `run_shell`, `run_js` | Yes (returns setup msg if SANDBOX missing) |
 | **delegate** | `delegate` | Yes (subagent pattern) |
@@ -539,6 +548,7 @@ The chat module ships with a **modular agent toolkit** in `src/server/modules/ch
 | **todo** | `todo_add`, `todo_update`, `todo_list`, `todo_clear` | Yes (Hermes-style session task list, persisted via user_meta) |
 | **browser** | `browser_markdown`, `browser_extract`, `browser_screenshot`, `browser_links`, `browser_content` | Only if `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_API_TOKEN` set |
 | **search** | `web_search` | Only if a provider key is set |
+| **places** | `places_search`, `places_details` | Only if `GOOGLE_PLACES_API_KEY` set |
 | **files** | `fs_list`, `fs_read`, `fs_write`, `fs_delete` | Only if `FILES` R2 bucket bound |
 
 **Adding a new tool**: create a new file in `tools/`, export a `buildXxxTools(ctx)` function, add to `tools/index.ts` aggregator. Use existing tools as reference.
@@ -548,6 +558,12 @@ The chat module ships with a **modular agent toolkit** in `src/server/modules/ch
 Use Cloudflare Browser Rendering's REST API directly — no Puppeteer/Playwright. Set up an API token at https://dash.cloudflare.com/profile/api-tokens with "Browser Rendering - Edit" permission, then set `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`.
 
 `browser_extract` is particularly powerful — uses the `/json` endpoint which runs Workers AI extraction natively, so you can pass natural-language prompts like "Extract product name, price, availability".
+
+### Places tools (Google Places API)
+
+`places_search` and `places_details` use the Google Places API (New). Set `GOOGLE_PLACES_API_KEY` (create one at https://console.cloud.google.com → enable "Places API (New)", restrict to your Worker routes in production).
+
+The agent is auto-nudged via the system prompt to pair `places_search` with the `show_map` UI tool — so local-business queries render as a Leaflet map + scrollable card list (like claude.ai's map answers) instead of a wall of text. Same nudge fires if an MCP server exposes a tool named `google_local_places`, so you can swap to an MCP without touching the prompt.
 
 ### Search providers
 

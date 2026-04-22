@@ -396,6 +396,103 @@ adminRoutes.post('/users/:id/revoke', async (c) => {
   return c.json({ success: true, message: 'All sessions revoked' })
 })
 
+/**
+ * POST /migrate-file-prefix — move legacy `files/<userId>/…` keys to
+ * `users/<userId>/uploads/…` and update D1 records. Idempotent: skips
+ * anything already on the new prefix. Returns a summary.
+ *
+ * Call this once per fork that had uploads before the 2026-04-20 refactor.
+ * New forks can ignore — new uploads already land on the right prefix.
+ */
+adminRoutes.post('/migrate-file-prefix', async (c) => {
+  const bucket = c.env.FILES as R2Bucket | undefined
+  if (!bucket) return c.json({ error: 'FILES bucket not bound' }, 501)
+  const db = drizzle(c.env.DB, { schema })
+
+  const rows = await db.select({
+    id: schema.files.id,
+    userId: schema.files.userId,
+    key: schema.files.key,
+  }).from(schema.files)
+
+  let migrated = 0, skipped = 0, errors = 0
+  const failures: Array<{ key: string; error: string }> = []
+
+  for (const row of rows) {
+    if (!row.key.startsWith('files/')) { skipped++; continue }
+    const newKey = row.key.replace(/^files\//, 'users/').replace(`${row.userId}/`, `${row.userId}/uploads/`)
+    try {
+      const obj = await bucket.get(row.key)
+      if (!obj) { skipped++; continue } // orphaned D1 row — nothing to move
+      const body = await obj.arrayBuffer()
+      await bucket.put(newKey, body, { httpMetadata: obj.httpMetadata, customMetadata: obj.customMetadata })
+      await db.update(schema.files).set({ key: newKey }).where(eq(schema.files.id, row.id))
+      await bucket.delete(row.key)
+      migrated++
+    } catch (err) {
+      errors++
+      failures.push({ key: row.key, error: err instanceof Error ? err.message : String(err) })
+    }
+  }
+
+  return c.json({ migrated, skipped, errors, total: rows.length, failures })
+})
+
+/**
+ * POST /invites — send an invite email to a prospective user.
+ *
+ * This doesn't create a user row (better-auth does that on first sign-in).
+ * Just fires the `invite` template with a sign-up URL the invitee can use.
+ * Send history is visible in the admin email-log view.
+ */
+adminRoutes.post('/invites', zValidator('json', (await import('zod')).z.object({
+  email: (await import('zod')).z.string().email(),
+  organizationName: (await import('zod')).z.string().min(1).max(100).optional(),
+  message: (await import('zod')).z.string().max(1000).optional(),
+})), async (c) => {
+  const input = c.req.valid('json')
+  const currentUser = c.get('user')
+  const env = c.env as unknown as Record<string, unknown>
+  const { sendEmail } = await import('@/server/modules/email/service')
+
+  const appUrl = (env['APP_URL'] as string | undefined) || (env['BETTER_AUTH_URL'] as string | undefined) || ''
+  const appName = (env['APP_NAME'] as string | undefined) || 'App'
+  const signUpUrl = `${appUrl}/sign-up?invite=${encodeURIComponent(input.email)}`
+
+  const result = await sendEmail(
+    {
+      DB: c.env.DB,
+      EMAIL: env['EMAIL'] as never,
+      SEND_EMAIL: env['SEND_EMAIL'] as never,
+      EMAIL_API_KEY: env['EMAIL_API_KEY'] as string | undefined,
+      EMAIL_FROM: env['EMAIL_FROM'] as string | undefined,
+      APP_NAME: appName,
+      APP_URL: appUrl,
+      BETTER_AUTH_URL: env['BETTER_AUTH_URL'] as string | undefined,
+    },
+    {
+      to: input.email,
+      userId: currentUser.id,
+      template: 'invite',
+      templateData: {
+        inviterName: currentUser.name || currentUser.email,
+        inviterEmail: currentUser.email,
+        organizationName: input.organizationName || appName,
+        signUpUrl,
+        message: input.message,
+        appName,
+      },
+      tags: ['admin-invite', `by:${currentUser.id}`],
+    },
+  )
+
+  if (result.status === 'failed') {
+    return c.json({ error: result.error ?? 'Failed to send invite' }, 500)
+  }
+
+  return c.json({ success: true, status: result.status, provider: result.provider })
+})
+
 // Mount admin routes under root
 app.route('/', adminRoutes)
 

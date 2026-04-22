@@ -176,16 +176,20 @@ export function ChatPreferencesSection() {
             <Label htmlFor="about">About you</Label>
             <Textarea
               id="about"
-              placeholder="e.g. I'm a TypeScript developer working on Cloudflare Workers. I prefer code examples that are runnable and use Drizzle ORM."
+              placeholder={`What should the AI know about you? This is prepended to every chat unless you turn it off per-conversation.
+
+e.g. I'm a TypeScript developer building on Cloudflare Workers + D1. I prefer EN-AU spelling, no em-dashes, warm + direct tone. Default to the latest model from each provider. When writing code, prefer Drizzle ORM and shadcn/ui.
+
+Works well with markdown — bullet lists, headings, anything you'd put in a profile.`}
               value={prefs.about ?? ''}
               onChange={(e) => setPrefs((p) => ({ ...p, about: e.target.value }))}
-              rows={4}
-              maxLength={500}
+              rows={8}
+              maxLength={2000}
               disabled={isLoading}
-              className="resize-none"
+              className="resize-y min-h-32"
             />
             <p className="text-xs text-muted-foreground">
-              {(prefs.about ?? '').length}/500 characters
+              {(prefs.about ?? '').length}/2000 characters · markdown supported · applies to every chat
             </p>
           </div>
           <div className="flex items-center justify-end gap-2">

@@ -87,13 +87,15 @@ app.get('/download/*', async (c) => {
   const userId = c.get('userId')
   const rawKey = c.req.path.replace(/^\/api\/files\/download\//, '')
   const decoded = decodeURIComponent(rawKey)
-  // Accept either the current scoped key format `users/${userId}/...` OR the
-  // legacy `generated/${userId}/...` format that earlier versions of the
-  // generate_image tool wrote. Both resolve to the same physical R2 object
-  // when we normalise. See commit fixing the generate_image key prefix.
+  // Accept the current scoped key format `users/${userId}/...` plus two
+  // legacy formats that may still be in some R2 buckets:
+  // - `generated/${userId}/...` from very old generate_image tool
+  // - `files/${userId}/...` from uploads before the 2026-04-20 migration
+  // All resolve to the same physical R2 object when we normalise.
   const isScoped = decoded.startsWith(`users/${userId}/`)
   const isLegacyGenerated = decoded.startsWith(`generated/${userId}/`)
-  if (!decoded || (!isScoped && !isLegacyGenerated)) {
+  const isLegacyUpload = decoded.startsWith(`files/${userId}/`)
+  if (!decoded || (!isScoped && !isLegacyGenerated && !isLegacyUpload)) {
     return c.json({ error: 'Access denied' }, 403)
   }
   const bucket = c.env.FILES as R2Bucket | undefined
@@ -164,10 +166,13 @@ app.post('/', async (c) => {
     return c.json({ error: `File type not allowed: ${file.type}` }, 400)
   }
 
-  // Generate unique key for R2
+  // Generate unique key for R2. Lives under users/<userId>/uploads/ so the
+  // agent's fs_* tools (scoped to users/<userId>/) can see UI-uploaded files
+  // alongside agent outputs. Legacy keys at files/<userId>/... are handled
+  // by the migration script and the download route's backward-compat check.
   const fileId = crypto.randomUUID()
   const ext = file.name.split('.').pop() || 'bin'
-  const key = `files/${userId}/${fileId}.${ext}`
+  const key = `users/${userId}/uploads/${fileId}.${ext}`
 
   // Upload to R2
   const arrayBuffer = await file.arrayBuffer()
@@ -204,6 +209,27 @@ app.post('/', async (c) => {
     entityName: file.name,
     metadata: { mimeType: file.type, size: file.size, folder },
   })
+
+  // Fire-and-forget ingest into Vectorize. Runs in the background via
+  // executionCtx.waitUntil so the upload response returns immediately
+  // while chunking + embedding happen after the request ends.
+  // Falls back to a direct await when waitUntil isn't available (tests).
+  if ((c.env as unknown as { VECTORS?: VectorizeIndex }).VECTORS) {
+    const { ingestFile } = await import('./ingest')
+    const task = ingestFile(
+      c.env as unknown as Parameters<typeof ingestFile>[0],
+      fileId,
+      userId,
+    ).catch((err) => {
+      console.error(JSON.stringify({ event: 'ingest_failed_async', fileId, error: String(err) }))
+    })
+    try {
+      c.executionCtx.waitUntil(task)
+    } catch {
+      // waitUntil not available — let it run to completion.
+      await task
+    }
+  }
 
   return c.json({ file: newFile }, 201)
 })
@@ -275,6 +301,20 @@ app.delete('/:id', async (c) => {
   // Delete from R2
   await c.env.FILES.delete(file.key)
 
+  // Delete ingested vectors before dropping the row (needs indexChunks).
+  if ((c.env as unknown as { VECTORS?: VectorizeIndex }).VECTORS && file.indexStatus === 'indexed') {
+    try {
+      const { deleteFileVectors } = await import('./ingest')
+      await deleteFileVectors(
+        c.env as unknown as Parameters<typeof deleteFileVectors>[0],
+        fileId,
+        userId,
+      )
+    } catch (err) {
+      console.error(JSON.stringify({ event: 'vector_cleanup_failed', fileId, error: String(err) }))
+    }
+  }
+
   // Delete database record
   await db.delete(files).where(eq(files.id, fileId))
 
@@ -286,6 +326,31 @@ app.delete('/:id', async (c) => {
   })
 
   return c.json({ success: true })
+})
+
+/**
+ * POST /:id/reindex — re-run the ingest pipeline for a file.
+ * Handy when the content changed (file rename doesn't trigger) or when
+ * the initial ingest failed (e.g. Vectorize not yet configured).
+ */
+app.post('/:id/reindex', async (c) => {
+  const userId = c.get('userId')
+  const fileId = c.req.param('id')
+
+  if (!(c.env as unknown as { VECTORS?: VectorizeIndex }).VECTORS) {
+    return c.json({ error: 'Vectorize not configured' }, 501)
+  }
+
+  const { ingestFile } = await import('./ingest')
+  const result = await ingestFile(
+    c.env as unknown as Parameters<typeof ingestFile>[0],
+    fileId,
+    userId,
+  )
+  if (result.status === 'failed') {
+    return c.json({ error: result.error ?? 'Reindex failed' }, 500)
+  }
+  return c.json({ success: true, ...result })
 })
 
 /**

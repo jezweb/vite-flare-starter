@@ -23,6 +23,10 @@ import { buildImageTools } from './image'
 import { buildImageTransformTools } from './image-transform'
 import { buildMediaTools } from './media'
 import { buildSessionTools } from './session'
+import { buildPlacesTools } from './places'
+import { buildEmailTools } from './email'
+import { buildSearchFilesTools } from './search-files'
+import { buildGoogleWorkspaceTools } from './google-workspace'
 
 interface ChatToolsContext {
   env: {
@@ -43,14 +47,39 @@ interface ChatToolsContext {
     OPENAI_API_KEY?: string
     GOOGLE_AI_API_KEY?: string
     OPENROUTER_API_KEY?: string
+    GOOGLE_PLACES_API_KEY?: string
     VECTORS?: VectorizeIndex
+    // Email bindings — at least one enables the send_email agent tool.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    EMAIL?: any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    SEND_EMAIL?: any
+    EMAIL_API_KEY?: string
+    EMAIL_FROM?: string
+    APP_NAME?: string
+    APP_URL?: string
+    BETTER_AUTH_URL?: string
+    // Google Workspace native OAuth — enables gmail/drive/calendar tools
+    GOOGLE_WORKSPACE_CLIENT_ID?: string
+    GOOGLE_WORKSPACE_CLIENT_SECRET?: string
+    TOKEN_ENCRYPTION_KEY?: string
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     IMAGES?: any
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     MEDIA?: any
   }
   userId: string
+  /** Optional — populated when we know the caller's email/name for
+   *  send_email Reply-To and agent-tool signing. */
+  userEmail?: string
+  userName?: string
   defaultModel: string
+  /**
+   * Names of skills available this session — used to constrain load_skill's
+   * `name` parameter to a Zod enum so the model can't invent skill names.
+   * Per agentskills.io client-implementation guide (Step 4).
+   */
+  availableSkillNames?: string[]
 }
 
 /**
@@ -67,7 +96,7 @@ export function buildChatTools(ctx: ChatToolsContext) {
     ...artifactTools,
     ...buildDocumentTools({ bucket: ctx.env.FILES, userId: ctx.userId }),
     ...buildMemoryTools({ db: ctx.env.DB, userId: ctx.userId }),
-    ...buildSkillsTools({ env: ctx.env }),
+    ...buildSkillsTools({ env: ctx.env, userId: ctx.userId, availableSkillNames: ctx.availableSkillNames }),
     ...buildCodeTools({ env: ctx.env, userId: ctx.userId }),
     ...buildDelegateTool({ env: ctx.env as Parameters<typeof buildDelegateTool>[0]['env'], defaultModel: ctx.defaultModel, userId: ctx.userId }),
     ...buildAudioTools({ env: ctx.env }),
@@ -75,6 +104,7 @@ export function buildChatTools(ctx: ChatToolsContext) {
     ...buildScheduleTools({ db: ctx.env.DB, userId: ctx.userId }),
     ...buildSessionTools({ db: ctx.env.DB, userId: ctx.userId }),
     ...buildSemanticSearchTools({ env: ctx.env as unknown as Parameters<typeof buildSemanticSearchTools>[0]['env'], userId: ctx.userId }),
+    ...buildSearchFilesTools({ env: ctx.env as unknown as Parameters<typeof buildSearchFilesTools>[0]['env'], userId: ctx.userId }),
   }
 
   if (ctx.env.CLOUDFLARE_ACCOUNT_ID && ctx.env.CLOUDFLARE_API_TOKEN) {
@@ -84,6 +114,30 @@ export function buildChatTools(ctx: ChatToolsContext) {
   if (getActiveSearchProvider(ctx.env)) {
     Object.assign(tools, buildSearchTools(ctx.env))
   }
+
+  Object.assign(tools, buildPlacesTools(ctx.env))
+
+  // send_email — only included when an email provider is configured.
+  // Guarded with needsApproval:true so the UI prompts before sending.
+  Object.assign(
+    tools,
+    buildEmailTools({
+      env: ctx.env,
+      userId: ctx.userId,
+      userEmail: ctx.userEmail,
+      userName: ctx.userName,
+    }),
+  )
+
+  // Google Workspace — omitted entirely when OAuth env vars aren't set.
+  // Further gated at tool-call time by the user's active connection + scopes.
+  Object.assign(
+    tools,
+    buildGoogleWorkspaceTools({
+      env: ctx.env as unknown as Parameters<typeof buildGoogleWorkspaceTools>[0]['env'],
+      userId: ctx.userId,
+    }),
+  )
 
   if (ctx.env.FILES) {
     Object.assign(tools, buildFileTools({ bucket: ctx.env.FILES, userId: ctx.userId }))
@@ -107,4 +161,6 @@ export {
   buildDelegateTool,
   buildAudioTools,
   buildTodoTools,
+  buildPlacesTools,
+  buildEmailTools,
 }

@@ -132,24 +132,42 @@ adminApp.post('/sync', async (c) => {
     menuPath: string
     sortOrder: number
   }> = [
-    // Core
+    // Core modules
     {
-      key: 'styleGuide',
-      name: 'Style Guide',
-      description: 'UI component documentation',
-      category: 'development',
-      icon: 'Palette',
-      menuPath: '/dashboard/style-guide',
+      key: 'chat',
+      name: 'AI Chat',
+      description: 'Streaming chat, tools, structured extract',
+      category: 'core',
+      icon: 'MessageSquare',
+      menuPath: '/dashboard/chat',
       sortOrder: 0,
     },
     {
-      key: 'components',
-      name: 'Components',
-      description: 'Component showcase',
-      category: 'development',
-      icon: 'Component',
-      menuPath: '/dashboard/components',
+      key: 'files',
+      name: 'Files',
+      description: 'R2-backed file uploads',
+      category: 'core',
+      icon: 'FileText',
+      menuPath: '/dashboard/files',
       sortOrder: 1,
+    },
+    {
+      key: 'activity',
+      name: 'Activity Log',
+      description: 'Audit log of user actions',
+      category: 'core',
+      icon: 'Activity',
+      menuPath: '/dashboard/activity',
+      sortOrder: 2,
+    },
+    {
+      key: 'notifications',
+      name: 'Notifications',
+      description: 'In-app notification bell',
+      category: 'core',
+      icon: 'Bell',
+      menuPath: '/dashboard',
+      sortOrder: 3,
     },
     {
       key: 'apiTokens',
@@ -158,7 +176,45 @@ adminApp.post('/sync', async (c) => {
       category: 'core',
       icon: 'Key',
       menuPath: '/dashboard/settings',
+      sortOrder: 4,
+    },
+    // UI features
+    {
+      key: 'themePicker',
+      name: 'Theme Picker',
+      description: 'Colour theme picker in preferences',
+      category: 'core',
+      icon: 'Palette',
+      menuPath: '/dashboard/settings',
+      sortOrder: 5,
+    },
+    // Development / dogfood tools
+    {
+      key: 'devTools',
+      name: 'Dev Tools',
+      description: 'Master toggle for dev tool pages',
+      category: 'development',
+      icon: 'Wrench',
+      menuPath: '/dashboard',
       sortOrder: 0,
+    },
+    {
+      key: 'styleGuide',
+      name: 'Style Guide',
+      description: 'UI component documentation',
+      category: 'development',
+      icon: 'Palette',
+      menuPath: '/dashboard/style-guide',
+      sortOrder: 1,
+    },
+    {
+      key: 'components',
+      name: 'Components',
+      description: 'Component showcase',
+      category: 'development',
+      icon: 'Component',
+      menuPath: '/dashboard/components',
+      sortOrder: 2,
     },
   ]
 

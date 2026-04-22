@@ -179,10 +179,19 @@ app.post('/:id/summarise', async (c) => {
     return c.json({ skipped: true, reason: 'not-enough-messages' })
   }
 
+  // Strip <skill_content …>…</skill_content> wrappers so the summariser
+  // doesn't see the skill body (which biases titles toward the skill name
+  // rather than the user's actual question). Keep whatever the user wrote
+  // after the wrapper.
+  const stripSkillContent = (text: string): string => {
+    return text.replace(/<skill_content\b[^>]*>[\s\S]*?<\/skill_content>\s*/gi, '').trim()
+  }
+
   const textOf = (m: typeof firstUser) =>
     (m.parts ?? [])
       .filter((p): p is { type: 'text'; text: string } => (p as { type: string }).type === 'text')
-      .map((p) => p.text)
+      .map((p) => stripSkillContent(p.text))
+      .filter(Boolean)
       .join('\n')
       .slice(0, 1500)
 
@@ -257,19 +266,43 @@ app.delete('/:id/star', async (c) => {
   return c.json({ success: true, starred: false })
 })
 
-/** PATCH /api/conversations/:id — update title */
+/**
+ * PATCH /api/conversations/:id
+ *
+ * Partial update. Supported fields:
+ *   - title: rename
+ *   - projectId: move between projects (null = ungroup)
+ *
+ * Only fields explicitly passed are changed. Undefined means "leave alone";
+ * null on projectId specifically clears the grouping.
+ */
 app.patch(
   '/:id',
-  zValidator('json', z.object({ title: z.string().max(200) })),
+  zValidator(
+    'json',
+    z.object({
+      title: z.string().max(200).optional(),
+      projectId: z.string().nullable().optional(),
+    }),
+  ),
   async (c) => {
     const conversationId = c.req.param('id')
     const userId = c.get('userId')
-    const { title } = c.req.valid('json')
+    const input = c.req.valid('json')
     const storage = createD1ChatStorage(c.env.DB)
 
-    await storage.updateTitle(conversationId, userId, title)
+    if (!(await storage.isOwner(conversationId, userId))) {
+      return c.json({ error: 'Not found' }, 404)
+    }
+
+    if (input.title !== undefined) {
+      await storage.updateTitle(conversationId, userId, input.title)
+    }
+    if (input.projectId !== undefined) {
+      await storage.updateProject(conversationId, userId, input.projectId)
+    }
     return c.json({ success: true })
-  }
+  },
 )
 
 export default app

@@ -9,7 +9,8 @@
  * file with the right extension (.html / .svg / .mmd / original filename).
  */
 import { useMemo, useCallback, useState } from 'react'
-import { FileText, FileCode, FileImage, FileAudio, FileVideo, FileSpreadsheet, FileArchive, File as FileIcon, Download, X, Maximize2 } from 'lucide-react'
+import { FileText, FileCode, FileImage, FileAudio, FileVideo, FileSpreadsheet, FileArchive, File as FileIcon, Download, X, Maximize2, FolderPlus, Check, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
@@ -133,6 +134,32 @@ export function ArtifactSidebar({ messages, onClose, scrollRoot: _scrollRoot }: 
   const hasAny = artifacts.length > 0 || files.length > 0
   /** Artifact currently open in the full-screen lightbox, if any. */
   const [lightbox, setLightbox] = useState<CollectedArtifact | null>(null)
+  /** Per-file save state: idle | saving | saved. Keyed by file id. */
+  const [saveState, setSaveState] = useState<Record<string, 'saving' | 'saved'>>({})
+
+  const saveToFiles = useCallback(async (file: CollectedFile) => {
+    if (!file.url || saveState[file.id]) return
+    setSaveState((s) => ({ ...s, [file.id]: 'saving' }))
+    try {
+      const resp = await fetch(file.url)
+      const blob = await resp.blob()
+      const fallbackExt = (file.mediaType?.split('/')[1] || 'bin').split('+')[0]
+      const filename = file.name || `attachment-${Date.now()}.${fallbackExt}`
+      const form = new FormData()
+      form.append('file', new File([blob], filename, { type: file.mediaType || blob.type || 'application/octet-stream' }))
+      form.append('folder', '/chat-attachments')
+      const upload = await fetch('/api/files', { method: 'POST', body: form })
+      if (!upload.ok) {
+        const err = await upload.json().catch(() => ({ error: upload.statusText })) as { error?: string }
+        throw new Error(err.error || `Upload failed (${upload.status})`)
+      }
+      setSaveState((s) => ({ ...s, [file.id]: 'saved' }))
+      toast.success('Saved to Files', { description: filename })
+    } catch (err) {
+      setSaveState((s) => { const next = { ...s }; delete next[file.id]; return next })
+      toast.error('Could not save to Files', { description: err instanceof Error ? err.message : String(err) })
+    }
+  }, [saveState])
 
   const scrollTo = useCallback((id: string) => {
     const el = document.querySelector<HTMLElement>(`[data-artifact-id="${CSS.escape(id)}"]`)
@@ -316,19 +343,52 @@ export function ArtifactSidebar({ messages, onClose, scrollRoot: _scrollRoot }: 
                     </div>
                   </div>
                   {f.url && (
-                    <a
-                      href={f.url}
-                      download={f.name}
-                      onClick={(e) => e.stopPropagation()}
-                      className={cn(
-                        'shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-opacity',
-                        'group-hover:opacity-100 hover:bg-muted hover:text-foreground',
-                      )}
-                      title={`Download ${f.name}`}
-                      aria-label={`Download ${f.name}`}
-                    >
-                      <Download className="size-3.5" />
-                    </a>
+                    <div className="flex shrink-0 items-center gap-0.5">
+                      <button
+                        type="button"
+                        disabled={!!saveState[f.id]}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          saveToFiles(f)
+                        }}
+                        className={cn(
+                          'rounded p-1 text-muted-foreground transition-opacity',
+                          saveState[f.id] === 'saved'
+                            ? 'text-primary opacity-100'
+                            : 'opacity-0 group-hover:opacity-100 hover:bg-muted hover:text-foreground',
+                          saveState[f.id] === 'saving' && 'opacity-100',
+                        )}
+                        title={
+                          saveState[f.id] === 'saved'
+                            ? 'Saved to Files'
+                            : saveState[f.id] === 'saving'
+                              ? 'Saving…'
+                              : 'Save to Files'
+                        }
+                        aria-label={`Save ${f.name} to Files`}
+                      >
+                        {saveState[f.id] === 'saved' ? (
+                          <Check className="size-3.5" />
+                        ) : saveState[f.id] === 'saving' ? (
+                          <Loader2 className="size-3.5 animate-spin" />
+                        ) : (
+                          <FolderPlus className="size-3.5" />
+                        )}
+                      </button>
+                      <a
+                        href={f.url}
+                        download={f.name}
+                        onClick={(e) => e.stopPropagation()}
+                        className={cn(
+                          'rounded p-1 text-muted-foreground opacity-0 transition-opacity',
+                          'group-hover:opacity-100 hover:bg-muted hover:text-foreground',
+                        )}
+                        title={`Download ${f.name}`}
+                        aria-label={`Download ${f.name}`}
+                      >
+                        <Download className="size-3.5" />
+                      </a>
+                    </div>
                   )}
                 </button>
               )

@@ -4,6 +4,7 @@
  * Displays a bell icon with unread count badge and dropdown with recent notifications.
  */
 
+import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -115,38 +116,46 @@ export function NotificationBell() {
             <p className="mt-2 text-sm text-muted-foreground">No notifications</p>
           </div>
         ) : (
-          <ScrollArea className="h-72">
-            {notifications.map((notification) => (
-              <DropdownMenuItem
-                key={notification.id}
-                className={cn(
-                  'flex cursor-pointer flex-col items-start gap-1 p-3',
-                  !notification.read && 'bg-muted/50'
-                )}
-                onClick={() => !notification.read && handleMarkAsRead(notification.id)}
-              >
-                <div className="flex w-full items-start gap-2">
-                  {getNotificationIcon(notification.type)}
-                  <div className="flex-1 space-y-1">
-                    <p className={cn('text-sm', !notification.read && 'font-medium')}>
-                      {notification.title}
-                    </p>
-                    {notification.message && (
-                      <p className="text-xs text-muted-foreground line-clamp-2">
-                        {notification.message}
-                      </p>
-                    )}
-                    <p className="text-xs text-muted-foreground">
-                      {formatTime(notification.createdAt)}
-                    </p>
-                  </div>
-                  {!notification.read && (
-                    <span className="h-2 w-2 rounded-full bg-primary" />
+          <>
+            <ScrollArea className="h-72">
+              {notifications.map((notification) => (
+                <DropdownMenuItem
+                  key={notification.id}
+                  className={cn(
+                    'flex cursor-pointer flex-col items-start gap-1 p-3',
+                    !notification.read && 'bg-muted/50'
                   )}
-                </div>
-              </DropdownMenuItem>
-            ))}
-          </ScrollArea>
+                  onClick={() => !notification.read && handleMarkAsRead(notification.id)}
+                >
+                  <div className="flex w-full items-start gap-2">
+                    {getNotificationIcon(notification.type)}
+                    <div className="flex-1 space-y-1">
+                      <p className={cn('text-sm', !notification.read && 'font-medium')}>
+                        {notification.title}
+                      </p>
+                      {notification.message && (
+                        <p className="text-xs text-muted-foreground line-clamp-2">
+                          {notification.message}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        {formatTime(notification.createdAt)}
+                      </p>
+                    </div>
+                    {!notification.read && (
+                      <span className="h-2 w-2 rounded-full bg-primary" />
+                    )}
+                  </div>
+                </DropdownMenuItem>
+              ))}
+            </ScrollArea>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild className="justify-center text-sm font-medium">
+              <Link to="/dashboard/notifications" className="w-full text-center">
+                View all notifications
+              </Link>
+            </DropdownMenuItem>
+          </>
         )}
       </DropdownMenuContent>
     </DropdownMenu>

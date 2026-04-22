@@ -19,6 +19,8 @@ The user wants to learn about something that requires up-to-date information fro
 
 3. **Read** — for the 3-5 most promising results, call `browser_markdown` to get the full content. Prefer official docs, well-known publications, and primary sources over aggregators or content farms.
 
+   When deciding which sources to trust, consult `references/source-trust-heuristics.md` (use `read_skill_resource` with `path: "references/source-trust-heuristics.md"`). It lists high/medium/low trust tiers and red flags.
+
 4. **Synthesise** — write a structured summary that:
    - Opens with a 1-2 sentence direct answer to the user's question
    - Has 3-5 sections covering the key aspects

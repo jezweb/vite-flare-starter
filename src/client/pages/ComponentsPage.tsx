@@ -142,12 +142,22 @@ export function ComponentsPage() {
               <CardDescription>Different button styles for various use cases</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-4">
-              <Button>Default</Button>
-              <Button variant="secondary">Secondary</Button>
-              <Button variant="destructive">Destructive</Button>
-              <Button variant="outline">Outline</Button>
-              <Button variant="ghost">Ghost</Button>
-              <Button variant="link">Link</Button>
+              {([
+                { variant: 'default', label: 'Default' },
+                { variant: 'secondary', label: 'Secondary' },
+                { variant: 'destructive', label: 'Destructive' },
+                { variant: 'outline', label: 'Outline' },
+                { variant: 'ghost', label: 'Ghost' },
+                { variant: 'link', label: 'Link' },
+              ] as const).map(({ variant, label }) => (
+                <div
+                  key={variant}
+                  className="flex flex-col items-center gap-1.5 rounded-md border border-dashed border-border/60 p-3"
+                >
+                  <Button variant={variant}>{label}</Button>
+                  <code className="text-[10px] text-muted-foreground">variant=&quot;{variant}&quot;</code>
+                </div>
+              ))}
             </CardContent>
           </Card>
 
@@ -157,10 +167,22 @@ export function ComponentsPage() {
               <CardDescription>Different button sizes</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap items-center gap-4">
-              <Button size="sm">Small</Button>
-              <Button size="default">Default</Button>
-              <Button size="lg">Large</Button>
-              <Button size="icon"><Check className="h-4 w-4" /></Button>
+              {([
+                { size: 'sm', content: 'Small' },
+                { size: 'default', content: 'Default' },
+                { size: 'lg', content: 'Large' },
+                { size: 'icon', content: <Check className="h-4 w-4" /> },
+              ] as const).map(({ size, content }) => (
+                <div
+                  key={size}
+                  className="flex flex-col items-center gap-1.5 rounded-md border border-dashed border-border/60 p-3"
+                >
+                  <Button size={size} aria-label={size === 'icon' ? 'Icon size button' : undefined}>
+                    {content}
+                  </Button>
+                  <code className="text-[10px] text-muted-foreground">size=&quot;{size}&quot;</code>
+                </div>
+              ))}
             </CardContent>
           </Card>
 
@@ -644,6 +666,13 @@ export function ComponentsPage() {
                 <Label className="text-xs text-muted-foreground mb-2 block">Compact mode (for toolbars)</Label>
                 <AudioRecorder compact onRecordingComplete={(_b, ms) => alert(`Recorded ${(ms / 1000).toFixed(1)}s`)} />
               </div>
+              <Separator />
+              <div>
+                <Label className="text-xs text-muted-foreground mb-2 block">
+                  Streaming chunks (1s cadence for demo) — live counter below
+                </Label>
+                <AudioRecorderChunkDemo />
+              </div>
             </CardContent>
           </Card>
 
@@ -682,6 +711,39 @@ export function ComponentsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+    </div>
+  )
+}
+
+/**
+ * Demo wrapper for the AudioRecorder streaming-chunk mode. Counts chunks
+ * as they arrive and renders the live count. 1-second cadence is for
+ * demo visibility — production streaming typically uses 30-60s chunks.
+ */
+function AudioRecorderChunkDemo() {
+  const [chunkCount, setChunkCount] = useState(0)
+  const [totalBytes, setTotalBytes] = useState(0)
+  const [lastDuration, setLastDuration] = useState<number | null>(null)
+
+  return (
+    <div className="space-y-2">
+      <AudioRecorder
+        chunkDurationMs={1000}
+        maxDuration={60}
+        onChunk={(chunk) => {
+          setChunkCount((n) => n + 1)
+          setTotalBytes((b) => b + chunk.size)
+        }}
+        onRecordingComplete={(blob, ms) => {
+          setLastDuration(ms)
+          // In production you'd keep the blob for archive; we just log size.
+          console.log(`Final blob: ${blob.size} bytes, ${ms}ms`)
+        }}
+      />
+      <div className="text-xs text-muted-foreground font-mono tabular-nums">
+        chunks: {chunkCount} · bytes: {totalBytes.toLocaleString()}
+        {lastDuration != null && ` · last recording: ${(lastDuration / 1000).toFixed(1)}s`}
+      </div>
     </div>
   )
 }

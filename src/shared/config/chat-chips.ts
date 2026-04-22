@@ -9,7 +9,7 @@
  * Fork: edit or replace these to match your product. Set an empty array to
  * hide the chip row entirely.
  */
-import { Pencil, Search, Code2, ListChecks, type LucideIcon } from 'lucide-react'
+import { Pencil, Search, Code2, ListChecks, MapPin, type LucideIcon } from 'lucide-react'
 
 export interface ChipPreset {
   /** Short label shown in the preset list */
@@ -36,7 +36,7 @@ export interface ChatChip {
  * hide the example-questions row entirely.
  */
 export const CHAT_EXAMPLES: string[] = [
-  'How does AI work?',
+  'Find good coffee shops near Newcastle NSW.',
   'Help me plan a focused 2-hour coding session.',
   'Summarise today\'s tech news in 5 bullet points.',
   'What are the trade-offs of server components vs client components?',
@@ -85,6 +85,17 @@ export const CHAT_CHIPS: ChatChip[] = [
       { label: 'Weekly priorities', prompt: 'Help me set the top 3 priorities for this week. My context: ' },
       { label: 'Risks and blockers', prompt: 'Surface the risks and blockers for this plan: ' },
       { label: 'Decision matrix', prompt: 'Build me a decision matrix comparing these options: ' },
+    ],
+  },
+  {
+    label: 'Local',
+    icon: MapPin,
+    presets: [
+      { label: 'Find local businesses', prompt: 'Find the best ' },
+      { label: 'Coffee near me', prompt: 'Find great coffee shops near Newcastle NSW.' },
+      { label: 'Trade services nearby', prompt: 'Find reputable plumbers near ' },
+      { label: 'Mechanic or wrecker search', prompt: 'Find Toyota mechanics or wreckers near ' },
+      { label: 'Restaurants for tonight', prompt: 'Suggest highly-rated restaurants for dinner near ' },
     ],
   },
 ]

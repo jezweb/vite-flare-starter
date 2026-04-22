@@ -66,47 +66,67 @@ export function DashboardPage() {
         />
       </div>
 
-      {/* Capability grid */}
+      {/* Capability grid — each card links to where the capability is
+          exercised in-app (usually AI Chat, since most tools are surfaced
+          there as agent tools rather than as standalone pages). */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <CapabilityCard
           icon={Brain}
           title="AI SDK v6"
           items={['ToolLoopAgent pattern', 'Multi-provider factory', 'Streaming + reasoning', 'Conversation persistence']}
+          to="/dashboard/chat"
+          ctaLabel="Open AI Chat"
         />
         <CapabilityCard
           icon={Wrench}
           title="60+ Agent Tools"
           items={['Browser, search, memory, files', 'Code execution, delegation', 'Scheduling, audio, UI tools', 'Skills system (14 bundled)']}
+          to="/dashboard/chat"
+          ctaLabel="Try the tools"
         />
         <CapabilityCard
           icon={Image}
           title="Image Processing"
           items={['Resize, crop, format convert', 'AI background removal', 'AI face detection', 'Image generation (FLUX/GPT)']}
+          footer="Ask AI Chat to resize, crop, or remove backgrounds"
+          to="/dashboard/chat"
+          ctaLabel="Open AI Chat"
         />
         <CapabilityCard
           icon={Video}
           title="Video Processing"
           items={['Clip and resize', 'Frame extraction', 'Audio extraction', 'Spritesheet generation']}
+          footer="Available as AI tools — ask chat to clip or extract frames"
+          to="/dashboard/chat"
+          ctaLabel="Open AI Chat"
         />
         <CapabilityCard
           icon={Search}
           title="Semantic Search"
           items={['AI SDK embeddings', 'Vectorize-ready', 'Cosine similarity', 'In-memory fallback']}
+          footer="Exposed as semantic_search tool in chat"
+          to="/dashboard/chat"
+          ctaLabel="Open AI Chat"
         />
         <CapabilityCard
           icon={FileText}
           title="Business Modules"
           items={['Comments, tags, watchers', 'Favourites, recent views', 'Soft delete + trash', 'CSV import/export']}
+          footer="Fork-only primitives — no standalone page"
         />
         <CapabilityCard
           icon={Shield}
           title="Auth + Admin"
           items={['Google OAuth + email/password', 'Role-based access', 'API tokens with scopes', 'Session management']}
+          to="/dashboard/settings"
+          ctaLabel="Open settings"
         />
         <CapabilityCard
           icon={Sparkles}
           title="UI Library"
           items={['59 shadcn/ui components', 'Milkdown markdown editor', 'DataTable (TanStack Table)', 'Dark/light + 8 themes']}
+          to="/dashboard/components"
+          ctaLabel="Browse components"
         />
       </div>
     </div>
@@ -149,16 +169,30 @@ function ActionCard({
   )
 }
 
-function CapabilityCard({ icon: Icon, title, items }: { icon: LucideIcon; title: string; items: string[] }) {
-  return (
-    <Card>
+function CapabilityCard({
+  icon: Icon,
+  title,
+  items,
+  footer,
+  to,
+  ctaLabel,
+}: {
+  icon: LucideIcon
+  title: string
+  items: string[]
+  footer?: string
+  to?: string
+  ctaLabel?: string
+}) {
+  const body = (
+    <>
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-sm">
           <Icon className="size-4 text-primary" />
           {title}
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-2">
         <ul className="space-y-1">
           {items.map((item) => (
             <li key={item} className="text-xs text-muted-foreground flex items-start gap-1.5">
@@ -167,9 +201,30 @@ function CapabilityCard({ icon: Icon, title, items }: { icon: LucideIcon; title:
             </li>
           ))}
         </ul>
+        {footer && (
+          <p className="text-xs text-muted-foreground italic pt-1">{footer}</p>
+        )}
+        {to && ctaLabel && (
+          <div className="pt-1">
+            <span className="text-xs font-medium text-primary inline-flex items-center gap-1">
+              {ctaLabel}
+              <ArrowRight className="size-3" />
+            </span>
+          </div>
+        )}
       </CardContent>
-    </Card>
+    </>
   )
+
+  if (to) {
+    return (
+      <Link to={to} className="block">
+        <Card className="h-full hover:bg-muted/30 transition-colors">{body}</Card>
+      </Link>
+    )
+  }
+
+  return <Card>{body}</Card>
 }
 
 export default DashboardPage

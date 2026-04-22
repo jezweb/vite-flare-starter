@@ -13,6 +13,11 @@ export interface FileItem {
   publicUrl: string | null
   createdAt: string
   updatedAt: string
+  // Phase 4 RAG status — null when ingestion never attempted (Vectorize unbound)
+  indexStatus?: 'pending' | 'indexed' | 'failed' | null
+  indexedAt?: string | null
+  indexChunks?: number | null
+  indexError?: string | null
 }
 
 export interface FilesResponse {
@@ -117,6 +122,25 @@ export function useDeleteFile() {
   return useMutation({
     mutationFn: async (id: string) => {
       await apiClient.delete(`/api/files/${id}`)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['files'] })
+    },
+  })
+}
+
+/**
+ * Hook to re-run RAG ingestion on a file (Phase 4).
+ */
+export function useReindexFile() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      return apiClient.post<{ success: boolean; status: string; chunks?: number }>(
+        `/api/files/${id}/reindex`,
+        {},
+      )
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['files'] })

@@ -70,4 +70,12 @@ export const queryKeys = {
     all: ['ai'] as const,
     models: () => ['ai', 'models'] as const,
   },
+
+  // Skills
+  skills: {
+    all: ['skills'] as const,
+    list: () => ['skills', 'list'] as const,
+    summary: () => ['skills', 'summary'] as const,
+    detail: (name: string) => ['skills', 'detail', name] as const,
+  },
 } as const

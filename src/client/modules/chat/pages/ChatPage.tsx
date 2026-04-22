@@ -25,11 +25,19 @@ import {
   PromptInputActionAddScreenshotCountdown,
   PromptInputActionAddScreenCapture,
 } from '../components/ScreenCaptureMenuItems'
-import { Plus, MessageSquare, MessagesSquare, Download, ArrowDown, Paperclip, FileText } from 'lucide-react'
+import { Plus, MessageSquare, MessagesSquare, Download, ArrowDown, Paperclip, FileText, Folder, X, FileQuestion } from 'lucide-react'
+import { Link as RouterLink } from 'react-router-dom'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { useMediaQuery } from '@/client/hooks/useMediaQuery'
 import { useChat, type Message } from '../hooks/useChat'
-import { useConversationMessages } from '../hooks/useConversations'
+import { useConversationList, useConversationMessages } from '../hooks/useConversations'
+import { useProjectList, useMoveConversation } from '@/client/modules/projects/hooks/useProjects'
 import { ConversationSidebar } from '../components/ConversationSidebar'
 import { ArtifactSidebar, countArtifactsAndFiles } from '../components/ArtifactSidebar'
 import { MessageRenderer } from '../components/MessageRenderer'
@@ -39,12 +47,16 @@ import { DropOverlay } from '../components/DropOverlay'
 import { ActionChips } from '../components/ActionChips'
 import { CHAT_EXAMPLES } from '@/shared/config/chat-chips'
 import { DEFAULT_MODEL_ID } from '@/shared/config/models'
+import { features } from '@/shared/config/features'
+import { apiClient } from '@/client/lib/api-client'
 import { InputTakeover, isTakeoverElement } from '../components/chat-ui/InputTakeover'
 import { hasUiMarker } from '../components/chat-ui/ChatUiElement'
 import { AudioRecorder } from '@/client/components/AudioRecorder'
 import { usePasteUpload } from '@/client/hooks/usePasteUpload'
 import { useSession } from '@/client/lib/auth'
 import { cn } from '@/lib/utils'
+import { SkillsSlashMenu, parseSlashQuery } from '../components/SkillsSlashMenu'
+import { useSkillSummary, type SkillSummary } from '@/client/modules/skills/hooks/useSkills'
 
 /**
  * Accept string for the file input. We widened this beyond images so that
@@ -98,6 +110,11 @@ export function ChatPage() {
 
   // Share Target: when shared from mobile, params arrive as ?title=&text=&url=
   const sharedText = searchParams.get('text') || searchParams.get('title') || searchParams.get('url')
+  // projectId stays in the URL until the first message is sent; on creation
+  // the server stamps the new conversation with the project and the row
+  // becomes source-of-truth. Any further ?projectId= is ignored for existing
+  // conversations (the server re-reads from DB).
+  const urlProjectId = searchParams.get('projectId')
   // Vision support check — gates whether we accept image attachments at the picker.
   // Non-image files (PDF/DOCX/audio/text) flow through convertToMarkdown on the
   // server and are safe for every model. The API endpoint also validates.
@@ -110,6 +127,13 @@ export function ChatPage() {
 
   // Ref to the underlying textarea so preset chips can insert text.
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
+  // Mirror the uncontrolled textarea value in state so the slash-command
+  // menu can react to every keystroke without forcing the input to be
+  // fully controlled (which would break ai-elements' PromptInput).
+  const [inputValue, setInputValue] = useState('')
+  const [slashIndex, setSlashIndex] = useState(0)
+  const [activatingSkill, setActivatingSkill] = useState<string | null>(null)
+  const { data: skillSummary } = useSkillSummary()
   // Single scroll container holding both the transcript and the sticky input.
   // We manage auto-scroll-to-bottom manually instead of relying on StickToBottom
   // so the input can be a sticky child of the same scroller (claude.ai layout).
@@ -123,7 +147,17 @@ export function ChatPage() {
   const [unreadCount, setUnreadCount] = useState(0)
   const lastSeenCountRef = useRef(0)
 
-  const { data: existingConversation } = useConversationMessages(urlConversationId)
+  const { data: existingConversation, error: conversationError, isError: conversationIsError } =
+    useConversationMessages(urlConversationId)
+
+  // 404 on a URL-supplied conversation means it's been deleted, is on another
+  // account, or never existed. Show a clear not-found state instead of the
+  // empty welcome screen, which makes the situation look like a fresh chat and
+  // confuses users who followed a stale bookmark.
+  const conversationNotFound =
+    !!urlConversationId &&
+    conversationIsError &&
+    (conversationError as { status?: number } | null)?.status === 404
 
   const {
     messages,
@@ -140,17 +174,21 @@ export function ChatPage() {
   } = useChat({
     model,
     conversationId: urlConversationId,
+    projectId: urlProjectId,
     initialMessages: existingConversation?.messages as Message[] | undefined,
   })
 
-  // Navigate to conversation URL when a new conversation is created
+  // Navigate to conversation URL when a new conversation is created.
+  // Preserve ?projectId= across the navigate so the in-project pill doesn't
+  // briefly vanish while the conversations list refetches. The pill falls
+  // back to urlProjectId until storedProjectId resolves from the list cache.
   useEffect(() => {
     if (conversationId && !urlConversationId && messages.length > 0) {
-      navigate(`/dashboard/chat/${conversationId}`, { replace: true })
-      // Refresh sidebar so the new conversation appears
+      const projectSuffix = urlProjectId ? `?projectId=${urlProjectId}` : ''
+      navigate(`/dashboard/chat/${conversationId}${projectSuffix}`, { replace: true })
       queryClient.invalidateQueries({ queryKey: ['conversations'] })
     }
-  }, [conversationId, urlConversationId, messages.length, navigate, queryClient])
+  }, [conversationId, urlConversationId, urlProjectId, messages.length, navigate, queryClient])
 
   // After the first assistant response completes, ask the server to generate
   // a proper title + summary for the sidebar. Fires at most once per
@@ -344,19 +382,134 @@ export function ChatPage() {
     setTextareaValue(text, true)
   }, [setTextareaValue])
 
+  /**
+   * Fetch a skill body and wrap it in <skill_content> tags so the model
+   * receives the activated skill in the first user message. Returns the
+   * final text + body for the UI to send or null if the skill is missing.
+   */
+  const activateSkill = useCallback(async (skillName: string, rest: string, files: unknown) => {
+    try {
+      const detail = await apiClient.get<{
+        name: string
+        directory: string
+        body: string
+        resources: string[]
+      }>(`/api/skills/${skillName}`)
+      const resourceBlock = detail.resources.length > 0
+        ? `\n\n<skill_resources>\n${detail.resources.map((r) => `  <file>${r}</file>`).join('\n')}\n</skill_resources>`
+        : ''
+      const wrapper = [
+        `<skill_content name="${detail.name}" directory="${detail.directory}">`,
+        detail.body,
+        '',
+        `Skill directory: ${detail.directory}`,
+        'Relative paths resolve against the skill directory. Use read_skill_resource or run_skill_script for any listed resource.',
+        resourceBlock.trim(),
+        '</skill_content>',
+      ].filter(Boolean).join('\n')
+      const finalText = `${wrapper}\n\n${rest || `Using the ${detail.name} skill.`}`
+      sendMessage({ text: finalText, files: files as never })
+      return true
+    } catch {
+      return false
+    }
+  }, [sendMessage])
+
   const handleSubmit = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (message: { text?: string; files?: any[] }) => {
+    async (message: { text?: string; files?: any[] }) => {
       const text = message.text?.trim()
       if (!text && !message.files?.length) return
+
+      // Slash-command activation (phase 2). When the user starts with `/` and
+      // the first token matches a skill, we activate the skill so the model
+      // receives the full instructions without having to call load_skill.
+      if (text && text.startsWith('/') && features.skills) {
+        const firstSpace = text.indexOf(' ')
+        const skillName = (firstSpace === -1 ? text.slice(1) : text.slice(1, firstSpace)).trim()
+        const rest = firstSpace === -1 ? '' : text.slice(firstSpace + 1).trim()
+        if (skillName && /^[a-z0-9-]+$/.test(skillName)) {
+          const activated = await activateSkill(skillName, rest, message.files)
+          if (activated) return
+          // Fall through on miss so the user sees a normal error rather
+          // than a silent no-op.
+        }
+      }
+
       if (message.files && message.files.length > 0) {
         sendMessage({ text: text || '', files: message.files })
       } else if (text) {
         sendMessage({ text })
       }
     },
-    [sendMessage],
+    [sendMessage, activateSkill],
   )
+
+  // Observe the uncontrolled PromptInputTextarea so the slash-command menu
+  // can react to every keystroke without fighting the AI Elements component.
+  useEffect(() => {
+    const ta = textareaRef.current
+    if (!ta) return
+    const onInput = () => setInputValue(ta.value)
+    ta.addEventListener('input', onInput)
+    // Catch programmatic value changes too (preset chips dispatch their own
+    // input event via setTextareaValue — this listener will pick them up).
+    setInputValue(ta.value)
+    return () => ta.removeEventListener('input', onInput)
+  }, [])
+
+  // Reset slash-menu highlight whenever the query changes.
+  const slashParsed = features.skills ? parseSlashQuery(inputValue) : null
+  const slashMatches = useMemo<SkillSummary[]>(() => {
+    if (!features.skills || !slashParsed || !skillSummary) return []
+    const q = slashParsed.query.toLowerCase()
+    if (!q) return skillSummary.skills.slice(0, 8)
+    return skillSummary.skills
+      .filter((s) => s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q))
+      .slice(0, 8)
+  }, [slashParsed, skillSummary])
+  const slashMenuOpen = !!slashParsed && slashMatches.length > 0
+  useEffect(() => { setSlashIndex(0) }, [slashParsed?.query])
+
+  const handleSelectSkill = useCallback(async (skill: SkillSummary) => {
+    if (!slashParsed) return
+    setActivatingSkill(skill.name)
+    const rest = slashParsed.rest.trim()
+    const ok = await activateSkill(skill.name, rest, undefined)
+    setActivatingSkill(null)
+    if (ok) {
+      // Clear the input — the message is in flight.
+      setTextareaValue('', true)
+      setInputValue('')
+    }
+  }, [slashParsed, activateSkill, setTextareaValue])
+
+  /**
+   * Keyboard navigation for the slash menu. Intercepts Arrow/Enter/Tab/Esc
+   * when the menu is open; otherwise lets the textarea handle them normally
+   * (Enter submits via PromptInput, Esc does nothing).
+   */
+  const handleTextareaKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (!slashMenuOpen) return
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setSlashIndex((i) => (i + 1) % slashMatches.length)
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setSlashIndex((i) => (i - 1 + slashMatches.length) % slashMatches.length)
+    } else if (e.key === 'Enter' || e.key === 'Tab') {
+      const skill = slashMatches[slashIndex]
+      if (skill) {
+        e.preventDefault()
+        e.stopPropagation()
+        void handleSelectSkill(skill)
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      setTextareaValue('', true)
+      setInputValue('')
+    }
+  }, [slashMenuOpen, slashMatches, slashIndex, handleSelectSkill, setTextareaValue])
 
   // Helper: convert File/Blob → data URL for AI SDK's FileUIPart
   const toDataUrl = useCallback((blob: Blob): Promise<string> => {
@@ -389,11 +542,33 @@ export function ChatPage() {
     [sendMessage, toDataUrl],
   )
 
-  const hasMessages = messages.length > 0
+  // hasMessages gates the empty "Good evening" screen. We treat "streaming
+  // with no messages yet" as "has messages" so the welcome state doesn't
+  // briefly flash between send and the first optimistic append, or while a
+  // regenerate is rebuilding the transcript. Empty state shows ONLY when
+  // the transcript is genuinely empty AND we're not mid-request.
+  const hasMessages = messages.length > 0 || isLoading
   // Derive whether the artifact panel toggle should appear at all. Recomputed
   // per render — cheap walk, no need for useMemo.
   const { artifactCount, fileCount } = countArtifactsAndFiles(messages)
   const hasArtifactsOrFiles = artifactCount + fileCount > 0
+
+  // Resolve the current conversation's project (if any) for the header pill.
+  // Two paths: (a) new chat launched from a project page — `urlProjectId` set
+  // until the first send persists it; (b) existing conversation — read from
+  // the conversations list cache. The list is already fetched by the sidebar,
+  // so this is a zero-cost subscribe.
+  const { data: conversationListData } = useConversationList()
+  const { data: projectListData } = useProjectList()
+  const moveConversation = useMoveConversation()
+  const activeConversation = urlConversationId
+    ? conversationListData?.conversations.find((c) => c.id === urlConversationId)
+    : undefined
+  const storedProjectId = activeConversation?.projectId ?? null
+  const activeProjectId = storedProjectId ?? urlProjectId ?? null
+  const activeProject = activeProjectId
+    ? projectListData?.projects.find((p) => p.id === activeProjectId) ?? null
+    : null
 
   // Track whether the user is near the bottom of the scroll container so we
   // can (a) show/hide the scroll-to-bottom button, (b) stop auto-sticking
@@ -499,7 +674,41 @@ export function ChatPage() {
               <MessagesSquare className="size-4" />
             </Button>
             <MessageSquare className="size-4 text-muted-foreground ml-1" />
-            <h1 className="text-sm font-medium">AI Chat</h1>
+            <h1 className="text-sm font-medium truncate max-w-[28rem]" title={activeConversation?.title ?? 'AI Chat'}>
+              {activeConversation?.title ?? 'AI Chat'}
+            </h1>
+            {/* In-project pill: click name → project page; × detaches. For
+                new chats launched from a project page we show the pill
+                immediately (optimistic) even before the first message
+                persists. */}
+            {activeProject && (
+              <div className="ml-2 inline-flex items-center gap-1 rounded-full border border-border bg-muted/50 pl-2 pr-1 py-0.5 text-xs">
+                <Folder className="size-3 text-muted-foreground" />
+                <RouterLink
+                  to={`/dashboard/projects/${activeProject.id}`}
+                  className="font-medium hover:underline underline-offset-2"
+                  title={`Project: ${activeProject.name}`}
+                >
+                  {activeProject.name}
+                </RouterLink>
+                {/* Detach — only for persisted conversations (no server-side
+                    PATCH exists for a not-yet-created chat). If the chat is
+                    only declared via urlProjectId, user can just navigate
+                    away; no "detach" affordance needed yet. */}
+                {urlConversationId && storedProjectId && (
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    className="size-4 rounded-full hover:bg-muted-foreground/10 text-muted-foreground hover:text-foreground"
+                    onClick={() => moveConversation.mutate({ id: urlConversationId, projectId: null })}
+                    title="Remove from project"
+                    aria-label="Remove from project"
+                  >
+                    <X className="size-2.5" />
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-1">
             {hasArtifactsOrFiles && (
@@ -519,15 +728,41 @@ export function ChatPage() {
               </Button>
             )}
             {hasMessages && conversationId && (
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                className="text-muted-foreground"
-                onClick={() => window.open(`/api/conversations/${conversationId}/export?format=md`, '_blank')}
-                title="Export as Markdown"
-              >
-                <Download className="size-3.5" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="text-muted-foreground"
+                    title="Export conversation"
+                    aria-label="Export conversation"
+                  >
+                    <Download className="size-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() =>
+                      window.open(
+                        `/api/conversations/${conversationId}/export?format=md`,
+                        '_blank',
+                      )
+                    }
+                  >
+                    Export as Markdown
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      window.open(
+                        `/api/conversations/${conversationId}/export?format=json`,
+                        '_blank',
+                      )
+                    }
+                  >
+                    Export as JSON
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
             {hasMessages && (
               <Button
@@ -535,8 +770,14 @@ export function ChatPage() {
                 size="sm"
                 className="gap-1.5 h-8"
                 onClick={() => {
+                  // Preserve current project context — if this chat belongs
+                  // to a project, "New chat" should create another one in
+                  // the same project, not kick the user back to ungrouped.
                   clearMessages()
-                  navigate('/dashboard/chat')
+                  const dest = activeProjectId
+                    ? `/dashboard/chat?projectId=${activeProjectId}`
+                    : '/dashboard/chat'
+                  navigate(dest)
                 }}
                 disabled={isLoading}
               >
@@ -583,6 +824,26 @@ export function ChatPage() {
                   message isn't permanently hidden behind it when scrolled to
                   the bottom. Matches claude.ai's h-12 spacer pattern. */}
               <div aria-hidden className="h-48 shrink-0" />
+            </div>
+          ) : conversationNotFound ? (
+            <div className="flex-1 flex items-center justify-center px-4 py-6">
+              <div className="max-w-md w-full text-center space-y-4">
+                <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
+                  <FileQuestion className="h-7 w-7 text-muted-foreground" />
+                </div>
+                <div className="space-y-1">
+                  <h2 className="text-xl font-semibold">Conversation not found</h2>
+                  <p className="text-sm text-muted-foreground">
+                    This chat may have been deleted or belongs to another account.
+                  </p>
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <Button onClick={() => navigate('/dashboard/chat')}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Start a new chat
+                  </Button>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="flex-1 flex items-center justify-center px-4 py-6">
@@ -661,6 +922,21 @@ export function ChatPage() {
                   // Inner InputGroup has its own border+rounded-md+ring; we
                   // neutralise those via the `[&_...]` selectors so we don't
                   // end up with mismatched nested corners (the original bug).
+                  // `relative` anchors the SkillsSlashMenu popover below.
+                  <div className="relative">
+                    {slashMenuOpen && (
+                      <SkillsSlashMenu
+                        input={inputValue}
+                        activeIndex={slashIndex}
+                        setActiveIndex={setSlashIndex}
+                        onSelect={handleSelectSkill}
+                      />
+                    )}
+                    {activatingSkill && (
+                      <div className="absolute bottom-full left-0 right-0 mb-2 mx-4 rounded-md border bg-popover p-2 text-xs text-muted-foreground shadow-md z-20">
+                        Activating <span className="font-mono">/{activatingSkill}</span>…
+                      </div>
+                    )}
                   <div
                     className={cn(
                       'rounded-2xl border bg-background shadow-sm overflow-hidden transition-all',
@@ -689,6 +965,7 @@ export function ChatPage() {
                       <PromptInputTextarea
                         ref={textareaRef}
                         placeholder={hasMessages ? 'Reply to the AI...' : 'Ask anything, or drop a file…'}
+                        onKeyDown={handleTextareaKeyDown}
                       />
                       <PromptInputFooter>
                         <PromptInputTools>
@@ -714,6 +991,7 @@ export function ChatPage() {
                         <PromptInputSubmit status={status} onStop={stop} />
                       </PromptInputFooter>
                     </PromptInput>
+                  </div>
                   </div>
                 )}
               </div>
