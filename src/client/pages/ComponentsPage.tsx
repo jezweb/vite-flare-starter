@@ -666,6 +666,13 @@ export function ComponentsPage() {
                 <Label className="text-xs text-muted-foreground mb-2 block">Compact mode (for toolbars)</Label>
                 <AudioRecorder compact onRecordingComplete={(_b, ms) => alert(`Recorded ${(ms / 1000).toFixed(1)}s`)} />
               </div>
+              <Separator />
+              <div>
+                <Label className="text-xs text-muted-foreground mb-2 block">
+                  Streaming chunks (1s cadence for demo) — live counter below
+                </Label>
+                <AudioRecorderChunkDemo />
+              </div>
             </CardContent>
           </Card>
 
@@ -704,6 +711,39 @@ export function ComponentsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+    </div>
+  )
+}
+
+/**
+ * Demo wrapper for the AudioRecorder streaming-chunk mode. Counts chunks
+ * as they arrive and renders the live count. 1-second cadence is for
+ * demo visibility — production streaming typically uses 30-60s chunks.
+ */
+function AudioRecorderChunkDemo() {
+  const [chunkCount, setChunkCount] = useState(0)
+  const [totalBytes, setTotalBytes] = useState(0)
+  const [lastDuration, setLastDuration] = useState<number | null>(null)
+
+  return (
+    <div className="space-y-2">
+      <AudioRecorder
+        chunkDurationMs={1000}
+        maxDuration={60}
+        onChunk={(chunk) => {
+          setChunkCount((n) => n + 1)
+          setTotalBytes((b) => b + chunk.size)
+        }}
+        onRecordingComplete={(blob, ms) => {
+          setLastDuration(ms)
+          // In production you'd keep the blob for archive; we just log size.
+          console.log(`Final blob: ${blob.size} bytes, ${ms}ms`)
+        }}
+      />
+      <div className="text-xs text-muted-foreground font-mono tabular-nums">
+        chunks: {chunkCount} · bytes: {totalBytes.toLocaleString()}
+        {lastDuration != null && ` · last recording: ${(lastDuration / 1000).toFixed(1)}s`}
+      </div>
     </div>
   )
 }
