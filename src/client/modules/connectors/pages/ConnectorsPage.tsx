@@ -90,18 +90,18 @@ export function ConnectorsPage() {
             <Plug className="h-5 w-5" />
             Connectors
           </h1>
-          <p className="text-sm text-muted-foreground mt-1 max-w-lg">
-            Connect external services so the AI can work with your data. Each connector runs on MCP (Model Context Protocol) — your tokens are encrypted at rest and never shared.
+          <p className="text-sm text-muted-foreground mt-1 max-w-xl">
+            Give the AI access to external tools via the Model Context Protocol. Paste any MCP server URL — public, community-hosted, or your own Cloudflare Worker. OAuth and bearer tokens both work; tokens are encrypted at rest.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setCustomOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add custom
-          </Button>
-          <Button onClick={() => setBrowseOpen(true)}>
+          <Button variant="outline" onClick={() => setBrowseOpen(true)}>
             <Search className="mr-2 h-4 w-4" />
-            Browse connectors
+            Examples
+          </Button>
+          <Button onClick={() => setCustomOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add connector
           </Button>
         </div>
       </div>
@@ -114,8 +114,8 @@ export function ConnectorsPage() {
         <EmptyState
           icon={Plug}
           title="No connectors yet"
-          description="Browse the catalogue to connect services like Google Drive, Gmail, GitHub, or add a custom MCP server URL."
-          action={{ label: 'Browse connectors', onClick: () => setBrowseOpen(true) }}
+          description="Paste any MCP server URL to connect. Start with an example to see the flow, or add your own custom connector — we'll probe the endpoint and walk you through OAuth or bearer auth."
+          action={{ label: 'Add connector', onClick: () => setCustomOpen(true) }}
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -297,9 +297,9 @@ function BrowseDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Browse connectors</DialogTitle>
+          <DialogTitle>Connector examples</DialogTitle>
           <DialogDescription>
-            Popular MCP servers. Connect one to give the AI access to your data at that service.
+            A short list of public MCP servers to demonstrate the connector flow. For more, paste any MCP server URL via Add connector — Smithery, Anthropic reference servers, and self-hosted Workers all work.
           </DialogDescription>
         </DialogHeader>
         <Input
