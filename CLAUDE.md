@@ -609,7 +609,7 @@ Use for: heavy ML inference, video processing, anything that exceeds Workers CPU
 
 One `OPENROUTER_API_KEY` unlocks all non-Workers-AI models. Direct-provider SDKs (`@ai-sdk/anthropic`, `@ai-sdk/openai`, `@ai-sdk/google`) are kept as fallbacks if you prefer native routing.
 
-AI features in the chat module: streaming, tool calling, reasoning extraction, vision (image attachments), structured output, token usage logging, message metadata, regenerate, **message editing** (truncate + re-send), **conversation search** (FTS5), **conversation export** (JSON/Markdown), response duration display, conversation persistence, MCP integration, MCP-UI rendering.
+AI features in the chat module: streaming, tool calling, reasoning extraction, vision (image attachments), structured output, token usage logging, message metadata, regenerate, **message editing** (truncate + re-send), **conversation search** (FTS5), **conversation export** (JSON/Markdown), response duration display, conversation persistence, MCP integration, MCP-UI rendering, **sources footer** (claude.ai-style citation strip aggregated from web_search / gmail_search / drive_search / places_search outputs plus native `source-url` / `source-document` parts), **per-tool telemetry** (`ai_tool_calls` D1 table + admin "Tool errors" tab), **privileged-tool gating** (`gmail_send` / `run_shell` / `drive_delete` etc. hidden unless user intent is clear), **single-retry tool repair** (`experimental_repairToolCall` logs then emits parse error — no cost-bearing retry yet).
 
 ### Document Conversion
 
@@ -618,6 +618,35 @@ AI features in the chat module: streaming, tool calling, reasoning extraction, v
 - **PDFs + images**: Uses `env.AI.toMarkdown()` (Cloudflare's built-in converter — free, fast, native PDF parsing)
 - **Fallback**: Vision model (Kimi K2.5) for formats `toMarkdown()` doesn't handle
 - **Text files**: Pass-through via `TextDecoder`
+
+### Observability
+
+Two D1 tables record every chat request:
+
+| Table | Granularity | Written by | Read by |
+|---|---|---|---|
+| `ai_usage_logs` | one row per REQUEST (aggregate usage) | `buildChatAgent` `onFinish` | admin stats, per-user caps |
+| `ai_tool_calls` | one row per TOOL CALL (step-level) | chat route `onStepFinish` | admin "Tool errors" tab |
+
+Each `ai_tool_calls` row captures `step_index`, `tool_name`, `tool_error` (null on success), and per-step `input_tokens`/`output_tokens`. Errors are also logged as structured JSON to Workers Logs under `event: "tool_error"` for dashboard filtering. Enable observability on the Worker (`observability.enabled: true` in wrangler.jsonc) for 7-day retention.
+
+### Sources UX
+
+`src/client/modules/chat/components/SourcesFooter.tsx` renders a chip strip under each assistant message. It aggregates citations from two origins:
+
+1. **Native SDK parts** — `source-url` and `source-document` UIMessage parts, emitted by search-grounded models (e.g. Gemini with googleSearch). Requires `sendSources: true` on `createAgentUIStreamResponse` (already set in the chat route).
+2. **Tool outputs** — walks `tool-*` parts in the message and extracts sources from known shapes: `web_search.results[]`, `gmail_search.messages[]`, `drive_search.files[]`, `places_search.places[]`.
+
+No tool schema changes required — extraction is purely client-side. Adding sources for a new tool means teaching `extractSources()` to recognise its output shape. Falls back to favicon → icon on image load failure. Collapses to first 8 sources with "+N more" toggle beyond that.
+
+### Privileged-tool gating
+
+`src/server/lib/ai/prepare-step.ts` exports `computeActiveTools()` which runs every step in the agent loop and filters out destructive tools (`gmail_send`, `gmail_delete`, `calendar_create`, `drive_delete`, `fs_delete`, `fs_write`, `run_shell`) unless:
+
+- The latest user message contains an unlock keyword (case-insensitive regex per tool), OR
+- The tool was already invoked successfully earlier in the same conversation.
+
+Keeps a "what's in my inbox?" chat from accidentally triggering `gmail_send` just because the model decides to be helpful. Add new privileged tools to `PRIVILEGED_TOOLS` + `UNLOCK_KEYWORDS` in the same file.
 
 ### AI SDK v7 Migration
 
