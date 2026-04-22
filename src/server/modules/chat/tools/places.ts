@@ -8,11 +8,16 @@
  * API docs: https://developers.google.com/maps/documentation/places/web-service
  * Get a key: https://console.cloud.google.com → enable "Places API (New)".
  */
-import { tool } from 'ai'
 import { z } from 'zod'
+import { MapPin, Info } from 'lucide-react'
+import type { ToolDefinition, AgentContext } from '@/shared/agent'
 
 interface PlacesEnv {
   GOOGLE_PLACES_API_KEY?: string
+}
+
+function getPlacesEnv(ctx: AgentContext): PlacesEnv {
+  return ctx.env as unknown as PlacesEnv
 }
 
 const BASIC_FIELD_MASK = [
@@ -176,61 +181,89 @@ async function placeDetails(apiKey: string, placeId: string): Promise<Normalised
   }
 }
 
-// ─── Tool Factories ───────────────────────────────────────────────────────
+// ─── Tool Definitions ───────────────────────────────────────────────────
 
-export function buildPlacesTools(env: PlacesEnv) {
-  const apiKey = env.GOOGLE_PLACES_API_KEY
-  if (!apiKey) return {}
-
-  return {
-    places_search: tool({
-      description:
-        'Search for local businesses or points of interest by text query. Uses Google Places API (New). ' +
-        'Returns name, location (lat/lng), address, phone, website, rating, review count, and type for each result. ' +
-        'Pair the results with the `show_map` UI tool to render a map + card list in chat. ' +
-        'Always include the suburb or city in the query (e.g. "wreckers Newcastle NSW", not just "wreckers").',
-      inputSchema: z.object({
-        query: z.string().describe('Search query — include suburb/city (e.g. "plumber Newcastle NSW")'),
-        lat: z.number().optional().describe('Latitude to bias the search around'),
-        lng: z.number().optional().describe('Longitude to bias the search around'),
-        radius: z.number().optional().describe('Bias radius in metres (default 50000)'),
-        max_results: z.number().optional().describe('Max results 1-20 (default 8)'),
-        open_now: z.boolean().optional().describe('Only return places currently open'),
-        type: z.string().optional().describe('Filter by Google place type (e.g. "restaurant", "car_repair")'),
-        region: z.string().optional().describe('ISO country code for region bias (default "AU")'),
-      }),
-      execute: async (args) => {
-        try {
-          const places = await textSearch(apiKey, args.query, {
-            lat: args.lat,
-            lng: args.lng,
-            radius: args.radius,
-            maxResults: args.max_results,
-            openNow: args.open_now,
-            type: args.type,
-            region: args.region,
-          })
-          return { count: places.length, places }
-        } catch (err) {
-          return { error: err instanceof Error ? err.message : String(err) }
-        }
-      },
-    }),
-
-    places_details: tool({
-      description:
-        'Get full details for a specific place — opening hours, reviews, editorial summary, full address. ' +
-        'Requires a place_id from `places_search`. Use sparingly; `places_search` already returns most fields.',
-      inputSchema: z.object({
-        place_id: z.string().describe('Google Place ID (from places_search results)'),
-      }),
-      execute: async (args) => {
-        try {
-          return await placeDetails(apiKey, args.place_id)
-        } catch (err) {
-          return { error: err instanceof Error ? err.message : String(err) }
-        }
-      },
-    }),
-  }
+export const placesSearchDefinition: ToolDefinition<
+  {
+    query: string
+    lat?: number
+    lng?: number
+    radius?: number
+    max_results?: number
+    open_now?: boolean
+    type?: string
+    region?: string
+  },
+  unknown
+> = {
+  name: 'places_search',
+  description:
+    'Search for local businesses or points of interest by text query. Uses Google Places API (New). ' +
+    'Returns name, location (lat/lng), address, phone, website, rating, review count, and type for each result. ' +
+    'Pair the results with the `show_map` UI tool to render a map + card list in chat. ' +
+    'Always include the suburb or city in the query (e.g. "wreckers Newcastle NSW", not just "wreckers").',
+  inputSchema: z.object({
+    query: z.string().describe('Search query — include suburb/city (e.g. "plumber Newcastle NSW")'),
+    lat: z.number().optional().describe('Latitude to bias the search around'),
+    lng: z.number().optional().describe('Longitude to bias the search around'),
+    radius: z.number().optional().describe('Bias radius in metres (default 50000)'),
+    max_results: z.number().optional().describe('Max results 1-20 (default 8)'),
+    open_now: z.boolean().optional().describe('Only return places currently open'),
+    type: z.string().optional().describe('Filter by Google place type (e.g. "restaurant", "car_repair")'),
+    region: z.string().optional().describe('ISO country code for region bias (default "AU")'),
+  }),
+  outputSchema: z.unknown(),
+  isAvailable: (ctx) => !!getPlacesEnv(ctx).GOOGLE_PLACES_API_KEY,
+  execute: async (args, ctx) => {
+    const apiKey = getPlacesEnv(ctx).GOOGLE_PLACES_API_KEY!
+    try {
+      const places = await textSearch(apiKey, args.query, {
+        lat: args.lat,
+        lng: args.lng,
+        radius: args.radius,
+        maxResults: args.max_results,
+        openNow: args.open_now,
+        type: args.type,
+        region: args.region,
+      })
+      return { count: places.length, places }
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : String(err) }
+    }
+  },
+  render: {
+    icon: MapPin,
+    displayName: 'Places Search',
+    summary: (output) => {
+      const o = output as { count?: number; error?: string } | undefined
+      if (!o || o.error) return null
+      return `${o.count ?? 0} places`
+    },
+  },
 }
+
+export const placesDetailsDefinition: ToolDefinition<{ place_id: string }, unknown> = {
+  name: 'places_details',
+  description:
+    'Get full details for a specific place — opening hours, reviews, editorial summary, full address. ' +
+    'Requires a place_id from `places_search`. Use sparingly; `places_search` already returns most fields.',
+  inputSchema: z.object({
+    place_id: z.string().describe('Google Place ID (from places_search results)'),
+  }),
+  outputSchema: z.unknown(),
+  isAvailable: (ctx) => !!getPlacesEnv(ctx).GOOGLE_PLACES_API_KEY,
+  execute: async (args, ctx) => {
+    const apiKey = getPlacesEnv(ctx).GOOGLE_PLACES_API_KEY!
+    try {
+      return await placeDetails(apiKey, args.place_id)
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : String(err) }
+    }
+  },
+  render: { icon: Info, displayName: 'Place Details' },
+}
+
+export const placesDefinitions = [
+  placesSearchDefinition,
+  placesDetailsDefinition,
+] as ToolDefinition<unknown, unknown>[]
