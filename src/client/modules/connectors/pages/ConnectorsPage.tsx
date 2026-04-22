@@ -36,6 +36,7 @@ import {
 } from '../hooks/useConnectors'
 import type { CatalogEntry } from '@/shared/config/connector-catalog'
 import { ConnectionDetail } from '../components/ConnectionDetail'
+import { GoogleWorkspacePanel } from '../components/GoogleWorkspacePanel'
 
 function resolveIcon(name: string): LucideIcon {
   const icons = LucideIcons as unknown as Record<string, LucideIcon>
@@ -105,6 +106,11 @@ export function ConnectorsPage() {
           </Button>
         </div>
       </div>
+
+      {/* Native integrations — shown above MCP connectors because they're
+          first-class (no MCP indirection, no token pasting). Self-hides when
+          the fork hasn't configured GOOGLE_WORKSPACE_CLIENT_ID. */}
+      <GoogleWorkspacePanel />
 
       {connectionsLoading ? (
         <div className="flex items-center justify-center py-12">

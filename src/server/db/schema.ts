@@ -53,6 +53,9 @@ export {
   userMcpToolPolicies,
 } from '@/server/modules/mcp-connections/db/schema'
 
+// Google Workspace (v1.8) — native Google OAuth (no MCP indirection)
+export { googleWorkspaceTokens } from '@/server/modules/google-workspace/db/schema'
+
 // Polymorphic modules (entity_type + entity_id pattern)
 export { comments } from '@/server/modules/comments/db/schema'
 export { tags, entityTags } from '@/server/modules/tags/db/schema'

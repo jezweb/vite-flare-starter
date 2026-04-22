@@ -8,7 +8,7 @@ This doc covers:
 2. [How the connector flow works](#how-the-connector-flow-works)
 3. [Public MCP servers worth trying](#public-mcp-servers-worth-trying)
 4. [Building your own MCP server](#building-your-own-mcp-server)
-5. [Why not native Google Workspace tools instead?](#why-not-native-google-workspace-tools-instead)
+5. [Native Google Workspace integration (v1.8+)](#native-google-workspace-integration-v18)
 
 ---
 
@@ -87,18 +87,49 @@ And for OAuth support: advertise `/.well-known/oauth-authorization-server` (RFC 
 
 ---
 
-## Why not native Google Workspace tools instead?
+## Native Google Workspace integration (v1.8+)
 
-For Google services specifically, the MCP indirection can feel heavy — you're adding an OAuth layer on top of Google's OAuth layer. A direct Google OAuth integration (store Google refresh tokens in D1, call Gmail/Drive/Calendar APIs directly from agent tools) is cleaner when:
+For Google services specifically, the MCP indirection is heavy — you'd be adding an OAuth layer on top of Google's OAuth layer. The starter ships a **native Google Workspace module** under `src/server/modules/google-workspace/` instead: direct OAuth 2.0, refresh tokens encrypted in D1, agent tools that hit Google APIs directly.
 
-- You only need Google Workspace, not a broader connector ecosystem
-- You want per-tool scope granularity without running an MCP server
-- Forkers expect Workspace integration "just works" with their own Google Cloud OAuth client
+When configured, a "Google Workspace" card appears at the top of the Connectors page (self-hides when env vars are absent).
 
-This is how Gemini and ChatGPT handle Workspace. **It's planned for a future release** of the starter as a native agent-tools module (no catalogue entry, no MCP server needed).
+**Agent tools shipped:**
 
-For now, if you want Google Workspace access in this starter:
+- `gmail_search(query, limit)` — Gmail search syntax
+- `gmail_send(to, subject, body, cc?)` — sends with `needsApproval: true`
+- `drive_search(query, limit)` — Drive fullText + field queries
+- `calendar_upcoming(days?, limit?)` — next N events on primary calendar
+- `calendar_create(summary, start, end, attendees?)` — creates with `needsApproval: true`
 
-- **Option 1** — self-host a Workspace MCP server (Cloudflare Agents SDK has a template) and add its URL via Add connector.
-- **Option 2** — write native agent tools in `src/server/modules/chat/tools/` that wrap Google APIs directly, using your own stored refresh tokens. Use the existing `email` or `places` modules as templates.
-- **Option 3** — wait for the native module (roadmap).
+**Setup:**
+
+1. Create a Google Cloud project and OAuth client (Web application type)
+2. Add redirect URI: `https://your-app.workers.dev/api/google-workspace/callback`
+3. Enable these APIs on the project: Gmail, Drive, Calendar, People (for userinfo)
+4. Set secrets:
+
+```bash
+printf "<client-id>" | npx wrangler secret put GOOGLE_WORKSPACE_CLIENT_ID
+printf "<client-secret>" | npx wrangler secret put GOOGLE_WORKSPACE_CLIENT_SECRET
+```
+
+These are separate from `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` (used by better-auth for sign-in). Keeping them separate means sign-in stays minimal-scope while Workspace gets the broader Gmail/Drive/Calendar grants.
+
+Tokens are AES-GCM encrypted via `TOKEN_ENCRYPTION_KEY` (same secret used by MCP connectors). Set that too if you haven't already:
+
+```bash
+printf "$(openssl rand -base64 32)" | npx wrangler secret put TOKEN_ENCRYPTION_KEY
+```
+
+**Scopes requested on consent:**
+
+- `gmail.readonly`, `gmail.send`
+- `drive.readonly`, `drive.file`
+- `calendar.events`
+- `openid email profile` (for the connected-as display email)
+
+**Access token refresh** happens lazily — every agent tool call checks expiry and refreshes if within 5 min. On refresh failure the status goes `error` and the UI prompts the user to reconnect.
+
+**Extending with more tools:** duplicate one of the existing tool blocks in `src/server/modules/chat/tools/google-workspace.ts` and call the relevant Google API. `requireActiveToken(ctx, 'scope.name')` guards scope availability automatically — just declare the scope in `GOOGLE_WORKSPACE_SCOPES` in `tokens.ts` and users will be prompted for it on next connect.
+
+**Adding services** (Docs, Sheets, Slides, Tasks, Contacts): same pattern. Add scopes to `GOOGLE_WORKSPACE_SCOPES`, add tools to `buildGoogleWorkspaceTools`, surface them in `SCOPE_LABELS` in `GoogleWorkspacePanel.tsx`.

@@ -26,6 +26,7 @@ import { buildSessionTools } from './session'
 import { buildPlacesTools } from './places'
 import { buildEmailTools } from './email'
 import { buildSearchFilesTools } from './search-files'
+import { buildGoogleWorkspaceTools } from './google-workspace'
 
 interface ChatToolsContext {
   env: {
@@ -58,6 +59,10 @@ interface ChatToolsContext {
     APP_NAME?: string
     APP_URL?: string
     BETTER_AUTH_URL?: string
+    // Google Workspace native OAuth — enables gmail/drive/calendar tools
+    GOOGLE_WORKSPACE_CLIENT_ID?: string
+    GOOGLE_WORKSPACE_CLIENT_SECRET?: string
+    TOKEN_ENCRYPTION_KEY?: string
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     IMAGES?: any
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -121,6 +126,16 @@ export function buildChatTools(ctx: ChatToolsContext) {
       userId: ctx.userId,
       userEmail: ctx.userEmail,
       userName: ctx.userName,
+    }),
+  )
+
+  // Google Workspace — omitted entirely when OAuth env vars aren't set.
+  // Further gated at tool-call time by the user's active connection + scopes.
+  Object.assign(
+    tools,
+    buildGoogleWorkspaceTools({
+      env: ctx.env as unknown as Parameters<typeof buildGoogleWorkspaceTools>[0]['env'],
+      userId: ctx.userId,
     }),
   )
 
