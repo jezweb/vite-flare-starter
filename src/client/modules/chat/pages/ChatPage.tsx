@@ -178,6 +178,12 @@ export function ChatPage() {
     initialMessages: existingConversation?.messages as Message[] | undefined,
   })
 
+  // Track the last conversation we hydrated from the server. Declared
+  // BEFORE the navigate effect so we can stamp it on creation (prevents
+  // the hydration effect further down from clobbering a live stream when
+  // the conversation's saved messages land).
+  const lastHydratedIdRef = useRef<string | undefined>(undefined)
+
   // Navigate to conversation URL when a new conversation is created.
   // Preserve ?projectId= across the navigate so the in-project pill doesn't
   // briefly vanish while the conversations list refetches. The pill falls
@@ -185,6 +191,12 @@ export function ChatPage() {
   useEffect(() => {
     if (conversationId && !urlConversationId && messages.length > 0) {
       const projectSuffix = urlProjectId ? `?projectId=${urlProjectId}` : ''
+      // Stamp BEFORE navigate so the hydration effect (below) sees this
+      // conversation as "already hydrated" and skips — otherwise the
+      // server-side refetch that follows the URL change would overwrite
+      // the in-flight streaming state with a stale DB snapshot ("flick
+      // back" symptom — see audit 2026-04-22).
+      lastHydratedIdRef.current = conversationId
       navigate(`/dashboard/chat/${conversationId}${projectSuffix}`, { replace: true })
       queryClient.invalidateQueries({ queryKey: ['conversations'] })
     }
@@ -223,7 +235,8 @@ export function ChatPage() {
   // Reset + hydrate when the conversation URL changes (navigating sidebar
   // entries). Tracking the last-hydrated conversationId prevents us from
   // clobbering mid-stream messages for the current conversation.
-  const lastHydratedIdRef = useRef<string | undefined>(undefined)
+  // (lastHydratedIdRef declared earlier so the navigate effect above can
+  // stamp it on creation — see comment there.)
   useEffect(() => {
     // Conversation cleared (user clicked "New chat" with no id) — empty the list.
     if (!urlConversationId) {
@@ -584,6 +597,39 @@ export function ChatPage() {
       lastSeenCountRef.current = messages.length
     }
   }, [messages.length])
+
+  // Detect USER intent to scroll up synchronously — before the rAF streaming
+  // loop gets a chance to snap back to bottom. Wheel events fire inside the
+  // user's gesture (before the next rAF), so flipping stickToBottomRef here
+  // guarantees the next frame won't overwrite their scroll position. Without
+  // this, users can't scroll up during streaming at all (the rAF wins every
+  // race with the scroll event handler).
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const release = () => {
+      if (stickToBottomRef.current) {
+        stickToBottomRef.current = false
+        setIsAtBottom(false)
+      }
+    }
+    const onWheel = (e: WheelEvent) => {
+      if (e.deltaY < 0) release()
+    }
+    const onTouchStart = () => release()
+    const onKeyDown = (e: KeyboardEvent) => {
+      // Scroll-affecting keys: user reading intent
+      if (['ArrowUp', 'PageUp', 'Home'].includes(e.key)) release()
+    }
+    el.addEventListener('wheel', onWheel, { passive: true })
+    el.addEventListener('touchstart', onTouchStart, { passive: true })
+    el.addEventListener('keydown', onKeyDown)
+    return () => {
+      el.removeEventListener('wheel', onWheel)
+      el.removeEventListener('touchstart', onTouchStart)
+      el.removeEventListener('keydown', onKeyDown)
+    }
+  }, [])
 
   // Auto-scroll to bottom on new messages / streamed tokens, but only if the
   // user hasn't scrolled up. Tracks unread count for the scroll-to-latest

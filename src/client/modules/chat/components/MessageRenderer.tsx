@@ -7,20 +7,19 @@
  * - tool-* / dynamic-tool → Tool accordion (plus our custom rich-output renderers)
  * - our custom markers (_artifact, _document, _ui) take precedence over the generic Tool view
  */
-import { memo, useState, useCallback, useEffect, useRef } from 'react'
+import { memo, useState, useCallback } from 'react'
 import { Message, MessageContent, MessageResponse } from '@/components/ai-elements/message'
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@/components/ai-elements/reasoning'
-import { Tool, ToolContent, ToolHeader, ToolInput, ToolOutput } from '@/components/ai-elements/tool'
 import type { Message as UIMessageType, MessageMetadata } from '../hooks/useChat'
 import { ChatUiElement, hasUiMarker } from './chat-ui/ChatUiElement'
 import { isTakeoverElement } from './chat-ui/InputTakeover'
 import { ArtifactViewer, isArtifact } from './chat-ui/ArtifactViewer'
 import { DocumentDownload, isDocument } from './chat-ui/DocumentDownload'
-import { WebSearchResults, isWebSearchOutput } from './chat-ui/WebSearchResults'
 import { AttachedFileBlock, parseAttachedFile } from './AttachedFileBlock'
 import { SkillActivationBlock, parseSkillActivation } from './SkillActivationBlock'
 import { extractUIResources, ToolUIResource } from './ToolUIResource'
 import { ToolApproval } from './chat-ui/ToolApproval'
+import { ToolCard, findRenderer, type ToolState } from './tool-renderers'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Textarea } from '@/components/ui/textarea'
 import { Loader2, RotateCcw, Pencil, Copy, Check, ThumbsUp, ThumbsDown, Sparkles, FileText, FileSpreadsheet, FileAudio, FileVideo, FileCode, FileArchive, File as FileIcon } from 'lucide-react'
@@ -287,6 +286,12 @@ function MessageBody({
       parts = [{ type: 'text', text: String(parts) }]
     }
   }
+  // Merge consecutive reasoning parts into one block so the transcript
+  // doesn't get spammed with multiple "Thought for a few seconds" pills
+  // between tool calls. The model still emits them granularly; we just
+  // fuse them visually so a user sees a single collapsible block per
+  // reasoning "run" (between tool calls or at the head/tail of a message).
+  parts = mergeReasoningRuns(parts)
   const hasVisibleText = parts.some((p) => p.type === 'text')
   const isUser = message.role === 'user'
 
@@ -335,6 +340,39 @@ function MessageBody({
         // 2. Reasoning (thinking models)
         if (part.type === 'reasoning') {
           const text = (part as { text?: string }).text ?? ''
+          // Hide reasoning blocks that have no actual content (some providers
+          // emit an empty one between tool calls; renders as a useless
+          // "Thought for a few seconds" pill otherwise).
+          if (!text.trim() && !(isLoading && isLast)) return null
+          // Some reasoning models (e.g. Kimi K2.5 via workers-ai-provider)
+          // bake their FINAL answer into their reasoning stream and never
+          // emit a separate text part. Detect that case — completed
+          // assistant message, this is the trailing content, and no text
+          // parts exist anywhere — and render as a muted markdown response
+          // so the answer isn't stuck inside a collapsed "Thought for…"
+          // block. Rendered in text-sm/muted tone to signal this is the
+          // model's chain-of-thought surfaced as an answer, not full prose.
+          const anyTextInMessage = parts.some(
+            (p) => p.type === 'text' && !!(p as { text?: string }).text?.trim(),
+          )
+          const laterPartsHaveContent = parts.slice(i + 1).some((p) => {
+            if (p.type === 'text') return !!(p as { text?: string }).text?.trim()
+            if (p.type === 'reasoning') return !!(p as { text?: string }).text?.trim()
+            if (p.type.startsWith('tool-') || p.type === 'dynamic-tool') return true
+            return false
+          })
+          const promoteToAnswer =
+            !isLoading && !laterPartsHaveContent && !anyTextInMessage && !!text.trim()
+          if (promoteToAnswer) {
+            return (
+              <div
+                key={i}
+                className="text-sm leading-relaxed text-foreground/90 [&_p]:my-1 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0"
+              >
+                <MessageResponse>{text}</MessageResponse>
+              </div>
+            )
+          }
           return (
             <Reasoning key={i} isStreaming={isLoading && isLast} className="w-full">
               <ReasoningTrigger />
@@ -432,15 +470,7 @@ function MessageBody({
             return <DocumentDownload key={i} doc={output} />
           }
 
-          // 4c1. Web search results — custom renderer (claude.ai-style
-          // favicon + title + domain rows). Only matches web_search /
-          // search-like tools via the {query, results[]} duck type so it
-          // won't hijack unrelated outputs.
-          if (isComplete && (toolName === 'web_search' || toolName === 'search') && isWebSearchOutput(output)) {
-            return <WebSearchResults key={i} output={output} />
-          }
-
-          // 4c2. Generated image tool — render the image inline so users
+          // 4c. Generated image tool — render the image inline so users
           // don't have to read the URL or wait for the model to re-emit it
           // as markdown. Shape: { url, key, prompt, provider, sizeBytes }.
           if (isComplete && isGeneratedImage(output)) {
@@ -485,21 +515,33 @@ function MessageBody({
             )
           }
 
-          // 4g. Fallback: generic Tool accordion from AI Elements.
-          // Auto-open while running, auto-close once complete. Previously we
-          // used `defaultOpen` which is only read on mount — so a tool that
-          // mounted in "input-streaming" stayed open forever after completing.
-          // Wrap in ControlledTool so the collapse tracks the live state.
+          // 4g. Registry-driven rendering. A renderer (keyed by tool name
+          // or duck-typed output) provides a compact summary line and a
+          // rich expanded view. Falls back to raw JSON dump when no
+          // renderer matches. Add new tool renderers under
+          // src/client/modules/chat/components/tool-renderers/.
+          const renderer = findRenderer(toolName, output)
+          const summary =
+            isComplete && renderer?.summary ? renderer.summary(output, p['input']) : null
+          const cardName =
+            typeof renderer?.displayName === 'function'
+              ? renderer.displayName(toolName)
+              : renderer?.displayName ?? toolDisplayName
           return (
-            <ControlledTool
+            <ToolCard
               key={i}
-              type={part.type as `tool-${string}`}
-              state={state}
-              title={toolDisplayName}
+              name={cardName}
+              state={state as ToolState}
+              icon={renderer?.icon}
+              summary={summary}
               input={p['input']}
               output={output}
               errorText={p['errorText'] as string | undefined}
-            />
+            >
+              {isComplete && renderer?.expanded
+                ? renderer.expanded({ output, input: p['input'] })
+                : undefined}
+            </ToolCard>
           )
         }
 
@@ -630,51 +672,36 @@ function GeneratedImageBlock({ output }: { output: { url: string; prompt?: strin
 }
 
 /**
- * ControlledTool — wraps the AI Elements Tool accordion with live-state-driven
- * open/close. Auto-opens while the tool is still running, auto-closes on
- * completion. Users can still click the header to toggle manually; we only
- * auto-update on `state` transitions, not every render.
+ * Fold consecutive `reasoning` parts into a single part. Preserves all
+ * other part types verbatim. Prevents the "three collapsed Thought for a
+ * few seconds rows in a row" look some reasoning-heavy models produce.
+ *
+ * Inputs with zero or one reasoning part pass through unchanged. When
+ * merging, text values are concatenated with a blank line separator so
+ * streamdown renders them as distinct paragraphs inside the accordion.
  */
-function ControlledTool({
-  type,
-  state,
-  title,
-  input,
-  output,
-  errorText,
-}: {
-  type: `tool-${string}`
-  state: string
-  title: string
-  input: unknown
-  output: unknown
-  errorText?: string
-}) {
-  const isRunning = state === 'input-streaming' || state === 'input-available'
-  const [open, setOpen] = useState(isRunning)
-  // When state transitions, re-sync open: open while running, close when done.
-  // Respects manual toggles because we only fire on state changes, not every render.
-  const prevStateRef = useRef(state)
-  useEffect(() => {
-    if (prevStateRef.current !== state) {
-      prevStateRef.current = state
-      setOpen(state === 'input-streaming' || state === 'input-available')
+function mergeReasoningRuns<T extends { type: string }>(parts: T[]): T[] {
+  const out: T[] = []
+  let buffer: T | null = null
+  for (const p of parts) {
+    if (p.type === 'reasoning') {
+      if (buffer) {
+        const prevText = ((buffer as unknown as { text?: string }).text ?? '').toString()
+        const nextText = ((p as unknown as { text?: string }).text ?? '').toString()
+        const merged = prevText && nextText ? `${prevText}\n\n${nextText}` : prevText || nextText
+        buffer = ({ ...(buffer as object), text: merged } as unknown) as T
+      } else {
+        buffer = p
+      }
+      continue
     }
-  }, [state])
-
-  return (
-    <Tool open={open} onOpenChange={setOpen}>
-      <ToolHeader
-        type={type}
-        state={state as 'input-available' | 'output-available' | 'output-error' | 'input-streaming' | 'approval-requested' | 'approval-responded' | 'output-denied'}
-        title={title}
-      />
-      <ToolContent>
-        {input != null ? <ToolInput input={input} /> : null}
-        {(output != null || errorText) ? (
-          <ToolOutput output={output} errorText={errorText} />
-        ) : null}
-      </ToolContent>
-    </Tool>
-  )
+    if (buffer) {
+      out.push(buffer)
+      buffer = null
+    }
+    out.push(p)
+  }
+  if (buffer) out.push(buffer)
+  return out
 }
+

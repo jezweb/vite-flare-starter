@@ -26,6 +26,8 @@ import { buildChatTools } from '@/server/modules/chat/tools'
 import { aiUsageLogs } from '@/server/modules/chat/db/schema'
 import { userMeta } from '@/server/modules/user-meta/db/schema'
 import { projects } from '@/server/modules/projects/db/schema'
+import type { AgentContext as CanonicalAgentContext, AgentUser } from '@/shared/agent'
+import { nullTelemetry } from '@/shared/agent'
 
 interface AgentContext {
   env: Record<string, unknown> & {
@@ -138,12 +140,27 @@ export async function buildChatAgent(ctx: AgentContext): Promise<AgentResult> {
   let mcpCleanup: (() => Promise<void>) | undefined
 
   if (modelConfig?.supportsTools) {
-    const chatTools = buildChatTools({
-      env: ctx.env as Parameters<typeof buildChatTools>[0]['env'],
+    // Canonical AgentContext threaded through every tool execute().
+    const agentUser: AgentUser = {
+      id: ctx.userId,
+      email: ctx.user?.email ?? '',
+      name: ctx.user?.name ?? null,
+      role: (ctx.user?.role as 'user' | 'manager' | 'admin' | undefined) ?? 'user',
+    }
+    const agentCtx: CanonicalAgentContext = {
+      env: ctx.env as unknown as Record<string, unknown>,
       userId: ctx.userId,
-      userEmail: ctx.user?.email,
-      userName: ctx.user?.name,
-      defaultModel: modelId,
+      user: agentUser,
+      projectId: ctx.projectId ?? null,
+      model: {
+        id: modelId,
+        provider: 'other',
+        supportsVision: modelConfig.supportsVision ?? false,
+        supportsTools: modelConfig.supportsTools ?? true,
+      },
+      telemetry: nullTelemetry,
+    }
+    const chatTools = await buildChatTools(agentCtx, {
       availableSkillNames: availableSkills.map((s) => s.name),
     })
     const { tools: mcpTools, cleanup } = await getMCPTools(ctx.env)

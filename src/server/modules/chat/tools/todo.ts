@@ -1,24 +1,18 @@
 /**
  * Todo Tools — agent's session task list
  *
- * Lets the agent track multi-step work explicitly. Useful for:
- * - Multi-step plans where the agent needs to remember its own checklist
- * - Showing the user what's been done vs what's pending
- * - Pausable workflows (mark item in_progress, come back later)
+ * Lets the agent track multi-step work explicitly. All 4 tools on
+ * canonical ToolDefinition contract (Phase 0).
  *
  * Backed by user_meta with key prefix 'todos.' so we don't need a new table.
  * Each todo is stored as: { id, text, status, createdAt, updatedAt }
  */
-import { tool } from 'ai'
 import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq, and } from 'drizzle-orm'
+import { ListChecks, ListPlus, CheckCircle2, Eraser } from 'lucide-react'
 import { userMeta } from '@/server/modules/user-meta/db/schema'
-
-interface TodoContext {
-  db: D1Database
-  userId: string
-}
+import type { ToolDefinition, AgentContext } from '@/shared/agent'
 
 interface TodoItem {
   id: string
@@ -30,8 +24,12 @@ interface TodoItem {
 
 const TODO_KEY = 'todos.session'
 
-async function getTodos(ctx: TodoContext): Promise<TodoItem[]> {
-  const db = drizzle(ctx.db)
+function getDB(ctx: AgentContext): D1Database {
+  return (ctx.env as unknown as { DB: D1Database }).DB
+}
+
+async function getTodos(ctx: AgentContext): Promise<TodoItem[]> {
+  const db = drizzle(getDB(ctx))
   const row = await db
     .select({ value: userMeta.value })
     .from(userMeta)
@@ -46,8 +44,8 @@ async function getTodos(ctx: TodoContext): Promise<TodoItem[]> {
   }
 }
 
-async function saveTodos(ctx: TodoContext, todos: TodoItem[]): Promise<void> {
-  const db = drizzle(ctx.db)
+async function saveTodos(ctx: AgentContext, todos: TodoItem[]): Promise<void> {
+  const db = drizzle(getDB(ctx))
   const existing = await db
     .select({ id: userMeta.id })
     .from(userMeta)
@@ -62,98 +60,161 @@ async function saveTodos(ctx: TodoContext, todos: TodoItem[]): Promise<void> {
   }
 }
 
-export function buildTodoTools(ctx: TodoContext) {
-  return {
-    todo_add: tool({
-      description: 'Add an item to the agent\'s task list. Use to track multi-step work — list everything you plan to do upfront, then mark each item complete as you go. The user can see the list and your progress.',
-      inputSchema: z.object({
-        items: z.array(z.string()).describe('One or more task descriptions to add'),
-      }),
-      execute: async ({ items }) => {
-        try {
-          const todos = await getTodos(ctx)
-          const now = Date.now()
-          const newItems: TodoItem[] = items.map((text, i) => ({
-            id: `todo-${now}-${i}`,
-            text,
-            status: 'pending',
-            createdAt: now,
-            updatedAt: now,
-          }))
-          const updated = [...todos, ...newItems]
-          await saveTodos(ctx, updated)
-          return { added: newItems, total: updated.length }
-        } catch (error) {
-          return { error: error instanceof Error ? error.message : String(error) }
-        }
-      },
-    }),
+// ─── todo_add ───────────────────────────────────────────────────
 
-    todo_update: tool({
-      description: 'Update the status of a todo item. Use to mark items as in_progress when starting them, completed when done, or cancelled if no longer needed.',
-      inputSchema: z.object({
-        id: z.string().describe('The todo item ID'),
-        status: z.enum(['pending', 'in_progress', 'completed', 'cancelled']),
-        text: z.string().optional().describe('Optional: update the text too'),
-      }),
-      execute: async ({ id, status, text }) => {
-        try {
-          const todos = await getTodos(ctx)
-          const idx = todos.findIndex((t) => t.id === id)
-          if (idx === -1) return { error: `Todo not found: ${id}` }
-          const updated = { ...todos[idx]!, status, updatedAt: Date.now() }
-          if (text) updated.text = text
-          todos[idx] = updated
-          await saveTodos(ctx, todos)
-          return { updated, total: todos.length }
-        } catch (error) {
-          return { error: error instanceof Error ? error.message : String(error) }
-        }
-      },
-    }),
-
-    todo_list: tool({
-      description: 'List the current todo items. Use to check what\'s been done and what\'s still pending.',
-      inputSchema: z.object({
-        status: z.enum(['all', 'pending', 'in_progress', 'completed', 'cancelled']).optional().describe('Filter by status (default: all)'),
-      }),
-      execute: async ({ status = 'all' }) => {
-        try {
-          const todos = await getTodos(ctx)
-          const filtered = status === 'all' ? todos : todos.filter((t) => t.status === status)
-          return {
-            items: filtered,
-            counts: {
-              pending: todos.filter((t) => t.status === 'pending').length,
-              in_progress: todos.filter((t) => t.status === 'in_progress').length,
-              completed: todos.filter((t) => t.status === 'completed').length,
-              cancelled: todos.filter((t) => t.status === 'cancelled').length,
-              total: todos.length,
-            },
-          }
-        } catch (error) {
-          return { error: error instanceof Error ? error.message : String(error) }
-        }
-      },
-    }),
-
-    todo_clear: tool({
-      description: 'Clear todo items. Use after a task is fully complete to start fresh.',
-      inputSchema: z.object({
-        completed_only: z.boolean().optional().describe('If true, only remove completed/cancelled items. If false, clear everything (default: true).'),
-      }),
-      execute: async ({ completed_only = true }) => {
-        try {
-          const todos = await getTodos(ctx)
-          const remaining = completed_only
-            ? todos.filter((t) => t.status !== 'completed' && t.status !== 'cancelled')
-            : []
-          await saveTodos(ctx, remaining)
-          return { remaining: remaining.length, removed: todos.length - remaining.length }
-        } catch (error) {
-          return { error: error instanceof Error ? error.message : String(error) }
-        }
-      },
-    }),
-  }
+export const todoAddDefinition: ToolDefinition<{ items: string[] }, unknown> = {
+  name: 'todo_add',
+  description:
+    "Add an item to the agent's task list. Use to track multi-step work — list everything you plan to do upfront, then mark each item complete as you go. The user can see the list and your progress.",
+  inputSchema: z.object({
+    items: z.array(z.string()).describe('One or more task descriptions to add'),
+  }),
+  outputSchema: z.unknown(),
+  execute: async ({ items }, ctx) => {
+    try {
+      const todos = await getTodos(ctx)
+      const now = Date.now()
+      const newItems: TodoItem[] = items.map((text, i) => ({
+        id: `todo-${now}-${i}`,
+        text,
+        status: 'pending',
+        createdAt: now,
+        updatedAt: now,
+      }))
+      const updated = [...todos, ...newItems]
+      await saveTodos(ctx, updated)
+      return { added: newItems, total: updated.length }
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : String(error) }
+    }
+  },
+  render: {
+    icon: ListPlus,
+    displayName: 'Add Todo',
+    summary: (output) => {
+      const o = output as { added?: TodoItem[] } | undefined
+      return o?.added ? `${o.added.length} added` : null
+    },
+  },
 }
+
+// ─── todo_update ────────────────────────────────────────────────
+
+export const todoUpdateDefinition: ToolDefinition<
+  { id: string; status: 'pending' | 'in_progress' | 'completed' | 'cancelled'; text?: string },
+  unknown
+> = {
+  name: 'todo_update',
+  description:
+    'Update the status of a todo item. Use to mark items as in_progress when starting them, completed when done, or cancelled if no longer needed.',
+  inputSchema: z.object({
+    id: z.string().describe('The todo item ID'),
+    status: z.enum(['pending', 'in_progress', 'completed', 'cancelled']),
+    text: z.string().optional().describe('Optional: update the text too'),
+  }),
+  outputSchema: z.unknown(),
+  execute: async ({ id, status, text }, ctx) => {
+    try {
+      const todos = await getTodos(ctx)
+      const idx = todos.findIndex((t) => t.id === id)
+      if (idx === -1) return { error: `Todo not found: ${id}` }
+      const updated = { ...todos[idx]!, status, updatedAt: Date.now() }
+      if (text) updated.text = text
+      todos[idx] = updated
+      await saveTodos(ctx, todos)
+      return { updated, total: todos.length }
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : String(error) }
+    }
+  },
+  render: {
+    icon: CheckCircle2,
+    displayName: 'Update Todo',
+    summary: (_output, input) => (input as { status?: string } | undefined)?.status ?? null,
+  },
+}
+
+// ─── todo_list ──────────────────────────────────────────────────
+
+export const todoListDefinition: ToolDefinition<
+  { status?: 'all' | 'pending' | 'in_progress' | 'completed' | 'cancelled' },
+  unknown
+> = {
+  name: 'todo_list',
+  description: "List the current todo items. Use to check what's been done and what's still pending.",
+  inputSchema: z.object({
+    status: z
+      .enum(['all', 'pending', 'in_progress', 'completed', 'cancelled'])
+      .optional()
+      .describe('Filter by status (default: all)'),
+  }),
+  outputSchema: z.unknown(),
+  execute: async ({ status = 'all' }, ctx) => {
+    try {
+      const todos = await getTodos(ctx)
+      const filtered = status === 'all' ? todos : todos.filter((t) => t.status === status)
+      return {
+        items: filtered,
+        counts: {
+          pending: todos.filter((t) => t.status === 'pending').length,
+          in_progress: todos.filter((t) => t.status === 'in_progress').length,
+          completed: todos.filter((t) => t.status === 'completed').length,
+          cancelled: todos.filter((t) => t.status === 'cancelled').length,
+          total: todos.length,
+        },
+      }
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : String(error) }
+    }
+  },
+  render: {
+    icon: ListChecks,
+    displayName: 'Todo List',
+    summary: (output) => {
+      const o = output as { items?: TodoItem[] } | undefined
+      if (!o?.items) return null
+      return `${o.items.length} items`
+    },
+  },
+}
+
+// ─── todo_clear ─────────────────────────────────────────────────
+
+export const todoClearDefinition: ToolDefinition<{ completed_only?: boolean }, unknown> = {
+  name: 'todo_clear',
+  description: 'Clear todo items. Use after a task is fully complete to start fresh.',
+  inputSchema: z.object({
+    completed_only: z
+      .boolean()
+      .optional()
+      .describe('If true, only remove completed/cancelled items. If false, clear everything (default: true).'),
+  }),
+  outputSchema: z.unknown(),
+  execute: async ({ completed_only = true }, ctx) => {
+    try {
+      const todos = await getTodos(ctx)
+      const remaining = completed_only
+        ? todos.filter((t) => t.status !== 'completed' && t.status !== 'cancelled')
+        : []
+      await saveTodos(ctx, remaining)
+      return { remaining: remaining.length, removed: todos.length - remaining.length }
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : String(error) }
+    }
+  },
+  render: {
+    icon: Eraser,
+    displayName: 'Clear Todos',
+    summary: (output) => {
+      const o = output as { removed?: number } | undefined
+      return typeof o?.removed === 'number' ? `${o.removed} removed` : null
+    },
+  },
+}
+
+export const todoDefinitions = [
+  todoAddDefinition,
+  todoUpdateDefinition,
+  todoListDefinition,
+  todoClearDefinition,
+] as ToolDefinition<unknown, unknown>[]

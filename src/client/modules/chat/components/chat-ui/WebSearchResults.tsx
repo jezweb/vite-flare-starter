@@ -1,7 +1,7 @@
 /**
  * WebSearchResults — claude.ai-style rendering for `web_search` tool output.
  *
- * Shape produced by `buildSearchTools` in server/chat/tools/search.ts:
+ * Shape produced by `webSearchDefinition` in server/chat/tools/search.ts:
  *   { query: string, results: { title, url, snippet, date? }[], count: number }
  *
  * Visual:
