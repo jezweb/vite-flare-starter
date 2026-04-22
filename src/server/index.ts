@@ -38,6 +38,7 @@ import { routeAgentRequest } from 'agents'
 // Worker entry module.
 // See CLAUDE.md → "Pattern 10: Durable Object Agent (voice / streaming WS)".
 export { VoiceInputExample } from './modules/voice/voice-agent'
+export { VideoInputExample } from './modules/video/video-agent'
 import { securityHeaders } from './middleware/security'
 import { rateLimiter } from './middleware/rate-limit'
 import { authMiddleware, requireScopes } from './middleware/auth'

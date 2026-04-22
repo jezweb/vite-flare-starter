@@ -134,6 +134,10 @@
       {
         "name": "VoiceInputExample",
         "class_name": "VoiceInputExample"
+      },
+      {
+        "name": "VideoInputExample",
+        "class_name": "VideoInputExample"
       }
     ]
   },
@@ -147,6 +151,10 @@
     {
       "tag": "v1",
       "new_sqlite_classes": ["VoiceInputExample"]
+    },
+    {
+      "tag": "v2",
+      "new_sqlite_classes": ["VideoInputExample"]
     }
   ],
 

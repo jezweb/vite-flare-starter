@@ -52,6 +52,14 @@ export const features = {
    */
   voiceAgent: import.meta.env['VITE_FEATURE_VOICE_AGENT'] === 'true',
 
+  /**
+   * Video input agent example page — sampled-frame vision captioning.
+   * Default OFF — opt-in by setting VITE_FEATURE_VIDEO_AGENT=true.
+   * Complements the voice example; shows the "no SDK mixin, build from
+   * primitives" pattern (getUserMedia → canvas → WS → DO → vision model).
+   */
+  videoAgent: import.meta.env['VITE_FEATURE_VIDEO_AGENT'] === 'true',
+
   // ── UI Features ────────────────────────────────────────────────────────
 
   /** Theme/colour picker in preferences */

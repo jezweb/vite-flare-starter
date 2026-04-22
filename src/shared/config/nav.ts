@@ -26,6 +26,7 @@ import {
   Settings as SettingsIcon,
   Bell,
   Mic,
+  Camera,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -68,6 +69,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { to: '/dashboard/skills', label: 'Skills', icon: Zap, feature: 'skills' },
       { to: '/dashboard/connectors', label: 'Connectors', icon: Plug, feature: 'connectors' },
       { to: '/dashboard/voice-example', label: 'Voice Example', icon: Mic, feature: 'voiceAgent' },
+      { to: '/dashboard/video-example', label: 'Video Example', icon: Camera, feature: 'videoAgent' },
     ],
   },
   {

@@ -35,6 +35,7 @@ const SkillsPage = lazy(() => import('./modules/skills/pages/SkillsPage').then(m
 const NotificationsPage = lazy(() => import('./modules/notifications/pages/NotificationsPage').then(m => ({ default: m.NotificationsPage })))
 const ConnectorsPage = lazy(() => import('./modules/connectors/pages/ConnectorsPage').then(m => ({ default: m.ConnectorsPage })))
 const VoiceInputExamplePage = lazy(() => import('./modules/voice/pages/VoiceInputExamplePage').then(m => ({ default: m.VoiceInputExamplePage })))
+const VideoInputExamplePage = lazy(() => import('./modules/video/pages/VideoInputExamplePage').then(m => ({ default: m.VideoInputExamplePage })))
 const ComponentsPage = lazy(() => import('./pages/ComponentsPage').then(m => ({ default: m.ComponentsPage })))
 const StyleGuidePage = lazy(() => import('./pages/StyleGuidePage').then(m => ({ default: m.StyleGuidePage })))
 
@@ -130,6 +131,11 @@ function App() {
                 scaffold is always compiled but the route only resolves
                 if a user navigates there manually. */}
             <Route path="voice-example" element={<VoiceInputExamplePage />} />
+
+            {/* Video agent reference — sampled frames → WS → Durable Object
+                → Workers AI vision model. No Cloudflare Realtime SFU needed
+                for the sampled pattern. Gated behind `videoAgent` flag. */}
+            <Route path="video-example" element={<VideoInputExamplePage />} />
 
             {/* Profile redirects to Settings (Profile tab is default) */}
             <Route path="profile" element={<Navigate to="/dashboard/settings" replace />} />

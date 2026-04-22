@@ -458,6 +458,31 @@ const { transcript, interimTranscript, audioLevel, start, stop, toggleMute } =
 
 **Reference:** `src/server/modules/voice/voice-agent.ts` + `src/client/modules/voice/pages/VoiceInputExamplePage.tsx`. Gated by `voiceAgent` feature flag (default OFF — set `VITE_FEATURE_VOICE_AGENT=true` to enable the nav item). The DO itself is always compiled so the pattern works as a pure code reference even when disabled.
 
+### Pattern 10b: Video input agent (no SDK, just primitives)
+
+Cloudflare has no `@cloudflare/video` package (as of 2026-04-22). For
+"describe what the user is showing" / "OCR this whiteboard" / "caption
+this scene" use cases, a simple sampled-frames-over-WS pattern works
+today without any SFU/WebRTC plumbing.
+
+**Pattern:**
+- Client: `getUserMedia` → `<canvas>` sampled every N seconds → JPEG
+  data URL → sent via the `agents` SDK WebSocket as a JSON message
+- Server: the DO's `onMessage` handler decodes the JSON, calls the AI
+  SDK's `generateText` with a vision-capable model, broadcasts the
+  caption back
+
+The DO wiring (binding, migration, class export, `run_worker_first`) is
+identical to Pattern 10. Only the transport differs — `useAgent` from
+`agents/react` instead of `useVoiceInput`.
+
+**Reference:** `src/server/modules/video/video-agent.ts` +
+`src/client/modules/video/pages/VideoInputExamplePage.tsx`. Gated by
+`videoAgent` feature flag (default OFF — set `VITE_FEATURE_VIDEO_AGENT=true`
+to enable). For 30fps continuous vision (gaze, object tracking), swap the
+transport for Cloudflare Realtime SFU + raw WebRTC tracks — keep the DO's
+agent logic.
+
 ---
 
 ## UI Patterns
