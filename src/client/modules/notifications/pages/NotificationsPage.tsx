@@ -5,7 +5,7 @@
  * everything with filters and bulk actions. Complements the dropdown — users
  * can either peek at new items or come here for the full audit trail.
  */
-import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { formatDistanceToNow, format } from 'date-fns'
 import { Bell, Check, CheckCheck, Info, AlertTriangle, AlertCircle, Loader2, Inbox } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -36,7 +36,16 @@ function iconFor(type: string) {
 }
 
 export function NotificationsPage() {
-  const [filter, setFilter] = useState<Filter>('all')
+  // Persist filter to the URL so it survives page reloads + back-nav.
+  // ?filter=unread → "unread" tab, anything else → "all".
+  const [searchParams, setSearchParams] = useSearchParams()
+  const filter: Filter = searchParams.get('filter') === 'unread' ? 'unread' : 'all'
+  const setFilter = (next: Filter) => {
+    const params = new URLSearchParams(searchParams)
+    if (next === 'all') params.delete('filter')
+    else params.set('filter', next)
+    setSearchParams(params, { replace: true })
+  }
   const { data, isLoading } = useNotifications({
     limit: 100,
     unreadOnly: filter === 'unread',
@@ -75,11 +84,14 @@ export function NotificationsPage() {
 
       <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
         <TabsList>
-          {/* Show an em-dash placeholder while counts are loading so the
-              tab width doesn't shift on first paint. */}
-          <TabsTrigger value="all">All ({data ? data.count : '—'})</TabsTrigger>
+          {/* `tabular-nums` keeps digit widths uniform; the em-dash
+              placeholder is also monospace so the tab width is stable
+              from first paint through data resolution. */}
+          <TabsTrigger value="all">
+            All <span className="ml-1 font-mono tabular-nums">({data ? data.count : '—'})</span>
+          </TabsTrigger>
           <TabsTrigger value="unread">
-            Unread ({data ? unreadCount : '—'})
+            Unread <span className="ml-1 font-mono tabular-nums">({data ? unreadCount : '—'})</span>
           </TabsTrigger>
         </TabsList>
       </Tabs>

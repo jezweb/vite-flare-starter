@@ -123,6 +123,13 @@ export function OrganizationSection() {
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      {/* `fieldset disabled` cascades to every form control inside,
+          blocking edits + double-submits while a save is in flight.
+          Cheaper than threading `disabled` onto 15+ individual inputs. */}
+      <fieldset
+        disabled={updateOrganization.isPending}
+        className="space-y-6 disabled:opacity-70 disabled:pointer-events-none"
+      >
       {/* Business Information */}
       <Card>
         <CardHeader>
@@ -329,9 +336,11 @@ export function OrganizationSection() {
             </Select>
           </div>
 
-          {/* Current business time preview */}
-          {watchedTimezone && (
-            <div className="rounded-lg border bg-muted/50 p-4">
+          {/* Current business time preview — reserve space with min-height
+              so selecting a timezone doesn't cause a layout jump. Empty
+              placeholder uses muted text to indicate the future content. */}
+          <div className="rounded-lg border bg-muted/50 p-4 min-h-[96px] flex items-center">
+            {watchedTimezone ? (
               <div className="flex items-center gap-3">
                 <Clock className="h-5 w-5 text-muted-foreground" />
                 <div>
@@ -344,8 +353,13 @@ export function OrganizationSection() {
                   </p>
                 </div>
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <Clock className="h-5 w-5" />
+                Select a timezone to preview the current business time.
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -403,6 +417,7 @@ export function OrganizationSection() {
           )}
         </Button>
       </div>
+      </fieldset>
     </form>
   )
 }

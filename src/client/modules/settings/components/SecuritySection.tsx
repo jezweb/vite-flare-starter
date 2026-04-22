@@ -127,6 +127,7 @@ export function SecuritySection() {
                 id="currentPassword"
                 type="password"
                 {...passwordForm.register('currentPassword')}
+                disabled={changePassword.isPending}
                 placeholder="Enter current password"
                 className="mt-1.5"
               />
@@ -143,6 +144,7 @@ export function SecuritySection() {
                 id="newPassword"
                 type="password"
                 {...passwordForm.register('newPassword')}
+                disabled={changePassword.isPending}
                 placeholder="Enter new password (min 8 characters)"
                 className="mt-1.5"
               />
@@ -160,6 +162,7 @@ export function SecuritySection() {
                 id="confirmPassword"
                 type="password"
                 {...passwordForm.register('confirmPassword')}
+                disabled={changePassword.isPending}
                 placeholder="Confirm new password"
                 className="mt-1.5"
               />

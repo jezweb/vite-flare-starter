@@ -152,6 +152,7 @@ export function ExtractPage() {
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
+            disabled={extract.isPending}
             placeholder="Paste any article, email, or text here. Cmd/Ctrl+Enter to extract."
             className="min-h-52"
           />
@@ -159,7 +160,11 @@ export function ExtractPage() {
 
         <div className="space-y-2">
           <Label htmlFor="schema">Extraction schema</Label>
-          <Select value={schema} onValueChange={(v) => handleSchemaChange(v as SchemaName)}>
+          <Select
+            value={schema}
+            onValueChange={(v) => handleSchemaChange(v as SchemaName)}
+            disabled={extract.isPending}
+          >
             <SelectTrigger id="schema" className="w-full">
               <SelectValue />
             </SelectTrigger>
@@ -212,7 +217,7 @@ export function ExtractPage() {
       </form>
 
       {extract.error && (
-        <div className="mt-6 rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+        <div className="mt-6 rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive break-words">
           {extract.error.message}
         </div>
       )}

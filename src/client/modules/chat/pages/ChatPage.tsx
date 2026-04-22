@@ -220,9 +220,11 @@ export function ChatPage() {
     // Must be the FIRST exchange — don't re-summarise mid-conversation.
     if (messages.length > 3) return
     summarisedIdsRef.current.add(conversationId)
+    const ac = new AbortController()
     void fetch(`/api/conversations/${conversationId}/summarise`, {
       method: 'POST',
       credentials: 'include',
+      signal: ac.signal,
     })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
@@ -231,7 +233,12 @@ export function ChatPage() {
           queryClient.invalidateQueries({ queryKey: ['conversations'] })
         }
       })
-      .catch(() => {})
+      .catch((err) => {
+        // Swallow abort errors (user navigated away before response arrived).
+        // Other errors are fire-and-forget — summarise is optional polish.
+        if ((err as { name?: string })?.name === 'AbortError') return
+      })
+    return () => ac.abort()
   }, [conversationId, isLoading, messages, queryClient])
 
   // Reset + hydrate when the conversation URL changes (navigating sidebar
