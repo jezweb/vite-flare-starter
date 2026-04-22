@@ -6,7 +6,11 @@
  * client-side tool execution, typed metadata, tool approval flow.
  */
 import { useChat as useAIChat } from '@ai-sdk/react'
-import { DefaultChatTransport, type UIMessage } from 'ai'
+import {
+  DefaultChatTransport,
+  lastAssistantMessageIsCompleteWithApprovalResponses,
+  type UIMessage,
+} from 'ai'
 import { useMemo, useRef, useEffect } from 'react'
 import { messageMetadataSchema, type MessageMetadata } from '@/shared/schemas/chat.schema'
 
@@ -82,6 +86,12 @@ export function useChat(options: ChatOptions = {}) {
     messageMetadataSchema,
     transport,
     onToolCall,
+    // CRITICAL: without this, addToolApprovalResponse() only stores the
+    // approval locally — the server never hears about it and the tool
+    // never runs. This callback tells the SDK to auto-resubmit once all
+    // pending approval requests have responses. Fixes the "Approve
+    // button does nothing" bug in the Workspace connector flow.
+    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
     onError: (error: Error) => {
       console.error('Chat error:', error)
     },
