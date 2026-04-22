@@ -100,9 +100,12 @@ function App() {
             {/* Admin panel - users, features, tokens */}
             <Route path="admin" element={<AdminPage />} />
 
-            {/* AI Chat */}
-            <Route path="chat" element={<ChatPage />} />
-            <Route path="chat/:conversationId" element={<ChatPage />} />
+            {/* AI Chat — single route with optional conversationId so
+                transitioning from /chat to /chat/:id (post-first-send)
+                doesn't remount ChatPage and wipe in-flight streaming
+                state. Two separate routes was the C1 regression cause:
+                navigate(replace:true) between Route entries unmounts. */}
+            <Route path="chat/:conversationId?" element={<ChatPage />} />
             <Route path="projects/:id" element={<ProjectPage />} />
             <Route path="extract" element={<ExtractPage />} />
 

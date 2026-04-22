@@ -161,8 +161,20 @@ export function GoogleWorkspacePanel() {
             {connected ? (
               <>
                 {isError && (
-                  <Button size="sm" onClick={() => connect.mutate()} disabled={connect.isPending}>
-                    {connect.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Reconnect'}
+                  <Button
+                    size="sm"
+                    onClick={() => connect.mutate()}
+                    disabled={connect.isPending}
+                    className="min-w-[112px]"
+                  >
+                    {connect.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Reconnecting…
+                      </>
+                    ) : (
+                      'Reconnect'
+                    )}
                   </Button>
                 )}
                 <Button
@@ -180,8 +192,18 @@ export function GoogleWorkspacePanel() {
                 </Button>
               </>
             ) : (
-              <Button size="sm" onClick={() => connect.mutate()} disabled={connect.isPending}>
-                {connect.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : (
+              <Button
+                size="sm"
+                onClick={() => connect.mutate()}
+                disabled={connect.isPending}
+                className="min-w-[112px]"
+              >
+                {connect.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Connecting…
+                  </>
+                ) : (
                   <>
                     <Plug className="mr-2 h-4 w-4" />
                     Connect
