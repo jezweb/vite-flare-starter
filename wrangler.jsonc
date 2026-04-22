@@ -18,7 +18,10 @@
     // SPA routing - serve index.html for all non-asset routes
     "not_found_handling": "single-page-application",
     // Only these paths invoke the Worker (everything else = FREE static serving)
-    "run_worker_first": ["/api/*"]
+    //  - /api/*    — Hono REST routes
+    //  - /agents/* — Durable Object agents SDK WebSocket routing (`routeAgentRequest`)
+    //                Remove this entry if you're not using any DO agents.
+    "run_worker_first": ["/api/*", "/agents/*"]
   },
 
   // Cloudflare Bindings
@@ -113,6 +116,39 @@
   //   { "name": "EMAIL", "type": "service" },
   //   { "name": "SEND_EMAIL", "destination_address": "you@example.com" }
   // ],
+
+  // Durable Objects — stateful, SQLite-backed classes that live longer than
+  // a single request. One instance per `idFromName(name)`. Used for:
+  //  - Voice agents (VoiceInputExample — streams mic + transcribes)
+  //  - Chat rooms, collaborative docs, live dashboards
+  //  - Any per-entity WebSocket session
+  //
+  // Every DO class listed here MUST be exported from the Worker entry
+  // (see `export { VoiceInputExample }` in src/server/index.ts) AND listed
+  // in `migrations.new_sqlite_classes` below so storage is provisioned.
+  //
+  // Routed via `routeAgentRequest` at /agents/{agent-name-kebab-case}/{name}.
+  // See CLAUDE.md → "Pattern 10: Durable Object Agent (voice / streaming WS)".
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "VoiceInputExample",
+        "class_name": "VoiceInputExample"
+      }
+    ]
+  },
+
+  // Migrations — required to enable SQLite storage on DO classes. Tag is
+  // monotonic ("v1", "v2", ...) — NEVER edit an existing tag after deploy,
+  // add a new one. Include every class in `new_sqlite_classes` the first
+  // time it ships. Subsequent renames/deletes use `renamed_classes` /
+  // `deleted_classes` on a new tag.
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["VoiceInputExample"]
+    }
+  ],
 
   // Observability
   "observability": {

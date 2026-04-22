@@ -34,6 +34,7 @@ const FilesPage = lazy(() => import('./modules/files/pages/FilesPage').then(m =>
 const SkillsPage = lazy(() => import('./modules/skills/pages/SkillsPage').then(m => ({ default: m.SkillsPage })))
 const NotificationsPage = lazy(() => import('./modules/notifications/pages/NotificationsPage').then(m => ({ default: m.NotificationsPage })))
 const ConnectorsPage = lazy(() => import('./modules/connectors/pages/ConnectorsPage').then(m => ({ default: m.ConnectorsPage })))
+const VoiceInputExamplePage = lazy(() => import('./modules/voice/pages/VoiceInputExamplePage').then(m => ({ default: m.VoiceInputExamplePage })))
 const ComponentsPage = lazy(() => import('./pages/ComponentsPage').then(m => ({ default: m.ComponentsPage })))
 const StyleGuidePage = lazy(() => import('./pages/StyleGuidePage').then(m => ({ default: m.StyleGuidePage })))
 
@@ -123,6 +124,12 @@ function App() {
 
             {/* MCP Connectors — per-user OAuth + bearer connections */}
             <Route path="connectors" element={<ConnectorsPage />} />
+
+            {/* Voice agent reference — @cloudflare/voice + agents SDK.
+                Gated behind `voiceAgent` feature flag (default OFF); the
+                scaffold is always compiled but the route only resolves
+                if a user navigates there manually. */}
+            <Route path="voice-example" element={<VoiceInputExamplePage />} />
 
             {/* Profile redirects to Settings (Profile tab is default) */}
             <Route path="profile" element={<Navigate to="/dashboard/settings" replace />} />

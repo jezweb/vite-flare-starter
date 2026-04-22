@@ -25,6 +25,7 @@ import {
   Plug,
   Settings as SettingsIcon,
   Bell,
+  Mic,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -66,6 +67,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { to: '/dashboard/files', label: 'Files', icon: FolderOpen, feature: 'files' },
       { to: '/dashboard/skills', label: 'Skills', icon: Zap, feature: 'skills' },
       { to: '/dashboard/connectors', label: 'Connectors', icon: Plug, feature: 'connectors' },
+      { to: '/dashboard/voice-example', label: 'Voice Example', icon: Mic, feature: 'voiceAgent' },
     ],
   },
   {

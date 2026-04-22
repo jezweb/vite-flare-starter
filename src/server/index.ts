@@ -32,6 +32,12 @@ import mediaRoutes from './modules/media/routes'
 import emailRoutes from './modules/email/routes'
 import mcpConnectionsRoutes from './modules/mcp-connections/routes'
 import googleWorkspaceRoutes from './modules/google-workspace/routes'
+import { routeAgentRequest } from 'agents'
+// Re-export DO class(es) so wrangler migrations can locate them. Every DO
+// referenced in `durable_objects.bindings` must be exported from the
+// Worker entry module.
+// See CLAUDE.md → "Pattern 10: Durable Object Agent (voice / streaming WS)".
+export { VoiceInputExample } from './modules/voice/voice-agent'
 import { securityHeaders } from './middleware/security'
 import { rateLimiter } from './middleware/rate-limit'
 import { authMiddleware, requireScopes } from './middleware/auth'
@@ -391,7 +397,16 @@ app.onError((err, c) => {
 // Users: 4" — better-auth doesn't reap expired rows itself, so without
 // this the admin dashboard drifts over time.
 export default {
-  fetch: app.fetch,
+  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
+    // Try Durable Object agent routing first — any request matching
+    // /agents/{agent-name-kebab-case}/{instance-name} is routed to the
+    // corresponding DO by the agents SDK. Falls through to Hono if
+    // the path doesn't match.
+    // See CLAUDE.md → "Pattern 10: Durable Object Agent (voice / streaming WS)".
+    const agentResponse = await routeAgentRequest(request, env)
+    if (agentResponse) return agentResponse
+    return app.fetch(request, env, ctx)
+  },
   async scheduled(event: ScheduledEvent, env: Env) {
     const logs: Record<string, unknown> = { trigger: event.cron }
 
