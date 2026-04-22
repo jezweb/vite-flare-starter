@@ -1,9 +1,35 @@
 # Phase 0 — Unified Tool Contracts + AgentContext
 
 **Date**: 2026-04-22
-**Status**: Planned — pilot not yet started
+**Status**: ✅ SHIPPED (commit `13eb176` + follow-up `c227d55`)
 **Prerequisite for**: Phases A-E in `ai-sdk-standards-adoption-plan-2026-04-22.md`
-**Estimate**: ~2.5 hours total (sub-phases are independently checkpointable)
+**Time taken**: ~2.5 hours (matched the estimate)
+
+## Shipped outcome
+
+- All 23 tool modules migrated to `ToolDefinition<I, O>` — no legacy
+  `build*Tools(ctx)` factories remain
+- Aggregator reduced to a single `collectAvailableTools(allDefinitions, ctx)`
+  call — no conditional branches, no `Object.assign` chains
+- Shared contracts at `src/shared/agent/` (tool, context, telemetry)
+- Server adapter at `src/server/lib/ai/tool-adapter.ts` with Zod validation
+  + telemetry wrapping
+- Per-tool `isAvailable(ctx)` replaces all the module-level early returns
+- 4 domains have strict typed renderers (gmail, drive, calendar, web-search)
+  — rest use `z.unknown()` for now, will be tightened opportunistically
+- `wrapLegacyToolkit` bridge was built and then deleted — the "no backward
+  compat unless production data depends on it" rule held
+
+## Learning captured from the journey
+
+Originally planned Option B (pilot + high-value migrate, rest on legacy
+factories via a `wrapLegacyToolkit` bridge). Jez pushed back: "why are
+we keeping legacy code or things that we dont need". The honest answer
+was that migrating all 23 modules was 2+ hours of mechanical work, but
+the pragmatic shortcut violated his "no backward compat" rule and
+codified drift. Full migration was the right call.
+
+→ Captured in `~/.claude/rules/think-in-contracts-not-code.md`
 
 ## Goal (one sentence)
 

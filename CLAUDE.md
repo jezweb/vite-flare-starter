@@ -653,7 +653,53 @@ The chat module ships with a **modular agent toolkit** in `src/server/modules/ch
 | **places** | `places_search`, `places_details` | Only if `GOOGLE_PLACES_API_KEY` set |
 | **files** | `fs_list`, `fs_read`, `fs_write`, `fs_delete` | Only if `FILES` R2 bucket bound |
 
-**Adding a new tool**: create a new file in `tools/`, export a `buildXxxTools(ctx)` function, add to `tools/index.ts` aggregator. Use existing tools as reference.
+### Adding a new tool (canonical pattern — post-Phase 0)
+
+Every tool is a `ToolDefinition<Input, Output>` from `src/shared/agent/tool.ts`.
+Server execute + input/output Zod schemas + optional client render metadata
+live in one object. See `.claude/rules/one-file-tool-definitions.md`.
+
+```ts
+// src/server/modules/chat/tools/my-domain.ts
+import { z } from 'zod'
+import { Sparkles } from 'lucide-react'
+import type { ToolDefinition } from '@/shared/agent'
+
+const MyInput = z.object({ query: z.string() })
+const MyOutput = z.object({ count: z.number(), items: z.array(z.unknown()) })
+
+export const myToolDefinition: ToolDefinition<
+  z.infer<typeof MyInput>,
+  z.infer<typeof MyOutput>
+> = {
+  name: 'my_tool',
+  description: 'What the model sees when deciding whether to call.',
+  inputSchema: MyInput,
+  outputSchema: MyOutput,
+  isAvailable: (ctx) => !!ctx.env.MY_BINDING,       // optional per-request gate
+  needsApproval: false,                              // or true / (input) => boolean
+  execute: async (input, ctx) => {
+    // ctx is the canonical AgentContext — env, userId, user, model, telemetry, ...
+    return { count: 0, items: [] }
+  },
+  render: {                                          // optional — nice UI when clicked
+    icon: Sparkles,
+    displayName: 'My Tool',
+    summary: (output) => `${output.count} results`,
+  },
+}
+
+export const myDomainDefinitions = [myToolDefinition] as ToolDefinition<unknown, unknown>[]
+```
+
+Register in `src/server/modules/chat/tools/index.ts` — add to the `allDefinitions` array.
+That's it. `collectAvailableTools(allDefinitions, ctx)` handles the rest:
+Zod validation, telemetry, AI SDK adapter, filtering by `isAvailable`.
+
+For a custom client renderer (summary badge + expanded card), drop a renderer file
+in `src/client/modules/chat/components/tool-renderers/` matching by tool name, and
+import the output type via `import type { MyOutput } from '@/server/modules/chat/tools/my-domain'`.
+Vite tree-shakes server-only code from client bundles.
 
 ### Browser Rendering tools
 
