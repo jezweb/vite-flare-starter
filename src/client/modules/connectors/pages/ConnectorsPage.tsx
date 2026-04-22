@@ -13,6 +13,7 @@ import * as LucideIcons from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { STATUS_SOFT_BG } from '@/client/lib/status-colors'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
@@ -227,7 +228,9 @@ function ConnectionCard({
 }
 
 function StatusBadge({ status }: { status: McpConnection['status'] }) {
-  if (status === 'active') return <Badge variant="secondary" className="text-[10px] bg-green-500/10 text-green-700 dark:text-green-400">Connected</Badge>
+  if (status === 'active') {
+    return <Badge variant="secondary" className={`text-[10px] ${STATUS_SOFT_BG.success}`}>Connected</Badge>
+  }
   if (status === 'pending') return <Badge variant="outline" className="text-[10px]">Pending</Badge>
   if (status === 'error') return <Badge variant="destructive" className="text-[10px]">Error</Badge>
   return <Badge variant="outline" className="text-[10px]">{status}</Badge>
@@ -301,7 +304,10 @@ function BrowseDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogContent
+        className="sm:max-w-2xl max-h-[80vh] overflow-hidden flex flex-col"
+        aria-label="Browse connector examples"
+      >
         <DialogHeader>
           <DialogTitle>Connector examples</DialogTitle>
           <DialogDescription>
@@ -442,6 +448,7 @@ function CustomConnectorDialog({
               placeholder="https://my-mcp-server.example.com/mcp"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
+              disabled={probe.isPending || connect.isPending}
             />
           </div>
           <div className="space-y-1.5">
@@ -450,6 +457,7 @@ function CustomConnectorDialog({
               placeholder="e.g. My Database"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              disabled={probe.isPending || connect.isPending}
             />
           </div>
 

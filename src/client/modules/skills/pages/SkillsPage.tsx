@@ -90,7 +90,7 @@ export function SkillsPage() {
             <GithubIcon className="size-4 mr-2" /> Install from GitHub
           </Button>
           <Button onClick={() => setUploadOpen(true)}>
-            <Upload className="size-4 mr-2" /> Upload
+            <Upload className="size-4 mr-2" /> Add skill
           </Button>
         </div>
       </div>
@@ -116,13 +116,20 @@ export function SkillsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {skills.map((s) => (
-            <Card key={s.id} className={s.enabled ? '' : 'opacity-60'}>
+            <Card key={s.id} className={s.enabled ? '' : 'opacity-60 grayscale'}>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
                   <CardTitle className="text-base">/{s.name}</CardTitle>
-                  <Badge variant={s.source === 'bundled' ? 'secondary' : 'outline'} className="text-[10px]">
-                    {s.source}
-                  </Badge>
+                  <div className="flex items-center gap-1">
+                    {!s.enabled && (
+                      <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
+                        Disabled
+                      </Badge>
+                    )}
+                    <Badge variant={s.source === 'bundled' ? 'secondary' : 'outline'} className="text-[10px]">
+                      {s.source}
+                    </Badge>
+                  </div>
                 </div>
                 <CardDescription className="line-clamp-3">{s.description}</CardDescription>
               </CardHeader>

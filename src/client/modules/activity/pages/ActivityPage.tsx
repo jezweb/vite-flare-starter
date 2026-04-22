@@ -230,8 +230,9 @@ export function ActivityPage() {
             </div>
           )}
 
-          {/* Pagination */}
-          {activities.length > 0 && (
+          {/* Pagination — hidden while loading so the "Page 1" label
+              doesn't flash over skeleton rows on first mount. */}
+          {!activitiesLoading && activities.length > 0 && (
             <div className="mt-6 flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
                 Page {page}
