@@ -13,7 +13,7 @@
  * return createAgentUIStreamResponse({ agent, uiMessages: messages })
  */
 import { ToolLoopAgent, stepCountIs, hasToolCall, type ToolSet, type PrepareStepResult } from 'ai'
-import { tokenBudgetPrepareStep } from './prepare-step'
+import { tokenBudgetPrepareStep, computeActiveTools } from './prepare-step'
 import { drizzle } from 'drizzle-orm/d1'
 import { and, eq } from 'drizzle-orm'
 import { resolveModel } from './providers'
@@ -220,10 +220,44 @@ export async function buildChatAgent(ctx: AgentContext): Promise<AgentResult> {
     providerOptions,
     prepareStep: (opts) => {
       try {
-        return budgetCheck(opts) as PrepareStepResult
+        // 1. Token budget check — strips all tools if we're over budget.
+        const budgetResult = budgetCheck(opts) as PrepareStepResult
+        if (budgetResult && 'activeTools' in budgetResult && Array.isArray(budgetResult.activeTools) && budgetResult.activeTools.length === 0) {
+          return budgetResult
+        }
+        // 2. Dangerous-op gating — privileged tools (gmail_send etc.) are
+        //    hidden unless the latest user message references them OR they
+        //    were already invoked successfully earlier in the conversation.
+        const activeTools = computeActiveTools(tools, opts.messages, opts.steps)
+        if (activeTools.length !== Object.keys(tools).length) {
+          return { activeTools } as PrepareStepResult
+        }
+        return {}
       } catch {
         return {} // Fail open — don't crash the agent loop
       }
+    },
+    // Single-retry repair for malformed tool calls. Smaller models
+    // (Gemma, Qwen) occasionally emit invalid JSON for tool args; rather
+    // than hard-failing the step, we log the error structurally so it
+    // surfaces in the admin Tool Errors tab and let the agent continue
+    // (the model sees the failure and can either retry or give up).
+    //
+    // Returning `null` tells the SDK to emit the original parse error,
+    // which is what we want — we're not yet invoking another LLM call
+    // for the repair (that's a bigger change with cost implications).
+    experimental_repairToolCall: async ({ toolCall, error }) => {
+      console.log(
+        JSON.stringify({
+          event: 'tool_call_repair',
+          userId: ctx.userId,
+          model: modelId,
+          toolName: toolCall.toolName,
+          errorName: error instanceof Error ? error.name : 'UnknownError',
+          errorMessage: error instanceof Error ? error.message : String(error),
+        }),
+      )
+      return null
     },
     experimental_telemetry: {
       isEnabled: true,

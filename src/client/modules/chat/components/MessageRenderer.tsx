@@ -20,6 +20,7 @@ import { SkillActivationBlock, parseSkillActivation } from './SkillActivationBlo
 import { extractUIResources, ToolUIResource } from './ToolUIResource'
 import { ToolApproval } from './chat-ui/ToolApproval'
 import { ToolCard, findRenderer, type ToolState } from './tool-renderers'
+import { SourcesFooter } from './SourcesFooter'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Textarea } from '@/components/ui/textarea'
 import { Loader2, RotateCcw, Pencil, Copy, Check, ThumbsUp, ThumbsDown, Sparkles, FileText, FileSpreadsheet, FileAudio, FileVideo, FileCode, FileArchive, File as FileIcon } from 'lucide-react'
@@ -547,6 +548,12 @@ function MessageBody({
 
         return null
       })}
+
+      {/* Sources footer — claude.ai-style citation strip aggregated from
+          tool outputs (web_search, gmail_search, drive_search, places_search)
+          and native source-* parts. Only shown on completed assistant
+          messages to avoid flashing during streaming. */}
+      {!isUser && !(isLoading && isLast) && <SourcesFooter parts={parts} />}
 
       {/* Thinking indicator when assistant is loading with no text yet */}
       {!isUser && isLoading && isLast && !hasVisibleText && (

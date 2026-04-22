@@ -268,6 +268,9 @@ app.post('/', async (c) => {
       originalMessages: validatedMessages as any,
       experimental_transform: smoothStream({ chunking: 'word' }),
       sendReasoning: true,
+      // Enable native source parts (e.g. Gemini googleSearch grounding).
+      // Custom tool sources are aggregated client-side in SourcesFooter.
+      sendSources: true,
       // Without this the assistant message lands in D1 with an empty id, failing the PK.
       generateMessageId: () => crypto.randomUUID(),
       messageMetadata: ({ part }) => {
