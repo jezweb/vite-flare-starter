@@ -12,7 +12,7 @@
  * "Sources" row so users can see what the model consulted without expanding
  * every tool card.
  */
-import { memo, useMemo } from 'react'
+import { memo, useMemo, useState } from 'react'
 import { Globe, Mail, FileText, MapPin, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -192,9 +192,15 @@ function extractSources(parts: any[]): Source[] {
   return sources
 }
 
+const COLLAPSE_THRESHOLD = 8
+
 export const SourcesFooter = memo(function SourcesFooter({ parts }: SourcesFooterProps) {
   const sources = useMemo(() => extractSources(parts), [parts])
+  const [expanded, setExpanded] = useState(false)
   if (sources.length === 0) return null
+
+  const overThreshold = sources.length > COLLAPSE_THRESHOLD
+  const visible = !expanded && overThreshold ? sources.slice(0, COLLAPSE_THRESHOLD) : sources
 
   return (
     <div className="mt-2 border-t border-border/50 pt-3">
@@ -202,7 +208,7 @@ export const SourcesFooter = memo(function SourcesFooter({ parts }: SourcesFoote
         Sources ({sources.length})
       </div>
       <div className="flex flex-wrap gap-2">
-        {sources.map((s) => {
+        {visible.map((s) => {
           const Icon = KIND_ICON[s.kind]
           const favicon = s.url && s.kind === 'web' ? faviconFor(s.url) : null
           const content = (
@@ -246,6 +252,22 @@ export const SourcesFooter = memo(function SourcesFooter({ parts }: SourcesFoote
             <div key={s.key}>{content}</div>
           )
         })}
+        {overThreshold && (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className={cn(
+              'inline-flex items-center rounded-md border border-dashed bg-muted/20 px-2 py-1 text-xs',
+              'hover:bg-muted hover:border-border text-muted-foreground',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            )}
+            aria-expanded={expanded}
+          >
+            {expanded
+              ? 'Show less'
+              : `+${sources.length - COLLAPSE_THRESHOLD} more`}
+          </button>
+        )}
       </div>
     </div>
   )

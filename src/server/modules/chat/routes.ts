@@ -332,6 +332,9 @@ app.post('/', async (c) => {
       // Structured error logging for stream-level failures (network, provider,
       // parse errors). Tool-specific errors are captured in onStepFinish above.
       onError: (error) => {
+        // Full error (including stack) goes only to Workers Logs — never the
+        // client. The client gets a generic sanitised message below to avoid
+        // leaking file paths, line numbers, or internal framework state.
         console.error(
           JSON.stringify({
             event: 'chat_stream_error',
@@ -344,7 +347,16 @@ app.post('/', async (c) => {
                 : String(error),
           }),
         )
-        return error instanceof Error ? error.message : 'An error occurred during chat streaming.'
+        // Surface a short, safe message based on common error categories.
+        // Unknown errors fall through to the generic string.
+        if (error instanceof Error) {
+          const name = error.name
+          if (name === 'AbortError') return 'Request was cancelled.'
+          if (name === 'TimeoutError') return 'The model took too long to respond. Please try again.'
+          if (name === 'RateLimitError') return 'Rate limit reached. Please wait a moment and try again.'
+          if (name === 'AI_APICallError') return 'The model service is temporarily unavailable.'
+        }
+        return 'An error occurred during chat streaming. Please try again.'
       },
       onFinish: async ({ messages: finalMessages }) => {
         // Persist conversation messages to D1. For brand-new conversations,

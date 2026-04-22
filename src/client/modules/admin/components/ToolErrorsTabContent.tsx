@@ -4,15 +4,20 @@
  * Shows the last 50 tool errors (24h window) from ai_tool_calls. Populated by
  * the agent's onStepFinish hook in src/server/modules/chat/routes.ts.
  */
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/client/lib/api-client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { AlertCircle, CheckCircle2 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
+import { cn } from '@/lib/utils'
 
-interface ToolErrorRow {
+const PREVIEW_CHAR_LIMIT = 300
+
+interface ToolErrorEntry {
   id: string
   userId: string
   userEmail: string | null
@@ -24,7 +29,7 @@ interface ToolErrorRow {
 }
 
 interface ToolErrorsResponse {
-  errors: ToolErrorRow[]
+  errors: ToolErrorEntry[]
 }
 
 function formatTime(dateString: string): string {
@@ -82,37 +87,68 @@ export function ToolErrorsTabContent() {
         ) : (
           <div className="space-y-3">
             {errors.map((err) => (
-              <div
-                key={err.id}
-                className="rounded-lg border border-destructive/20 bg-destructive/5 p-4"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="font-mono text-xs">
-                        {err.toolName}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        step {err.stepIndex}
-                      </span>
-                      <span className="text-xs text-muted-foreground">·</span>
-                      <span className="text-xs text-muted-foreground truncate">
-                        {err.model}
-                      </span>
-                    </div>
-                    <p className="text-sm break-words">
-                      {err.toolError}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {err.userEmail ?? err.userId} · {formatTime(err.createdAt)}
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <ToolErrorRow key={err.id} err={err} />
             ))}
           </div>
         )}
       </CardContent>
     </Card>
+  )
+}
+
+/**
+ * Single error row with "Show full" toggle for long stack traces. Keeps
+ * the list scannable when some errors are one-liners and others are 500
+ * lines of a provider stack.
+ */
+function ToolErrorRow({ err }: { err: ToolErrorEntry }) {
+  const [expanded, setExpanded] = useState(false)
+  const needsTruncation = err.toolError.length > PREVIEW_CHAR_LIMIT
+  const display = !expanded && needsTruncation
+    ? err.toolError.slice(0, PREVIEW_CHAR_LIMIT) + '…'
+    : err.toolError
+
+  return (
+    <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1 space-y-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge variant="outline" className="font-mono text-xs">
+              {err.toolName}
+            </Badge>
+            <span className="text-xs text-muted-foreground">
+              step {err.stepIndex}
+            </span>
+            <span className="text-xs text-muted-foreground">·</span>
+            <span className="text-xs text-muted-foreground truncate">
+              {err.model}
+            </span>
+          </div>
+          <pre
+            className={cn(
+              'text-sm whitespace-pre-wrap break-words font-mono',
+              !expanded && needsTruncation && 'max-h-32 overflow-hidden',
+              expanded && 'max-h-96 overflow-y-auto',
+            )}
+          >
+            {display}
+          </pre>
+          {needsTruncation && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs"
+              onClick={() => setExpanded((v) => !v)}
+            >
+              {expanded ? 'Show less' : 'Show full error'}
+            </Button>
+          )}
+          <p className="text-xs text-muted-foreground">
+            {err.userEmail ?? err.userId} · {formatTime(err.createdAt)}
+          </p>
+        </div>
+      </div>
+    </div>
   )
 }
