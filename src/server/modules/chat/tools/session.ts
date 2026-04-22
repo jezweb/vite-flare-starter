@@ -18,12 +18,42 @@ function getDB(ctx: AgentContext): D1Database {
 
 // ─── session_stats ──────────────────────────────────────────────
 
-export const sessionStatsDefinition: ToolDefinition<Record<string, never>, unknown> = {
+const SessionStatsOutput = z.union([
+  z.object({
+    totals: z.object({
+      requests: z.number(),
+      totalTokens: z.number(),
+      avgTokensPerRequest: z.number(),
+      avgDurationMs: z.number(),
+    }),
+    topModels: z.array(
+      z.object({
+        model: z.string(),
+        count: z.number(),
+        tokens: z.number().nullable(),
+      }),
+    ),
+    recentActivity: z.array(
+      z.object({
+        model: z.string(),
+        tokens: z.number().nullable(),
+        durationMs: z.number().nullable(),
+        createdAt: z.string().nullable(),
+      }),
+    ),
+  }),
+  z.object({ error: z.string() }),
+])
+
+export const sessionStatsDefinition: ToolDefinition<
+  Record<string, never>,
+  z.infer<typeof SessionStatsOutput>
+> = {
   name: 'session_stats',
   description:
     'View your usage statistics — total conversations, tokens used, most-used models, recent activity. Use when the user asks about their usage, history, or "how much have I used?".',
   inputSchema: z.object({}),
-  outputSchema: z.unknown(),
+  outputSchema: SessionStatsOutput,
   execute: async (_input, ctx) => {
     try {
       const db = drizzle(getDB(ctx))
@@ -84,14 +114,26 @@ export const sessionStatsDefinition: ToolDefinition<Record<string, never>, unkno
 
 // ─── search_memories ────────────────────────────────────────────
 
-export const searchMemoriesDefinition: ToolDefinition<{ query: string }, unknown> = {
+const SearchMemoriesOutput = z.union([
+  z.object({
+    query: z.string(),
+    results: z.array(z.record(z.string(), z.unknown())),
+    count: z.number(),
+  }),
+  z.object({ query: z.string(), error: z.string() }),
+])
+
+export const searchMemoriesDefinition: ToolDefinition<
+  { query: string },
+  z.infer<typeof SearchMemoriesOutput>
+> = {
   name: 'search_memories',
   description:
     'Search all saved memories/facts for this user. Unlike recall (which needs an exact key), this searches across all keys and values. Use to find everything the agent knows about the user or a topic.',
   inputSchema: z.object({
     query: z.string().describe('Search term — matches against memory keys and values'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: SearchMemoriesOutput,
   execute: async ({ query }, ctx) => {
     try {
       const db = drizzle(getDB(ctx))
@@ -121,12 +163,23 @@ export const searchMemoriesDefinition: ToolDefinition<{ query: string }, unknown
 
 // ─── list_all_memories ──────────────────────────────────────────
 
-export const listAllMemoriesDefinition: ToolDefinition<Record<string, never>, unknown> = {
+const ListAllMemoriesOutput = z.union([
+  z.object({
+    memories: z.array(z.record(z.string(), z.unknown())),
+    count: z.number(),
+  }),
+  z.object({ error: z.string() }),
+])
+
+export const listAllMemoriesDefinition: ToolDefinition<
+  Record<string, never>,
+  z.infer<typeof ListAllMemoriesOutput>
+> = {
   name: 'list_all_memories',
   description:
     'List all saved memories/facts for this user. Shows every key-value pair the agent has stored. Use to review what the agent remembers, or to help the user see all their saved context.',
   inputSchema: z.object({}),
-  outputSchema: z.unknown(),
+  outputSchema: ListAllMemoriesOutput,
   execute: async (_input, ctx) => {
     try {
       const db = drizzle(getDB(ctx))

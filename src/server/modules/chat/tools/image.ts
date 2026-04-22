@@ -20,9 +20,20 @@ function getImageEnv(ctx: AgentContext): ImageEnv {
   return ctx.env as unknown as ImageEnv
 }
 
+const GenerateImageOutput = z.union([
+  z.object({
+    url: z.string(),
+    key: z.string(),
+    prompt: z.string(),
+    provider: z.string(),
+    sizeBytes: z.number(),
+  }),
+  z.object({ error: z.string() }),
+])
+
 export const generateImageDefinition: ToolDefinition<
   { prompt: string; size?: string; provider?: 'workers-ai' | 'openai' },
-  unknown
+  z.infer<typeof GenerateImageOutput>
 > = {
   name: 'generate_image',
   description:
@@ -32,7 +43,7 @@ export const generateImageDefinition: ToolDefinition<
     size: z.string().optional().describe('Image size: 1024x1024 (default), 1536x1024, 1024x1536'),
     provider: z.enum(['workers-ai', 'openai']).optional().describe('Image provider (default: workers-ai which is free)'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: GenerateImageOutput,
   isAvailable: (ctx) => !!getImageEnv(ctx).FILES,
   execute: async ({ prompt, size, provider = 'workers-ai' }, ctx) => {
     const env = getImageEnv(ctx)

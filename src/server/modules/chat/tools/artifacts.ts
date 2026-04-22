@@ -31,9 +31,17 @@ function cleanFences(code: string): string {
   return code.trim().replace(/^```(?:html|svg|mermaid)?\n?/, '').replace(/\n?```$/, '')
 }
 
+const CreateArtifactOutput = z.object({
+  _artifact: z.literal(true),
+  type: ArtifactType,
+  title: z.string(),
+  code: z.string(),
+  height: z.number(),
+})
+
 export const createArtifactDefinition: ToolDefinition<
   z.infer<typeof CreateArtifactInput>,
-  unknown
+  z.infer<typeof CreateArtifactOutput>
 > = {
   name: 'create_artifact',
   description: `Create a visual artifact rendered inline in chat. Use for dashboards, charts, diagrams, interactive calculators, reports, or any visual content. Displayed in a sandboxed iframe with code/preview toggle.
@@ -53,7 +61,7 @@ CDN libraries available in HTML artifacts:
 
 IMPORTANT: Output the COMPLETE code as the 'code' parameter — no markdown fences, no explanation. Make it visually polished with dark theme.`,
   inputSchema: CreateArtifactInput,
-  outputSchema: z.unknown(),
+  outputSchema: CreateArtifactOutput,
   execute: async ({ type, title, code, height = 400 }) => ({
     _artifact: true,
     type,
@@ -63,14 +71,23 @@ IMPORTANT: Output the COMPLETE code as the 'code' parameter — no markdown fenc
   }),
 }
 
+const EditArtifactOutput = z.object({
+  _artifact: z.literal(true),
+  artifactId: z.string(),
+  type: ArtifactType,
+  title: z.string(),
+  code: z.string(),
+  height: z.number(),
+})
+
 export const editArtifactDefinition: ToolDefinition<
   z.infer<typeof EditArtifactInput>,
-  unknown
+  z.infer<typeof EditArtifactOutput>
 > = {
   name: 'edit_artifact',
   description: 'Edit an existing artifact by describing what to change. Provide the artifact ID and the change instruction. The AI will output the complete updated code.',
   inputSchema: EditArtifactInput,
-  outputSchema: z.unknown(),
+  outputSchema: EditArtifactOutput,
   execute: async ({ artifactId, type, title, code, height = 400 }) => ({
     _artifact: true,
     artifactId,

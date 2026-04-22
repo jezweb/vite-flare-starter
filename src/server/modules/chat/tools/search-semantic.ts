@@ -23,9 +23,38 @@ function getSemanticEnv(ctx: AgentContext): SemanticEnv {
   return ctx.env as unknown as SemanticEnv
 }
 
+const SemanticSearchOutput = z.union([
+  z.object({
+    query: z.string(),
+    mode: z.literal('vectorize'),
+    results: z.array(
+      z.object({
+        id: z.string(),
+        key: z.string().optional(),
+        value: z.string().optional(),
+        type: z.string().optional(),
+        similarity: z.number(),
+      }),
+    ),
+  }),
+  z.object({
+    query: z.string(),
+    mode: z.literal('in-memory'),
+    results: z.array(
+      z.object({
+        key: z.string(),
+        value: z.string(),
+        similarity: z.number(),
+      }),
+    ),
+    message: z.string().optional(),
+  }),
+  z.object({ query: z.string(), error: z.string() }),
+])
+
 export const semanticSearchDefinition: ToolDefinition<
   { query: string; limit?: number },
-  unknown
+  z.infer<typeof SemanticSearchOutput>
 > = {
   name: 'semantic_search',
   description:
@@ -34,7 +63,7 @@ export const semanticSearchDefinition: ToolDefinition<
     query: z.string().describe('Natural language search query'),
     limit: z.number().optional().describe('Max results (default 5)'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: SemanticSearchOutput,
   execute: async ({ query, limit = 5 }, ctx) => {
     const env = getSemanticEnv(ctx)
     try {
@@ -101,9 +130,15 @@ export const semanticSearchDefinition: ToolDefinition<
   render: { icon: Sparkles, displayName: 'Semantic Search' },
 }
 
+const VectorizeContentOutput = z.union([
+  z.object({ indexed: z.literal(true), id: z.string(), type: z.string() }),
+  z.object({ indexed: z.literal(false), message: z.string() }),
+  z.object({ indexed: z.literal(false), error: z.string() }),
+])
+
 export const vectorizeContentDefinition: ToolDefinition<
   { id: string; content: string; type?: string; key?: string },
-  unknown
+  z.infer<typeof VectorizeContentOutput>
 > = {
   name: 'vectorize_content',
   description:
@@ -114,7 +149,7 @@ export const vectorizeContentDefinition: ToolDefinition<
     type: z.string().optional().describe('Content type (e.g. "memory", "document", "note")'),
     key: z.string().optional().describe('Human-readable key/title'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: VectorizeContentOutput,
   execute: async ({ id, content, type = 'memory', key }, ctx) => {
     const env = getSemanticEnv(ctx)
     if (!env.VECTORS) {

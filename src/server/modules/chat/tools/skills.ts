@@ -68,12 +68,24 @@ export function skillsDefinitions(
   // Dedup tracker scoped to this factory invocation (one per request).
   const loadedSkills = new Set<string>()
 
-  const listSkillsDef: ToolDefinition<Record<string, never>, unknown> = {
+  const SkillSummarySchema = z.object({
+    name: z.string(),
+    description: z.string(),
+    source: z.enum(['bundled', 'r2', 'github']),
+    disableModelInvocation: z.boolean().optional(),
+  })
+
+  const ListSkillsOutput = z.union([
+    z.object({ skills: z.array(SkillSummarySchema), count: z.number() }),
+    z.object({ error: z.string() }),
+  ])
+
+  const listSkillsDef: ToolDefinition<Record<string, never>, z.infer<typeof ListSkillsOutput>> = {
     name: 'list_skills',
     description:
       'List all available skills with their names, descriptions, and sources. Use to discover what skills exist before loading one, or to help the user understand available capabilities.',
     inputSchema: z.object({}),
-    outputSchema: z.unknown(),
+    outputSchema: ListSkillsOutput,
     execute: async (_input, ctx) => {
       try {
         const items = await listSkills(getSkillsEnv(ctx))
@@ -85,14 +97,35 @@ export function skillsDefinitions(
     render: { icon: List, displayName: 'List Skills' },
   }
 
-  const loadSkillDef: ToolDefinition<{ name: string }, unknown> = {
+  const LoadSkillOutput = z.union([
+    z.object({
+      name: z.string(),
+      description: z.string(),
+      directory: z.string(),
+      resources: z.array(z.string()),
+      deduped: z.literal(true),
+      note: z.string(),
+    }),
+    z.object({
+      name: z.string(),
+      description: z.string(),
+      directory: z.string(),
+      resources: z.array(z.string()),
+      content: z.string(),
+      frontmatter: z.record(z.string(), z.unknown()),
+      warnings: z.array(z.string()).optional(),
+    }),
+    z.object({ name: z.string(), error: z.string() }),
+  ])
+
+  const loadSkillDef: ToolDefinition<{ name: string }, z.infer<typeof LoadSkillOutput>> = {
     name: 'load_skill',
     description:
       "Load the full instructions for a skill by name. Use when a task matches a skill's description from the catalog. Returns the skill body wrapped in <skill_content> tags, the skill directory (for resolving relative paths), and a list of sibling resources you can read on demand. If you've already loaded this skill earlier in the session, a compact pointer is returned instead — the body is still in context above.",
     inputSchema: z.object({
       name: nameSchema.describe('The skill name (e.g. "web-research", "morning-brief")'),
     }),
-    outputSchema: z.unknown(),
+    outputSchema: LoadSkillOutput,
     execute: async ({ name }, ctx) => {
       try {
         const skill = await loadSkill(getSkillsEnv(ctx), name)
@@ -139,7 +172,15 @@ export function skillsDefinitions(
     render: { icon: BookOpen, displayName: 'Load Skill' },
   }
 
-  const readSkillResourceDef: ToolDefinition<{ name: string; path: string }, unknown> = {
+  const ReadSkillResourceOutput = z.union([
+    z.object({ name: z.string(), path: z.string(), content: z.string() }),
+    z.object({ name: z.string(), path: z.string(), error: z.string() }),
+  ])
+
+  const readSkillResourceDef: ToolDefinition<
+    { name: string; path: string },
+    z.infer<typeof ReadSkillResourceOutput>
+  > = {
     name: 'read_skill_resource',
     description:
       "Read a resource file (script, reference, asset) bundled with a skill. The skill's load_skill result lists available resources under <skill_resources>. Use this to pull a specific file's content — do NOT eagerly read everything listed.",
@@ -147,7 +188,7 @@ export function skillsDefinitions(
       name: nameSchema.describe('The skill name'),
       path: z.string().describe('The resource path relative to the skill directory, e.g. "scripts/extract.py" or "references/spec.md"'),
     }),
-    outputSchema: z.unknown(),
+    outputSchema: ReadSkillResourceOutput,
     execute: async ({ name, path }, ctx) => {
       try {
         const skill = await loadSkill(getSkillsEnv(ctx), name)
@@ -169,9 +210,23 @@ export function skillsDefinitions(
     render: { icon: FileSearch, displayName: 'Read Skill Resource' },
   }
 
+  const RunSkillScriptOutput = z.union([
+    z.object({
+      name: z.string(),
+      path: z.string(),
+      language: z.string(),
+      stdout: z.string(),
+      stderr: z.string(),
+      exitCode: z.number(),
+      error: z.string().optional(),
+      success: z.boolean().optional(),
+    }),
+    z.object({ name: z.string(), path: z.string(), error: z.string() }),
+  ])
+
   const runSkillScriptDef: ToolDefinition<
     { name: string; path: string; stdin?: string; timeout?: number },
-    unknown
+    z.infer<typeof RunSkillScriptOutput>
   > = {
     name: 'run_skill_script',
     description:
@@ -182,7 +237,7 @@ export function skillsDefinitions(
       stdin: z.string().optional().describe('Optional stdin content (string) piped into the script'),
       timeout: z.number().optional().describe('Timeout in seconds (default: 60)'),
     }),
-    outputSchema: z.unknown(),
+    outputSchema: RunSkillScriptOutput,
     execute: async ({ name, path, stdin, timeout = 60 }, ctx) => {
       try {
         const env = getSkillsEnv(ctx)
@@ -254,7 +309,20 @@ export function skillsDefinitions(
     render: { icon: Terminal, displayName: 'Run Skill Script' },
   }
 
-  const createSkillDef: ToolDefinition<{ content: string; overwrite?: boolean }, unknown> = {
+  const CreateSkillOutput = z.union([
+    z.object({
+      name: z.string(),
+      description: z.string(),
+      path: z.string(),
+      action: z.string(),
+    }),
+    z.object({ error: z.string() }),
+  ])
+
+  const createSkillDef: ToolDefinition<
+    { content: string; overwrite?: boolean },
+    z.infer<typeof CreateSkillOutput>
+  > = {
     name: 'create_skill',
     description:
       "Create a new skill from a SKILL.md document. The skill will be stored in R2 and available immediately. Use when you've developed a useful procedure that should be reusable. Requires the full SKILL.md content with YAML frontmatter (name + description) and markdown body.",
@@ -262,7 +330,7 @@ export function skillsDefinitions(
       content: z.string().describe('Full SKILL.md content including YAML frontmatter (---\\nname: ...\\ndescription: ...\\n---) and markdown body'),
       overwrite: z.boolean().optional().describe('Overwrite if a skill with this name already exists (default: false)'),
     }),
-    outputSchema: z.unknown(),
+    outputSchema: CreateSkillOutput,
     execute: async ({ content, overwrite }, ctx) => {
       try {
         const result = await uploadSkillToR2(getSkillsEnv(ctx), content, { overwrite })
@@ -274,14 +342,24 @@ export function skillsDefinitions(
     render: { icon: PlusSquare, displayName: 'Create Skill' },
   }
 
-  const installSkillDef: ToolDefinition<{ url: string }, unknown> = {
+  const InstallSkillOutput = z.union([
+    z.object({
+      name: z.string(),
+      description: z.string(),
+      source: z.literal('github'),
+      action: z.literal('installed'),
+    }),
+    z.object({ error: z.string() }),
+  ])
+
+  const installSkillDef: ToolDefinition<{ url: string }, z.infer<typeof InstallSkillOutput>> = {
     name: 'install_skill',
     description:
       'Install a skill from a GitHub URL. Fetches the SKILL.md, registers it, and caches it in R2. Use to add community skills or skills from the Anthropic skills repo.',
     inputSchema: z.object({
       url: z.string().describe('Raw GitHub URL to the SKILL.md file (e.g. https://raw.githubusercontent.com/anthropics/skills/main/pdf/SKILL.md)'),
     }),
-    outputSchema: z.unknown(),
+    outputSchema: InstallSkillOutput,
     execute: async ({ url }, ctx) => {
       try {
         const result = await addGitHubSkill(getSkillsEnv(ctx), url)
@@ -293,7 +371,15 @@ export function skillsDefinitions(
     render: { icon: Download, displayName: 'Install Skill' },
   }
 
-  const toggleSkillDef: ToolDefinition<{ name: string; enabled: boolean }, unknown> = {
+  const ToggleSkillOutput = z.union([
+    z.object({ name: z.string(), enabled: z.boolean(), action: z.string() }),
+    z.object({ error: z.string() }),
+  ])
+
+  const toggleSkillDef: ToolDefinition<
+    { name: string; enabled: boolean },
+    z.infer<typeof ToggleSkillOutput>
+  > = {
     name: 'toggle_skill',
     description:
       'Enable or disable a skill. Disabled skills are hidden from the system prompt but their code remains available. Use to temporarily turn off a skill without deleting it.',
@@ -301,7 +387,7 @@ export function skillsDefinitions(
       name: z.string().describe('The skill name to enable/disable'),
       enabled: z.boolean().describe('true to enable, false to disable'),
     }),
-    outputSchema: z.unknown(),
+    outputSchema: ToggleSkillOutput,
     execute: async ({ name, enabled }, ctx) => {
       try {
         const db = drizzle(getSkillsEnv(ctx).DB)

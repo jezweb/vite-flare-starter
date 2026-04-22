@@ -108,9 +108,27 @@ export const getServerTimeDefinition: ToolDefinition<
 
 // ─── get_model_info ──────────────────────────────────────────────
 
+const GetModelInfoOutput = z.union([
+  z.object({
+    id: z.string(),
+    name: z.string(),
+    provider: z.string(),
+    contextWindow: z.number(),
+    supportsTools: z.boolean(),
+    supportsVision: z.boolean(),
+    isReasoning: z.boolean(),
+    tier: z.string(),
+    description: z.string().optional(),
+  }),
+  z.object({
+    error: z.string(),
+    availableModels: z.array(z.object({ id: z.string(), name: z.string() })),
+  }),
+])
+
 export const getModelInfoDefinition: ToolDefinition<
   { modelId: string },
-  unknown
+  z.infer<typeof GetModelInfoOutput>
 > = {
   name: 'get_model_info',
   description:
@@ -118,7 +136,7 @@ export const getModelInfoDefinition: ToolDefinition<
   inputSchema: z.object({
     modelId: z.string().describe('The model ID to look up, e.g. @cf/moonshotai/kimi-k2.5'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: GetModelInfoOutput,
   execute: async ({ modelId }) => {
     const model = getModel(modelId as ModelId)
     if (!model) {

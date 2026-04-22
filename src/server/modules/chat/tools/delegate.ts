@@ -41,9 +41,14 @@ async function getSubagentTools(role: string, ctx: AgentContext): Promise<ToolSe
   return {}
 }
 
+const DelegateOutput = z.union([
+  z.object({ role: z.string(), text: z.string() }),
+  z.object({ role: z.string(), error: z.string() }),
+])
+
 export const delegateDefinition: ToolDefinition<
   { role: string; prompt: string; model?: string },
-  unknown
+  z.infer<typeof DelegateOutput>
 > = {
   name: 'delegate',
   description:
@@ -53,7 +58,7 @@ export const delegateDefinition: ToolDefinition<
     prompt: z.string().describe('The task — full instructions and any context the subagent needs'),
     model: z.string().optional().describe('Override the model (e.g. "@cf/meta/llama-3.1-8b-instruct" for a fast cheap subagent)'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: DelegateOutput,
   execute: async ({ role, prompt, model }, ctx) => {
     try {
       const modelId = model || ctx.model.id

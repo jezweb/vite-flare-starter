@@ -63,7 +63,23 @@ const GenerateDocxInput = z.object({
     .describe('Array of content blocks'),
 })
 
-export const generateDocxDefinition: ToolDefinition<z.infer<typeof GenerateDocxInput>, unknown> = {
+const GenerateDocxOutput = z.union([
+  z.object({
+    _document: z.literal(true),
+    format: z.literal('docx'),
+    title: z.string(),
+    filename: z.string(),
+    sizeBytes: z.number(),
+    downloadUrl: z.string().optional(),
+    base64: z.string().optional(),
+  }),
+  z.object({ error: z.string() }),
+])
+
+export const generateDocxDefinition: ToolDefinition<
+  z.infer<typeof GenerateDocxInput>,
+  z.infer<typeof GenerateDocxOutput>
+> = {
   name: 'generate_docx',
   description: `Generate a Word document (.docx) from structured content. Returns a download link/button. Use for reports, proposals, letters, or any formatted document.
 
@@ -73,7 +89,7 @@ Content is an array of blocks:
 - bullet_list: { type: "bullet_list", items: ["Item 1", "Item 2"] }
 - table: { type: "table", headers: ["Col A", "Col B"], rows: [["val", "val"]] }`,
   inputSchema: GenerateDocxInput,
-  outputSchema: z.unknown(),
+  outputSchema: GenerateDocxOutput,
   execute: async ({ title, content }, ctx) => {
     try {
       const children: (Paragraph | Table)[] = []
@@ -140,12 +156,29 @@ const GenerateCsvInput = z.object({
   rows: z.array(z.array(z.union([z.string(), z.number()]))).describe('Data rows'),
 })
 
-export const generateCsvDefinition: ToolDefinition<z.infer<typeof GenerateCsvInput>, unknown> = {
+const GenerateCsvOutput = z.union([
+  z.object({
+    _document: z.literal(true),
+    format: z.literal('csv'),
+    title: z.string(),
+    rowCount: z.number(),
+    filename: z.string(),
+    sizeBytes: z.number(),
+    downloadUrl: z.string().optional(),
+    base64: z.string().optional(),
+  }),
+  z.object({ error: z.string() }),
+])
+
+export const generateCsvDefinition: ToolDefinition<
+  z.infer<typeof GenerateCsvInput>,
+  z.infer<typeof GenerateCsvOutput>
+> = {
   name: 'generate_csv',
   description:
     'Generate a CSV file from tabular data. Returns a download link. Universal format — opens in Excel, Google Sheets, Numbers, and any data tool.',
   inputSchema: GenerateCsvInput,
-  outputSchema: z.unknown(),
+  outputSchema: GenerateCsvOutput,
   execute: async ({ title, headers, rows }, ctx) => {
     try {
       const escapeCell = (val: string | number) => {

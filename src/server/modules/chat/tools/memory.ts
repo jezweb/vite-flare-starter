@@ -81,14 +81,26 @@ export const rememberDefinition: ToolDefinition<
 
 // ─── recall ─────────────────────────────────────────────────────
 
-export const recallDefinition: ToolDefinition<{ key: string }, unknown> = {
+const RecallOutput = z.union([
+  z.object({ key: z.string(), found: z.literal(false) }),
+  z.object({
+    key: z.string(),
+    found: z.literal(true),
+    value: z.unknown().optional(),
+    description: z.string().optional(),
+    updatedAt: z.unknown().optional(),
+  }).passthrough(),
+  z.object({ key: z.string(), error: z.string() }),
+])
+
+export const recallDefinition: ToolDefinition<{ key: string }, z.infer<typeof RecallOutput>> = {
   name: 'recall',
   description:
     'Retrieve a specific fact from memory by key. Use when you need to check something the user told you before.',
   inputSchema: z.object({
     key: z.string().describe('The memory key to look up (e.g. "pet.name")'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: RecallOutput,
   execute: async ({ key }, ctx) => {
     try {
       const db = drizzle(getDB(ctx))
@@ -115,14 +127,26 @@ export const recallDefinition: ToolDefinition<{ key: string }, unknown> = {
 
 // ─── search_memory ──────────────────────────────────────────────
 
-export const searchMemoryDefinition: ToolDefinition<{ query: string }, unknown> = {
+const SearchMemoryOutput = z.union([
+  z.object({
+    query: z.string(),
+    results: z.array(z.record(z.string(), z.unknown())),
+    count: z.number(),
+  }),
+  z.object({ query: z.string(), error: z.string() }),
+])
+
+export const searchMemoryDefinition: ToolDefinition<
+  { query: string },
+  z.infer<typeof SearchMemoryOutput>
+> = {
   name: 'search_memory',
   description:
     'Search memory by substring match on keys. Use to discover what you remember about a topic (e.g. search "project" to find all project-related facts).',
   inputSchema: z.object({
     query: z.string().describe('Search term — matches against memory keys'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: SearchMemoryOutput,
   execute: async ({ query }, ctx) => {
     try {
       const db = drizzle(getDB(ctx))

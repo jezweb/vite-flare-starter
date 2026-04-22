@@ -38,13 +38,29 @@ function inferContentType(path: string): string {
   return map[ext || ''] || 'text/plain'
 }
 
-export const fsListDefinition: ToolDefinition<{ path?: string }, unknown> = {
+const FsListOutput = z.union([
+  z.object({
+    path: z.string(),
+    files: z.array(
+      z.object({
+        path: z.string(),
+        size: z.number(),
+        modified: z.string(),
+      }),
+    ),
+    count: z.number(),
+    truncated: z.boolean(),
+  }),
+  z.object({ path: z.string(), error: z.string() }),
+])
+
+export const fsListDefinition: ToolDefinition<{ path?: string }, z.infer<typeof FsListOutput>> = {
   name: 'fs_list',
   description: 'List files at a given path in your filesystem. Use to discover what files exist before reading.',
   inputSchema: z.object({
     path: z.string().optional().describe('Folder path (default: root). Example: "reports/" or "" for root'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: FsListOutput,
   isAvailable: filesAvailable,
   execute: async ({ path = '' }, ctx) => {
     const bucket = getFiles(ctx)!
@@ -64,14 +80,29 @@ export const fsListDefinition: ToolDefinition<{ path?: string }, unknown> = {
   render: { icon: FolderTree, displayName: 'List Files' },
 }
 
-export const fsReadDefinition: ToolDefinition<{ path: string }, unknown> = {
+const FsReadOutput = z.union([
+  z.object({
+    path: z.string(),
+    content: z.string(),
+    contentType: z.string(),
+    size: z.number(),
+  }),
+  z.object({
+    path: z.string(),
+    error: z.string(),
+    contentType: z.string().optional(),
+    size: z.number().optional(),
+  }),
+])
+
+export const fsReadDefinition: ToolDefinition<{ path: string }, z.infer<typeof FsReadOutput>> = {
   name: 'fs_read',
   description:
     'Read the contents of a file. Returns text content for text files, or a message for binary files. Max 1MB.',
   inputSchema: z.object({
     path: z.string().describe('File path to read (e.g. "report.md", "data/users.json")'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: FsReadOutput,
   isAvailable: filesAvailable,
   execute: async ({ path }, ctx) => {
     const bucket = getFiles(ctx)!
@@ -109,9 +140,19 @@ export const fsReadDefinition: ToolDefinition<{ path: string }, unknown> = {
   render: { icon: FileCheck, displayName: 'Read File' },
 }
 
+const FsWriteOutput = z.union([
+  z.object({
+    path: z.string(),
+    size: z.number(),
+    contentType: z.string(),
+    action: z.literal('written'),
+  }),
+  z.object({ path: z.string(), error: z.string() }),
+])
+
 export const fsWriteDefinition: ToolDefinition<
   { path: string; content: string; contentType?: string },
-  unknown
+  z.infer<typeof FsWriteOutput>
 > = {
   name: 'fs_write',
   description:
@@ -121,7 +162,7 @@ export const fsWriteDefinition: ToolDefinition<
     content: z.string().describe('Text content to write'),
     contentType: z.string().optional().describe('MIME type (default: text/plain for .txt, text/markdown for .md, etc.)'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: FsWriteOutput,
   isAvailable: filesAvailable,
   execute: async ({ path, content, contentType }, ctx) => {
     const bucket = getFiles(ctx)!
@@ -137,13 +178,18 @@ export const fsWriteDefinition: ToolDefinition<
   render: { icon: FilePlus, displayName: 'Write File' },
 }
 
-export const fsDeleteDefinition: ToolDefinition<{ path: string }, unknown> = {
+const FsDeleteOutput = z.union([
+  z.object({ path: z.string(), deleted: z.literal(true) }),
+  z.object({ path: z.string(), error: z.string() }),
+])
+
+export const fsDeleteDefinition: ToolDefinition<{ path: string }, z.infer<typeof FsDeleteOutput>> = {
   name: 'fs_delete',
   description: 'Delete a file from the filesystem. Cannot be undone. Requires user approval.',
   inputSchema: z.object({
     path: z.string().describe('File path to delete'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: FsDeleteOutput,
   needsApproval: true,
   isAvailable: filesAvailable,
   execute: async ({ path }, ctx) => {

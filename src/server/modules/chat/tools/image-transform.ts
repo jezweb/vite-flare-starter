@@ -45,7 +45,21 @@ type ImageTransformInput = {
   backgroundColor?: string
 }
 
-export const imageTransformDefinition: ToolDefinition<ImageTransformInput, unknown> = {
+const ImageTransformOutput = z.union([
+  z.object({
+    sourcePath: z.string(),
+    outputPath: z.string(),
+    sizeBytes: z.number(),
+    contentType: z.string(),
+    url: z.string(),
+  }),
+  z.object({ error: z.string() }),
+])
+
+export const imageTransformDefinition: ToolDefinition<
+  ImageTransformInput,
+  z.infer<typeof ImageTransformOutput>
+> = {
   name: 'image_transform',
   description:
     'Transform an image stored in the filesystem: resize, crop, convert format, remove background, blur, sharpen, adjust brightness/contrast/saturation, rotate, flip. The result is saved as a new file. Use when the user asks to resize, optimise, edit, or process an image.',
@@ -68,7 +82,7 @@ export const imageTransformDefinition: ToolDefinition<ImageTransformInput, unkno
     removeBackground: z.boolean().optional().describe('AI background removal (returns transparent PNG)'),
     backgroundColor: z.string().optional().describe('Fill background colour (CSS4 format, e.g. "#ffffff")'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: ImageTransformOutput,
   isAvailable: available,
   execute: async ({ sourcePath, outputPath, removeBackground, backgroundColor, rotate, ...rest }, ctx) => {
     const env = getEnv(ctx)
@@ -106,13 +120,24 @@ export const imageTransformDefinition: ToolDefinition<ImageTransformInput, unkno
   render: { icon: Wand2, displayName: 'Transform Image' },
 }
 
-export const imageInfoDefinition: ToolDefinition<{ path: string }, unknown> = {
+const ImageInfoOutput = z.union([
+  z.object({
+    path: z.string(),
+    format: z.string(),
+    fileSize: z.number(),
+    width: z.number(),
+    height: z.number(),
+  }),
+  z.object({ error: z.string() }),
+])
+
+export const imageInfoDefinition: ToolDefinition<{ path: string }, z.infer<typeof ImageInfoOutput>> = {
   name: 'image_info',
   description: "Get metadata about an image: format, dimensions, file size. Use when the user asks about an image's properties.",
   inputSchema: z.object({
     path: z.string().describe('Path to image in the filesystem'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: ImageInfoOutput,
   isAvailable: available,
   execute: async ({ path }, ctx) => {
     const env = getEnv(ctx)

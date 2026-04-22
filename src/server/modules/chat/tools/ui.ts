@@ -18,16 +18,25 @@ import type { ToolDefinition } from '@/shared/agent'
  * `{ _ui: name, ...args }`. Output schema is permissive because the
  * rendering pipeline (ChatUiElement) reads fields structurally.
  */
+// UI tools all return `{ _ui: <toolName>, ...inputArgs }`. The exact shape
+// varies per tool and mirrors each tool's input schema plus the marker. We
+// use a structural schema with `_ui` as a literal-ish string and any
+// passthrough keys so the rendering pipeline can read them without a full
+// per-tool union.
+const UiOutputSchema = z
+  .object({ _ui: z.string() })
+  .catchall(z.unknown())
+
 function uiTool<I>(
   name: string,
   description: string,
   inputSchema: z.ZodType<I>,
-): ToolDefinition<I, unknown> {
+): ToolDefinition<I, z.infer<typeof UiOutputSchema>> {
   return {
     name,
     description,
     inputSchema,
-    outputSchema: z.unknown(),
+    outputSchema: UiOutputSchema,
     execute: async (args: I) => ({ _ui: name, ...(args as object) }),
   }
 }

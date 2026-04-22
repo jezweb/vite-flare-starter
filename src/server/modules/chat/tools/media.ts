@@ -24,6 +24,16 @@ const available = (ctx: AgentContext) => {
   return !!(env.MEDIA && env.FILES)
 }
 
+const VideoClipOutput = z.union([
+  z.object({
+    sourcePath: z.string(),
+    outputPath: z.string(),
+    sizeBytes: z.number(),
+    duration: z.string(),
+  }),
+  z.object({ error: z.string() }),
+])
+
 export const videoClipDefinition: ToolDefinition<
   {
     sourcePath: string
@@ -34,7 +44,7 @@ export const videoClipDefinition: ToolDefinition<
     height?: number
     removeAudio?: boolean
   },
-  unknown
+  z.infer<typeof VideoClipOutput>
 > = {
   name: 'video_clip',
   description:
@@ -48,7 +58,7 @@ export const videoClipDefinition: ToolDefinition<
     height: z.number().optional().describe('Resize height'),
     removeAudio: z.boolean().optional().describe('Strip audio from output'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: VideoClipOutput,
   isAvailable: available,
   execute: async ({ sourcePath, outputPath, ...opts }, ctx) => {
     const env = getEnv(ctx)
@@ -74,9 +84,19 @@ export const videoClipDefinition: ToolDefinition<
   render: { icon: Scissors, displayName: 'Clip Video' },
 }
 
+const VideoFrameOutput = z.union([
+  z.object({
+    sourcePath: z.string(),
+    outputPath: z.string(),
+    time: z.string(),
+    sizeBytes: z.number(),
+  }),
+  z.object({ error: z.string() }),
+])
+
 export const videoFrameDefinition: ToolDefinition<
   { sourcePath: string; outputPath: string; time?: string; width?: number; height?: number },
-  unknown
+  z.infer<typeof VideoFrameOutput>
 > = {
   name: 'video_frame',
   description:
@@ -88,7 +108,7 @@ export const videoFrameDefinition: ToolDefinition<
     width: z.number().optional().describe('Frame width'),
     height: z.number().optional().describe('Frame height'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: VideoFrameOutput,
   isAvailable: available,
   execute: async ({ sourcePath, outputPath, time, width, height }, ctx) => {
     const env = getEnv(ctx)
@@ -108,9 +128,18 @@ export const videoFrameDefinition: ToolDefinition<
   render: { icon: ImageIcon, displayName: 'Extract Frame' },
 }
 
+const VideoAudioOutput = z.union([
+  z.object({
+    sourcePath: z.string(),
+    outputPath: z.string(),
+    sizeBytes: z.number(),
+  }),
+  z.object({ error: z.string() }),
+])
+
 export const videoAudioDefinition: ToolDefinition<
   { sourcePath: string; outputPath: string },
-  unknown
+  z.infer<typeof VideoAudioOutput>
 > = {
   name: 'video_audio',
   description: 'Extract the audio track from a video as M4A. Use when the user wants just the audio from a video file.',
@@ -118,7 +147,7 @@ export const videoAudioDefinition: ToolDefinition<
     sourcePath: z.string().describe('Path to source video'),
     outputPath: z.string().describe('Path to save the extracted audio (M4A)'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: VideoAudioOutput,
   isAvailable: available,
   execute: async ({ sourcePath, outputPath }, ctx) => {
     const env = getEnv(ctx)
@@ -138,9 +167,18 @@ export const videoAudioDefinition: ToolDefinition<
   render: { icon: Music, displayName: 'Extract Audio' },
 }
 
+const VideoSpritesheetOutput = z.union([
+  z.object({
+    sourcePath: z.string(),
+    outputPath: z.string(),
+    sizeBytes: z.number(),
+  }),
+  z.object({ error: z.string() }),
+])
+
 export const videoSpritesheetDefinition: ToolDefinition<
   { sourcePath: string; outputPath: string; width?: number; height?: number },
-  unknown
+  z.infer<typeof VideoSpritesheetOutput>
 > = {
   name: 'video_spritesheet',
   description:
@@ -151,7 +189,7 @@ export const videoSpritesheetDefinition: ToolDefinition<
     width: z.number().optional().describe('Frame width in spritesheet (default: 160)'),
     height: z.number().optional().describe('Frame height in spritesheet (default: 90)'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: VideoSpritesheetOutput,
   isAvailable: available,
   execute: async ({ sourcePath, outputPath, width, height }, ctx) => {
     const env = getEnv(ctx)

@@ -23,14 +23,26 @@ function getAudioEnv(ctx: AgentContext): { AI: Ai; OPENAI_API_KEY?: string } {
 
 // ─── transcribe_audio ───────────────────────────────────────────
 
-export const transcribeAudioDefinition: ToolDefinition<{ audioDataUrl: string }, unknown> = {
+const TranscribeAudioOutput = z.union([
+  z.object({
+    text: z.string(),
+    segments: z.number().optional(),
+    provider: z.string().optional(),
+  }),
+  z.object({ error: z.string() }),
+])
+
+export const transcribeAudioDefinition: ToolDefinition<
+  { audioDataUrl: string },
+  z.infer<typeof TranscribeAudioOutput>
+> = {
   name: 'transcribe_audio',
   description:
     'Convert audio to text (speech-to-text). Use when the user provides an audio recording or wants you to listen to something. Pass audio as a base64 data URL.',
   inputSchema: z.object({
     audioDataUrl: z.string().describe('Audio file as data URL (data:audio/webm;base64,...). Max 10MB.'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: TranscribeAudioOutput,
   execute: async ({ audioDataUrl }, ctx) => {
     const env = getAudioEnv(ctx)
     const workersai = createWorkersAI({ binding: env.AI })
@@ -80,9 +92,20 @@ export const transcribeAudioDefinition: ToolDefinition<{ audioDataUrl: string },
 
 // ─── speak_text ─────────────────────────────────────────────────
 
+const SpeakTextOutput = z.union([
+  z.object({
+    audioDataUrl: z.string(),
+    speaker: z.string(),
+    provider: z.string().optional(),
+    sizeBytes: z.number(),
+    characters: z.number(),
+  }),
+  z.object({ error: z.string() }),
+])
+
 export const speakTextDefinition: ToolDefinition<
   { text: string; speaker?: typeof SPEAKERS[number] },
-  unknown
+  z.infer<typeof SpeakTextOutput>
 > = {
   name: 'speak_text',
   description:
@@ -91,7 +114,7 @@ export const speakTextDefinition: ToolDefinition<
     text: z.string().max(2000).describe('Text to convert to speech (max 2000 chars)'),
     speaker: z.enum(SPEAKERS).optional().describe('Voice: luna (default, neutral female), orion (male), athena (warm female), zeus (deep male)'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: SpeakTextOutput,
   execute: async ({ text, speaker = 'luna' }, ctx) => {
     const env = getAudioEnv(ctx)
     const workersai = createWorkersAI({ binding: env.AI })

@@ -23,9 +23,28 @@ function getEnv(ctx: AgentContext): SearchFilesEnv {
   return ctx.env as unknown as SearchFilesEnv
 }
 
+const SearchFilesOutput = z.union([
+  z.object({
+    query: z.string(),
+    results: z.array(
+      z.object({
+        fileId: z.string(),
+        fileName: z.string(),
+        folder: z.string(),
+        mimeType: z.string().nullable(),
+        chunkIndex: z.number().optional(),
+        excerpt: z.string().optional(),
+        similarity: z.number(),
+      }),
+    ),
+    message: z.string().optional(),
+  }),
+  z.object({ query: z.string(), error: z.string() }),
+])
+
 export const searchFilesDefinition: ToolDefinition<
   { query: string; limit?: number; fileId?: string },
-  unknown
+  z.infer<typeof SearchFilesOutput>
 > = {
   name: 'search_files',
   description:
@@ -49,7 +68,7 @@ export const searchFilesDefinition: ToolDefinition<
       .optional()
       .describe('Restrict search to one file ID. Use when the user is asking about a specific file.'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: SearchFilesOutput,
   isAvailable: (ctx) => !!getEnv(ctx).VECTORS,
   execute: async ({ query, limit = 5, fileId }, ctx) => {
     const env = getEnv(ctx)

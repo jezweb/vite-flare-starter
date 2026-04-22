@@ -39,9 +39,24 @@ function escapeHtml(s: string): string {
     .replace(/'/g, '&#039;')
 }
 
+const SendEmailOutput = z.union([
+  z.object({
+    ok: z.literal(true),
+    provider: z.string(),
+    messageId: z.string().optional(),
+    message: z.string(),
+  }),
+  z.object({
+    ok: z.literal(false),
+    provider: z.string().optional(),
+    status: z.string().optional(),
+    error: z.string(),
+  }),
+])
+
 export const sendEmailDefinition: ToolDefinition<
   { to: string; subject: string; body: string },
-  unknown
+  z.infer<typeof SendEmailOutput>
 > = {
   name: 'send_email',
   description:
@@ -57,7 +72,7 @@ export const sendEmailDefinition: ToolDefinition<
         'Plain-text body of the email. Markdown-style line breaks are respected. HTML will be derived by wrapping paragraphs.',
       ),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: SendEmailOutput,
   needsApproval: true,
   isAvailable: (ctx) => {
     const env = getEmailEnv(ctx)

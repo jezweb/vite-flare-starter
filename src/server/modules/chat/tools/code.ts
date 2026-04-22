@@ -41,9 +41,29 @@ function userSandbox(ctx: AgentContext) {
   return getSandbox(binding, `user-${ctx.userId}`)
 }
 
+const CodeExecOutput = z.union([
+  z.object({
+    stdout: z.string(),
+    stderr: z.string(),
+    exitCode: z.number(),
+    error: z.string().optional(),
+  }),
+  z.object({ error: z.string() }),
+])
+
+const ShellExecOutput = z.union([
+  z.object({
+    stdout: z.string(),
+    stderr: z.string(),
+    exitCode: z.number(),
+    success: z.boolean(),
+  }),
+  z.object({ error: z.string() }),
+])
+
 export const runPythonDefinition: ToolDefinition<
   { code: string; timeout?: number },
-  unknown
+  z.infer<typeof CodeExecOutput>
 > = {
   name: 'run_python',
   description:
@@ -52,7 +72,7 @@ export const runPythonDefinition: ToolDefinition<
     code: z.string().describe('Python code to execute'),
     timeout: z.number().optional().describe('Timeout in seconds (default: 30)'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: CodeExecOutput,
   isAvailable: sandboxAvailable,
   execute: async ({ code, timeout = 30 }, ctx) => {
     try {
@@ -68,7 +88,7 @@ export const runPythonDefinition: ToolDefinition<
 
 export const runShellDefinition: ToolDefinition<
   { command: string; cwd?: string; timeout?: number },
-  unknown
+  z.infer<typeof ShellExecOutput>
 > = {
   name: 'run_shell',
   description:
@@ -78,7 +98,7 @@ export const runShellDefinition: ToolDefinition<
     cwd: z.string().optional().describe('Working directory (default: /workspace)'),
     timeout: z.number().optional().describe('Timeout in seconds (default: 30)'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: ShellExecOutput,
   isAvailable: sandboxAvailable,
   execute: async ({ command, cwd, timeout = 30 }, ctx) => {
     try {
@@ -94,7 +114,7 @@ export const runShellDefinition: ToolDefinition<
 
 export const runJsDefinition: ToolDefinition<
   { code: string; timeout?: number },
-  unknown
+  z.infer<typeof CodeExecOutput>
 > = {
   name: 'run_js',
   description:
@@ -103,7 +123,7 @@ export const runJsDefinition: ToolDefinition<
     code: z.string().describe('JavaScript or TypeScript code to execute'),
     timeout: z.number().optional().describe('Timeout in seconds (default: 30)'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: CodeExecOutput,
   isAvailable: sandboxAvailable,
   execute: async ({ code, timeout = 30 }, ctx) => {
     try {

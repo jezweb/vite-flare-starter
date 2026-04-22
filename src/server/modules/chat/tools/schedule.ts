@@ -83,9 +83,20 @@ function nextCronRun(cronExpr: string, after: Date = new Date()): Date {
 
 // ─── Schedule Tools ─────────────────────────────────────────────────
 
+const ScheduleTaskOutput = z.union([
+  z.object({
+    id: z.string(),
+    name: z.string(),
+    nextRun: z.string(),
+    recurring: z.boolean(),
+    cron: z.string().optional(),
+  }),
+  z.object({ error: z.string() }),
+])
+
 export const scheduleTaskDefinition: ToolDefinition<
   { name: string; prompt: string; skillName?: string; runAt?: string; cron?: string },
-  unknown
+  z.infer<typeof ScheduleTaskOutput>
 > = {
   name: 'schedule_task',
   description:
@@ -97,7 +108,7 @@ export const scheduleTaskDefinition: ToolDefinition<
     runAt: z.string().optional().describe('ISO 8601 datetime for one-shot tasks (e.g. "2026-04-14T09:00:00+11:00")'),
     cron: z.string().optional().describe('Cron expression for recurring tasks (e.g. "0 6 * * *" = daily at 6am, "0 9 * * 1" = Monday 9am)'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: ScheduleTaskOutput,
   execute: async ({ name, prompt, skillName, runAt, cron: cronExpr }, ctx) => {
     try {
       if (!runAt && !cronExpr) {
@@ -130,16 +141,35 @@ export const scheduleTaskDefinition: ToolDefinition<
   render: { icon: CalendarClock, displayName: 'Schedule Task' },
 }
 
+const ListTasksOutput = z.union([
+  z.object({
+    tasks: z.array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        status: z.string(),
+        nextRun: z.string().nullable(),
+        lastRun: z.string().nullable(),
+        recurring: z.boolean(),
+        cron: z.string().nullable(),
+        skillName: z.string().nullable(),
+      }),
+    ),
+    count: z.number(),
+  }),
+  z.object({ error: z.string() }),
+])
+
 export const listTasksDefinition: ToolDefinition<
   { status?: 'all' | 'active' | 'paused' | 'completed' | 'failed' },
-  unknown
+  z.infer<typeof ListTasksOutput>
 > = {
   name: 'list_tasks',
   description: 'List your scheduled tasks. Shows upcoming, recurring, and completed tasks with their next run times.',
   inputSchema: z.object({
     status: z.enum(['all', 'active', 'paused', 'completed', 'failed']).optional().describe('Filter by status (default: active)'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: ListTasksOutput,
   execute: async ({ status = 'active' }, ctx) => {
     try {
       const db = drizzle(getDB(ctx))
@@ -169,13 +199,18 @@ export const listTasksDefinition: ToolDefinition<
   render: { icon: ListOrdered, displayName: 'List Tasks' },
 }
 
-export const cancelTaskDefinition: ToolDefinition<{ id: string }, unknown> = {
+const CancelTaskOutput = z.union([
+  z.object({ id: z.string(), cancelled: z.boolean() }),
+  z.object({ error: z.string() }),
+])
+
+export const cancelTaskDefinition: ToolDefinition<{ id: string }, z.infer<typeof CancelTaskOutput>> = {
   name: 'cancel_task',
   description: "Cancel a scheduled task by ID. Pauses it so it won't run, but keeps it in the list for reference.",
   inputSchema: z.object({
     id: z.string().describe('The task ID to cancel'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: CancelTaskOutput,
   execute: async ({ id }, ctx) => {
     try {
       const db = drizzle(getDB(ctx))

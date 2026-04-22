@@ -62,14 +62,27 @@ async function saveTodos(ctx: AgentContext, todos: TodoItem[]): Promise<void> {
 
 // ─── todo_add ───────────────────────────────────────────────────
 
-export const todoAddDefinition: ToolDefinition<{ items: string[] }, unknown> = {
+const TodoItemSchema = z.object({
+  id: z.string(),
+  text: z.string(),
+  status: z.enum(['pending', 'in_progress', 'completed', 'cancelled']),
+  createdAt: z.number(),
+  updatedAt: z.number(),
+})
+
+const TodoAddOutput = z.union([
+  z.object({ added: z.array(TodoItemSchema), total: z.number() }),
+  z.object({ error: z.string() }),
+])
+
+export const todoAddDefinition: ToolDefinition<{ items: string[] }, z.infer<typeof TodoAddOutput>> = {
   name: 'todo_add',
   description:
     "Add an item to the agent's task list. Use to track multi-step work — list everything you plan to do upfront, then mark each item complete as you go. The user can see the list and your progress.",
   inputSchema: z.object({
     items: z.array(z.string()).describe('One or more task descriptions to add'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: TodoAddOutput,
   execute: async ({ items }, ctx) => {
     try {
       const todos = await getTodos(ctx)
@@ -100,9 +113,14 @@ export const todoAddDefinition: ToolDefinition<{ items: string[] }, unknown> = {
 
 // ─── todo_update ────────────────────────────────────────────────
 
+const TodoUpdateOutput = z.union([
+  z.object({ updated: TodoItemSchema, total: z.number() }),
+  z.object({ error: z.string() }),
+])
+
 export const todoUpdateDefinition: ToolDefinition<
   { id: string; status: 'pending' | 'in_progress' | 'completed' | 'cancelled'; text?: string },
-  unknown
+  z.infer<typeof TodoUpdateOutput>
 > = {
   name: 'todo_update',
   description:
@@ -112,7 +130,7 @@ export const todoUpdateDefinition: ToolDefinition<
     status: z.enum(['pending', 'in_progress', 'completed', 'cancelled']),
     text: z.string().optional().describe('Optional: update the text too'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: TodoUpdateOutput,
   execute: async ({ id, status, text }, ctx) => {
     try {
       const todos = await getTodos(ctx)
@@ -136,9 +154,23 @@ export const todoUpdateDefinition: ToolDefinition<
 
 // ─── todo_list ──────────────────────────────────────────────────
 
+const TodoListOutput = z.union([
+  z.object({
+    items: z.array(TodoItemSchema),
+    counts: z.object({
+      pending: z.number(),
+      in_progress: z.number(),
+      completed: z.number(),
+      cancelled: z.number(),
+      total: z.number(),
+    }),
+  }),
+  z.object({ error: z.string() }),
+])
+
 export const todoListDefinition: ToolDefinition<
   { status?: 'all' | 'pending' | 'in_progress' | 'completed' | 'cancelled' },
-  unknown
+  z.infer<typeof TodoListOutput>
 > = {
   name: 'todo_list',
   description: "List the current todo items. Use to check what's been done and what's still pending.",
@@ -148,7 +180,7 @@ export const todoListDefinition: ToolDefinition<
       .optional()
       .describe('Filter by status (default: all)'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: TodoListOutput,
   execute: async ({ status = 'all' }, ctx) => {
     try {
       const todos = await getTodos(ctx)
@@ -180,7 +212,15 @@ export const todoListDefinition: ToolDefinition<
 
 // ─── todo_clear ─────────────────────────────────────────────────
 
-export const todoClearDefinition: ToolDefinition<{ completed_only?: boolean }, unknown> = {
+const TodoClearOutput = z.union([
+  z.object({ remaining: z.number(), removed: z.number() }),
+  z.object({ error: z.string() }),
+])
+
+export const todoClearDefinition: ToolDefinition<
+  { completed_only?: boolean },
+  z.infer<typeof TodoClearOutput>
+> = {
   name: 'todo_clear',
   description: 'Clear todo items. Use after a task is fully complete to start fresh.',
   inputSchema: z.object({
@@ -189,7 +229,7 @@ export const todoClearDefinition: ToolDefinition<{ completed_only?: boolean }, u
       .optional()
       .describe('If true, only remove completed/cancelled items. If false, clear everything (default: true).'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: TodoClearOutput,
   execute: async ({ completed_only = true }, ctx) => {
     try {
       const todos = await getTodos(ctx)

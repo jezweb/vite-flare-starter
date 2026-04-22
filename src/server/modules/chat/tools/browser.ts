@@ -51,9 +51,14 @@ async function callBrowserAPI<T>(
   return data.result as T
 }
 
+const BrowserMarkdownOutput = z.union([
+  z.object({ url: z.string(), markdown: z.string() }),
+  z.object({ url: z.string(), error: z.string() }),
+])
+
 export const browserMarkdownDefinition: ToolDefinition<
   { url: string; waitForSelector?: string },
-  unknown
+  z.infer<typeof BrowserMarkdownOutput>
 > = {
   name: 'browser_markdown',
   description: 'Fetch a URL and convert the page to clean markdown. Ideal for reading articles, docs, or any web content as text.',
@@ -61,7 +66,7 @@ export const browserMarkdownDefinition: ToolDefinition<
     url: z.string().url().describe('The URL to fetch'),
     waitForSelector: z.string().optional().describe('CSS selector to wait for before extracting (for JS-heavy pages)'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: BrowserMarkdownOutput,
   isAvailable: browserAvailable,
   execute: async ({ url, waitForSelector }, ctx) => {
     try {
@@ -76,9 +81,14 @@ export const browserMarkdownDefinition: ToolDefinition<
   render: { icon: FileText, displayName: 'Browser Markdown' },
 }
 
+const BrowserExtractOutput = z.union([
+  z.object({ url: z.string(), data: z.unknown() }),
+  z.object({ url: z.string(), error: z.string() }),
+])
+
 export const browserExtractDefinition: ToolDefinition<
   { url: string; prompt: string },
-  unknown
+  z.infer<typeof BrowserExtractOutput>
 > = {
   name: 'browser_extract',
   description:
@@ -91,7 +101,7 @@ export const browserExtractDefinition: ToolDefinition<
         'Natural language instruction: "Extract product name, price, and availability" or "Get the article title, author, and publish date"',
       ),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: BrowserExtractOutput,
   isAvailable: browserAvailable,
   execute: async ({ url, prompt }, ctx) => {
     try {
@@ -104,9 +114,18 @@ export const browserExtractDefinition: ToolDefinition<
   render: { icon: Database, displayName: 'Browser Extract' },
 }
 
+const BrowserScreenshotOutput = z.union([
+  z.object({
+    url: z.string(),
+    imageDataUrl: z.string(),
+    sizeBytes: z.number(),
+  }),
+  z.object({ url: z.string(), error: z.string() }),
+])
+
 export const browserScreenshotDefinition: ToolDefinition<
   { url: string; fullPage?: boolean },
-  unknown
+  z.infer<typeof BrowserScreenshotOutput>
 > = {
   name: 'browser_screenshot',
   description:
@@ -115,7 +134,7 @@ export const browserScreenshotDefinition: ToolDefinition<
     url: z.string().url().describe('The URL to screenshot'),
     fullPage: z.boolean().optional().describe('Capture the full scrollable page (default: viewport only)'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: BrowserScreenshotOutput,
   isAvailable: browserAvailable,
   execute: async ({ url, fullPage }, ctx) => {
     const env = getBrowserEnv(ctx)
@@ -142,13 +161,24 @@ export const browserScreenshotDefinition: ToolDefinition<
   render: { icon: Camera, displayName: 'Browser Screenshot' },
 }
 
-export const browserLinksDefinition: ToolDefinition<{ url: string }, unknown> = {
+const BrowserLinksOutput = z.union([
+  z.object({
+    url: z.string(),
+    // Some pages return a non-array shape (e.g. the full response payload) —
+    // keep this permissive so valid results never fail Zod validation.
+    links: z.unknown(),
+    count: z.number(),
+  }),
+  z.object({ url: z.string(), error: z.string() }),
+])
+
+export const browserLinksDefinition: ToolDefinition<{ url: string }, z.infer<typeof BrowserLinksOutput>> = {
   name: 'browser_links',
   description: 'Extract all links from a webpage. Useful for discovering pages to crawl or navigation structure.',
   inputSchema: z.object({
     url: z.string().url().describe('The URL to extract links from'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: BrowserLinksOutput,
   isAvailable: browserAvailable,
   execute: async ({ url }, ctx) => {
     try {
@@ -161,9 +191,14 @@ export const browserLinksDefinition: ToolDefinition<{ url: string }, unknown> = 
   render: { icon: Link2, displayName: 'Browser Links' },
 }
 
+const BrowserContentOutput = z.union([
+  z.object({ url: z.string(), html: z.string(), length: z.number() }),
+  z.object({ url: z.string(), error: z.string() }),
+])
+
 export const browserContentDefinition: ToolDefinition<
   { url: string; waitForSelector?: string },
-  unknown
+  z.infer<typeof BrowserContentOutput>
 > = {
   name: 'browser_content',
   description: 'Get the rendered HTML content of a page. Use when you need raw HTML, not markdown.',
@@ -171,7 +206,7 @@ export const browserContentDefinition: ToolDefinition<
     url: z.string().url().describe('The URL to fetch'),
     waitForSelector: z.string().optional().describe('CSS selector to wait for'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: BrowserContentOutput,
   isAvailable: browserAvailable,
   execute: async ({ url, waitForSelector }, ctx) => {
     try {

@@ -130,9 +130,26 @@ function getSearchEnv(ctx: AgentContext): SearchEnv {
   return ctx.env as unknown as SearchEnv
 }
 
+const WebSearchOutput = z.union([
+  z.object({
+    query: z.string(),
+    results: z.array(
+      z.object({
+        title: z.string(),
+        url: z.string(),
+        snippet: z.string(),
+        date: z.string().optional(),
+      }),
+    ),
+    count: z.number(),
+    provider: z.string(),
+  }),
+  z.object({ query: z.string(), error: z.string() }),
+])
+
 export const webSearchDefinition: ToolDefinition<
   { query: string; limit?: number },
-  unknown
+  z.infer<typeof WebSearchOutput>
 > = {
   name: 'web_search',
   description:
@@ -141,7 +158,7 @@ export const webSearchDefinition: ToolDefinition<
     query: z.string().describe('The search query'),
     limit: z.number().optional().describe('Number of results to return (default: 10, max: 20)'),
   }),
-  outputSchema: z.unknown(),
+  outputSchema: WebSearchOutput,
   isAvailable: (ctx) => !!getActiveSearchProvider(getSearchEnv(ctx)),
   execute: async ({ query, limit = 10 }, ctx) => {
     const env = getSearchEnv(ctx)
