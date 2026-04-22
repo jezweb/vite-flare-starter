@@ -74,6 +74,15 @@ NODE_ENV=development
 # VITE_FEATURE_STYLE_GUIDE=true    # Enable style guide in production
 # VITE_FEATURE_COMPONENTS=false    # Disable components showcase
 
+# Durable Object agent example pages — the DO code is always compiled
+# (so Claude can reference the pattern) but the nav items are hidden
+# unless explicitly enabled. Set to "true" to reveal.
+# VITE_FEATURE_VOICE_AGENT=true    # /dashboard/voice-example (@cloudflare/voice)
+# VITE_FEATURE_VIDEO_AGENT=true    # /dashboard/video-example (sampled frames → Workers AI vision)
+
+# MCP Connectors — per-user OAuth/bearer connections to external MCP servers
+# VITE_FEATURE_CONNECTORS=true
+
 # ============================================
 # PRODUCTION SECRETS
 # ============================================

@@ -71,10 +71,22 @@ export function ProfileSection() {
   }
 
   if (!session?.user) {
+    // Skeleton that matches the real layout — avatar + name + email fields.
+    // Matches the design-system pattern used elsewhere for loading states.
     return (
       <Card>
-        <CardContent className="p-6">
-          <p className="text-muted-foreground">Loading profile...</p>
+        <CardContent className="p-6 space-y-4">
+          <div className="flex items-center gap-4 animate-pulse">
+            <div className="h-20 w-20 rounded-full bg-muted" />
+            <div className="space-y-2 flex-1">
+              <div className="h-4 w-40 bg-muted rounded" />
+              <div className="h-3 w-56 bg-muted/60 rounded" />
+            </div>
+          </div>
+          <div className="space-y-3 animate-pulse">
+            <div className="h-9 w-full bg-muted rounded" />
+            <div className="h-9 w-full bg-muted rounded" />
+          </div>
         </CardContent>
       </Card>
     )
