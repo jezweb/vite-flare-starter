@@ -27,7 +27,7 @@ export { userNotifications, userNotificationsRelations } from '@/server/modules/
 export { files } from '@/server/modules/files/db/schema'
 
 // Chat / AI module schemas
-export { aiUsageLogs } from '@/server/modules/chat/db/schema'
+export { aiUsageLogs, aiToolCalls } from '@/server/modules/chat/db/schema'
 
 // User metadata (key-value store)
 export { userMeta } from '@/server/modules/user-meta/db/schema'

@@ -7,7 +7,7 @@
 
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
-import { eq, like, or, desc, asc, count, and, gt } from 'drizzle-orm'
+import { eq, like, or, desc, asc, count, and, gt, isNotNull } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { authMiddleware } from '@/server/middleware/auth'
 import { adminMiddleware, type AdminContext } from '@/server/middleware/admin'
@@ -394,6 +394,46 @@ adminRoutes.post('/users/:id/revoke', async (c) => {
   await db.delete(schema.session).where(eq(schema.session.userId, id))
 
   return c.json({ success: true, message: 'All sessions revoked' })
+})
+
+/**
+ * GET /tool-errors — recent tool-call failures (last 24h, newest first).
+ * Read-only view for the admin panel's observability strip. Returns up to 50
+ * rows sorted by createdAt DESC; enough for a glance, not a full dashboard.
+ */
+adminRoutes.get('/tool-errors', async (c) => {
+  const db = drizzle(c.env.DB, { schema })
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000)
+
+  const rows = await db
+    .select({
+      id: schema.aiToolCalls.id,
+      userId: schema.aiToolCalls.userId,
+      userEmail: schema.user.email,
+      model: schema.aiToolCalls.model,
+      toolName: schema.aiToolCalls.toolName,
+      stepIndex: schema.aiToolCalls.stepIndex,
+      toolError: schema.aiToolCalls.toolError,
+      createdAt: schema.aiToolCalls.createdAt,
+    })
+    .from(schema.aiToolCalls)
+    .leftJoin(schema.user, eq(schema.user.id, schema.aiToolCalls.userId))
+    .where(and(isNotNull(schema.aiToolCalls.toolError), gt(schema.aiToolCalls.createdAt, since)))
+    .orderBy(desc(schema.aiToolCalls.createdAt))
+    .limit(50)
+
+  return c.json({
+    errors: rows.map((r) => ({
+      id: r.id,
+      userId: r.userId,
+      userEmail: r.userEmail,
+      model: r.model,
+      toolName: r.toolName,
+      stepIndex: r.stepIndex,
+      toolError: r.toolError,
+      createdAt: r.createdAt.toISOString(),
+    })),
+  })
 })
 
 /**

@@ -127,6 +127,13 @@
       "when": 1776820382644,
       "tag": "0017_google_workspace_tokens",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1776866380079,
+      "tag": "0018_add_ai_tool_calls",
+      "breakpoints": true
     }
   ]
 }

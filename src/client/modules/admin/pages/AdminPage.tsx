@@ -15,10 +15,11 @@ import { AdminStats } from '../components/AdminStats'
 import { UsersTabContent } from '../components/UsersTabContent'
 import { FeaturesTabContent } from '../components/FeaturesTabContent'
 import { EmailLogsTabContent } from '../components/EmailLogsTabContent'
+import { ToolErrorsTabContent } from '../components/ToolErrorsTabContent'
 import { ApiTokensSection } from '@/client/modules/settings/components/ApiTokensSection'
-import { Shield, Users, Flag, Key, ArrowLeft, Mail } from 'lucide-react'
+import { Shield, Users, Flag, Key, ArrowLeft, Mail, AlertCircle } from 'lucide-react'
 
-const TABS = ['users', 'features', 'tokens', 'emails'] as const
+const TABS = ['users', 'features', 'tokens', 'emails', 'tool-errors'] as const
 type TabValue = (typeof TABS)[number]
 
 function isValidTab(tab: string | null): tab is TabValue {
@@ -145,6 +146,10 @@ export function AdminPage() {
             <Mail className="h-4 w-4" />
             Emails
           </TabsTrigger>
+          <TabsTrigger value="tool-errors" className="gap-2">
+            <AlertCircle className="h-4 w-4" />
+            Tool errors
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="users" className="space-y-4">
@@ -171,6 +176,10 @@ export function AdminPage() {
 
         <TabsContent value="emails" className="space-y-4">
           <EmailLogsTabContent />
+        </TabsContent>
+
+        <TabsContent value="tool-errors" className="space-y-4">
+          <ToolErrorsTabContent />
         </TabsContent>
       </Tabs>
     </div>

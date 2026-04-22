@@ -16,7 +16,7 @@ import { convertToMarkdown } from '@/server/lib/ai/documents'
 import { createD1ChatStorage } from '@/server/modules/conversations/storage'
 import { conversations } from '@/server/modules/conversations/db/schema'
 import { logActivityFromContext } from '@/server/modules/activity/log'
-import { aiUsageLogs } from './db/schema'
+import { aiUsageLogs, aiToolCalls } from './db/schema'
 
 const app = new Hono<AuthContext>()
 
@@ -281,6 +281,67 @@ app.post('/', async (c) => {
           }
         }
         return undefined
+      },
+      // Per-step telemetry — one row per tool call, enables the admin panel's
+      // "Recent tool errors" strip and future latency/reliability dashboards.
+      onStepFinish: async (stepResult) => {
+        const { stepNumber, toolCalls, toolResults, usage } = stepResult
+        if (toolCalls.length === 0) return
+        try {
+          const db = drizzle(c.env.DB)
+          const rows = toolCalls.map((tc) => {
+            const result = toolResults.find((tr) => tr.toolCallId === tc.toolCallId)
+            const toolError =
+              result && 'output' in result === false && 'error' in result
+                ? String((result as { error: unknown }).error)
+                : null
+            return {
+              userId,
+              model: modelId,
+              stepIndex: stepNumber,
+              toolName: tc.toolName,
+              toolDurationMs: null,
+              toolError,
+              inputTokens: usage.inputTokens ?? 0,
+              outputTokens: usage.outputTokens ?? 0,
+            }
+          })
+          await db.insert(aiToolCalls).values(rows)
+          const errored = rows.filter((r) => r.toolError)
+          if (errored.length > 0) {
+            console.log(
+              JSON.stringify({
+                event: 'tool_error',
+                stepIndex: stepNumber,
+                userId,
+                model: modelId,
+                conversationId,
+                errors: errored.map((r) => ({ tool: r.toolName, error: r.toolError })),
+              }),
+            )
+          }
+        } catch (err) {
+          console.error(
+            JSON.stringify({ event: 'step_finish_telemetry_error', error: String(err) }),
+          )
+        }
+      },
+      // Structured error logging for stream-level failures (network, provider,
+      // parse errors). Tool-specific errors are captured in onStepFinish above.
+      onError: (error) => {
+        console.error(
+          JSON.stringify({
+            event: 'chat_stream_error',
+            userId,
+            model: modelId,
+            conversationId,
+            error:
+              error instanceof Error
+                ? { name: error.name, message: error.message, stack: error.stack }
+                : String(error),
+          }),
+        )
+        return error instanceof Error ? error.message : 'An error occurred during chat streaming.'
       },
       onFinish: async ({ messages: finalMessages }) => {
         // Persist conversation messages to D1. For brand-new conversations,

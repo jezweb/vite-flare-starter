@@ -15,3 +15,28 @@ export const aiUsageLogs = sqliteTable('ai_usage_logs', {
   index('ai_usage_logs_user_id_idx').on(table.userId),
   index('ai_usage_logs_created_at_idx').on(table.createdAt),
 ])
+
+/**
+ * Per-step telemetry for agent tool calls. One row per tool invocation.
+ * `aiUsageLogs` stays aggregate-per-request; this is the step-level detail
+ * for observability (latency distribution, failure patterns, tool mix).
+ *
+ * Written from `onStepFinish` in `buildChatAgent`. Read by the admin panel's
+ * "Recent tool errors" strip (`tool_error IS NOT NULL`).
+ */
+export const aiToolCalls = sqliteTable('ai_tool_calls', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  model: text('model').notNull(),
+  stepIndex: integer('step_index').notNull(),
+  toolName: text('tool_name').notNull(),
+  toolDurationMs: integer('tool_duration_ms'),
+  toolError: text('tool_error'),
+  inputTokens: integer('input_tokens').default(0),
+  outputTokens: integer('output_tokens').default(0),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+}, (table) => [
+  index('ai_tool_calls_user_id_idx').on(table.userId),
+  index('ai_tool_calls_created_at_idx').on(table.createdAt),
+  index('ai_tool_calls_tool_name_idx').on(table.toolName),
+])

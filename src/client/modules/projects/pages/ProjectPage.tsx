@@ -18,6 +18,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { ArrowLeft, Plus, Pencil, Folder, Archive, MessageSquare, Loader2, Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -163,7 +164,9 @@ export function ProjectPage() {
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <Folder className={cn('size-5 shrink-0', isProjectColor(project.color) ? PROJECT_COLOR_CLASSES[project.color].fill : 'text-muted-foreground')} />
+          <Label htmlFor="project-name" className="sr-only">Project name</Label>
           <Input
+            id="project-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             onBlur={() => saveIfChanged('name', name)}
@@ -173,7 +176,9 @@ export function ProjectPage() {
             placeholder="Untitled project"
           />
         </div>
+        <Label htmlFor="project-description" className="sr-only">Project description</Label>
         <Textarea
+          id="project-description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           onBlur={() => saveIfChanged('description', description)}
@@ -371,12 +376,11 @@ export function ProjectPage() {
             try {
               await apiClient.post(`/api/projects/${id}/archive`, {})
               queryClient.invalidateQueries({ queryKey: ['projects'] })
+              toast.success('Project archived')
               navigate('/dashboard/chat')
             } catch (err) {
-              // No toast infrastructure yet — log for now so failures aren't
-              // completely silent. When /dev-tools:toast ships, wire it up here.
               console.error('Failed to archive project', err)
-              alert('Could not archive project. Check your connection and try again.')
+              toast.error('Could not archive project. Check your connection and try again.')
             }
           }}
         >
