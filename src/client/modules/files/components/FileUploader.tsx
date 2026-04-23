@@ -130,6 +130,30 @@ export function FileUploader({
         )}
       </div>
 
+      {/* Context panel — answers three questions users would otherwise
+          guess at: where does this land, what formats are supported,
+          and what happens after upload? */}
+      <div className="rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground space-y-1">
+        <p>
+          Destination:{' '}
+          <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">
+            {folder === '/' ? '/ (root)' : folder}
+          </code>
+        </p>
+        <p>
+          Supported for search: PDFs, text, markdown, DOCX, images (OCR), audio (transcribed).
+          Other formats still upload but won't be searchable.
+        </p>
+        <p>
+          Indexing runs automatically after upload — takes a few seconds to a minute depending
+          on size. Watch for the{' '}
+          <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:text-green-400">
+            Indexed
+          </span>{' '}
+          pill on each file.
+        </p>
+      </div>
+
       {/* Upload Progress */}
       {uploadingFiles.length > 0 && (
         <div className="space-y-2">

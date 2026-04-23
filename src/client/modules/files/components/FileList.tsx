@@ -218,6 +218,18 @@ export function FileList({ files, isLoading, folder }: FileListProps) {
                       Index failed
                     </span>
                   )}
+                  {/* Null state — never indexed (e.g. pre-Phase-4 uploads or
+                      file types that skip ingestion). Distinct from `pending`
+                      so users can tell "waiting for indexer" vs "not enrolled
+                      for semantic search". */}
+                  {!file.indexStatus && (
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full border border-dashed border-muted-foreground/30 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground flex-shrink-0"
+                      title="Not indexed for semantic search. Re-upload or trigger reindex to enable."
+                    >
+                      Not indexed
+                    </span>
+                  )}
                 </div>
                 <p className="text-sm text-muted-foreground">
                   {formatFileSize(file.size)} • {new Date(file.createdAt).toLocaleDateString()}

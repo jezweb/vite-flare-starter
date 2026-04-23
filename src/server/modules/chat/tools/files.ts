@@ -6,6 +6,9 @@
  */
 import { z } from 'zod'
 import { FolderTree, FileCheck, FilePlus, FileX } from 'lucide-react'
+import { drizzle } from 'drizzle-orm/d1'
+import { eq, inArray, and } from 'drizzle-orm'
+import { files as filesTable } from '@/server/modules/files/db/schema'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 
 function getFiles(ctx: AgentContext): R2Bucket | undefined {
@@ -44,6 +47,8 @@ const FsListOutput = z.union([
     files: z.array(
       z.object({
         path: z.string(),
+        /** Friendly filename (from D1 metadata) — prefer over path when rendering. */
+        name: z.string().optional(),
         size: z.number(),
         modified: z.string(),
       }),
@@ -67,8 +72,27 @@ export const fsListDefinition: ToolDefinition<{ path?: string }, z.infer<typeof 
     try {
       const prefix = scopedPath(ctx.userId, path.endsWith('/') || path === '' ? path : `${path}/`)
       const list = await bucket.list({ prefix, limit: 100 })
+
+      // Look up friendly names from the files D1 table so the agent can
+      // reference "invoice.pdf" instead of the UUID-mangled R2 key. Keys
+      // that aren't in the D1 table (e.g. raw agent writes via fs_write)
+      // fall back to the bare path.
+      const r2Keys = list.objects.map((o) => o.key)
+      const metaRows =
+        r2Keys.length > 0
+          ? await drizzle((ctx.env as unknown as { DB: D1Database }).DB)
+              .select({ key: filesTable.key, name: filesTable.name })
+              .from(filesTable)
+              .where(
+                and(eq(filesTable.userId, ctx.userId), inArray(filesTable.key, r2Keys)),
+              )
+              .catch(() => [])
+          : []
+      const nameByKey = new Map(metaRows.map((r) => [r.key, r.name]))
+
       const files = list.objects.map((obj) => ({
         path: obj.key.replace(`users/${ctx.userId}/`, ''),
+        name: nameByKey.get(obj.key),
         size: obj.size,
         modified: obj.uploaded.toISOString(),
       }))

@@ -10,6 +10,7 @@
 import { memo, useState, useCallback } from 'react'
 import { Message, MessageContent, MessageResponse } from '@/components/ai-elements/message'
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@/components/ai-elements/reasoning'
+import { BrainIcon, ChevronDownIcon } from 'lucide-react'
 import type { Message as UIMessageType, MessageMetadata } from '../hooks/useChat'
 import { ChatUiElement, hasUiMarker } from './chat-ui/ChatUiElement'
 import { isTakeoverElement } from './chat-ui/InputTakeover'
@@ -345,6 +346,18 @@ function MessageBody({
           // emit an empty one between tool calls; renders as a useless
           // "Thought for a few seconds" pill otherwise).
           if (!text.trim() && !(isLoading && isLast)) return null
+          // Context-aware labelling — when a message has multiple reasoning
+          // blocks (typical of a tool-calling turn: plan → tool → interpret),
+          // each block gets a distinct label so they're not all "Thought for
+          // a few seconds". Single-block messages keep the default.
+          const reasoningIndex = parts
+            .slice(0, i)
+            .filter((p) => p.type === 'reasoning' && !!(p as { text?: string }).text?.trim())
+            .length
+          const totalReasoning = parts.filter(
+            (p) => p.type === 'reasoning' && !!(p as { text?: string }).text?.trim(),
+          ).length
+          const reasoningLabel = computeReasoningLabel(reasoningIndex, totalReasoning)
           // Some reasoning models (e.g. Kimi K2.5 via workers-ai-provider)
           // bake their FINAL answer into their reasoning stream and never
           // emit a separate text part. Detect that case — completed
@@ -376,7 +389,15 @@ function MessageBody({
           }
           return (
             <Reasoning key={i} isStreaming={isLoading && isLast} className="w-full">
-              <ReasoningTrigger />
+              {reasoningLabel ? (
+                <ReasoningTrigger>
+                  <BrainIcon className="size-4" />
+                  <p>{reasoningLabel}</p>
+                  <ChevronDownIcon className="size-4 ml-auto transition-transform group-data-[state=open]/collapsible:rotate-180" />
+                </ReasoningTrigger>
+              ) : (
+                <ReasoningTrigger />
+              )}
               <ReasoningContent>{text}</ReasoningContent>
             </Reasoning>
           )
@@ -687,6 +708,25 @@ function GeneratedImageBlock({ output }: { output: { url: string; prompt?: strin
  * merging, text values are concatenated with a blank line separator so
  * streamdown renders them as distinct paragraphs inside the accordion.
  */
+/**
+ * Context-aware label for a reasoning block within a message.
+ *
+ * When the model reasons → calls a tool → reasons again, the UI
+ * previously rendered two identical "Thought for a few seconds"
+ * disclosures. Labelling the first as "Planned" and the second as
+ * "Reviewed" (etc.) tells the user which phase they're reading at a
+ * glance without needing to expand both.
+ *
+ * Returns `null` for the single-reasoning-block case — preserves the
+ * default "Thought for X seconds" provided by `ReasoningTrigger`.
+ */
+function computeReasoningLabel(index: number, total: number): string | null {
+  if (total <= 1) return null
+  if (index === 0) return 'Planned'
+  if (index === total - 1) return 'Concluded'
+  return `Reviewed (step ${index + 1} of ${total})`
+}
+
 function mergeReasoningRuns<T extends { type: string }>(parts: T[]): T[] {
   const out: T[] = []
   let buffer: T | null = null

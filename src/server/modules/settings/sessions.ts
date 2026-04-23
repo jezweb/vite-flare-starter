@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { drizzle } from 'drizzle-orm/d1'
-import { eq, ne, and, desc } from 'drizzle-orm'
+import { eq, ne, and, desc, isNull } from 'drizzle-orm'
 import { UAParser } from 'ua-parser-js'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import { createAuth } from '@/server/modules/auth'
@@ -75,6 +75,32 @@ app.get('/', async (c) => {
   const db = drizzle(c.env.DB, { schema })
 
   const currentSessionId = await getCurrentSessionId(c)
+
+  // Lazy IP backfill: if the current session has no ipAddress captured
+  // (e.g. it was created before the `ipAddressHeaders` config landed, or
+  // a better-auth internal path bypassed the capture), fill it in from
+  // this request's headers. One-time DB write per session, gated by the
+  // `IS NULL` WHERE clause so we don't thrash re-visits.
+  const currentIp =
+    c.req.header('cf-connecting-ip') ||
+    c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ||
+    null
+  if (currentSessionId && currentIp) {
+    await db
+      .update(schema.session)
+      .set({ ipAddress: currentIp })
+      .where(
+        and(
+          eq(schema.session.id, currentSessionId),
+          // Only backfill when the column is empty — otherwise preserve
+          // whatever the original session-create path captured.
+          isNull(schema.session.ipAddress),
+        ),
+      )
+      .catch(() => {
+        // Non-critical — swallow. Sessions list still works without the backfill.
+      })
+  }
 
   // Fetch all sessions for user
   const sessions = await db

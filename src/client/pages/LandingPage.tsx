@@ -252,9 +252,31 @@ export function LandingPage() {
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">
             Ready to build?
           </h2>
-          <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto">
             Clone the repo and start building your next project in minutes.
           </p>
+          {/* Copy-pasteable clone command — meets "Clone the repo" copy
+              with an actual clone command so the CTA isn't just words. */}
+          {appConfig.githubUrl && (
+            <div className="mb-8 max-w-2xl mx-auto">
+              <div className="rounded-lg border bg-background/60 px-4 py-3 text-left font-mono text-sm text-muted-foreground overflow-x-auto">
+                <span className="select-none text-muted-foreground/60">$ </span>
+                <span className="text-foreground">git clone {appConfig.githubUrl}.git</span>
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Then read{' '}
+                <a
+                  href={`${appConfig.githubUrl}/blob/main/FORKING.md`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2 hover:text-foreground"
+                >
+                  FORKING.md
+                </a>
+                {' '}for the rebrand + customise checklist.
+              </p>
+            </div>
+          )}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" asChild>
               <Link to={primaryCtaHref}>
