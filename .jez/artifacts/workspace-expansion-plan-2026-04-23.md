@@ -1,9 +1,21 @@
 # Google Workspace Tool Expansion — Plan
 
-**Status**: Draft for review
+**Status**: ✅ **COMPLETE** — Phases 1, 2, 3 all shipped 2026-04-23.
 **Author**: Claude (this session)
 **Date**: 2026-04-23
 **Lives at**: `src/server/modules/chat/tools/google-workspace.ts`
+
+## Shipped
+
+| Phase | Tools shipped | Commit | Version |
+|---|---|---|---|
+| **Phase 1** — Gmail depth + Calendar CRUD | `gmail_get_message`, `gmail_list_labels`, `gmail_draft`, `gmail_reply`, `calendar_list_events`, `calendar_get_event`, `calendar_find_free_slot`, `calendar_update_event`, `calendar_delete_event` | `b5c8c00` | `3c9374f9` |
+| **Phase 2** — Docs + Sheets | `docs_search`, `docs_get`, `docs_create`, `docs_append`, `sheets_list_tabs`, `sheets_read_range`, `sheets_append_row`, `sheets_write_range` | `48a2ce6` | `532211b0` |
+| **Phase 3** — Drive read + Tasks | `drive_get_file`, `drive_create_folder`, `tasks_list`, `tasks_create` | `6ab30fc` | `4659434e` |
+| **Bonus** — naturalQuery translator | Nemotron-3-backed NLP on `gmail_search` + `calendar_list_events` | `58bc390` | `08b67bd5` |
+| **Review** — 7 bug fixes | MIME separator, docs_append index math, find_free_slot timezone, reply self-exclude, drive streaming cap, scope match, docs_get degraded flag | `17799a6` | `4e4798cb` |
+
+26 total Workspace tools live (up from 5). Deferred: `drive_upload` (needs R2→Drive bridge), Chat integration, Gmail bulk ops, Workers-AI-backed summarise/ask tools.
 
 ## Current state (5 tools, ~506 LOC)
 

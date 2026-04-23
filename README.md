@@ -36,24 +36,31 @@ One prompt, two tool calls (`get_server_time` + `calculate`), streamed response 
 **AI agent layer**
 
 - `ToolLoopAgent` pattern (AI SDK v6) with `createAgentUIStreamResponse`
-- 40+ tools across 11 modules — browser, search, memory, files, code execution, UI, audio, todo, delegation
+- 95+ agent tools across 20 modules — Gmail, Calendar, Docs, Sheets, Drive, Tasks, browser automation, web search, places, code execution, files, memory, UI widgets, audio, todo, delegation
+- Unified `ToolDefinition<I, O>` contract — every tool has a strict Zod output schema + optional typed client renderer, enforced end-to-end
 - Skills system (Claude Agent Skills compatible) — bundled, R2, or GitHub sources
 - Conversation persistence via `ChatStorage` interface (D1 today, DO-ready)
 - Subagent delegation with role-based tool assignment
-- Human-in-the-loop via `needsApproval` on destructive tools
+- Human-in-the-loop via `needsApproval` on destructive tools, with `sendAutomaticallyWhen` auto-resubmit so the Approve button just works
+- Privileged-tool gating — destructive tools (`gmail_send`, `calendar_delete_event`, `sheets_write_range`, etc.) stay hidden from the model unless user intent matches a keyword unlock
+- Per-tool telemetry in `ai_tool_calls` D1 table + admin "Tool errors" tab for 24h observability
+- Natural-language query translation — pass `naturalQuery: "emails from nick last week"` instead of constructing Gmail operator syntax; server translates via Nemotron 3
+- Sources footer under assistant messages — claude.ai-style citation strip aggregated from tool outputs (web_search, gmail, drive, places) + native `source-url` / `source-document` SDK parts
 - 16 models across 8 providers (Workers AI free tier + OpenRouter unlocks the rest)
 - MCP integration (tools, resources, prompts, elicitation) + MCP-UI rendering
 
 **Application framework**
 
-- Auth — `better-auth` with Google OAuth (email/password optional)
-- Admin — role-based access (user/manager/admin), auto-promotion via `ADMIN_EMAILS`
+- Auth — `better-auth` with Google OAuth (email/password optional), deep-link preserved through sign-in via `?next=`
+- Admin — role-based access (user/manager/admin), auto-promotion via `ADMIN_EMAILS`, Tool Errors tab for 24h tool-call failure observability
+- MCP Connectors — per-user OAuth to external MCP servers, PKCE + DCR flow, tokens AES-GCM encrypted at rest, per-tool always/ask/never policies
+- Google Workspace — per-user OAuth with automatic token refresh, granular scope tracking, 26 tools across 6 Google services
 - Config-driven sidebar — add nav items in `nav.ts`, feature-flag modules in `features.ts`
 - UI — Tailwind v4 + shadcn/ui, 8+ themes, dark/light/system
 - Command palette — Cmd+K, keyboard shortcuts
 - Files — R2 upload/download with D1 metadata
 - Activity — audit log with pagination and entity history
-- Notifications — in-app, unread counts
+- Notifications — in-app, unread counts, URL-persisted filter
 - API tokens — SHA-256 hashed, scope-based
 - Feature flags — DB-backed with admin API
 
@@ -105,17 +112,27 @@ Tools live in `src/server/modules/chat/tools/` and are auto-included based on av
 |---|---|---|
 | core | `get_server_time`, `get_model_info`, `calculate` | Always |
 | memory | `remember`, `recall`, `search_memory`, `forget` | Always |
-| ui | 11 inline UI components (choices, alerts, tables, timelines, progress, comparison, confirm, metrics, contact, collect, ask) | Always |
+| ui | 13 inline UI components (choices, alerts, tables, timelines, progress, comparison, confirm, metrics, contact, collect, ask, show_map, image) | Always |
 | skills | `load_skill` | Always |
 | todo | `todo_add`, `todo_update`, `todo_list`, `todo_clear` | Always |
 | delegate | `delegate` (role-based subagent spawn) | Always |
 | audio | `transcribe_audio`, `speak_text` | Always (AI binding) |
+| documents | `convert_document`, `read_pdf` | Always (AI binding) |
 | code | `run_python`, `run_shell`, `run_js` | `SANDBOX` DO binding |
 | browser | `browser_markdown`, `browser_extract`, `browser_screenshot`, `browser_links`, `browser_content` | CF API token |
 | search | `web_search` | One of Serper / Brave / Tavily / Exa key |
+| places | `places_search`, `places_details` | `GOOGLE_PLACES_API_KEY` |
 | files | `fs_list`, `fs_read`, `fs_write`, `fs_delete` | `FILES` R2 bucket |
+| **Google Workspace** — Gmail | `gmail_search`, `gmail_get_message`, `gmail_list_labels`, `gmail_draft`, `gmail_reply`, `gmail_send` | Per-user OAuth |
+| **Google Workspace** — Drive | `drive_search`, `drive_get_file`, `drive_create_folder` | Per-user OAuth |
+| **Google Workspace** — Calendar | `calendar_upcoming`, `calendar_list_events`, `calendar_get_event`, `calendar_find_free_slot`, `calendar_create`, `calendar_update_event`, `calendar_delete_event` | Per-user OAuth |
+| **Google Workspace** — Docs | `docs_search`, `docs_get`, `docs_create`, `docs_append` | Per-user OAuth |
+| **Google Workspace** — Sheets | `sheets_list_tabs`, `sheets_read_range`, `sheets_append_row`, `sheets_write_range` | Per-user OAuth |
+| **Google Workspace** — Tasks | `tasks_list`, `tasks_create` | Per-user OAuth |
 
-Adding a tool: create a file in `tools/`, export `buildXxxTools(ctx)`, register in `tools/index.ts`. Bind-aware factories mean you can't accidentally ship a tool for a service that isn't configured.
+Each tool is a `ToolDefinition<Input, Output>` export in its domain file. Strict Zod schemas on both sides are type-inferred through to the renderer, so a server change flows to the client without either side silently drifting. `collectAvailableTools(allDefinitions, ctx)` filters at request time — a tool's `isAvailable(ctx)` predicate decides whether the binding / API key / OAuth scope is present. No accidental shipping of a tool for a service that isn't configured.
+
+Adding a tool: add a file in `tools/`, export a `ToolDefinition`, register in `tools/index.ts`. That's it — telemetry, approval flow, active-tools gating, and the SDK-compatible `tool()` wrapper all come for free.
 
 ---
 
@@ -197,6 +214,7 @@ Don't delete modules you don't need. Disable them via `src/shared/config/feature
 
 - **[CLAUDE.md](./CLAUDE.md)** — Developer context: architecture, patterns, how to build features
 - **[FORKING.md](./FORKING.md)** — Step-by-step guide for starting a new product from this base
+- **[CHANGELOG.md](./CHANGELOG.md)** — Release notes and what changed when
 
 ---
 

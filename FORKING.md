@@ -294,6 +294,76 @@ Update any found references to your project name.
 
 ---
 
+## Part 7.5: Optional Integrations
+
+The starter ships with several optional integrations. Each is disabled by default when its credentials aren't set — the agent simply won't see those tools. Enable the ones you need; ignore the rest.
+
+### Google Workspace connector (26 tools)
+
+Per-user OAuth for Gmail, Drive, Calendar, Docs, Sheets, and Tasks. Users connect via **Connectors → Google Workspace → Connect** after signing in.
+
+1. **Google Cloud Console**:
+   - Create an OAuth 2.0 Client ID (the same one you use for Google sign-in can work, or create a new one)
+   - Add authorised redirect URI: `https://YOUR_WORKER_URL/api/google-workspace/oauth/callback`
+   - Enable these APIs on the project: Gmail, Drive, Calendar, Docs, Sheets, Tasks
+2. **Set secrets** (re-use GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET if already set for OAuth sign-in):
+   ```bash
+   printf "your-client-id" | npx wrangler secret put GOOGLE_CLIENT_ID
+   printf "your-client-secret" | npx wrangler secret put GOOGLE_CLIENT_SECRET
+   ```
+3. **Scopes**: the connector requests a union of read + write scopes when a user connects. Users see exactly what they're granting. Individual tools check `requireActiveToken(ctx, 'gmail.send')` etc. — a user who granted only read-only scopes gets a clean "This action needs the X scope" error on write tools.
+
+**To disable entirely**: leave `GOOGLE_CLIENT_ID` unset, or filter the connector from `src/client/modules/connectors/catalogue.ts`. The 26 Workspace tools won't appear in the agent's toolkit.
+
+**Privileged-tool gating**: all 10 write tools (`gmail_send`, `gmail_reply`, `calendar_create`, `calendar_update_event`, `calendar_delete_event`, `docs_create`, `docs_append`, `sheets_append_row`, `sheets_write_range`, `drive_create_folder`, `tasks_create`) are hidden from the model unless the latest user message contains an unlock keyword (e.g. "reply", "schedule", "append"). Add custom gating rules in `src/server/lib/ai/prepare-step.ts`.
+
+### Google Places (`places_search`, `places_details`)
+
+Map answers paired with the inline `show_map` UI. Requires Places API (New) enabled on a Google Cloud project.
+
+```bash
+printf "your-google-places-key" | npx wrangler secret put GOOGLE_PLACES_API_KEY
+```
+
+### Web search (`web_search`)
+
+Pick any ONE of the four supported providers. The agent uses whichever key is set.
+
+```bash
+# One of these:
+printf "your-serper-key"  | npx wrangler secret put SERPER_API_KEY   # 2,500 free/month
+printf "your-brave-key"   | npx wrangler secret put BRAVE_API_KEY    # $5 monthly credits
+printf "your-tavily-key"  | npx wrangler secret put TAVILY_API_KEY   # 1,000 free credits/month
+printf "your-exa-key"     | npx wrangler secret put EXA_API_KEY      # paid
+```
+
+### Browser Rendering tools (`browser_markdown`, `browser_extract`, etc.)
+
+Requires a Cloudflare API token with "Browser Rendering - Edit" permission.
+
+```bash
+printf "your-cf-account-id" | npx wrangler secret put CLOUDFLARE_ACCOUNT_ID
+printf "your-cf-api-token"  | npx wrangler secret put CLOUDFLARE_API_TOKEN
+```
+
+### Code execution (`run_python`, `run_shell`, `run_js`)
+
+Requires the Workers Paid plan and a `SANDBOX` Durable Object binding. See Cloudflare Sandbox docs for setup.
+
+### MCP Connectors (per-user OAuth to external MCP servers)
+
+Opt-in feature flag: `VITE_FEATURE_CONNECTORS=true` in `.dev.vars` or the production secret bag. Users can then connect their own MCP servers from **Connectors** page. Tokens are AES-GCM encrypted at rest using:
+
+```bash
+printf "$(openssl rand -hex 32)" | npx wrangler secret put TOKEN_ENCRYPTION_KEY
+```
+
+### Voice + Video agent examples
+
+Opt-in feature flags: `VITE_FEATURE_VOICE_AGENT=true`, `VITE_FEATURE_VIDEO_AGENT=true`. Reference implementations of the Durable Object + `agents` SDK pattern for streaming voice / vision. See CLAUDE.md Pattern 10 and 10b.
+
+---
+
 ## Part 8: First Deployment
 
 ### Step 8.1: Set Production Secrets
