@@ -27,6 +27,18 @@ import {
   calendarUpdateEventRenderer,
   calendarDeleteEventRenderer,
 } from './calendar'
+import {
+  docsSearchRenderer,
+  docsGetRenderer,
+  docsCreateRenderer,
+  docsAppendRenderer,
+} from './docs'
+import {
+  sheetsListTabsRenderer,
+  sheetsReadRangeRenderer,
+  sheetsAppendRowRenderer,
+  sheetsWriteRangeRenderer,
+} from './sheets'
 import { webSearchRenderer } from './search'
 import { matchesRenderer, type ToolRenderer } from './_shared'
 
@@ -48,6 +60,16 @@ export const TOOL_RENDERERS: ToolRenderer[] = [
   calendarCreateRenderer,
   calendarUpdateEventRenderer,
   calendarDeleteEventRenderer,
+  // Google Workspace — Docs
+  docsSearchRenderer,
+  docsGetRenderer,
+  docsCreateRenderer,
+  docsAppendRenderer,
+  // Google Workspace — Sheets
+  sheetsListTabsRenderer,
+  sheetsReadRangeRenderer,
+  sheetsAppendRowRenderer,
+  sheetsWriteRangeRenderer,
   // Search
   webSearchRenderer,
 ]

@@ -25,6 +25,13 @@ import {
   CalendarClock,
   CalendarCheck,
   CalendarX,
+  FileText,
+  FileSearch,
+  FilePlus,
+  FilePen,
+  Sheet,
+  Table2,
+  Rows4,
 } from 'lucide-react'
 import { googleWorkspaceTokens } from '@/server/modules/google-workspace/db/schema'
 import {
@@ -1345,6 +1352,566 @@ export const calendarDeleteEventDefinition: ToolDefinition<
   },
 }
 
+// ─── docs_search ─────────────────────────────────────────────────
+// Scoped Drive query for Google Docs only — uses mimeType filter.
+
+const DocsSearchInput = z.object({
+  query: z.string().min(1).max(500),
+  limit: z.number().int().min(1).max(50).default(10).optional(),
+})
+
+const DocsFile = z.object({
+  id: z.string(),
+  name: z.string(),
+  modifiedTime: z.string(),
+  url: z.string().optional(),
+  owner: z.string().optional(),
+})
+
+const DocsSearchOutput = z.union([
+  z.object({
+    query: z.string(),
+    count: z.number(),
+    docs: z.array(DocsFile),
+  }),
+  z.object({ error: z.string() }),
+])
+
+export type DocsSearchInput = z.infer<typeof DocsSearchInput>
+export type DocsSearchOutput = z.infer<typeof DocsSearchOutput>
+
+export const docsSearchDefinition: ToolDefinition<DocsSearchInput, DocsSearchOutput> = {
+  name: 'docs_search',
+  description:
+    "Search the user's Google Docs by title + content. Returns doc ids, names, and links — use docs_get to fetch the content.",
+  inputSchema: DocsSearchInput,
+  outputSchema: DocsSearchOutput,
+  isAvailable: gwsAvailable,
+  execute: async ({ query, limit = 10 }, ctx) => {
+    const auth = await requireActiveToken(ctx, 'drive.readonly')
+    if ('error' in auth) return auth
+
+    const q = `mimeType='application/vnd.google-apps.document' and fullText contains ${JSON.stringify(query)} and trashed=false`
+    const url = new URL('https://www.googleapis.com/drive/v3/files')
+    url.searchParams.set('q', q)
+    url.searchParams.set('pageSize', String(limit))
+    url.searchParams.set('orderBy', 'modifiedTime desc')
+    url.searchParams.set(
+      'fields',
+      'files(id,name,modifiedTime,webViewLink,owners(emailAddress))',
+    )
+    const resp = await fetch(url, { headers: { Authorization: `Bearer ${auth.token}` } })
+    if (!resp.ok) return { error: `Docs search failed: ${resp.status}` }
+    const json = (await resp.json()) as {
+      files?: Array<{
+        id: string
+        name: string
+        modifiedTime: string
+        webViewLink?: string
+        owners?: Array<{ emailAddress?: string }>
+      }>
+    }
+    return {
+      query,
+      count: json.files?.length ?? 0,
+      docs: (json.files ?? []).map((f) => ({
+        id: f.id,
+        name: f.name,
+        modifiedTime: f.modifiedTime,
+        url: f.webViewLink,
+        owner: f.owners?.[0]?.emailAddress,
+      })),
+    }
+  },
+  render: {
+    icon: FileSearch,
+    displayName: 'Docs — Search',
+    summary: (output) => {
+      if ('error' in output) return 'failed'
+      if (output.count === 0) return 'no docs'
+      return `${output.count} ${output.count === 1 ? 'doc' : 'docs'}`
+    },
+  },
+}
+
+// ─── docs_get ────────────────────────────────────────────────────
+// Fetch full doc content flattened to plain text (preserves paragraph
+// structure + heading hierarchy as markdown). Skip tables / images /
+// embedded objects in v1 — the model usually just needs the prose.
+
+const DocsGetInput = z.object({
+  docId: z.string(),
+})
+
+const DocsGetOutput = z.union([
+  z.object({
+    docId: z.string(),
+    title: z.string(),
+    content: z.string().describe('Plain text, with `# heading` / `## heading` markers preserved'),
+    revisionId: z.string().optional(),
+  }),
+  z.object({ error: z.string() }),
+])
+
+export type DocsGetInput = z.infer<typeof DocsGetInput>
+export type DocsGetOutput = z.infer<typeof DocsGetOutput>
+
+export const docsGetDefinition: ToolDefinition<DocsGetInput, DocsGetOutput> = {
+  name: 'docs_get',
+  description:
+    "Read a Google Doc's content as plain text (with heading markers). Use after docs_search. Tables and images are not returned — the model sees paragraphs only.",
+  inputSchema: DocsGetInput,
+  outputSchema: DocsGetOutput,
+  isAvailable: gwsAvailable,
+  execute: async ({ docId }, ctx) => {
+    const auth = await requireActiveToken(ctx, 'documents.readonly')
+    if ('error' in auth) {
+      // Fallback: some users have only `drive.readonly` — try exporting as text.
+      const fallback = await requireActiveToken(ctx, 'drive.readonly')
+      if ('error' in fallback) return auth
+      return readDocViaDriveExport(docId, fallback.token)
+    }
+
+    const resp = await fetch(
+      `https://docs.googleapis.com/v1/documents/${encodeURIComponent(docId)}`,
+      { headers: { Authorization: `Bearer ${auth.token}` } },
+    )
+    if (!resp.ok) return { error: `Docs get failed: ${resp.status}` }
+    const doc = (await resp.json()) as GoogleDocsApiDoc
+    return {
+      docId: doc.documentId ?? docId,
+      title: doc.title ?? '(untitled)',
+      content: flattenGoogleDoc(doc),
+      revisionId: doc.revisionId,
+    }
+  },
+  render: {
+    icon: FileText,
+    displayName: 'Docs — Read',
+    summary: (output) => {
+      if ('error' in output) return 'failed'
+      return truncate(output.title || '(untitled)', 40)
+    },
+  },
+}
+
+// ─── docs_create ─────────────────────────────────────────────────
+
+const DocsCreateInput = z.object({
+  title: z.string().min(1).max(200),
+  /** Optional seed content — paragraphs separated by blank lines, headings prefixed with #. */
+  content: z.string().max(50000).optional(),
+})
+
+const DocsCreateOutput = z.union([
+  z.object({
+    ok: z.literal(true),
+    docId: z.string(),
+    title: z.string(),
+    url: z.string().optional(),
+  }),
+  z.object({ error: z.string() }),
+])
+
+export type DocsCreateInput = z.infer<typeof DocsCreateInput>
+export type DocsCreateOutput = z.infer<typeof DocsCreateOutput>
+
+export const docsCreateDefinition: ToolDefinition<DocsCreateInput, DocsCreateOutput> = {
+  name: 'docs_create',
+  description:
+    "Create a new Google Doc. Optional `content` is appended after creation using the same rules as docs_append (paragraphs + `# heading` lines). Returns the docId and shareable URL.",
+  inputSchema: DocsCreateInput,
+  outputSchema: DocsCreateOutput,
+  isAvailable: gwsAvailable,
+  needsApproval: true,
+  execute: async ({ title, content }, ctx) => {
+    const auth = await requireActiveToken(ctx, 'documents')
+    if ('error' in auth) return auth
+
+    const createResp = await fetch('https://docs.googleapis.com/v1/documents', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${auth.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ title }),
+    })
+    if (!createResp.ok) {
+      const errBody = await createResp.text()
+      return { error: `Docs create failed: ${createResp.status} ${errBody.slice(0, 200)}` }
+    }
+    const created = (await createResp.json()) as { documentId?: string }
+    const docId = created.documentId
+    if (!docId) return { error: 'Docs create returned no documentId' }
+
+    // Optional seed content
+    if (content && content.trim()) {
+      const append = await appendToGoogleDoc(auth.token, docId, content)
+      if ('error' in append) {
+        // Doc exists but seed failed — still a partial success; surface the error.
+        return { error: `Doc created (${docId}) but seed content failed: ${append.error}` }
+      }
+    }
+
+    return {
+      ok: true as const,
+      docId,
+      title,
+      url: `https://docs.google.com/document/d/${docId}/edit`,
+    }
+  },
+  render: {
+    icon: FilePlus,
+    displayName: 'Docs — Create',
+    summary: (output) => {
+      if ('error' in output) return 'failed'
+      if (output.ok) return truncate(output.title, 30)
+      return null
+    },
+  },
+}
+
+// ─── docs_append ─────────────────────────────────────────────────
+
+const DocsAppendInput = z.object({
+  docId: z.string(),
+  content: z
+    .string()
+    .min(1)
+    .max(50000)
+    .describe('Paragraphs separated by blank lines. Lines starting with # / ## / ### become H1 / H2 / H3.'),
+})
+
+const DocsAppendOutput = z.union([
+  z.object({
+    ok: z.literal(true),
+    docId: z.string(),
+    charsAppended: z.number(),
+  }),
+  z.object({ error: z.string() }),
+])
+
+export type DocsAppendInput = z.infer<typeof DocsAppendInput>
+export type DocsAppendOutput = z.infer<typeof DocsAppendOutput>
+
+export const docsAppendDefinition: ToolDefinition<DocsAppendInput, DocsAppendOutput> = {
+  name: 'docs_append',
+  description:
+    "Append paragraphs (and optional markdown headings `#`, `##`, `###`) to an existing Google Doc. Doesn't support tables or images — use the Docs UI for those.",
+  inputSchema: DocsAppendInput,
+  outputSchema: DocsAppendOutput,
+  isAvailable: gwsAvailable,
+  needsApproval: true,
+  execute: async ({ docId, content }, ctx) => {
+    const auth = await requireActiveToken(ctx, 'documents')
+    if ('error' in auth) return auth
+
+    const result = await appendToGoogleDoc(auth.token, docId, content)
+    if ('error' in result) return result
+    return { ok: true as const, docId, charsAppended: content.length }
+  },
+  render: {
+    icon: FilePen,
+    displayName: 'Docs — Append',
+    summary: (output) => {
+      if ('error' in output) return 'failed'
+      if (output.ok) return `+${output.charsAppended} chars`
+      return null
+    },
+  },
+}
+
+// ─── sheets_list_tabs ────────────────────────────────────────────
+
+const SheetsListTabsInput = z.object({
+  spreadsheetId: z.string(),
+})
+
+const SheetTab = z.object({
+  sheetId: z.number(),
+  title: z.string(),
+  index: z.number(),
+  rowCount: z.number().optional(),
+  columnCount: z.number().optional(),
+})
+
+const SheetsListTabsOutput = z.union([
+  z.object({
+    spreadsheetId: z.string(),
+    title: z.string(),
+    tabs: z.array(SheetTab),
+  }),
+  z.object({ error: z.string() }),
+])
+
+export type SheetsListTabsInput = z.infer<typeof SheetsListTabsInput>
+export type SheetsListTabsOutput = z.infer<typeof SheetsListTabsOutput>
+
+export const sheetsListTabsDefinition: ToolDefinition<SheetsListTabsInput, SheetsListTabsOutput> = {
+  name: 'sheets_list_tabs',
+  description:
+    'List the tabs (sheets) inside a Google Sheets spreadsheet. Use before sheets_read_range so the model knows which tab name to pass in the A1 range.',
+  inputSchema: SheetsListTabsInput,
+  outputSchema: SheetsListTabsOutput,
+  isAvailable: gwsAvailable,
+  execute: async ({ spreadsheetId }, ctx) => {
+    const auth = await requireActiveToken(ctx, 'spreadsheets.readonly')
+    if ('error' in auth) return auth
+
+    const url = new URL(
+      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}`,
+    )
+    url.searchParams.set('fields', 'properties(title),sheets(properties(sheetId,title,index,gridProperties))')
+    const resp = await fetch(url, { headers: { Authorization: `Bearer ${auth.token}` } })
+    if (!resp.ok) return { error: `Sheets list failed: ${resp.status}` }
+    const json = (await resp.json()) as {
+      properties?: { title?: string }
+      sheets?: Array<{
+        properties?: {
+          sheetId?: number
+          title?: string
+          index?: number
+          gridProperties?: { rowCount?: number; columnCount?: number }
+        }
+      }>
+    }
+    return {
+      spreadsheetId,
+      title: json.properties?.title ?? '(untitled)',
+      tabs: (json.sheets ?? []).map((s) => ({
+        sheetId: s.properties?.sheetId ?? 0,
+        title: s.properties?.title ?? '',
+        index: s.properties?.index ?? 0,
+        rowCount: s.properties?.gridProperties?.rowCount,
+        columnCount: s.properties?.gridProperties?.columnCount,
+      })),
+    }
+  },
+  render: {
+    icon: Sheet,
+    displayName: 'Sheets — Tabs',
+    summary: (output) => {
+      if ('error' in output) return 'failed'
+      const n = output.tabs.length
+      return `${n} ${n === 1 ? 'tab' : 'tabs'}`
+    },
+  },
+}
+
+// ─── sheets_read_range ───────────────────────────────────────────
+
+const SheetsReadRangeInput = z.object({
+  spreadsheetId: z.string(),
+  range: z.string().describe('A1 notation, e.g. "Sheet1!A1:D20" or "Budget!A:A"'),
+  valueRenderOption: z
+    .enum(['FORMATTED_VALUE', 'UNFORMATTED_VALUE', 'FORMULA'])
+    .default('FORMATTED_VALUE')
+    .optional(),
+})
+
+const SheetsReadRangeOutput = z.union([
+  z.object({
+    range: z.string(),
+    rowCount: z.number(),
+    columnCount: z.number(),
+    values: z.array(z.array(z.union([z.string(), z.number(), z.boolean(), z.null()]))),
+  }),
+  z.object({ error: z.string() }),
+])
+
+export type SheetsReadRangeInput = z.infer<typeof SheetsReadRangeInput>
+export type SheetsReadRangeOutput = z.infer<typeof SheetsReadRangeOutput>
+
+export const sheetsReadRangeDefinition: ToolDefinition<SheetsReadRangeInput, SheetsReadRangeOutput> = {
+  name: 'sheets_read_range',
+  description:
+    "Read a range from a Google Sheets spreadsheet in A1 notation. Default valueRenderOption is FORMATTED_VALUE (strings — what the user sees); use UNFORMATTED_VALUE for raw numbers/dates or FORMULA to inspect formulas.",
+  inputSchema: SheetsReadRangeInput,
+  outputSchema: SheetsReadRangeOutput,
+  isAvailable: gwsAvailable,
+  execute: async ({ spreadsheetId, range, valueRenderOption = 'FORMATTED_VALUE' }, ctx) => {
+    const auth = await requireActiveToken(ctx, 'spreadsheets.readonly')
+    if ('error' in auth) return auth
+
+    const url = new URL(
+      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(range)}`,
+    )
+    url.searchParams.set('valueRenderOption', valueRenderOption)
+    const resp = await fetch(url, { headers: { Authorization: `Bearer ${auth.token}` } })
+    if (!resp.ok) return { error: `Sheets read failed: ${resp.status}` }
+    const json = (await resp.json()) as {
+      range?: string
+      values?: Array<Array<string | number | boolean | null>>
+    }
+    const values = json.values ?? []
+    const rowCount = values.length
+    const columnCount = values.reduce((m, row) => Math.max(m, row.length), 0)
+    return { range: json.range ?? range, rowCount, columnCount, values }
+  },
+  render: {
+    icon: Table2,
+    displayName: 'Sheets — Read',
+    summary: (output) => {
+      if ('error' in output) return 'failed'
+      return `${output.rowCount} × ${output.columnCount}`
+    },
+  },
+}
+
+// ─── sheets_append_row ───────────────────────────────────────────
+
+const SheetsAppendRowInput = z.object({
+  spreadsheetId: z.string(),
+  range: z.string().describe("A1 of the tab to append to — e.g. 'Sheet1' or 'Sheet1!A:A'. Google finds the first empty row."),
+  rows: z
+    .array(z.array(z.union([z.string(), z.number(), z.boolean()])))
+    .min(1)
+    .max(1000)
+    .describe('Rows to append — each row is an array of cell values.'),
+  valueInputOption: z.enum(['RAW', 'USER_ENTERED']).default('USER_ENTERED').optional(),
+})
+
+const SheetsAppendRowOutput = z.union([
+  z.object({
+    ok: z.literal(true),
+    spreadsheetId: z.string(),
+    updatedRange: z.string().optional(),
+    updatedRows: z.number().optional(),
+  }),
+  z.object({ error: z.string() }),
+])
+
+export type SheetsAppendRowInput = z.infer<typeof SheetsAppendRowInput>
+export type SheetsAppendRowOutput = z.infer<typeof SheetsAppendRowOutput>
+
+export const sheetsAppendRowDefinition: ToolDefinition<SheetsAppendRowInput, SheetsAppendRowOutput> = {
+  name: 'sheets_append_row',
+  description:
+    "Append one or more rows to the end of a Google Sheets tab. valueInputOption=USER_ENTERED (default) parses numbers/dates/formulas like the UI does; RAW stores the string verbatim. Privileged — confirm with the user before calling.",
+  inputSchema: SheetsAppendRowInput,
+  outputSchema: SheetsAppendRowOutput,
+  isAvailable: gwsAvailable,
+  needsApproval: true,
+  execute: async (
+    { spreadsheetId, range, rows, valueInputOption = 'USER_ENTERED' },
+    ctx,
+  ) => {
+    const auth = await requireActiveToken(ctx, 'spreadsheets')
+    if ('error' in auth) return auth
+
+    const url = new URL(
+      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(range)}:append`,
+    )
+    url.searchParams.set('valueInputOption', valueInputOption)
+    url.searchParams.set('insertDataOption', 'INSERT_ROWS')
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${auth.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ values: rows }),
+    })
+    if (!resp.ok) {
+      const errBody = await resp.text()
+      return { error: `Sheets append failed: ${resp.status} ${errBody.slice(0, 200)}` }
+    }
+    const json = (await resp.json()) as {
+      updates?: { updatedRange?: string; updatedRows?: number }
+    }
+    return {
+      ok: true as const,
+      spreadsheetId,
+      updatedRange: json.updates?.updatedRange,
+      updatedRows: json.updates?.updatedRows,
+    }
+  },
+  render: {
+    icon: Rows4,
+    displayName: 'Sheets — Append',
+    summary: (output) => {
+      if ('error' in output) return 'failed'
+      if (output.ok) return `+${output.updatedRows ?? '?'} rows`
+      return null
+    },
+  },
+}
+
+// ─── sheets_write_range ──────────────────────────────────────────
+
+const SheetsWriteRangeInput = z.object({
+  spreadsheetId: z.string(),
+  range: z.string().describe('A1 notation — must match the shape of values'),
+  values: z
+    .array(z.array(z.union([z.string(), z.number(), z.boolean()])))
+    .min(1)
+    .max(1000),
+  valueInputOption: z.enum(['RAW', 'USER_ENTERED']).default('USER_ENTERED').optional(),
+})
+
+const SheetsWriteRangeOutput = z.union([
+  z.object({
+    ok: z.literal(true),
+    spreadsheetId: z.string(),
+    updatedRange: z.string().optional(),
+    updatedCells: z.number().optional(),
+  }),
+  z.object({ error: z.string() }),
+])
+
+export type SheetsWriteRangeInput = z.infer<typeof SheetsWriteRangeInput>
+export type SheetsWriteRangeOutput = z.infer<typeof SheetsWriteRangeOutput>
+
+export const sheetsWriteRangeDefinition: ToolDefinition<SheetsWriteRangeInput, SheetsWriteRangeOutput> = {
+  name: 'sheets_write_range',
+  description:
+    "Overwrite a range in Google Sheets with the provided values. The range must match the values matrix shape. Privileged — this replaces existing data.",
+  inputSchema: SheetsWriteRangeInput,
+  outputSchema: SheetsWriteRangeOutput,
+  isAvailable: gwsAvailable,
+  needsApproval: true,
+  execute: async (
+    { spreadsheetId, range, values, valueInputOption = 'USER_ENTERED' },
+    ctx,
+  ) => {
+    const auth = await requireActiveToken(ctx, 'spreadsheets')
+    if ('error' in auth) return auth
+
+    const url = new URL(
+      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(range)}`,
+    )
+    url.searchParams.set('valueInputOption', valueInputOption)
+    const resp = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${auth.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ values }),
+    })
+    if (!resp.ok) {
+      const errBody = await resp.text()
+      return { error: `Sheets write failed: ${resp.status} ${errBody.slice(0, 200)}` }
+    }
+    const json = (await resp.json()) as { updatedRange?: string; updatedCells?: number }
+    return {
+      ok: true as const,
+      spreadsheetId,
+      updatedRange: json.updatedRange,
+      updatedCells: json.updatedCells,
+    }
+  },
+  render: {
+    icon: Table2,
+    displayName: 'Sheets — Write',
+    summary: (output) => {
+      if ('error' in output) return 'failed'
+      if (output.ok) return `${output.updatedCells ?? '?'} cells`
+      return null
+    },
+  },
+}
+
 /**
  * All Google Workspace tool definitions — imported by the aggregator.
  * Order here determines the order shown to the model in the tool catalog.
@@ -1369,6 +1936,16 @@ export const googleWorkspaceDefinitions = [
   calendarCreateDefinition,
   calendarUpdateEventDefinition,
   calendarDeleteEventDefinition,
+  // Docs
+  docsSearchDefinition,
+  docsGetDefinition,
+  docsCreateDefinition,
+  docsAppendDefinition,
+  // Sheets
+  sheetsListTabsDefinition,
+  sheetsReadRangeDefinition,
+  sheetsAppendRowDefinition,
+  sheetsWriteRangeDefinition,
 ] as ToolDefinition<unknown, unknown>[]
 
 // ─── shared helpers ──────────────────────────────────────────────
@@ -1490,6 +2067,229 @@ function normaliseCalendarEvent(e: GoogleCalendarApiEvent): z.infer<typeof Calen
     meetLink: e.hangoutLink,
     attendees: (e.attendees ?? []).map((a) => a.email ?? '').filter(Boolean),
   }
+}
+
+// ─── Google Docs helpers ─────────────────────────────────────────
+
+interface GoogleDocsTextRun {
+  content?: string
+  textStyle?: { bold?: boolean; italic?: boolean }
+}
+interface GoogleDocsParagraphElement {
+  textRun?: GoogleDocsTextRun
+}
+interface GoogleDocsParagraph {
+  elements?: GoogleDocsParagraphElement[]
+  paragraphStyle?: { namedStyleType?: string }
+}
+interface GoogleDocsStructuralElement {
+  paragraph?: GoogleDocsParagraph
+  sectionBreak?: unknown
+}
+interface GoogleDocsApiDoc {
+  documentId?: string
+  title?: string
+  revisionId?: string
+  body?: { content?: GoogleDocsStructuralElement[] }
+}
+
+/**
+ * Walk a Google Docs document and return a plain-text / markdown-ish
+ * representation. Preserves heading levels as `# / ## / ###` prefixes;
+ * preserves paragraphs as blank-line-separated blocks. Skips tables,
+ * images, inline objects — v1 deliberately keeps this simple.
+ */
+function flattenGoogleDoc(doc: GoogleDocsApiDoc): string {
+  const parts: string[] = []
+  for (const elem of doc.body?.content ?? []) {
+    if (!elem.paragraph) continue
+    const style = elem.paragraph.paragraphStyle?.namedStyleType ?? 'NORMAL_TEXT'
+    const text = (elem.paragraph.elements ?? [])
+      .map((e) => e.textRun?.content ?? '')
+      .join('')
+      .replace(/\n$/, '')
+    if (!text.trim()) {
+      parts.push('')
+      continue
+    }
+    switch (style) {
+      case 'HEADING_1':
+        parts.push(`# ${text.trim()}`)
+        break
+      case 'HEADING_2':
+        parts.push(`## ${text.trim()}`)
+        break
+      case 'HEADING_3':
+        parts.push(`### ${text.trim()}`)
+        break
+      case 'HEADING_4':
+      case 'HEADING_5':
+      case 'HEADING_6':
+        parts.push(`#### ${text.trim()}`)
+        break
+      default:
+        parts.push(text)
+    }
+  }
+  return parts.join('\n\n').replace(/\n{3,}/g, '\n\n').trim()
+}
+
+/**
+ * Fallback when the user only has drive.readonly scope — export the doc
+ * as plain text via the Drive API and synthesise a matching response.
+ * Loses heading structure but recovers SOMETHING rather than erroring.
+ */
+async function readDocViaDriveExport(
+  docId: string,
+  token: string,
+): Promise<DocsGetOutput> {
+  const url = new URL(
+    `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(docId)}/export`,
+  )
+  url.searchParams.set('mimeType', 'text/plain')
+  const resp = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+  if (!resp.ok) return { error: `Doc export failed: ${resp.status}` }
+  const content = await resp.text()
+
+  // Fetch title separately
+  const metaUrl = new URL(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(docId)}`)
+  metaUrl.searchParams.set('fields', 'name')
+  const metaResp = await fetch(metaUrl, { headers: { Authorization: `Bearer ${token}` } })
+  const meta = metaResp.ok ? ((await metaResp.json()) as { name?: string }) : undefined
+
+  return {
+    docId,
+    title: meta?.name ?? '(untitled)',
+    content,
+  }
+}
+
+/**
+ * Append markdown-ish content to an existing Google Doc. Builds a
+ * `batchUpdate` request that inserts text at the end, then re-styles
+ * heading lines via `updateParagraphStyle`. Table / image support
+ * deliberately omitted for v1.
+ */
+async function appendToGoogleDoc(
+  token: string,
+  docId: string,
+  content: string,
+): Promise<{ ok: true } | { error: string }> {
+  // Fetch current end-of-body index so we know where to insert
+  const docResp = await fetch(
+    `https://docs.googleapis.com/v1/documents/${encodeURIComponent(docId)}?fields=body(content(endIndex))`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  )
+  if (!docResp.ok) return { error: `Append lookup failed: ${docResp.status}` }
+  const doc = (await docResp.json()) as {
+    body?: { content?: Array<{ endIndex?: number }> }
+  }
+  const lastElement = doc.body?.content?.[doc.body.content.length - 1]
+  // endIndex of the final element includes a trailing newline — inserting
+  // AT endIndex-1 puts us just before the implicit terminator.
+  const insertAt = Math.max(1, (lastElement?.endIndex ?? 2) - 1)
+
+  // Prepare the text block: ensure it starts with a newline so we don't
+  // merge into the last existing paragraph.
+  const textBlock = (content.endsWith('\n') ? content : content + '\n')
+  const fullText = '\n' + textBlock
+
+  // Build the insert request + heading style updates.
+  const requests: Array<Record<string, unknown>> = [
+    {
+      insertText: {
+        location: { index: insertAt },
+        text: fullText,
+      },
+    },
+  ]
+
+  // Walk the lines, computing absolute (startIndex, endIndex) for each
+  // heading line, so we can apply the right named style.
+  let cursor = insertAt + 1 // +1 for the leading newline we added
+  for (const line of textBlock.split('\n')) {
+    const lineLen = line.length + 1 // +1 for the trailing newline
+    const heading = detectHeading(line)
+    if (heading) {
+      requests.push({
+        updateParagraphStyle: {
+          range: { startIndex: cursor, endIndex: cursor + line.length + 1 },
+          paragraphStyle: { namedStyleType: heading.style },
+          fields: 'namedStyleType',
+        },
+      })
+      // Strip the `#` prefix from the inserted text (replace with same char count kept)
+      requests.push({
+        deleteContentRange: {
+          range: { startIndex: cursor, endIndex: cursor + heading.prefixLen },
+        },
+      })
+    }
+    cursor += lineLen
+  }
+
+  // Execute batchUpdate. When we deleteContentRange, subsequent indices
+  // shift — Google handles that if the deletions are in REVERSE order.
+  // Simplest correct approach: do insertions first in one call, then
+  // do heading styles + deletions in a SECOND call where we re-read
+  // the now-inserted content.
+  const insertOnly = requests.slice(0, 1)
+  const styleOnly = requests
+    .slice(1)
+    .sort((a, b) => {
+      const ai = getRequestIndex(a)
+      const bi = getRequestIndex(b)
+      return bi - ai // reverse so deletions don't shift each other
+    })
+
+  const applyInsert = await fetch(
+    `https://docs.googleapis.com/v1/documents/${encodeURIComponent(docId)}:batchUpdate`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ requests: insertOnly }),
+    },
+  )
+  if (!applyInsert.ok) {
+    const errBody = await applyInsert.text()
+    return { error: `Docs append insert failed: ${applyInsert.status} ${errBody.slice(0, 200)}` }
+  }
+  if (styleOnly.length > 0) {
+    const applyStyle = await fetch(
+      `https://docs.googleapis.com/v1/documents/${encodeURIComponent(docId)}:batchUpdate`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ requests: styleOnly }),
+      },
+    )
+    if (!applyStyle.ok) {
+      const errBody = await applyStyle.text()
+      return { error: `Docs append style failed: ${applyStyle.status} ${errBody.slice(0, 200)}` }
+    }
+  }
+  return { ok: true }
+}
+
+function detectHeading(line: string): { style: string; prefixLen: number } | null {
+  if (line.startsWith('### ')) return { style: 'HEADING_3', prefixLen: 4 }
+  if (line.startsWith('## ')) return { style: 'HEADING_2', prefixLen: 3 }
+  if (line.startsWith('# ')) return { style: 'HEADING_1', prefixLen: 2 }
+  return null
+}
+
+function getRequestIndex(req: Record<string, unknown>): number {
+  const upd = req['updateParagraphStyle'] as { range?: { startIndex?: number } } | undefined
+  if (upd?.range?.startIndex != null) return upd.range.startIndex
+  const del = req['deleteContentRange'] as { range?: { startIndex?: number } } | undefined
+  if (del?.range?.startIndex != null) return del.range.startIndex
+  return 0
 }
 
 function resolveRange(range: CalendarRange, now: Date): [Date, Date] {

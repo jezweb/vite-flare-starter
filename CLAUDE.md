@@ -684,17 +684,27 @@ The chat module ships with a **modular agent toolkit** in `src/server/modules/ch
 | **google-workspace — Gmail** | `gmail_search`, `gmail_get_message`, `gmail_list_labels`, `gmail_draft`, `gmail_reply`, `gmail_send` | Only if the user has connected Google Workspace (per-user OAuth) |
 | **google-workspace — Drive** | `drive_search` | Same |
 | **google-workspace — Calendar** | `calendar_upcoming`, `calendar_list_events`, `calendar_get_event`, `calendar_find_free_slot`, `calendar_create`, `calendar_update_event`, `calendar_delete_event` | Same |
+| **google-workspace — Docs** | `docs_search`, `docs_get`, `docs_create`, `docs_append` | Same |
+| **google-workspace — Sheets** | `sheets_list_tabs`, `sheets_read_range`, `sheets_append_row`, `sheets_write_range` | Same |
 
 **Google Workspace — privileged write ops**
 
-Every write tool (`gmail_send`, `gmail_reply`, `calendar_create`, `calendar_update_event`, `calendar_delete_event`) uses `needsApproval: true` — the agent stops, shows the user the proposed args, and only executes after approval. Plus the ops are in `PRIVILEGED_TOOLS` so they aren't even offered to the model unless the latest user message contains an unlock keyword (e.g. "reply", "schedule", "cancel"). `gmail_draft` is intentionally NOT privileged — drafts have no external effect, so the model can draft freely and the user approves later.
+Every write tool (`gmail_send`, `gmail_reply`, `calendar_create`, `calendar_update_event`, `calendar_delete_event`, `docs_create`, `docs_append`, `sheets_append_row`, `sheets_write_range`) uses `needsApproval: true` — the agent stops, shows the user the proposed args, and only executes after approval. Plus the ops are in `PRIVILEGED_TOOLS` so they aren't even offered to the model unless the latest user message contains an unlock keyword (e.g. "reply", "schedule", "append", "write"). `gmail_draft` is intentionally NOT privileged — drafts have no external effect, so the model can draft freely and the user approves later.
 
 Scopes required (set up at Connectors → Google Workspace):
-- `gmail.readonly` — read tools
+- `gmail.readonly` — gmail read tools
 - `gmail.send` — gmail_send, gmail_reply
 - `gmail.compose` — gmail_draft
-- `drive.readonly` — drive_search
+- `drive.readonly` — drive_search, docs_search, docs_get (fallback via Drive export)
 - `calendar.events` — all calendar tools
+- `documents` — docs_create, docs_append, docs_get (preferred)
+- `documents.readonly` — docs_get (alternative to `documents`)
+- `spreadsheets.readonly` — sheets_list_tabs, sheets_read_range
+- `spreadsheets` — sheets_append_row, sheets_write_range
+
+Docs `docs_append` supports markdown-ish input: lines starting with `#`, `##`, or `###` become H1/H2/H3; paragraphs separated by blank lines render as separate paragraphs. Tables, images, inline objects are not yet supported — use the Docs UI for those.
+
+Sheets ranges use A1 notation (`Sheet1!A1:D20`, `Budget!A:A`). `valueInputOption: 'USER_ENTERED'` (default) parses formulas + dates the way the Sheets UI does; `RAW` stores the string verbatim.
 
 ### Adding a new tool (canonical pattern — post-Phase 0)
 
