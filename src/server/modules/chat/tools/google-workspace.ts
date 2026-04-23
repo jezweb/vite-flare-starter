@@ -19,6 +19,7 @@ import {
   Reply,
   Tags,
   FolderOpen,
+  FolderPlus,
   Calendar,
   CalendarPlus,
   CalendarSearch,
@@ -29,9 +30,12 @@ import {
   FileSearch,
   FilePlus,
   FilePen,
+  FileDown,
   Sheet,
   Table2,
   Rows4,
+  ListTodo,
+  ListPlus,
 } from 'lucide-react'
 import { googleWorkspaceTokens } from '@/server/modules/google-workspace/db/schema'
 import {
@@ -1912,6 +1916,389 @@ export const sheetsWriteRangeDefinition: ToolDefinition<SheetsWriteRangeInput, S
   },
 }
 
+// ─── drive_get_file ──────────────────────────────────────────────
+// Fetch content for text-shaped files. Binary / Workspace files return
+// metadata only + a `notSupported` flag the model can surface to the user.
+
+const DriveGetFileInput = z.object({
+  fileId: z.string(),
+})
+
+const DriveGetFileOutput = z.union([
+  z.object({
+    fileId: z.string(),
+    name: z.string(),
+    mimeType: z.string(),
+    sizeBytes: z.number().optional(),
+    modifiedTime: z.string().optional(),
+    content: z.string().optional(),
+    notSupported: z.boolean().optional(),
+    notSupportedReason: z.string().optional(),
+    url: z.string().optional(),
+  }),
+  z.object({ error: z.string() }),
+])
+
+export type DriveGetFileInput = z.infer<typeof DriveGetFileInput>
+export type DriveGetFileOutput = z.infer<typeof DriveGetFileOutput>
+
+export const driveGetFileDefinition: ToolDefinition<DriveGetFileInput, DriveGetFileOutput> = {
+  name: 'drive_get_file',
+  description:
+    "Fetch a Drive file's content. Supports text/markdown/CSV/JSON and Google Docs (auto-exported to text). Binary files (PDFs, images, zips) return metadata only with notSupported=true — use drive_search to get their webViewLink and let the user open in Drive.",
+  inputSchema: DriveGetFileInput,
+  outputSchema: DriveGetFileOutput,
+  isAvailable: gwsAvailable,
+  execute: async ({ fileId }, ctx) => {
+    const auth = await requireActiveToken(ctx, 'drive.readonly')
+    if ('error' in auth) return auth
+
+    // 1. Fetch metadata
+    const metaUrl = new URL(
+      `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}`,
+    )
+    metaUrl.searchParams.set('fields', 'id,name,mimeType,size,modifiedTime,webViewLink')
+    const metaResp = await fetch(metaUrl, { headers: { Authorization: `Bearer ${auth.token}` } })
+    if (!metaResp.ok) return { error: `Drive meta failed: ${metaResp.status}` }
+    const meta = (await metaResp.json()) as {
+      id: string
+      name: string
+      mimeType: string
+      size?: string
+      modifiedTime?: string
+      webViewLink?: string
+    }
+
+    const base = {
+      fileId: meta.id,
+      name: meta.name,
+      mimeType: meta.mimeType,
+      sizeBytes: meta.size ? Number(meta.size) : undefined,
+      modifiedTime: meta.modifiedTime,
+      url: meta.webViewLink,
+    }
+
+    // 2. Decide whether we can read content
+    const isGoogleDoc = meta.mimeType === 'application/vnd.google-apps.document'
+    const isGoogleSheet = meta.mimeType === 'application/vnd.google-apps.spreadsheet'
+    const isTextShape =
+      meta.mimeType.startsWith('text/') ||
+      meta.mimeType === 'application/json' ||
+      meta.mimeType === 'application/xml' ||
+      meta.mimeType === 'application/javascript' ||
+      meta.mimeType === 'text/csv' ||
+      meta.mimeType === 'application/vnd.google-apps.script+json'
+
+    if (isGoogleSheet) {
+      return {
+        ...base,
+        notSupported: true,
+        notSupportedReason:
+          'Google Sheets — use sheets_list_tabs + sheets_read_range instead.',
+      }
+    }
+    if (!isTextShape && !isGoogleDoc) {
+      return {
+        ...base,
+        notSupported: true,
+        notSupportedReason: `Binary or unsupported type (${meta.mimeType}). Open in Drive to view.`,
+      }
+    }
+
+    // 3. Fetch content
+    if (isGoogleDoc) {
+      const exportUrl = new URL(
+        `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}/export`,
+      )
+      exportUrl.searchParams.set('mimeType', 'text/plain')
+      const resp = await fetch(exportUrl, { headers: { Authorization: `Bearer ${auth.token}` } })
+      if (!resp.ok) return { error: `Drive export failed: ${resp.status}` }
+      const content = await resp.text()
+      return { ...base, content }
+    } else {
+      const getUrl = new URL(
+        `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}`,
+      )
+      getUrl.searchParams.set('alt', 'media')
+      const resp = await fetch(getUrl, { headers: { Authorization: `Bearer ${auth.token}` } })
+      if (!resp.ok) return { error: `Drive get failed: ${resp.status}` }
+      const content = await resp.text()
+      // Cap to 500KB text to avoid context blowouts
+      const capped = content.length > 500_000 ? content.slice(0, 500_000) + '\n[...truncated]' : content
+      return { ...base, content: capped }
+    }
+  },
+  render: {
+    icon: FileDown,
+    displayName: 'Drive — Get File',
+    summary: (output) => {
+      if ('error' in output) return 'failed'
+      if (output.notSupported) return 'not readable'
+      return truncate(output.name, 40)
+    },
+  },
+}
+
+// ─── drive_create_folder ─────────────────────────────────────────
+
+const DriveCreateFolderInput = z.object({
+  name: z.string().min(1).max(200),
+  parentId: z
+    .string()
+    .optional()
+    .describe('Optional parent folder id. Defaults to "My Drive" root.'),
+})
+
+const DriveCreateFolderOutput = z.union([
+  z.object({
+    ok: z.literal(true),
+    folderId: z.string(),
+    name: z.string(),
+    url: z.string().optional(),
+  }),
+  z.object({ error: z.string() }),
+])
+
+export type DriveCreateFolderInput = z.infer<typeof DriveCreateFolderInput>
+export type DriveCreateFolderOutput = z.infer<typeof DriveCreateFolderOutput>
+
+export const driveCreateFolderDefinition: ToolDefinition<
+  DriveCreateFolderInput,
+  DriveCreateFolderOutput
+> = {
+  name: 'drive_create_folder',
+  description:
+    'Create a folder in Google Drive. Defaults to the root of My Drive unless parentId is given. Privileged — confirm name and location with the user.',
+  inputSchema: DriveCreateFolderInput,
+  outputSchema: DriveCreateFolderOutput,
+  isAvailable: gwsAvailable,
+  needsApproval: true,
+  execute: async ({ name, parentId }, ctx) => {
+    const auth = await requireActiveToken(ctx, 'drive.file')
+    if ('error' in auth) {
+      // Fall back to full drive scope if drive.file isn't granted
+      const full = await requireActiveToken(ctx, 'drive')
+      if ('error' in full) return auth
+      return createFolderWithToken(full.token, name, parentId)
+    }
+    return createFolderWithToken(auth.token, name, parentId)
+  },
+  render: {
+    icon: FolderPlus,
+    displayName: 'Drive — New Folder',
+    summary: (output) => {
+      if ('error' in output) return 'failed'
+      if (output.ok) return truncate(output.name, 30)
+      return null
+    },
+  },
+}
+
+async function createFolderWithToken(
+  token: string,
+  name: string,
+  parentId?: string,
+): Promise<DriveCreateFolderOutput> {
+  const body: Record<string, unknown> = {
+    name,
+    mimeType: 'application/vnd.google-apps.folder',
+  }
+  if (parentId) body['parents'] = [parentId]
+  const resp = await fetch('https://www.googleapis.com/drive/v3/files?fields=id,name,webViewLink', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  })
+  if (!resp.ok) {
+    const errBody = await resp.text()
+    return { error: `Folder create failed: ${resp.status} ${errBody.slice(0, 200)}` }
+  }
+  const json = (await resp.json()) as { id?: string; name?: string; webViewLink?: string }
+  if (!json.id) return { error: 'Folder create returned no id' }
+  return {
+    ok: true as const,
+    folderId: json.id,
+    name: json.name ?? name,
+    url: json.webViewLink,
+  }
+}
+
+// ─── tasks_list ──────────────────────────────────────────────────
+
+const TasksListInput = z.object({
+  taskListId: z
+    .string()
+    .optional()
+    .describe('Task list id. Omit to list from the default "@default" list.'),
+  showCompleted: z.boolean().default(false).optional(),
+  maxResults: z.number().int().min(1).max(100).default(50).optional(),
+})
+
+const TaskItem = z.object({
+  id: z.string(),
+  title: z.string(),
+  notes: z.string().optional(),
+  status: z.string(),
+  due: z.string().optional(),
+  completed: z.string().optional(),
+  updated: z.string().optional(),
+})
+
+const TasksListOutput = z.union([
+  z.object({
+    taskListId: z.string(),
+    count: z.number(),
+    tasks: z.array(TaskItem),
+  }),
+  z.object({ error: z.string() }),
+])
+
+export type TasksListInput = z.infer<typeof TasksListInput>
+export type TasksListOutput = z.infer<typeof TasksListOutput>
+
+export const tasksListDefinition: ToolDefinition<TasksListInput, TasksListOutput> = {
+  name: 'tasks_list',
+  description:
+    "List tasks from the user's Google Tasks. Omit taskListId to use the default list. Set showCompleted=true to include completed items. Useful for surfacing TODOs in a chat.",
+  inputSchema: TasksListInput,
+  outputSchema: TasksListOutput,
+  isAvailable: gwsAvailable,
+  execute: async ({ taskListId = '@default', showCompleted = false, maxResults = 50 }, ctx) => {
+    const auth = await requireActiveToken(ctx, 'tasks.readonly')
+    if ('error' in auth) {
+      const full = await requireActiveToken(ctx, 'tasks')
+      if ('error' in full) return auth
+      return listTasksWithToken(full.token, taskListId, showCompleted, maxResults)
+    }
+    return listTasksWithToken(auth.token, taskListId, showCompleted, maxResults)
+  },
+  render: {
+    icon: ListTodo,
+    displayName: 'Tasks — List',
+    summary: (output) => {
+      if ('error' in output) return 'failed'
+      if (output.count === 0) return 'no tasks'
+      return `${output.count} ${output.count === 1 ? 'task' : 'tasks'}`
+    },
+  },
+}
+
+async function listTasksWithToken(
+  token: string,
+  taskListId: string,
+  showCompleted: boolean,
+  maxResults: number,
+): Promise<TasksListOutput> {
+  const url = new URL(
+    `https://tasks.googleapis.com/tasks/v1/lists/${encodeURIComponent(taskListId)}/tasks`,
+  )
+  url.searchParams.set('maxResults', String(maxResults))
+  url.searchParams.set('showCompleted', String(showCompleted))
+  url.searchParams.set('showHidden', 'false')
+  const resp = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+  if (!resp.ok) return { error: `Tasks list failed: ${resp.status}` }
+  const json = (await resp.json()) as {
+    items?: Array<{
+      id: string
+      title?: string
+      notes?: string
+      status?: string
+      due?: string
+      completed?: string
+      updated?: string
+    }>
+  }
+  const tasks = (json.items ?? []).map((t) => ({
+    id: t.id,
+    title: t.title ?? '(no title)',
+    notes: t.notes,
+    status: t.status ?? 'needsAction',
+    due: t.due,
+    completed: t.completed,
+    updated: t.updated,
+  }))
+  return { taskListId, count: tasks.length, tasks }
+}
+
+// ─── tasks_create ────────────────────────────────────────────────
+
+const TasksCreateInput = z.object({
+  title: z.string().min(1).max(200),
+  notes: z.string().max(2000).optional(),
+  due: z
+    .string()
+    .optional()
+    .describe('ISO 8601 due date (time component ignored by Google Tasks)'),
+  taskListId: z.string().default('@default').optional(),
+})
+
+const TasksCreateOutput = z.union([
+  z.object({
+    ok: z.literal(true),
+    taskId: z.string(),
+    title: z.string(),
+    taskListId: z.string(),
+  }),
+  z.object({ error: z.string() }),
+])
+
+export type TasksCreateInput = z.infer<typeof TasksCreateInput>
+export type TasksCreateOutput = z.infer<typeof TasksCreateOutput>
+
+export const tasksCreateDefinition: ToolDefinition<TasksCreateInput, TasksCreateOutput> = {
+  name: 'tasks_create',
+  description:
+    "Add a task to the user's Google Tasks. Defaults to the default list unless taskListId is given. Privileged — confirm the title and due date with the user.",
+  inputSchema: TasksCreateInput,
+  outputSchema: TasksCreateOutput,
+  isAvailable: gwsAvailable,
+  needsApproval: true,
+  execute: async ({ title, notes, due, taskListId = '@default' }, ctx) => {
+    const auth = await requireActiveToken(ctx, 'tasks')
+    if ('error' in auth) return auth
+
+    const body: Record<string, unknown> = { title }
+    if (notes) body['notes'] = notes
+    if (due) body['due'] = due
+
+    const resp = await fetch(
+      `https://tasks.googleapis.com/tasks/v1/lists/${encodeURIComponent(taskListId)}/tasks`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${auth.token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      },
+    )
+    if (!resp.ok) {
+      const errBody = await resp.text()
+      return { error: `Tasks create failed: ${resp.status} ${errBody.slice(0, 200)}` }
+    }
+    const json = (await resp.json()) as { id?: string; title?: string }
+    if (!json.id) return { error: 'Tasks create returned no id' }
+    return {
+      ok: true as const,
+      taskId: json.id,
+      title: json.title ?? title,
+      taskListId,
+    }
+  },
+  render: {
+    icon: ListPlus,
+    displayName: 'Tasks — Create',
+    summary: (output) => {
+      if ('error' in output) return 'failed'
+      if (output.ok) return truncate(output.title, 30)
+      return null
+    },
+  },
+}
+
 /**
  * All Google Workspace tool definitions — imported by the aggregator.
  * Order here determines the order shown to the model in the tool catalog.
@@ -1927,6 +2314,8 @@ export const googleWorkspaceDefinitions = [
   gmailSendDefinition,
   // Drive
   driveSearchDefinition,
+  driveGetFileDefinition,
+  driveCreateFolderDefinition,
   // Calendar: read
   calendarUpcomingDefinition,
   calendarListEventsDefinition,
@@ -1946,6 +2335,9 @@ export const googleWorkspaceDefinitions = [
   sheetsReadRangeDefinition,
   sheetsAppendRowDefinition,
   sheetsWriteRangeDefinition,
+  // Tasks
+  tasksListDefinition,
+  tasksCreateDefinition,
 ] as ToolDefinition<unknown, unknown>[]
 
 // ─── shared helpers ──────────────────────────────────────────────

@@ -17,7 +17,12 @@ import {
   gmailReplyRenderer,
   gmailSendRenderer,
 } from './gmail'
-import { driveSearchRenderer } from './drive'
+import {
+  driveSearchRenderer,
+  driveGetFileRenderer,
+  driveCreateFolderRenderer,
+} from './drive'
+import { tasksListRenderer, tasksCreateRenderer } from './tasks'
 import {
   calendarUpcomingRenderer,
   calendarListEventsRenderer,
@@ -52,6 +57,8 @@ export const TOOL_RENDERERS: ToolRenderer[] = [
   gmailSendRenderer,
   // Google Workspace — Drive
   driveSearchRenderer,
+  driveGetFileRenderer,
+  driveCreateFolderRenderer,
   // Google Workspace — Calendar
   calendarUpcomingRenderer,
   calendarListEventsRenderer,
@@ -70,6 +77,9 @@ export const TOOL_RENDERERS: ToolRenderer[] = [
   sheetsReadRangeRenderer,
   sheetsAppendRowRenderer,
   sheetsWriteRangeRenderer,
+  // Google Workspace — Tasks
+  tasksListRenderer,
+  tasksCreateRenderer,
   // Search
   webSearchRenderer,
 ]

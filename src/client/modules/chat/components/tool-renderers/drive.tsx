@@ -3,11 +3,13 @@
  */
 import {
   FolderOpen,
+  FolderPlus,
   FileText,
   FileSpreadsheet,
   FileImage,
   FileVideo,
   FileCode,
+  FileDown,
   Presentation,
   File as FileIcon,
   ExternalLink,
@@ -15,7 +17,11 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import type { ToolRenderer } from './_shared'
 import { formatToolDate, truncate } from './_shared'
-import type { DriveSearchOutput } from '@/server/modules/chat/tools/google-workspace'
+import type {
+  DriveSearchOutput,
+  DriveGetFileOutput,
+  DriveCreateFolderOutput,
+} from '@/server/modules/chat/tools/google-workspace'
 
 function iconForDriveMime(mime: string): LucideIcon {
   if (mime.includes('folder')) return FolderOpen
@@ -38,6 +44,112 @@ function shortMimeType(mime: string): string {
   if (mime.startsWith('video/')) return 'Video'
   const slash = mime.lastIndexOf('/')
   return slash >= 0 ? mime.slice(slash + 1).toUpperCase() : mime
+}
+
+export const driveGetFileRenderer: ToolRenderer = {
+  match: 'drive_get_file',
+  icon: FileDown,
+  displayName: 'Drive — Get File',
+  summary: (output) => {
+    const o = output as DriveGetFileOutput | undefined
+    if (!o) return null
+    if ('error' in o) return 'failed'
+    if (o.notSupported) return 'not readable'
+    return truncate(o.name, 40)
+  },
+  expanded: ({ output }) => {
+    const o = output as DriveGetFileOutput | undefined
+    if (!o) return null
+    if ('error' in o) {
+      return (
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
+          {o.error}
+        </div>
+      )
+    }
+    const Icon = iconForDriveMime(o.mimeType)
+    return (
+      <div className="space-y-2 text-xs">
+        <div className="flex items-center gap-2">
+          <Icon className="size-4 text-muted-foreground" />
+          <span className="font-medium">{o.name}</span>
+          <span className="text-[11px] text-muted-foreground">
+            · {shortMimeType(o.mimeType)}
+            {o.modifiedTime && <> · {formatToolDate(o.modifiedTime)}</>}
+          </span>
+        </div>
+        {o.notSupported ? (
+          <div className="rounded-md bg-muted/50 p-3 text-muted-foreground">
+            {o.notSupportedReason}
+          </div>
+        ) : o.content ? (
+          <pre className="rounded-md bg-muted/50 p-3 whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-foreground/90 max-h-80 overflow-y-auto">
+            {o.content.length > 2000 ? o.content.slice(0, 2000) + '…' : o.content}
+          </pre>
+        ) : null}
+        {o.url && (
+          <a
+            href={o.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-foreground hover:underline"
+          >
+            Open in Drive
+            <ExternalLink className="size-3" />
+          </a>
+        )}
+      </div>
+    )
+  },
+}
+
+export const driveCreateFolderRenderer: ToolRenderer = {
+  match: 'drive_create_folder',
+  icon: FolderPlus,
+  displayName: 'Drive — New Folder',
+  summary: (output) => {
+    const o = output as DriveCreateFolderOutput | undefined
+    if (!o) return null
+    if ('error' in o) return 'failed'
+    if (o.ok) return truncate(o.name, 30)
+    return null
+  },
+  expanded: ({ output, input }) => {
+    const o = output as DriveCreateFolderOutput | undefined
+    const i = input as { parentId?: string } | undefined
+    if (!o) return null
+    if ('error' in o) {
+      return (
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
+          {o.error}
+        </div>
+      )
+    }
+    return (
+      <div className="space-y-2 text-xs">
+        <div className="flex items-center gap-2">
+          <FolderPlus className="size-4 text-muted-foreground" />
+          <span className="font-medium">{o.name}</span>
+        </div>
+        {i?.parentId && (
+          <div className="text-muted-foreground">
+            Parent: <span className="font-mono">{i.parentId}</span>
+          </div>
+        )}
+        {o.url && (
+          <a
+            href={o.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-foreground hover:underline"
+          >
+            Open in Drive
+            <ExternalLink className="size-3" />
+          </a>
+        )}
+      </div>
+    )
+  },
 }
 
 export const driveSearchRenderer: ToolRenderer = {

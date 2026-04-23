@@ -682,7 +682,8 @@ The chat module ships with a **modular agent toolkit** in `src/server/modules/ch
 | **places** | `places_search`, `places_details` | Only if `GOOGLE_PLACES_API_KEY` set |
 | **files** | `fs_list`, `fs_read`, `fs_write`, `fs_delete` | Only if `FILES` R2 bucket bound |
 | **google-workspace — Gmail** | `gmail_search`, `gmail_get_message`, `gmail_list_labels`, `gmail_draft`, `gmail_reply`, `gmail_send` | Only if the user has connected Google Workspace (per-user OAuth) |
-| **google-workspace — Drive** | `drive_search` | Same |
+| **google-workspace — Drive** | `drive_search`, `drive_get_file`, `drive_create_folder` | Same |
+| **google-workspace — Tasks** | `tasks_list`, `tasks_create` | Same |
 | **google-workspace — Calendar** | `calendar_upcoming`, `calendar_list_events`, `calendar_get_event`, `calendar_find_free_slot`, `calendar_create`, `calendar_update_event`, `calendar_delete_event` | Same |
 | **google-workspace — Docs** | `docs_search`, `docs_get`, `docs_create`, `docs_append` | Same |
 | **google-workspace — Sheets** | `sheets_list_tabs`, `sheets_read_range`, `sheets_append_row`, `sheets_write_range` | Same |
@@ -701,6 +702,9 @@ Scopes required (set up at Connectors → Google Workspace):
 - `documents.readonly` — docs_get (alternative to `documents`)
 - `spreadsheets.readonly` — sheets_list_tabs, sheets_read_range
 - `spreadsheets` — sheets_append_row, sheets_write_range
+- `drive.file` (or `drive`) — drive_create_folder
+- `tasks.readonly` — tasks_list (or `tasks` which covers both)
+- `tasks` — tasks_create
 
 Docs `docs_append` supports markdown-ish input: lines starting with `#`, `##`, or `###` become H1/H2/H3; paragraphs separated by blank lines render as separate paragraphs. Tables, images, inline objects are not yet supported — use the Docs UI for those.
 
