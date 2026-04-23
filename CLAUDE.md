@@ -681,6 +681,20 @@ The chat module ships with a **modular agent toolkit** in `src/server/modules/ch
 | **search** | `web_search` | Only if a provider key is set |
 | **places** | `places_search`, `places_details` | Only if `GOOGLE_PLACES_API_KEY` set |
 | **files** | `fs_list`, `fs_read`, `fs_write`, `fs_delete` | Only if `FILES` R2 bucket bound |
+| **google-workspace — Gmail** | `gmail_search`, `gmail_get_message`, `gmail_list_labels`, `gmail_draft`, `gmail_reply`, `gmail_send` | Only if the user has connected Google Workspace (per-user OAuth) |
+| **google-workspace — Drive** | `drive_search` | Same |
+| **google-workspace — Calendar** | `calendar_upcoming`, `calendar_list_events`, `calendar_get_event`, `calendar_find_free_slot`, `calendar_create`, `calendar_update_event`, `calendar_delete_event` | Same |
+
+**Google Workspace — privileged write ops**
+
+Every write tool (`gmail_send`, `gmail_reply`, `calendar_create`, `calendar_update_event`, `calendar_delete_event`) uses `needsApproval: true` — the agent stops, shows the user the proposed args, and only executes after approval. Plus the ops are in `PRIVILEGED_TOOLS` so they aren't even offered to the model unless the latest user message contains an unlock keyword (e.g. "reply", "schedule", "cancel"). `gmail_draft` is intentionally NOT privileged — drafts have no external effect, so the model can draft freely and the user approves later.
+
+Scopes required (set up at Connectors → Google Workspace):
+- `gmail.readonly` — read tools
+- `gmail.send` — gmail_send, gmail_reply
+- `gmail.compose` — gmail_draft
+- `drive.readonly` — drive_search
+- `calendar.events` — all calendar tools
 
 ### Adding a new tool (canonical pattern — post-Phase 0)
 

@@ -50,9 +50,11 @@ export function tokenBudgetPrepareStep<TOOLS extends ToolSet>({ maxTotalTokens }
  */
 const PRIVILEGED_TOOLS = [
   'gmail_send',
+  'gmail_reply',
   'gmail_delete',
   'calendar_create',
-  'calendar_delete',
+  'calendar_update_event',
+  'calendar_delete_event',
   'drive_delete',
   'fs_delete',
   'fs_write',
@@ -69,9 +71,11 @@ type PrivilegedTool = (typeof PRIVILEGED_TOOLS)[number]
  */
 const UNLOCK_KEYWORDS: Record<PrivilegedTool, RegExp> = {
   gmail_send: /\bsend\b|\bcompose\b|\bdraft\b|\breply\b|\bforward\b|\bemail\b/i,
+  gmail_reply: /\breply\b|\brespond\b|\banswer\b|\bget back\b|\bfollow up\b/i,
   gmail_delete: /\bdelete\b|\btrash\b|\barchive\b|\bremove\b/i,
   calendar_create: /\bschedule\b|\bbook\b|\bmeeting\b|\bappointment\b|\bevent\b|\bremind/i,
-  calendar_delete: /\bcancel\b|\bdelete\b|\bremove\b/i,
+  calendar_update_event: /\bmove\b|\breschedule\b|\bchange\b|\bupdate\b|\bedit\b|\bshift\b|\bpostpone\b/i,
+  calendar_delete_event: /\bcancel\b|\bdelete\b|\bremove\b|\bscrap\b/i,
   drive_delete: /\bdelete\b|\bremove\b|\btrash\b/i,
   fs_delete: /\bdelete\b|\bremove\b|\brm\b/i,
   fs_write: /\bwrite\b|\bcreate\b|\bsave\b|\bstore\b|\bupload\b/i,

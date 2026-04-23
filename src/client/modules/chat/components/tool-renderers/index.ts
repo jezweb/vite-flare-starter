@@ -9,19 +9,45 @@
  * domain, create a new file, export renderer objects, and register them
  * here.
  */
-import { gmailSearchRenderer, gmailSendRenderer } from './gmail'
+import {
+  gmailSearchRenderer,
+  gmailGetMessageRenderer,
+  gmailListLabelsRenderer,
+  gmailDraftRenderer,
+  gmailReplyRenderer,
+  gmailSendRenderer,
+} from './gmail'
 import { driveSearchRenderer } from './drive'
-import { calendarUpcomingRenderer, calendarCreateRenderer } from './calendar'
+import {
+  calendarUpcomingRenderer,
+  calendarListEventsRenderer,
+  calendarGetEventRenderer,
+  calendarFindFreeSlotRenderer,
+  calendarCreateRenderer,
+  calendarUpdateEventRenderer,
+  calendarDeleteEventRenderer,
+} from './calendar'
 import { webSearchRenderer } from './search'
 import { matchesRenderer, type ToolRenderer } from './_shared'
 
 export const TOOL_RENDERERS: ToolRenderer[] = [
-  // Google Workspace
+  // Google Workspace — Gmail
   gmailSearchRenderer,
+  gmailGetMessageRenderer,
+  gmailListLabelsRenderer,
+  gmailDraftRenderer,
+  gmailReplyRenderer,
   gmailSendRenderer,
+  // Google Workspace — Drive
   driveSearchRenderer,
+  // Google Workspace — Calendar
   calendarUpcomingRenderer,
+  calendarListEventsRenderer,
+  calendarGetEventRenderer,
+  calendarFindFreeSlotRenderer,
   calendarCreateRenderer,
+  calendarUpdateEventRenderer,
+  calendarDeleteEventRenderer,
   // Search
   webSearchRenderer,
 ]
