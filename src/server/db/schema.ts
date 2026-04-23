@@ -59,6 +59,17 @@ export { googleWorkspaceTokens } from '@/server/modules/google-workspace/db/sche
 // Microsoft Workspace (v1.9) — native Microsoft 365 OAuth (Azure AD v2.0)
 export { microsoftWorkspaceTokens } from '@/server/modules/microsoft-workspace/db/schema'
 
+// Per-user connector settings (v1.9) — enables scaling to many providers
+// without flooding the agent context. Master switch + per-tool toggles.
+export { userConnectorSettings } from '@/server/modules/connectors/db/schema'
+
+// Stub-provider token tables (v1.9) — Slack, Notion, Atlassian OAuth
+// tokens. Each uses the shared `defineProviderTokenTable` factory so
+// the table shape is identical across providers.
+export { slackTokens } from '@/server/modules/slack/db/schema'
+export { notionTokens } from '@/server/modules/notion/db/schema'
+export { atlassianTokens } from '@/server/modules/atlassian/db/schema'
+
 // Polymorphic modules (entity_type + entity_id pattern)
 export { comments } from '@/server/modules/comments/db/schema'
 export { tags, entityTags } from '@/server/modules/tags/db/schema'

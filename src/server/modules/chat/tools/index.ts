@@ -38,6 +38,11 @@ import { searchFilesDefinitions } from './search-files'
 import { googleWorkspaceDefinitions } from './google-workspace'
 import { microsoftWorkspaceDefinitions } from './microsoft-workspace'
 import { collectAvailableTools } from '@/server/lib/ai/tool-adapter'
+import {
+  getAllowedConnectorTools,
+  filterToolsByUserSettings,
+  type ConnectorSettingsEnv,
+} from '@/server/modules/connectors/settings'
 import type { AgentContext } from '@/shared/agent'
 import type { ToolDefinition } from '@/shared/agent/tool'
 
@@ -69,7 +74,17 @@ export async function buildChatTools(ctx: AgentContext, options: { availableSkil
     ...microsoftWorkspaceDefinitions,
   ]
 
-  return await collectAvailableTools(allDefinitions, ctx)
+  // Per-user connector filter — keeps connector tools the user has
+  // opted into, passes built-in tools through untouched. Preserves
+  // current behaviour when the user has no settings rows (defaults
+  // include the read-only subset of each provider).
+  const allowed = await getAllowedConnectorTools(
+    ctx.env as unknown as ConnectorSettingsEnv,
+    ctx.userId,
+  )
+  const filtered = filterToolsByUserSettings(allDefinitions, allowed)
+
+  return await collectAvailableTools(filtered, ctx)
 }
 
 // Legacy re-exports for anything that still imports the old names.

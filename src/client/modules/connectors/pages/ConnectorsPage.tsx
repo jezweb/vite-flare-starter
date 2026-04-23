@@ -49,6 +49,7 @@ import type { CatalogEntry } from '@/shared/config/connector-catalog'
 import { ConnectionDetail } from '../components/ConnectionDetail'
 import { GoogleWorkspacePanel } from '../components/GoogleWorkspacePanel'
 import { MicrosoftWorkspacePanel } from '../components/MicrosoftWorkspacePanel'
+import { StubConnectorPanel } from '../components/StubConnectorPanel'
 
 function resolveIcon(name: string): LucideIcon {
   const icons = LucideIcons as unknown as Record<string, LucideIcon>
@@ -124,6 +125,31 @@ export function ConnectorsPage() {
           the fork hasn't configured GOOGLE_WORKSPACE_CLIENT_ID. */}
       <GoogleWorkspacePanel />
       <MicrosoftWorkspacePanel />
+      <StubConnectorPanel
+        providerId="slack"
+        logo={
+          <svg viewBox="0 0 24 24" aria-hidden className="h-6 w-6" fill="#E01E5A">
+            <path d="M5 15a2 2 0 1 1-2-2h2v2zm1 0a2 2 0 1 1 4 0v5a2 2 0 1 1-4 0v-5zm2-8a2 2 0 1 1-2-2V3a2 2 0 1 1 4 0v2H8zm0 1a2 2 0 1 1 0 4H3a2 2 0 1 1 0-4h5zm11 6a2 2 0 1 1 2 2h-2v-2zm-1 0a2 2 0 1 1-4 0V9a2 2 0 1 1 4 0v5zm-2 8a2 2 0 1 1 2 2v2a2 2 0 1 1-4 0v-2h2zm0-1a2 2 0 1 1 0-4h5a2 2 0 1 1 0 4h-5z" />
+          </svg>
+        }
+      />
+      <StubConnectorPanel
+        providerId="notion"
+        logo={
+          <svg viewBox="0 0 24 24" aria-hidden className="h-6 w-6" fill="currentColor">
+            <path d="M4.5 3.4L14 2.7c1.2-.1 1.5 0 2.3.5l3 2.1c.6.4.8.5.8 1v15.3c0 .8-.3 1.3-1.3 1.4l-11 .7c-.8.1-1.2 0-1.6-.5L3.9 21c-.4-.6-.6-1-.6-1.5V4.7c0-.7.3-1.2 1.2-1.3z" />
+          </svg>
+        }
+      />
+      <StubConnectorPanel
+        providerId="atlassian"
+        logo={
+          <svg viewBox="0 0 24 24" aria-hidden className="h-6 w-6" fill="#2684FF">
+            <path d="M6.5 11.5L2 20h8.5c.2 0 .4-.2.4-.4 0-.1 0-.2-.1-.3L6.8 11.6c-.2-.2-.4-.2-.3-.1z" />
+            <path d="M11.4 4c-.2 0-.4.1-.5.3l-3.6 7.2-.8 1.6 4.6 8.5c.1.2.3.4.6.4H22c.3 0 .5-.2.5-.5 0-.1 0-.2-.1-.3L12 4.3c-.2-.2-.4-.3-.6-.3z" fill="#0052CC" />
+          </svg>
+        }
+      />
 
       {connectionsLoading ? (
         <div className="flex items-center justify-center py-12">
