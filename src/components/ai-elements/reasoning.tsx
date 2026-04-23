@@ -154,9 +154,62 @@ export type ReasoningTriggerProps = ComponentProps<
   getThinkingMessage?: (isStreaming: boolean, duration?: number) => ReactNode;
 };
 
+/**
+ * Rotating set of "what's the model doing right now" verbs shown during
+ * the streaming state. Claude Code does this — a changing word beats
+ * staring at a static "Thinking..." because it conveys "still alive,
+ * still working" without needing to know the actual content.
+ *
+ * 12 entries mixes common + slightly playful so repeats within a session
+ * feel natural rather than cycly. Keep roughly one-word or two-word
+ * max so the layout doesn't jump between short and long verbs.
+ */
+const THINKING_PHRASES = [
+  "Thinking",
+  "Pondering",
+  "Mulling",
+  "Considering",
+  "Weighing",
+  "Chewing on it",
+  "Reasoning",
+  "Cogitating",
+  "Ruminating",
+  "Noodling",
+  "Turning it over",
+  "Untangling",
+] as const;
+
+function pickPhrase(): string {
+  return THINKING_PHRASES[Math.floor(Math.random() * THINKING_PHRASES.length)] ?? "Thinking";
+}
+
+/**
+ * ThinkingPhrase — shimmer-wrapped rotating verb for the streaming state.
+ *
+ * Picks a random verb on mount; if the block is still streaming after
+ * 10 seconds, rotates to a new verb. Most reasoning finishes within
+ * 10s so the rotation rarely triggers — the base random pick gives the
+ * variety. Long blocks get the cycle as a bonus tactile signal.
+ */
+function ThinkingPhrase() {
+  const [phrase, setPhrase] = useState(pickPhrase);
+  useEffect(() => {
+    const id = setInterval(() => {
+      setPhrase((prev) => {
+        // Avoid picking the same verb twice in a row — would look buggy.
+        let next = pickPhrase();
+        for (let i = 0; next === prev && i < 5; i++) next = pickPhrase();
+        return next;
+      });
+    }, 10_000);
+    return () => clearInterval(id);
+  }, []);
+  return <Shimmer duration={1}>{`${phrase}…`}</Shimmer>;
+}
+
 const defaultGetThinkingMessage = (isStreaming: boolean, duration?: number) => {
   if (isStreaming || duration === 0) {
-    return <Shimmer duration={1}>Thinking...</Shimmer>;
+    return <ThinkingPhrase />;
   }
   if (duration === undefined) {
     return <p>Thought for a few seconds</p>;

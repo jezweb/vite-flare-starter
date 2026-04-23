@@ -387,9 +387,17 @@ function MessageBody({
               </div>
             )
           }
+          // Only apply the positional label ("Planned" / "Concluded") once
+          // this reasoning block has finished streaming — while it's still
+          // active, defer to the default trigger which renders the rotating
+          // ThinkingPhrase ("Pondering…" / "Mulling…" etc.) for tactile
+          // feedback. Without this, an in-flight block shows a static
+          // "Concluded" label which is a lie + loses the live indicator.
+          const isBlockStreaming = isLoading && isLast && i === parts.length - 1
+          const showPositionalLabel = !!reasoningLabel && !isBlockStreaming
           return (
             <Reasoning key={i} isStreaming={isLoading && isLast} className="w-full">
-              {reasoningLabel ? (
+              {showPositionalLabel ? (
                 <ReasoningTrigger>
                   <BrainIcon className="size-4" />
                   <p>{reasoningLabel}</p>
