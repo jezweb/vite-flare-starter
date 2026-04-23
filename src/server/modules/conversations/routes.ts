@@ -198,7 +198,7 @@ app.post('/:id/summarise', async (c) => {
   try {
     const workersai = createWorkersAI({ binding: c.env.AI })
     const { object } = await generateObject({
-      model: workersai('@cf/moonshotai/kimi-k2.5'),
+      model: workersai('@cf/moonshotai/kimi-k2.6'),
       schema: z.object({
         title: z.string().min(1).max(60).describe('A short noun phrase naming the topic. 2-5 words. No verbs. No colons.'),
         summary: z.string().min(1).max(120).describe('A one-sentence description of the exchange, using different words from the title.'),

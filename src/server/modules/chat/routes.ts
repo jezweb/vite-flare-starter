@@ -63,7 +63,7 @@ async function autoTitleConversation(
     if (!userText || !assistantText) return
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result: any = await (env.AI as any).run('@cf/moonshotai/kimi-k2.5', {
+    const result: any = await (env.AI as any).run('@cf/moonshotai/kimi-k2.6', {
       messages: [
         {
           role: 'system',
@@ -526,7 +526,7 @@ app.post('/extract', async (c) => {
     }
 
     // Use a tool-capable model for structured output
-    const modelId = '@cf/moonshotai/kimi-k2.5'
+    const modelId = '@cf/moonshotai/kimi-k2.6'
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const schema = extractSchemas[schemaName] as any
@@ -572,7 +572,7 @@ app.post('/stream-extract', async (c) => {
       return c.json({ error: 'Text too long (max 100,000 characters)' }, 400)
     }
 
-    const modelId = '@cf/moonshotai/kimi-k2.5'
+    const modelId = '@cf/moonshotai/kimi-k2.6'
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const schema = extractSchemas[schemaName] as any

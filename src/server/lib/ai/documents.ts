@@ -22,7 +22,7 @@ interface DocumentEnv {
   OPENROUTER_API_KEY?: string
 }
 
-const DEFAULT_VISION_MODEL = '@cf/moonshotai/kimi-k2.5'
+const DEFAULT_VISION_MODEL = '@cf/moonshotai/kimi-k2.6'
 
 export interface ConvertOptions {
   /** Override the model for vision fallback */

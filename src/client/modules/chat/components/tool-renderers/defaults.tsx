@@ -176,6 +176,17 @@ const DEFAULT_META: Record<string, DefaultMeta> = {
   browser_screenshot: { icon: Camera, displayName: 'Browser Screenshot' },
   browser_links: { icon: Link2, displayName: 'Browser Links' },
   browser_content: { icon: Code, displayName: 'Browser Content' },
+
+  // Microsoft Workspace (parallels Google Workspace entries in the
+  // per-domain renderer files — these are fallbacks in case the
+  // per-domain renderers aren't registered for a given deploy)
+  outlook_search: { icon: Mail, displayName: 'Outlook — Search' },
+  outlook_get_message: { icon: Mail, displayName: 'Outlook — Read' },
+  outlook_send: { icon: Mail, displayName: 'Outlook — Send' },
+  onedrive_search: { icon: FolderTree, displayName: 'OneDrive — Search' },
+  onedrive_get_file: { icon: FileCheck, displayName: 'OneDrive — Get File' },
+  msoffice_calendar_list: { icon: CalendarClock, displayName: 'MS Calendar — List' },
+  msoffice_calendar_create: { icon: CalendarClock, displayName: 'MS Calendar — Create' },
 }
 
 /**

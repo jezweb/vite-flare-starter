@@ -262,7 +262,7 @@ export async function processDueJobs(dbBinding: D1Database, env: Record<string, 
       const { generateText } = await import('ai')
       const { resolveModel } = await import('@/server/lib/ai/providers')
 
-      const model = resolveModel(env as never, '@cf/moonshotai/kimi-k2.5')
+      const model = resolveModel(env as never, '@cf/moonshotai/kimi-k2.6')
 
       let systemPrompt = `You are executing a scheduled task named "${job.name}".`
       if (job.skillName) {

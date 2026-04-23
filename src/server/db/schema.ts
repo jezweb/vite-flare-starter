@@ -56,6 +56,9 @@ export {
 // Google Workspace (v1.8) — native Google OAuth (no MCP indirection)
 export { googleWorkspaceTokens } from '@/server/modules/google-workspace/db/schema'
 
+// Microsoft Workspace (v1.9) — native Microsoft 365 OAuth (Azure AD v2.0)
+export { microsoftWorkspaceTokens } from '@/server/modules/microsoft-workspace/db/schema'
+
 // Polymorphic modules (entity_type + entity_id pattern)
 export { comments } from '@/server/modules/comments/db/schema'
 export { tags, entityTags } from '@/server/modules/tags/db/schema'

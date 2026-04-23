@@ -48,6 +48,7 @@ import {
 import type { CatalogEntry } from '@/shared/config/connector-catalog'
 import { ConnectionDetail } from '../components/ConnectionDetail'
 import { GoogleWorkspacePanel } from '../components/GoogleWorkspacePanel'
+import { MicrosoftWorkspacePanel } from '../components/MicrosoftWorkspacePanel'
 
 function resolveIcon(name: string): LucideIcon {
   const icons = LucideIcons as unknown as Record<string, LucideIcon>
@@ -122,6 +123,7 @@ export function ConnectorsPage() {
           first-class (no MCP indirection, no token pasting). Self-hides when
           the fork hasn't configured GOOGLE_WORKSPACE_CLIENT_ID. */}
       <GoogleWorkspacePanel />
+      <MicrosoftWorkspacePanel />
 
       {connectionsLoading ? (
         <div className="flex items-center justify-center py-12">

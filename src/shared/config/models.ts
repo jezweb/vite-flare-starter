@@ -18,7 +18,7 @@
 
 /** Free Workers AI models (always available). */
 export const WORKERS_AI_MODELS = [
-  '@cf/moonshotai/kimi-k2.5',
+  '@cf/moonshotai/kimi-k2.6',
   '@cf/google/gemma-4-26b-a4b-it',
   '@cf/zai-org/glm-4.7-flash',
   '@cf/qwen/qwq-32b',
@@ -71,7 +71,7 @@ export const ENABLED_MODEL_IDS: readonly string[] = [
  * tools, so it's a good starter. Change to a paid model if OPENROUTER_API_KEY
  * is always set in your deployment.
  */
-export const DEFAULT_MODEL_ID = '@cf/moonshotai/kimi-k2.5'
+export const DEFAULT_MODEL_ID = '@cf/moonshotai/kimi-k2.6'
 
 /** flared.au API endpoint — cached at the edge, automatically OpenRouter-synced. */
 export const MODELS_CATALOGUE_URL = 'https://models.flared.au/json'

@@ -32,6 +32,7 @@ import mediaRoutes from './modules/media/routes'
 import emailRoutes from './modules/email/routes'
 import mcpConnectionsRoutes from './modules/mcp-connections/routes'
 import googleWorkspaceRoutes from './modules/google-workspace/routes'
+import microsoftWorkspaceRoutes from './modules/microsoft-workspace/routes'
 import { routeAgentRequest } from 'agents'
 // Re-export DO class(es) so wrangler migrations can locate them. Every DO
 // referenced in `durable_objects.bindings` must be exported from the
@@ -275,6 +276,7 @@ app.route('/api/media', mediaRoutes)
 app.route('/api/email', emailRoutes)
 app.route('/api/mcp-connections', mcpConnectionsRoutes)
 app.route('/api/google-workspace', googleWorkspaceRoutes)
+app.route('/api/microsoft-workspace', microsoftWorkspaceRoutes)
 
 // =============================================================================
 // AI TEST ENDPOINT

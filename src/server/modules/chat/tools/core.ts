@@ -134,7 +134,7 @@ export const getModelInfoDefinition: ToolDefinition<
   description:
     'Get capabilities and metadata for a Workers AI model. Use when the user asks about available AI models or model features.',
   inputSchema: z.object({
-    modelId: z.string().describe('The model ID to look up, e.g. @cf/moonshotai/kimi-k2.5'),
+    modelId: z.string().describe('The model ID to look up, e.g. @cf/moonshotai/kimi-k2.6'),
   }),
   outputSchema: GetModelInfoOutput,
   execute: async ({ modelId }) => {

@@ -36,6 +36,7 @@ import { placesDefinitions } from './places'
 import { emailDefinitions } from './email'
 import { searchFilesDefinitions } from './search-files'
 import { googleWorkspaceDefinitions } from './google-workspace'
+import { microsoftWorkspaceDefinitions } from './microsoft-workspace'
 import { collectAvailableTools } from '@/server/lib/ai/tool-adapter'
 import type { AgentContext } from '@/shared/agent'
 import type { ToolDefinition } from '@/shared/agent/tool'
@@ -65,6 +66,7 @@ export async function buildChatTools(ctx: AgentContext, options: { availableSkil
     ...imageTransformDefinitions,
     ...mediaDefinitions,
     ...googleWorkspaceDefinitions,
+    ...microsoftWorkspaceDefinitions,
   ]
 
   return await collectAvailableTools(allDefinitions, ctx)

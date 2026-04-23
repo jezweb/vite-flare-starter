@@ -109,7 +109,7 @@ export const DEFAULT_MODEL: ModelId = DEFAULT_MODEL_ID
 
 /** Shortcut aliases for use in URLs / tool calls. Extend freely. */
 export const ALIAS_TO_MODEL_ID: Record<string, ModelId> = {
-  kimi: '@cf/moonshotai/kimi-k2.5',
+  kimi: '@cf/moonshotai/kimi-k2.6',
   gemma: '@cf/google/gemma-4-26b-a4b-it',
   glm: '@cf/zai-org/glm-4.7-flash',
   qwq: '@cf/qwen/qwq-32b',
@@ -148,7 +148,7 @@ export function getRecommendedModel(
   switch (useCase) {
     case 'general':
     case 'tools':
-      return '@cf/moonshotai/kimi-k2.5'
+      return '@cf/moonshotai/kimi-k2.6'
     case 'fast':
       return '@cf/zai-org/glm-4.7-flash'
     case 'reasoning':

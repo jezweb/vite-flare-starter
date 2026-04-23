@@ -109,6 +109,35 @@ NODE_ENV=development
 # GOOGLE_PLACES_API_KEY=your-google-places-api-key
 
 # ============================================
+# Microsoft 365 Workspace (optional — Outlook / OneDrive / Calendar)
+# ============================================
+# Native Microsoft Graph integration — agent tools for Outlook mail,
+# OneDrive files, and the user's calendar (with optional Teams meeting
+# links). Parallels the Google Workspace module in pattern + scope.
+#
+# Setup:
+#   1. Visit https://entra.microsoft.com → App registrations → New registration
+#   2. Supported account types: "Accounts in any organizational directory
+#      and personal Microsoft accounts" (uses the /common endpoint)
+#   3. Redirect URI type: Web, value: https://YOUR_DOMAIN/api/microsoft-workspace/callback
+#   4. After creation: note the "Application (client) ID"
+#   5. Certificates & secrets → New client secret → copy the value
+#   6. API permissions → Add → Microsoft Graph → Delegated → tick these:
+#        - offline_access
+#        - openid, profile, email, User.Read
+#        - Mail.Read, Mail.Send
+#        - Files.Read, Files.ReadWrite
+#        - Calendars.ReadWrite
+#      Click "Grant admin consent" if you're an admin of the tenant.
+#
+# MICROSOFT_WORKSPACE_CLIENT_ID=your-azure-app-client-id
+# MICROSOFT_WORKSPACE_CLIENT_SECRET=your-azure-app-client-secret
+#
+# Optional: restrict to a single tenant (otherwise `common` = work + personal
+# accounts, `organizations` = work only, `consumers` = personal only):
+# MICROSOFT_WORKSPACE_TENANT=common
+
+# ============================================
 # MCP Servers (optional)
 # ============================================
 # Auto-discovered via the MCP_<ID>_URL / _TOKEN / _TRANSPORT convention.

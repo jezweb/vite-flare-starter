@@ -8,7 +8,7 @@
  * import { resolveModel, DEFAULT_MODEL } from '@/server/lib/ai'
  * import { streamText } from 'ai'
  *
- * const model = resolveModel(c.env, '@cf/moonshotai/kimi-k2.5') // Workers AI
+ * const model = resolveModel(c.env, '@cf/moonshotai/kimi-k2.6') // Workers AI
  * const model = resolveModel(c.env, 'claude-sonnet-4-6')         // Anthropic
  * const model = resolveModel(c.env, 'gpt-4o')                    // OpenAI
  *
