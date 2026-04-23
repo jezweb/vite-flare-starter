@@ -101,6 +101,13 @@ export const docsGetRenderer: ToolRenderer = {
     return (
       <div className="space-y-2 text-xs">
         <div className="text-sm font-semibold">{o.title}</div>
+        {o.degraded && (
+          <div className="rounded-md bg-amber-500/10 dark:bg-amber-500/15 p-2 text-[11px] text-amber-700 dark:text-amber-400">
+            Heading structure lost — content fetched via Drive export fallback.
+            Ask the user to reconnect with the `documents.readonly` scope for
+            a richer read.
+          </div>
+        )}
         <pre className="rounded-md bg-muted/50 p-3 whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-foreground/90 max-h-80 overflow-y-auto">
           {preview}
         </pre>

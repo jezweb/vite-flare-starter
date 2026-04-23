@@ -79,7 +79,19 @@ async function requireActiveToken(
     }
   }
   if (row.status !== 'active') return { error: RECONNECT_HINT }
-  if (!row.scope.includes(requiredScope)) {
+  // Scope strings are space-separated full URIs. Match exactly on the
+  // short suffix (everything after `/auth/`) so `gmail.readonly` doesn't
+  // spuriously match `gmail.readonly.something` if Google ever ships
+  // a super-set scope with that prefix.
+  const grantedScopes = row.scope
+    .split(/\s+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((s) => {
+      const idx = s.indexOf('/auth/')
+      return idx >= 0 ? s.slice(idx + '/auth/'.length) : s
+    })
+  if (!grantedScopes.includes(requiredScope)) {
     return {
       error: `This action needs the "${requiredScope}" scope which was not granted. Ask the user to reconnect with this scope.`,
     }
@@ -212,17 +224,7 @@ export const gmailSendDefinition: ToolDefinition<GmailSendInput, GmailSendOutput
     const auth = await requireActiveToken(ctx, 'gmail.send')
     if ('error' in auth) return auth
 
-    const headers = [
-      `To: ${to}`,
-      cc && cc.length > 0 ? `Cc: ${cc.join(', ')}` : '',
-      `Subject: ${subject}`,
-      'Content-Type: text/plain; charset=UTF-8',
-      '',
-      body,
-    ]
-      .filter(Boolean)
-      .join('\r\n')
-    const raw = base64UrlEncode(headers)
+    const raw = base64UrlEncode(buildMimeMessage({ to, subject, body, cc }))
 
     const resp = await fetch(
       'https://gmail.googleapis.com/gmail/v1/users/me/messages/send',
@@ -713,18 +715,7 @@ export const gmailDraftDefinition: ToolDefinition<GmailDraftInput, GmailDraftOut
     const auth = await requireActiveToken(ctx, 'gmail.compose')
     if ('error' in auth) return auth
 
-    const headers = [
-      `To: ${to}`,
-      cc && cc.length > 0 ? `Cc: ${cc.join(', ')}` : '',
-      bcc && bcc.length > 0 ? `Bcc: ${bcc.join(', ')}` : '',
-      `Subject: ${subject}`,
-      'Content-Type: text/plain; charset=UTF-8',
-      '',
-      body,
-    ]
-      .filter(Boolean)
-      .join('\r\n')
-    const raw = base64UrlEncode(headers)
+    const raw = base64UrlEncode(buildMimeMessage({ to, subject, body, cc, bcc }))
 
     const resp = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/drafts', {
       method: 'POST',
@@ -795,7 +786,9 @@ export const gmailReplyDefinition: ToolDefinition<GmailReplyInput, GmailReplyOut
     const auth = await requireActiveToken(ctx, 'gmail.send')
     if ('error' in auth) return auth
 
-    // 1. Fetch the original message's headers to derive reply target
+    // 1. Fetch the original message's headers + user profile in parallel.
+    //    The profile lookup gives us the user's own email so we can strip
+    //    it from the replyAll cc list (Gmail does NOT dedupe self-addresses).
     const metaUrl = new URL(
       `https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(messageId)}`,
     )
@@ -803,12 +796,21 @@ export const gmailReplyDefinition: ToolDefinition<GmailReplyInput, GmailReplyOut
     for (const h of ['From', 'To', 'Cc', 'Subject', 'Message-ID', 'References', 'In-Reply-To']) {
       metaUrl.searchParams.append('metadataHeaders', h)
     }
-    const metaResp = await fetch(metaUrl, { headers: { Authorization: `Bearer ${auth.token}` } })
+    const [metaResp, profileResp] = await Promise.all([
+      fetch(metaUrl, { headers: { Authorization: `Bearer ${auth.token}` } }),
+      fetch('https://gmail.googleapis.com/gmail/v1/users/me/profile', {
+        headers: { Authorization: `Bearer ${auth.token}` },
+      }),
+    ])
     if (!metaResp.ok) return { error: `Reply lookup failed: ${metaResp.status}` }
     const meta = (await metaResp.json()) as {
       threadId?: string
       payload?: { headers?: Array<{ name: string; value: string }> }
     }
+    const profile = profileResp.ok
+      ? ((await profileResp.json()) as { emailAddress?: string })
+      : undefined
+    const selfEmail = profile?.emailAddress?.toLowerCase() ?? ''
     const hdr = (name: string) =>
       meta.payload?.headers?.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value
 
@@ -820,30 +822,31 @@ export const gmailReplyDefinition: ToolDefinition<GmailReplyInput, GmailReplyOut
     const origRefs = hdr('References') ?? ''
 
     const to = origFrom
-    // replyAll: include the Original To and Cc minus our own address.
-    // We can't know the user's primary email cheaply here, so we include all
-    // and let Gmail dedupe (it does).
-    const cc = replyAll
-      ? [origTo, origCc].filter(Boolean).join(', ')
-      : ''
+    // replyAll: include the original To + Cc, but strip the user's own
+    // email so we don't reply-all to ourselves. Gmail does NOT dedupe
+    // self-addresses on send.
+    const ccList = replyAll
+      ? splitAddresses([origTo, origCc].filter(Boolean).join(', ')).filter(
+          (addr) => !selfEmail || !addressEquals(addr, selfEmail),
+        )
+      : []
     const subject = /^re:/i.test(origSubject) ? origSubject : `Re: ${origSubject}`
     const references = origRefs
       ? `${origRefs} ${origMessageIdHeader}`.trim()
       : origMessageIdHeader
 
-    const headers = [
-      `To: ${to}`,
-      cc ? `Cc: ${cc}` : '',
-      `Subject: ${subject}`,
-      origMessageIdHeader ? `In-Reply-To: ${origMessageIdHeader}` : '',
-      references ? `References: ${references}` : '',
-      'Content-Type: text/plain; charset=UTF-8',
-      '',
-      body,
-    ]
-      .filter(Boolean)
-      .join('\r\n')
-    const raw = base64UrlEncode(headers)
+    const extraHeaders: string[] = []
+    if (origMessageIdHeader) extraHeaders.push(`In-Reply-To: ${origMessageIdHeader}`)
+    if (references) extraHeaders.push(`References: ${references}`)
+    const raw = base64UrlEncode(
+      buildMimeMessage({
+        to,
+        subject,
+        body,
+        cc: ccList.length > 0 ? ccList : undefined,
+        extraHeaders,
+      }),
+    )
 
     const resp = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
       method: 'POST',
@@ -1042,6 +1045,15 @@ const CalendarFindFreeSlotInput = z.object({
     })
     .optional()
     .describe('Local hour window, inclusive start / exclusive end. Default 9-17.'),
+  /**
+   * IANA timezone for working-hours interpretation. Required — without a
+   * timezone, "9-17 local" is ambiguous and the Worker defaults to UTC
+   * (meaning a Sydney user would get slots in the middle of the night).
+   * Pass the user's current timezone (e.g. "Australia/Sydney",
+   * "America/Los_Angeles"). Defaults to Australia/Sydney which matches
+   * the starter's agent prompt context.
+   */
+  timezone: z.string().default('Australia/Sydney').optional(),
   candidates: z.number().int().min(1).max(10).default(5).optional(),
   calendarIds: z
     .array(z.string())
@@ -1083,6 +1095,7 @@ export const calendarFindFreeSlotDefinition: ToolDefinition<
       earliest,
       latest,
       workingHours,
+      timezone = 'Australia/Sydney',
       candidates = 5,
       calendarIds = ['primary'],
     },
@@ -1095,6 +1108,24 @@ export const calendarFindFreeSlotDefinition: ToolDefinition<
     const timeMax = new Date(latest)
     if (!isFinite(+timeMin) || !isFinite(+timeMax) || timeMin >= timeMax) {
       return { error: 'earliest must be before latest and both must be valid ISO timestamps' }
+    }
+
+    // Validate the timezone — Intl throws RangeError on unknown IANA names.
+    // Better to return a friendly message than crash the loop below.
+    let getLocalHour: (d: Date) => number
+    try {
+      const fmt = new Intl.DateTimeFormat('en-GB', {
+        timeZone: timezone,
+        hour: '2-digit',
+        hour12: false,
+      })
+      getLocalHour = (d) => Number.parseInt(fmt.format(d), 10)
+      // Sanity-check the formatter — some browsers return weird strings
+      if (!Number.isFinite(getLocalHour(new Date()))) {
+        return { error: `Invalid timezone: ${timezone}` }
+      }
+    } catch {
+      return { error: `Invalid timezone: ${timezone}` }
     }
 
     const fbResp = await fetch('https://www.googleapis.com/calendar/v3/freeBusy', {
@@ -1137,10 +1168,16 @@ export const calendarFindFreeSlotDefinition: ToolDefinition<
     while (cursor + slotMs <= timeMax.getTime() && slots.length < candidates) {
       const startDate = new Date(cursor)
       const endDate = new Date(cursor + slotMs)
-      const hour = startDate.getHours()
+      const startHour = getLocalHour(startDate)
+      const endHour = getLocalHour(endDate)
 
-      // Enforce working hours on local timezone
-      if (hour < whStart || hour + durationMinutes / 60 > whEnd) {
+      // Enforce working hours on the requested timezone. A slot is
+      // admissible iff both its START and END fall inside [whStart, whEnd).
+      // (If a slot crosses midnight this also correctly rejects it since
+      // endHour will be smaller than startHour.)
+      const startOk = startHour >= whStart && startHour < whEnd
+      const endOk = endHour > whStart && endHour <= whEnd
+      if (!startOk || !endOk || endHour < startHour) {
         cursor += step
         continue
       }
@@ -1453,6 +1490,12 @@ const DocsGetOutput = z.union([
     title: z.string(),
     content: z.string().describe('Plain text, with `# heading` / `## heading` markers preserved'),
     revisionId: z.string().optional(),
+    /**
+     * True when the content was retrieved via Drive export (plain text fallback)
+     * because the Docs API scope wasn't granted. In that case heading structure
+     * is lost — the model should caveat any "the document has N sections" claims.
+     */
+    degraded: z.boolean().optional(),
   }),
   z.object({ error: z.string() }),
 ])
@@ -1766,7 +1809,11 @@ export const sheetsReadRangeDefinition: ToolDefinition<SheetsReadRangeInput, She
 
 const SheetsAppendRowInput = z.object({
   spreadsheetId: z.string(),
-  range: z.string().describe("A1 of the tab to append to — e.g. 'Sheet1' or 'Sheet1!A:A'. Google finds the first empty row."),
+  range: z
+    .string()
+    .describe(
+      "A1 of the target table, e.g. 'Sheet1' or 'Sheet1!A:D'. Google scans this range to find the 'logical table' (trailing empty rows are ignored) and inserts new rows AFTER that table, pushing any data in unrelated rows below down one row per appended row.",
+    ),
   rows: z
     .array(z.array(z.union([z.string(), z.number(), z.boolean()])))
     .min(1)
@@ -2005,7 +2052,21 @@ export const driveGetFileDefinition: ToolDefinition<DriveGetFileInput, DriveGetF
       }
     }
 
-    // 3. Fetch content
+    // Refuse oversized text files BEFORE buffering into a Worker heap.
+    // Workers have 128 MB RAM shared with WASM, and the model doesn't
+    // need a 10 MB CSV inline — point the agent at the webViewLink.
+    const MAX_BYTES = 512_000
+    if (!isGoogleDoc && base.sizeBytes != null && base.sizeBytes > MAX_BYTES) {
+      return {
+        ...base,
+        notSupported: true,
+        notSupportedReason: `File is ${(base.sizeBytes / 1024).toFixed(0)} KB — too large for inline read. Cap is ${MAX_BYTES / 1024} KB. Open in Drive for the full file.`,
+      }
+    }
+
+    // 3. Fetch content — stream a bounded number of bytes even for
+    // text files where Content-Length wasn't reported, so a misreported
+    // size can't surprise us with a heap blowout.
     if (isGoogleDoc) {
       const exportUrl = new URL(
         `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}/export`,
@@ -2013,7 +2074,7 @@ export const driveGetFileDefinition: ToolDefinition<DriveGetFileInput, DriveGetF
       exportUrl.searchParams.set('mimeType', 'text/plain')
       const resp = await fetch(exportUrl, { headers: { Authorization: `Bearer ${auth.token}` } })
       if (!resp.ok) return { error: `Drive export failed: ${resp.status}` }
-      const content = await resp.text()
+      const content = await readCappedText(resp, MAX_BYTES)
       return { ...base, content }
     } else {
       const getUrl = new URL(
@@ -2022,10 +2083,8 @@ export const driveGetFileDefinition: ToolDefinition<DriveGetFileInput, DriveGetF
       getUrl.searchParams.set('alt', 'media')
       const resp = await fetch(getUrl, { headers: { Authorization: `Bearer ${auth.token}` } })
       if (!resp.ok) return { error: `Drive get failed: ${resp.status}` }
-      const content = await resp.text()
-      // Cap to 500KB text to avoid context blowouts
-      const capped = content.length > 500_000 ? content.slice(0, 500_000) + '\n[...truncated]' : content
-      return { ...base, content: capped }
+      const content = await readCappedText(resp, MAX_BYTES)
+      return { ...base, content }
     }
   },
   render: {
@@ -2342,11 +2401,117 @@ export const googleWorkspaceDefinitions = [
 
 // ─── shared helpers ──────────────────────────────────────────────
 
+/**
+ * Read an HTTP response body as text, stopping after `maxBytes` have been
+ * buffered. Appends a `[...truncated]` marker if the stream was cut short.
+ * Prevents a misreported Content-Length from letting a 50 MB file
+ * blow past the 128 MB Worker heap limit.
+ */
+async function readCappedText(resp: Response, maxBytes: number): Promise<string> {
+  if (!resp.body) return await resp.text()
+  const reader = resp.body.getReader()
+  const decoder = new TextDecoder('utf-8', { fatal: false })
+  const chunks: string[] = []
+  let bytesRead = 0
+  let truncated = false
+  try {
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const { value, done } = await reader.read()
+      if (done) break
+      if (value) {
+        if (bytesRead + value.byteLength > maxBytes) {
+          const room = Math.max(0, maxBytes - bytesRead)
+          if (room > 0) chunks.push(decoder.decode(value.subarray(0, room), { stream: true }))
+          truncated = true
+          break
+        }
+        bytesRead += value.byteLength
+        chunks.push(decoder.decode(value, { stream: true }))
+      }
+    }
+    chunks.push(decoder.decode())
+  } finally {
+    try {
+      await reader.cancel()
+    } catch {
+      // noop — reader may already be closed
+    }
+  }
+  return chunks.join('') + (truncated ? '\n[...truncated]' : '')
+}
+
 function base64UrlEncode(str: string): string {
   const bytes = new TextEncoder().encode(str)
   let bin = ''
   for (const b of bytes) bin += String.fromCharCode(b)
   return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+/**
+ * Build an RFC 5322-compliant MIME message. Critical: the blank line
+ * between headers and body must survive — earlier implementations used
+ * `.filter(Boolean)` on an array that contained the blank separator,
+ * which dropped it whenever cc/bcc were empty and produced a malformed
+ * message whose body was treated as a header by strict parsers.
+ */
+interface MimeMessageInput {
+  to: string
+  subject: string
+  body: string
+  cc?: string[]
+  bcc?: string[]
+  extraHeaders?: string[]
+}
+
+/**
+ * Split a comma-separated address header value into individual addresses,
+ * respecting that "Name, With Comma <x@y>" contains a comma inside the
+ * display name. Pragmatic parse — good enough for headers we control
+ * or that come from Google.
+ */
+function splitAddresses(raw: string): string[] {
+  if (!raw) return []
+  const out: string[] = []
+  let depth = 0
+  let buf = ''
+  for (const ch of raw) {
+    if (ch === '<') depth++
+    else if (ch === '>') depth = Math.max(0, depth - 1)
+    if (ch === ',' && depth === 0) {
+      const trimmed = buf.trim()
+      if (trimmed) out.push(trimmed)
+      buf = ''
+    } else {
+      buf += ch
+    }
+  }
+  const last = buf.trim()
+  if (last) out.push(last)
+  return out
+}
+
+/**
+ * Case-insensitive comparison of an RFC 5322 address (optionally
+ * display-name-wrapped) against a bare email address.
+ */
+function addressEquals(addr: string, email: string): boolean {
+  const m = addr.match(/<([^>]+)>/)
+  const extracted = (m && m[1] ? m[1] : addr).trim().toLowerCase()
+  return extracted === email.toLowerCase()
+}
+
+function buildMimeMessage({ to, subject, body, cc, bcc, extraHeaders }: MimeMessageInput): string {
+  const headerLines: string[] = [`To: ${to}`]
+  if (cc && cc.length > 0) headerLines.push(`Cc: ${cc.join(', ')}`)
+  if (bcc && bcc.length > 0) headerLines.push(`Bcc: ${bcc.join(', ')}`)
+  headerLines.push(`Subject: ${subject}`)
+  if (extraHeaders && extraHeaders.length > 0) {
+    for (const h of extraHeaders) if (h) headerLines.push(h)
+  }
+  headerLines.push('Content-Type: text/plain; charset=UTF-8')
+  // Exactly one blank line separates headers from body, per RFC 5322
+  return headerLines.join('\r\n') + '\r\n\r\n' + body
 }
 
 function truncate(s: string, n: number): string {
@@ -2553,6 +2718,7 @@ async function readDocViaDriveExport(
     docId,
     title: meta?.name ?? '(untitled)',
     content,
+    degraded: true,
   }
 }
 
@@ -2581,59 +2747,45 @@ async function appendToGoogleDoc(
   // AT endIndex-1 puts us just before the implicit terminator.
   const insertAt = Math.max(1, (lastElement?.endIndex ?? 2) - 1)
 
-  // Prepare the text block: ensure it starts with a newline so we don't
-  // merge into the last existing paragraph.
-  const textBlock = (content.endsWith('\n') ? content : content + '\n')
-  const fullText = '\n' + textBlock
-
-  // Build the insert request + heading style updates.
-  const requests: Array<Record<string, unknown>> = [
-    {
-      insertText: {
-        location: { index: insertAt },
-        text: fullText,
-      },
-    },
-  ]
-
-  // Walk the lines, computing absolute (startIndex, endIndex) for each
-  // heading line, so we can apply the right named style.
-  let cursor = insertAt + 1 // +1 for the leading newline we added
-  for (const line of textBlock.split('\n')) {
-    const lineLen = line.length + 1 // +1 for the trailing newline
+  // Strip markdown heading prefixes BEFORE inserting and compute the
+  // style request ranges against the stripped text. This avoids a hairy
+  // bug where updateParagraphStyle + deleteContentRange requests had
+  // indices that shifted under each other's effects — multi-heading
+  // appends styled the wrong ranges or rejected outright.
+  //
+  // The heading lines below use the stripped text; the agent just needs
+  // to see the heading styled in Docs after the call.
+  const rawLines = (content.endsWith('\n') ? content : content + '\n').split('\n')
+  const processed: Array<{ text: string; heading: string | null }> = rawLines.map((line) => {
     const heading = detectHeading(line)
-    if (heading) {
-      requests.push({
+    if (!heading) return { text: line, heading: null }
+    return { text: line.slice(heading.prefixLen), heading: heading.style }
+  })
+
+  // Leading newline so we don't merge into the last existing paragraph.
+  const strippedText =
+    '\n' + processed.map((p) => p.text).join('\n')
+
+  // Walk the stripped text to compute each heading paragraph's range in
+  // post-insert coordinates. cursor starts at insertAt + 1 (past the
+  // leading newline we added).
+  let cursor = insertAt + 1
+  const styleRequests: Array<Record<string, unknown>> = []
+  for (const p of processed) {
+    const lineLen = p.text.length + 1 // +1 for the trailing newline
+    if (p.heading) {
+      styleRequests.push({
         updateParagraphStyle: {
-          range: { startIndex: cursor, endIndex: cursor + line.length + 1 },
-          paragraphStyle: { namedStyleType: heading.style },
+          range: { startIndex: cursor, endIndex: cursor + lineLen },
+          paragraphStyle: { namedStyleType: p.heading },
           fields: 'namedStyleType',
-        },
-      })
-      // Strip the `#` prefix from the inserted text (replace with same char count kept)
-      requests.push({
-        deleteContentRange: {
-          range: { startIndex: cursor, endIndex: cursor + heading.prefixLen },
         },
       })
     }
     cursor += lineLen
   }
 
-  // Execute batchUpdate. When we deleteContentRange, subsequent indices
-  // shift — Google handles that if the deletions are in REVERSE order.
-  // Simplest correct approach: do insertions first in one call, then
-  // do heading styles + deletions in a SECOND call where we re-read
-  // the now-inserted content.
-  const insertOnly = requests.slice(0, 1)
-  const styleOnly = requests
-    .slice(1)
-    .sort((a, b) => {
-      const ai = getRequestIndex(a)
-      const bi = getRequestIndex(b)
-      return bi - ai // reverse so deletions don't shift each other
-    })
-
+  // Phase 1: insert the stripped text (no prefixes left to delete).
   const applyInsert = await fetch(
     `https://docs.googleapis.com/v1/documents/${encodeURIComponent(docId)}:batchUpdate`,
     {
@@ -2642,14 +2794,19 @@ async function appendToGoogleDoc(
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ requests: insertOnly }),
+      body: JSON.stringify({
+        requests: [{ insertText: { location: { index: insertAt }, text: strippedText } }],
+      }),
     },
   )
   if (!applyInsert.ok) {
     const errBody = await applyInsert.text()
     return { error: `Docs append insert failed: ${applyInsert.status} ${errBody.slice(0, 200)}` }
   }
-  if (styleOnly.length > 0) {
+
+  // Phase 2: apply heading styles. updateParagraphStyle never shifts
+  // indices so they can run in any order against the post-insert state.
+  if (styleRequests.length > 0) {
     const applyStyle = await fetch(
       `https://docs.googleapis.com/v1/documents/${encodeURIComponent(docId)}:batchUpdate`,
       {
@@ -2658,7 +2815,7 @@ async function appendToGoogleDoc(
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ requests: styleOnly }),
+        body: JSON.stringify({ requests: styleRequests }),
       },
     )
     if (!applyStyle.ok) {
@@ -2674,14 +2831,6 @@ function detectHeading(line: string): { style: string; prefixLen: number } | nul
   if (line.startsWith('## ')) return { style: 'HEADING_2', prefixLen: 3 }
   if (line.startsWith('# ')) return { style: 'HEADING_1', prefixLen: 2 }
   return null
-}
-
-function getRequestIndex(req: Record<string, unknown>): number {
-  const upd = req['updateParagraphStyle'] as { range?: { startIndex?: number } } | undefined
-  if (upd?.range?.startIndex != null) return upd.range.startIndex
-  const del = req['deleteContentRange'] as { range?: { startIndex?: number } } | undefined
-  if (del?.range?.startIndex != null) return del.range.startIndex
-  return 0
 }
 
 function resolveRange(range: CalendarRange, now: Date): [Date, Date] {
