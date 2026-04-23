@@ -32,7 +32,7 @@ export const gmailSearchRenderer: ToolRenderer = {
   },
   expanded: ({ output, input }) => {
     const o = output as GmailSearchOutput | undefined
-    const i = input as { query?: string } | undefined
+    const i = input as { query?: string; naturalQuery?: string } | undefined
     if (!o) return null
     if ('error' in o) {
       return (
@@ -42,12 +42,22 @@ export const gmailSearchRenderer: ToolRenderer = {
       )
     }
     const messages = o.messages
+    const translatedFrom = o.translatedFrom ?? i?.naturalQuery
+    const shownQuery = o.query ?? i?.query
     return (
       <div className="space-y-2">
-        {i?.query && (
+        {translatedFrom && (
+          <div className="text-xs">
+            <span className="text-muted-foreground font-medium">From:</span>{' '}
+            <span className="italic">{translatedFrom}</span>
+          </div>
+        )}
+        {shownQuery && (
           <div className="text-xs text-muted-foreground">
-            <span className="font-medium">Query:</span>{' '}
-            <span className="font-mono">{i.query}</span>
+            <span className="font-medium">
+              {translatedFrom ? 'Translated to:' : 'Query:'}
+            </span>{' '}
+            <span className="font-mono">{shownQuery}</span>
           </div>
         )}
         {messages.length === 0 ? (

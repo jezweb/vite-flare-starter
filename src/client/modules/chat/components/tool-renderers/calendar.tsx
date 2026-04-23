@@ -181,7 +181,7 @@ export const calendarListEventsRenderer: ToolRenderer = {
   },
   expanded: ({ output, input }) => {
     const o = output as CalendarListEventsOutput | undefined
-    const i = input as { range?: string; query?: string } | undefined
+    const i = input as { range?: string; query?: string; naturalQuery?: string } | undefined
     if (!o) return null
     if ('error' in o) {
       return (
@@ -190,15 +190,27 @@ export const calendarListEventsRenderer: ToolRenderer = {
         </div>
       )
     }
+    const translatedFrom = o.translatedFrom ?? i?.naturalQuery
     if (o.events.length === 0) {
       return (
         <div className="text-xs text-muted-foreground italic">
           No events in this window{i?.query ? ` for "${i.query}"` : ''}.
+          {translatedFrom && (
+            <span className="block mt-1 not-italic text-[11px]">
+              Translated from: <span className="italic">{translatedFrom}</span>
+            </span>
+          )}
         </div>
       )
     }
     return (
       <div className="space-y-2">
+        {translatedFrom && (
+          <div className="text-[11px]">
+            <span className="text-muted-foreground font-medium">From:</span>{' '}
+            <span className="italic">{translatedFrom}</span>
+          </div>
+        )}
         {(i?.range || i?.query) && (
           <div className="text-[11px] text-muted-foreground">
             {i?.range && <span className="mr-3">Range: <span className="font-mono">{i.range}</span></span>}

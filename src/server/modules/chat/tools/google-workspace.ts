@@ -107,10 +107,27 @@ const gwsAvailable = (ctx: AgentContext) => isGoogleWorkspaceEnabled(gwsEnv(ctx)
 
 // ─── gmail_search ────────────────────────────────────────────────
 
-const GmailSearchInput = z.object({
-  query: z.string().min(1).max(500).describe('Gmail search query'),
-  limit: z.number().int().min(1).max(50).default(10).optional(),
-})
+const GmailSearchInput = z
+  .object({
+    query: z
+      .string()
+      .min(1)
+      .max(500)
+      .optional()
+      .describe('Gmail search query in operator syntax. Prefer this when you can construct it yourself.'),
+    naturalQuery: z
+      .string()
+      .min(1)
+      .max(500)
+      .optional()
+      .describe(
+        'Free-form English — "emails from nick last week with attachments". Use only when you have free-form user intent and would otherwise have to guess the Gmail operator syntax. Server translates via Nemotron 3 (costs ~3-8s of extra latency per call).',
+      ),
+    limit: z.number().int().min(1).max(50).default(10).optional(),
+  })
+  .refine((i) => !!i.query || !!i.naturalQuery, {
+    message: 'Provide either `query` or `naturalQuery`',
+  })
 
 const GmailMessage = z.object({
   id: z.string(),
@@ -123,6 +140,7 @@ const GmailMessage = z.object({
 const GmailSearchOutput = z.union([
   z.object({
     query: z.string(),
+    translatedFrom: z.string().optional().describe('Original naturalQuery when the server translated it'),
     count: z.number(),
     messages: z.array(GmailMessage),
   }),
@@ -135,16 +153,34 @@ export type GmailSearchOutput = z.infer<typeof GmailSearchOutput>
 export const gmailSearchDefinition: ToolDefinition<GmailSearchInput, GmailSearchOutput> = {
   name: 'gmail_search',
   description:
-    "Search the user's Gmail. Uses Gmail search syntax (e.g. 'from:jez@jezweb.net after:2026/04/01'). Returns message subject, from, date, snippet — no full body (use gmail_read for that).",
+    "Search the user's Gmail. Returns message subject, from, date, snippet — no full body (use gmail_get_message for that). Pass `query` in Gmail operator syntax (e.g. 'from:jez@jezweb.net after:2026/04/01') when you can, or `naturalQuery` in free-form English when translating user intent is clearer.",
   inputSchema: GmailSearchInput,
   outputSchema: GmailSearchOutput,
   isAvailable: gwsAvailable,
-  execute: async ({ query, limit = 10 }, ctx) => {
+  execute: async ({ query, naturalQuery, limit = 10 }, ctx) => {
     const auth = await requireActiveToken(ctx, 'gmail.readonly')
     if ('error' in auth) return auth
 
+    // Translate naturalQuery when we don't already have a structured query.
+    // If both are provided, structured wins (silently — avoids surprising
+    // behaviour where a user-provided operator gets "helpfully" replaced).
+    let translatedFrom: string | undefined
+    let effectiveQuery = query
+    if (!effectiveQuery && naturalQuery) {
+      const { translateGmailQuery } = await import('./google-workspace-nlp')
+      const result = await translateGmailQuery(
+        gwsEnv(ctx) as unknown as { AI: Ai },
+        naturalQuery,
+      )
+      effectiveQuery = result.query
+      translatedFrom = naturalQuery
+    }
+    if (!effectiveQuery) {
+      return { error: 'Internal error: no query after translation' }
+    }
+
     const listUrl = new URL('https://gmail.googleapis.com/gmail/v1/users/me/messages')
-    listUrl.searchParams.set('q', query)
+    listUrl.searchParams.set('q', effectiveQuery)
     listUrl.searchParams.set('maxResults', String(limit))
     const listResp = await fetch(listUrl, {
       headers: { Authorization: `Bearer ${auth.token}` },
@@ -177,7 +213,12 @@ export const gmailSearchDefinition: ToolDefinition<GmailSearchInput, GmailSearch
       }),
     )
     const filtered = messages.filter((m): m is NonNullable<typeof m> => m != null)
-    return { query, count: filtered.length, messages: filtered }
+    return {
+      query: effectiveQuery,
+      translatedFrom,
+      count: filtered.length,
+      messages: filtered,
+    }
   },
   render: {
     icon: Mail,
@@ -884,11 +925,24 @@ type CalendarRange = (typeof CALENDAR_RANGES)[number]
 
 const CalendarListEventsInput = z.object({
   range: z.enum(CALENDAR_RANGES).optional().describe('Preset date window. Mutually exclusive with start/end.'),
-  start: z.string().optional().describe('ISO 8601 start. Required if range is not set.'),
-  end: z.string().optional().describe('ISO 8601 end. Required if range is not set.'),
+  start: z.string().optional().describe('ISO 8601 start. Required if range is not set AND naturalQuery not provided.'),
+  end: z.string().optional().describe('ISO 8601 end. Required if range is not set AND naturalQuery not provided.'),
   limit: z.number().int().min(1).max(100).default(25).optional(),
   calendarId: z.string().default('primary').optional(),
   query: z.string().max(200).optional().describe('Free-text search within event summary/description'),
+  naturalQuery: z
+    .string()
+    .min(1)
+    .max(300)
+    .optional()
+    .describe(
+      'Free-form English — "meetings with Sarah this week". Server translates via Nemotron 3 into range/start/end/query. Use when the user intent is free-form and structured fields would require guessing. Structured fields (range, start, end, query) take precedence if BOTH are provided.',
+    ),
+  timezone: z
+    .string()
+    .default('Australia/Sydney')
+    .optional()
+    .describe('IANA timezone for naturalQuery interpretation. Default Australia/Sydney.'),
 })
 
 const CalendarListEventsOutput = z.union([
@@ -897,6 +951,7 @@ const CalendarListEventsOutput = z.union([
     rangeStart: z.string(),
     rangeEnd: z.string(),
     events: z.array(CalendarEvent),
+    translatedFrom: z.string().optional(),
   }),
   z.object({ error: z.string() }),
 ])
@@ -910,23 +965,62 @@ export const calendarListEventsDefinition: ToolDefinition<
 > = {
   name: 'calendar_list_events',
   description:
-    "List calendar events in a specific range. Use `range` presets (today, tomorrow, thisWeek, nextWeek, thisMonth) for natural date windows, or pass explicit start/end ISO timestamps. Falls back to the primary calendar unless calendarId is given.",
+    "List calendar events. Three ways to specify the window: `range` preset (today/tomorrow/thisWeek/nextWeek/thisMonth), explicit `start`/`end` ISO timestamps, OR `naturalQuery` free-form English that the server translates via Nemotron 3. Falls back to the primary calendar unless calendarId is given.",
   inputSchema: CalendarListEventsInput,
   outputSchema: CalendarListEventsOutput,
   isAvailable: gwsAvailable,
-  execute: async ({ range, start, end, limit = 25, calendarId = 'primary', query }, ctx) => {
+  execute: async (
+    {
+      range,
+      start,
+      end,
+      limit = 25,
+      calendarId = 'primary',
+      query,
+      naturalQuery,
+      timezone = 'Australia/Sydney',
+    },
+    ctx,
+  ) => {
     const auth = await requireActiveToken(ctx, 'calendar.events')
     if ('error' in auth) return auth
+
+    // Translate naturalQuery only to fill gaps — caller-supplied structured
+    // fields always win. That way a user can still add "quarterly planning"
+    // as query text on top of a `range: thisMonth`.
+    let translatedFrom: string | undefined
+    let effectiveRange = range
+    let effectiveStart = start
+    let effectiveEnd = end
+    let effectiveQuery = query
+    if (naturalQuery && !range && !start && !end && !query) {
+      const { translateCalendarListQuery } = await import('./google-workspace-nlp')
+      const result = await translateCalendarListQuery(
+        gwsEnv(ctx) as unknown as { AI: Ai },
+        naturalQuery,
+        timezone,
+      )
+      effectiveRange = result.fields.range ?? effectiveRange
+      effectiveStart = result.fields.start ?? effectiveStart
+      effectiveEnd = result.fields.end ?? effectiveEnd
+      effectiveQuery = result.fields.query ?? effectiveQuery
+      translatedFrom = naturalQuery
+    }
 
     const now = new Date()
     let rangeStart: Date
     let rangeEnd: Date
-    if (range) {
-      ;[rangeStart, rangeEnd] = resolveRange(range, now)
+    if (effectiveRange) {
+      ;[rangeStart, rangeEnd] = resolveRange(effectiveRange, now)
+    } else if (effectiveStart && effectiveEnd) {
+      rangeStart = new Date(effectiveStart)
+      rangeEnd = new Date(effectiveEnd)
     } else {
-      if (!start || !end) return { error: 'Either `range` or both `start` and `end` are required.' }
-      rangeStart = new Date(start)
-      rangeEnd = new Date(end)
+      // No structured window and the translator didn't produce one —
+      // default to the next 14 days so the query still yields something
+      // useful instead of erroring.
+      rangeStart = now
+      rangeEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000)
     }
 
     const url = new URL(
@@ -937,7 +1031,7 @@ export const calendarListEventsDefinition: ToolDefinition<
     url.searchParams.set('maxResults', String(limit))
     url.searchParams.set('singleEvents', 'true')
     url.searchParams.set('orderBy', 'startTime')
-    if (query) url.searchParams.set('q', query)
+    if (effectiveQuery) url.searchParams.set('q', effectiveQuery)
     const resp = await fetch(url, { headers: { Authorization: `Bearer ${auth.token}` } })
     if (!resp.ok) return { error: `Calendar list failed: ${resp.status}` }
     const json = (await resp.json()) as { items?: GoogleCalendarApiEvent[] }
@@ -947,6 +1041,7 @@ export const calendarListEventsDefinition: ToolDefinition<
       rangeStart: rangeStart.toISOString(),
       rangeEnd: rangeEnd.toISOString(),
       events,
+      translatedFrom,
     }
   },
   render: {

@@ -710,6 +710,17 @@ Docs `docs_append` supports markdown-ish input: lines starting with `#`, `##`, o
 
 Sheets ranges use A1 notation (`Sheet1!A1:D20`, `Budget!A:A`). `valueInputOption: 'USER_ENTERED'` (default) parses formulas + dates the way the Sheets UI does; `RAW` stores the string verbatim.
 
+**Natural-language query translation** (`gmail_search`, `calendar_list_events`)
+
+Both tools accept an optional `naturalQuery` field alongside their structured inputs. When the model passes free-form English ("emails from Nick last week with attachments", "meetings with Sarah this week"), the server translates it to Gmail operator syntax or structured calendar fields via Nemotron 3 (`@cf/nvidia/nemotron-3-120b-a12b`) on Workers AI — see `src/server/modules/chat/tools/google-workspace-nlp.ts`.
+
+Rules:
+- Structured fields (`query`, `range`, `start`, `end`) ALWAYS win over `naturalQuery`. If both are passed, naturalQuery is ignored silently — avoids "the server helpfully rewrote my operator" surprise.
+- Translator output is echoed back as `translatedFrom` on the result so the renderer can show both "from: emails from nick last week" AND "translated to: from:nick after:2026/04/16". The user sees exactly what the server inferred.
+- 10-second timeout with graceful passthrough — translator errors fall back to using the original text as a fulltext query, so the tool still returns *something*. Failures land in Workers Logs as `event: "gmail_nlp_fallback"` or `calendar_nlp_fallback`.
+- Current date + user timezone are injected into the translator's system prompt so "last week" resolves correctly despite the Worker running in UTC.
+- Not wired on `calendar_create` — its structured fields are required and a single natural sentence misses too much to be a reliable replacement. Users can describe the event in chat and the main model constructs the structured call.
+
 ### Adding a new tool (canonical pattern — post-Phase 0)
 
 Every tool is a `ToolDefinition<Input, Output>` from `src/shared/agent/tool.ts`.
