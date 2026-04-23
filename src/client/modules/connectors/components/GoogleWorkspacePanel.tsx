@@ -7,12 +7,22 @@
  * - Connected: email + granted scopes + Disconnect
  * - Error state: "Reconnect needed — last error: …"
  */
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Loader2, Plug, CheckCircle2, AlertCircle, Trash2, Mail, FolderOpen, CalendarDays } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { apiClient } from '@/client/lib/api-client'
 import { toast } from 'sonner'
 
@@ -39,6 +49,9 @@ const SCOPE_LABELS: Record<string, { icon: typeof Mail; label: string }> = {
 
 export function GoogleWorkspacePanel() {
   const qc = useQueryClient()
+  // In-app disconnect confirmation — avoids native `confirm()` which
+  // blocks browser automation and isn't dismissible by extensions.
+  const [confirmOpen, setConfirmOpen] = useState(false)
 
   const { data, isLoading } = useQuery({
     queryKey: ['google-workspace', 'status'],
@@ -180,13 +193,16 @@ export function GoogleWorkspacePanel() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => {
-                    if (confirm('Disconnect Google Workspace? The AI will lose access to Gmail, Drive, and Calendar tools.')) {
-                      disconnect.mutate()
-                    }
+                  onClick={(e) => {
+                    // Stop any ancestor click-handler from also firing —
+                    // guards against accidental disconnect when the
+                    // click-target coordinates land near the trash icon.
+                    e.stopPropagation()
+                    setConfirmOpen(true)
                   }}
                   disabled={disconnect.isPending}
                   className="text-destructive hover:text-destructive"
+                  aria-label="Disconnect Google Workspace"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
@@ -214,6 +230,28 @@ export function GoogleWorkspacePanel() {
           </div>
         </div>
       </CardContent>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Disconnect Google Workspace?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The AI will lose access to Gmail, Drive, Calendar, Docs, Sheets, and Tasks tools
+              {data?.email ? ` for ${data.email}` : ''}.
+              You can reconnect any time — you'll be taken back to Google to re-authorise.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep connected</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => disconnect.mutate()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Disconnect
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   )
 }

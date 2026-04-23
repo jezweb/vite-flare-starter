@@ -25,6 +25,16 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { EmptyState } from '@/client/components/EmptyState'
 import { toast } from 'sonner'
 import {
@@ -176,6 +186,9 @@ function ConnectionCard({
 }) {
   const Icon = resolveIcon(catalog?.icon ?? 'Plug')
   const disconnect = useDisconnect()
+  // In-app disconnect confirmation — replaces native `confirm()` which
+  // blocks browser automation and can be dismissed accidentally.
+  const [confirmOpen, setConfirmOpen] = useState(false)
 
   return (
     <Card className="relative overflow-hidden">
@@ -210,19 +223,42 @@ function ConnectionCard({
             variant="ghost"
             size="sm"
             className="text-destructive hover:text-destructive"
-            onClick={() => {
-              if (confirm(`Disconnect ${connection.displayName}?`)) {
-                disconnect.mutate(connection.id, {
-                  onSuccess: () => toast.success('Disconnected'),
-                })
-              }
+            onClick={(e) => {
+              e.stopPropagation()
+              setConfirmOpen(true)
             }}
             disabled={disconnect.isPending}
+            aria-label={`Disconnect ${connection.displayName}`}
           >
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
       </CardContent>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Disconnect {connection.displayName}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The AI will lose access to this connector's tools. Tokens stored for this
+              connection will be removed. You can reconnect any time.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep connected</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() =>
+                disconnect.mutate(connection.id, {
+                  onSuccess: () => toast.success('Disconnected'),
+                })
+              }
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Disconnect
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   )
 }

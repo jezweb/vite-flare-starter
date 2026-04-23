@@ -45,6 +45,7 @@ import {
   sheetsWriteRangeRenderer,
 } from './sheets'
 import { webSearchRenderer } from './search'
+import { defaultRenderers } from './defaults'
 import { matchesRenderer, type ToolRenderer } from './_shared'
 
 export const TOOL_RENDERERS: ToolRenderer[] = [
@@ -82,6 +83,10 @@ export const TOOL_RENDERERS: ToolRenderer[] = [
   tasksCreateRenderer,
   // Search
   webSearchRenderer,
+  // Default renderers for tools without a custom expanded view — icon +
+  // displayName only, falls back to JSON body. Kept LAST so custom
+  // renderers above win. See defaults.tsx for the metadata table.
+  ...defaultRenderers,
 ]
 
 export function findRenderer(

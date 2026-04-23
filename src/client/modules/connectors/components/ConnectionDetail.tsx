@@ -12,6 +12,16 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import {
@@ -48,6 +58,7 @@ export function ConnectionDetail({
   const disconnect = useDisconnect()
 
   const [dirty, setDirty] = useState<Record<string, Policy>>({})
+  const [confirmOpen, setConfirmOpen] = useState(false)
   // Reset dirty buffer when the connection changes.
   useEffect(() => {
     setDirty({})
@@ -149,21 +160,42 @@ export function ConnectionDetail({
           <Button
             variant="ghost"
             className="text-destructive hover:text-destructive"
-            onClick={() => {
-              if (confirm(`Disconnect ${connection?.displayName}?`)) {
-                disconnect.mutate(connectionId, {
-                  onSuccess: () => {
-                    toast.success('Disconnected')
-                    onClose()
-                  },
-                })
-              }
-            }}
+            onClick={() => setConfirmOpen(true)}
             disabled={disconnect.isPending}
           >
             <Trash2 className="mr-2 h-4 w-4" />
             Disconnect
           </Button>
+
+          <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  Disconnect {connection?.displayName ?? 'connector'}?
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  The AI will lose access to this connector's tools. Stored tokens will be
+                  removed. You can reconnect any time.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Keep connected</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() =>
+                    disconnect.mutate(connectionId, {
+                      onSuccess: () => {
+                        toast.success('Disconnected')
+                        onClose()
+                      },
+                    })
+                  }
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Disconnect
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           <div className="flex items-center gap-2">
             <Button variant="ghost" onClick={onClose}>Close</Button>
             <Button

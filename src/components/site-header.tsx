@@ -8,24 +8,27 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Moon, Sun } from 'lucide-react'
-import { useTheme } from '@/client/components/theme-provider'
+import { useTheme, useResolvedMode } from '@/client/components/theme-provider'
 import { useSession } from '@/client/lib/auth'
 import { usePreferences, useUpdatePreferences } from '@/client/modules/settings/hooks/useSettings'
 import { NotificationBell } from '@/client/components/NotificationBell'
 import { features } from '@/shared/config/features'
 
 export function SiteHeader() {
-  const { theme, setTheme } = useTheme()
+  const { setTheme } = useTheme()
+  const resolvedMode = useResolvedMode()
   const { data: session } = useSession()
   const { data: preferences } = usePreferences()
   const updatePreferences = useUpdatePreferences()
 
   const toggleTheme = () => {
+    // Flip from what's currently rendered, not from the preference value —
+    // otherwise clicking while in 'system' mode feels random.
+    const newMode = resolvedMode === 'dark' ? 'light' : 'dark'
     if (session && preferences) {
-      const newMode = preferences.mode === 'dark' ? 'light' : 'dark'
       updatePreferences.mutate({ theme: preferences.theme, mode: newMode })
     } else {
-      setTheme(theme === 'dark' ? 'light' : 'dark')
+      setTheme(newMode)
     }
   }
 
@@ -44,10 +47,10 @@ export function SiteHeader() {
             variant="ghost"
             size="icon"
             onClick={toggleTheme}
-            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={resolvedMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label={resolvedMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
           >
-            {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            {resolvedMode === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             <span className="sr-only">Toggle theme</span>
           </Button>
         </div>

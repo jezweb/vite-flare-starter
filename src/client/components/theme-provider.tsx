@@ -79,3 +79,32 @@ export const useTheme = () => {
 
   return context
 }
+
+/**
+ * Returns the RESOLVED colour mode actually rendered in the DOM
+ * (`'dark'` or `'light'`) — never `'system'`. Use this for UI that
+ * needs to flip based on appearance (e.g. Moon/Sun icons, "Switch
+ * to light mode" labels).
+ *
+ * `useTheme().theme` is the user's *preference* and can be `'system'`;
+ * this hook watches `html.dark` class mutations so it stays in sync
+ * when `applyTheme` changes the DOM.
+ */
+export function useResolvedMode(): 'dark' | 'light' {
+  const [mode, setMode] = useState<'dark' | 'light'>(() =>
+    typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
+      ? 'dark'
+      : 'light'
+  )
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    const update = () => {
+      setMode(document.documentElement.classList.contains('dark') ? 'dark' : 'light')
+    }
+    update()
+    const observer = new MutationObserver(update)
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+    return () => observer.disconnect()
+  }, [])
+  return mode
+}

@@ -52,7 +52,7 @@ import { features } from '@/shared/config/features'
 import { apiClient } from '@/client/lib/api-client'
 import { InputTakeover, isTakeoverElement } from '../components/chat-ui/InputTakeover'
 import { hasUiMarker } from '../components/chat-ui/ChatUiElement'
-import { AudioRecorder } from '@/client/components/AudioRecorder'
+import { VoiceDictationButton } from '@/client/modules/chat/components/VoiceDictationButton'
 import { usePasteUpload } from '@/client/hooks/usePasteUpload'
 import { useSession } from '@/client/lib/auth'
 import { cn } from '@/lib/utils'
@@ -566,14 +566,11 @@ export function ChatPage() {
   )
   usePasteUpload({ onPaste: handlePastedFiles, accept: 'image/*', global: true, disabled: isLoading })
 
-  // Audio recording: sends the recorded blob as an attachment
-  const handleAudioRecording = useCallback(
-    async (blob: Blob) => {
-      const url = await toDataUrl(blob)
-      sendMessage({ text: 'Transcribe this audio recording.', files: [{ type: 'file', url, mediaType: blob.type }] })
-    },
-    [sendMessage, toDataUrl],
-  )
+  // Voice dictation — the mic button now streams STT directly into the
+  // input field via the voice DO (see VoiceDictationButton). The old
+  // upload-and-ask-to-transcribe flow is replaced; users wanting to drop
+  // an audio FILE for analysis can still attach via the paperclip menu,
+  // which routes through convertToMarkdown + transcribe_audio tool.
 
   // hasMessages gates the empty "Good evening" screen. We treat "streaming
   // with no messages yet" as "has messages" so the welcome state doesn't
@@ -930,7 +927,10 @@ export function ChatPage() {
               </div>
             </div>
           ) : (
-            <div className="flex-1 flex items-center justify-center px-4 py-6">
+            // items-start on mobile so the email chip + greeting never get
+            // clipped under the chat-panel header. Switch back to
+            // vertically centred at md+ where the column is tall enough.
+            <div className="flex-1 flex items-start md:items-center justify-center px-4 pt-10 pb-6 md:py-6">
               <div className="max-w-2xl w-full text-center space-y-6">
                 <EmptyStateBody
                   userName={session?.user?.name?.split(' ')[0]}
@@ -1069,7 +1069,10 @@ export function ChatPage() {
                               <PromptInputActionAddScreenCapture />
                             </PromptInputActionMenuContent>
                           </PromptInputActionMenu>
-                          <AudioRecorder compact onRecordingComplete={handleAudioRecording} />
+                          <VoiceDictationButton
+                            textareaRef={textareaRef}
+                            userId={session?.user?.id}
+                          />
                           <ModelSelector value={model} onChange={setModel} disabled={isLoading} />
                         </PromptInputTools>
                         <PromptInputSubmit status={status} onStop={stop} />
