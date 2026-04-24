@@ -9,6 +9,13 @@ export default defineConfig({
   // Output directory for migrations
   out: './drizzle',
 
+  // Timestamp-prefixed migrations so fork migrations don't collide with
+  // upstream's sequential numbering (see docs/PATCHES-guide.md). New
+  // migrations generate as 20260424142530_<name>.sql. Existing
+  // 0001..0022 migrations keep their names — timestamps sort after them
+  // lexicographically because "2..." > "0...".
+  migrations: { prefix: 'timestamp' },
+
   // Database driver
   dialect: 'sqlite',
 

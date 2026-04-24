@@ -478,6 +478,33 @@ echo "http://localhost:5173,https://your-domain.workers.dev" | npx wrangler secr
 
 ---
 
+## Keeping in sync with upstream
+
+If your fork intends to pull bug fixes and features from
+`vite-flare-starter` over time, follow the `PATCHES.md` convention from
+day one. It's a lightweight way to track which parts of the fork diverge
+from upstream, so merges later stay tractable.
+
+The short version:
+
+- Prefer extension points (`nav.ts`, `features.ts`, skills, tool modules,
+  connectors) over editing shared code.
+- For unavoidable edits, add a `// @fork-patch[some-id]` comment above
+  the changed block.
+- Add a matching entry in `PATCHES.md` at the repo root explaining what
+  and why.
+
+Full convention + worked example:
+[`docs/PATCHES-guide.md`](./docs/PATCHES-guide.md).
+
+New forks inherit timestamp-prefixed migrations (`drizzle.config.ts` has
+`prefix: "timestamp"`), so your migrations won't collide with upstream's
+when you merge. If you don't plan to sync with upstream after the initial
+fork, you can skip the `PATCHES.md` convention entirely — delete the
+file and move on.
+
+---
+
 ## Resources
 
 - [Cloudflare Workers Documentation](https://developers.cloudflare.com/workers/)
