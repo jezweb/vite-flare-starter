@@ -279,7 +279,7 @@ import { z } from 'zod'
 
 const workersai = createWorkersAI({ binding: c.env.AI })
 const { output } = await generateText({
-  model: workersai('@cf/moonshotai/kimi-k2.5'),
+  model: workersai('@cf/moonshotai/kimi-k2.6'),
   output: Output.object({
     schema: z.object({ title: z.string(), summary: z.string() }),
   }),
@@ -510,7 +510,8 @@ Use dedicated pages for forms and content. Modals only for confirmations and qui
 | **Inline Edit** | `src/client/components/InlineEdit.tsx` | Click-to-edit text fields (save on blur/Enter, cancel on Escape) |
 | **Skeletons** | `src/client/components/skeletons.tsx` | Loading placeholders: StatCard, Table, Chart, List, Page |
 | **Notification Bell** | `src/client/components/NotificationBell.tsx` | Unread count badge + dropdown |
-| **Audio Recorder** | `src/client/components/AudioRecorder.tsx` | Voice input, live duration, returns Blob. Compact mode for toolbars |
+| **Audio Recorder** | `src/client/components/AudioRecorder.tsx` | Voice input, live duration, returns Blob. Compact mode for toolbars. Still used for the `transcribe_audio` tool path (attach an audio file). |
+| **Voice Dictation Button** | `src/client/modules/chat/components/VoiceDictationButton.tsx` | Streaming STT dictation in the chat input — uses `useVoiceInput` → voice DO → Deepgram Nova 3. Interim transcripts appear live in the `PromptInput` textarea (iPhone-style). Mic button in chat toolbar uses this, NOT AudioRecorder. |
 | **Paste Upload** | `src/client/hooks/usePasteUpload.ts` | Cmd+V file/image paste handler. Global or element-scoped |
 
 ---
@@ -597,7 +598,7 @@ Use for: heavy ML inference, video processing, anything that exceeds Workers CPU
 
 | Source | Models | Notes |
 |--------|--------|-------|
-| **Workers AI** (free) | Kimi K2.5 (default), Gemma 4 26B, GLM 4.7 Flash, QwQ 32B | No API key needed |
+| **Workers AI** (free) | Kimi K2.6 (default), Gemma 4 26B, GLM 4.7 Flash, QwQ 32B | No API key needed |
 | **Anthropic** | Claude Opus 4.6, Claude Sonnet 4.6, Claude Haiku 4.5 | Via OpenRouter |
 | **OpenAI** | GPT-5.4, GPT-5.4 mini | Via OpenRouter |
 | **Google** | Gemini 3.1 Pro, Gemini 3 Flash | Via OpenRouter |
@@ -616,7 +617,7 @@ AI features in the chat module: streaming, tool calling, reasoning extraction, v
 `convertToMarkdown()` in `src/server/lib/ai/documents.ts` converts uploaded files to markdown:
 
 - **PDFs + images**: Uses `env.AI.toMarkdown()` (Cloudflare's built-in converter — free, fast, native PDF parsing)
-- **Fallback**: Vision model (Kimi K2.5) for formats `toMarkdown()` doesn't handle
+- **Fallback**: Vision model (Kimi K2.6) for formats `toMarkdown()` doesn't handle
 - **Text files**: Pass-through via `TextDecoder`
 
 ### Observability
@@ -687,6 +688,10 @@ The chat module ships with a **modular agent toolkit** in `src/server/modules/ch
 | **google-workspace — Calendar** | `calendar_upcoming`, `calendar_list_events`, `calendar_get_event`, `calendar_find_free_slot`, `calendar_create`, `calendar_update_event`, `calendar_delete_event` | Same |
 | **google-workspace — Docs** | `docs_search`, `docs_get`, `docs_create`, `docs_append` | Same |
 | **google-workspace — Sheets** | `sheets_list_tabs`, `sheets_read_range`, `sheets_append_row`, `sheets_write_range` | Same |
+| **microsoft-workspace — Outlook** | `outlook_search`, `outlook_get_message`, `outlook_send` | Only if the user has connected Microsoft 365 |
+| **microsoft-workspace — OneDrive** | `onedrive_search`, `onedrive_get_file` | Same |
+| **microsoft-workspace — Calendar** | `msoffice_calendar_list`, `msoffice_calendar_create` (optional Teams meeting link via `isOnlineMeeting: true`) | Same |
+| **slack / notion / atlassian** | Scaffolded (OAuth + cards + tokens). Tool implementations in [issue #21](https://github.com/jezweb/vite-flare-starter/issues/21), [#22](https://github.com/jezweb/vite-flare-starter/issues/22), [#23](https://github.com/jezweb/vite-flare-starter/issues/23). | Connectors page auto-shows their cards when `<PROVIDER>_CLIENT_ID` + `_SECRET` secrets are set |
 
 **Google Workspace — privileged write ops**
 
@@ -709,6 +714,24 @@ Scopes required (set up at Connectors → Google Workspace):
 Docs `docs_append` supports markdown-ish input: lines starting with `#`, `##`, or `###` become H1/H2/H3; paragraphs separated by blank lines render as separate paragraphs. Tables, images, inline objects are not yet supported — use the Docs UI for those.
 
 Sheets ranges use A1 notation (`Sheet1!A1:D20`, `Budget!A:A`). `valueInputOption: 'USER_ENTERED'` (default) parses formulas + dates the way the Sheets UI does; `RAW` stores the string verbatim.
+
+**Connector scaling — ConnectorProvider registry + per-user tool filter**
+
+Every native OAuth connector (Google, Microsoft, Slack, Notion, Atlassian, …) is declared once in `src/shared/config/connector-providers.ts`. The registry is the single source of truth: ConnectorsPage reads it to render cards, the agent toolkit reads it to filter tools per user, `.dev.vars.example` docs pull from it.
+
+Per-user settings live in `user_connector_settings` (D1): master switch + `enabledToolsJson` array per user per provider. `src/server/modules/connectors/settings.ts` exposes `getAllowedConnectorTools(env, userId)` which `buildChatTools` calls to filter the toolkit. When no settings row exists, the provider's `defaultEnabledTools` apply (typically the read-only subset) — happy-path users never touch a toggle. Master switch off = entire provider skipped, zero context cost.
+
+Adding a new native connector:
+
+1. Add an entry to `CONNECTOR_PROVIDERS` with `id`, `toolNames`, `defaultEnabledTools`, `envVars`, `developerPortalUrl`.
+2. Create `src/server/modules/<id>/db/schema.ts`, `routes.ts`, `tokens.ts`. For typical OAuth providers use the `buildStubRoutes` + `defineProviderTokenTable` helpers in `src/server/modules/connectors/stub-provider.ts` — each new provider then ships as ~40 LOC of config.
+3. Add tool definitions in `src/server/modules/chat/tools/<id>.ts`, one `ToolDefinition` per entry in `toolNames`.
+4. Register the routes in `src/server/index.ts`, tool defs in `src/server/modules/chat/tools/index.ts`, schema in `src/server/db/schema.ts`.
+5. The card renders automatically via `StubConnectorPanel` when you mount it once in `ConnectorsPage.tsx` with `providerId="<id>"` + logo SVG.
+
+Provider-specific OAuth quirks are handled via `StubProviderConfig` options — `includeRedirectUriInTokenExchange: false` for Notion (which rejects `redirect_uri` in the token exchange), `extraAuthParams` for Atlassian (needs `audience=api.atlassian.com` + `prompt=consent`), `fetchAccountInfo` callback for custom profile endpoints (Slack's `/auth.test`, Atlassian's `/oauth/token/accessible-resources`, etc.).
+
+See `.jez/artifacts/connector-scaling-plan-2026-04-23.md` for the full design doc.
 
 **Natural-language query translation** (`gmail_search`, `calendar_list_events`)
 
