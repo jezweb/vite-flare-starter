@@ -24,6 +24,7 @@ import {
   FolderOpen,
   FilePlus,
   CalendarDays,
+  SlidersHorizontal,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -40,6 +41,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { apiClient } from '@/client/lib/api-client'
 import { toast } from 'sonner'
+import { ManageToolsDialog } from './ManageToolsDialog'
 
 interface StatusResponse {
   enabled: boolean
@@ -64,6 +66,7 @@ const SCOPE_LABELS: Record<string, { icon: typeof Mail; label: string }> = {
 export function MicrosoftWorkspacePanel() {
   const qc = useQueryClient()
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [manageOpen, setManageOpen] = useState(false)
 
   const { data, isLoading } = useQuery({
     queryKey: ['microsoft-workspace', 'status'],
@@ -224,6 +227,14 @@ export function MicrosoftWorkspacePanel() {
                 <Button
                   size="sm"
                   variant="ghost"
+                  onClick={() => setManageOpen(true)}
+                  aria-label="Manage Microsoft 365 tools"
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
                   onClick={(e) => {
                     e.stopPropagation()
                     setConfirmOpen(true)
@@ -258,6 +269,12 @@ export function MicrosoftWorkspacePanel() {
           </div>
         </div>
       </CardContent>
+
+      <ManageToolsDialog
+        connectorId="microsoft-workspace"
+        open={manageOpen}
+        onOpenChange={setManageOpen}
+      />
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>

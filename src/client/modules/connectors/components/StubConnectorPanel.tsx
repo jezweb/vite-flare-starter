@@ -17,6 +17,7 @@ import {
   AlertCircle,
   Trash2,
   ExternalLink,
+  SlidersHorizontal,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -34,6 +35,8 @@ import {
 import { apiClient } from '@/client/lib/api-client'
 import { toast } from 'sonner'
 import { getProvider } from '@/shared/config/connector-providers'
+import { ManageToolsDialog } from './ManageToolsDialog'
+import { useConnectorSettings } from '../hooks/useConnectorSettings'
 
 interface StatusResponse {
   enabled: boolean
@@ -56,6 +59,8 @@ export function StubConnectorPanel({ providerId, logo }: StubConnectorPanelProps
   const provider = getProvider(providerId)
   const qc = useQueryClient()
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [manageOpen, setManageOpen] = useState(false)
+  const { data: settings } = useConnectorSettings(provider ? providerId : null)
 
   const { data, isLoading } = useQuery({
     queryKey: [providerId, 'status'],
@@ -149,8 +154,9 @@ export function StubConnectorPanel({ providerId, logo }: StubConnectorPanelProps
                   </p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  {provider.defaultEnabledTools.length} of {provider.toolNames.length} tools
-                  enabled by default. Per-tool management coming soon.
+                  {(settings?.enabledTools ?? provider.defaultEnabledTools).length} of{' '}
+                  {provider.toolNames.length} tools enabled
+                  {settings && !settings.enabled ? ' — master switch off' : ''}
                 </p>
               </>
             ) : (
@@ -195,6 +201,14 @@ export function StubConnectorPanel({ providerId, logo }: StubConnectorPanelProps
                 <Button
                   size="sm"
                   variant="ghost"
+                  onClick={() => setManageOpen(true)}
+                  aria-label={`Manage ${provider.label} tools`}
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
                   onClick={(e) => {
                     e.stopPropagation()
                     setConfirmOpen(true)
@@ -229,6 +243,12 @@ export function StubConnectorPanel({ providerId, logo }: StubConnectorPanelProps
           </div>
         </div>
       </CardContent>
+
+      <ManageToolsDialog
+        connectorId={providerId}
+        open={manageOpen}
+        onOpenChange={setManageOpen}
+      />
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>

@@ -37,6 +37,7 @@ import microsoftWorkspaceRoutes from './modules/microsoft-workspace/routes'
 import slackRoutes from './modules/slack/routes'
 import notionRoutes from './modules/notion/routes'
 import atlassianRoutes from './modules/atlassian/routes'
+import connectorsRoutes from './modules/connectors/routes'
 import { routeAgentRequest } from 'agents'
 // Re-export DO class(es) so wrangler migrations can locate them. Every DO
 // referenced in `durable_objects.bindings` must be exported from the
@@ -285,6 +286,7 @@ app.route('/api/microsoft-workspace', microsoftWorkspaceRoutes)
 app.route('/api/slack', slackRoutes)
 app.route('/api/notion', notionRoutes)
 app.route('/api/atlassian', atlassianRoutes)
+app.route('/api/connectors', connectorsRoutes)
 
 // =============================================================================
 // AI TEST ENDPOINT

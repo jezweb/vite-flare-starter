@@ -13,7 +13,7 @@
  */
 import type { D1Database } from '@cloudflare/workers-types'
 import { drizzle } from 'drizzle-orm/d1'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { userConnectorSettings } from './db/schema'
 import {
   CONNECTOR_PROVIDERS,
@@ -104,7 +104,12 @@ export async function getProviderSettings(
   const [row] = await db
     .select()
     .from(userConnectorSettings)
-    .where(eq(userConnectorSettings.userId, userId))
+    .where(
+      and(
+        eq(userConnectorSettings.userId, userId),
+        eq(userConnectorSettings.connectorId, connectorId),
+      ),
+    )
     .limit(1)
   if (!row) {
     return {

@@ -9,7 +9,7 @@
  */
 import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Loader2, Plug, CheckCircle2, AlertCircle, Trash2, Mail, FolderOpen, CalendarDays } from 'lucide-react'
+import { Loader2, Plug, CheckCircle2, AlertCircle, Trash2, Mail, FolderOpen, CalendarDays, SlidersHorizontal } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { apiClient } from '@/client/lib/api-client'
 import { toast } from 'sonner'
+import { ManageToolsDialog } from './ManageToolsDialog'
 
 interface StatusResponse {
   enabled: boolean
@@ -52,6 +53,7 @@ export function GoogleWorkspacePanel() {
   // In-app disconnect confirmation — avoids native `confirm()` which
   // blocks browser automation and isn't dismissible by extensions.
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [manageOpen, setManageOpen] = useState(false)
 
   const { data, isLoading } = useQuery({
     queryKey: ['google-workspace', 'status'],
@@ -193,6 +195,14 @@ export function GoogleWorkspacePanel() {
                 <Button
                   size="sm"
                   variant="ghost"
+                  onClick={() => setManageOpen(true)}
+                  aria-label="Manage Google Workspace tools"
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
                   onClick={(e) => {
                     // Stop any ancestor click-handler from also firing —
                     // guards against accidental disconnect when the
@@ -230,6 +240,12 @@ export function GoogleWorkspacePanel() {
           </div>
         </div>
       </CardContent>
+
+      <ManageToolsDialog
+        connectorId="google-workspace"
+        open={manageOpen}
+        onOpenChange={setManageOpen}
+      />
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>

@@ -14,6 +14,7 @@
  * `server/modules/chat/tools/skills.ts`.
  */
 import type { ToolSet, ModelMessage } from 'ai'
+import { PRIVILEGED_TOOL_NAMES } from '@/shared/config/privileged-tools'
 
 interface TokenBudgetOptions {
   maxTotalTokens: number
@@ -48,26 +49,9 @@ export function tokenBudgetPrepareStep<TOOLS extends ToolSet>({ maxTotalTokens }
  * Keeps the "what's in my inbox?" chat from accidentally triggering
  * `gmail_send` because the model decided to be helpful.
  */
-const PRIVILEGED_TOOLS = [
-  'gmail_send',
-  'gmail_reply',
-  'gmail_delete',
-  'calendar_create',
-  'calendar_update_event',
-  'calendar_delete_event',
-  'docs_create',
-  'docs_append',
-  'sheets_append_row',
-  'sheets_write_range',
-  'drive_create_folder',
-  'tasks_create',
-  'drive_delete',
-  'fs_delete',
-  'fs_write',
-  'run_shell',
-] as const
+const PRIVILEGED_TOOLS = PRIVILEGED_TOOL_NAMES
 
-type PrivilegedTool = (typeof PRIVILEGED_TOOLS)[number]
+type PrivilegedTool = (typeof PRIVILEGED_TOOL_NAMES)[number]
 
 /**
  * Keywords per tool that, when seen in a recent user message, unlock that
@@ -89,6 +73,15 @@ const UNLOCK_KEYWORDS: Record<PrivilegedTool, RegExp> = {
   drive_create_folder: /\bfolder\b|\bcreate\b|\bnew\b|\bmake\b|\borganis|\borganiz/i,
   tasks_create: /\btask\b|\btodo\b|\bto-do\b|\badd\b|\bremind\b|\bfollow up\b/i,
   drive_delete: /\bdelete\b|\bremove\b|\btrash\b/i,
+  outlook_send: /\bsend\b|\bcompose\b|\breply\b|\bforward\b|\bemail\b|\boutlook\b/i,
+  msoffice_calendar_create: /\bschedule\b|\bbook\b|\bmeeting\b|\bappointment\b|\bevent\b|\bteams\b/i,
+  slack_post_message: /\bpost\b|\bsend\b|\bmessage\b|\bslack\b|\breply\b|\btell\b|\bnotify\b/i,
+  notion_create_page: /\bcreate\b|\bnew\b|\bpage\b|\bnotion\b|\badd\b/i,
+  notion_append_blocks: /\bappend\b|\badd\b|\bwrite\b|\binsert\b|\bnotion\b|\bupdate\b/i,
+  jira_create_issue: /\bcreate\b|\bnew\b|\bissue\b|\bticket\b|\bbug\b|\bstory\b|\btask\b|\bjira\b/i,
+  jira_add_comment: /\bcomment\b|\breply\b|\breply to\b|\bnote\b|\bjira\b/i,
+  jira_transition_issue: /\btransition\b|\bmove\b|\bclose\b|\bresolve\b|\bopen\b|\breopen\b|\bdone\b|\bstart\b/i,
+  confluence_create_page: /\bcreate\b|\bnew\b|\bpage\b|\bconfluence\b|\bdoc\b/i,
   fs_delete: /\bdelete\b|\bremove\b|\brm\b/i,
   fs_write: /\bwrite\b|\bcreate\b|\bsave\b|\bstore\b|\bupload\b/i,
   run_shell: /\brun\b|\bexecute\b|\bshell\b|\bbash\b|\bcommand\b|\bscript\b/i,
