@@ -289,7 +289,7 @@ export function SkillEditor({ name }: SkillEditorProps) {
           <Textarea
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            className="min-h-[400px] font-mono text-xs leading-relaxed"
+            className="min-h-[400px] font-mono text-[11px] leading-relaxed md:text-[11px]"
             spellCheck={false}
           />
           <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
