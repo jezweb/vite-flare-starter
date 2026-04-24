@@ -42,9 +42,19 @@ export function SettingsPage() {
         </p>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs — horizontally scrollable on narrow viewports so the tab
+          labels never truncate unreadably on small phones. Wider screens
+          use the pre-computed gridCols for even spacing. */}
       <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className={`grid w-full ${gridCols} mb-8`}>
+        <TabsList
+          className={`
+            mb-8 flex w-full overflow-x-auto
+            sm:grid sm:w-full ${gridCols}
+            [&::-webkit-scrollbar]:hidden
+            [-ms-overflow-style:none]
+            [scrollbar-width:none]
+          `}
+        >
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="organization">Organization</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
@@ -53,7 +63,7 @@ export function SettingsPage() {
             <TabsTrigger value="api-tokens">API Tokens</TabsTrigger>
           )}
           {showChatTab && <TabsTrigger value="ai">AI</TabsTrigger>}
-          <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="preferences">Preferences</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile">
@@ -84,7 +94,7 @@ export function SettingsPage() {
           </TabsContent>
         )}
 
-        <TabsContent value="settings">
+        <TabsContent value="preferences">
           <PreferencesSection />
         </TabsContent>
       </Tabs>

@@ -2,15 +2,17 @@
  * Core Tools — always available, zero dependencies
  *
  * Simple primitives that work in any environment: time, math, registry lookup.
+ * All on the canonical ToolDefinition contract (Phase 0).
  */
-import { tool } from 'ai'
 import { z } from 'zod'
+import { Clock, Info, Calculator, CheckCheck } from 'lucide-react'
 import { getModel, listModels } from '@/server/lib/ai/models'
 import type { ModelId } from '@/server/lib/ai/types'
+import type { ToolDefinition } from '@/shared/agent'
 
 /**
  * Safe arithmetic evaluator using Shunting-Yard.
- * Workers disallow Function()/eval(). This supports + - * / % and parentheses.
+ * Workers disallow dynamic code execution. This supports + - * / % and parentheses.
  */
 function computeArithmetic(expr: string): number {
   const tokens: string[] = []
@@ -81,77 +83,143 @@ function computeArithmetic(expr: string): number {
   return stack[0]!
 }
 
-export const coreTools = {
-  get_server_time: tool({
-    description: 'Get the current server time in UTC. Use when the user asks about the current time or date.',
-    inputSchema: z.object({}),
-    execute: async () => ({
-      utc: new Date().toISOString(),
-      timestamp: Date.now(),
-      timezone: 'UTC',
-    }),
-  }),
+// ─── get_server_time ─────────────────────────────────────────────
 
-  get_model_info: tool({
-    description: 'Get capabilities and metadata for a Workers AI model. Use when the user asks about available AI models or model features.',
-    inputSchema: z.object({
-      modelId: z.string().describe('The model ID to look up, e.g. @cf/moonshotai/kimi-k2.5'),
-    }),
-    execute: async ({ modelId }: { modelId: string }) => {
-      const model = getModel(modelId as ModelId)
-      if (!model) {
-        const available = listModels().map((m) => ({ id: m.id, name: m.displayName }))
-        return { error: `Unknown model: ${modelId}`, availableModels: available }
-      }
-      return {
-        id: model.id,
-        name: model.displayName,
-        provider: model.provider,
-        contextWindow: model.contextWindow,
-        supportsTools: model.supportsTools,
-        supportsVision: model.supportsVision,
-        isReasoning: model.isReasoning,
-        tier: model.tier,
-        description: model.description,
-      }
-    },
+export const getServerTimeDefinition: ToolDefinition<
+  Record<string, never>,
+  { utc: string; timestamp: number; timezone: string }
+> = {
+  name: 'get_server_time',
+  description:
+    'Get the current server time in UTC. Use when the user asks about the current time or date.',
+  inputSchema: z.object({}),
+  outputSchema: z.object({
+    utc: z.string(),
+    timestamp: z.number(),
+    timezone: z.string(),
   }),
-
-  calculate: tool({
-    description: 'Evaluate a simple arithmetic expression. Use for any math calculations.',
-    inputSchema: z.object({
-      expression: z.string().describe('Math expression like "2 + 2" or "100 / 4 * 3"'),
-    }),
-    execute: async ({ expression }: { expression: string }) => {
-      if (!/^[\d\s+\-*/()%.]+$/.test(expression)) {
-        return { error: 'Expression contains invalid characters. Only numbers and basic operators (+, -, *, /, %) are allowed.' }
-      }
-      try {
-        // Cloudflare Workers blocks Function()/eval() — use Shunting-Yard parser.
-        const result = computeArithmetic(expression)
-        if (typeof result !== 'number' || !isFinite(result)) {
-          return { error: 'Expression did not evaluate to a valid number' }
-        }
-        return { expression, result }
-      } catch (err) {
-        return { error: `Could not compute: ${expression} (${err instanceof Error ? err.message : 'parse error'})` }
-      }
-    },
+  execute: async () => ({
+    utc: new Date().toISOString(),
+    timestamp: Date.now(),
+    timezone: 'UTC',
   }),
-
-  /**
-   * Done tool — signals structured task completion.
-   * No execute function — calling this stops the agent loop.
-   * The answer is accessible via result.staticToolCalls[0].
-   * Use with hasToolCall('done') as a stop condition.
-   */
-  done: tool({
-    description: 'Signal that you have completed the current task. Use when you have a final answer and no more tool calls are needed. Put your complete answer in the answer field.',
-    inputSchema: z.object({
-      answer: z.string().describe('Your final, complete answer to the user\'s request'),
-    }),
-    // Execute returns the answer so the streaming UI gets a tool result
-    // (without this, the UI shows "Running" forever and "tool result missing").
-    execute: async ({ answer }: { answer: string }) => ({ answer, completed: true }),
-  }),
+  render: { icon: Clock, displayName: 'Server Time' },
 }
+
+// ─── get_model_info ──────────────────────────────────────────────
+
+const GetModelInfoOutput = z.union([
+  z.object({
+    id: z.string(),
+    name: z.string(),
+    provider: z.string(),
+    contextWindow: z.number(),
+    supportsTools: z.boolean(),
+    supportsVision: z.boolean(),
+    isReasoning: z.boolean(),
+    tier: z.string(),
+    description: z.string().optional(),
+  }),
+  z.object({
+    error: z.string(),
+    availableModels: z.array(z.object({ id: z.string(), name: z.string() })),
+  }),
+])
+
+export const getModelInfoDefinition: ToolDefinition<
+  { modelId: string },
+  z.infer<typeof GetModelInfoOutput>
+> = {
+  name: 'get_model_info',
+  description:
+    'Get capabilities and metadata for a Workers AI model. Use when the user asks about available AI models or model features.',
+  inputSchema: z.object({
+    modelId: z.string().describe('The model ID to look up, e.g. @cf/moonshotai/kimi-k2.5'),
+  }),
+  outputSchema: GetModelInfoOutput,
+  execute: async ({ modelId }) => {
+    const model = getModel(modelId as ModelId)
+    if (!model) {
+      const available = listModels().map((m) => ({ id: m.id, name: m.displayName }))
+      return { error: `Unknown model: ${modelId}`, availableModels: available }
+    }
+    return {
+      id: model.id,
+      name: model.displayName,
+      provider: model.provider,
+      contextWindow: model.contextWindow,
+      supportsTools: model.supportsTools,
+      supportsVision: model.supportsVision,
+      isReasoning: model.isReasoning,
+      tier: model.tier,
+      description: model.description,
+    }
+  },
+  render: { icon: Info, displayName: 'Model Info' },
+}
+
+// ─── calculate ───────────────────────────────────────────────────
+
+export const calculateDefinition: ToolDefinition<
+  { expression: string },
+  { expression: string; result: number } | { error: string }
+> = {
+  name: 'calculate',
+  description: 'Evaluate a simple arithmetic expression. Use for any math calculations.',
+  inputSchema: z.object({
+    expression: z.string().describe('Math expression like "2 + 2" or "100 / 4 * 3"'),
+  }),
+  outputSchema: z.union([
+    z.object({ expression: z.string(), result: z.number() }),
+    z.object({ error: z.string() }),
+  ]),
+  execute: async ({ expression }) => {
+    if (!/^[\d\s+\-*/()%.]+$/.test(expression)) {
+      return { error: 'Expression contains invalid characters. Only numbers and basic operators (+, -, *, /, %) are allowed.' }
+    }
+    try {
+      const result = computeArithmetic(expression)
+      if (typeof result !== 'number' || !isFinite(result)) {
+        return { error: 'Expression did not evaluate to a valid number' }
+      }
+      return { expression, result }
+    } catch (err) {
+      return { error: `Could not compute: ${expression} (${err instanceof Error ? err.message : 'parse error'})` }
+    }
+  },
+  render: {
+    icon: Calculator,
+    displayName: 'Calculator',
+    summary: (output) => ('error' in output ? 'failed' : String(output.result)),
+  },
+}
+
+// ─── done ────────────────────────────────────────────────────────
+
+/**
+ * Done tool — signals structured task completion. Used with
+ * `hasToolCall('done')` as a stop condition. MessageRenderer intercepts
+ * `done` and renders its `answer` input as the final response text, so
+ * the render metadata here is vestigial (never fires).
+ */
+export const doneDefinition: ToolDefinition<
+  { answer: string },
+  { answer: string; completed: boolean }
+> = {
+  name: 'done',
+  description:
+    "Signal that you have completed the current task. Use when you have a final answer and no more tool calls are needed. Put your complete answer in the answer field.",
+  inputSchema: z.object({
+    answer: z.string().describe("Your final, complete answer to the user's request"),
+  }),
+  outputSchema: z.object({ answer: z.string(), completed: z.boolean() }),
+  execute: async ({ answer }) => ({ answer, completed: true }),
+  render: { icon: CheckCheck, displayName: 'Done' },
+}
+
+export const coreDefinitions = [
+  getServerTimeDefinition,
+  getModelInfoDefinition,
+  calculateDefinition,
+  doneDefinition,
+] as ToolDefinition<unknown, unknown>[]

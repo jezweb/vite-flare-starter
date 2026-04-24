@@ -48,6 +48,12 @@ import { toast } from 'sonner'
 interface FileListProps {
   files: FileItem[]
   isLoading?: boolean
+  /**
+   * Current folder filter label, used to shape the empty-state copy.
+   * 'all' | '/' (root) | a specific folder name. When set to a specific
+   * folder, the empty state clarifies the filter is narrowing the view.
+   */
+  folder?: string
 }
 
 const iconMap = {
@@ -58,7 +64,7 @@ const iconMap = {
   file: FileIcon,
 }
 
-export function FileList({ files, isLoading }: FileListProps) {
+export function FileList({ files, isLoading, folder }: FileListProps) {
   const [deleteTarget, setDeleteTarget] = useState<FileItem | null>(null)
   const [editTarget, setEditTarget] = useState<FileItem | null>(null)
   const [editName, setEditName] = useState('')
@@ -136,11 +142,19 @@ export function FileList({ files, isLoading }: FileListProps) {
   }
 
   if (files.length === 0) {
+    const isFiltered = !!folder && folder !== 'all'
+    const folderLabel = folder === '/' ? 'the root folder' : `"${folder}"`
     return (
       <div className="text-center py-12 text-muted-foreground">
         <FileIcon className="mx-auto h-12 w-12 mb-4 opacity-50" />
-        <p className="text-lg font-medium">No files yet</p>
-        <p className="text-sm">Upload your first file to get started</p>
+        <p className="text-lg font-medium">
+          {isFiltered ? `No files in ${folderLabel}` : 'No files yet'}
+        </p>
+        <p className="text-sm">
+          {isFiltered
+            ? 'Try a different folder, or upload a file here.'
+            : 'Upload your first file to get started.'}
+        </p>
       </div>
     )
   }
@@ -179,6 +193,30 @@ export function FileList({ files, isLoading }: FileListProps) {
                     <Globe className="h-3.5 w-3.5 text-green-600 dark:text-green-400 flex-shrink-0" />
                   ) : (
                     <Lock className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                  )}
+                  {file.indexStatus === 'indexed' && (
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full bg-green-500/10 dark:bg-green-500/15 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:text-green-400 flex-shrink-0"
+                      title={`Indexed for semantic search (${file.indexChunks ?? 0} chunks)`}
+                    >
+                      Indexed
+                    </span>
+                  )}
+                  {file.indexStatus === 'pending' && (
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground flex-shrink-0"
+                      title="Indexing in progress — will be searchable shortly"
+                    >
+                      Indexing…
+                    </span>
+                  )}
+                  {file.indexStatus === 'failed' && (
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive flex-shrink-0"
+                      title={file.indexError ?? 'Indexing failed'}
+                    >
+                      Index failed
+                    </span>
                   )}
                 </div>
                 <p className="text-sm text-muted-foreground">

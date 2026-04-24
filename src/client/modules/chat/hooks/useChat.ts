@@ -6,7 +6,11 @@
  * client-side tool execution, typed metadata, tool approval flow.
  */
 import { useChat as useAIChat } from '@ai-sdk/react'
-import { DefaultChatTransport, type UIMessage } from 'ai'
+import {
+  DefaultChatTransport,
+  lastAssistantMessageIsCompleteWithApprovalResponses,
+  type UIMessage,
+} from 'ai'
 import { useMemo, useRef, useEffect } from 'react'
 import { messageMetadataSchema, type MessageMetadata } from '@/shared/schemas/chat.schema'
 
@@ -17,6 +21,13 @@ interface ChatOptions {
   model?: string
   systemPrompt?: string
   conversationId?: string
+  /**
+   * When starting a new conversation from a project page ("New chat in
+   * this project"), this stamps the conversation with the project on
+   * first send. Ignored server-side for existing conversations — the
+   * stored row always wins.
+   */
+  projectId?: string | null
   initialMessages?: Message[]
   /** Client-side tool handlers — execute tools in the browser without server round-trip */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -24,17 +35,19 @@ interface ChatOptions {
 }
 
 export function useChat(options: ChatOptions = {}) {
-  const { model, systemPrompt, conversationId, initialMessages, onToolCall } = options
+  const { model, systemPrompt, conversationId, projectId, initialMessages, onToolCall } = options
 
-  // Refs keep prepareSendMessagesRequest reading the LATEST model/systemPrompt/conversationId.
+  // Refs keep prepareSendMessagesRequest reading the LATEST fields.
   // useAIChat memoises the transport internally, so a closure captured at mount would
-  // otherwise pin the request to the model first passed in.
+  // otherwise pin the request to the initial values.
   const modelRef = useRef(model)
   const systemPromptRef = useRef(systemPrompt)
   const conversationIdRef = useRef(conversationId)
+  const projectIdRef = useRef(projectId)
   useEffect(() => { modelRef.current = model }, [model])
   useEffect(() => { systemPromptRef.current = systemPrompt }, [systemPrompt])
   useEffect(() => { conversationIdRef.current = conversationId }, [conversationId])
+  useEffect(() => { projectIdRef.current = projectId }, [projectId])
 
   const transport = useMemo(
     () =>
@@ -51,6 +64,7 @@ export function useChat(options: ChatOptions = {}) {
               model: modelRef.current,
               systemPrompt: systemPromptRef.current,
               conversationId: conversationIdRef.current,
+              projectId: projectIdRef.current,
             },
           }
         },
@@ -58,15 +72,39 @@ export function useChat(options: ChatOptions = {}) {
     [],
   )
 
+  // Seed useAIChat ONCE at mount. Without this, a later prop update to
+  // `initialMessages` (triggered when /chat transitions to /chat/:id and
+  // useConversationMessages refetches) clobbers the in-flight streaming
+  // state, blanking the transcript until reload (C1 in the 2026-04-22
+  // audit). After mount we sync stored messages explicitly with
+  // setMessages only when chat state is empty — never when a stream is in
+  // flight.
+  const seedRef = useRef(initialMessages)
+
   const chat = useAIChat({
-    messages: initialMessages,
+    messages: seedRef.current,
     messageMetadataSchema,
     transport,
     onToolCall,
+    // CRITICAL: without this, addToolApprovalResponse() only stores the
+    // approval locally — the server never hears about it and the tool
+    // never runs. This callback tells the SDK to auto-resubmit once all
+    // pending approval requests have responses. Fixes the "Approve
+    // button does nothing" bug in the Workspace connector flow.
+    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
     onError: (error: Error) => {
       console.error('Chat error:', error)
     },
   })
+
+  // Adopt stored messages on later mounts (e.g. navigating from one
+  // conversation to another). Only when chat.messages is empty — so we
+  // never overwrite a live stream or optimistic user message.
+  useEffect(() => {
+    if (!initialMessages || initialMessages.length === 0) return
+    if (chat.messages.length > 0) return
+    chat.setMessages(initialMessages)
+  }, [initialMessages, chat])
 
   // Extract conversationId from the latest assistant message metadata
   const latestConversationId = (() => {

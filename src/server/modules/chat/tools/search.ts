@@ -6,8 +6,9 @@
  *
  * Configure via SEARCH_PROVIDER env var + provider-specific API key.
  */
-import { tool } from 'ai'
 import { z } from 'zod'
+import { Globe } from 'lucide-react'
+import type { ToolDefinition, AgentContext } from '@/shared/agent'
 
 interface SearchEnv {
   SEARCH_PROVIDER?: string // 'serper' (default) | 'brave' | 'tavily' | 'exa'
@@ -125,22 +126,59 @@ export function getActiveSearchProvider(env: SearchEnv): string | null {
 
 // ─── Tool Definitions ───────────────────────────────────────────────────
 
-export function buildSearchTools(env: SearchEnv) {
-  return {
-    web_search: tool({
-      description: 'Search the web for current information. Returns a list of results with titles, URLs, snippets, and dates. Use when the user asks about recent events, or when you need up-to-date information.',
-      inputSchema: z.object({
-        query: z.string().describe('The search query'),
-        limit: z.number().optional().describe('Number of results to return (default: 10, max: 20)'),
-      }),
-      execute: async ({ query, limit = 10 }) => {
-        try {
-          const results = await webSearch(env, query, Math.min(limit, 20))
-          return { query, results, count: results.length, provider: env.SEARCH_PROVIDER || 'serper' }
-        } catch (error) {
-          return { query, error: error instanceof Error ? error.message : String(error) }
-        }
-      },
-    }),
-  }
+function getSearchEnv(ctx: AgentContext): SearchEnv {
+  return ctx.env as unknown as SearchEnv
 }
+
+const WebSearchOutput = z.union([
+  z.object({
+    query: z.string(),
+    results: z.array(
+      z.object({
+        title: z.string(),
+        url: z.string(),
+        snippet: z.string(),
+        date: z.string().optional(),
+      }),
+    ),
+    count: z.number(),
+    provider: z.string(),
+  }),
+  z.object({ query: z.string(), error: z.string() }),
+])
+
+export const webSearchDefinition: ToolDefinition<
+  { query: string; limit?: number },
+  z.infer<typeof WebSearchOutput>
+> = {
+  name: 'web_search',
+  description:
+    'Search the web for current information. Returns a list of results with titles, URLs, snippets, and dates. Use when the user asks about recent events, or when you need up-to-date information.',
+  inputSchema: z.object({
+    query: z.string().describe('The search query'),
+    limit: z.number().optional().describe('Number of results to return (default: 10, max: 20)'),
+  }),
+  outputSchema: WebSearchOutput,
+  isAvailable: (ctx) => !!getActiveSearchProvider(getSearchEnv(ctx)),
+  execute: async ({ query, limit = 10 }, ctx) => {
+    const env = getSearchEnv(ctx)
+    try {
+      const results = await webSearch(env, query, Math.min(limit, 20))
+      return { query, results, count: results.length, provider: env.SEARCH_PROVIDER || 'serper' }
+    } catch (error) {
+      return { query, error: error instanceof Error ? error.message : String(error) }
+    }
+  },
+  render: {
+    icon: Globe,
+    displayName: 'Web Search',
+    summary: (output) => {
+      const o = output as { count?: number; error?: string } | undefined
+      if (!o || o.error) return null
+      const n = o.count ?? 0
+      return n === 0 ? 'no results' : `${n} ${n === 1 ? 'result' : 'results'}`
+    },
+  },
+}
+
+export const searchDefinitions = [webSearchDefinition] as ToolDefinition<unknown, unknown>[]

@@ -1,7 +1,7 @@
 /**
  * WebSearchResults — claude.ai-style rendering for `web_search` tool output.
  *
- * Shape produced by `buildSearchTools` in server/chat/tools/search.ts:
+ * Shape produced by `webSearchDefinition` in server/chat/tools/search.ts:
  *   { query: string, results: { title, url, snippet, date? }[], count: number }
  *
  * Visual:
@@ -124,7 +124,10 @@ export function WebSearchResults({ output }: Props) {
                     className="flex items-center gap-2.5 px-3 py-2 hover:bg-accent/40 transition-colors"
                     title={r.snippet || r.title}
                   >
-                    <span className="flex size-5 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-background">
+                    {/* Light neutral tile so white/monochrome favicons stay
+                        visible in dark mode. Without it, single-colour icons
+                        like Anthropic's disappear against our near-black bg. */}
+                    <span className="flex size-5 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-white ring-1 ring-border/40">
                       {fav ? (
                         // eslint-disable-next-line jsx-a11y/alt-text
                         <img

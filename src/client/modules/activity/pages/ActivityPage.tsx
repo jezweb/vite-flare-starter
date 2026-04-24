@@ -5,6 +5,7 @@
  */
 
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -73,27 +74,64 @@ function formatTime(dateString: string): string {
   }
 }
 
+/**
+ * Derive a deep-link for an activity row, when the entity is reachable
+ * in-app. Returns null for entities that have no destination page (e.g.
+ * `user` for signup events, or `session` for login events).
+ */
+function activityHref(activity: Activity): string | null {
+  if (!activity.entityId) return null
+  switch (activity.entityType) {
+    case 'conversation':
+      return `/dashboard/chat/${activity.entityId}`
+    case 'project':
+      return `/dashboard/projects/${activity.entityId}`
+    case 'file':
+      return `/dashboard/files?file=${activity.entityId}`
+    default:
+      return null
+  }
+}
+
 function ActivityItem({ activity }: { activity: Activity }) {
   const Icon = ACTION_ICONS[activity.action] || ActivityIcon
   const colorClass = ACTION_COLORS[activity.action] || 'bg-muted text-muted-foreground'
+  const href = activityHref(activity)
 
-  return (
-    <div className="flex items-start gap-4 rounded-lg border p-4">
+  const body = (
+    <>
       <div className={`flex h-10 w-10 items-center justify-center rounded-full ${colorClass}`}>
         <Icon className="h-5 w-5" />
       </div>
-      <div className="flex-1 space-y-1">
+      <div className="flex-1 space-y-1 min-w-0">
         <div className="flex items-center gap-2">
           <p className="font-medium capitalize">{activity.action}</p>
           <Badge variant="outline" className="text-xs">
             {activity.entityType}
           </Badge>
         </div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground truncate">
           {activity.entityName || activity.entityId}
         </p>
         <p className="text-xs text-muted-foreground">{formatTime(activity.createdAt)}</p>
       </div>
+    </>
+  )
+
+  if (href) {
+    return (
+      <Link
+        to={href}
+        className="flex items-start gap-4 rounded-lg border p-4 hover:bg-muted/50 transition-colors"
+      >
+        {body}
+      </Link>
+    )
+  }
+
+  return (
+    <div className="flex items-start gap-4 rounded-lg border p-4">
+      {body}
     </div>
   )
 }
@@ -164,10 +202,7 @@ export function ActivityPage() {
               <SelectContent>
                 <SelectItem value="all">All Actions</SelectItem>
                 <SelectItem value="create">Create</SelectItem>
-                <SelectItem value="update">Update</SelectItem>
                 <SelectItem value="delete">Delete</SelectItem>
-                <SelectItem value="view">View</SelectItem>
-                <SelectItem value="export">Export</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -195,8 +230,9 @@ export function ActivityPage() {
             </div>
           )}
 
-          {/* Pagination */}
-          {activities.length > 0 && (
+          {/* Pagination — hidden while loading so the "Page 1" label
+              doesn't flash over skeleton rows on first mount. */}
+          {!activitiesLoading && activities.length > 0 && (
             <div className="mt-6 flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
                 Page {page}

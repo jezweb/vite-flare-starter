@@ -14,10 +14,12 @@ import { useAdminStatus } from '../hooks/useAdminStatus'
 import { AdminStats } from '../components/AdminStats'
 import { UsersTabContent } from '../components/UsersTabContent'
 import { FeaturesTabContent } from '../components/FeaturesTabContent'
+import { EmailLogsTabContent } from '../components/EmailLogsTabContent'
+import { ToolErrorsTabContent } from '../components/ToolErrorsTabContent'
 import { ApiTokensSection } from '@/client/modules/settings/components/ApiTokensSection'
-import { Shield, Users, Flag, Key, ArrowLeft } from 'lucide-react'
+import { Shield, Users, Flag, Key, ArrowLeft, Mail, AlertCircle } from 'lucide-react'
 
-const TABS = ['users', 'features', 'tokens'] as const
+const TABS = ['users', 'features', 'tokens', 'emails', 'tool-errors'] as const
 type TabValue = (typeof TABS)[number]
 
 function isValidTab(tab: string | null): tab is TabValue {
@@ -83,17 +85,27 @@ export function AdminPage() {
             <CardTitle>Access Denied</CardTitle>
           </div>
           <CardDescription>
-            You don't have permission to access the admin panel.
-            Contact an administrator if you believe this is an error.
+            You don't have permission to access the admin panel. Only users
+            with the admin role can manage users and feature flags. If you
+            believe this is an error, ask the site administrator to grant
+            you admin access — they can do this by adding your email to
+            the <code className="font-mono text-xs">ADMIN_EMAILS</code> env
+            var on the Worker.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
           <Button asChild variant="outline">
             <Link to="/dashboard">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Dashboard
+              Back to dashboard
             </Link>
           </Button>
+          <p className="text-xs text-muted-foreground">
+            Not on the right account?{' '}
+            <Link to="/sign-in" className="underline underline-offset-2 hover:text-foreground">
+              Switch accounts
+            </Link>
+          </p>
         </CardContent>
       </Card>
     )
@@ -130,6 +142,14 @@ export function AdminPage() {
             <Key className="h-4 w-4" />
             API Tokens
           </TabsTrigger>
+          <TabsTrigger value="emails" className="gap-2">
+            <Mail className="h-4 w-4" />
+            Emails
+          </TabsTrigger>
+          <TabsTrigger value="tool-errors" className="gap-2">
+            <AlertCircle className="h-4 w-4" />
+            Tool errors
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="users" className="space-y-4">
@@ -152,6 +172,14 @@ export function AdminPage() {
               <ApiTokensSection />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="emails" className="space-y-4">
+          <EmailLogsTabContent />
+        </TabsContent>
+
+        <TabsContent value="tool-errors" className="space-y-4">
+          <ToolErrorsTabContent />
         </TabsContent>
       </Tabs>
     </div>

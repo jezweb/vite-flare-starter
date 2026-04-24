@@ -36,7 +36,7 @@ import {
 import { useDeleteUser, useRevokeUserSessions } from '../hooks/useAdmin'
 import { UserEditDialog } from './UserEditDialog'
 import type { UserResponse } from '@/shared/schemas/admin.schema'
-import { MoreHorizontal, Pencil, Key, Trash2, Shield, UserCog, User } from 'lucide-react'
+import { MoreHorizontal, Pencil, Key, Trash2, Shield, UserCog, User, Copy } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatDistanceToNow } from 'date-fns'
 
@@ -151,6 +151,19 @@ export function UserList({ users }: UserListProps) {
                         <DropdownMenuItem onClick={() => setEditUser(user)}>
                           <Pencil className="mr-2 h-4 w-4" />
                           Edit User
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={async () => {
+                            try {
+                              await navigator.clipboard.writeText(user.email)
+                              toast.success('Email copied')
+                            } catch {
+                              toast.error('Clipboard blocked')
+                            }
+                          }}
+                        >
+                          <Copy className="mr-2 h-4 w-4" />
+                          Copy Email
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => setRevokeUser(user)}

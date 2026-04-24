@@ -2,6 +2,7 @@ import { Outlet, Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/client/components/theme-toggle'
 import { appConfig } from '@/shared/config/app'
+import { useSession } from '@/client/lib/auth'
 
 /**
  * Public layout for landing and auth pages
@@ -11,6 +12,7 @@ import { appConfig } from '@/shared/config/app'
  * to rebrand for production (see src/shared/config/app.ts)
  */
 export function PublicLayout() {
+  const { data: session } = useSession()
   // Build footer text from config or default
   const footerText = appConfig.footerText || `© ${new Date().getFullYear()} ${appConfig.name}. MIT Licensed.`
 
@@ -24,12 +26,15 @@ export function PublicLayout() {
           </Link>
           <div className="flex items-center gap-4">
             <ThemeToggle />
-            <Button variant="ghost" asChild>
-              <Link to="/sign-in">Sign In</Link>
-            </Button>
-            <Button asChild>
-              <Link to="/sign-up">Get Started</Link>
-            </Button>
+            {session?.user ? (
+              <Button asChild>
+                <Link to="/dashboard">Open Dashboard</Link>
+              </Button>
+            ) : (
+              <Button variant="ghost" asChild>
+                <Link to="/sign-in">Sign In</Link>
+              </Button>
+            )}
           </div>
         </div>
       </header>

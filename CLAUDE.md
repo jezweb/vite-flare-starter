@@ -230,6 +230,9 @@ return createAgentUIStreamResponse({
 // Uses refs for model/systemPrompt/conversationId to avoid stale-closure bugs
 // when switching models in the UI. The transport is memoised once; refs update
 // on each render so prepareSendMessagesRequest always reads the latest values.
+// initialMessages is frozen at mount — later changes from useConversationMessages
+// are adopted via setMessages only when chat.messages is empty, so a URL
+// transition from /chat to /chat/:id never clobbers in-flight streaming state.
 import { useChat } from '@/client/modules/chat/hooks/useChat'
 const { messages, sendMessage, isLoading, conversationId, addToolApprovalResponse } = useChat({
   model: 'anthropic/claude-sonnet-4.6',  // or any id from src/shared/config/models.ts
@@ -239,6 +242,8 @@ sendMessage({ text: 'Hello' })
 ```
 
 **Reference:** `src/server/lib/ai/agent.ts` (agent factory), `src/server/modules/chat/routes.ts` (streaming endpoint)
+
+**Gotcha (fixed 2026-04-22):** Do NOT pass a reactive `initialMessages` prop directly to `useAIChat` — the SDK treats the prop as a re-seed signal. When `useConversationMessages(urlConversationId)` resolves after the URL transitions from `/chat` to `/chat/:id`, it clobbers in-flight streaming state and the transcript goes blank until reload. The `useChat` wrapper in this repo freezes `initialMessages` at mount and only adopts later loads via `chat.setMessages` when `chat.messages.length === 0`.
 
 ### Pattern 4b: Conversation Persistence
 
@@ -304,6 +309,10 @@ const result = streamText({
 
 **Install:** `pnpm add @ai-sdk/mcp`
 
+**Per-user MCP connectors (Phase 5):** `src/server/modules/mcp-connections/` exposes a catalogue + OAuth (PKCE + DCR) + bearer fallback. Connections live in D1 (`user_mcp_connections`), tokens AES-GCM encrypted at rest via `TOKEN_ENCRYPTION_KEY`. Per-tool policies (always/ask/never) in `user_mcp_tool_policies`. The chat agent loads user connections via `getUserMcpTools(env, userId)` in `src/server/lib/ai/user-mcp.ts`.
+
+**OAuth redirect gotcha (fixed 2026-04-22):** Never use `window.open(authorizationUrl)` for the provider redirect — Chrome silently blocks popups fired inside React dialog event chains (the user-gesture chain is lost when the dialog defers). Always use `window.location.href = authorizationUrl` for the initial hand-off. The OAuth callback page closes itself and `window.opener.postMessage` is still available if you need to message the parent tab on return. A `POST /api/mcp-connections/:id/authorize` endpoint re-issues a fresh `authorizationUrl` for pending connections so users can retry if the flow is interrupted.
+
 ### Pattern 7: R2 File Upload
 
 ```typescript
@@ -367,6 +376,113 @@ await rebuildFTSIndex(db, 'conversation_messages_fts')
 
 **Reference:** `src/server/lib/search/fts.ts`, wired in `src/server/modules/conversations/routes.ts` (`GET /search`)
 
+### Pattern 10: Durable Object Agent (voice / streaming WS)
+
+For features that need a persistent stateful connection per-session — voice capture, live collaboration, multiplayer, real-time dashboards — use a Durable Object wired via the `agents` SDK.
+
+Four pieces to get right:
+
+```typescript
+// 1. Define the DO class — extend Agent (or a mixin like withVoiceInput)
+// src/server/modules/voice/voice-agent.ts
+import { Agent, type Connection, type ConnectionContext } from 'agents'
+import { withVoiceInput, WorkersAINova3STT } from '@cloudflare/voice'
+
+const InputAgent = withVoiceInput(Agent)
+
+export class VoiceInputExample extends InputAgent<any> {
+  transcriber = new WorkersAINova3STT((this.env as { AI: Ai }).AI)
+
+  async onConnect(conn: Connection, _ctx: ConnectionContext) {
+    conn.send(JSON.stringify({ type: 'welcome' }))
+  }
+
+  async onTranscript(text: string, _conn: Connection) {
+    this.broadcast(JSON.stringify({ type: 'utterance', text }))
+  }
+}
+```
+
+```typescript
+// 2. Re-export from Worker entry + wrap fetch with routeAgentRequest
+// src/server/index.ts
+import { routeAgentRequest } from 'agents'
+export { VoiceInputExample } from './modules/voice/voice-agent'
+
+export default {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
+    const agentResponse = await routeAgentRequest(request, env)
+    if (agentResponse) return agentResponse
+    return app.fetch(request, env, ctx)
+  },
+}
+```
+
+```jsonc
+// 3. wrangler.jsonc — DO binding + SQLite migration + /agents/* routing
+{
+  "assets": {
+    "run_worker_first": ["/api/*", "/agents/*"]
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "VoiceInputExample", "class_name": "VoiceInputExample" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["VoiceInputExample"] }
+  ]
+}
+```
+
+```tsx
+// 4. Client: use the hook, set instance name = your session id
+// src/client/modules/voice/pages/VoiceInputExamplePage.tsx
+import { useVoiceInput } from '@cloudflare/voice/react'
+
+const { transcript, interimTranscript, audioLevel, start, stop, toggleMute } =
+  useVoiceInput({ agent: 'VoiceInputExample', name: sessionId })
+```
+
+**Gotchas that cost 30 min if missed:**
+
+| Gotcha | Symptom |
+|---|---|
+| Forgot to add `/agents/*` to `run_worker_first` | WS requests hit static assets → 404, DO never touched |
+| Forgot to `export { VoiceInputExample }` from Worker entry | `wrangler deploy` errors "Durable Object class not found" |
+| Class in bindings but missing from `migrations.new_sqlite_classes` | Deploy ok, but first request errors "DO storage not provisioned" |
+| `useVoiceInput` hook `isListening` stays false during recording | Not a bug — it flips true only once real audio is flowing. Use your own local phase state for the status label. |
+| Browser WS URL wrong | Path is `/agents/{kebab-case-class-name}/{instance-name}` — the SDK auto-converts the `agent:` prop to kebab-case |
+
+**When to use this over polling or a Hono endpoint:** anything that needs >1 message/sec, server→client push, or per-session CPU state. For plain REST CRUD or infrequent updates, Hono + TanStack Query is simpler.
+
+**Reference:** `src/server/modules/voice/voice-agent.ts` + `src/client/modules/voice/pages/VoiceInputExamplePage.tsx`. Gated by `voiceAgent` feature flag (default OFF — set `VITE_FEATURE_VOICE_AGENT=true` to enable the nav item). The DO itself is always compiled so the pattern works as a pure code reference even when disabled.
+
+### Pattern 10b: Video input agent (no SDK, just primitives)
+
+Cloudflare has no `@cloudflare/video` package (as of 2026-04-22). For
+"describe what the user is showing" / "OCR this whiteboard" / "caption
+this scene" use cases, a simple sampled-frames-over-WS pattern works
+today without any SFU/WebRTC plumbing.
+
+**Pattern:**
+- Client: `getUserMedia` → `<canvas>` sampled every N seconds → JPEG
+  data URL → sent via the `agents` SDK WebSocket as a JSON message
+- Server: the DO's `onMessage` handler decodes the JSON, calls the AI
+  SDK's `generateText` with a vision-capable model, broadcasts the
+  caption back
+
+The DO wiring (binding, migration, class export, `run_worker_first`) is
+identical to Pattern 10. Only the transport differs — `useAgent` from
+`agents/react` instead of `useVoiceInput`.
+
+**Reference:** `src/server/modules/video/video-agent.ts` +
+`src/client/modules/video/pages/VideoInputExamplePage.tsx`. Gated by
+`videoAgent` feature flag (default OFF — set `VITE_FEATURE_VIDEO_AGENT=true`
+to enable). For 30fps continuous vision (gaze, object tracking), swap the
+transport for Cloudflare Realtime SFU + raw WebRTC tracks — keep the DO's
+agent logic.
+
 ---
 
 ## UI Patterns
@@ -415,13 +531,8 @@ The starter uses D1, R2, and Workers AI. Here's when to reach for other Cloudfla
 
 ### Add When You Need It
 
-**Durable Objects** — stateful agents, WebSocket sessions, per-user state
-```jsonc
-// wrangler.jsonc
-"durable_objects": {
-  "bindings": [{ "name": "AGENT", "class_name": "AgentDO" }]
-}
-```
+**Durable Objects** — stateful agents, WebSocket sessions, per-user state. **Already scaffolded** via the `VoiceInputExample` reference (enable with `VITE_FEATURE_VOICE_AGENT=true`). See "Pattern 10: Durable Object Agent" above for the full wiring — the scaffold saves you getting the 4 pieces (binding, migration, fetch-handler, Worker-entry export) aligned the first time.
+
 Use for: AI agent conversation loops, real-time collaboration, scheduled tasks via DO.alarm(), WebSocket hibernation (80-95% cost reduction). Every AI assistant project (Apollo, Athena, Claq, l2chat) uses this pattern.
 
 **Queues** — async job processing
@@ -498,7 +609,7 @@ Use for: heavy ML inference, video processing, anything that exceeds Workers CPU
 
 One `OPENROUTER_API_KEY` unlocks all non-Workers-AI models. Direct-provider SDKs (`@ai-sdk/anthropic`, `@ai-sdk/openai`, `@ai-sdk/google`) are kept as fallbacks if you prefer native routing.
 
-AI features in the chat module: streaming, tool calling, reasoning extraction, vision (image attachments), structured output, token usage logging, message metadata, regenerate, **message editing** (truncate + re-send), **conversation search** (FTS5), **conversation export** (JSON/Markdown), response duration display, conversation persistence, MCP integration, MCP-UI rendering.
+AI features in the chat module: streaming, tool calling, reasoning extraction, vision (image attachments), structured output, token usage logging, message metadata, regenerate, **message editing** (truncate + re-send), **conversation search** (FTS5), **conversation export** (JSON/Markdown), response duration display, conversation persistence, MCP integration, MCP-UI rendering, **sources footer** (claude.ai-style citation strip aggregated from web_search / gmail_search / drive_search / places_search outputs plus native `source-url` / `source-document` parts), **per-tool telemetry** (`ai_tool_calls` D1 table + admin "Tool errors" tab), **privileged-tool gating** (`gmail_send` / `run_shell` / `drive_delete` etc. hidden unless user intent is clear), **single-retry tool repair** (`experimental_repairToolCall` logs then emits parse error — no cost-bearing retry yet).
 
 ### Document Conversion
 
@@ -507,6 +618,35 @@ AI features in the chat module: streaming, tool calling, reasoning extraction, v
 - **PDFs + images**: Uses `env.AI.toMarkdown()` (Cloudflare's built-in converter — free, fast, native PDF parsing)
 - **Fallback**: Vision model (Kimi K2.5) for formats `toMarkdown()` doesn't handle
 - **Text files**: Pass-through via `TextDecoder`
+
+### Observability
+
+Two D1 tables record every chat request:
+
+| Table | Granularity | Written by | Read by |
+|---|---|---|---|
+| `ai_usage_logs` | one row per REQUEST (aggregate usage) | `buildChatAgent` `onFinish` | admin stats, per-user caps |
+| `ai_tool_calls` | one row per TOOL CALL (step-level) | chat route `onStepFinish` | admin "Tool errors" tab |
+
+Each `ai_tool_calls` row captures `step_index`, `tool_name`, `tool_error` (null on success), and per-step `input_tokens`/`output_tokens`. Errors are also logged as structured JSON to Workers Logs under `event: "tool_error"` for dashboard filtering. Enable observability on the Worker (`observability.enabled: true` in wrangler.jsonc) for 7-day retention.
+
+### Sources UX
+
+`src/client/modules/chat/components/SourcesFooter.tsx` renders a chip strip under each assistant message. It aggregates citations from two origins:
+
+1. **Native SDK parts** — `source-url` and `source-document` UIMessage parts, emitted by search-grounded models (e.g. Gemini with googleSearch). Requires `sendSources: true` on `createAgentUIStreamResponse` (already set in the chat route).
+2. **Tool outputs** — walks `tool-*` parts in the message and extracts sources from known shapes: `web_search.results[]`, `gmail_search.messages[]`, `drive_search.files[]`, `places_search.places[]`.
+
+No tool schema changes required — extraction is purely client-side. Adding sources for a new tool means teaching `extractSources()` to recognise its output shape. Falls back to favicon → icon on image load failure. Collapses to first 8 sources with "+N more" toggle beyond that.
+
+### Privileged-tool gating
+
+`src/server/lib/ai/prepare-step.ts` exports `computeActiveTools()` which runs every step in the agent loop and filters out destructive tools (`gmail_send`, `gmail_delete`, `calendar_create`, `drive_delete`, `fs_delete`, `fs_write`, `run_shell`) unless:
+
+- The latest user message contains an unlock keyword (case-insensitive regex per tool), OR
+- The tool was already invoked successfully earlier in the same conversation.
+
+Keeps a "what's in my inbox?" chat from accidentally triggering `gmail_send` just because the model decides to be helpful. Add new privileged tools to `PRIVILEGED_TOOLS` + `UNLOCK_KEYWORDS` in the same file.
 
 ### AI SDK v7 Migration
 
@@ -531,7 +671,7 @@ The chat module ships with a **modular agent toolkit** in `src/server/modules/ch
 |--------|-------|-----------------|
 | **core** | `get_server_time`, `get_model_info`, `calculate` | Yes |
 | **memory** | `remember`, `recall`, `search_memory`, `forget` | Yes (uses user_meta D1 table) |
-| **ui** | `offer_choices`, `show_alert`, `show_contact`, `collect_info`, `ask_questions`, `show_data_table`, `show_metric_cards`, `show_timeline`, `show_progress`, `show_comparison`, `confirm_action` | Yes (rendered as inline React components) |
+| **ui** | `offer_choices`, `show_alert`, `show_contact`, `collect_info`, `ask_questions`, `show_data_table`, `show_metric_cards`, `show_timeline`, `show_progress`, `show_comparison`, `confirm_action`, `show_map` | Yes (rendered as inline React components) |
 | **skills** | `load_skill` | Yes |
 | **code** | `run_python`, `run_shell`, `run_js` | Yes (returns setup msg if SANDBOX missing) |
 | **delegate** | `delegate` | Yes (subagent pattern) |
@@ -539,15 +679,107 @@ The chat module ships with a **modular agent toolkit** in `src/server/modules/ch
 | **todo** | `todo_add`, `todo_update`, `todo_list`, `todo_clear` | Yes (Hermes-style session task list, persisted via user_meta) |
 | **browser** | `browser_markdown`, `browser_extract`, `browser_screenshot`, `browser_links`, `browser_content` | Only if `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_API_TOKEN` set |
 | **search** | `web_search` | Only if a provider key is set |
+| **places** | `places_search`, `places_details` | Only if `GOOGLE_PLACES_API_KEY` set |
 | **files** | `fs_list`, `fs_read`, `fs_write`, `fs_delete` | Only if `FILES` R2 bucket bound |
+| **google-workspace — Gmail** | `gmail_search`, `gmail_get_message`, `gmail_list_labels`, `gmail_draft`, `gmail_reply`, `gmail_send` | Only if the user has connected Google Workspace (per-user OAuth) |
+| **google-workspace — Drive** | `drive_search`, `drive_get_file`, `drive_create_folder` | Same |
+| **google-workspace — Tasks** | `tasks_list`, `tasks_create` | Same |
+| **google-workspace — Calendar** | `calendar_upcoming`, `calendar_list_events`, `calendar_get_event`, `calendar_find_free_slot`, `calendar_create`, `calendar_update_event`, `calendar_delete_event` | Same |
+| **google-workspace — Docs** | `docs_search`, `docs_get`, `docs_create`, `docs_append` | Same |
+| **google-workspace — Sheets** | `sheets_list_tabs`, `sheets_read_range`, `sheets_append_row`, `sheets_write_range` | Same |
 
-**Adding a new tool**: create a new file in `tools/`, export a `buildXxxTools(ctx)` function, add to `tools/index.ts` aggregator. Use existing tools as reference.
+**Google Workspace — privileged write ops**
+
+Every write tool (`gmail_send`, `gmail_reply`, `calendar_create`, `calendar_update_event`, `calendar_delete_event`, `docs_create`, `docs_append`, `sheets_append_row`, `sheets_write_range`) uses `needsApproval: true` — the agent stops, shows the user the proposed args, and only executes after approval. Plus the ops are in `PRIVILEGED_TOOLS` so they aren't even offered to the model unless the latest user message contains an unlock keyword (e.g. "reply", "schedule", "append", "write"). `gmail_draft` is intentionally NOT privileged — drafts have no external effect, so the model can draft freely and the user approves later.
+
+Scopes required (set up at Connectors → Google Workspace):
+- `gmail.readonly` — gmail read tools
+- `gmail.send` — gmail_send, gmail_reply
+- `gmail.compose` — gmail_draft
+- `drive.readonly` — drive_search, docs_search, docs_get (fallback via Drive export)
+- `calendar.events` — all calendar tools
+- `documents` — docs_create, docs_append, docs_get (preferred)
+- `documents.readonly` — docs_get (alternative to `documents`)
+- `spreadsheets.readonly` — sheets_list_tabs, sheets_read_range
+- `spreadsheets` — sheets_append_row, sheets_write_range
+- `drive.file` (or `drive`) — drive_create_folder
+- `tasks.readonly` — tasks_list (or `tasks` which covers both)
+- `tasks` — tasks_create
+
+Docs `docs_append` supports markdown-ish input: lines starting with `#`, `##`, or `###` become H1/H2/H3; paragraphs separated by blank lines render as separate paragraphs. Tables, images, inline objects are not yet supported — use the Docs UI for those.
+
+Sheets ranges use A1 notation (`Sheet1!A1:D20`, `Budget!A:A`). `valueInputOption: 'USER_ENTERED'` (default) parses formulas + dates the way the Sheets UI does; `RAW` stores the string verbatim.
+
+**Natural-language query translation** (`gmail_search`, `calendar_list_events`)
+
+Both tools accept an optional `naturalQuery` field alongside their structured inputs. When the model passes free-form English ("emails from Nick last week with attachments", "meetings with Sarah this week"), the server translates it to Gmail operator syntax or structured calendar fields via Nemotron 3 (`@cf/nvidia/nemotron-3-120b-a12b`) on Workers AI — see `src/server/modules/chat/tools/google-workspace-nlp.ts`.
+
+Rules:
+- Structured fields (`query`, `range`, `start`, `end`) ALWAYS win over `naturalQuery`. If both are passed, naturalQuery is ignored silently — avoids "the server helpfully rewrote my operator" surprise.
+- Translator output is echoed back as `translatedFrom` on the result so the renderer can show both "from: emails from nick last week" AND "translated to: from:nick after:2026/04/16". The user sees exactly what the server inferred.
+- 10-second timeout with graceful passthrough — translator errors fall back to using the original text as a fulltext query, so the tool still returns *something*. Failures land in Workers Logs as `event: "gmail_nlp_fallback"` or `calendar_nlp_fallback`.
+- Current date + user timezone are injected into the translator's system prompt so "last week" resolves correctly despite the Worker running in UTC.
+- Not wired on `calendar_create` — its structured fields are required and a single natural sentence misses too much to be a reliable replacement. Users can describe the event in chat and the main model constructs the structured call.
+
+### Adding a new tool (canonical pattern — post-Phase 0)
+
+Every tool is a `ToolDefinition<Input, Output>` from `src/shared/agent/tool.ts`.
+Server execute + input/output Zod schemas + optional client render metadata
+live in one object. See `.claude/rules/one-file-tool-definitions.md`.
+
+```ts
+// src/server/modules/chat/tools/my-domain.ts
+import { z } from 'zod'
+import { Sparkles } from 'lucide-react'
+import type { ToolDefinition } from '@/shared/agent'
+
+const MyInput = z.object({ query: z.string() })
+const MyOutput = z.object({ count: z.number(), items: z.array(z.unknown()) })
+
+export const myToolDefinition: ToolDefinition<
+  z.infer<typeof MyInput>,
+  z.infer<typeof MyOutput>
+> = {
+  name: 'my_tool',
+  description: 'What the model sees when deciding whether to call.',
+  inputSchema: MyInput,
+  outputSchema: MyOutput,
+  isAvailable: (ctx) => !!ctx.env.MY_BINDING,       // optional per-request gate
+  needsApproval: false,                              // or true / (input) => boolean
+  execute: async (input, ctx) => {
+    // ctx is the canonical AgentContext — env, userId, user, model, telemetry, ...
+    return { count: 0, items: [] }
+  },
+  render: {                                          // optional — nice UI when clicked
+    icon: Sparkles,
+    displayName: 'My Tool',
+    summary: (output) => `${output.count} results`,
+  },
+}
+
+export const myDomainDefinitions = [myToolDefinition] as ToolDefinition<unknown, unknown>[]
+```
+
+Register in `src/server/modules/chat/tools/index.ts` — add to the `allDefinitions` array.
+That's it. `collectAvailableTools(allDefinitions, ctx)` handles the rest:
+Zod validation, telemetry, AI SDK adapter, filtering by `isAvailable`.
+
+For a custom client renderer (summary badge + expanded card), drop a renderer file
+in `src/client/modules/chat/components/tool-renderers/` matching by tool name, and
+import the output type via `import type { MyOutput } from '@/server/modules/chat/tools/my-domain'`.
+Vite tree-shakes server-only code from client bundles.
 
 ### Browser Rendering tools
 
 Use Cloudflare Browser Rendering's REST API directly — no Puppeteer/Playwright. Set up an API token at https://dash.cloudflare.com/profile/api-tokens with "Browser Rendering - Edit" permission, then set `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`.
 
 `browser_extract` is particularly powerful — uses the `/json` endpoint which runs Workers AI extraction natively, so you can pass natural-language prompts like "Extract product name, price, availability".
+
+### Places tools (Google Places API)
+
+`places_search` and `places_details` use the Google Places API (New). Set `GOOGLE_PLACES_API_KEY` (create one at https://console.cloud.google.com → enable "Places API (New)", restrict to your Worker routes in production).
+
+The agent is auto-nudged via the system prompt to pair `places_search` with the `show_map` UI tool — so local-business queries render as a Leaflet map + scrollable card list (like claude.ai's map answers) instead of a wall of text. Same nudge fires if an MCP server exposes a tool named `google_local_places`, so you can swap to an MCP without touching the prompt.
 
 ### Search providers
 

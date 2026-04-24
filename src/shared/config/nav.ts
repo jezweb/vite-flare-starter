@@ -20,6 +20,13 @@ import {
   FolderOpen,
   Component,
   Palette,
+  Shield,
+  Zap,
+  Plug,
+  Settings as SettingsIcon,
+  Bell,
+  Mic,
+  Camera,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -59,6 +66,17 @@ export const NAV_SECTIONS: NavSection[] = [
       { to: '/dashboard/extract', label: 'Extract', icon: Sparkles, feature: 'chat' },
       { to: '/dashboard/activity', label: 'Activity', icon: Activity, feature: 'activity' },
       { to: '/dashboard/files', label: 'Files', icon: FolderOpen, feature: 'files' },
+      { to: '/dashboard/skills', label: 'Skills', icon: Zap, feature: 'skills' },
+      { to: '/dashboard/connectors', label: 'Connectors', icon: Plug, feature: 'connectors' },
+      { to: '/dashboard/voice-example', label: 'Voice Example', icon: Mic, feature: 'voiceAgent' },
+      { to: '/dashboard/video-example', label: 'Video Example', icon: Camera, feature: 'videoAgent' },
+    ],
+  },
+  {
+    label: 'You',
+    items: [
+      { to: '/dashboard/notifications', label: 'Notifications', icon: Bell, feature: 'notifications' },
+      { to: '/dashboard/settings', label: 'Settings', icon: SettingsIcon },
     ],
   },
   {
@@ -67,6 +85,12 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { to: '/dashboard/components', label: 'Components', icon: Component, feature: 'components' },
       { to: '/dashboard/style-guide', label: 'Style Guide', icon: Palette, feature: 'styleGuide' },
+    ],
+  },
+  {
+    label: 'Admin',
+    items: [
+      { to: '/dashboard/admin', label: 'Admin Panel', icon: Shield, minRole: 'admin' },
     ],
   },
 ]

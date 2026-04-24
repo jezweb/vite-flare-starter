@@ -3,7 +3,9 @@
  *
  * AI SDK's needsApproval feature pauses the agent loop and sends
  * a tool part with state 'approval-requested'. The user approves
- * or denies, and the response is sent back via addToolApprovalResponse.
+ * or denies, and the response is sent back via addToolApprovalResponse
+ * + the `sendAutomaticallyWhen` callback wired in `useChat.ts` which
+ * re-submits the conversation once the approval is recorded.
  */
 import { ShieldAlert, Check, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -21,7 +23,7 @@ export function ToolApproval({ toolName, args, onApprove, onDeny }: Props) {
   return (
     <div className="my-2 rounded-lg border border-amber-500/30 dark:border-amber-500/40 bg-amber-500/5 dark:bg-amber-500/10 p-3">
       <div className="flex items-start gap-3">
-        <div className="rounded-md bg-amber-500/10 dark:bg-amber-500/15 p-2">
+        <div className="rounded-md bg-amber-500/10 dark:bg-amber-500/15 p-2 shrink-0">
           <ShieldAlert className="size-4 text-amber-600 dark:text-amber-400" />
         </div>
         <div className="flex-1 min-w-0">
@@ -30,16 +32,30 @@ export function ToolApproval({ toolName, args, onApprove, onDeny }: Props) {
             The agent wants to execute this action. Review the details and approve or deny.
           </div>
           {Object.keys(args).length > 0 && (
-            <pre className="mt-2 rounded bg-muted p-2 text-xs overflow-auto max-h-32">
+            <pre
+              className="mt-2 max-h-40 overflow-auto rounded bg-muted p-2 font-mono text-[11px] leading-relaxed whitespace-pre-wrap break-words"
+            >
               {JSON.stringify(args, null, 2)}
             </pre>
           )}
-          <div className="mt-3 flex gap-2">
-            <Button size="sm" variant="default" onClick={onApprove} className="gap-1.5">
+          <div className="relative z-10 mt-3 flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="default"
+              onClick={onApprove}
+              className="gap-1.5"
+            >
               <Check className="size-3.5" />
               Approve
             </Button>
-            <Button size="sm" variant="outline" onClick={onDeny} className="gap-1.5">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={onDeny}
+              className="gap-1.5"
+            >
               <X className="size-3.5" />
               Deny
             </Button>

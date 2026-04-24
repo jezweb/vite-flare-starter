@@ -90,13 +90,23 @@ export function InlineEdit({
 
   return (
     <span
+      role="button"
+      tabIndex={0}
       onClick={() => setEditing(true)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          setEditing(true)
+        }
+      }}
       className={cn(
         'cursor-text rounded px-1 py-0.5 -mx-1 hover:bg-muted transition-colors',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         !value && 'text-muted-foreground',
         className
       )}
       title="Click to edit"
+      aria-label={value ? `Edit: ${value}` : `Edit: ${placeholder}`}
     >
       {value || placeholder}
     </span>

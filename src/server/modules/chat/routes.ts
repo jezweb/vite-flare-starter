@@ -16,7 +16,7 @@ import { convertToMarkdown } from '@/server/lib/ai/documents'
 import { createD1ChatStorage } from '@/server/modules/conversations/storage'
 import { conversations } from '@/server/modules/conversations/db/schema'
 import { logActivityFromContext } from '@/server/modules/activity/log'
-import { aiUsageLogs } from './db/schema'
+import { aiUsageLogs, aiToolCalls } from './db/schema'
 
 const app = new Hono<AuthContext>()
 
@@ -104,6 +104,20 @@ app.post('/', async (c) => {
   try {
     const body = await c.req.json()
     const { model: requestedModel, conversationId: existingConversationId } = body
+    // projectId is accepted from the client ONLY for new conversations — it
+    // tells the server which project this conversation should belong to. For
+    // existing conversations we always trust the stored row, not the payload
+    // (stops a client from flipping project mid-chat to get elevated
+    // instructions). `null` explicitly unbinds at creation.
+    //
+    // Defensive parse: reject anything that isn't a UUID-shaped string to
+    // prevent a malicious client sending a 10MB payload as projectId.
+    // Strict v4 UUID regex — won't match "aaa" or "----" which the prior
+    // looser regex allowed.
+    const rawProjectId = body.projectId
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    const clientProjectId: string | null =
+      typeof rawProjectId === 'string' && UUID_RE.test(rawProjectId) ? rawProjectId : null
     // systemPrompt is intentionally server-controlled — client cannot override.
     // Fork-users: change this in buildChatAgent's default instructions.
     const systemPrompt = undefined
@@ -120,14 +134,24 @@ app.post('/', async (c) => {
     const storage = createD1ChatStorage(c.env.DB)
 
     // Title derived from the first user message — used lazily when we finally
-    // persist the conversation in `onFinish`.
+    // persist the conversation in `onFinish`. Strips <skill_content> wrappers
+    // so slash-activated skills (e.g. /plan-task) don't leak XML into the
+    // breadcrumb or activity feed.
     const firstUserMsg = messages.find((m: { role: string }) => m.role === 'user')
+    const stripSkillWrapper = (text: string): string =>
+      text.replace(/<skill_content\b[^>]*>[\s\S]*?<\/skill_content>\s*/gi, '').trim()
     const extractTitle = (msg: typeof firstUserMsg): string => {
       if (!msg) return 'New conversation'
-      if (typeof msg.content === 'string' && msg.content.trim()) return msg.content.slice(0, 80)
+      if (typeof msg.content === 'string' && msg.content.trim()) {
+        const cleaned = stripSkillWrapper(msg.content)
+        if (cleaned) return cleaned.slice(0, 80)
+      }
       const parts = msg.parts as Array<{ type?: string; text?: string }> | undefined
       const textPart = parts?.find((p) => p?.type === 'text' && typeof p.text === 'string' && p.text.trim())
-      if (textPart?.text) return textPart.text.slice(0, 80)
+      if (textPart?.text) {
+        const cleaned = stripSkillWrapper(textPart.text)
+        if (cleaned) return cleaned.slice(0, 80)
+      }
       return 'New conversation'
     }
 
@@ -141,6 +165,14 @@ app.post('/', async (c) => {
       conversationId = crypto.randomUUID()
     }
 
+    // Resolve the effective projectId. For existing conversations the stored
+    // row wins — trusting the client on this would let a user flip projects
+    // mid-chat and inherit someone else's instructions. For new ones we
+    // accept what the client declared.
+    const effectiveProjectId = isNewConversation
+      ? clientProjectId
+      : await storage.getProjectId(conversationId, userId)
+
     // Build the agent (model, tools, system prompt, logging — all encapsulated)
     const { agent, startTime, modelId } = await buildChatAgent({
       env: c.env as unknown as Parameters<typeof buildChatAgent>[0]['env'],
@@ -148,6 +180,7 @@ app.post('/', async (c) => {
       user: user || undefined,
       modelId: requestedModel,
       systemPrompt,
+      projectId: effectiveProjectId,
     })
 
     // Pre-process file attachments: convert non-image files to text/transcription
@@ -235,6 +268,9 @@ app.post('/', async (c) => {
       originalMessages: validatedMessages as any,
       experimental_transform: smoothStream({ chunking: 'word' }),
       sendReasoning: true,
+      // Enable native source parts (e.g. Gemini googleSearch grounding).
+      // Custom tool sources are aggregated client-side in SourcesFooter.
+      sendSources: true,
       // Without this the assistant message lands in D1 with an empty id, failing the PK.
       generateMessageId: () => crypto.randomUUID(),
       messageMetadata: ({ part }) => {
@@ -249,6 +285,79 @@ app.post('/', async (c) => {
         }
         return undefined
       },
+      // Per-step telemetry — one row per tool call, enables the admin panel's
+      // "Recent tool errors" strip and future latency/reliability dashboards.
+      onStepFinish: async (stepResult) => {
+        const { stepNumber, toolCalls, toolResults, usage } = stepResult
+        if (toolCalls.length === 0) return
+        try {
+          const db = drizzle(c.env.DB)
+          const rows = toolCalls.map((tc) => {
+            const result = toolResults.find((tr) => tr.toolCallId === tc.toolCallId)
+            const toolError =
+              result && 'output' in result === false && 'error' in result
+                ? String((result as { error: unknown }).error)
+                : null
+            return {
+              userId,
+              model: modelId,
+              stepIndex: stepNumber,
+              toolName: tc.toolName,
+              toolDurationMs: null,
+              toolError,
+              inputTokens: usage.inputTokens ?? 0,
+              outputTokens: usage.outputTokens ?? 0,
+            }
+          })
+          await db.insert(aiToolCalls).values(rows)
+          const errored = rows.filter((r) => r.toolError)
+          if (errored.length > 0) {
+            console.log(
+              JSON.stringify({
+                event: 'tool_error',
+                stepIndex: stepNumber,
+                userId,
+                model: modelId,
+                conversationId,
+                errors: errored.map((r) => ({ tool: r.toolName, error: r.toolError })),
+              }),
+            )
+          }
+        } catch (err) {
+          console.error(
+            JSON.stringify({ event: 'step_finish_telemetry_error', error: String(err) }),
+          )
+        }
+      },
+      // Structured error logging for stream-level failures (network, provider,
+      // parse errors). Tool-specific errors are captured in onStepFinish above.
+      onError: (error) => {
+        // Full error (including stack) goes only to Workers Logs — never the
+        // client. The client gets a generic sanitised message below to avoid
+        // leaking file paths, line numbers, or internal framework state.
+        console.error(
+          JSON.stringify({
+            event: 'chat_stream_error',
+            userId,
+            model: modelId,
+            conversationId,
+            error:
+              error instanceof Error
+                ? { name: error.name, message: error.message, stack: error.stack }
+                : String(error),
+          }),
+        )
+        // Surface a short, safe message based on common error categories.
+        // Unknown errors fall through to the generic string.
+        if (error instanceof Error) {
+          const name = error.name
+          if (name === 'AbortError') return 'Request was cancelled.'
+          if (name === 'TimeoutError') return 'The model took too long to respond. Please try again.'
+          if (name === 'RateLimitError') return 'Rate limit reached. Please wait a moment and try again.'
+          if (name === 'AI_APICallError') return 'The model service is temporarily unavailable.'
+        }
+        return 'An error occurred during chat streaming. Please try again.'
+      },
       onFinish: async ({ messages: finalMessages }) => {
         // Persist conversation messages to D1. For brand-new conversations,
         // insert the parent conversation row LAZILY here — this prevents ghost
@@ -261,6 +370,7 @@ app.post('/', async (c) => {
               title: extractTitle(firstUserMsg),
               model: requestedModel || DEFAULT_MODEL,
               systemPrompt,
+              projectId: effectiveProjectId,
             })
             // Activity log moved here too so empty conversations don't pollute
             // the audit trail.

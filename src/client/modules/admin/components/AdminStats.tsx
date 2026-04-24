@@ -7,7 +7,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAdminStats } from '../hooks/useAdmin'
-import { Users, Activity, TrendingUp, Calendar } from 'lucide-react'
+import { Users, Activity, TrendingUp, Calendar, AlertCircle } from 'lucide-react'
 
 export function AdminStats() {
   const { data: stats, isLoading, error } = useAdminStats()
@@ -32,7 +32,21 @@ export function AdminStats() {
   }
 
   if (error || !stats) {
-    return null
+    // Silently returning null hides an actual API failure from the admin — surface it
+    // so the page doesn't appear broken without an explanation.
+    return (
+      <Card className="border-destructive/50 bg-destructive/5">
+        <CardContent className="flex items-start gap-3 py-4 text-sm">
+          <AlertCircle className="mt-0.5 h-4 w-4 text-destructive" />
+          <div className="space-y-0.5">
+            <p className="font-medium text-destructive">Couldn't load stats</p>
+            <p className="text-muted-foreground">
+              {error instanceof Error ? error.message : 'Check your connection and try again.'}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   const cards = [

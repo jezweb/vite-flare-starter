@@ -58,13 +58,19 @@ function formatLastUsed(timestamp: number | null): string {
   return formatDate(timestamp)
 }
 
+// Separated `isDeleting` (show spinner on THIS row) from `disabled`
+// (block the button on every row while any delete is in flight) so the
+// spinner only appears on the row actually being deleted.
 interface TokenRowProps {
   token: ApiTokenListItem
   onDeleteClick: (token: { id: string; name: string }) => void
+  /** Show spinner on this row only — the token being deleted. */
   isDeleting: boolean
+  /** Disable the delete button on every row while any delete is in flight. */
+  anyPending: boolean
 }
 
-function TokenRow({ token, onDeleteClick, isDeleting }: TokenRowProps) {
+function TokenRow({ token, onDeleteClick, isDeleting, anyPending }: TokenRowProps) {
   return (
     <TableRow>
       <TableCell className="font-medium">{token.name}</TableCell>
@@ -93,7 +99,7 @@ function TokenRow({ token, onDeleteClick, isDeleting }: TokenRowProps) {
           variant="ghost"
           size="sm"
           onClick={() => onDeleteClick({ id: token.id, name: token.name })}
-          disabled={isDeleting}
+          disabled={isDeleting || anyPending}
           className="text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors"
         >
           {isDeleting ? (
@@ -380,6 +386,7 @@ export function ApiTokensSection() {
                     token={token}
                     onDeleteClick={deleteConfirmDialog.openDialog}
                     isDeleting={deletingId === token.id}
+                    anyPending={deleteToken.isPending}
                   />
                 ))}
               </TableBody>

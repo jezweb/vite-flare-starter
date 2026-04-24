@@ -39,6 +39,27 @@ export const features = {
   /** API token management in settings */
   apiTokens: isEnabled('VITE_FEATURE_API_TOKENS'),
 
+  /** Skills dashboard + slash-command activation in chat */
+  skills: isEnabled('VITE_FEATURE_SKILLS'),
+
+  /** MCP Connectors — per-user OAuth/bearer connections to external MCP servers */
+  connectors: isEnabled('VITE_FEATURE_CONNECTORS'),
+
+  /**
+   * Voice agent example page (@cloudflare/voice + agents SDK).
+   * Default OFF — opt-in by setting VITE_FEATURE_VOICE_AGENT=true.
+   * This demo shows the pattern; not every fork needs a voice UI.
+   */
+  voiceAgent: import.meta.env['VITE_FEATURE_VOICE_AGENT'] === 'true',
+
+  /**
+   * Video input agent example page — sampled-frame vision captioning.
+   * Default OFF — opt-in by setting VITE_FEATURE_VIDEO_AGENT=true.
+   * Complements the voice example; shows the "no SDK mixin, build from
+   * primitives" pattern (getUserMedia → canvas → WS → DO → vision model).
+   */
+  videoAgent: import.meta.env['VITE_FEATURE_VIDEO_AGENT'] === 'true',
+
   // ── UI Features ────────────────────────────────────────────────────────
 
   /** Theme/colour picker in preferences */

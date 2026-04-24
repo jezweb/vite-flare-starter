@@ -11,11 +11,16 @@
  * Jobs store a prompt that gets re-sent to the AI when triggered.
  * The cron handler creates a fresh AI call with the stored prompt + context.
  */
-import { tool } from 'ai'
 import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq, and, lte } from 'drizzle-orm'
 import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core'
+import { CalendarClock, ListOrdered, XCircle } from 'lucide-react'
+import type { ToolDefinition, AgentContext } from '@/shared/agent'
+
+function getDB(ctx: AgentContext): D1Database {
+  return (ctx.env as unknown as { DB: D1Database }).DB
+}
 
 // ─── Schema (inline — exported for use in db/schema.ts) ─────────────
 
@@ -78,115 +83,154 @@ function nextCronRun(cronExpr: string, after: Date = new Date()): Date {
 
 // ─── Schedule Tools ─────────────────────────────────────────────────
 
-interface ScheduleContext {
-  db: D1Database
-  userId: string
+const ScheduleTaskOutput = z.union([
+  z.object({
+    id: z.string(),
+    name: z.string(),
+    nextRun: z.string(),
+    recurring: z.boolean(),
+    cron: z.string().optional(),
+  }),
+  z.object({ error: z.string() }),
+])
+
+export const scheduleTaskDefinition: ToolDefinition<
+  { name: string; prompt: string; skillName?: string; runAt?: string; cron?: string },
+  z.infer<typeof ScheduleTaskOutput>
+> = {
+  name: 'schedule_task',
+  description:
+    'Schedule a task to run later. The prompt will be sent to the AI at the scheduled time. Use for reminders, recurring reports, daily briefs, or any delayed work. Supports one-shot (specific time) or recurring (cron expression).',
+  inputSchema: z.object({
+    name: z.string().describe('Short name for the task (e.g. "Morning brief", "Weekly report")'),
+    prompt: z.string().describe('The full prompt to execute when the task fires — include all context the AI will need'),
+    skillName: z.string().optional().describe('Optional: skill to load before executing (e.g. "morning-brief")'),
+    runAt: z.string().optional().describe('ISO 8601 datetime for one-shot tasks (e.g. "2026-04-14T09:00:00+11:00")'),
+    cron: z.string().optional().describe('Cron expression for recurring tasks (e.g. "0 6 * * *" = daily at 6am, "0 9 * * 1" = Monday 9am)'),
+  }),
+  outputSchema: ScheduleTaskOutput,
+  execute: async ({ name, prompt, skillName, runAt, cron: cronExpr }, ctx) => {
+    try {
+      if (!runAt && !cronExpr) {
+        return { error: 'Either runAt (one-shot) or cron (recurring) is required' }
+      }
+      let nextRun: number
+      if (runAt) {
+        nextRun = new Date(runAt).getTime()
+        if (isNaN(nextRun)) return { error: `Invalid date: ${runAt}` }
+      } else {
+        nextRun = nextCronRun(cronExpr!).getTime()
+      }
+      const db = drizzle(getDB(ctx))
+      const id = crypto.randomUUID()
+      await db.insert(scheduledJobs).values({
+        id,
+        userId: ctx.userId,
+        name,
+        prompt,
+        skillName: skillName || null,
+        cron: cronExpr || null,
+        nextRun,
+        status: 'active',
+      })
+      return { id, name, nextRun: new Date(nextRun).toISOString(), recurring: !!cronExpr, cron: cronExpr }
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : String(error) }
+    }
+  },
+  render: { icon: CalendarClock, displayName: 'Schedule Task' },
 }
 
-export function buildScheduleTools(ctx: ScheduleContext) {
-  return {
-    schedule_task: tool({
-      description: 'Schedule a task to run later. The prompt will be sent to the AI at the scheduled time. Use for reminders, recurring reports, daily briefs, or any delayed work. Supports one-shot (specific time) or recurring (cron expression).',
-      inputSchema: z.object({
-        name: z.string().describe('Short name for the task (e.g. "Morning brief", "Weekly report")'),
-        prompt: z.string().describe('The full prompt to execute when the task fires — include all context the AI will need'),
-        skillName: z.string().optional().describe('Optional: skill to load before executing (e.g. "morning-brief")'),
-        runAt: z.string().optional().describe('ISO 8601 datetime for one-shot tasks (e.g. "2026-04-14T09:00:00+11:00")'),
-        cron: z.string().optional().describe('Cron expression for recurring tasks (e.g. "0 6 * * *" = daily at 6am, "0 9 * * 1" = Monday 9am)'),
+const ListTasksOutput = z.union([
+  z.object({
+    tasks: z.array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        status: z.string(),
+        nextRun: z.string().nullable(),
+        lastRun: z.string().nullable(),
+        recurring: z.boolean(),
+        cron: z.string().nullable(),
+        skillName: z.string().nullable(),
       }),
-      execute: async ({ name, prompt, skillName, runAt, cron: cronExpr }) => {
-        try {
-          if (!runAt && !cronExpr) {
-            return { error: 'Either runAt (one-shot) or cron (recurring) is required' }
-          }
+    ),
+    count: z.number(),
+  }),
+  z.object({ error: z.string() }),
+])
 
-          let nextRun: number
-          if (runAt) {
-            nextRun = new Date(runAt).getTime()
-            if (isNaN(nextRun)) return { error: `Invalid date: ${runAt}` }
-          } else {
-            nextRun = nextCronRun(cronExpr!).getTime()
-          }
-
-          const db = drizzle(ctx.db)
-          const id = crypto.randomUUID()
-          await db.insert(scheduledJobs).values({
-            id,
-            userId: ctx.userId,
-            name,
-            prompt,
-            skillName: skillName || null,
-            cron: cronExpr || null,
-            nextRun,
-            status: 'active',
-          })
-
-          return {
-            id,
-            name,
-            nextRun: new Date(nextRun).toISOString(),
-            recurring: !!cronExpr,
-            cron: cronExpr,
-          }
-        } catch (error) {
-          return { error: error instanceof Error ? error.message : String(error) }
-        }
-      },
-    }),
-
-    list_tasks: tool({
-      description: 'List your scheduled tasks. Shows upcoming, recurring, and completed tasks with their next run times.',
-      inputSchema: z.object({
-        status: z.enum(['all', 'active', 'paused', 'completed', 'failed']).optional().describe('Filter by status (default: active)'),
-      }),
-      execute: async ({ status = 'active' }) => {
-        try {
-          const db = drizzle(ctx.db)
-          const query = status === 'all'
-            ? db.select().from(scheduledJobs).where(eq(scheduledJobs.userId, ctx.userId))
-            : db.select().from(scheduledJobs).where(
-                and(eq(scheduledJobs.userId, ctx.userId), eq(scheduledJobs.status, status))
-              )
-          const jobs = await query
-          return {
-            tasks: jobs.map((j) => ({
-              id: j.id,
-              name: j.name,
-              status: j.status,
-              nextRun: j.nextRun ? new Date(j.nextRun).toISOString() : null,
-              lastRun: j.lastRun ? new Date(j.lastRun).toISOString() : null,
-              recurring: !!j.cron,
-              cron: j.cron,
-              skillName: j.skillName,
-            })),
-            count: jobs.length,
-          }
-        } catch (error) {
-          return { error: error instanceof Error ? error.message : String(error) }
-        }
-      },
-    }),
-
-    cancel_task: tool({
-      description: 'Cancel a scheduled task by ID. Pauses it so it won\'t run, but keeps it in the list for reference.',
-      inputSchema: z.object({
-        id: z.string().describe('The task ID to cancel'),
-      }),
-      execute: async ({ id }) => {
-        try {
-          const db = drizzle(ctx.db)
-          await db
-            .update(scheduledJobs)
-            .set({ status: 'paused' })
-            .where(and(eq(scheduledJobs.id, id), eq(scheduledJobs.userId, ctx.userId)))
-          return { id, cancelled: true }
-        } catch (error) {
-          return { error: error instanceof Error ? error.message : String(error) }
-        }
-      },
-    }),
-  }
+export const listTasksDefinition: ToolDefinition<
+  { status?: 'all' | 'active' | 'paused' | 'completed' | 'failed' },
+  z.infer<typeof ListTasksOutput>
+> = {
+  name: 'list_tasks',
+  description: 'List your scheduled tasks. Shows upcoming, recurring, and completed tasks with their next run times.',
+  inputSchema: z.object({
+    status: z.enum(['all', 'active', 'paused', 'completed', 'failed']).optional().describe('Filter by status (default: active)'),
+  }),
+  outputSchema: ListTasksOutput,
+  execute: async ({ status = 'active' }, ctx) => {
+    try {
+      const db = drizzle(getDB(ctx))
+      const query = status === 'all'
+        ? db.select().from(scheduledJobs).where(eq(scheduledJobs.userId, ctx.userId))
+        : db.select().from(scheduledJobs).where(
+            and(eq(scheduledJobs.userId, ctx.userId), eq(scheduledJobs.status, status))
+          )
+      const jobs = await query
+      return {
+        tasks: jobs.map((j) => ({
+          id: j.id,
+          name: j.name,
+          status: j.status,
+          nextRun: j.nextRun ? new Date(j.nextRun).toISOString() : null,
+          lastRun: j.lastRun ? new Date(j.lastRun).toISOString() : null,
+          recurring: !!j.cron,
+          cron: j.cron,
+          skillName: j.skillName,
+        })),
+        count: jobs.length,
+      }
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : String(error) }
+    }
+  },
+  render: { icon: ListOrdered, displayName: 'List Tasks' },
 }
+
+const CancelTaskOutput = z.union([
+  z.object({ id: z.string(), cancelled: z.boolean() }),
+  z.object({ error: z.string() }),
+])
+
+export const cancelTaskDefinition: ToolDefinition<{ id: string }, z.infer<typeof CancelTaskOutput>> = {
+  name: 'cancel_task',
+  description: "Cancel a scheduled task by ID. Pauses it so it won't run, but keeps it in the list for reference.",
+  inputSchema: z.object({
+    id: z.string().describe('The task ID to cancel'),
+  }),
+  outputSchema: CancelTaskOutput,
+  execute: async ({ id }, ctx) => {
+    try {
+      const db = drizzle(getDB(ctx))
+      await db
+        .update(scheduledJobs)
+        .set({ status: 'paused' })
+        .where(and(eq(scheduledJobs.id, id), eq(scheduledJobs.userId, ctx.userId)))
+      return { id, cancelled: true }
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : String(error) }
+    }
+  },
+  render: { icon: XCircle, displayName: 'Cancel Task' },
+}
+
+export const scheduleDefinitions = [
+  scheduleTaskDefinition,
+  listTasksDefinition,
+  cancelTaskDefinition,
+] as ToolDefinition<unknown, unknown>[]
 
 // ─── Cron Handler (called by Worker scheduled() event) ──────────────
 

@@ -18,7 +18,10 @@
     // SPA routing - serve index.html for all non-asset routes
     "not_found_handling": "single-page-application",
     // Only these paths invoke the Worker (everything else = FREE static serving)
-    "run_worker_first": ["/api/*"]
+    //  - /api/*    — Hono REST routes
+    //  - /agents/* — Durable Object agents SDK WebSocket routing (`routeAgentRequest`)
+    //                Remove this entry if you're not using any DO agents.
+    "run_worker_first": ["/api/*", "/agents/*"]
   },
 
   // Cloudflare Bindings
@@ -45,6 +48,10 @@
     {
       "binding": "FILES",
       "bucket_name": "vite-flare-starter-files"
+    },
+    {
+      "binding": "SKILLS",
+      "bucket_name": "vite-flare-starter-skills"
     }
   ],
 
@@ -86,11 +93,70 @@
   //   }
   // ],
 
-  // Cron Triggers (scheduled tasks — processes due jobs from scheduled_jobs table)
-  // Uncomment to enable. The scheduled() handler is already wired up in src/server/index.ts.
-  // "triggers": {
-  //   "crons": ["*/5 * * * *"]
-  // },
+  // Cron Triggers (scheduled tasks)
+  // Runs every 15 minutes:
+  //  - processes due jobs from scheduled_jobs table (agent reminders)
+  //  - cleans up expired better-auth sessions + verification tokens
+  //  - hourly: 30-day backstop for orphaned session rows
+  // The scheduled() handler is wired up in src/server/index.ts.
+  "triggers": {
+    "crons": ["*/15 * * * *"]
+  },
+
+  // Email Sending
+  // Two paths wrapped by src/server/modules/email/service.ts:
+  //  - Cloudflare Email Service binding (EMAIL) — transactional, any recipient,
+  //    requires Email Sending domain onboarding. Uncomment when ready.
+  //  - Cloudflare Email Routing SendEmail binding (SEND_EMAIL) — dev / internal,
+  //    verified destinations only. Uncomment and set destination_address.
+  //  - Resend HTTP fallback — uses EMAIL_API_KEY secret, works anywhere.
+  // The service picks the first available in that order and falls back
+  // to console.log in development when none is configured.
+  // "send_email": [
+  //   { "name": "EMAIL", "type": "service" },
+  //   { "name": "SEND_EMAIL", "destination_address": "you@example.com" }
+  // ],
+
+  // Durable Objects — stateful, SQLite-backed classes that live longer than
+  // a single request. One instance per `idFromName(name)`. Used for:
+  //  - Voice agents (VoiceInputExample — streams mic + transcribes)
+  //  - Chat rooms, collaborative docs, live dashboards
+  //  - Any per-entity WebSocket session
+  //
+  // Every DO class listed here MUST be exported from the Worker entry
+  // (see `export { VoiceInputExample }` in src/server/index.ts) AND listed
+  // in `migrations.new_sqlite_classes` below so storage is provisioned.
+  //
+  // Routed via `routeAgentRequest` at /agents/{agent-name-kebab-case}/{name}.
+  // See CLAUDE.md → "Pattern 10: Durable Object Agent (voice / streaming WS)".
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "VoiceInputExample",
+        "class_name": "VoiceInputExample"
+      },
+      {
+        "name": "VideoInputExample",
+        "class_name": "VideoInputExample"
+      }
+    ]
+  },
+
+  // Migrations — required to enable SQLite storage on DO classes. Tag is
+  // monotonic ("v1", "v2", ...) — NEVER edit an existing tag after deploy,
+  // add a new one. Include every class in `new_sqlite_classes` the first
+  // time it ships. Subsequent renames/deletes use `renamed_classes` /
+  // `deleted_classes` on a new tag.
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["VoiceInputExample"]
+    },
+    {
+      "tag": "v2",
+      "new_sqlite_classes": ["VideoInputExample"]
+    }
+  ],
 
   // Observability
   "observability": {

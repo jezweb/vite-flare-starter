@@ -110,7 +110,7 @@ export function FilesPage() {
             </div>
             <div className="flex items-center gap-2">
               <Select value={currentFolder} onValueChange={setCurrentFolder}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="Select folder" />
                 </SelectTrigger>
                 <SelectContent>
@@ -129,7 +129,7 @@ export function FilesPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <FileList files={files} isLoading={isLoading} />
+          <FileList files={files} isLoading={isLoading} folder={currentFolder} />
         </CardContent>
       </Card>
     </div>

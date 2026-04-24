@@ -1,167 +1,221 @@
 # Vite Flare Starter
 
-Production-ready AI agent starter kit for Cloudflare Workers. 53+ tools, skills system, conversation persistence, and full AI SDK v6 patterns.
+**Production-ready AI agent starter kit for Cloudflare Workers.** Ship a conversational AI product with tool calling, skills, file uploads, and admin ops — built the way we build at Jezweb.
 
 [![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/jezweb/vite-flare-starter)
 
-**[Live Demo](https://vite-flare-starter.webfonts.workers.dev)** | **[Documentation](./CLAUDE.md)** | **[Forking Guide](./FORKING.md)**
+**[Live Demo](https://vite-flare-starter.webfonts.workers.dev)** · **[Developer Guide](./CLAUDE.md)** · **[Forking Guide](./FORKING.md)**
 
 ---
 
-## What's Included
+## See it in action
 
-### AI Agent Layer
-- **ToolLoopAgent** pattern (AI SDK v6) with `createAgentUIStreamResponse`
-- **53+ tools** across 15 modules: browser, search, memory, files, code execution, UI, audio, scheduling, delegation
-- **Skills system** (Claude Agent Skills compatible) with bundled + R2 + GitHub sources
-- **Conversation persistence** with D1 storage and conversation sidebar
-- **Subagent delegation** with role-based tool assignment (researchers get search, coders get code tools)
-- **Human-in-the-loop** via `needsApproval` on destructive tools
-- **Token budget tracking** via `prepareStep` loop control
-- **Multi-provider** AI via factory pattern (Workers AI, Anthropic, OpenAI, Google, OpenRouter)
-- **MCP integration** (full spec: tools, resources, prompts, elicitation) + MCP-UI rendering
+![Agent loop — user asks for Sydney time and a calculation, the agent calls two tools and returns the answer in one turn](./docs/vfs-agent-loop.gif)
 
-### Application Framework
-- **Authentication** — better-auth with Google OAuth (email/password optional)
-- **Admin system** — role-based access (user/manager/admin) with ADMIN_EMAILS auto-promotion
-- **Config-driven sidebar** — add nav items in `nav.ts`, feature-flag modules via `features.ts`
-- **UI library** — Tailwind v4 + shadcn/ui, 8+ themes, dark/light/system mode
-- **Command palette** — Cmd+K search/navigation, keyboard shortcuts
-- **File management** — R2 upload/download with metadata in D1
-- **Activity logging** — audit trail with pagination and entity history
-- **Notifications** — in-app notifications with unread counts
-- **API tokens** — SHA-256 hashed, scope-based access control
-- **Feature flags** — DB-backed toggles with admin API
+One prompt, two tool calls (`get_server_time` + `calculate`), streamed response with reasoning, token + latency footer. This is the `ToolLoopAgent` pattern — every tool in the starter works the same way.
 
-## Tech Stack
+---
+
+## Tour
+
+| | |
+|---|---|
+| ![Dashboard](./docs/screenshots/03-dashboard.png) | **Dashboard shell** — config-driven sidebar with role + feature-flag gating. Edit `nav.ts`, not layouts. |
+| ![Chat](./docs/screenshots/04-chat-empty.png) | **AI Chat** — greeting by time of day, preset prompts, persisted conversations. 16 models across 8 providers. |
+| ![Chat with tools](./docs/screenshots/05-chat-with-tools.png) | **Agent loop in one turn** — tool chips, reasoning, streamed answer. Every call logs tokens and duration. |
+| ![Extract](./docs/screenshots/06-extract.png) | **Structured output** — upload a document, get JSON matching a Zod schema. Uses `env.AI.toMarkdown()` for PDFs. |
+| ![Components](./docs/screenshots/07-components.png) | **Components showcase** — a living pattern library of the UI primitives used throughout the app. |
+| ![Admin](./docs/screenshots/08-admin.png) | **Admin panel** — user + role management, stats, auto-promotion via `ADMIN_EMAILS`. |
+| ![Activity](./docs/screenshots/09-activity.png) | **Activity log** — audit trail with pagination, filters, and entity history. |
+| ![Command palette](./docs/screenshots/10-command-palette.png) | **Cmd+K palette** — global search + navigation. Reads straight from the nav config. |
+
+---
+
+## What it gives you
+
+**AI agent layer**
+
+- `ToolLoopAgent` pattern (AI SDK v6) with `createAgentUIStreamResponse`
+- 95+ agent tools across 20 modules — Gmail, Calendar, Docs, Sheets, Drive, Tasks, browser automation, web search, places, code execution, files, memory, UI widgets, audio, todo, delegation
+- Unified `ToolDefinition<I, O>` contract — every tool has a strict Zod output schema + optional typed client renderer, enforced end-to-end
+- Skills system (Claude Agent Skills compatible) — bundled, R2, or GitHub sources
+- Conversation persistence via `ChatStorage` interface (D1 today, DO-ready)
+- Subagent delegation with role-based tool assignment
+- Human-in-the-loop via `needsApproval` on destructive tools, with `sendAutomaticallyWhen` auto-resubmit so the Approve button just works
+- Privileged-tool gating — destructive tools (`gmail_send`, `calendar_delete_event`, `sheets_write_range`, etc.) stay hidden from the model unless user intent matches a keyword unlock
+- Per-tool telemetry in `ai_tool_calls` D1 table + admin "Tool errors" tab for 24h observability
+- Natural-language query translation — pass `naturalQuery: "emails from nick last week"` instead of constructing Gmail operator syntax; server translates via Nemotron 3
+- Sources footer under assistant messages — claude.ai-style citation strip aggregated from tool outputs (web_search, gmail, drive, places) + native `source-url` / `source-document` SDK parts
+- 16 models across 8 providers (Workers AI free tier + OpenRouter unlocks the rest)
+- MCP integration (tools, resources, prompts, elicitation) + MCP-UI rendering
+
+**Application framework**
+
+- Auth — `better-auth` with Google OAuth (email/password optional), deep-link preserved through sign-in via `?next=`
+- Admin — role-based access (user/manager/admin), auto-promotion via `ADMIN_EMAILS`, Tool Errors tab for 24h tool-call failure observability
+- MCP Connectors — per-user OAuth to external MCP servers, PKCE + DCR flow, tokens AES-GCM encrypted at rest, per-tool always/ask/never policies
+- Google Workspace — per-user OAuth with automatic token refresh, granular scope tracking, 26 tools across 6 Google services
+- Config-driven sidebar — add nav items in `nav.ts`, feature-flag modules in `features.ts`
+- UI — Tailwind v4 + shadcn/ui, 8+ themes, dark/light/system
+- Command palette — Cmd+K, keyboard shortcuts
+- Files — R2 upload/download with D1 metadata
+- Activity — audit log with pagination and entity history
+- Notifications — in-app, unread counts, URL-persisted filter
+- API tokens — SHA-256 hashed, scope-based
+- Feature flags — DB-backed with admin API
+
+---
+
+## Tech stack
 
 | Layer | Technology |
-|-------|------------|
-| **Platform** | Cloudflare Workers with Static Assets |
-| **Frontend** | React 19 + Vite 7 |
-| **Backend** | Hono 4.12 |
-| **Database** | D1 (SQLite) + Drizzle ORM 0.45 |
-| **Auth** | better-auth 1.6 (Google OAuth, optional email/password) |
-| **AI** | AI SDK v6 + workers-ai-provider (16 Workers AI models) |
-| **UI** | Tailwind v4 + shadcn/ui |
-| **Data Fetching** | TanStack Query 5 + apiClient |
-| **Forms** | React Hook Form + Zod |
-| **Testing** | Vitest 4 + @cloudflare/vitest-pool-workers |
+|---|---|
+| Platform | Cloudflare Workers with Static Assets |
+| Frontend | React 19 + Vite 7 |
+| Backend | Hono 4.12 |
+| Database | D1 (SQLite) + Drizzle ORM 0.45 |
+| Auth | better-auth 1.6 |
+| AI | AI SDK v6 + workers-ai-provider + OpenRouter |
+| UI | Tailwind v4 + shadcn/ui |
+| Data | TanStack Query 5 + `apiClient` |
+| Forms | React Hook Form + Zod |
+| Testing | Vitest 4 + `@cloudflare/vitest-pool-workers` |
 
-## Quick Start
+---
+
+## Quick start
 
 ```bash
-# Clone and install
 git clone https://github.com/jezweb/vite-flare-starter.git my-app
 cd my-app
 pnpm install
 
-# Create Cloudflare resources
 pnpm cf:login
-npx wrangler d1 create my-app-db       # Copy database_id to wrangler.jsonc
+npx wrangler d1 create my-app-db       # copy database_id into wrangler.jsonc
 npx wrangler r2 bucket create my-app-avatars
+npx wrangler r2 bucket create my-app-files
 
-# Configure
-cp .dev.vars.example .dev.vars
-# Edit .dev.vars: BETTER_AUTH_SECRET, BETTER_AUTH_URL, Google OAuth creds
-
-# Database
+cp .dev.vars.example .dev.vars         # fill in BETTER_AUTH_SECRET, Google OAuth creds
 pnpm db:migrate:local
-
-# Run
 pnpm dev
 ```
 
-## Agent Toolkit
+Open [http://localhost:5173](http://localhost:5173) and sign in.
 
-Tools are in `src/server/modules/chat/tools/` and auto-included based on available env bindings.
+---
+
+## Agent toolkit
+
+Tools live in `src/server/modules/chat/tools/` and are auto-included based on available bindings.
 
 | Module | Tools | Requires |
-|--------|-------|----------|
-| **core** | `get_server_time`, `get_model_info`, `calculate` | Always |
-| **memory** | `remember`, `recall`, `search_memory`, `forget` | Always |
-| **ui** | 12 inline UI components (choices, alerts, forms, tables, timelines...) | Always |
-| **skills** | `load_skill`, `create_skill`, `install_skill`, `toggle_skill` | Always |
-| **code** | `run_python`, `run_shell`, `run_js` | SANDBOX binding |
-| **delegate** | `delegate` (ToolLoopAgent subagent with role-based tools) | Always |
-| **audio** | `transcribe_audio`, `speak_text` | Always |
-| **todo** | `todo_add`, `todo_update`, `todo_list`, `todo_clear` | Always |
-| **schedule** | `schedule_task`, `list_tasks`, `cancel_task` | Always |
-| **session** | `session_stats`, `search_memories`, `list_all_memories` | Always |
-| **browser** | `browser_markdown`, `browser_extract`, `browser_screenshot`, `browser_links`, `browser_content` | CF API token |
-| **search** | `web_search` | Search provider key |
-| **files** | `fs_list`, `fs_read`, `fs_write`, `fs_delete` | FILES R2 bucket |
-| **artifacts** | `create_artifact`, `edit_artifact` | Always |
-| **documents** | `generate_docx`, `generate_csv` | Always |
+|---|---|---|
+| core | `get_server_time`, `get_model_info`, `calculate` | Always |
+| memory | `remember`, `recall`, `search_memory`, `forget` | Always |
+| ui | 13 inline UI components (choices, alerts, tables, timelines, progress, comparison, confirm, metrics, contact, collect, ask, show_map, image) | Always |
+| skills | `load_skill` | Always |
+| todo | `todo_add`, `todo_update`, `todo_list`, `todo_clear` | Always |
+| delegate | `delegate` (role-based subagent spawn) | Always |
+| audio | `transcribe_audio`, `speak_text` | Always (AI binding) |
+| documents | `convert_document`, `read_pdf` | Always (AI binding) |
+| code | `run_python`, `run_shell`, `run_js` | `SANDBOX` DO binding |
+| browser | `browser_markdown`, `browser_extract`, `browser_screenshot`, `browser_links`, `browser_content` | CF API token |
+| search | `web_search` | One of Serper / Brave / Tavily / Exa key |
+| places | `places_search`, `places_details` | `GOOGLE_PLACES_API_KEY` |
+| files | `fs_list`, `fs_read`, `fs_write`, `fs_delete` | `FILES` R2 bucket |
+| **Google Workspace** — Gmail | `gmail_search`, `gmail_get_message`, `gmail_list_labels`, `gmail_draft`, `gmail_reply`, `gmail_send` | Per-user OAuth |
+| **Google Workspace** — Drive | `drive_search`, `drive_get_file`, `drive_create_folder` | Per-user OAuth |
+| **Google Workspace** — Calendar | `calendar_upcoming`, `calendar_list_events`, `calendar_get_event`, `calendar_find_free_slot`, `calendar_create`, `calendar_update_event`, `calendar_delete_event` | Per-user OAuth |
+| **Google Workspace** — Docs | `docs_search`, `docs_get`, `docs_create`, `docs_append` | Per-user OAuth |
+| **Google Workspace** — Sheets | `sheets_list_tabs`, `sheets_read_range`, `sheets_append_row`, `sheets_write_range` | Per-user OAuth |
+| **Google Workspace** — Tasks | `tasks_list`, `tasks_create` | Per-user OAuth |
 
-## Skills System
+Each tool is a `ToolDefinition<Input, Output>` export in its domain file. Strict Zod schemas on both sides are type-inferred through to the renderer, so a server change flows to the client without either side silently drifting. `collectAvailableTools(allDefinitions, ctx)` filters at request time — a tool's `isAvailable(ctx)` predicate decides whether the binding / API key / OAuth scope is present. No accidental shipping of a tool for a service that isn't configured.
 
-Claude Agent Skills compatible (SKILL.md format). 14 bundled skills covering research, writing, documents, workflows, and self-management.
+Adding a tool: add a file in `tools/`, export a `ToolDefinition`, register in `tools/index.ts`. That's it — telemetry, approval flow, active-tools gating, and the SDK-compatible `tool()` wrapper all come for free.
+
+---
+
+## Skills
+
+Claude Agent Skills compatible — same SKILL.md format as Claude Code, Cursor, Hermes, OpenClaw, Aider.
 
 ```
 skills/
   web-research/SKILL.md
   draft-email/SKILL.md
   code-review/SKILL.md
-  ...
+  extract-structured-data/SKILL.md
+  ...12 total
 ```
 
-Skills from R2 or GitHub can be installed at runtime via the `install_skill` tool or REST API.
+Progressive disclosure: only names + descriptions are in the system prompt. The full body loads on demand via `load_skill`. Register more skills from GitHub URLs or R2 uploads at runtime.
 
-## Conversation Persistence
+---
 
-Chats are persisted to D1 via a `ChatStorage` interface (designed for future swap to Durable Objects).
+## Multi-provider AI
 
-- Conversation sidebar with create/delete/rename
-- URL-based routing (`/dashboard/chat/:conversationId`)
-- Auto-title from first user message
-- Messages saved on stream completion via `onFinish`
-
-## Multi-Provider AI
-
-Pass any model string to `resolveModel()` — the factory picks the right provider:
+One `resolveModel()` call picks the right provider from the model string.
 
 ```typescript
-resolveModel(env, '@cf/moonshotai/kimi-k2.5')      // Workers AI (free)
-resolveModel(env, 'claude-sonnet-4-6')               // Anthropic
-resolveModel(env, 'gpt-4o')                          // OpenAI
-resolveModel(env, 'gemini-2.5-pro')                  // Google
-resolveModel(env, 'openrouter/anthropic/claude-...')  // OpenRouter
+resolveModel(env, '@cf/moonshotai/kimi-k2.5')        // Workers AI — free
+resolveModel(env, 'claude-sonnet-4-6')                // Anthropic
+resolveModel(env, 'gpt-5.4-mini')                     // OpenAI
+resolveModel(env, 'gemini-3.1-pro')                   // Google
+resolveModel(env, 'openrouter/deepseek/deepseek-v3.2') // OpenRouter
 ```
 
-16 curated Workers AI models ship with the starter. Set provider API keys as env vars to unlock external models.
+Model catalogue is a bundled snapshot from [models.flared.au](https://models.flared.au). Refresh with `pnpm models:refresh`.
+
+---
 
 ## Deployment
 
 ```bash
-# Set secrets
 printf "secret" | npx wrangler secret put BETTER_AUTH_SECRET
 printf "https://your-app.workers.dev" | npx wrangler secret put BETTER_AUTH_URL
 printf "http://localhost:5173,https://your-app.workers.dev" | npx wrangler secret put TRUSTED_ORIGINS
 
-# Apply migrations + deploy
 pnpm db:migrate:remote
 npx wrangler deploy
 ```
 
+Always use `printf` not `echo` — `echo` appends a newline that breaks HMAC signatures.
+
+---
+
 ## Commands
 
-```bash
-pnpm dev                    # Start development server
-pnpm build                  # Build for production
-npx wrangler deploy         # Deploy to Cloudflare
-pnpm db:generate:named "x"  # Generate migration
-pnpm db:migrate:local       # Apply migrations locally
-pnpm db:migrate:remote      # Apply migrations to production
-pnpm test                   # Run tests
-pnpm type-check             # TypeScript check
-```
+| Command | Does |
+|---|---|
+| `pnpm dev` | Local dev server |
+| `pnpm build` | Production build |
+| `npx wrangler deploy` | Deploy to Cloudflare |
+| `pnpm db:generate:named "x"` | Create a new Drizzle migration |
+| `pnpm db:migrate:local` | Apply migrations to local D1 |
+| `pnpm db:migrate:remote` | Apply migrations to production D1 |
+| `pnpm models:refresh` | Refresh the bundled AI model catalogue |
+| `pnpm test` | Run tests |
+| `pnpm type-check` | Strict TypeScript check |
+
+---
+
+## Philosophy
+
+This is a **pattern library**, not a demo.
+
+Every module teaches one technique for this stack — ToolLoopAgent, D1-first storage, R2 uploads, feature flags, audit logging, OAuth on Workers, MCP integration. When you build a new feature in a fork, read the closest existing module first.
+
+Don't delete modules you don't need. Disable them via `src/shared/config/features.ts` — the code stays as a reference. Future-you, or the next AI agent working in the fork, will thank you.
+
+---
 
 ## Documentation
 
-- **[CLAUDE.md](./CLAUDE.md)** — Full developer context: patterns, architecture, how to build features
-- **[FORKING.md](./FORKING.md)** — Step-by-step guide for forking and customising
+- **[CLAUDE.md](./CLAUDE.md)** — Developer context: architecture, patterns, how to build features
+- **[FORKING.md](./FORKING.md)** — Step-by-step guide for starting a new product from this base
+- **[CHANGELOG.md](./CHANGELOG.md)** — Release notes and what changed when
 
-## License
+---
 
-MIT - see [LICENSE](./LICENSE)
+MIT — see [LICENSE](./LICENSE).

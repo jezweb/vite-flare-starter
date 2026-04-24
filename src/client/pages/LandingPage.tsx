@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
+import { useSession } from '@/client/lib/auth'
 import {
   Shield,
   Zap,
@@ -95,6 +96,12 @@ const features = [
 ]
 
 export function LandingPage() {
+  const { data: session } = useSession()
+  const isAuthed = !!session?.user
+  const primaryCtaHref = isAuthed ? '/dashboard' : '/sign-up'
+  const primaryCtaLabel = isAuthed ? 'Open Dashboard' : 'Get Started'
+  const secondaryCtaLabel = isAuthed ? 'Open Dashboard' : 'Try the Demo'
+
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
@@ -119,8 +126,8 @@ export function LandingPage() {
 
             <div className="mt-10 flex flex-col sm:flex-row gap-4">
               <Button size="lg" asChild>
-                <Link to="/sign-up">
-                  Get Started
+                <Link to={primaryCtaHref}>
+                  {primaryCtaLabel}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
@@ -250,8 +257,8 @@ export function LandingPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" asChild>
-              <Link to="/sign-up">
-                Try the Demo
+              <Link to={primaryCtaHref}>
+                {secondaryCtaLabel}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>

@@ -44,10 +44,6 @@ export function AvatarUpload({ onAvatarChange }: AvatarUploadProps) {
         maxSizeInMB: 5,
       })
 
-      console.log(
-        `Image resized: ${result.original.width}x${result.original.height} → ${result.resized.width}x${result.resized.height} (${result.reduction}% reduction)`
-      )
-
       // Upload to server
       const formData = new FormData()
       formData.append('avatar', result.blob, 'avatar.jpg')

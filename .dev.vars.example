@@ -74,6 +74,15 @@ NODE_ENV=development
 # VITE_FEATURE_STYLE_GUIDE=true    # Enable style guide in production
 # VITE_FEATURE_COMPONENTS=false    # Disable components showcase
 
+# Durable Object agent example pages — the DO code is always compiled
+# (so Claude can reference the pattern) but the nav items are hidden
+# unless explicitly enabled. Set to "true" to reveal.
+# VITE_FEATURE_VOICE_AGENT=true    # /dashboard/voice-example (@cloudflare/voice)
+# VITE_FEATURE_VIDEO_AGENT=true    # /dashboard/video-example (sampled frames → Workers AI vision)
+
+# MCP Connectors — per-user OAuth/bearer connections to external MCP servers
+# VITE_FEATURE_CONNECTORS=true
+
 # ============================================
 # PRODUCTION SECRETS
 # ============================================
@@ -89,6 +98,25 @@ NODE_ENV=development
 # echo "true" | npx wrangler secret put ENABLE_EMAIL_SIGNUP
 #
 # Never commit production secrets to git!
+
+# ============================================
+# Google Places (optional — powers places_search + show_map)
+# ============================================
+# Pairs with the show_map inline UI tool to render map answers like claude.ai.
+# Get a key: https://console.cloud.google.com → APIs & Services → Credentials.
+# Enable "Places API (New)" on the same project. Restrict the key to your
+# Worker routes in production.
+# GOOGLE_PLACES_API_KEY=your-google-places-api-key
+
+# ============================================
+# MCP Servers (optional)
+# ============================================
+# Auto-discovered via the MCP_<ID>_URL / _TOKEN / _TRANSPORT convention.
+# The chat agent connects on startup and exposes the remote tools inline.
+# Example:
+# MCP_WEATHER_URL=https://weather.mcp.example.com/mcp
+# MCP_WEATHER_TOKEN=your-bearer-token
+# MCP_WEATHER_TRANSPORT=http
 
 # ============================================
 # NOTES

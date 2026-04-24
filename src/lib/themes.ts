@@ -1,7 +1,9 @@
-import type {
-  ThemeScheme,
-  ThemeMode,
-  CustomThemeColors,
+import {
+  themeExportEnvelopeSchema,
+  type ThemeScheme,
+  type ThemeMode,
+  type CustomThemeColors,
+  type ThemeExportEnvelope,
 } from '@/shared/schemas/preferences.schema'
 
 /**
@@ -22,7 +24,7 @@ type ThemeColors = {
 /**
  * Required CSS variable names for a complete theme
  */
-export const THEME_CSS_VARIABLES = [
+export const THEME_CORE_VARIABLES = [
   'background',
   'foreground',
   'card',
@@ -42,6 +44,29 @@ export const THEME_CSS_VARIABLES = [
   'border',
   'input',
   'ring',
+] as const
+
+/** Optional — charts and the sidebar surface. Custom themes may set these. */
+export const THEME_OPTIONAL_VARIABLES = [
+  'chart-1',
+  'chart-2',
+  'chart-3',
+  'chart-4',
+  'chart-5',
+  'sidebar',
+  'sidebar-foreground',
+  'sidebar-primary',
+  'sidebar-primary-foreground',
+  'sidebar-accent',
+  'sidebar-accent-foreground',
+  'sidebar-border',
+  'sidebar-ring',
+] as const
+
+/** All theme variables (core + optional). Kept for backwards-compat. */
+export const THEME_CSS_VARIABLES = [
+  ...THEME_CORE_VARIABLES,
+  ...THEME_OPTIONAL_VARIABLES,
 ] as const
 
 const themes: Record<ThemeScheme, ThemeColors> = {
@@ -493,6 +518,11 @@ export function applyTheme(
     colors = themes[scheme][effectiveMode]
   }
 
+  // Clear any inline overrides first so keys the new scheme doesn't set
+  // fall back to the :root defaults in index.css (important for chart/sidebar
+  // when switching from a custom theme that set them to a preset that doesn't).
+  THEME_CSS_VARIABLES.forEach((key) => root.style.removeProperty(`--${key}`))
+
   // Update CSS variables on :root (wrap with hsl() for Tailwind v4)
   Object.entries(colors).forEach(([key, value]) => {
     root.style.setProperty(`--${key}`, `hsl(${value})`)
@@ -665,13 +695,14 @@ function parseColorValue(value: string): string | null {
 }
 
 /**
- * Validate that parsed colors have all required variables
+ * Validate that parsed colors have all required (core) variables.
+ * Chart and sidebar vars are optional — their absence doesn't fail validation.
  */
 export function validateThemeColors(colors: Partial<CustomThemeColors>): {
   valid: boolean
   missing: string[]
 } {
-  const missing = THEME_CSS_VARIABLES.filter((v) => !colors[v as keyof CustomThemeColors])
+  const missing = THEME_CORE_VARIABLES.filter((v) => !colors[v as keyof CustomThemeColors])
   return {
     valid: missing.length === 0,
     missing,
@@ -726,4 +757,116 @@ export function getThemeCSSTemplate(): string {
   --input: 240 3.7% 15.9%;
   --ring: 240 4.9% 83.9%;
 }`
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Theme export / import (JSON files + shareable URLs)
+// ─────────────────────────────────────────────────────────────────────────
+
+export const THEME_EXPORT_FILENAME = 'vfs-theme.json'
+export const THEME_EXPORT_MIME = 'application/json'
+
+/**
+ * Merge a possibly-partial imported envelope with a base (the user's current
+ * custom theme if any, otherwise the default theme) so we always produce a
+ * complete 19-key CustomThemeColors on both sides. Lets shared links carry
+ * just the vars that differ — handy for "share my primary" links.
+ */
+export function mergeThemeEnvelope(
+  envelope: { light?: Partial<CustomThemeColors>; dark?: Partial<CustomThemeColors> },
+  base?: { light?: CustomThemeColors; dark?: CustomThemeColors },
+): { light: CustomThemeColors; dark: CustomThemeColors } {
+  const baseLight = (base?.light ?? themes['default'].light) as unknown as CustomThemeColors
+  const baseDark = (base?.dark ?? themes['default'].dark) as unknown as CustomThemeColors
+  const fromEnvLight = envelope.light ?? envelope.dark ?? {}
+  const fromEnvDark = envelope.dark ?? envelope.light ?? {}
+  return {
+    light: { ...baseLight, ...fromEnvLight } as CustomThemeColors,
+    dark: { ...baseDark, ...fromEnvDark } as CustomThemeColors,
+  }
+}
+
+/**
+ * Build an export envelope from the user's current custom theme colours.
+ * Either mode can be omitted — callers commonly have both.
+ */
+export function buildThemeExport(
+  customTheme: { light?: Partial<CustomThemeColors>; dark?: Partial<CustomThemeColors> } | undefined,
+  name?: string,
+): ThemeExportEnvelope {
+  return {
+    version: 1,
+    ...(name ? { name } : {}),
+    createdAt: new Date().toISOString(),
+    ...(customTheme?.light ? { light: customTheme.light } : {}),
+    ...(customTheme?.dark ? { dark: customTheme.dark } : {}),
+  }
+}
+
+/**
+ * Serialize an export envelope to pretty JSON (for file download)
+ */
+export function serializeThemeExport(envelope: ThemeExportEnvelope): string {
+  return JSON.stringify(envelope, null, 2)
+}
+
+/**
+ * Parse an import JSON string into an envelope. Returns a discriminated result
+ * so callers can show targeted error messages.
+ */
+export function parseThemeImport(
+  json: string,
+): { ok: true; envelope: ThemeExportEnvelope } | { ok: false; error: string } {
+  let raw: unknown
+  try {
+    raw = JSON.parse(json)
+  } catch {
+    return { ok: false, error: 'File is not valid JSON.' }
+  }
+
+  const parsed = themeExportEnvelopeSchema.safeParse(raw)
+  if (!parsed.success) {
+    const first = parsed.error.issues[0]
+    const path = first?.path.join('.') || 'envelope'
+    return { ok: false, error: `${path}: ${first?.message ?? 'invalid shape'}` }
+  }
+
+  if (!parsed.data.light && !parsed.data.dark) {
+    return { ok: false, error: 'Envelope is missing both light and dark colours.' }
+  }
+
+  return { ok: true, envelope: parsed.data }
+}
+
+/**
+ * Encode an envelope into a URL-safe base64 string (for ?theme=<…>)
+ *
+ * No compression yet — a custom theme fits in ~2KB base64, well under the
+ * browser URL limit. If we ever need shorter, swap in lz-string here.
+ */
+export function encodeThemeToURL(envelope: ThemeExportEnvelope): string {
+  const json = JSON.stringify(envelope)
+  const b64 = typeof btoa === 'function'
+    ? btoa(unescape(encodeURIComponent(json)))
+    : Buffer.from(json, 'utf-8').toString('base64')
+  return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+/**
+ * Decode an envelope from a URL-safe base64 string. Safe to call with
+ * untrusted input; returns an error rather than throwing.
+ */
+export function decodeThemeFromURL(
+  encoded: string,
+): { ok: true; envelope: ThemeExportEnvelope } | { ok: false; error: string } {
+  try {
+    const b64 = encoded.replace(/-/g, '+').replace(/_/g, '/')
+    const pad = b64.length % 4 === 0 ? '' : '='.repeat(4 - (b64.length % 4))
+    const json = typeof atob === 'function'
+      ? decodeURIComponent(escape(atob(b64 + pad)))
+      : Buffer.from(b64 + pad, 'base64').toString('utf-8')
+    return parseThemeImport(json)
+  } catch {
+    return { ok: false, error: 'Theme link is corrupt or incomplete.' }
+  }
 }
