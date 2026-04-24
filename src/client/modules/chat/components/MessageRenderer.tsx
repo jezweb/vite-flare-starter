@@ -557,6 +557,20 @@ function MessageBody({
             typeof renderer?.displayName === 'function'
               ? renderer.displayName(toolName)
               : renderer?.displayName ?? toolDisplayName
+
+          // Bare renderers own their own chrome — skip the Collapsible
+          // wrapper entirely. Used when the expanded component already has
+          // its own card/border (e.g. ConfigDiffCard for propose_patch).
+          // During streaming we still render the pill so the user sees
+          // progress; only post-completion do we unwrap.
+          if (isComplete && renderer?.bare && renderer.expanded) {
+            return (
+              <div key={i} className="not-prose mb-4">
+                {renderer.expanded({ output, input: p['input'] })}
+              </div>
+            )
+          }
+
           return (
             <ToolCard
               key={i}
