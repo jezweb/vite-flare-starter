@@ -37,6 +37,7 @@ import { emailDefinitions } from './email'
 import { searchFilesDefinitions } from './search-files'
 import { googleWorkspaceDefinitions } from './google-workspace'
 import { microsoftWorkspaceDefinitions } from './microsoft-workspace'
+import { proposePatchDefinitions } from './propose-patch'
 import { collectAvailableTools } from '@/server/lib/ai/tool-adapter'
 import {
   getAllowedConnectorTools,
@@ -72,6 +73,7 @@ export async function buildChatTools(ctx: AgentContext, options: { availableSkil
     ...mediaDefinitions,
     ...googleWorkspaceDefinitions,
     ...microsoftWorkspaceDefinitions,
+    ...proposePatchDefinitions,
   ]
 
   // Per-user connector filter — keeps connector tools the user has

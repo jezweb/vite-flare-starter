@@ -70,6 +70,10 @@ export { slackTokens } from '@/server/modules/slack/db/schema'
 export { notionTokens } from '@/server/modules/notion/db/schema'
 export { atlassianTokens } from '@/server/modules/atlassian/db/schema'
 
+// Config diff proposals — staged changes to user-configurable resources
+// (skills, system prompts, settings) awaiting user review + approval.
+export { configDiffProposals } from '@/server/modules/config-diff/db/schema'
+
 // Polymorphic modules (entity_type + entity_id pattern)
 export { comments } from '@/server/modules/comments/db/schema'
 export { tags, entityTags } from '@/server/modules/tags/db/schema'

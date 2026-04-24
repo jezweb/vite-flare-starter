@@ -45,6 +45,7 @@ import {
   sheetsWriteRangeRenderer,
 } from './sheets'
 import { webSearchRenderer } from './search'
+import { proposePatchRenderer } from './propose-patch'
 import { defaultRenderers } from './defaults'
 import { matchesRenderer, type ToolRenderer } from './_shared'
 
@@ -83,6 +84,8 @@ export const TOOL_RENDERERS: ToolRenderer[] = [
   tasksCreateRenderer,
   // Search
   webSearchRenderer,
+  // Config-diff (propose_patch tool) — inline ApprovalCard in chat
+  proposePatchRenderer,
   // Default renderers for tools without a custom expanded view — icon +
   // displayName only, falls back to JSON body. Kept LAST so custom
   // renderers above win. See defaults.tsx for the metadata table.

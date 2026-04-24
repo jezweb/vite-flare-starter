@@ -20,6 +20,7 @@ import adminRoutes from './modules/admin/routes'
 import webhookRoutes from './modules/webhooks/routes'
 import userMetaRoutes from './modules/user-meta/routes'
 import skillsRoutes from './modules/skills/routes'
+import configDiffRoutes from './modules/config-diff/routes'
 import conversationsRoutes from './modules/conversations/routes'
 import projectsRoutes from './modules/projects/routes'
 import commentsRoutes from './modules/comments/routes'
@@ -267,6 +268,7 @@ app.route('/api/files', filesRoutes)
 app.route('/api/webhooks', webhookRoutes)
 app.route('/api/user-meta', userMetaRoutes)
 app.route('/api/skills', skillsRoutes)
+app.route('/api/config-diff', configDiffRoutes)
 app.route('/api/conversations', conversationsRoutes)
 app.route('/api/projects', projectsRoutes)
 app.route('/api/comments', commentsRoutes)

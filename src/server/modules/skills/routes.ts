@@ -7,6 +7,8 @@
 import { Hono } from 'hono'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq } from 'drizzle-orm'
+import { generateText } from 'ai'
+import { DEFAULT_MODEL, resolveModel } from '@/server/lib/ai'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import { skills } from './db/schema'
 import {
@@ -19,6 +21,8 @@ import {
   addSkillFromZip,
   uploadSkillToR2,
 } from '@/server/lib/ai/skills/registry'
+import { createProposal } from '@/server/modules/config-diff/storage'
+import { loadCurrentContent } from '@/server/modules/config-diff/apply'
 
 const app = new Hono<AuthContext>()
 
@@ -167,6 +171,73 @@ app.patch('/:name', async (c) => {
     .set({ enabled: body.enabled ?? true, updatedAt: new Date() })
     .where(eq(skills.name, name))
   return c.json({ success: true, name, enabled: body.enabled ?? true })
+})
+
+/**
+ * POST /:name/ai-edit — rewrite the skill body from a natural-language
+ * instruction. Creates a pending ConfigDiffProposal with source 'ai-sparkle'
+ * so the user can review the diff before anything is persisted.
+ *
+ * Body: { instruction: string, model?: string }
+ * Returns: { proposal: ConfigDiffProposal }
+ */
+app.post('/:name/ai-edit', async (c) => {
+  const name = c.req.param('name')
+  const body = (await c.req.json().catch(() => ({}))) as {
+    instruction?: string
+    model?: string
+  }
+  if (!body.instruction || typeof body.instruction !== 'string') {
+    return c.json({ error: 'instruction required' }, 400)
+  }
+  const env = c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket }
+  const before = await loadCurrentContent(env, { kind: 'skill', id: name })
+  if (!before) return c.json({ error: 'Skill not found' }, 404)
+
+  const modelId = body.model ?? DEFAULT_MODEL
+  const systemPrompt = `You edit user skill files (Claude Agent Skills format — SKILL.md).
+
+RULES:
+- Output ONLY the full new SKILL.md, starting with the YAML frontmatter block (--- ... ---) and ending with the body.
+- Do NOT wrap the output in code fences.
+- Do NOT add commentary, explanations, or preamble.
+- Preserve the YAML frontmatter shape. The "name" field MUST stay unchanged.
+- Follow the user's instruction faithfully. Keep the overall intent unless the user asks to change it.
+- If you need to reduce length, remove least-important content first (repeated examples, optional caveats).`
+
+  try {
+    const { text } = await generateText({
+      model: resolveModel(c.env, modelId),
+      system: systemPrompt,
+      messages: [
+        {
+          role: 'user',
+          content: `Current SKILL.md (${name}):\n\n${before}\n\n---\n\nInstruction: ${body.instruction}\n\nOutput the full rewritten SKILL.md now.`,
+        },
+      ],
+      maxOutputTokens: 4096,
+    })
+    const cleaned = text.trim().replace(/^```[a-z]*\n?|\n?```$/g, '').trim()
+    if (cleaned === before) {
+      return c.json({ error: 'The rewrite matched the original — try a different instruction.' }, 422)
+    }
+    const userId = c.get('userId')
+    const proposal = await createProposal(c.env.DB, userId, {
+      resource: { kind: 'skill', id: name, label: `/${name}` },
+      before,
+      after: cleaned,
+      summary: body.instruction.slice(0, 200),
+      reason: null,
+      format: 'markdown',
+      createdBy: { type: 'ai-sparkle', userId, modelId },
+    })
+    return c.json({ proposal })
+  } catch (err) {
+    return c.json(
+      { error: err instanceof Error ? err.message : String(err) },
+      500,
+    )
+  }
 })
 
 /** DELETE /:name — delete a skill from the registry */

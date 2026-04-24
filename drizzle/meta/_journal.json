@@ -134,6 +134,13 @@
       "when": 1776866380079,
       "tag": "0018_add_ai_tool_calls",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "6",
+      "when": 1776992174047,
+      "tag": "0022_config_diff_proposals",
+      "breakpoints": true
     }
   ]
 }
