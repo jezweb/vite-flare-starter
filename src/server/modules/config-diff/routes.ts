@@ -53,6 +53,7 @@ app.post('/', zValidator('json', createSchema), async (c) => {
   const before = await loadCurrentContent(
     c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket },
     input.resource,
+    userId,
   )
   if (before === input.after) {
     return c.json(

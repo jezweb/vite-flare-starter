@@ -9,6 +9,9 @@ export interface SkillSummary {
   name: string
   description: string
   source: 'bundled' | 'r2' | 'github'
+  userId: string
+  /** True when this row is the caller's personal override (not the bundled default). */
+  isPersonal: boolean
   disableModelInvocation?: boolean
 }
 
@@ -16,6 +19,8 @@ export interface SkillDetail {
   name: string
   description: string
   source: 'bundled' | 'r2' | 'github'
+  userId: string
+  isPersonal: boolean
   directory: string
   resources: string[]
   frontmatter: Record<string, unknown>
@@ -49,10 +54,12 @@ export function useSkillsList() {
     queryFn: () => apiClient.get<{
       skills: Array<{
         id: string
+        userId: string
         name: string
         description: string
         source: string
         enabled: boolean
+        isPersonal: boolean
         createdAt: string
         updatedAt: string
       }>

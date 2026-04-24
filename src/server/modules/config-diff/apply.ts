@@ -20,15 +20,18 @@ export interface ApplyEnv {
  * Read the current live content for a resource — used when creating a
  * proposal so `before` reflects the actual current state, not whatever
  * the model or UI believes it to be.
+ *
+ * The user's personal override is preferred; falls back to bundled.
  */
 export async function loadCurrentContent(
   env: ApplyEnv,
   resource: Pick<ConfigDiffResource, 'kind' | 'id'>,
+  userId: string,
 ): Promise<string> {
   switch (resource.kind) {
     case 'skill': {
       const { loadSkill } = await import('@/server/lib/ai/skills/registry')
-      const skill = await loadSkill(env, resource.id)
+      const skill = await loadSkill(env, resource.id, userId)
       if (!skill) return ''
       // Rebuild the SKILL.md from its parsed form — matches what the
       // user will edit and what the diff should compare against.
@@ -68,10 +71,11 @@ export async function applyProposal(
           'SKILLS R2 bucket not configured — cannot persist skill edits. Add the binding in wrangler.jsonc.',
         )
       }
-      // uploadSkillToR2 parses frontmatter, flips source→r2, writes R2,
-      // and updates the registry row. overwrite:true is correct here —
-      // the proposal WAS the user consenting to replace the prior body.
-      await uploadSkillToR2(env, proposal.after, { overwrite: true })
+      // uploadSkillToR2 writes to `${userId}/${name}/SKILL.md` and
+      // upserts the skill row scoped to (userId, name). The bundled
+      // row is never touched — user edits always create/update their
+      // PERSONAL override.
+      await uploadSkillToR2(env, proposal.after, proposal.userId, { overwrite: true })
       return
     }
     case 'system-prompt':

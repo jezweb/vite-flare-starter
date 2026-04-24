@@ -162,6 +162,13 @@
       "when": 1776992174047,
       "tag": "0022_config_diff_proposals",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1777004000000,
+      "tag": "0023_skills_per_user",
+      "breakpoints": true
     }
   ]
 }

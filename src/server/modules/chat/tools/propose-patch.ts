@@ -75,7 +75,7 @@ export const proposePatchDefinition: ToolDefinition<
     const before = await loadCurrentContent(env, {
       kind: input.kind,
       id: input.id,
-    })
+    }, ctx.userId)
     if (!before) {
       throw new Error(
         `No current content found for ${input.kind} "${input.id}". Check the resource exists before proposing a patch.`,

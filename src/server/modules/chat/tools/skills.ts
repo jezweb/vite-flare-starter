@@ -16,7 +16,7 @@
  */
 import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { getSandbox } from '@cloudflare/sandbox'
 import { BookOpen, List, FileSearch, Terminal, PlusSquare, Download, ToggleRight } from 'lucide-react'
 import {
@@ -88,7 +88,7 @@ export function skillsDefinitions(
     outputSchema: ListSkillsOutput,
     execute: async (_input, ctx) => {
       try {
-        const items = await listSkills(getSkillsEnv(ctx))
+        const items = await listSkills(getSkillsEnv(ctx), ctx.userId)
         return { skills: items, count: items.length }
       } catch (error) {
         return { error: error instanceof Error ? error.message : String(error) }
@@ -128,7 +128,7 @@ export function skillsDefinitions(
     outputSchema: LoadSkillOutput,
     execute: async ({ name }, ctx) => {
       try {
-        const skill = await loadSkill(getSkillsEnv(ctx), name)
+        const skill = await loadSkill(getSkillsEnv(ctx), name, ctx.userId)
         if (!skill) return { name, error: `Skill "${name}" not found` }
 
         if (loadedSkills.has(name)) {
@@ -191,7 +191,7 @@ export function skillsDefinitions(
     outputSchema: ReadSkillResourceOutput,
     execute: async ({ name, path }, ctx) => {
       try {
-        const skill = await loadSkill(getSkillsEnv(ctx), name)
+        const skill = await loadSkill(getSkillsEnv(ctx), name, ctx.userId)
         if (!skill) return { name, path, error: `Skill "${name}" not found` }
         if (!skill.resources.includes(path)) {
           return {
@@ -244,7 +244,7 @@ export function skillsDefinitions(
         if (!env.SANDBOX) {
           return { name, path, error: 'Cloudflare Sandbox not configured — SANDBOX binding missing. Use read_skill_resource + run_python/run_shell/run_js as a fallback.' }
         }
-        const skill = await loadSkill(env, name)
+        const skill = await loadSkill(env, name, ctx.userId)
         if (!skill) return { name, path, error: `Skill "${name}" not found` }
         if (!skill.resources.includes(path)) {
           return { name, path, error: `"${path}" is not a listed resource of skill "${name}". Available: ${skill.resources.join(', ') || '(none)'}` }
@@ -333,7 +333,7 @@ export function skillsDefinitions(
     outputSchema: CreateSkillOutput,
     execute: async ({ content, overwrite }, ctx) => {
       try {
-        const result = await uploadSkillToR2(getSkillsEnv(ctx), content, { overwrite })
+        const result = await uploadSkillToR2(getSkillsEnv(ctx), content, ctx.userId, { overwrite })
         return { ...result, action: overwrite ? 'updated' : 'created' }
       } catch (error) {
         return { error: error instanceof Error ? error.message : String(error) }
@@ -391,7 +391,12 @@ export function skillsDefinitions(
     execute: async ({ name, enabled }, ctx) => {
       try {
         const db = drizzle(getSkillsEnv(ctx).DB)
-        await db.update(skills).set({ enabled, updatedAt: new Date() }).where(eq(skills.name, name))
+        // Scope the toggle to the user's own row — they can only
+        // enable/disable their personal override, not the bundled default.
+        await db
+          .update(skills)
+          .set({ enabled, updatedAt: new Date() })
+          .where(and(eq(skills.userId, ctx.userId), eq(skills.name, name)))
         return { name, enabled, action: enabled ? 'enabled' : 'disabled' }
       } catch (error) {
         return { error: error instanceof Error ? error.message : String(error) }

@@ -12,8 +12,8 @@
  * system prompt by default. Full body is loaded via load_skill tool on demand.
  */
 import { drizzle } from 'drizzle-orm/d1'
-import { eq } from 'drizzle-orm'
-import { skills } from '@/server/modules/skills/db/schema'
+import { and, eq, or } from 'drizzle-orm'
+import { BUNDLED_USER_ID, skills } from '@/server/modules/skills/db/schema'
 import { parseSkill, type ParsedSkill } from './loader'
 import { getBundledSkill, getBundledSkillResource, listBundledSkills } from './bundled'
 
@@ -26,9 +26,17 @@ export interface SkillSummary {
   name: string
   description: string
   source: 'bundled' | 'r2' | 'github'
+  /** Which userId owns this row — `'bundled'` for the shared default,
+   *  or the caller's userId if they have a personal override. */
+  userId: string
+  /** True if this is the caller's personal override (vs the bundled default). */
+  isPersonal: boolean
   /** Skills with disable_model_invocation=true are hidden from the model catalog. */
   disableModelInvocation?: boolean
 }
+
+/** Re-export for external consumers that need to distinguish bundled rows. */
+export { BUNDLED_USER_ID }
 
 /**
  * A skill loaded with enough context for the agent to act on it:
@@ -43,6 +51,10 @@ export interface SkillSummary {
 export interface LoadedSkill extends ParsedSkill {
   name: string
   source: 'bundled' | 'r2' | 'github'
+  /** Owner userId — 'bundled' for shared defaults, or the user's id. */
+  userId: string
+  /** True if this row is the caller's personal override (vs the bundled default). */
+  isPersonal: boolean
   directory: string
   /** Paths relative to the skill directory for all sibling files. */
   resources: string[]
@@ -72,26 +84,54 @@ export async function ensureBundledSynced(env: SkillsEnv): Promise<void> {
 }
 
 /**
- * Get all enabled skills (metadata only) for system prompt injection.
+ * Get all enabled skills (metadata only) for the given user. Returns
+ * the union of:
+ *   - the user's personal overrides (user_id === userId), AND
+ *   - bundled skills whose name is NOT overridden by the user.
+ *
+ * Shape per row includes `isPersonal` so the UI can distinguish "this
+ * is your copy" from "this is the shared default."
  *
  * Auto-syncs bundled skills on first call per isolate. Idempotent.
  */
-export async function listSkills(env: SkillsEnv): Promise<SkillSummary[]> {
+export async function listSkills(
+  env: SkillsEnv,
+  userId: string,
+): Promise<SkillSummary[]> {
   const db = drizzle(env.DB)
 
   await ensureBundledSynced(env)
 
   const rows = await db
     .select({
+      userId: skills.userId,
       name: skills.name,
       description: skills.description,
       source: skills.source,
       metadata: skills.metadata,
     })
     .from(skills)
-    .where(eq(skills.enabled, true))
+    .where(
+      and(
+        eq(skills.enabled, true),
+        or(eq(skills.userId, userId), eq(skills.userId, BUNDLED_USER_ID)),
+      ),
+    )
 
-  return rows.map((r) => {
+  // Index user's overrides by name, then prefer them over bundled.
+  const personalByName = new Map(
+    rows.filter((r) => r.userId === userId).map((r) => [r.name, r]),
+  )
+  const merged = new Map<string, typeof rows[number]>()
+  for (const row of rows) {
+    if (row.userId === userId) {
+      merged.set(row.name, row)
+    } else if (!personalByName.has(row.name)) {
+      merged.set(row.name, row)
+    }
+  }
+
+  return [...merged.values()].map((r) => {
     let disableModelInvocation = false
     try {
       const fm = JSON.parse(r.metadata || '{}') as { disable_model_invocation?: boolean }
@@ -103,6 +143,8 @@ export async function listSkills(env: SkillsEnv): Promise<SkillSummary[]> {
       name: r.name,
       description: r.description,
       source: r.source,
+      userId: r.userId,
+      isPersonal: r.userId === userId,
       disableModelInvocation,
     }
   })
@@ -111,18 +153,31 @@ export async function listSkills(env: SkillsEnv): Promise<SkillSummary[]> {
 /**
  * Load a specific skill with its content + resource listing.
  *
+ * Resolution: user's personal override wins, falls back to bundled row.
+ * Returns null if neither exists (or the row is disabled).
+ *
  * Returns an object shaped for agentskills.io structured activation:
  * body, directory identifier, and a list of sibling resources the model
  * can request on demand via fs tools.
  */
-export async function loadSkill(env: SkillsEnv, name: string): Promise<LoadedSkill | null> {
+export async function loadSkill(
+  env: SkillsEnv,
+  name: string,
+  userId: string,
+): Promise<LoadedSkill | null> {
   const db = drizzle(env.DB)
-  const row = await db
+  // Pull both rows in one query, pick the user's override if present.
+  const rows = await db
     .select()
     .from(skills)
-    .where(eq(skills.name, name))
-    .get()
+    .where(
+      and(
+        eq(skills.name, name),
+        or(eq(skills.userId, userId), eq(skills.userId, BUNDLED_USER_ID)),
+      ),
+    )
 
+  const row = rows.find((r) => r.userId === userId) ?? rows.find((r) => r.userId === BUNDLED_USER_ID)
   if (!row || !row.enabled) return null
 
   let content: string
@@ -194,6 +249,8 @@ export async function loadSkill(env: SkillsEnv, name: string): Promise<LoadedSki
     ...parsed,
     name: row.name,
     source: row.source,
+    userId: row.userId,
+    isPersonal: row.userId === userId,
     directory,
     resources,
     fetchResource,
@@ -207,7 +264,14 @@ export async function loadSkill(env: SkillsEnv, name: string): Promise<LoadedSki
 export async function syncBundledSkills(env: SkillsEnv): Promise<{ added: number; updated: number; removed: number }> {
   const db = drizzle(env.DB)
   const bundled = await listBundledSkills()
-  const existing = await db.select().from(skills).where(eq(skills.source, 'bundled'))
+  // Only touch rows owned by the bundled sentinel — users' personal
+  // overrides are never affected by a bundled sync.
+  const existing = await db
+    .select()
+    .from(skills)
+    .where(
+      and(eq(skills.source, 'bundled'), eq(skills.userId, BUNDLED_USER_ID)),
+    )
 
   const existingByName = new Map(existing.map((s) => [s.name, s]))
   const bundledNames = new Set(bundled.map((s) => s.name))
@@ -221,6 +285,7 @@ export async function syncBundledSkills(env: SkillsEnv): Promise<{ added: number
     const metadata = JSON.stringify(b.frontmatter)
     if (!existing) {
       await db.insert(skills).values({
+        userId: BUNDLED_USER_ID,
         name: b.name,
         description: b.description,
         source: 'bundled',
@@ -237,7 +302,9 @@ export async function syncBundledSkills(env: SkillsEnv): Promise<{ added: number
     }
   }
 
-  // Remove bundled skills no longer in the source
+  // Remove bundled rows no longer in the source. User overrides with
+  // the same name are left intact — the user keeps their copy even if
+  // the upstream bundled version goes away.
   for (const e of existing) {
     if (!bundledNames.has(e.name)) {
       await db.delete(skills).where(eq(skills.id, e.id))
@@ -254,14 +321,22 @@ export async function syncBundledSkills(env: SkillsEnv): Promise<{ added: number
  * @example
  *   addGitHubSkill(env, 'https://raw.githubusercontent.com/anthropics/skills/main/skill-name/SKILL.md')
  */
-export async function addGitHubSkill(env: SkillsEnv, url: string): Promise<{ name: string; description: string }> {
+export async function addGitHubSkill(
+  env: SkillsEnv,
+  url: string,
+  userId: string = BUNDLED_USER_ID,
+): Promise<{ name: string; description: string }> {
   const response = await fetch(url)
   if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.status}`)
   const content = await response.text()
   const parsed = parseSkill(content)
 
   const db = drizzle(env.DB)
-  const existing = await db.select().from(skills).where(eq(skills.name, parsed.frontmatter.name)).get()
+  const existing = await db
+    .select()
+    .from(skills)
+    .where(and(eq(skills.userId, userId), eq(skills.name, parsed.frontmatter.name)))
+    .get()
 
   if (existing) {
     await db
@@ -276,6 +351,7 @@ export async function addGitHubSkill(env: SkillsEnv, url: string): Promise<{ nam
       .where(eq(skills.id, existing.id))
   } else {
     await db.insert(skills).values({
+      userId,
       name: parsed.frontmatter.name,
       description: parsed.frontmatter.description,
       source: 'github',
@@ -304,6 +380,7 @@ export async function addGitHubSkill(env: SkillsEnv, url: string): Promise<{ nam
 export async function addGitHubSkillDirectory(
   env: SkillsEnv,
   input: string,
+  userId: string = BUNDLED_USER_ID,
 ): Promise<{ name: string; description: string; files: string[] }> {
   if (!env.SKILLS) throw new Error('SKILLS R2 bucket required for directory imports — bind it in wrangler.jsonc')
 
@@ -331,24 +408,30 @@ export async function addGitHubSkillDirectory(
   const MAX_TOTAL = 10 * 1024 * 1024
   let totalBytes = 0
 
-  // Upload every file into R2 under `${skillName}/<relativePath>`
+  // Upload every file into R2 under `${userId}/${skillName}/<relativePath>`
+  // — userId scoping keeps one user's install separate from another's.
+  const r2Prefix = `${userId}/${skillName}`
   for (const file of files) {
     const content = await fetchGitHubBlob(spec, file.path)
     totalBytes += content.length
     if (totalBytes > MAX_TOTAL) {
       throw new Error(`Directory exceeds 10 MB limit; import aborted at ${file.path}.`)
     }
-    const r2Key = `${skillName}/${file.path}`
+    const r2Key = `${r2Prefix}/${file.path}`
     await env.SKILLS.put(r2Key, content, { httpMetadata: { contentType: guessMimeType(file.path) } })
   }
 
-  // Register the skill pointing to R2 source (`<skillName>/SKILL.md`)
+  // Register the skill pointing to R2 source.
   const db = drizzle(env.DB)
-  const existing = await db.select().from(skills).where(eq(skills.name, skillName)).get()
+  const existing = await db
+    .select()
+    .from(skills)
+    .where(and(eq(skills.userId, userId), eq(skills.name, skillName)))
+    .get()
   const values = {
     description: parsed.frontmatter.description,
     source: 'r2' as const,
-    path: `${skillName}/SKILL.md`,
+    path: `${r2Prefix}/SKILL.md`,
     metadata: JSON.stringify({
       ...parsed.frontmatter,
       _origin: `github:${spec.owner}/${spec.repo}@${spec.ref}/${spec.path}`,
@@ -357,7 +440,7 @@ export async function addGitHubSkillDirectory(
   if (existing) {
     await db.update(skills).set({ ...values, updatedAt: new Date() }).where(eq(skills.id, existing.id))
   } else {
-    await db.insert(skills).values({ name: skillName, ...values })
+    await db.insert(skills).values({ userId, name: skillName, ...values })
   }
 
   return {
@@ -377,6 +460,7 @@ export async function addGitHubSkillDirectory(
 export async function addSkillFromZip(
   env: SkillsEnv,
   zipBytes: Uint8Array,
+  userId: string = BUNDLED_USER_ID,
 ): Promise<{ name: string; description: string; files: string[] }> {
   if (!env.SKILLS) throw new Error('SKILLS R2 bucket required for zip imports — bind it in wrangler.jsonc')
 
@@ -410,25 +494,30 @@ export async function addSkillFromZip(
   for (const buf of Object.values(filesByPath)) totalBytes += buf.length
   if (totalBytes > MAX_TOTAL) throw new Error(`Zip contents exceed 10 MB limit (${(totalBytes / 1024 / 1024).toFixed(1)} MB)`)
 
-  // Upload each file into R2 under `${skillName}/<rel>`
+  // Upload each file into R2 under `${userId}/${skillName}/<rel>`
+  const r2Prefix = `${userId}/${skillName}`
   for (const [rel, buf] of Object.entries(filesByPath)) {
-    const r2Key = `${skillName}/${rel}`
+    const r2Key = `${r2Prefix}/${rel}`
     await env.SKILLS.put(r2Key, buf, { httpMetadata: { contentType: guessMimeType(rel) } })
   }
 
   // Register the skill
   const db = drizzle(env.DB)
-  const existing = await db.select().from(skills).where(eq(skills.name, skillName)).get()
+  const existing = await db
+    .select()
+    .from(skills)
+    .where(and(eq(skills.userId, userId), eq(skills.name, skillName)))
+    .get()
   const values = {
     description: parsed.frontmatter.description,
     source: 'r2' as const,
-    path: `${skillName}/SKILL.md`,
+    path: `${r2Prefix}/SKILL.md`,
     metadata: JSON.stringify({ ...parsed.frontmatter, _origin: 'zip-upload' }),
   }
   if (existing) {
     await db.update(skills).set({ ...values, updatedAt: new Date() }).where(eq(skills.id, existing.id))
   } else {
-    await db.insert(skills).values({ name: skillName, ...values })
+    await db.insert(skills).values({ userId, name: skillName, ...values })
   }
 
   return {
@@ -542,18 +631,26 @@ function guessMimeType(path: string): string {
 export async function uploadSkillToR2(
   env: SkillsEnv,
   content: string,
+  userId: string,
   options?: { overwrite?: boolean }
 ): Promise<{ name: string; description: string; path: string }> {
   if (!env.SKILLS) throw new Error('SKILLS R2 bucket not configured')
 
   const parsed = parseSkill(content)
-  const path = `${parsed.frontmatter.name}/SKILL.md`
+  const name = parsed.frontmatter.name
+  const path = `${userId}/${name}/SKILL.md`
 
   const db = drizzle(env.DB)
-  const existing = await db.select().from(skills).where(eq(skills.name, parsed.frontmatter.name)).get()
+  // Lookup is scoped to (userId, name) — another user owning a row
+  // with the same name is fine and does not conflict.
+  const existing = await db
+    .select()
+    .from(skills)
+    .where(and(eq(skills.userId, userId), eq(skills.name, name)))
+    .get()
 
   if (existing && !options?.overwrite) {
-    throw new Error(`Skill "${parsed.frontmatter.name}" already exists. Set overwrite: true to replace.`)
+    throw new Error(`Skill "${name}" already exists for this user. Set overwrite: true to replace.`)
   }
 
   await env.SKILLS.put(path, content, { httpMetadata: { contentType: 'text/markdown' } })
@@ -571,7 +668,8 @@ export async function uploadSkillToR2(
       .where(eq(skills.id, existing.id))
   } else {
     await db.insert(skills).values({
-      name: parsed.frontmatter.name,
+      userId,
+      name,
       description: parsed.frontmatter.description,
       source: 'r2',
       path,
@@ -579,5 +677,5 @@ export async function uploadSkillToR2(
     })
   }
 
-  return { name: parsed.frontmatter.name, description: parsed.frontmatter.description, path }
+  return { name, description: parsed.frontmatter.description, path }
 }

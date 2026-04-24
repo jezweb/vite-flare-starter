@@ -87,8 +87,12 @@ export async function buildChatAgent(ctx: AgentContext): Promise<AgentResult> {
   // Skills with `disable_model_invocation: true` are user-invocable only, so
   // they're hidden from this catalog per the agentskills.io spec — the model
   // shouldn't discover or auto-load them.
-  const availableSkills = (await listSkills(ctx.env as { DB: D1Database; SKILLS?: R2Bucket }))
-    .filter((s) => !s.disableModelInvocation)
+  const availableSkills = (
+    await listSkills(
+      ctx.env as { DB: D1Database; SKILLS?: R2Bucket },
+      ctx.userId,
+    )
+  ).filter((s) => !s.disableModelInvocation)
   // Empty array → no catalog block, no behavioural instructions, and the
   // load_skill tool degrades to free-form string (harmless since nothing
   // is callable). Matches the guide's "if no skills, omit entirely" rule.

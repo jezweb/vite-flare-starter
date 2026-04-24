@@ -6,11 +6,11 @@
  */
 import { Hono } from 'hono'
 import { drizzle } from 'drizzle-orm/d1'
-import { eq } from 'drizzle-orm'
+import { and, eq, or } from 'drizzle-orm'
 import { generateText } from 'ai'
 import { DEFAULT_MODEL, resolveModel } from '@/server/lib/ai'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
-import { skills } from './db/schema'
+import { BUNDLED_USER_ID, skills } from './db/schema'
 import {
   listSkills,
   loadSkill,
@@ -29,22 +29,49 @@ const app = new Hono<AuthContext>()
 app.use('*', authMiddleware)
 
 /**
- * GET / — list all skills (including disabled).
+ * GET / — list skills visible to the caller.
  *
- * Uses ensureBundledSynced (idempotent per worker isolate) so freshly-
- * deployed bundled skills show up without the user having to hit
- * "Sync bundled" manually.
+ * Returns the union of:
+ *   - the user's personal overrides (skills.user_id === caller), AND
+ *   - bundled skills whose name is NOT overridden by the caller.
+ *
+ * Each row has `isPersonal: boolean` so the UI can distinguish "yours"
+ * from "bundled default". ensureBundledSynced (idempotent per isolate)
+ * keeps the bundled rows fresh.
  */
 app.get('/', async (c) => {
+  const userId = c.get('userId')
   await ensureBundledSynced(c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket })
   const db = drizzle(c.env.DB)
-  const all = await db.select().from(skills)
-  return c.json({ skills: all, count: all.length })
+  const rows = await db
+    .select()
+    .from(skills)
+    .where(or(eq(skills.userId, userId), eq(skills.userId, BUNDLED_USER_ID)))
+
+  // Prefer the user's override when both exist for the same name.
+  const personalByName = new Map(
+    rows.filter((r) => r.userId === userId).map((r) => [r.name, r]),
+  )
+  const merged: typeof rows = []
+  for (const r of rows) {
+    if (r.userId === userId) merged.push(r)
+    else if (!personalByName.has(r.name)) merged.push(r)
+  }
+
+  const withFlag = merged.map((r) => ({
+    ...r,
+    isPersonal: r.userId === userId,
+  }))
+  return c.json({ skills: withFlag, count: withFlag.length })
 })
 
 /** GET /summary — list skill metadata only (for AI consumption) */
 app.get('/summary', async (c) => {
-  const items = await listSkills(c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket })
+  const userId = c.get('userId')
+  const items = await listSkills(
+    c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket },
+    userId,
+  )
   return c.json({ skills: items, count: items.length })
 })
 
@@ -58,13 +85,18 @@ app.get('/summary', async (c) => {
  */
 app.get('/:name/resources/*', async (c) => {
   const name = c.req.param('name')
+  const userId = c.get('userId')
   const fullPath = c.req.path
   const marker = `/skills/${name}/resources/`
   const idx = fullPath.indexOf(marker)
   if (idx === -1) return c.json({ error: 'Malformed resource path' }, 400)
   const rawPath = fullPath.slice(idx + marker.length)
   const relPath = decodeURIComponent(rawPath)
-  const skill = await loadSkill(c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket }, name)
+  const skill = await loadSkill(
+    c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket },
+    name,
+    userId,
+  )
   if (!skill) return c.json({ error: 'Skill not found' }, 404)
   if (!skill.resources.includes(relPath)) {
     return c.json({
@@ -82,12 +114,19 @@ app.get('/:name/resources/*', async (c) => {
 /** GET /:name — get full skill content + resource listing */
 app.get('/:name', async (c) => {
   const name = c.req.param('name')
-  const skill = await loadSkill(c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket }, name)
+  const userId = c.get('userId')
+  const skill = await loadSkill(
+    c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket },
+    name,
+    userId,
+  )
   if (!skill) return c.json({ error: 'Skill not found' }, 404)
   return c.json({
     name: skill.name,
     description: skill.frontmatter.description,
     source: skill.source,
+    userId: skill.userId,
+    isPersonal: skill.isPersonal,
     directory: skill.directory,
     resources: skill.resources,
     frontmatter: skill.frontmatter,
@@ -109,6 +148,7 @@ app.post('/sync', async (c) => {
  *    directory import with scripts/references/assets copied into R2.
  */
 app.post('/github', async (c) => {
+  const userId = c.get('userId')
   const body = await c.req.json() as { url?: string; mode?: 'auto' | 'single' | 'directory' }
   if (!body.url) return c.json({ error: 'url required' }, 400)
   const mode = body.mode ?? 'auto'
@@ -116,10 +156,18 @@ app.post('/github', async (c) => {
   const useDirectory = mode === 'directory' || (mode === 'auto' && !looksLikeRawSingle)
   try {
     if (useDirectory) {
-      const result = await addGitHubSkillDirectory(c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket }, body.url)
+      const result = await addGitHubSkillDirectory(
+        c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket },
+        body.url,
+        userId,
+      )
       return c.json({ success: true, mode: 'directory', ...result })
     }
-    const result = await addGitHubSkill(c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket }, body.url)
+    const result = await addGitHubSkill(
+      c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket },
+      body.url,
+      userId,
+    )
     return c.json({ success: true, mode: 'single', ...result })
   } catch (error) {
     return c.json({ error: error instanceof Error ? error.message : String(error) }, 500)
@@ -132,13 +180,18 @@ app.post('/github', async (c) => {
  * SKILL.md at the root (or inside a single wrapping folder).
  */
 app.post('/upload-zip', async (c) => {
+  const userId = c.get('userId')
   try {
     const formData = await c.req.formData()
     const file = formData.get('file')
     if (!(file instanceof File)) return c.json({ error: 'file field required (multipart)' }, 400)
     if (file.size > 20 * 1024 * 1024) return c.json({ error: 'zip exceeds 20 MB' }, 400)
     const bytes = new Uint8Array(await file.arrayBuffer())
-    const result = await addSkillFromZip(c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket }, bytes)
+    const result = await addSkillFromZip(
+      c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket },
+      bytes,
+      userId,
+    )
     return c.json({ success: true, ...result })
   } catch (error) {
     return c.json({ error: error instanceof Error ? error.message : String(error) }, 500)
@@ -147,12 +200,14 @@ app.post('/upload-zip', async (c) => {
 
 /** POST /upload — upload a SKILL.md to R2 */
 app.post('/upload', async (c) => {
+  const userId = c.get('userId')
   const body = await c.req.json() as { content?: string; overwrite?: boolean }
   if (!body.content) return c.json({ error: 'content required' }, 400)
   try {
     const result = await uploadSkillToR2(
       c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket },
       body.content,
+      userId,
       { overwrite: body.overwrite }
     )
     return c.json({ success: true, ...result })
@@ -161,16 +216,52 @@ app.post('/upload', async (c) => {
   }
 })
 
-/** PATCH /:name — enable/disable a skill */
+/**
+ * PATCH /:name — enable/disable a skill.
+ *
+ * Scoped to the caller's own row. If the user only has the bundled
+ * copy (no personal override yet), the enable flag is stored as a
+ * thin personal override row pointing at the same path, so the
+ * toggle is per-user rather than global.
+ */
 app.patch('/:name', async (c) => {
+  const userId = c.get('userId')
   const name = c.req.param('name')
   const body = await c.req.json() as { enabled?: boolean }
+  const enabled = body.enabled ?? true
   const db = drizzle(c.env.DB)
-  await db
-    .update(skills)
-    .set({ enabled: body.enabled ?? true, updatedAt: new Date() })
-    .where(eq(skills.name, name))
-  return c.json({ success: true, name, enabled: body.enabled ?? true })
+
+  // Try the user's own row first.
+  const mine = await db
+    .select()
+    .from(skills)
+    .where(and(eq(skills.userId, userId), eq(skills.name, name)))
+    .get()
+  if (mine) {
+    await db
+      .update(skills)
+      .set({ enabled, updatedAt: new Date() })
+      .where(eq(skills.id, mine.id))
+    return c.json({ success: true, name, enabled })
+  }
+
+  // No personal row yet — create a thin override from the bundled copy.
+  const bundled = await db
+    .select()
+    .from(skills)
+    .where(and(eq(skills.userId, BUNDLED_USER_ID), eq(skills.name, name)))
+    .get()
+  if (!bundled) return c.json({ error: 'Skill not found' }, 404)
+  await db.insert(skills).values({
+    userId,
+    name: bundled.name,
+    description: bundled.description,
+    source: bundled.source,
+    path: bundled.path,
+    metadata: bundled.metadata,
+    enabled,
+  })
+  return c.json({ success: true, name, enabled })
 })
 
 /**
@@ -196,8 +287,9 @@ app.post('/:name/ai-edit', async (c) => {
       400,
     )
   }
+  const userId = c.get('userId')
   const env = c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket }
-  const before = await loadCurrentContent(env, { kind: 'skill', id: name })
+  const before = await loadCurrentContent(env, { kind: 'skill', id: name }, userId)
   if (!before) return c.json({ error: 'Skill not found' }, 404)
 
   const modelId = body.model ?? DEFAULT_MODEL
@@ -241,7 +333,6 @@ RULES:
         422,
       )
     }
-    const userId = c.get('userId')
     const proposal = await createProposal(c.env.DB, userId, {
       resource: { kind: 'skill', id: name, label: `/${name}` },
       before,
@@ -260,11 +351,32 @@ RULES:
   }
 })
 
-/** DELETE /:name — delete a skill from the registry */
+/**
+ * DELETE /:name — delete the caller's personal override of a skill.
+ *
+ * Never deletes the bundled row. If the user has no personal override,
+ * returns 404. After deletion, the user sees the bundled version
+ * again (the override is "reverted to bundled").
+ */
 app.delete('/:name', async (c) => {
+  const userId = c.get('userId')
   const name = c.req.param('name')
   const db = drizzle(c.env.DB)
-  await db.delete(skills).where(eq(skills.name, name))
+  const mine = await db
+    .select({ id: skills.id, userId: skills.userId })
+    .from(skills)
+    .where(and(eq(skills.userId, userId), eq(skills.name, name)))
+    .get()
+  if (!mine) {
+    return c.json(
+      {
+        error:
+          'No personal override of this skill to delete. Bundled skills cannot be removed — they ship with the starter.',
+      },
+      404,
+    )
+  }
+  await db.delete(skills).where(eq(skills.id, mine.id))
   return c.json({ success: true, name, deleted: true })
 })
 

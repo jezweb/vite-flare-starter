@@ -137,6 +137,9 @@ export function SkillEditor({ name }: SkillEditorProps) {
   const history = useProposalsForResource('skill', name)
 
   const isDirty = draft !== canonical && draft.trim().length > 0
+  // `isPersonal` means the caller owns this row (not the shared bundled
+  // default). `isBundled` is used for the render of the source badge.
+  const isPersonal = skill?.isPersonal === true
   const isBundled = skill?.source === 'bundled'
 
   const submitSave = async () => {
@@ -220,11 +223,15 @@ export function SkillEditor({ name }: SkillEditorProps) {
             <Badge variant={isBundled ? 'secondary' : 'outline'} className="text-[10px]">
               {skill.source}
             </Badge>
-            {isBundled ? (
+            {isPersonal ? (
+              <Badge variant="outline" className="text-[10px] text-emerald-600 dark:text-emerald-400">
+                Personal override
+              </Badge>
+            ) : (
               <Badge variant="outline" className="text-[10px] text-amber-600 dark:text-amber-400">
                 Bundled — edits create a personal override
               </Badge>
-            ) : null}
+            )}
           </div>
           <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
             {skill.description}

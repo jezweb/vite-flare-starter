@@ -255,8 +255,7 @@ export function SkillsPage() {
                     <ArrowLeft className="mr-1 h-4 w-4" />
                     Back to list
                   </Button>
-                  {skills.find((s) => s.name === effectiveSelected)?.source !==
-                    'bundled' && (
+                  {skills.find((s) => s.name === effectiveSelected)?.isPersonal && (
                     <Button
                       variant="ghost"
                       size="sm"
@@ -267,9 +266,11 @@ export function SkillsPage() {
                   )}
                 </div>
                 <SkillEditor key={effectiveSelected} name={effectiveSelected} />
-                {/* Desktop delete button (non-bundled only) */}
-                {skills.find((s) => s.name === effectiveSelected)?.source !==
-                  'bundled' && (
+                {/* Desktop "Revert to bundled" button — only shown when the
+                    caller owns a personal override. Deleting the override
+                    restores the bundled version. Bundled rows are shared,
+                    so the delete action isn't offered for them. */}
+                {skills.find((s) => s.name === effectiveSelected)?.isPersonal && (
                   <div className="mt-3 hidden justify-end lg:flex">
                     <Button
                       variant="outline"
@@ -277,7 +278,7 @@ export function SkillsPage() {
                       onClick={() => setDeleteTarget(effectiveSelected)}
                     >
                       <Trash2 className="mr-1 h-3.5 w-3.5 text-destructive" />
-                      Delete skill
+                      Revert to bundled
                     </Button>
                   </div>
                 )}
