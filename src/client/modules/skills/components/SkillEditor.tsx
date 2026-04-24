@@ -15,8 +15,14 @@
  * → returns a ConfigDiffProposal (pending, ai-sparkle origin) → same
  * approval modal. Implemented in Phase 2 — the button is wired here.
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
+
+// Lazy-loaded CodeMirror editor — ~100KB gzipped. Only pays its bundle
+// cost when the Source tab on a skill detail pane actually renders.
+const MarkdownCodeEditor = lazy(() =>
+  import('./MarkdownCodeEditor').then((m) => ({ default: m.MarkdownCodeEditor })),
+)
 import {
   Check,
   Code2,
@@ -286,12 +292,18 @@ export function SkillEditor({ name }: SkillEditorProps) {
         </TabsList>
 
         <TabsContent value="source" className="mt-4">
-          <Textarea
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            className="min-h-[400px] font-mono text-[11px] leading-relaxed md:text-[11px]"
-            spellCheck={false}
-          />
+          <Suspense
+            fallback={
+              <div className="min-h-[400px] animate-pulse rounded-md border bg-muted/20" />
+            }
+          >
+            <MarkdownCodeEditor
+              value={draft}
+              onChange={setDraft}
+              minHeight="400px"
+              aria-label="Skill SKILL.md source"
+            />
+          </Suspense>
           <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
             <span>
               {draft.length.toLocaleString()} chars · {draft.split('\n').length}{' '}
