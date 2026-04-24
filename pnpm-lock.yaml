@@ -35,6 +35,9 @@ importers:
       '@cloudflare/voice':
         specifier: ^0.1.2
         version: 0.1.2(agents@0.11.4(@ai-sdk/react@3.0.163(react@19.2.5)(zod@4.3.6))(@babel/core@7.29.0)(@babel/runtime@7.29.2)(@cloudflare/workers-types@4.20260412.1)(ai@6.0.161(zod@4.3.6))(react@19.2.5)(rolldown@1.0.0-rc.17)(vite@8.0.8(@types/node@24.10.1)(esbuild@0.27.3)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))(zod@4.3.6))(partysocket@1.1.16(react@19.2.5))(react@19.2.5)
+      '@codemirror/autocomplete':
+        specifier: ^6.20.1
+        version: 6.20.1
       '@codemirror/lang-markdown':
         specifier: ^6.5.0
         version: 6.5.0
