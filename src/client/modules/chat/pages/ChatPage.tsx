@@ -603,12 +603,26 @@ export function ChatPage() {
   // Track whether the user is near the bottom of the scroll container so we
   // can (a) show/hide the scroll-to-bottom button, (b) stop auto-sticking
   // once they scroll up, and (c) reset the unread count when they return.
+  //
+  // `lastScrollTopRef` detects direction independent of wheel events — so
+  // scrollbar drags and trackpad inertia release stick-to-bottom as soon
+  // as the user moves away from bottom, not only on wheel deltaY < 0.
+  const lastScrollTopRef = useRef(0)
   const handleScroll = useCallback(() => {
     const el = scrollRef.current
     if (!el) return
     const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 48
+    const movedUp = el.scrollTop < lastScrollTopRef.current
+    lastScrollTopRef.current = el.scrollTop
     setIsAtBottom(nearBottom)
-    stickToBottomRef.current = nearBottom
+    // If the user moved up at all, release stick — even if they're still
+    // within the 48px "near bottom" band. Prevents the rAF loop from
+    // snapping their scroll back mid-gesture.
+    if (movedUp) {
+      stickToBottomRef.current = false
+    } else {
+      stickToBottomRef.current = nearBottom
+    }
     if (nearBottom) {
       setUnreadCount(0)
       lastSeenCountRef.current = messages.length
@@ -651,20 +665,30 @@ export function ChatPage() {
   // Auto-scroll to bottom on new messages / streamed tokens, but only if the
   // user hasn't scrolled up. Tracks unread count for the scroll-to-latest
   // badge when they have.
+  //
+  // CRITICAL: skip the smooth scroll while `isLoading` is true — the 60fps
+  // rAF loop below handles auto-scroll during streaming with instant writes.
+  // Running both at once makes the browser start a smooth animation, then
+  // interrupt it every frame with a direct scrollTop write → "sticky"
+  // overshoot feel when the user tries to scroll up. Smooth scroll only
+  // fires once streaming ends (or for non-streaming message changes like
+  // loading history), and the unread counter still updates in both cases.
   useEffect(() => {
     const el = scrollRef.current
     if (!el) return
     if (stickToBottomRef.current) {
-      requestAnimationFrame(() => {
-        el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
-      })
+      if (!isLoading) {
+        requestAnimationFrame(() => {
+          el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+        })
+      }
       lastSeenCountRef.current = messages.length
     } else {
       // User is scrolled up — anything past the last seen index counts as unread.
       const delta = messages.length - lastSeenCountRef.current
       if (delta > 0) setUnreadCount(delta)
     }
-  }, [messages])
+  }, [messages, isLoading])
 
   // While streaming, tokens arrive without a messages[] identity change — so
   // the effect above doesn't re-fire per token. Run a rAF loop that nudges the
