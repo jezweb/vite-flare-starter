@@ -17,6 +17,7 @@
  */
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
+import { toast } from 'sonner'
 
 // Lazy-loaded CodeMirror editor — ~100KB gzipped. Only pays its bundle
 // cost when the Source tab on a skill detail pane actually renders.
@@ -164,16 +165,31 @@ export function SkillEditor({ name }: SkillEditorProps) {
   }
 
   const handleApprove = async (proposal: ConfigDiffProposal) => {
-    await approve.mutateAsync(proposal.id)
-    setPendingProposal(null)
-    // Reset draft to match the new canonical on next render — useEffect will
-    // re-seed once the skill query refetches.
-    lastLoadedName.current = null
+    try {
+      await approve.mutateAsync(proposal.id)
+      setPendingProposal(null)
+      // Reset draft to match the new canonical on next render — useEffect
+      // re-seeds once the skill query refetches.
+      lastLoadedName.current = null
+      toast.success('Skill updated')
+    } catch (err) {
+      // Keep the modal open so the user can retry. Surface the actual
+      // server error (race 409, revert failure, D1 hiccup).
+      toast.error('Approve failed', {
+        description: err instanceof Error ? err.message : String(err),
+      })
+    }
   }
 
   const handleReject = async (proposal: ConfigDiffProposal) => {
-    await reject.mutateAsync(proposal.id)
-    setPendingProposal(null)
+    try {
+      await reject.mutateAsync(proposal.id)
+      setPendingProposal(null)
+    } catch (err) {
+      toast.error('Reject failed', {
+        description: err instanceof Error ? err.message : String(err),
+      })
+    }
   }
 
   if (isLoading) {
@@ -215,7 +231,20 @@ export function SkillEditor({ name }: SkillEditorProps) {
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <Popover open={sparkleOpen} onOpenChange={setSparkleOpen}>
+          <Popover
+            open={sparkleOpen}
+            onOpenChange={(open) => {
+              setSparkleOpen(open)
+              // Clear stale error + instruction when the popover is
+              // dismissed — otherwise the next open still shows the
+              // previous failure. Keep instruction on open for a
+              // successful re-submit scenario.
+              if (!open) {
+                setSparkleError(null)
+                setSparkleInstruction('')
+              }
+            }}
+          >
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm">
                 <Sparkles className="mr-1 h-3.5 w-3.5" />
@@ -234,6 +263,7 @@ export function SkillEditor({ name }: SkillEditorProps) {
                     onChange={(e) => setSparkleInstruction(e.target.value)}
                     placeholder="e.g. Make it shorter. Add an Australian context note. Rewrite for a senior engineer audience."
                     rows={4}
+                    maxLength={2000}
                     className="mt-1 text-sm"
                   />
                   {sparkleError ? (

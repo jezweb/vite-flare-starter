@@ -56,6 +56,27 @@ const ENDPOINT_LIMITS: Record<string, RateLimitConfig> = {
 }
 
 /**
+ * Rate limits that apply to URL patterns with dynamic segments. Checked
+ * after exact-path lookup fails — the first matching regex wins.
+ *
+ * Keep the patterns specific — overly broad regexes will hit unintended
+ * endpoints.
+ */
+const PATTERN_LIMITS: Array<{
+  method: string
+  pattern: RegExp
+  config: RateLimitConfig
+  displayPath: string
+}> = [
+  {
+    method: 'POST',
+    pattern: /^\/api\/skills\/[^/]+\/ai-edit$/,
+    config: { key: 'SKILL_AI_EDIT', windowMs: 60 * 60 * 1000 },
+    displayPath: 'POST:/api/skills/:name/ai-edit',
+  },
+]
+
+/**
  * In-memory rate limit store
  *
  * NOTE: This is per-Worker instance. On Cloudflare Workers, each request
@@ -123,8 +144,19 @@ export const rateLimiter = createMiddleware<{ Bindings: Env }>(async (c, next) =
   const path = c.req.path
   const endpointKey = `${method}:${path}`
 
-  // Check if this endpoint has rate limiting configured
-  const config = ENDPOINT_LIMITS[endpointKey]
+  // Check if this endpoint has rate limiting configured. Exact-path
+  // match first (common case), then regex patterns for dynamic routes.
+  let config = ENDPOINT_LIMITS[endpointKey]
+  let patternKey = endpointKey
+  if (!config) {
+    const patternHit = PATTERN_LIMITS.find(
+      (p) => p.method === method && p.pattern.test(path),
+    )
+    if (patternHit) {
+      config = patternHit.config
+      patternKey = `${method}:${patternHit.displayPath}`
+    }
+  }
   if (!config) {
     // No rate limiting for this endpoint
     await next()
@@ -133,7 +165,7 @@ export const rateLimiter = createMiddleware<{ Bindings: Env }>(async (c, next) =
 
   const limit = RATE_LIMITS[config.key]
   const identifier = getClientIdentifier(c)
-  const storeKey = `${endpointKey}:${identifier}`
+  const storeKey = `${patternKey}:${identifier}`
   const now = Date.now()
 
   // Get or create rate limit entry

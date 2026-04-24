@@ -136,6 +136,27 @@
       "breakpoints": true
     },
     {
+      "idx": 19,
+      "version": "6",
+      "when": 1776949500000,
+      "tag": "0019_microsoft_workspace_tokens",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1776951787000,
+      "tag": "0020_user_connector_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1776951787001,
+      "tag": "0021_stub_connector_tokens",
+      "breakpoints": true
+    },
+    {
       "idx": 22,
       "version": "6",
       "when": 1776992174047,

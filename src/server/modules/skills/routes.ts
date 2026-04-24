@@ -190,6 +190,12 @@ app.post('/:name/ai-edit', async (c) => {
   if (!body.instruction || typeof body.instruction !== 'string') {
     return c.json({ error: 'instruction required' }, 400)
   }
+  if (body.instruction.length > 2000) {
+    return c.json(
+      { error: 'instruction too long (max 2000 characters)' },
+      400,
+    )
+  }
   const env = c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket }
   const before = await loadCurrentContent(env, { kind: 'skill', id: name })
   if (!before) return c.json({ error: 'Skill not found' }, 404)
@@ -221,6 +227,20 @@ RULES:
     if (cleaned === before) {
       return c.json({ error: 'The rewrite matched the original — try a different instruction.' }, 422)
     }
+    // Enforce: the model MUST NOT rename the skill. Enforcement happens
+    // here (not in the system prompt) because models occasionally
+    // ignore the instruction. If the returned frontmatter names a
+    // different skill, reject rather than silently orphaning the
+    // original + creating a new one on apply.
+    const returnedName = extractSkillName(cleaned)
+    if (returnedName && returnedName !== name) {
+      return c.json(
+        {
+          error: `The rewrite changed the skill name from "${name}" to "${returnedName}". Skill names must stay unchanged — try a different instruction.`,
+        },
+        422,
+      )
+    }
     const userId = c.get('userId')
     const proposal = await createProposal(c.env.DB, userId, {
       resource: { kind: 'skill', id: name, label: `/${name}` },
@@ -247,5 +267,17 @@ app.delete('/:name', async (c) => {
   await db.delete(skills).where(eq(skills.name, name))
   return c.json({ success: true, name, deleted: true })
 })
+
+/**
+ * Extract the `name:` field from a SKILL.md frontmatter block without
+ * a full YAML parse. Used to validate AI-rewritten skill files don't
+ * change the skill's identity.
+ */
+function extractSkillName(source: string): string | null {
+  const fm = source.match(/^---\r?\n([\s\S]*?)\r?\n---/)
+  if (!fm) return null
+  const match = fm[1]?.match(/^name:\s*["']?([a-z0-9-]+)["']?\s*$/m)
+  return match?.[1] ?? null
+}
 
 export default app

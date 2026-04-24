@@ -694,10 +694,19 @@ export function ChatPage() {
   // the effect above doesn't re-fire per token. Run a rAF loop that nudges the
   // scroll position to the bottom each frame until streaming stops. Gives
   // claude.ai-style continuous auto-scroll instead of jumpy per-message scroll.
+  //
+  // Safety guard: if `isLoading` is stuck true due to a stream hang (network
+  // drop, backend error silently swallowed), bail after 5 minutes so we're
+  // not burning frames indefinitely. Normal completions flip `isLoading`
+  // false in seconds/tens of seconds — the guard is only for the pathological
+  // case.
   useEffect(() => {
     if (!isLoading) return
+    const startedAt = performance.now()
+    const MAX_MS = 5 * 60 * 1000
     let rafId = 0
     const tick = () => {
+      if (performance.now() - startedAt > MAX_MS) return // give up
       const el = scrollRef.current
       if (el && stickToBottomRef.current) {
         // instant, not smooth, because we're running 60fps — smooth would jitter

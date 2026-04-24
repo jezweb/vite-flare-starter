@@ -27,16 +27,17 @@ import {
 const app = new Hono<AuthContext>()
 app.use('*', authMiddleware)
 
-const kindSchema = z.enum([
+// Narrowed to kinds that have an apply handler wired up. Widen as
+// other kinds gain support in `config-diff/apply.ts`. Without the
+// narrow, a user could create a proposal for an unsupported kind and
+// hit a 500 on apply with a confusing "not implemented" error.
+const createKindSchema = z.enum([
   'skill',
-  'system-prompt',
-  'setting',
-  'connector-tool-policy',
 ]) satisfies z.ZodType<ConfigDiffKind>
 
 const createSchema = z.object({
   resource: z.object({
-    kind: kindSchema,
+    kind: createKindSchema,
     id: z.string().min(1),
     label: z.string().min(1),
   }),
@@ -111,12 +112,36 @@ app.post('/:id/apply', async (c) => {
       claimed,
     )
   } catch (err) {
-    // Apply threw after we claimed — revert so the user can retry.
-    await revertProposalToPending(c.env.DB, userId, id)
-    return c.json(
-      { error: err instanceof Error ? err.message : String(err) },
-      500,
-    )
+    // Apply threw after we claimed — try to revert so the user can retry.
+    // If the revert ITSELF throws, we log loudly and leave the row as
+    // `applied` (the R2 write did NOT happen). The user sees a 500 with
+    // the ORIGINAL apply error + a hint that the state may be
+    // inconsistent. Better than silently claiming "applied" with no
+    // write.
+    const applyError = err instanceof Error ? err.message : String(err)
+    try {
+      await revertProposalToPending(c.env.DB, userId, id)
+    } catch (revertErr) {
+      console.error(
+        JSON.stringify({
+          event: 'config_diff_revert_failed',
+          proposalId: id,
+          userId,
+          applyError,
+          revertError:
+            revertErr instanceof Error ? revertErr.message : String(revertErr),
+        }),
+      )
+      return c.json(
+        {
+          error: `Apply failed: ${applyError}. Revert also failed — proposal is in an inconsistent state and may need manual intervention.`,
+          applyError,
+          revertFailed: true,
+        },
+        500,
+      )
+    }
+    return c.json({ error: applyError }, 500)
   }
   return c.json({ proposal: claimed })
 })
