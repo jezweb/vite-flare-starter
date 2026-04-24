@@ -1,4 +1,4 @@
-# CLAUDE.md - AI Developer Context
+# CLAUDE.md — AI Developer Context
 
 **Project:** Vite Flare Starter
 **Version:** 2.1.0
@@ -8,9 +8,12 @@
 
 ## Philosophy: Pattern Library, Not a Demo
 
-The modules in this starter are **reference implementations**. When an AI agent or developer builds a new feature in a fork, they should read the closest existing module first to learn the patterns for this stack.
+The modules in this starter are **reference implementations**. When an AI
+agent or developer builds a new feature in a fork, they should read the
+closest existing module first to learn the patterns for this stack.
 
-**Don't delete modules you don't need.** Disable them via feature flags instead — the code stays readable as a pattern reference.
+**Don't delete modules you don't need.** Disable them via feature flags
+instead — the code stays readable as a pattern reference.
 
 ```bash
 # In .dev.vars — hide modules from the sidebar without deleting code
@@ -19,51 +22,65 @@ VITE_FEATURE_FILES=false
 VITE_FEATURE_ACTIVITY=false
 ```
 
-### What Each Module Demonstrates
+### What each module demonstrates
 
-| Module | Pattern it teaches | Key files |
-|--------|--------------------|-----------|
-| **chat** | ToolLoopAgent, tool calling, reasoning, structured output, usage logging, vision, subagents | `server/lib/ai/agent.ts`, `server/modules/chat/routes.ts`, `client/modules/chat/hooks/useChat.ts` |
-| **conversations** | Conversation persistence, ChatStorage interface (D1-backed, DO-ready), sidebar UI | `server/modules/conversations/storage.ts`, `server/modules/conversations/routes.ts` |
-| **files** | R2 file upload/download, multipart form handling, file metadata in D1 | `server/modules/files/routes.ts` |
+| Module | Teaches | Key files |
+|---|---|---|
+| **chat** | ToolLoopAgent, tool calling, reasoning, structured output, usage logging, vision, subagents | `server/lib/ai/agent.ts`, `server/modules/chat/routes.ts` |
+| **conversations** | Conversation persistence, ChatStorage interface (D1-backed, DO-ready) | `server/modules/conversations/storage.ts` |
+| **files** | R2 upload/download, multipart form handling, metadata in D1 | `server/modules/files/routes.ts` |
 | **activity** | Audit logging with pagination, entity history, stats aggregation | `server/modules/activity/routes.ts` |
-| **notifications** | In-app notification service, unread counts, bulk operations | `server/modules/notifications/routes.ts` |
-| **api-tokens** | Token generation, SHA-256 hashing, scope-based access control | `server/modules/api-tokens/routes.ts` |
+| **notifications** | In-app service, unread counts, bulk operations | `server/modules/notifications/routes.ts` |
+| **api-tokens** | Token generation, SHA-256 hashing, scope-based access | `server/modules/api-tokens/routes.ts` |
 | **feature-flags** | DB-backed feature toggles, public/admin endpoints | `server/modules/feature-flags/routes.ts` |
 | **organization** | Single-row business settings with upsert | `server/modules/organization/routes.ts` |
 | **admin** | User management, role promotion, admin stats | `server/modules/admin/routes.ts` |
-| **settings** | Profile CRUD, password change, preferences, session management, data export | `server/modules/settings/routes.ts` |
+| **settings** | Profile CRUD, password, preferences, sessions, data export | `server/modules/settings/routes.ts` |
+| **skills** | Claude Agent Skills registry + editor + AI-sparkle rewrite + diff approval | `server/modules/skills/routes.ts` |
+| **config-diff** | Shared primitive for staged user-config changes (skills, prompts, …) | `server/modules/config-diff/` |
 
 ---
 
 ## Forking This Project
 
-Read [FORKING.md](./FORKING.md) for step-by-step instructions.
+See [FORKING.md](./FORKING.md) for the full guide.
 
 **Quick start after forking:**
+
 1. Edit `src/shared/config/nav.ts` — add your product's nav items
 2. Edit `src/shared/config/features.ts` — disable modules you don't need
 3. Edit `src/shared/config/app.ts` — rebrand (name, logo, token prefix)
-4. Create your first module following the patterns below
+4. Create your first module following [`docs/PATTERNS.md`](./docs/PATTERNS.md)
 
-### Security: Rebranding
+**Rebrand before production:** `VITE_APP_NAME`, `VITE_TOKEN_PREFIX` +
+`TOKEN_PREFIX`, `index.html` title, favicon in `public/`. Set
+`VITE_GITHUB_URL=""` to hide GitHub links.
 
-Change these before deploying to production:
+---
 
-| What | Where | Default |
-|------|-------|---------|
-| App name | `VITE_APP_NAME` env var | "Vite Flare Starter" |
-| Token prefix | `VITE_TOKEN_PREFIX` + `TOKEN_PREFIX` | `vfs_` |
-| Page title | `index.html` | "Vite Flare Starter" |
-| Favicon | `public/` | Default |
-| GitHub links | `VITE_GITHUB_URL=` (empty to hide) | Shown |
+## Where to find things
+
+CLAUDE.md stays thin on purpose — it loads into every session. Deeper
+reference lives in `docs/`, loaded only when you need it.
+
+| Want to… | Read |
+|---|---|
+| Build a CRUD feature, table, hook | [`docs/PATTERNS.md`](./docs/PATTERNS.md) |
+| Wire voice, video, or any DO agent | [`docs/DO_AGENTS.md`](./docs/DO_AGENTS.md) |
+| Understand sources, gating, NLP, observability | [`docs/CHAT_INTERNALS.md`](./docs/CHAT_INTERNALS.md) |
+| Add or customise agent tools + connectors | [`docs/AGENT_TOOLKIT.md`](./docs/AGENT_TOOLKIT.md) |
+| Enable KV / Queues / Vectorize / Hyperdrive / Stream | [`docs/PLATFORM_SERVICES.md`](./docs/PLATFORM_SERVICES.md) |
+| Add analytics / payments / email / real-time / background jobs | `docs/ADDING_*.md` |
+| Deploy checklist | [`docs/DEPLOYMENT_CHECKLIST.md`](./docs/DEPLOYMENT_CHECKLIST.md) |
+| MCP connectors setup | [`docs/mcp-connectors.md`](./docs/mcp-connectors.md) |
+| Project-local rules (auto-loaded by convention) | `.claude/rules/*.md` |
 
 ---
 
 ## Tech Stack
 
 | Layer | Technology |
-|-------|------------|
+|---|---|
 | **Platform** | Cloudflare Workers with Static Assets |
 | **Frontend** | React 19 + Vite 7 |
 | **Backend** | Hono 4.12 |
@@ -71,25 +88,24 @@ Change these before deploying to production:
 | **Auth** | better-auth 1.6 (Google OAuth, optional email/password) |
 | **AI** | AI SDK v6 + workers-ai-provider + OpenRouter (16 models across 8 providers) |
 | **UI** | Tailwind v4 + shadcn/ui |
-| **Data Fetching** | TanStack Query 5 + apiClient |
+| **Data fetching** | TanStack Query 5 + apiClient |
 | **Forms** | React Hook Form + Zod |
 | **Testing** | Vitest 4 + @cloudflare/vitest-pool-workers |
 
 ---
 
-## Config-Driven Navigation
+## Config-driven navigation
 
-The sidebar is driven by `src/shared/config/nav.ts`. Edit this file to customise navigation — don't modify the layout component.
+The sidebar is driven by `src/shared/config/nav.ts`. Edit this file —
+don't modify the layout component.
 
 ```typescript
-// src/shared/config/nav.ts
 export const NAV_SECTIONS: NavSection[] = [
   {
     label: 'Main',
     items: [
       { to: '/dashboard', label: 'Home', icon: Home },
       { to: '/dashboard/chat', label: 'AI Chat', icon: MessageSquare, feature: 'chat' },
-      { to: '/dashboard/your-feature', label: 'Your Feature', icon: YourIcon },
     ],
   },
   {
@@ -102,741 +118,102 @@ export const NAV_SECTIONS: NavSection[] = [
 ]
 ```
 
-**Feature flags** in `src/shared/config/features.ts` control item visibility:
-- `chat`, `files`, `activity`, `notifications`, `apiTokens` — module visibility
-- `themePicker` — colour theme picker in preferences
-- `devTools`, `styleGuide`, `components` — dev tool pages
-
----
-
-## Patterns: How to Build Features
-
-### Pattern 1: New Server Module
-
-```typescript
-// src/server/modules/your-module/routes.ts
-import { Hono } from 'hono'
-import { zValidator } from '@hono/zod-validator'
-import { z } from 'zod'
-import { drizzle } from 'drizzle-orm/d1'
-import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
-import { yourTable } from './db/schema'
-
-const app = new Hono<AuthContext>()
-app.use('*', authMiddleware)
-
-app.get('/', async (c) => {
-  const userId = c.get('userId')
-  const db = drizzle(c.env.DB)
-  const items = await db.select().from(yourTable).where(eq(yourTable.userId, userId))
-  return c.json({ items })
-})
-
-app.post('/', zValidator('json', createSchema), async (c) => {
-  const input = c.req.valid('json')
-  const userId = c.get('userId')
-  const db = drizzle(c.env.DB)
-  await db.insert(yourTable).values({ ...input, userId })
-  return c.json({ success: true }, 201)
-})
-
-export default app
-
-// Register in src/server/index.ts:
-// app.route('/api/your-module', yourRoutes)
-```
-
-**Reference:** `src/server/modules/files/routes.ts` (CRUD), `src/server/modules/activity/routes.ts` (pagination + stats)
-
-### Pattern 2: New D1 Table
-
-```typescript
-// src/server/modules/your-module/db/schema.ts
-import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core'
-import { user } from '@/server/modules/auth/db/schema'
-
-export const yourTable = sqliteTable('your_table', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
-  title: text('title').notNull(),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
-}, (table) => [
-  index('your_table_user_id_idx').on(table.userId),
-])
-
-// Add to src/server/db/schema.ts:
-// export { yourTable } from '@/server/modules/your-module/db/schema'
-
-// Then generate migration:
-// pnpm db:generate:named "add_your_table"
-```
-
-**Reference:** `src/server/modules/chat/db/schema.ts` (simple), `src/server/modules/files/db/schema.ts` (with FK)
-
-### Pattern 3: TanStack Query Hook
-
-```typescript
-// src/client/modules/your-module/hooks/useYourData.ts
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiClient } from '@/client/lib/api-client'
-
-export function useYourData() {
-  return useQuery({
-    queryKey: ['your-module', 'list'],
-    queryFn: () => apiClient.get<{ items: YourType[] }>('/api/your-module'),
-  })
-}
-
-export function useCreateYourData() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (input: CreateInput) =>
-      apiClient.post<{ success: boolean }>('/api/your-module', input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['your-module'] })
-    },
-  })
-}
-```
-
-**Reference:** `src/client/modules/settings/hooks/useSettings.ts` (apiClient + queryKeys pattern)
-
-### Pattern 4: AI Streaming Chat (ToolLoopAgent)
-
-```typescript
-// Server: ToolLoopAgent + createAgentUIStreamResponse
-import { buildChatAgent } from '@/server/lib/ai'
-import { createAgentUIStreamResponse, smoothStream } from 'ai'
-
-// Build agent with all tools, system prompt, logging encapsulated
-const { agent, startTime, modelId } = await buildChatAgent({
-  env, userId, user, modelId: requestedModel, systemPrompt,
-})
-
-// Stream via AI SDK's agent response pattern
-return createAgentUIStreamResponse({
-  agent,
-  uiMessages: messages,
-  experimental_transform: smoothStream({ chunking: 'word' }),
-  sendReasoning: true,
-  onFinish: async ({ messages }) => {
-    await storage.saveChat({ conversationId, messages })  // Persist conversation
-  },
-})
-```
-
-```typescript
-// Client: useChat hook (wrapper around @ai-sdk/react useChat)
-// Uses refs for model/systemPrompt/conversationId to avoid stale-closure bugs
-// when switching models in the UI. The transport is memoised once; refs update
-// on each render so prepareSendMessagesRequest always reads the latest values.
-// initialMessages is frozen at mount — later changes from useConversationMessages
-// are adopted via setMessages only when chat.messages is empty, so a URL
-// transition from /chat to /chat/:id never clobbers in-flight streaming state.
-import { useChat } from '@/client/modules/chat/hooks/useChat'
-const { messages, sendMessage, isLoading, conversationId, addToolApprovalResponse } = useChat({
-  model: 'anthropic/claude-sonnet-4.6',  // or any id from src/shared/config/models.ts
-  conversationId: urlConversationId,      // Load existing conversation
-})
-sendMessage({ text: 'Hello' })
-```
-
-**Reference:** `src/server/lib/ai/agent.ts` (agent factory), `src/server/modules/chat/routes.ts` (streaming endpoint)
-
-**Gotcha (fixed 2026-04-22):** Do NOT pass a reactive `initialMessages` prop directly to `useAIChat` — the SDK treats the prop as a re-seed signal. When `useConversationMessages(urlConversationId)` resolves after the URL transitions from `/chat` to `/chat/:id`, it clobbers in-flight streaming state and the transcript goes blank until reload. The `useChat` wrapper in this repo freezes `initialMessages` at mount and only adopts later loads via `chat.setMessages` when `chat.messages.length === 0`.
-
-### Pattern 4b: Conversation Persistence
-
-```typescript
-// Conversations are stored in D1 (conversations + conversation_messages tables)
-import { createD1ChatStorage } from '@/server/modules/conversations/storage'
-
-const storage = createD1ChatStorage(c.env.DB)
-
-// Create
-const conversationId = await storage.createConversation(userId, { title, model })
-
-// Load
-const messages = await storage.loadChat(conversationId)
-
-// Save (append-only — only inserts new messages)
-await storage.saveChat({ conversationId, messages })
-
-// List (paginated, sorted by updatedAt)
-const conversations = await storage.listConversations(userId, { limit: 50 })
-```
-
-The `ChatStorage` interface is designed for future swap to Durable Objects (Cloudflare Agents SDK).
-
-**Reference:** `src/server/modules/conversations/storage.ts`, `src/server/modules/conversations/routes.ts`
-
-### Pattern 5: Structured Output
-
-```typescript
-import { generateText, Output } from 'ai'
-import { createWorkersAI } from 'workers-ai-provider'
-import { z } from 'zod'
-
-const workersai = createWorkersAI({ binding: c.env.AI })
-const { output } = await generateText({
-  model: workersai('@cf/moonshotai/kimi-k2.6'),
-  output: Output.object({
-    schema: z.object({ title: z.string(), summary: z.string() }),
-  }),
-  prompt: 'Summarise this text...',
-})
-```
-
-**Reference:** `src/server/modules/chat/routes.ts` (`POST /extract` endpoint)
-
-### Pattern 6: MCP Integration
-
-```typescript
-import { createMCPClient } from '@ai-sdk/mcp'
-
-const mcp = await createMCPClient({
-  transport: { type: 'http', url: 'https://your-mcp-server/mcp' },
-})
-const mcpTools = await mcp.tools()
-
-const result = streamText({
-  model,
-  tools: { ...localTools, ...mcpTools },
-  stopWhen: stepCountIs(10),
-  // ...
-})
-```
-
-**Install:** `pnpm add @ai-sdk/mcp`
-
-**Per-user MCP connectors (Phase 5):** `src/server/modules/mcp-connections/` exposes a catalogue + OAuth (PKCE + DCR) + bearer fallback. Connections live in D1 (`user_mcp_connections`), tokens AES-GCM encrypted at rest via `TOKEN_ENCRYPTION_KEY`. Per-tool policies (always/ask/never) in `user_mcp_tool_policies`. The chat agent loads user connections via `getUserMcpTools(env, userId)` in `src/server/lib/ai/user-mcp.ts`.
-
-**OAuth redirect gotcha (fixed 2026-04-22):** Never use `window.open(authorizationUrl)` for the provider redirect — Chrome silently blocks popups fired inside React dialog event chains (the user-gesture chain is lost when the dialog defers). Always use `window.location.href = authorizationUrl` for the initial hand-off. The OAuth callback page closes itself and `window.opener.postMessage` is still available if you need to message the parent tab on return. A `POST /api/mcp-connections/:id/authorize` endpoint re-issues a fresh `authorizationUrl` for pending connections so users can retry if the flow is interrupted.
-
-### Pattern 7: R2 File Upload
-
-```typescript
-// Server: multipart upload to R2
-app.post('/', async (c) => {
-  const formData = await c.req.formData()
-  const file = formData.get('file') as File
-  const key = `uploads/${crypto.randomUUID()}-${file.name}`
-  await c.env.FILES.put(key, await file.arrayBuffer(), {
-    httpMetadata: { contentType: file.type },
-  })
-  // Store metadata in D1, return key
-})
-```
-
-**Reference:** `src/server/modules/files/routes.ts`
-
-### Pattern 8: Webhook Handler
-
-```typescript
-// Server: receive and verify webhooks
-app.post('/webhooks/:provider', async (c) => {
-  const provider = c.req.param('provider')
-  const body = await c.req.text()
-  const signature = c.req.header('x-signature')
-
-  // Verify signature (provider-specific)
-  if (!verifySignature(body, signature, c.env.WEBHOOK_SECRET)) {
-    return c.json({ error: 'Invalid signature' }, 401)
-  }
-
-  const payload = JSON.parse(body)
-  // Process webhook...
-  return c.json({ received: true })
-})
-```
-
-### Pattern 9: Full-Text Search (FTS5)
-
-```typescript
-import { createFTSIndex, searchFTS, rebuildFTSIndex } from '@/server/lib/search'
-
-// One-time setup (in a migration or init endpoint):
-await createFTSIndex(db, {
-  table: 'conversation_messages',
-  columns: ['parts'],                    // JSON text column
-  ftsTable: 'conversation_messages_fts', // auto-creates triggers
-})
-
-// Search with BM25 ranking, joined to source table:
-const { results } = await searchFTS(db, {
-  ftsTable: 'conversation_messages_fts',
-  sourceTable: 'conversation_messages',
-  query: 'meeting notes',
-  limit: 20,
-})
-
-// Rebuild after bulk import:
-await rebuildFTSIndex(db, 'conversation_messages_fts')
-```
-
-**Reference:** `src/server/lib/search/fts.ts`, wired in `src/server/modules/conversations/routes.ts` (`GET /search`)
-
-### Pattern 10: Durable Object Agent (voice / streaming WS)
-
-For features that need a persistent stateful connection per-session — voice capture, live collaboration, multiplayer, real-time dashboards — use a Durable Object wired via the `agents` SDK.
-
-Four pieces to get right:
-
-```typescript
-// 1. Define the DO class — extend Agent (or a mixin like withVoiceInput)
-// src/server/modules/voice/voice-agent.ts
-import { Agent, type Connection, type ConnectionContext } from 'agents'
-import { withVoiceInput, WorkersAINova3STT } from '@cloudflare/voice'
-
-const InputAgent = withVoiceInput(Agent)
-
-export class VoiceInputExample extends InputAgent<any> {
-  transcriber = new WorkersAINova3STT((this.env as { AI: Ai }).AI)
-
-  async onConnect(conn: Connection, _ctx: ConnectionContext) {
-    conn.send(JSON.stringify({ type: 'welcome' }))
-  }
-
-  async onTranscript(text: string, _conn: Connection) {
-    this.broadcast(JSON.stringify({ type: 'utterance', text }))
-  }
-}
-```
-
-```typescript
-// 2. Re-export from Worker entry + wrap fetch with routeAgentRequest
-// src/server/index.ts
-import { routeAgentRequest } from 'agents'
-export { VoiceInputExample } from './modules/voice/voice-agent'
-
-export default {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
-    const agentResponse = await routeAgentRequest(request, env)
-    if (agentResponse) return agentResponse
-    return app.fetch(request, env, ctx)
-  },
-}
-```
-
-```jsonc
-// 3. wrangler.jsonc — DO binding + SQLite migration + /agents/* routing
-{
-  "assets": {
-    "run_worker_first": ["/api/*", "/agents/*"]
-  },
-  "durable_objects": {
-    "bindings": [
-      { "name": "VoiceInputExample", "class_name": "VoiceInputExample" }
-    ]
-  },
-  "migrations": [
-    { "tag": "v1", "new_sqlite_classes": ["VoiceInputExample"] }
-  ]
-}
-```
-
-```tsx
-// 4. Client: use the hook, set instance name = your session id
-// src/client/modules/voice/pages/VoiceInputExamplePage.tsx
-import { useVoiceInput } from '@cloudflare/voice/react'
-
-const { transcript, interimTranscript, audioLevel, start, stop, toggleMute } =
-  useVoiceInput({ agent: 'VoiceInputExample', name: sessionId })
-```
-
-**Gotchas that cost 30 min if missed:**
-
-| Gotcha | Symptom |
-|---|---|
-| Forgot to add `/agents/*` to `run_worker_first` | WS requests hit static assets → 404, DO never touched |
-| Forgot to `export { VoiceInputExample }` from Worker entry | `wrangler deploy` errors "Durable Object class not found" |
-| Class in bindings but missing from `migrations.new_sqlite_classes` | Deploy ok, but first request errors "DO storage not provisioned" |
-| `useVoiceInput` hook `isListening` stays false during recording | Not a bug — it flips true only once real audio is flowing. Use your own local phase state for the status label. |
-| Browser WS URL wrong | Path is `/agents/{kebab-case-class-name}/{instance-name}` — the SDK auto-converts the `agent:` prop to kebab-case |
-
-**When to use this over polling or a Hono endpoint:** anything that needs >1 message/sec, server→client push, or per-session CPU state. For plain REST CRUD or infrequent updates, Hono + TanStack Query is simpler.
-
-**Reference:** `src/server/modules/voice/voice-agent.ts` + `src/client/modules/voice/pages/VoiceInputExamplePage.tsx`. Gated by `voiceAgent` feature flag (default OFF — set `VITE_FEATURE_VOICE_AGENT=true` to enable the nav item). The DO itself is always compiled so the pattern works as a pure code reference even when disabled.
-
-### Pattern 10b: Video input agent (no SDK, just primitives)
-
-Cloudflare has no `@cloudflare/video` package (as of 2026-04-22). For
-"describe what the user is showing" / "OCR this whiteboard" / "caption
-this scene" use cases, a simple sampled-frames-over-WS pattern works
-today without any SFU/WebRTC plumbing.
-
-**Pattern:**
-- Client: `getUserMedia` → `<canvas>` sampled every N seconds → JPEG
-  data URL → sent via the `agents` SDK WebSocket as a JSON message
-- Server: the DO's `onMessage` handler decodes the JSON, calls the AI
-  SDK's `generateText` with a vision-capable model, broadcasts the
-  caption back
-
-The DO wiring (binding, migration, class export, `run_worker_first`) is
-identical to Pattern 10. Only the transport differs — `useAgent` from
-`agents/react` instead of `useVoiceInput`.
-
-**Reference:** `src/server/modules/video/video-agent.ts` +
-`src/client/modules/video/pages/VideoInputExamplePage.tsx`. Gated by
-`videoAgent` feature flag (default OFF — set `VITE_FEATURE_VIDEO_AGENT=true`
-to enable). For 30fps continuous vision (gaze, object tracking), swap the
-transport for Cloudflare Realtime SFU + raw WebRTC tracks — keep the DO's
-agent logic.
+Feature flags in `src/shared/config/features.ts` control item visibility:
+`chat`, `files`, `activity`, `notifications`, `apiTokens`, `themePicker`,
+`devTools`, `styleGuide`, `components`, `voiceAgent`, `videoAgent`.
 
 ---
 
 ## UI Patterns
 
-### Pages Over Modals
+**Pages over modals.** Dedicated pages for forms and content. Modals
+only for confirmations and quick decisions. Reference:
+`src/client/modules/settings/pages/SettingsPage.tsx`.
 
-Use dedicated pages for forms and content. Modals only for confirmations and quick decisions.
-
-**Page layout pattern:** See `src/client/modules/settings/pages/SettingsPage.tsx`
-
-### Adding a New Page
+### Adding a new page
 
 1. Create the page component in your module
-2. Add Route in `src/client/App.tsx`
-3. Add nav item in `src/shared/config/nav.ts`
-4. Feature flag it if it should be optional
+2. Add a Route in `src/client/App.tsx`
+3. Add a nav item in `src/shared/config/nav.ts`
+4. Feature-flag it if it's optional
 
-### UI Components Available
+### UI components available
 
 | Component | File | What it does |
-|-----------|------|-------------|
-| **Command Palette** | `src/client/components/CommandPalette.tsx` | Cmd+K global search/navigation, reads from nav config |
-| **Keyboard Shortcuts** | `src/client/components/KeyboardShortcuts.tsx` | Press ? to show all shortcuts |
-| **Empty State** | `src/client/components/EmptyState.tsx` | No-data screens with icon, title, description, CTA button |
-| **Inline Edit** | `src/client/components/InlineEdit.tsx` | Click-to-edit text fields (save on blur/Enter, cancel on Escape) |
-| **Skeletons** | `src/client/components/skeletons.tsx` | Loading placeholders: StatCard, Table, Chart, List, Page |
-| **Notification Bell** | `src/client/components/NotificationBell.tsx` | Unread count badge + dropdown |
-| **Audio Recorder** | `src/client/components/AudioRecorder.tsx` | Voice input, live duration, returns Blob. Compact mode for toolbars. Still used for the `transcribe_audio` tool path (attach an audio file). |
-| **Voice Dictation Button** | `src/client/modules/chat/components/VoiceDictationButton.tsx` | Streaming STT dictation in the chat input — uses `useVoiceInput` → voice DO → Deepgram Nova 3. Interim transcripts appear live in the `PromptInput` textarea (iPhone-style). Mic button in chat toolbar uses this, NOT AudioRecorder. |
-| **Paste Upload** | `src/client/hooks/usePasteUpload.ts` | Cmd+V file/image paste handler. Global or element-scoped |
+|---|---|---|
+| **Command Palette** | `client/components/CommandPalette.tsx` | Cmd+K global search/navigation |
+| **Keyboard Shortcuts** | `client/components/KeyboardShortcuts.tsx` | Press ? to show all shortcuts |
+| **Empty State** | `client/components/EmptyState.tsx` | No-data screens with CTA |
+| **Inline Edit** | `client/components/InlineEdit.tsx` | Click-to-edit text fields |
+| **Skeletons** | `client/components/skeletons.tsx` | StatCard, Table, Chart, List, Page |
+| **Notification Bell** | `client/components/NotificationBell.tsx` | Unread count + dropdown |
+| **Audio Recorder** | `client/components/AudioRecorder.tsx` | Voice input → Blob (for `transcribe_audio`) |
+| **Voice Dictation Button** | `client/modules/chat/components/VoiceDictationButton.tsx` | Streaming STT — iPhone-style live transcript in chat input |
+| **Paste Upload** | `client/hooks/usePasteUpload.ts` | Cmd+V file/image handler |
+| **ConfigDiffCard** | `client/components/ConfigDiffCard.tsx` | Shared approval card with line diff (used by skills editor + propose_patch chat tool) |
 
 ---
 
-## Cloudflare Platform Features
+## Cloudflare platform features
 
-The starter uses D1, R2, and Workers AI. Here's when to reach for other Cloudflare services in your fork:
+Bindings already configured in `wrangler.jsonc`:
 
-### Already Configured (in wrangler.jsonc)
+| Service | Binding | Used by |
+|---|---|---|
+| D1 | `DB` | All modules |
+| R2 | `AVATARS`, `FILES` | Avatars, file uploads |
+| R2 | `SKILLS` | Skills registry |
+| Workers AI | `AI` | Chat (free tier) |
+| Images | `IMAGES` | Image processing module |
+| Media | `MEDIA` | Video transforms |
 
-| Service | Binding | What it does | Used by |
-|---------|---------|-------------|---------|
-| **D1** | `DB` | SQLite database | Auth, all modules |
-| **R2** | `AVATARS`, `FILES` | Object storage | Avatars, file uploads |
-| **Workers AI** | `AI` | LLM inference (free) | Chat module via AI SDK |
-| **Images** | `IMAGES` | Image transforms (resize, crop, bg removal, face crop, format conversion) | Image processing module |
-| **Media** | `MEDIA` | Video transforms (resize, clip, frame extraction, audio extraction) | Media processing module |
+For KV / Queues / Vectorize / Browser Rendering / Cron / Hyperdrive /
+Stream / Containers — see [`docs/PLATFORM_SERVICES.md`](./docs/PLATFORM_SERVICES.md).
 
-### Add When You Need It
-
-**Durable Objects** — stateful agents, WebSocket sessions, per-user state. **Already scaffolded** via the `VoiceInputExample` reference (enable with `VITE_FEATURE_VOICE_AGENT=true`). See "Pattern 10: Durable Object Agent" above for the full wiring — the scaffold saves you getting the 4 pieces (binding, migration, fetch-handler, Worker-entry export) aligned the first time.
-
-Use for: AI agent conversation loops, real-time collaboration, scheduled tasks via DO.alarm(), WebSocket hibernation (80-95% cost reduction). Every AI assistant project (Apollo, Athena, Claq, l2chat) uses this pattern.
-
-**Queues** — async job processing
-```jsonc
-"queues": {
-  "producers": [{ "binding": "JOBS", "queue": "job-queue" }],
-  "consumers": [{ "queue": "job-queue", "max_batch_size": 10 }]
-}
-```
-Use for: background email sending, webhook delivery, image processing, any work that shouldn't block the request.
-
-**Vectorize** — semantic search with embeddings (ready to enable)
-```jsonc
-// Uncomment in wrangler.jsonc after creating the index:
-// npx wrangler vectorize create vite-flare-starter-vectors --dimensions=768 --metric=cosine
-// npx wrangler vectorize create-metadata-index vite-flare-starter-vectors --property-name=userId --type=string
-"vectorize": [{ "binding": "VECTORS", "index_name": "vite-flare-starter-vectors" }]
-```
-Use for: knowledge base search, RAG (retrieval-augmented generation), similar item discovery. The `semantic_search` and `vectorize_content` agent tools automatically use Vectorize when the binding is available, falling back to in-memory embedding comparison. Create metadata indexes BEFORE inserting vectors (they're not retroactive).
-
-**KV** — low-latency key-value cache
-```jsonc
-"kv_namespaces": [{ "binding": "CACHE", "id": "..." }]
-```
-Use for: session cache, rate limiting state, frequently-read config, API response caching. Not for large objects (use R2) or complex queries (use D1).
-
-**Browser Rendering** — headless Chrome
-```jsonc
-"browser": { "binding": "BROWSER" }
-```
-Use for: screenshots, PDF generation, web scraping, visual testing. REST API available for simple screenshot/PDF without Puppeteer.
-
-**Cron Triggers** — scheduled execution
-```jsonc
-"triggers": { "crons": ["0 6 * * *"] }
-```
-Use for: daily reports, data cleanup, health checks. Handler is `scheduled(event, env, ctx)` in your Worker. For per-user schedules, use Durable Object alarms instead.
-
-**Hyperdrive** — connection pooling for external databases
-```jsonc
-// Create: npx wrangler hyperdrive create my-hyperdrive --connection-string="postgres://user:pass@host:5432/db"
-"hyperdrive": [{ "binding": "HYPERDRIVE", "id": "..." }]
-```
-Use for: connecting to PostgreSQL, MySQL, or other external databases from Workers with connection pooling and query caching. Not needed for D1 (native). Relevant when a fork needs to talk to an existing database (e.g. legacy systems, data warehouses, managed PostgreSQL on AWS/GCP/Neon). Works with standard Postgres drivers — no code changes needed.
-
-**Cloudflare Stream** — video hosting and delivery platform
-```jsonc
-// Not a binding — uses the Stream API via REST or the dashboard
-// Upload: curl -X POST -H "Authorization: Bearer $CF_TOKEN" \
-//   -F file=@video.mp4 "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/stream"
-```
-Use for: full video hosting with automatic encoding (adaptive bitrate, 360p-1080p), HLS/DASH playback, signed URLs for access control, upload from users (one-time upload URLs), per-creator analytics. Different from the Media Transformations binding — Stream is a complete video platform (hosting + CDN + player), while Media (`env.MEDIA`) is for on-the-fly transforms of your own video files. Use Stream when you need a YouTube-like video hosting feature.
-
-**Containers** — long-running compute
-Use for: heavy ML inference, video processing, anything that exceeds Workers CPU limits. ClawHQ uses this for compute-intensive operations.
+Durable Objects are already scaffolded (`VoiceInputExample`,
+`VideoInputExample`) — enable per-feature via `VITE_FEATURE_VOICE_AGENT`
+/ `VITE_FEATURE_VIDEO_AGENT`. Wiring guide:
+[`docs/DO_AGENTS.md`](./docs/DO_AGENTS.md).
 
 ---
 
 ## AI Module
 
-16 curated models across 8 providers. Edit `src/shared/config/models.ts` to add or remove models — metadata comes from a bundled snapshot of [models.flared.au](https://models.flared.au) + [ai.flared.au](https://ai.flared.au). Run `pnpm models:refresh` to update.
-
-| Source | Models | Notes |
-|--------|--------|-------|
-| **Workers AI** (free) | Kimi K2.6 (default), Gemma 4 26B, GLM 4.7 Flash, QwQ 32B | No API key needed |
-| **Anthropic** | Claude Opus 4.6, Claude Sonnet 4.6, Claude Haiku 4.5 | Via OpenRouter |
-| **OpenAI** | GPT-5.4, GPT-5.4 mini | Via OpenRouter |
-| **Google** | Gemini 3.1 Pro, Gemini 3 Flash | Via OpenRouter |
-| **DeepSeek** | DeepSeek V3.2 Speciale | Via OpenRouter |
-| **Qwen** | Qwen 3.6 Plus | Via OpenRouter |
-| **Mistral** | Mistral Large 3 2512 | Via OpenRouter |
-| **xAI** | Grok 4.1 Fast | Via OpenRouter |
-| **Z.AI** | GLM 5 | Via OpenRouter |
-
-One `OPENROUTER_API_KEY` unlocks all non-Workers-AI models. Direct-provider SDKs (`@ai-sdk/anthropic`, `@ai-sdk/openai`, `@ai-sdk/google`) are kept as fallbacks if you prefer native routing.
-
-AI features in the chat module: streaming, tool calling, reasoning extraction, vision (image attachments), structured output, token usage logging, message metadata, regenerate, **message editing** (truncate + re-send), **conversation search** (FTS5), **conversation export** (JSON/Markdown), response duration display, conversation persistence, MCP integration, MCP-UI rendering, **sources footer** (claude.ai-style citation strip aggregated from web_search / gmail_search / drive_search / places_search outputs plus native `source-url` / `source-document` parts), **per-tool telemetry** (`ai_tool_calls` D1 table + admin "Tool errors" tab), **privileged-tool gating** (`gmail_send` / `run_shell` / `drive_delete` etc. hidden unless user intent is clear), **single-retry tool repair** (`experimental_repairToolCall` logs then emits parse error — no cost-bearing retry yet).
-
-### Document Conversion
-
-`convertToMarkdown()` in `src/server/lib/ai/documents.ts` converts uploaded files to markdown:
-
-- **PDFs + images**: Uses `env.AI.toMarkdown()` (Cloudflare's built-in converter — free, fast, native PDF parsing)
-- **Fallback**: Vision model (Kimi K2.6) for formats `toMarkdown()` doesn't handle
-- **Text files**: Pass-through via `TextDecoder`
-
-### Observability
-
-Two D1 tables record every chat request:
-
-| Table | Granularity | Written by | Read by |
-|---|---|---|---|
-| `ai_usage_logs` | one row per REQUEST (aggregate usage) | `buildChatAgent` `onFinish` | admin stats, per-user caps |
-| `ai_tool_calls` | one row per TOOL CALL (step-level) | chat route `onStepFinish` | admin "Tool errors" tab |
-
-Each `ai_tool_calls` row captures `step_index`, `tool_name`, `tool_error` (null on success), and per-step `input_tokens`/`output_tokens`. Errors are also logged as structured JSON to Workers Logs under `event: "tool_error"` for dashboard filtering. Enable observability on the Worker (`observability.enabled: true` in wrangler.jsonc) for 7-day retention.
-
-### Sources UX
-
-`src/client/modules/chat/components/SourcesFooter.tsx` renders a chip strip under each assistant message. It aggregates citations from two origins:
-
-1. **Native SDK parts** — `source-url` and `source-document` UIMessage parts, emitted by search-grounded models (e.g. Gemini with googleSearch). Requires `sendSources: true` on `createAgentUIStreamResponse` (already set in the chat route).
-2. **Tool outputs** — walks `tool-*` parts in the message and extracts sources from known shapes: `web_search.results[]`, `gmail_search.messages[]`, `drive_search.files[]`, `places_search.places[]`.
-
-No tool schema changes required — extraction is purely client-side. Adding sources for a new tool means teaching `extractSources()` to recognise its output shape. Falls back to favicon → icon on image load failure. Collapses to first 8 sources with "+N more" toggle beyond that.
-
-### Privileged-tool gating
-
-`src/server/lib/ai/prepare-step.ts` exports `computeActiveTools()` which runs every step in the agent loop and filters out destructive tools (`gmail_send`, `gmail_delete`, `calendar_create`, `drive_delete`, `fs_delete`, `fs_write`, `run_shell`) unless:
-
-- The latest user message contains an unlock keyword (case-insensitive regex per tool), OR
-- The tool was already invoked successfully earlier in the same conversation.
-
-Keeps a "what's in my inbox?" chat from accidentally triggering `gmail_send` just because the model decides to be helpful. Add new privileged tools to `PRIVILEGED_TOOLS` + `UNLOCK_KEYWORDS` in the same file.
-
-### AI SDK v7 Migration
-
-v7 is in beta. When it goes stable, the migration is ~30 minutes:
-
-1. Rename `stepCountIs` → `isStepCount` (2 files, 4 lines)
-2. Remove `experimental_telemetry` block (1 file — we log via D1 already)
-3. Add `redirect: 'follow'` to MCP transport config (1 file)
-4. Drop `experimental_` prefix on promoted APIs (audio, useObject)
-
-All AI SDK imports are concentrated in `src/server/lib/ai/` (4 files). No architectural changes needed. `ChatStorage` interface is designed for future swap to Durable Objects / CF Agents SDK.
-
----
-
-## Agentic Toolkit
-
-The chat module ships with a **modular agent toolkit** in `src/server/modules/chat/tools/`. Tools are auto-included based on which env bindings are configured.
-
-### Tool modules
-
-| Module | Tools | Always present? |
-|--------|-------|-----------------|
-| **core** | `get_server_time`, `get_model_info`, `calculate` | Yes |
-| **memory** | `remember`, `recall`, `search_memory`, `forget` | Yes (uses user_meta D1 table) |
-| **ui** | `offer_choices`, `show_alert`, `show_contact`, `collect_info`, `ask_questions`, `show_data_table`, `show_metric_cards`, `show_timeline`, `show_progress`, `show_comparison`, `confirm_action`, `show_map` | Yes (rendered as inline React components) |
-| **skills** | `load_skill` | Yes |
-| **code** | `run_python`, `run_shell`, `run_js` | Yes (returns setup msg if SANDBOX missing) |
-| **delegate** | `delegate` | Yes (subagent pattern) |
-| **audio** | `transcribe_audio` (Deepgram Nova 3 STT, auto language detect), `speak_text` (Deepgram Aura 2 TTS with 12 voices, Aura 1 fallback) | Yes (uses AI binding — no external API keys) |
-| **todo** | `todo_add`, `todo_update`, `todo_list`, `todo_clear` | Yes (Hermes-style session task list, persisted via user_meta) |
-| **browser** | `browser_markdown`, `browser_extract`, `browser_screenshot`, `browser_links`, `browser_content` | Only if `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_API_TOKEN` set |
-| **search** | `web_search` | Only if a provider key is set |
-| **places** | `places_search`, `places_details` | Only if `GOOGLE_PLACES_API_KEY` set |
-| **files** | `fs_list`, `fs_read`, `fs_write`, `fs_delete` | Only if `FILES` R2 bucket bound |
-| **google-workspace — Gmail** | `gmail_search`, `gmail_get_message`, `gmail_list_labels`, `gmail_draft`, `gmail_reply`, `gmail_send` | Only if the user has connected Google Workspace (per-user OAuth) |
-| **google-workspace — Drive** | `drive_search`, `drive_get_file`, `drive_create_folder` | Same |
-| **google-workspace — Tasks** | `tasks_list`, `tasks_create` | Same |
-| **google-workspace — Calendar** | `calendar_upcoming`, `calendar_list_events`, `calendar_get_event`, `calendar_find_free_slot`, `calendar_create`, `calendar_update_event`, `calendar_delete_event` | Same |
-| **google-workspace — Docs** | `docs_search`, `docs_get`, `docs_create`, `docs_append` | Same |
-| **google-workspace — Sheets** | `sheets_list_tabs`, `sheets_read_range`, `sheets_append_row`, `sheets_write_range` | Same |
-| **microsoft-workspace — Outlook** | `outlook_search`, `outlook_get_message`, `outlook_send` | Only if the user has connected Microsoft 365 |
-| **microsoft-workspace — OneDrive** | `onedrive_search`, `onedrive_get_file` | Same |
-| **microsoft-workspace — Calendar** | `msoffice_calendar_list`, `msoffice_calendar_create` (optional Teams meeting link via `isOnlineMeeting: true`) | Same |
-| **slack / notion / atlassian** | Scaffolded (OAuth + cards + tokens). Tool implementations in [issue #21](https://github.com/jezweb/vite-flare-starter/issues/21), [#22](https://github.com/jezweb/vite-flare-starter/issues/22), [#23](https://github.com/jezweb/vite-flare-starter/issues/23). | Connectors page auto-shows their cards when `<PROVIDER>_CLIENT_ID` + `_SECRET` secrets are set |
-
-**Google Workspace — privileged write ops**
-
-Every write tool (`gmail_send`, `gmail_reply`, `calendar_create`, `calendar_update_event`, `calendar_delete_event`, `docs_create`, `docs_append`, `sheets_append_row`, `sheets_write_range`) uses `needsApproval: true` — the agent stops, shows the user the proposed args, and only executes after approval. Plus the ops are in `PRIVILEGED_TOOLS` so they aren't even offered to the model unless the latest user message contains an unlock keyword (e.g. "reply", "schedule", "append", "write"). `gmail_draft` is intentionally NOT privileged — drafts have no external effect, so the model can draft freely and the user approves later.
-
-Scopes required (set up at Connectors → Google Workspace):
-- `gmail.readonly` — gmail read tools
-- `gmail.send` — gmail_send, gmail_reply
-- `gmail.compose` — gmail_draft
-- `drive.readonly` — drive_search, docs_search, docs_get (fallback via Drive export)
-- `calendar.events` — all calendar tools
-- `documents` — docs_create, docs_append, docs_get (preferred)
-- `documents.readonly` — docs_get (alternative to `documents`)
-- `spreadsheets.readonly` — sheets_list_tabs, sheets_read_range
-- `spreadsheets` — sheets_append_row, sheets_write_range
-- `drive.file` (or `drive`) — drive_create_folder
-- `tasks.readonly` — tasks_list (or `tasks` which covers both)
-- `tasks` — tasks_create
-
-Docs `docs_append` supports markdown-ish input: lines starting with `#`, `##`, or `###` become H1/H2/H3; paragraphs separated by blank lines render as separate paragraphs. Tables, images, inline objects are not yet supported — use the Docs UI for those.
-
-Sheets ranges use A1 notation (`Sheet1!A1:D20`, `Budget!A:A`). `valueInputOption: 'USER_ENTERED'` (default) parses formulas + dates the way the Sheets UI does; `RAW` stores the string verbatim.
-
-**Connector scaling — ConnectorProvider registry + per-user tool filter**
-
-Every native OAuth connector (Google, Microsoft, Slack, Notion, Atlassian, …) is declared once in `src/shared/config/connector-providers.ts`. The registry is the single source of truth: ConnectorsPage reads it to render cards, the agent toolkit reads it to filter tools per user, `.dev.vars.example` docs pull from it.
-
-Per-user settings live in `user_connector_settings` (D1): master switch + `enabledToolsJson` array per user per provider. `src/server/modules/connectors/settings.ts` exposes `getAllowedConnectorTools(env, userId)` which `buildChatTools` calls to filter the toolkit. When no settings row exists, the provider's `defaultEnabledTools` apply (typically the read-only subset) — happy-path users never touch a toggle. Master switch off = entire provider skipped, zero context cost.
-
-Adding a new native connector:
-
-1. Add an entry to `CONNECTOR_PROVIDERS` with `id`, `toolNames`, `defaultEnabledTools`, `envVars`, `developerPortalUrl`.
-2. Create `src/server/modules/<id>/db/schema.ts`, `routes.ts`, `tokens.ts`. For typical OAuth providers use the `buildStubRoutes` + `defineProviderTokenTable` helpers in `src/server/modules/connectors/stub-provider.ts` — each new provider then ships as ~40 LOC of config.
-3. Add tool definitions in `src/server/modules/chat/tools/<id>.ts`, one `ToolDefinition` per entry in `toolNames`.
-4. Register the routes in `src/server/index.ts`, tool defs in `src/server/modules/chat/tools/index.ts`, schema in `src/server/db/schema.ts`.
-5. The card renders automatically via `StubConnectorPanel` when you mount it once in `ConnectorsPage.tsx` with `providerId="<id>"` + logo SVG.
-
-Provider-specific OAuth quirks are handled via `StubProviderConfig` options — `includeRedirectUriInTokenExchange: false` for Notion (which rejects `redirect_uri` in the token exchange), `extraAuthParams` for Atlassian (needs `audience=api.atlassian.com` + `prompt=consent`), `fetchAccountInfo` callback for custom profile endpoints (Slack's `/auth.test`, Atlassian's `/oauth/token/accessible-resources`, etc.).
-
-See `.jez/artifacts/connector-scaling-plan-2026-04-23.md` for the full design doc.
-
-**Natural-language query translation** (`gmail_search`, `calendar_list_events`)
-
-Both tools accept an optional `naturalQuery` field alongside their structured inputs. When the model passes free-form English ("emails from Nick last week with attachments", "meetings with Sarah this week"), the server translates it to Gmail operator syntax or structured calendar fields via Nemotron 3 (`@cf/nvidia/nemotron-3-120b-a12b`) on Workers AI — see `src/server/modules/chat/tools/google-workspace-nlp.ts`.
-
-Rules:
-- Structured fields (`query`, `range`, `start`, `end`) ALWAYS win over `naturalQuery`. If both are passed, naturalQuery is ignored silently — avoids "the server helpfully rewrote my operator" surprise.
-- Translator output is echoed back as `translatedFrom` on the result so the renderer can show both "from: emails from nick last week" AND "translated to: from:nick after:2026/04/16". The user sees exactly what the server inferred.
-- 10-second timeout with graceful passthrough — translator errors fall back to using the original text as a fulltext query, so the tool still returns *something*. Failures land in Workers Logs as `event: "gmail_nlp_fallback"` or `calendar_nlp_fallback`.
-- Current date + user timezone are injected into the translator's system prompt so "last week" resolves correctly despite the Worker running in UTC.
-- Not wired on `calendar_create` — its structured fields are required and a single natural sentence misses too much to be a reliable replacement. Users can describe the event in chat and the main model constructs the structured call.
-
-### Adding a new tool (canonical pattern — post-Phase 0)
-
-Every tool is a `ToolDefinition<Input, Output>` from `src/shared/agent/tool.ts`.
-Server execute + input/output Zod schemas + optional client render metadata
-live in one object. See `.claude/rules/one-file-tool-definitions.md`.
-
-```ts
-// src/server/modules/chat/tools/my-domain.ts
-import { z } from 'zod'
-import { Sparkles } from 'lucide-react'
-import type { ToolDefinition } from '@/shared/agent'
-
-const MyInput = z.object({ query: z.string() })
-const MyOutput = z.object({ count: z.number(), items: z.array(z.unknown()) })
-
-export const myToolDefinition: ToolDefinition<
-  z.infer<typeof MyInput>,
-  z.infer<typeof MyOutput>
-> = {
-  name: 'my_tool',
-  description: 'What the model sees when deciding whether to call.',
-  inputSchema: MyInput,
-  outputSchema: MyOutput,
-  isAvailable: (ctx) => !!ctx.env.MY_BINDING,       // optional per-request gate
-  needsApproval: false,                              // or true / (input) => boolean
-  execute: async (input, ctx) => {
-    // ctx is the canonical AgentContext — env, userId, user, model, telemetry, ...
-    return { count: 0, items: [] }
-  },
-  render: {                                          // optional — nice UI when clicked
-    icon: Sparkles,
-    displayName: 'My Tool',
-    summary: (output) => `${output.count} results`,
-  },
-}
-
-export const myDomainDefinitions = [myToolDefinition] as ToolDefinition<unknown, unknown>[]
-```
-
-Register in `src/server/modules/chat/tools/index.ts` — add to the `allDefinitions` array.
-That's it. `collectAvailableTools(allDefinitions, ctx)` handles the rest:
-Zod validation, telemetry, AI SDK adapter, filtering by `isAvailable`.
-
-For a custom client renderer (summary badge + expanded card), drop a renderer file
-in `src/client/modules/chat/components/tool-renderers/` matching by tool name, and
-import the output type via `import type { MyOutput } from '@/server/modules/chat/tools/my-domain'`.
-Vite tree-shakes server-only code from client bundles.
-
-### Browser Rendering tools
-
-Use Cloudflare Browser Rendering's REST API directly — no Puppeteer/Playwright. Set up an API token at https://dash.cloudflare.com/profile/api-tokens with "Browser Rendering - Edit" permission, then set `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`.
-
-`browser_extract` is particularly powerful — uses the `/json` endpoint which runs Workers AI extraction natively, so you can pass natural-language prompts like "Extract product name, price, availability".
-
-### Places tools (Google Places API)
-
-`places_search` and `places_details` use the Google Places API (New). Set `GOOGLE_PLACES_API_KEY` (create one at https://console.cloud.google.com → enable "Places API (New)", restrict to your Worker routes in production).
-
-The agent is auto-nudged via the system prompt to pair `places_search` with the `show_map` UI tool — so local-business queries render as a Leaflet map + scrollable card list (like claude.ai's map answers) instead of a wall of text. Same nudge fires if an MCP server exposes a tool named `google_local_places`, so you can swap to an MCP without touching the prompt.
-
-### Search providers
-
-Configure via `SEARCH_PROVIDER` env var (default: `serper`). All providers normalised to `{ title, url, snippet, date }`.
-
-| Provider | Free tier | Setup |
-|----------|-----------|-------|
-| **Serper** (default) | 2,500 queries/month | https://serper.dev → `SERPER_API_KEY` |
-| Brave | $5 monthly credits | https://brave.com/search/api/ → `BRAVE_API_KEY` |
-| Tavily | 1,000 credits/month | https://tavily.com → `TAVILY_API_KEY` |
-| Exa | Paid | https://exa.ai → `EXA_API_KEY` |
-
-### Inline UI tools (vs MCP-UI)
-
-Two patterns coexist:
-
-- **Inline UI** (`_ui` marker) — tools return `{ _ui: 'toolName', ...args }`. Rendered in `chat-ui/ChatUiElement.tsx` using shadcn components. No iframes. Tighter integration. Use for your own app's UI.
-- **MCP-UI** (SEP-1865) — external MCP servers deliver `ui://` resources. Rendered in sandboxed iframes via `ToolUIResource.tsx`. Cross-host standard. Use for plug-in capabilities.
-
-Both render automatically when detected in tool output. The tool-name pill is hidden when rich UI displays.
-
-### Code execution
-
-`run_python`, `run_shell`, `run_js` use Cloudflare Sandbox — isolated Linux containers via Firecracker microVMs. Each user gets their own persistent sandbox (`user-<userId>`). Requires Workers Paid plan and a SANDBOX Durable Object binding in wrangler.jsonc.
-
-When the binding is missing, the tools still appear in the toolkit but return a clear setup message — the agent will know what's needed.
+16 curated models across 8 providers. Edit `src/shared/config/models.ts`.
+Metadata comes from a bundled snapshot of [models.flared.au](https://models.flared.au)
++ [ai.flared.au](https://ai.flared.au). `pnpm models:refresh` to update.
+
+| Source | Models | Keys |
+|---|---|---|
+| **Workers AI** (free) | Kimi K2.6 (default), Gemma 4 26B, GLM 4.7 Flash, QwQ 32B | none |
+| **Anthropic** | Claude Opus 4.6, Sonnet 4.6, Haiku 4.5 | via OpenRouter |
+| **OpenAI** | GPT-5.4, GPT-5.4 mini | via OpenRouter |
+| **Google** | Gemini 3.1 Pro, Gemini 3 Flash | via OpenRouter |
+| **DeepSeek / Qwen / Mistral / xAI / Z.AI** | V3.2 Speciale, 3.6 Plus, Large 3 2512, Grok 4.1 Fast, GLM 5 | via OpenRouter |
+
+One `OPENROUTER_API_KEY` unlocks everything non-Workers-AI. Direct-provider
+SDKs (`@ai-sdk/anthropic`, `@ai-sdk/openai`, `@ai-sdk/google`) remain as
+fallbacks if you prefer native routing.
+
+**Chat module features:** streaming, tool calling, reasoning, vision,
+structured output, token usage + per-tool telemetry, message editing,
+conversation search (FTS5), export (JSON/Markdown), regenerate,
+persistence, MCP integration, MCP-UI rendering, sources footer
+(claude.ai-style citation strip), privileged-tool gating, single-retry
+tool repair, `propose_patch` tool for staged config edits.
+
+Implementation notes: [`docs/CHAT_INTERNALS.md`](./docs/CHAT_INTERNALS.md).
+Tool catalog + adding new tools:
+[`docs/AGENT_TOOLKIT.md`](./docs/AGENT_TOOLKIT.md).
 
 ---
 
 ## Skills System
 
-Claude Agent Skills compatible — same SKILL.md format that works with Claude Code, Codex, Hermes, OpenClaw, Cursor, and Aider.
+Claude Agent Skills compatible — same SKILL.md format that works with
+Claude Code, Codex, Hermes, OpenClaw, Cursor, and Aider.
 
-### Format (SKILL.md)
+### SKILL.md format
 
 ```yaml
 ---
@@ -851,21 +228,48 @@ Step-by-step instructions the AI follows...
 
 Required: `name` (lowercase-hyphens, ≤64 chars), `description` (≤1024 chars).
 
-### Storage — three sources
+### Three storage sources
 
-1. **Bundled** — drop a SKILL.md at `skills/<name>/SKILL.md`. Picked up at build time via Vite glob. 12 examples ship with the starter.
-2. **R2** — upload via `POST /api/skills/upload` with the SKILL.md content. Stored in the SKILLS R2 bucket (optional binding).
-3. **GitHub** — register via `POST /api/skills/github` with a raw GitHub URL. Cached in R2 if available.
+- **Bundled** — drop `skills/<name>/SKILL.md` in the repo. Vite glob,
+  build-time. 12 examples ship with the starter.
+- **R2** — `POST /api/skills/upload` with SKILL.md content. Stored in
+  the SKILLS R2 bucket.
+- **GitHub** — `POST /api/skills/github` with a raw URL or directory URL.
+  Cached in R2.
 
 ### Progressive disclosure
 
-- **Level 1** (always loaded): `name` + `description` of every enabled skill, injected into system prompt
-- **Level 2** (on demand): full SKILL.md body, loaded via the `load_skill` tool when triggered
-- **Level 3** (referenced files): the skill body can mention other files, agent reads via `fs_read`
+1. **Level 1** (always loaded): `name` + `description` of every enabled
+   skill, injected into system prompt.
+2. **Level 2** (on demand): full SKILL.md body, via the `load_skill` tool.
+3. **Level 3** (referenced files): skill body mentions other files, agent
+   reads via `fs_read`.
+
+### Editor + AI-sparkle rewrite
+
+The `/dashboard/skills` page has a list + detail editor with Source,
+Preview, and History tabs. Save goes through the ConfigDiffProposal
+primitive — edit a bundled skill and you get a diff preview, approve,
+and an R2 override is created that shadows the bundled copy
+(source flips from `bundled` to `r2`).
+
+The **AI Sparkle** button opens a popover — pass a natural-language
+instruction ("make this shorter", "add Australian context") and the
+server calls Kimi K2.6 to rewrite the body. Same approval card flow.
+
+The chat agent has a **`propose_patch` tool** that stages skill edits
+from conversation ("make my morning-brief skill shorter"). The proposal
+renders as an inline ConfigDiffCard in chat — user approves, the change
+applies. Server always captures `before` from live state, so diffs are
+never stale.
+
+Config-diff primitive: `src/server/modules/config-diff/` (storage,
+routes, apply switch). Shared React component:
+`src/client/components/ConfigDiffCard.tsx`.
 
 ### Bundled skills
 
-12 reference implementations covering common agent patterns:
+12 reference implementations:
 
 - **Research**: `web-research`, `fact-check`, `summarise-url`
 - **Writing**: `draft-email`, `rewrite-for-audience`
@@ -873,30 +277,17 @@ Required: `name` (lowercase-hyphens, ≤64 chars), `description` (≤1024 chars)
 - **Self-management**: `morning-brief`, `remember-conversation`, `save-research-doc`
 - **Workflows**: `compare-options`, `plan-task`, `code-review`
 
-Each demonstrates a different combination of primitive tools — fork, modify, add your own.
-
-### Adding skills from external sources
-
-```bash
-# From GitHub (raw URL)
-curl -X POST /api/skills/github \
-  -H 'Content-Type: application/json' \
-  -d '{"url": "https://raw.githubusercontent.com/anthropics/skills/main/pdf/SKILL.md"}'
-
-# From inline content
-curl -X POST /api/skills/upload \
-  -H 'Content-Type: application/json' \
-  -d '{"content": "---\nname: my-skill\ndescription: ...\n---\n\n..."}'
-```
+Fork, modify, add your own.
 
 ---
 
 ## Auth
 
-- **OAuth-only by default** — set `ENABLE_EMAIL_LOGIN=true` for email/password
-- Google OAuth with optional domain restriction via Google Cloud Console
-- Session management (7-day expiry, revoke on password change)
-- Admin role via `ADMIN_EMAILS` env var
+- **OAuth-only by default** — set `ENABLE_EMAIL_LOGIN=true` for
+  email/password.
+- Google OAuth with optional domain restriction via Google Cloud Console.
+- Session management: 7-day expiry, revoke on password change.
+- Admin role via `ADMIN_EMAILS` env var.
 
 ---
 
@@ -909,26 +300,22 @@ printf "http://localhost:5173,https://your-app.workers.dev" | npx wrangler secre
 npx wrangler deploy
 ```
 
-**Bindings** in `wrangler.jsonc`: `DB` (D1), `AVATARS` (R2), `FILES` (R2), `AI` (Workers AI)
-
 ---
 
 ## Commands
 
 ```bash
-pnpm dev                    # Start development server
-pnpm build                  # Build for production
+pnpm dev                    # Dev server
+pnpm build                  # Production build
 npx wrangler deploy         # Deploy to Cloudflare
 pnpm db:generate:named "x"  # Generate migration
 pnpm db:migrate:local       # Apply migrations locally
 pnpm db:migrate:remote      # Apply migrations to production
 pnpm models:refresh         # Update AI model catalogue from flared.au
 pnpm test                   # Run tests
-pnpm type-check             # Run TypeScript check
+pnpm type-check             # Type check
 ```
 
 ---
 
-**Created:** 2025-11-29
-**Updated:** 2026-04-15
-**Author:** Jeremy Dawes (Jezweb)
+**Created:** 2025-11-29 · **Updated:** 2026-04-24 · **Author:** Jeremy Dawes (Jezweb)
