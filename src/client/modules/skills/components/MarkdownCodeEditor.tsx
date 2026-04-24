@@ -52,7 +52,10 @@ export function MarkdownCodeEditor({
 
   // Force a consistent 11px font inside the editor + match the app's
   // rounded-md + border-input chrome so it visually aligns with the
-  // shadcn Textarea it replaces.
+  // shadcn Textarea it replaces. `maxWidth: 100%` and overflow clip on
+  // the outer wrapper prevent the editor from blowing past its parent
+  // when a single line is longer than the container — line wrapping
+  // (below) handles long lines visually, this is belt-and-braces.
   const fontTheme = useMemo(
     () =>
       EditorView.theme({
@@ -61,8 +64,14 @@ export function MarkdownCodeEditor({
           lineHeight: '1.6',
           borderRadius: '0.375rem',
           border: '1px solid hsl(var(--input, 215 27% 20%))',
+          maxWidth: '100%',
+          overflow: 'hidden',
         },
-        '.cm-content': { fontFamily: 'var(--font-mono, ui-monospace, SFMono-Regular, monospace)' },
+        '.cm-scroller': { overflowX: 'auto' },
+        '.cm-content': {
+          fontFamily: 'var(--font-mono, ui-monospace, SFMono-Regular, monospace)',
+          wordBreak: 'break-word',
+        },
         '.cm-gutters': { fontSize: '10px' },
       }),
     [],
@@ -72,7 +81,10 @@ export function MarkdownCodeEditor({
     <CodeMirror
       value={value}
       onChange={onChange}
-      extensions={[markdown(), fontTheme]}
+      // EditorView.lineWrapping wraps long lines visually instead of
+      // forcing horizontal scroll — essential for markdown which often
+      // has long prose lines.
+      extensions={[markdown(), EditorView.lineWrapping, fontTheme]}
       theme={dark ? oneDark : 'light'}
       basicSetup={{
         lineNumbers: false,
