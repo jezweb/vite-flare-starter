@@ -19,6 +19,7 @@ import { highlightSelectionMatches, search } from '@codemirror/search'
 import { linter, lintGutter, type Diagnostic } from '@codemirror/lint'
 import {
   autocompletion,
+  startCompletion,
   type CompletionContext,
   type CompletionResult,
 } from '@codemirror/autocomplete'
@@ -244,6 +245,23 @@ export function MarkdownCodeEditor({
   //    lines violating the SKILL.md spec (name ≤64 kebab-case, description
   //    ≤1024 chars, both required)
   const extensions = useMemo(() => {
+    // Force-start autocompletion whenever the user types `/`. CodeMirror's
+    // built-in activateOnTyping only fires on word characters (`/` is
+    // punctuation), so we listen for doc changes ourselves and call
+    // startCompletion after a `/` is inserted.
+    const slashTrigger = EditorView.updateListener.of((update) => {
+      if (!update.docChanged) return
+      let sawSlash = false
+      update.changes.iterChanges((_fromA, _toA, _fromB, _toB, inserted) => {
+        if (inserted.toString() === '/') sawSlash = true
+      })
+      if (sawSlash) {
+        // Defer to next tick so CodeMirror has fully committed the insert
+        // before we ask for completions.
+        queueMicrotask(() => startCompletion(update.view))
+      }
+    })
+
     const exts = [
       markdown(),
       EditorView.lineWrapping,
@@ -255,6 +273,7 @@ export function MarkdownCodeEditor({
       // list of agent tool names. Selection inserts the name wrapped in
       // backticks (SKILL.md inline-code convention).
       autocompletion({ override: [toolCompletionSource], activateOnTyping: true }),
+      slashTrigger,
     ]
     if (lintSkillFrontmatter) {
       exts.push(lintGutter())
