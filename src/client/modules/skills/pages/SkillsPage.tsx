@@ -401,7 +401,7 @@ export function SkillsPage() {
                 onChange={(e) => setInlineContent(e.target.value)}
                 placeholder="---&#10;name: my-skill&#10;description: ...&#10;---&#10;&#10;# My Skill&#10;..."
                 rows={8}
-                className="font-mono text-xs"
+                className="font-mono text-xs md:text-xs"
               />
               {uploadContent.isError && (
                 <p className="mt-1 text-sm text-destructive">

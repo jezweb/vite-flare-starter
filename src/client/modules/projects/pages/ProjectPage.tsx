@@ -259,7 +259,7 @@ export function ProjectPage() {
             placeholder={`e.g. This project is for editing the Clark Forklifts website. Use EN-AU spelling. When the user asks about service packages, default to the 2026 pricing sheet. Tone: warm, direct, no em-dashes.`}
             rows={8}
             maxLength={4000}
-            className="resize-y min-h-32 font-mono text-xs"
+            className="resize-y min-h-32 font-mono text-xs md:text-xs"
           />
         </CardContent>
       </Card>

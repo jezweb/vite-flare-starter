@@ -264,7 +264,7 @@ function ColorRow({
         type="text"
         value={textValue}
         placeholder="hue saturation% lightness%"
-        className="h-8 font-mono text-xs"
+        className="h-8 font-mono text-xs md:text-xs"
         title="Format: 'hue saturation% lightness%' (e.g. '222 47% 11%')"
         onChange={(e) => setTextValue(e.target.value)}
         onBlur={() => {
