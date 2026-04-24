@@ -17,13 +17,6 @@ import { EditorView } from '@codemirror/view'
 import { foldGutter } from '@codemirror/language'
 import { highlightSelectionMatches, search } from '@codemirror/search'
 import { linter, lintGutter, type Diagnostic } from '@codemirror/lint'
-import {
-  autocompletion,
-  startCompletion,
-  type CompletionContext,
-  type CompletionResult,
-} from '@codemirror/autocomplete'
-import { TOOL_CATALOG_SORTED } from '@/shared/agent/tool-catalog'
 
 export interface MarkdownCodeEditorProps {
   value: string
@@ -38,50 +31,6 @@ export interface MarkdownCodeEditorProps {
    * the frontmatter rules don't apply.
    */
   lintSkillFrontmatter?: boolean
-}
-
-/**
- * Tool-name autocomplete source. Triggers on `/` and filters by the
- * word typed after it. Picking a suggestion inserts the tool name
- * wrapped in backticks (markdown inline-code convention for SKILL.md),
- * replacing the `/prefix` the user typed.
- *
- * We match `/word-chars` — so typing `/gmail` narrows to gmail_* tools.
- * If the `/` is part of something that shouldn't be a trigger (URL
- * path, regex, date), the popup still shows but won't insert unless
- * the user explicitly selects — harmless.
- */
-function toolCompletionSource(ctx: CompletionContext): CompletionResult | null {
-  // Match a / followed by any number of [a-z_] chars (tool names are
-  // snake_case lowercase). Allow the popup to show even on bare `/`
-  // so the full list is browsable.
-  const match = ctx.matchBefore(/\/[a-z_]*/)
-  if (!match) return null
-  // Don't fire when the user is explicitly typing — require at least
-  // the `/` to be typed. Also skip explicit-only mode when nothing typed
-  // unless the user triggered manually (Ctrl+Space).
-  if (match.from === match.to && !ctx.explicit) return null
-
-  const typed = match.text.slice(1).toLowerCase() // drop the leading /
-
-  return {
-    from: match.from,
-    to: match.to,
-    options: TOOL_CATALOG_SORTED.filter((t) =>
-      typed === '' || t.name.toLowerCase().includes(typed),
-    ).map((t) => ({
-      label: t.name,
-      detail: t.category,
-      info: t.description,
-      // Wrap in backticks — the standard SKILL.md convention for tool
-      // references. Typing `/gmail_search` + accept → `` `gmail_search` ``
-      apply: `\`${t.name}\``,
-      type: 'function',
-    })),
-    // Re-run the source while the user continues typing word chars so
-    // filtering stays live.
-    validFor: /^\/[a-z_]*$/,
-  }
 }
 
 /**
@@ -245,23 +194,6 @@ export function MarkdownCodeEditor({
   //    lines violating the SKILL.md spec (name ≤64 kebab-case, description
   //    ≤1024 chars, both required)
   const extensions = useMemo(() => {
-    // Force-start autocompletion whenever the user types `/`. CodeMirror's
-    // built-in activateOnTyping only fires on word characters (`/` is
-    // punctuation), so we listen for doc changes ourselves and call
-    // startCompletion after a `/` is inserted.
-    const slashTrigger = EditorView.updateListener.of((update) => {
-      if (!update.docChanged) return
-      let sawSlash = false
-      update.changes.iterChanges((_fromA, _toA, _fromB, _toB, inserted) => {
-        if (inserted.toString() === '/') sawSlash = true
-      })
-      if (sawSlash) {
-        // Defer to next tick so CodeMirror has fully committed the insert
-        // before we ask for completions.
-        queueMicrotask(() => startCompletion(update.view))
-      }
-    })
-
     const exts = [
       markdown(),
       EditorView.lineWrapping,
@@ -269,11 +201,6 @@ export function MarkdownCodeEditor({
       foldGutter(),
       search({ top: true }),
       highlightSelectionMatches(),
-      // Tool-name autocomplete — type `/` anywhere to pop a filterable
-      // list of agent tool names. Selection inserts the name wrapped in
-      // backticks (SKILL.md inline-code convention).
-      autocompletion({ override: [toolCompletionSource], activateOnTyping: true }),
-      slashTrigger,
     ]
     if (lintSkillFrontmatter) {
       exts.push(lintGutter())

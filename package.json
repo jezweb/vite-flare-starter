@@ -40,7 +40,6 @@
     "@cloudflare/ai-utils": "^1.0.1",
     "@cloudflare/sandbox": "^0.8.9",
     "@cloudflare/voice": "^0.1.2",
-    "@codemirror/autocomplete": "^6.20.1",
     "@codemirror/lang-markdown": "^6.5.0",
     "@codemirror/language": "^6.12.3",
     "@codemirror/lint": "^6.9.5",
