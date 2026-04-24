@@ -37,6 +37,9 @@ import { emailDefinitions } from './email'
 import { searchFilesDefinitions } from './search-files'
 import { googleWorkspaceDefinitions } from './google-workspace'
 import { microsoftWorkspaceDefinitions } from './microsoft-workspace'
+import { slackDefinitions } from './slack'
+import { notionDefinitions } from './notion'
+import { atlassianDefinitions } from './atlassian'
 import { proposePatchDefinitions } from './propose-patch'
 import { collectAvailableTools } from '@/server/lib/ai/tool-adapter'
 import {
@@ -73,6 +76,9 @@ export async function buildChatTools(ctx: AgentContext, options: { availableSkil
     ...mediaDefinitions,
     ...googleWorkspaceDefinitions,
     ...microsoftWorkspaceDefinitions,
+    ...slackDefinitions,
+    ...notionDefinitions,
+    ...atlassianDefinitions,
     ...proposePatchDefinitions,
   ]
 

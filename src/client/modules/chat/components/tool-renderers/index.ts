@@ -45,6 +45,31 @@ import {
   sheetsWriteRangeRenderer,
 } from './sheets'
 import { webSearchRenderer } from './search'
+import {
+  slackSearchMessagesRenderer,
+  slackListChannelsRenderer,
+  slackGetChannelHistoryRenderer,
+  slackGetUserRenderer,
+  slackPostMessageRenderer,
+} from './slack'
+import {
+  notionSearchRenderer,
+  notionGetPageRenderer,
+  notionGetDatabaseRenderer,
+  notionQueryDatabaseRenderer,
+  notionCreatePageRenderer,
+  notionAppendBlocksRenderer,
+} from './notion'
+import {
+  jiraSearchRenderer,
+  jiraGetIssueRenderer,
+  jiraCreateRenderer,
+  jiraCommentRenderer,
+  jiraTransitionRenderer,
+  confluenceSearchRenderer,
+  confluenceGetRenderer,
+  confluenceCreateRenderer,
+} from './atlassian'
 import { proposePatchRenderer } from './propose-patch'
 import { defaultRenderers } from './defaults'
 import { matchesRenderer, type ToolRenderer } from './_shared'
@@ -84,6 +109,28 @@ export const TOOL_RENDERERS: ToolRenderer[] = [
   tasksCreateRenderer,
   // Search
   webSearchRenderer,
+  // Slack
+  slackSearchMessagesRenderer,
+  slackListChannelsRenderer,
+  slackGetChannelHistoryRenderer,
+  slackGetUserRenderer,
+  slackPostMessageRenderer,
+  // Notion
+  notionSearchRenderer,
+  notionGetPageRenderer,
+  notionGetDatabaseRenderer,
+  notionQueryDatabaseRenderer,
+  notionCreatePageRenderer,
+  notionAppendBlocksRenderer,
+  // Atlassian (Jira + Confluence)
+  jiraSearchRenderer,
+  jiraGetIssueRenderer,
+  jiraCreateRenderer,
+  jiraCommentRenderer,
+  jiraTransitionRenderer,
+  confluenceSearchRenderer,
+  confluenceGetRenderer,
+  confluenceCreateRenderer,
   // Config-diff (propose_patch tool) — inline ApprovalCard in chat
   proposePatchRenderer,
   // Default renderers for tools without a custom expanded view — icon +
