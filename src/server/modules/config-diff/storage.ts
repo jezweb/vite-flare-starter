@@ -127,3 +127,49 @@ export async function markProposal(
     .returning()
   return row ? rowToProposal(row) : null
 }
+
+/**
+ * Atomic claim — flip a proposal from `pending` to a target status in
+ * one SQL statement. Returns the updated row if the claim succeeded
+ * (caller was first to transition), or null if the row was already in
+ * another state (caller lost the race — another request got there
+ * first, or the proposal is already applied/rejected).
+ *
+ * Used by routes to prevent double-apply: the first concurrent request
+ * claims the transition, the second sees null and returns 409.
+ */
+export async function claimProposal(
+  d1: D1,
+  userId: string,
+  id: string,
+  targetStatus: Exclude<ConfigDiffStatus, 'pending'>,
+): Promise<ConfigDiffProposal | null> {
+  const db = drizzle(d1)
+  const [row] = await db
+    .update(configDiffProposals)
+    .set({ status: targetStatus, resolvedAt: new Date() })
+    .where(
+      and(
+        eq(configDiffProposals.id, id),
+        eq(configDiffProposals.userId, userId),
+        eq(configDiffProposals.status, 'pending'),
+      ),
+    )
+    .returning()
+  return row ? rowToProposal(row) : null
+}
+
+/** Revert an accidental claim (e.g. apply handler threw after claim). */
+export async function revertProposalToPending(
+  d1: D1,
+  userId: string,
+  id: string,
+): Promise<void> {
+  const db = drizzle(d1)
+  await db
+    .update(configDiffProposals)
+    .set({ status: 'pending', resolvedAt: null })
+    .where(
+      and(eq(configDiffProposals.id, id), eq(configDiffProposals.userId, userId)),
+    )
+}

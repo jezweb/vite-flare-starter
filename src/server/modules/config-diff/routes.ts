@@ -17,10 +17,11 @@ import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import type { ConfigDiffKind } from '@/shared/config/diff-proposal'
 import { applyProposal, loadCurrentContent } from './apply'
 import {
+  claimProposal,
   createProposal,
   getProposal,
   listProposalsForResource,
-  markProposal,
+  revertProposalToPending,
 } from './storage'
 
 const app = new Hono<AuthContext>()
@@ -91,9 +92,14 @@ app.get('/:id', async (c) => {
 app.post('/:id/apply', async (c) => {
   const userId = c.get('userId')
   const id = c.req.param('id')
-  const existing = await getProposal(c.env.DB, userId, id)
-  if (!existing) return c.json({ error: 'Proposal not found' }, 404)
-  if (existing.status !== 'pending') {
+  // Atomic claim — only one concurrent request can flip pending→applied.
+  // If another request got there first (or the proposal was already
+  // resolved), claim returns null and we re-read the current state for
+  // a friendly 409.
+  const claimed = await claimProposal(c.env.DB, userId, id, 'applied')
+  if (!claimed) {
+    const existing = await getProposal(c.env.DB, userId, id)
+    if (!existing) return c.json({ error: 'Proposal not found' }, 404)
     return c.json(
       { error: `Proposal already ${existing.status}.`, proposal: existing },
       409,
@@ -102,31 +108,32 @@ app.post('/:id/apply', async (c) => {
   try {
     await applyProposal(
       c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket },
-      existing,
+      claimed,
     )
   } catch (err) {
+    // Apply threw after we claimed — revert so the user can retry.
+    await revertProposalToPending(c.env.DB, userId, id)
     return c.json(
       { error: err instanceof Error ? err.message : String(err) },
       500,
     )
   }
-  const updated = await markProposal(c.env.DB, userId, id, 'applied')
-  return c.json({ proposal: updated })
+  return c.json({ proposal: claimed })
 })
 
 app.post('/:id/reject', async (c) => {
   const userId = c.get('userId')
   const id = c.req.param('id')
-  const existing = await getProposal(c.env.DB, userId, id)
-  if (!existing) return c.json({ error: 'Proposal not found' }, 404)
-  if (existing.status !== 'pending') {
+  const claimed = await claimProposal(c.env.DB, userId, id, 'rejected')
+  if (!claimed) {
+    const existing = await getProposal(c.env.DB, userId, id)
+    if (!existing) return c.json({ error: 'Proposal not found' }, 404)
     return c.json(
       { error: `Proposal already ${existing.status}.`, proposal: existing },
       409,
     )
   }
-  const updated = await markProposal(c.env.DB, userId, id, 'rejected')
-  return c.json({ proposal: updated })
+  return c.json({ proposal: claimed })
 })
 
 export default app
