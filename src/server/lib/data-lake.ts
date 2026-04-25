@@ -302,6 +302,9 @@ export type AggregationKind =
   | 'max'
   | 'count'
   | 'distinct_count'
+  /** Population standard deviation. Useful for comparing group spread.
+   *  Combine with `avg` to get coefficient of variation (stddev/avg). */
+  | 'stddev'
 
 export interface AggregateMetric {
   field?: string
@@ -353,6 +356,12 @@ export async function aggregateDataset(
     mins: Record<string, number>
     maxes: Record<string, number>
     distinct: Record<string, Set<unknown>>
+    /** Sum of squares per field — needed for population stddev without
+     *  a second pass. Pop variance = (Σx² / n) − (Σx / n)². */
+    sumSquares: Record<string, number>
+    /** Per-field count of numeric observations. Differs from `count`
+     *  when some rows are missing the field. Used for accurate stddev. */
+    fieldCounts: Record<string, number>
   }
   const groups = new Map<string, Accumulator>()
 
@@ -377,6 +386,8 @@ export async function aggregateDataset(
           mins: {},
           maxes: {},
           distinct: {},
+          sumSquares: {},
+          fieldCounts: {},
         }
         groups.set(groupKey, acc)
       }
@@ -390,9 +401,11 @@ export async function aggregateDataset(
           if (!acc.distinct[field]) acc.distinct[field] = new Set()
           acc.distinct[field].add(value)
         } else if (typeof value === 'number') {
-          if (m.op === 'sum' || m.op === 'avg') {
-            acc.sums[field] = (acc.sums[field] ?? 0) + value
-          }
+          // Track sum + sumSquares + fieldCount once per numeric field
+          // so any of sum/avg/stddev share the same accumulator state.
+          acc.sums[field] = (acc.sums[field] ?? 0) + value
+          acc.sumSquares[field] = (acc.sumSquares[field] ?? 0) + value * value
+          acc.fieldCounts[field] = (acc.fieldCounts[field] ?? 0) + 1
           if (m.op === 'min') {
             acc.mins[field] = acc.mins[field] === undefined ? value : Math.min(acc.mins[field]!, value)
           }
@@ -422,6 +435,19 @@ export async function aggregateDataset(
         out[alias] = acc.maxes[m.field] ?? null
       } else if (m.op === 'distinct_count' && m.field) {
         out[alias] = acc.distinct[m.field]?.size ?? 0
+      } else if (m.op === 'stddev' && m.field) {
+        const n = acc.fieldCounts[m.field] ?? 0
+        if (n === 0) {
+          out[alias] = null
+        } else {
+          const sum = acc.sums[m.field] ?? 0
+          const sumSq = acc.sumSquares[m.field] ?? 0
+          // Population variance = E[X²] - E[X]². Clamp negatives from
+          // float drift before sqrt — avoids `NaN` when all values
+          // are identical.
+          const variance = Math.max(0, sumSq / n - (sum / n) ** 2)
+          out[alias] = Math.sqrt(variance)
+        }
       }
     }
     result.push(out)
@@ -432,6 +458,384 @@ export async function aggregateDataset(
     totalGroups: result.length,
     rowsScanned: scanned,
     truncated: manifest.totalRows > cap,
+  }
+}
+
+// ─── Analytical operations ────────────────────────────────────
+// pivotDataset / trendDataset / distributionDataset all share the
+// same shape: load up to MAX_AGGREGATE_ROWS, transform in JS, return
+// a compact result that's chart-ready and tiny vs the raw input.
+
+export interface PivotOptions {
+  /** Column name(s) whose distinct values become rows. */
+  rowFields: string[]
+  /** Column whose distinct values become columns. */
+  columnField: string
+  /** Numeric column to aggregate per cell. Omit for op=count. */
+  valueField?: string
+  op: 'sum' | 'avg' | 'min' | 'max' | 'count'
+}
+
+export interface PivotResult {
+  /** The set of unique column-field values, in stable sorted order. */
+  columns: Array<string | number>
+  /** One row per unique row-field combination. Cells are keyed by the
+   *  stringified column value. */
+  rows: Array<Record<string, unknown>>
+  rowsScanned: number
+  truncated: boolean
+}
+
+export async function pivotDataset(
+  env: DataLakeEnv,
+  userId: string,
+  dataRef: string,
+  opts: PivotOptions,
+): Promise<PivotResult | null> {
+  const manifest = await getManifest(env, userId, dataRef)
+  if (!manifest) return null
+  const cap = Math.min(manifest.totalRows, MAX_AGGREGATE_ROWS)
+  const lastChunk = Math.min(
+    manifest.totalChunks - 1,
+    Math.floor((cap - 1) / manifest.rowsPerChunk),
+  )
+  const chunks = await loadChunks(env, dataRef, 0, lastChunk)
+
+  // {rowKeyJSON: {colKey: {sum, count, min, max}}}
+  const matrix = new Map<string, Map<string | number, { sum: number; count: number; min: number; max: number }>>()
+  const colSet = new Set<string | number>()
+  let scanned = 0
+  for (const chunk of chunks) {
+    for (const row of chunk) {
+      if (scanned >= cap) break
+      scanned++
+      if (!row || typeof row !== 'object') continue
+      const r = row as Record<string, unknown>
+
+      const rowKey: Record<string, unknown> = {}
+      for (const f of opts.rowFields) rowKey[f] = r[f]
+      const rowKeyStr = JSON.stringify(rowKey)
+      const colVal = r[opts.columnField]
+      if (colVal === undefined || colVal === null) continue
+      // Coerce non-string column keys (numbers stay numbers; objects
+      // get stringified). Avoids `[object Object]` columns.
+      const colKey: string | number =
+        typeof colVal === 'number' ? colVal
+        : typeof colVal === 'string' ? colVal
+        : JSON.stringify(colVal)
+      colSet.add(colKey)
+
+      let rowMap = matrix.get(rowKeyStr)
+      if (!rowMap) {
+        rowMap = new Map()
+        matrix.set(rowKeyStr, rowMap)
+      }
+      let cell = rowMap.get(colKey)
+      if (!cell) {
+        cell = { sum: 0, count: 0, min: Infinity, max: -Infinity }
+        rowMap.set(colKey, cell)
+      }
+      cell.count++
+      if (opts.valueField) {
+        const v = r[opts.valueField]
+        if (typeof v === 'number') {
+          cell.sum += v
+          if (v < cell.min) cell.min = v
+          if (v > cell.max) cell.max = v
+        }
+      }
+    }
+    if (scanned >= cap) break
+  }
+
+  // Stable column ordering — numbers ascending, strings alphabetical.
+  const columns = Array.from(colSet).sort((a, b) => {
+    if (typeof a === 'number' && typeof b === 'number') return a - b
+    return String(a).localeCompare(String(b))
+  })
+
+  const rows: Array<Record<string, unknown>> = []
+  for (const [rowKeyStr, cells] of matrix.entries()) {
+    const out: Record<string, unknown> = JSON.parse(rowKeyStr)
+    for (const col of columns) {
+      const cell = cells.get(col)
+      if (!cell) {
+        out[String(col)] = null
+        continue
+      }
+      switch (opts.op) {
+        case 'sum': out[String(col)] = cell.sum; break
+        case 'avg': out[String(col)] = cell.count > 0 ? cell.sum / cell.count : null; break
+        case 'min': out[String(col)] = cell.min === Infinity ? null : cell.min; break
+        case 'max': out[String(col)] = cell.max === -Infinity ? null : cell.max; break
+        case 'count': out[String(col)] = cell.count; break
+      }
+    }
+    rows.push(out)
+  }
+
+  return {
+    columns,
+    rows,
+    rowsScanned: scanned,
+    truncated: manifest.totalRows > cap,
+  }
+}
+
+export type TrendGranularity = 'day' | 'week' | 'month' | 'quarter' | 'year'
+
+export interface TrendOptions {
+  /** Column holding an ISO date string or unix timestamp (ms). */
+  dateColumn: string
+  metricField?: string
+  metricOp: 'sum' | 'avg' | 'min' | 'max' | 'count'
+  granularity: TrendGranularity
+}
+
+export interface TrendBucket {
+  bucket: string
+  value: number | null
+  /** Period-over-period change as a fraction (0.12 = +12%). null for the first bucket. */
+  changePct: number | null
+  count: number
+}
+
+export interface TrendResult {
+  buckets: TrendBucket[]
+  rowsScanned: number
+  truncated: boolean
+  /** Number of rows whose dateColumn couldn't be parsed — surfaced so the
+   *  agent can warn the user about data quality. */
+  parseFailures: number
+}
+
+/**
+ * Truncate a Date down to the start of the given granularity bucket.
+ * Returns an ISO-style label (`2026-04-25`, `2026-W17`, `2026-04`, …)
+ * suitable for sorting and display. UTC throughout — timezone-aware
+ * bucketing is out of scope; callers wanting local-time buckets can
+ * pre-shift their dates.
+ */
+function bucketLabel(date: Date, granularity: TrendGranularity): string {
+  const y = date.getUTCFullYear()
+  const m = String(date.getUTCMonth() + 1).padStart(2, '0')
+  const d = String(date.getUTCDate()).padStart(2, '0')
+  if (granularity === 'day') return `${y}-${m}-${d}`
+  if (granularity === 'month') return `${y}-${m}`
+  if (granularity === 'year') return `${y}`
+  if (granularity === 'quarter') {
+    const q = Math.floor(date.getUTCMonth() / 3) + 1
+    return `${y}-Q${q}`
+  }
+  // ISO 8601 week — Thursday rule.
+  const tmp = new Date(Date.UTC(y, date.getUTCMonth(), date.getUTCDate()))
+  const dayNum = (tmp.getUTCDay() + 6) % 7
+  tmp.setUTCDate(tmp.getUTCDate() - dayNum + 3)
+  const firstThursday = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 4))
+  const week =
+    1 +
+    Math.round(
+      ((tmp.getTime() - firstThursday.getTime()) / 86_400_000 - 3 + ((firstThursday.getUTCDay() + 6) % 7)) / 7,
+    )
+  return `${tmp.getUTCFullYear()}-W${String(week).padStart(2, '0')}`
+}
+
+export async function trendDataset(
+  env: DataLakeEnv,
+  userId: string,
+  dataRef: string,
+  opts: TrendOptions,
+): Promise<TrendResult | null> {
+  const manifest = await getManifest(env, userId, dataRef)
+  if (!manifest) return null
+  const cap = Math.min(manifest.totalRows, MAX_AGGREGATE_ROWS)
+  const lastChunk = Math.min(
+    manifest.totalChunks - 1,
+    Math.floor((cap - 1) / manifest.rowsPerChunk),
+  )
+  const chunks = await loadChunks(env, dataRef, 0, lastChunk)
+
+  const buckets = new Map<string, { sum: number; count: number; min: number; max: number }>()
+  let scanned = 0
+  let parseFailures = 0
+  for (const chunk of chunks) {
+    for (const row of chunk) {
+      if (scanned >= cap) break
+      scanned++
+      if (!row || typeof row !== 'object') continue
+      const r = row as Record<string, unknown>
+      const raw = r[opts.dateColumn]
+      let date: Date | null = null
+      if (typeof raw === 'string') {
+        const t = Date.parse(raw)
+        if (!Number.isNaN(t)) date = new Date(t)
+      } else if (typeof raw === 'number') {
+        // Heuristic: 10-digit values are seconds, 13-digit are millis.
+        const ms = raw < 1e12 ? raw * 1000 : raw
+        date = new Date(ms)
+      }
+      if (!date || Number.isNaN(date.getTime())) {
+        parseFailures++
+        continue
+      }
+      const label = bucketLabel(date, opts.granularity)
+      let cell = buckets.get(label)
+      if (!cell) {
+        cell = { sum: 0, count: 0, min: Infinity, max: -Infinity }
+        buckets.set(label, cell)
+      }
+      cell.count++
+      if (opts.metricField) {
+        const v = r[opts.metricField]
+        if (typeof v === 'number') {
+          cell.sum += v
+          if (v < cell.min) cell.min = v
+          if (v > cell.max) cell.max = v
+        }
+      }
+    }
+    if (scanned >= cap) break
+  }
+
+  // Sort labels chronologically — string comparison works because we
+  // formatted with leading zeros.
+  const sorted = [...buckets.entries()].sort((a, b) => a[0].localeCompare(b[0]))
+  const result: TrendBucket[] = []
+  let prev: number | null = null
+  for (const [label, cell] of sorted) {
+    let value: number | null
+    switch (opts.metricOp) {
+      case 'sum': value = cell.sum; break
+      case 'avg': value = cell.count > 0 ? cell.sum / cell.count : null; break
+      case 'min': value = cell.min === Infinity ? null : cell.min; break
+      case 'max': value = cell.max === -Infinity ? null : cell.max; break
+      case 'count':
+      default: value = cell.count; break
+    }
+    let changePct: number | null = null
+    if (prev !== null && value !== null && prev !== 0) {
+      changePct = (value - prev) / Math.abs(prev)
+    }
+    result.push({ bucket: label, value, changePct, count: cell.count })
+    if (value !== null) prev = value
+  }
+
+  return {
+    buckets: result,
+    rowsScanned: scanned,
+    truncated: manifest.totalRows > cap,
+    parseFailures,
+  }
+}
+
+export interface DistributionOptions {
+  field: string
+  /** Number of histogram bins. Default 10. */
+  bins?: number
+}
+
+export interface DistributionBin {
+  /** Inclusive lower bound. */
+  from: number
+  /** Exclusive upper bound (inclusive for the last bin). */
+  to: number
+  count: number
+  pct: number
+}
+
+export interface DistributionResult {
+  bins: DistributionBin[]
+  stats: {
+    count: number
+    min: number
+    max: number
+    avg: number
+    median: number
+    stddev: number
+  }
+  rowsScanned: number
+  truncated: boolean
+  /** Numeric values found vs. rows scanned — surfaces data-quality issues. */
+  numericValues: number
+}
+
+export async function distributionDataset(
+  env: DataLakeEnv,
+  userId: string,
+  dataRef: string,
+  opts: DistributionOptions,
+): Promise<DistributionResult | null> {
+  const manifest = await getManifest(env, userId, dataRef)
+  if (!manifest) return null
+  const binCount = Math.max(2, Math.min(opts.bins ?? 10, 50))
+  const cap = Math.min(manifest.totalRows, MAX_AGGREGATE_ROWS)
+  const lastChunk = Math.min(
+    manifest.totalChunks - 1,
+    Math.floor((cap - 1) / manifest.rowsPerChunk),
+  )
+  const chunks = await loadChunks(env, dataRef, 0, lastChunk)
+
+  const values: number[] = []
+  let scanned = 0
+  for (const chunk of chunks) {
+    for (const row of chunk) {
+      if (scanned >= cap) break
+      scanned++
+      if (!row || typeof row !== 'object') continue
+      const v = (row as Record<string, unknown>)[opts.field]
+      if (typeof v === 'number' && Number.isFinite(v)) values.push(v)
+    }
+    if (scanned >= cap) break
+  }
+  if (values.length === 0) {
+    return {
+      bins: [],
+      stats: { count: 0, min: 0, max: 0, avg: 0, median: 0, stddev: 0 },
+      rowsScanned: scanned,
+      truncated: manifest.totalRows > cap,
+      numericValues: 0,
+    }
+  }
+
+  values.sort((a, b) => a - b)
+  const min = values[0]!
+  const max = values[values.length - 1]!
+  const sum = values.reduce((a, b) => a + b, 0)
+  const avg = sum / values.length
+  const median =
+    values.length % 2 === 1
+      ? values[(values.length - 1) / 2]!
+      : (values[values.length / 2 - 1]! + values[values.length / 2]!) / 2
+  const sumSq = values.reduce((a, b) => a + b * b, 0)
+  const variance = Math.max(0, sumSq / values.length - avg * avg)
+  const stddev = Math.sqrt(variance)
+
+  // Even-width bins between min and max. Edge case: if min===max we
+  // return one bin holding everything (a degenerate distribution).
+  const bins: DistributionBin[] = []
+  if (max === min) {
+    bins.push({ from: min, to: max, count: values.length, pct: 1 })
+  } else {
+    const width = (max - min) / binCount
+    for (let i = 0; i < binCount; i++) {
+      const from = min + width * i
+      const to = i === binCount - 1 ? max : min + width * (i + 1)
+      bins.push({ from, to, count: 0, pct: 0 })
+    }
+    for (const v of values) {
+      let idx = Math.floor((v - min) / width)
+      if (idx >= binCount) idx = binCount - 1
+      bins[idx]!.count++
+    }
+    for (const b of bins) b.pct = b.count / values.length
+  }
+
+  return {
+    bins,
+    stats: { count: values.length, min, max, avg, median, stddev },
+    rowsScanned: scanned,
+    truncated: manifest.totalRows > cap,
+    numericValues: values.length,
   }
 }
 
