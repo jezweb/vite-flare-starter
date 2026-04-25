@@ -44,8 +44,10 @@ export const OPENROUTER_MODELS = [
   'google/gemini-3.1-pro-preview',
   'google/gemini-3-flash-preview',
 
-  // DeepSeek
-  'deepseek/deepseek-v3.2-speciale',
+  // DeepSeek — V4 dropped 2026-04-24, MIT license, 1M context.
+  // V3.2-speciale retired (deepseek-chat/reasoner endpoints sunset 2026-07-24).
+  'deepseek/deepseek-v4-pro',     // 1.6T MoE, 49B active; $1.74/$3.48 per Mtok
+  'deepseek/deepseek-v4-flash',   // 284B MoE, 13B active; $0.14/$0.28 per Mtok
 
   // Qwen
   'qwen/qwen3.6-plus',
