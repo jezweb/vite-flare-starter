@@ -68,11 +68,13 @@ export class AssistantAgent extends AutonomousAgent<Env, AutonomousAgentState> {
     const { todoDefinitions } = await import('@/server/modules/chat/tools/todo')
     const { memoryDefinitions } = await import('@/server/modules/chat/tools/memory')
     const { searchDefinitions } = await import('@/server/modules/chat/tools/search')
+    const { entityDefinitions } = await import('@/server/modules/chat/tools/entities')
     return [
       ...coreDefinitions,
       ...memoryDefinitions,
       ...todoDefinitions,
       ...searchDefinitions,
+      ...entityDefinitions,
       this.requestEmailApprovalTool(),
     ] as ToolDefinition<unknown, unknown>[]
   }
