@@ -189,17 +189,19 @@ extending it to take a prior `contents[]` history including the
 ## Image generation — GPT Image 2
 
 OpenAI model id: `gpt-image-2` (snapshot `gpt-image-2-2026-04-21`).
-Released 2026-04-21. **Note**: as of April 25, the developer API rolls out
-"early May 2026" — until then `gpt-image-2` calls fail with
-`model not found`. ChatGPT/Codex web users have it now.
+Released 2026-04-21 and GA on the developer API now — rate limit tiers
+already in place (5 img/min on Tier 1 → 250 img/min on Tier 5).
 
 **Capabilities**: integrates O-series reasoning so the model "thinks" before
 drawing — researches, plans, and reasons about structure before pixel
-generation. Multilingual text rendering, slides, infographics, maps, manga.
+generation. Multilingual text rendering, slides, infographics, maps, manga,
+flexible image sizes, high-fidelity image inputs.
 
-The starter's `generate_image` tool maps `provider: 'openai-2'` → `gpt-image-2`
-when the API is GA. Keep the existing `provider: 'openai'` (which uses
-`gpt-image-1`) as a fallback that works today.
+The starter's `generate_image` tool maps `provider: 'openai'` → `gpt-image-2`
+(default for OpenAI). Use `provider: 'openai-1'` for the legacy `gpt-image-1`
+model if you need it for compatibility.
+
+Source: [developers.openai.com/api/docs/models/gpt-image-2](https://developers.openai.com/api/docs/models/gpt-image-2).
 
 ## Adding a new vision tool
 

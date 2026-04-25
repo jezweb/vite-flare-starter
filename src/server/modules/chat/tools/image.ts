@@ -3,10 +3,11 @@
  *
  * Providers (pass via `provider`):
  *   - 'workers-ai' (default, free) — FLUX Schnell on Cloudflare Workers AI
- *   - 'openai' — GPT Image 1 (gpt-image-1) — current GA, paid, needs OPENAI_API_KEY
- *   - 'openai-2' — GPT Image 2 (gpt-image-2) — released 2026-04-21,
- *      developer API rolling out early May 2026. Will fail with
- *      "model not found" until then. Paid, needs OPENAI_API_KEY.
+ *   - 'openai' — GPT Image 2 (gpt-image-2) — OpenAI's current default,
+ *      paid, needs OPENAI_API_KEY. Released 2026-04-21, GA on the
+ *      developer API now. Multilingual text, slides, infographics.
+ *   - 'openai-1' — GPT Image 1 (gpt-image-1) — legacy fallback, kept
+ *      for forks that need the older model.
  *   - 'nano-banana-2' — Gemini 3.1 Flash Image Preview via OpenRouter.
  *      Paid, needs OPENROUTER_API_KEY. Pro-quality at Flash speed.
  *   - 'gemini-direct' — same Gemini model, direct via Google AI Studio.
@@ -40,7 +41,7 @@ function getImageEnv(ctx: AgentContext): ImageEnv {
 const ProviderEnum = z.enum([
   'workers-ai',
   'openai',
-  'openai-2',
+  'openai-1',
   'nano-banana-2',
   'gemini-direct',
 ])
@@ -52,7 +53,7 @@ const GenerateImageInput = z.object({
     .optional()
     .describe('Image size: 1024x1024 (default), 1536x1024, 1024x1536. Some providers (Workers AI FLUX) ignore non-square sizes.'),
   provider: ProviderEnum.optional().describe(
-    "Image provider. 'workers-ai' (default, free FLUX), 'openai' (GPT Image 1, direct), 'openai-2' (GPT Image 2 — early May), 'nano-banana-2' (Gemini via OpenRouter), 'gemini-direct' (Gemini direct — best for multi-turn).",
+    "Image provider. 'workers-ai' (default, free FLUX), 'openai' (GPT Image 2 — paid, multilingual text + infographics), 'openai-1' (legacy GPT Image 1), 'nano-banana-2' (Gemini via OpenRouter), 'gemini-direct' (Gemini direct — best for multi-turn).",
   ),
 })
 
@@ -169,13 +170,15 @@ export const generateImageDefinition: ToolDefinition<
         bytes = out.bytes
         mimeType = out.mimeType
         modelLabel = 'google/gemini-3.1-flash-image-preview'
-      } else if (provider === 'openai' || provider === 'openai-2') {
+      } else if (provider === 'openai' || provider === 'openai-1') {
         if (!env.OPENAI_API_KEY) {
           return { error: `provider='${provider}' requires OPENAI_API_KEY.` }
         }
         const { createOpenAI } = await import('@ai-sdk/openai')
         const openai = createOpenAI({ apiKey: env.OPENAI_API_KEY })
-        const modelId = provider === 'openai-2' ? 'gpt-image-2' : 'gpt-image-1'
+        // 'openai' → GPT Image 2 (current default, GA as of 2026-04-21).
+        // 'openai-1' → legacy gpt-image-1 fallback.
+        const modelId = provider === 'openai-1' ? 'gpt-image-1' : 'gpt-image-2'
         const imageModel: ImageModel = openai.image(modelId)
         const { image } = await generateImage({
           model: imageModel,
