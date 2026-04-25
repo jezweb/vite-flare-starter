@@ -14,12 +14,17 @@
  *                                   `anthropic/...`  → @ai-sdk/anthropic
  *                                   `openai/...`     → @ai-sdk/openai
  *                                   `google/...`     → @ai-sdk/google
+ *                                   `deepseek/...`   → @ai-sdk/deepseek
+ *                                   `mistralai/...`  → @ai-sdk/mistral
+ *                                   `x-ai/...`       → @ai-sdk/xai
  *                                   The `provider/` prefix is stripped
  *                                   before forwarding.
  *   4. OpenRouter fallback        — `provider/model` shape and
  *                                   OPENROUTER_API_KEY is set.
- *   5. Bare-id direct provider    — `claude-*` / `gpt-*` / `o3-*` /
- *                                   `gemini-*` with the matching key.
+ *   5. Bare-id direct provider    — `claude-*`, `gpt-*` / `o3-*`,
+ *                                   `gemini-*`, `deepseek-*`,
+ *                                   `mistral-*`/`codestral-*`/`pixtral-*`,
+ *                                   or `grok-*` with the matching key.
  *   6. Unknown id                 — fall through to OpenRouter or
  *                                   Workers AI as last-resort.
  *
@@ -32,6 +37,9 @@ import { createWorkersAI } from 'workers-ai-provider'
 import { createAnthropic } from '@ai-sdk/anthropic'
 import { createOpenAI } from '@ai-sdk/openai'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
+import { createDeepSeek } from '@ai-sdk/deepseek'
+import { createMistral } from '@ai-sdk/mistral'
+import { createXai } from '@ai-sdk/xai'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 
 export interface ProviderEnv {
@@ -39,6 +47,9 @@ export interface ProviderEnv {
   ANTHROPIC_API_KEY?: string
   OPENAI_API_KEY?: string
   GOOGLE_AI_API_KEY?: string
+  DEEPSEEK_API_KEY?: string
+  MISTRAL_API_KEY?: string
+  XAI_API_KEY?: string
   OPENROUTER_API_KEY?: string
 }
 
@@ -57,6 +68,17 @@ function tryDirectFromPrefix(env: ProviderEnv, modelId: string) {
   }
   if (modelId.startsWith('google/') && env.GOOGLE_AI_API_KEY) {
     return createGoogleGenerativeAI({ apiKey: env.GOOGLE_AI_API_KEY })(modelId.slice('google/'.length))
+  }
+  if (modelId.startsWith('deepseek/') && env.DEEPSEEK_API_KEY) {
+    return createDeepSeek({ apiKey: env.DEEPSEEK_API_KEY })(modelId.slice('deepseek/'.length))
+  }
+  // Catalogue uses OpenRouter's `mistralai/` prefix; direct API drops it.
+  if (modelId.startsWith('mistralai/') && env.MISTRAL_API_KEY) {
+    return createMistral({ apiKey: env.MISTRAL_API_KEY })(modelId.slice('mistralai/'.length))
+  }
+  // Catalogue uses OpenRouter's `x-ai/` prefix; direct xAI API drops it.
+  if (modelId.startsWith('x-ai/') && env.XAI_API_KEY) {
+    return createXai({ apiKey: env.XAI_API_KEY })(modelId.slice('x-ai/'.length))
   }
   return null
 }
@@ -102,6 +124,18 @@ export function resolveModel(env: ProviderEnv, modelId: string) {
     if (!env.GOOGLE_AI_API_KEY) throw new Error(`GOOGLE_AI_API_KEY required for model: ${modelId}`)
     return createGoogleGenerativeAI({ apiKey: env.GOOGLE_AI_API_KEY })(modelId)
   }
+  if (modelId.startsWith('deepseek-')) {
+    if (!env.DEEPSEEK_API_KEY) throw new Error(`DEEPSEEK_API_KEY required for model: ${modelId}`)
+    return createDeepSeek({ apiKey: env.DEEPSEEK_API_KEY })(modelId)
+  }
+  if (modelId.startsWith('mistral-') || modelId.startsWith('codestral-') || modelId.startsWith('pixtral-')) {
+    if (!env.MISTRAL_API_KEY) throw new Error(`MISTRAL_API_KEY required for model: ${modelId}`)
+    return createMistral({ apiKey: env.MISTRAL_API_KEY })(modelId)
+  }
+  if (modelId.startsWith('grok-')) {
+    if (!env.XAI_API_KEY) throw new Error(`XAI_API_KEY required for model: ${modelId}`)
+    return createXai({ apiKey: env.XAI_API_KEY })(modelId)
+  }
 
   // 6. Last-chance fallback: OpenRouter if key set, else Workers AI.
   if (env.OPENROUTER_API_KEY) {
@@ -125,6 +159,9 @@ export function routeFor(env: ProviderEnv, modelId: string): string {
     if (modelId.startsWith('anthropic/') && env.ANTHROPIC_API_KEY) return 'anthropic-direct'
     if (modelId.startsWith('openai/') && env.OPENAI_API_KEY) return 'openai-direct'
     if (modelId.startsWith('google/') && env.GOOGLE_AI_API_KEY) return 'google-direct'
+    if (modelId.startsWith('deepseek/') && env.DEEPSEEK_API_KEY) return 'deepseek-direct'
+    if (modelId.startsWith('mistralai/') && env.MISTRAL_API_KEY) return 'mistral-direct'
+    if (modelId.startsWith('x-ai/') && env.XAI_API_KEY) return 'xai-direct'
     if (env.OPENROUTER_API_KEY) return 'openrouter'
     return 'unknown'
   }
@@ -134,6 +171,12 @@ export function routeFor(env: ProviderEnv, modelId: string): string {
     env.OPENAI_API_KEY
   ) return 'openai-direct'
   if (modelId.startsWith('gemini-') && env.GOOGLE_AI_API_KEY) return 'google-direct'
+  if (modelId.startsWith('deepseek-') && env.DEEPSEEK_API_KEY) return 'deepseek-direct'
+  if (
+    (modelId.startsWith('mistral-') || modelId.startsWith('codestral-') || modelId.startsWith('pixtral-')) &&
+    env.MISTRAL_API_KEY
+  ) return 'mistral-direct'
+  if (modelId.startsWith('grok-') && env.XAI_API_KEY) return 'xai-direct'
   if (env.OPENROUTER_API_KEY) return 'openrouter'
   return 'workers-ai'
 }
@@ -143,6 +186,9 @@ export function getAvailableProviders(env: ProviderEnv): string[] {
   if (env.ANTHROPIC_API_KEY) providers.push('anthropic')
   if (env.OPENAI_API_KEY) providers.push('openai')
   if (env.GOOGLE_AI_API_KEY) providers.push('google')
+  if (env.DEEPSEEK_API_KEY) providers.push('deepseek')
+  if (env.MISTRAL_API_KEY) providers.push('mistral')
+  if (env.XAI_API_KEY) providers.push('xai')
   if (env.OPENROUTER_API_KEY) providers.push('openrouter')
   return providers
 }

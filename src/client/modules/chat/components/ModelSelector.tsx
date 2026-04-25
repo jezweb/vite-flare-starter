@@ -38,6 +38,9 @@ interface Model {
     | 'anthropic-direct'
     | 'openai-direct'
     | 'google-direct'
+    | 'deepseek-direct'
+    | 'mistral-direct'
+    | 'xai-direct'
     | 'openrouter'
     | 'unknown'
 }
