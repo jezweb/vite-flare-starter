@@ -38,6 +38,8 @@ VITE_FEATURE_ACTIVITY=false
 | **settings** | Profile CRUD, password, preferences, sessions, data export | `server/modules/settings/routes.ts` |
 | **skills** | Claude Agent Skills registry + editor + AI-sparkle rewrite + diff approval | `server/modules/skills/routes.ts` |
 | **config-diff** | Shared primitive for staged user-config changes (skills, prompts, …) | `server/modules/config-diff/` |
+| **scheduled-agents** | DO scheduled work via agents SDK `schedule()` / `retry()` — no hand-rolled alarms | `server/modules/scheduled-agents/reminder-agent.ts` |
+| **autonomous-agents** | Stateful AI agent base — persona + memory blocks + tools + decision loop | `server/lib/agents/autonomous-agent.ts`, `server/modules/autonomous-agents/assistant-agent.ts` |
 
 ---
 
@@ -66,7 +68,8 @@ reference lives in `docs/`, loaded only when you need it.
 | Want to… | Read |
 |---|---|
 | Build a CRUD feature, table, hook | [`docs/PATTERNS.md`](./docs/PATTERNS.md) |
-| Wire voice, video, or any DO agent | [`docs/DO_AGENTS.md`](./docs/DO_AGENTS.md) |
+| Build an AI agent / scheduled agent / agent swarm | [`docs/AGENTS.md`](./docs/AGENTS.md) |
+| Wire voice, video, or any DO streaming agent | [`docs/DO_AGENTS.md`](./docs/DO_AGENTS.md) |
 | Understand sources, gating, NLP, observability | [`docs/CHAT_INTERNALS.md`](./docs/CHAT_INTERNALS.md) |
 | Add or customise agent tools + connectors | [`docs/AGENT_TOOLKIT.md`](./docs/AGENT_TOOLKIT.md) |
 | Vision + image edit + image gen patterns | [`docs/VISION_AND_IMAGE_EDITING.md`](./docs/VISION_AND_IMAGE_EDITING.md) |
@@ -176,6 +179,23 @@ Durable Objects are already scaffolded (`VoiceInputExample`,
 `VideoInputExample`) — enable per-feature via `VITE_FEATURE_VOICE_AGENT`
 / `VITE_FEATURE_VIDEO_AGENT`. Wiring guide:
 [`docs/DO_AGENTS.md`](./docs/DO_AGENTS.md).
+
+---
+
+## Agents
+
+Four kinds of agent ship with the starter, all on Cloudflare's `agents`
+SDK. **Don't extend raw `DurableObject` — use the SDK base.**
+
+| If you need... | Use | Worked example |
+|---|---|---|
+| Live mic / camera / WebSocket | `Agent` + `withVoiceInput` mixin | `VoiceInputExample` |
+| Scheduled non-AI work | `Agent` directly + `this.schedule()` | `ReminderAgent` |
+| Stateful AI agent (persona + memory + tools) | `AutonomousAgent` | `AssistantAgent` |
+| Multi-session AI chat surface | `AIChatAgent` from `agents/chat` | _SDK class — chat module not yet adopted_ |
+
+Full architecture, decision matrix, naming conventions, and migration
+notes: [`docs/AGENTS.md`](./docs/AGENTS.md).
 
 ---
 
