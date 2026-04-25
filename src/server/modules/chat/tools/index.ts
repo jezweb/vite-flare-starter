@@ -29,6 +29,8 @@ import { artifactDefinitions } from './artifacts'
 import { documentDefinitions } from './documents'
 import { semanticSearchDefinitions } from './search-semantic'
 import { imageDefinitions } from './image'
+import { imageAnalyzeDefinitions } from './image-analyze'
+import { imageEditDefinitions } from './image-edit'
 import { imageTransformDefinitions } from './image-transform'
 import { mediaDefinitions } from './media'
 import { sessionDefinitions } from './session'
@@ -72,6 +74,8 @@ export async function buildChatTools(ctx: AgentContext, options: { availableSkil
     ...browserDefinitions,
     ...fileDefinitions,
     ...imageDefinitions,
+    ...imageAnalyzeDefinitions,
+    ...imageEditDefinitions,
     ...imageTransformDefinitions,
     ...mediaDefinitions,
     ...googleWorkspaceDefinitions,

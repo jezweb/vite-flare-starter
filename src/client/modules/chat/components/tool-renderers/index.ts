@@ -61,6 +61,11 @@ import {
   notionAppendBlocksRenderer,
 } from './notion'
 import {
+  generateImageRenderer,
+  editImageRenderer,
+  analyzeImageRenderer,
+} from './image'
+import {
   jiraSearchRenderer,
   jiraGetIssueRenderer,
   jiraCreateRenderer,
@@ -107,6 +112,10 @@ export const TOOL_RENDERERS: ToolRenderer[] = [
   // Google Workspace — Tasks
   tasksListRenderer,
   tasksCreateRenderer,
+  // Image — generate / edit / analyze
+  generateImageRenderer,
+  editImageRenderer,
+  analyzeImageRenderer,
   // Search
   webSearchRenderer,
   // Slack

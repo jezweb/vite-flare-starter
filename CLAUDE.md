@@ -69,6 +69,7 @@ reference lives in `docs/`, loaded only when you need it.
 | Wire voice, video, or any DO agent | [`docs/DO_AGENTS.md`](./docs/DO_AGENTS.md) |
 | Understand sources, gating, NLP, observability | [`docs/CHAT_INTERNALS.md`](./docs/CHAT_INTERNALS.md) |
 | Add or customise agent tools + connectors | [`docs/AGENT_TOOLKIT.md`](./docs/AGENT_TOOLKIT.md) |
+| Vision + image edit + image gen patterns | [`docs/VISION_AND_IMAGE_EDITING.md`](./docs/VISION_AND_IMAGE_EDITING.md) |
 | Enable KV / Queues / Vectorize / Hyperdrive / Stream | [`docs/PLATFORM_SERVICES.md`](./docs/PLATFORM_SERVICES.md) |
 | Add analytics / payments / email / real-time / background jobs | `docs/ADDING_*.md` |
 | Track fork divergence from upstream (forks only) | [`PATCHES.md`](./PATCHES.md) + [`docs/PATCHES-guide.md`](./docs/PATCHES-guide.md) |
