@@ -36,6 +36,11 @@ const TRUNCATION_BYPASS = new Set<string>([
   'propose_patch',
   'load_skill',
   'done',
+  // Data-lake reader — already operates under an explicit user-chosen
+  // limit (max 500 rows). Truncating again on top of that would
+  // silently break the contract the agent relied on when it picked
+  // the limit.
+  'read_data',
 ])
 
 /**

@@ -43,6 +43,7 @@ import { slackDefinitions } from './slack'
 import { notionDefinitions } from './notion'
 import { atlassianDefinitions } from './atlassian'
 import { proposePatchDefinitions } from './propose-patch'
+import { dataDefinitions } from './data'
 import { collectAvailableTools } from '@/server/lib/ai/tool-adapter'
 import {
   getAllowedConnectorTools,
@@ -84,6 +85,7 @@ export async function buildChatTools(ctx: AgentContext, options: { availableSkil
     ...notionDefinitions,
     ...atlassianDefinitions,
     ...proposePatchDefinitions,
+    ...dataDefinitions,
   ]
 
   // Per-user connector filter — keeps connector tools the user has

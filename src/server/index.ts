@@ -16,6 +16,7 @@ import notificationsRoutes from './modules/notifications/routes'
 import chatRoutes from './modules/chat/routes'
 import audioRoutes from './modules/audio/routes'
 import filesRoutes from './modules/files/routes'
+import dataRoutes from './modules/data/routes'
 import adminRoutes from './modules/admin/routes'
 import webhookRoutes from './modules/webhooks/routes'
 import userMetaRoutes from './modules/user-meta/routes'
@@ -266,6 +267,7 @@ app.route('/api/notifications', notificationsRoutes)
 app.route('/api/chat', chatRoutes)
 app.route('/api/audio', audioRoutes)
 app.route('/api/files', filesRoutes)
+app.route('/api/data', dataRoutes)
 app.route('/api/webhooks', webhookRoutes)
 app.route('/api/user-meta', userMetaRoutes)
 app.route('/api/skills', skillsRoutes)
