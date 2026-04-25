@@ -52,6 +52,23 @@
     {
       "binding": "SKILLS",
       "bucket_name": "vite-flare-starter-skills"
+    },
+    {
+      // Data Lake — chunked R2 storage for oversized tool results.
+      // The chat tool adapter spills any tool output that exceeds the
+      // truncation budget (~12K chars) into this bucket and gives the
+      // agent a `data_ref` to read back via read_data / aggregate_data
+      // / export_data. Without this binding the truncation gate still
+      // works, but the agent only sees the preview, not the full data.
+      //
+      // CRITICAL: configure a 1-day lifecycle rule on this bucket so
+      // datasets auto-expire — the agent uses `data_ref` for at most a
+      // single conversation, and the bucket would otherwise grow
+      // unbounded. Run once per fork:
+      //   wrangler r2 bucket lifecycle add vite-flare-starter-data-lake \\
+      //     auto-expire data/ --expire-days 1
+      "binding": "DATA_LAKE",
+      "bucket_name": "vite-flare-starter-data-lake"
     }
   ],
 
