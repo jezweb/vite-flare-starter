@@ -26,14 +26,28 @@
  *   - Wire Cloudflare's AgentMemory service for vector recall over
  *     long conversation history (replaces the sliding window)
  */
+import { z } from 'zod'
+import { Mail } from 'lucide-react'
 import { AutonomousAgent, type AutonomousAgentEnv, type AutonomousAgentState } from '@/server/lib/agents/autonomous-agent'
-import type { ToolDefinition } from '@/shared/agent'
+import { getAccessToken } from '@/server/modules/google-workspace/tokens'
+import type { ToolDefinition, AgentContext } from '@/shared/agent'
 
 interface Env extends AutonomousAgentEnv {
   // Agents inheriting AutonomousAgentEnv get all the AI provider keys
   // from the parent shape — no need to redeclare unless you need
   // additional bindings (R2 buckets, KV, etc).
 }
+
+/** Schema for the queued send_email payload. Used both client-side
+ *  in the UI for editing AND server-side when executing post-approve. */
+const SendEmailPayload = z.object({
+  to: z.string().email(),
+  subject: z.string().min(1).max(200),
+  body: z.string().min(1).max(20_000),
+  cc: z.string().email().optional(),
+  bcc: z.string().email().optional(),
+})
+type SendEmailPayload = z.infer<typeof SendEmailPayload>
 
 export class AssistantAgent extends AutonomousAgent<Env, AutonomousAgentState> {
   static override readonly className = 'AssistantAgent'
@@ -59,7 +73,115 @@ export class AssistantAgent extends AutonomousAgent<Env, AutonomousAgentState> {
       ...memoryDefinitions,
       ...todoDefinitions,
       ...searchDefinitions,
+      this.requestEmailApprovalTool(),
     ] as ToolDefinition<unknown, unknown>[]
+  }
+
+  /**
+   * Worked example of the approval-queue pattern. The LLM calls this
+   * INSTEAD of sending email directly. The tool stores the request
+   * in `pending_approvals` and returns the approval id — nothing
+   * actually sends. The user reviews in the queue UI / API and on
+   * approve, `executeApproved('send_email', payload)` runs to
+   * actually send via Gmail.
+   *
+   * The shape here is the canonical pattern for any destructive
+   * action: define a request_X_approval tool that calls
+   * `requestApproval('do_X', payload)` and returns the id.
+   */
+  private requestEmailApprovalTool(): ToolDefinition<
+    SendEmailPayload,
+    { ok: true; approvalId: string; status: 'pending'; summary: string } | { ok: false; error: string }
+  > {
+    return {
+      name: 'request_email_approval',
+      description:
+        'Queue an email for the user to review and approve before sending. Returns an approval id. Nothing sends until the user approves via /approvals. Always prefer this over silent send for any user-facing email.',
+      inputSchema: SendEmailPayload,
+      outputSchema: z.union([
+        z.object({
+          ok: z.literal(true),
+          approvalId: z.string(),
+          status: z.literal('pending'),
+          summary: z.string(),
+        }),
+        z.object({ ok: z.literal(false), error: z.string() }),
+      ]),
+      execute: async (payload, _ctx: AgentContext) => {
+        try {
+          const summary = `Email to ${payload.to}: ${payload.subject.slice(0, 80)}`
+          const result = await this.requestApproval('send_email', payload, summary)
+          return { ok: true as const, ...result, summary }
+        } catch (err) {
+          return {
+            ok: false as const,
+            error: err instanceof Error ? err.message : String(err),
+          }
+        }
+      },
+      render: { icon: Mail, displayName: 'Request Email Approval' },
+    }
+  }
+
+  /**
+   * Approval execute hook — called by the approvals route handler
+   * when the user approves a queued request. Receives the
+   * (possibly user-edited) payload.
+   */
+  override async executeApproved(action: string, payload: unknown): Promise<unknown> {
+    if (action === 'send_email') {
+      const data = SendEmailPayload.parse(payload)
+      return this.sendEmailViaGmail(data)
+    }
+    return super.executeApproved(action, payload) // throws — unknown action
+  }
+
+  /**
+   * Internal: send via the user's Gmail using their OAuth token.
+   * Mirrors the chat module's `gmailSendDefinition` execute body but
+   * without the AgentContext indirection — we have direct access to
+   * env + state.userId here.
+   */
+  private async sendEmailViaGmail(
+    payload: SendEmailPayload,
+  ): Promise<{ ok: true; messageId: string } | { ok: false; error: string }> {
+    if (!this.state.userId) {
+      return { ok: false, error: 'AssistantAgent has no owner — cannot send email' }
+    }
+    const env = this.env as Env & { DB: D1Database }
+    const token = await getAccessToken(env as Parameters<typeof getAccessToken>[0], this.state.userId)
+    if (!token) {
+      return {
+        ok: false,
+        error: 'Gmail not connected for this user — visit Connectors → Google Workspace.',
+      }
+    }
+    // Build RFC 822 MIME message + base64-url encode for Gmail send.
+    const headers = [
+      `To: ${payload.to}`,
+      ...(payload.cc ? [`Cc: ${payload.cc}`] : []),
+      ...(payload.bcc ? [`Bcc: ${payload.bcc}`] : []),
+      `Subject: ${payload.subject}`,
+      'Content-Type: text/plain; charset="UTF-8"',
+      'MIME-Version: 1.0',
+    ].join('\r\n')
+    const raw = `${headers}\r\n\r\n${payload.body}`
+    const encoded = btoa(raw).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+
+    const resp = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ raw: encoded }),
+    })
+    if (!resp.ok) {
+      const errBody = await resp.text()
+      return { ok: false, error: `Gmail send failed: ${resp.status} ${errBody.slice(0, 200)}` }
+    }
+    const result = (await resp.json()) as { id?: string }
+    return { ok: true, messageId: result.id ?? 'unknown' }
   }
 
   /**

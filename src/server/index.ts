@@ -41,6 +41,7 @@ import atlassianRoutes from './modules/atlassian/routes'
 import connectorsRoutes from './modules/connectors/routes'
 import scheduledAgentsRoutes from './modules/scheduled-agents/routes'
 import autonomousAgentsRoutes from './modules/autonomous-agents/routes'
+import approvalsRoutes from './modules/approvals/routes'
 import { routeAgentRequest } from 'agents'
 import { ScratchpadMcpAgent } from './modules/mcp-agents/scratchpad-mcp-agent'
 // Re-export DO class(es) so wrangler migrations can locate them. Every DO
@@ -278,6 +279,7 @@ app.route('/api/files', filesRoutes)
 app.route('/api/data', dataRoutes)
 app.route('/api/scheduled-agents', scheduledAgentsRoutes)
 app.route('/api/autonomous-agents', autonomousAgentsRoutes)
+app.route('/api/approvals', approvalsRoutes)
 app.route('/api/webhooks', webhookRoutes)
 app.route('/api/user-meta', userMetaRoutes)
 app.route('/api/skills', skillsRoutes)

@@ -63,8 +63,10 @@
  */
 import { Agent } from 'agents'
 import { streamText, convertToModelMessages, type UIMessage } from 'ai'
+import { drizzle } from 'drizzle-orm/d1'
 import { resolveModel } from '@/server/lib/ai/providers'
 import { collectAvailableTools } from '@/server/lib/ai/tool-adapter'
+import { pendingApprovals } from '@/server/modules/approvals/db/schema'
 import { nullTelemetry } from '@/shared/agent'
 import type { ToolDefinition, AgentContext as CanonicalAgentContext, AgentUser } from '@/shared/agent'
 
@@ -398,6 +400,70 @@ export abstract class AutonomousAgent<
   async scheduleSelfRun(when: Date | number, input?: RunOnceInput): Promise<{ scheduleId: string }> {
     const schedule = await this.schedule(when, 'runScheduled', input ?? {})
     return { scheduleId: schedule.id }
+  }
+
+  // ─── Approval queue ───────────────────────────────────────────
+
+  /**
+   * Queue a destructive action for human approval. Use from inside
+   * tools (or directly from `run`) when the agent wants to take an
+   * action that should NOT execute autonomously — sending email,
+   * posting messages, transferring funds, deleting things.
+   *
+   * Returns immediately with the approval id — does NOT block waiting
+   * for review. The agent's run completes, the LLM relays the queued
+   * status back to the user, the user reviews via /approvals, and on
+   * approve the system calls back to `executeApproved(action, payload)`
+   * to perform the action.
+   *
+   * Subclasses must implement `executeApproved` to handle their own
+   * action types — the base throws to prevent silent no-ops.
+   *
+   * @param action  Subclass-defined action identifier (e.g. 'send_email')
+   * @param payload Action-specific data (must be JSON-serialisable)
+   * @param summary One-line human-readable summary for the queue UI
+   */
+  async requestApproval<T = unknown>(
+    action: string,
+    payload: T,
+    summary?: string,
+  ): Promise<{ approvalId: string; status: 'pending' }> {
+    if (!this.state.userId) {
+      throw new Error('AutonomousAgent.requestApproval requires an owner — call setOwner first.')
+    }
+    const id = crypto.randomUUID()
+    const db = drizzle(this.env.DB)
+    await db.insert(pendingApprovals).values({
+      id,
+      userId: this.state.userId,
+      agentClass: (this.constructor as typeof AutonomousAgent).className,
+      agentName: this.state.name,
+      action,
+      payloadJson: JSON.stringify(payload),
+      ...(summary !== undefined && { summary }),
+      status: 'pending',
+    })
+    return { approvalId: id, status: 'pending' }
+  }
+
+  /**
+   * Subclass override: execute an approved action with the agent's
+   * full env access. Called by the approvals route handler when a
+   * user approves a queued request. The (possibly user-edited)
+   * payload is passed in.
+   *
+   * Default throws — subclasses MUST implement to handle their own
+   * action types. Failure to implement an action just means that
+   * action will never successfully execute (the row stays in 'failed'
+   * status with a clear error).
+   *
+   * Return value (any JSON-serialisable shape) is persisted as
+   * `result_json` for diagnostics + UI display.
+   */
+  async executeApproved(action: string, _payload: unknown): Promise<unknown> {
+    throw new Error(
+      `${(this.constructor as typeof AutonomousAgent).className} does not implement executeApproved for action "${action}". Override executeApproved() in the subclass.`,
+    )
   }
 
   /**
