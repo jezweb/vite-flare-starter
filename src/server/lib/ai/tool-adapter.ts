@@ -13,6 +13,29 @@
 import { tool, type Tool } from 'ai'
 import type { ToolDefinition } from '@/shared/agent/tool'
 import type { AgentContext } from '@/shared/agent/context'
+import { truncateToolResult, DEFAULT_MAX_CHARS } from './truncate-tool-result'
+
+/**
+ * Tools that already return a structured small summary and should NOT
+ * have truncation applied — passing them through the helper is wasted
+ * work and the metadata pollution (`truncated: false`, `originalChars`)
+ * would confuse the model. Most tools won't need to be in this list;
+ * add only the ones we know are bounded and where the wrapper hurts
+ * more than it helps.
+ *
+ * (UI-render tools like `show_map`, `show_image`, `propose_patch` are
+ * the natural candidates — their output IS the UI payload and we never
+ * want to alter it.)
+ */
+const TRUNCATION_BYPASS = new Set<string>([
+  'show_map',
+  'show_image',
+  'show_link',
+  'show_image_card',
+  'propose_patch',
+  'load_skill',
+  'done',
+])
 
 /**
  * Wrap a single ToolDefinition into an AI SDK tool. The resulting tool's
@@ -54,11 +77,46 @@ export function toAiSdkTool<I, O>(
         // wild that all tool outputs conform.
         const validated = output as O
 
+        // Truncation gate — see truncate-tool-result.ts. Bypass tools
+        // that return UI payloads or known-small summaries. For the
+        // rest, run the budget check; if the result is over, swap in
+        // a preview + truncation hint and structurally log so we can
+        // see *which* tools are causing context bloat.
+        let finalResult: O = validated
         let outputSize: number | undefined
         try {
           outputSize = JSON.stringify(validated).length
         } catch {
           /* non-serialisable — skip */
+        }
+        if (!TRUNCATION_BYPASS.has(def.name)) {
+          const trunc = truncateToolResult(validated, { maxChars: DEFAULT_MAX_CHARS })
+          if (trunc.metadata.truncated) {
+            finalResult = trunc.result
+            // Recompute outputSize on the truncated payload so telemetry
+            // reflects what actually entered the conversation, not the
+            // original blob — otherwise the size graph would be a lie.
+            try {
+              outputSize = JSON.stringify(finalResult).length
+            } catch {
+              /* skip */
+            }
+            // Structured log: the admin tools tab can surface a list of
+            // chronically-truncated tools so we know which ones need
+            // pagination or dedicated analytical variants.
+            console.log(
+              JSON.stringify({
+                event: 'tool_result_truncated',
+                userId: ctx.userId,
+                toolName: def.name,
+                originalChars: trunc.metadata.originalChars,
+                kind: trunc.metadata.kind,
+                collectionKey: trunc.metadata.collectionKey,
+                totalItems: trunc.metadata.totalItems,
+                keptItems: trunc.metadata.keptItems,
+              }),
+            )
+          }
         }
 
         await ctx.telemetry.recordTool({
@@ -68,7 +126,7 @@ export function toAiSdkTool<I, O>(
           inputSize,
           outputSize,
         })
-        return validated
+        return finalResult
       } catch (err) {
         await ctx.telemetry.recordTool({
           name: def.name,
