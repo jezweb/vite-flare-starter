@@ -1,5 +1,32 @@
 /**
- * AI Provider Factory — direct call pattern (registry was unreliable for Workers AI).
+ * AI Provider Factory — picks the cheapest correct path for a model id.
+ *
+ * Routing rules (first match wins):
+ *
+ *   1. Workers AI binding         — model id starts with `@cf/` or `@hf/`.
+ *   2. Forced OpenRouter          — id starts with `openrouter/`.
+ *                                   Explicit escape hatch for "I want
+ *                                   OpenRouter even though the direct key
+ *                                   is set" (rare; useful for billing
+ *                                   consolidation testing).
+ *   3. Direct provider SDK        — `provider/model` shape where the
+ *                                   matching direct key is present.
+ *                                   `anthropic/...`  → @ai-sdk/anthropic
+ *                                   `openai/...`     → @ai-sdk/openai
+ *                                   `google/...`     → @ai-sdk/google
+ *                                   The `provider/` prefix is stripped
+ *                                   before forwarding.
+ *   4. OpenRouter fallback        — `provider/model` shape and
+ *                                   OPENROUTER_API_KEY is set.
+ *   5. Bare-id direct provider    — `claude-*` / `gpt-*` / `o3-*` /
+ *                                   `gemini-*` with the matching key.
+ *   6. Unknown id                 — fall through to OpenRouter or
+ *                                   Workers AI as last-resort.
+ *
+ * Net effect: a fork that sets BOTH `ANTHROPIC_API_KEY` and
+ * `OPENROUTER_API_KEY` automatically uses direct Anthropic for
+ * `anthropic/...` ids while still routing DeepSeek, Qwen, etc. through
+ * OpenRouter. No configuration toggle needed — keys are the signal.
  */
 import { createWorkersAI } from 'workers-ai-provider'
 import { createAnthropic } from '@ai-sdk/anthropic'
@@ -15,30 +42,54 @@ export interface ProviderEnv {
   OPENROUTER_API_KEY?: string
 }
 
+/**
+ * Map a `provider/` prefix to its direct-SDK builder + env key check.
+ * Returns null if the model id doesn't match a known direct provider OR
+ * the matching key isn't set. The caller should then fall back to
+ * OpenRouter (or fail if no OpenRouter key either).
+ */
+function tryDirectFromPrefix(env: ProviderEnv, modelId: string) {
+  if (modelId.startsWith('anthropic/') && env.ANTHROPIC_API_KEY) {
+    return createAnthropic({ apiKey: env.ANTHROPIC_API_KEY })(modelId.slice('anthropic/'.length))
+  }
+  if (modelId.startsWith('openai/') && env.OPENAI_API_KEY) {
+    return createOpenAI({ apiKey: env.OPENAI_API_KEY })(modelId.slice('openai/'.length))
+  }
+  if (modelId.startsWith('google/') && env.GOOGLE_AI_API_KEY) {
+    return createGoogleGenerativeAI({ apiKey: env.GOOGLE_AI_API_KEY })(modelId.slice('google/'.length))
+  }
+  return null
+}
+
 export function resolveModel(env: ProviderEnv, modelId: string) {
-  // Workers AI — native binding, free.
+  // 1. Workers AI — native binding, free.
   if (modelId.startsWith('@cf/') || modelId.startsWith('@hf/')) {
     const workersai = createWorkersAI({ binding: env.AI })
     return workersai(modelId)
   }
 
-  // Explicit `openrouter/provider/model` prefix — strip and forward.
+  // 2. Explicit `openrouter/...` prefix forces OpenRouter even when the
+  //    matching direct key is set. Strip and forward.
   if (modelId.startsWith('openrouter/')) {
     if (!env.OPENROUTER_API_KEY) throw new Error(`OPENROUTER_API_KEY required for model: ${modelId}`)
     const openrouter = createOpenRouter({ apiKey: env.OPENROUTER_API_KEY })
     return openrouter(modelId.replace('openrouter/', ''))
   }
 
-  // `provider/model` shape (e.g. `anthropic/claude-sonnet-4.6`) → OpenRouter.
-  // This is the new default for non-Workers-AI models and lets one key unlock
-  // the full OpenRouter catalogue.
+  // 3 + 4. `provider/model` shape — prefer direct, fall back to OpenRouter.
   if (modelId.includes('/') && !modelId.startsWith('@')) {
-    if (!env.OPENROUTER_API_KEY) throw new Error(`OPENROUTER_API_KEY required for model: ${modelId}`)
-    const openrouter = createOpenRouter({ apiKey: env.OPENROUTER_API_KEY })
-    return openrouter(modelId)
+    const direct = tryDirectFromPrefix(env, modelId)
+    if (direct) return direct
+    if (env.OPENROUTER_API_KEY) {
+      const openrouter = createOpenRouter({ apiKey: env.OPENROUTER_API_KEY })
+      return openrouter(modelId)
+    }
+    throw new Error(
+      `No route for model "${modelId}" — set OPENROUTER_API_KEY (or the direct key for the matching provider).`,
+    )
   }
 
-  // Direct-provider fallbacks kept for users who prefer native SDKs per provider.
+  // 5. Bare model ids — direct provider SDKs only.
   if (modelId.startsWith('claude-')) {
     if (!env.ANTHROPIC_API_KEY) throw new Error(`ANTHROPIC_API_KEY required for model: ${modelId}`)
     return createAnthropic({ apiKey: env.ANTHROPIC_API_KEY })(modelId)
@@ -52,13 +103,39 @@ export function resolveModel(env: ProviderEnv, modelId: string) {
     return createGoogleGenerativeAI({ apiKey: env.GOOGLE_AI_API_KEY })(modelId)
   }
 
-  // Last-chance fallback: OpenRouter if key is set, else Workers AI.
+  // 6. Last-chance fallback: OpenRouter if key set, else Workers AI.
   if (env.OPENROUTER_API_KEY) {
     const openrouter = createOpenRouter({ apiKey: env.OPENROUTER_API_KEY })
     return openrouter(modelId)
   }
   console.warn(`Unknown model "${modelId}" — falling back to Workers AI`)
   return createWorkersAI({ binding: env.AI })(modelId)
+}
+
+/**
+ * Tells the caller WHICH path resolveModel() will pick. Useful for
+ * the model picker UI ("via OpenRouter" / "direct") and logging
+ * decisions. Returns:
+ *   'workers-ai' | 'openrouter' | 'anthropic-direct' | 'openai-direct' | 'google-direct' | 'unknown'
+ */
+export function routeFor(env: ProviderEnv, modelId: string): string {
+  if (modelId.startsWith('@cf/') || modelId.startsWith('@hf/')) return 'workers-ai'
+  if (modelId.startsWith('openrouter/')) return 'openrouter'
+  if (modelId.includes('/') && !modelId.startsWith('@')) {
+    if (modelId.startsWith('anthropic/') && env.ANTHROPIC_API_KEY) return 'anthropic-direct'
+    if (modelId.startsWith('openai/') && env.OPENAI_API_KEY) return 'openai-direct'
+    if (modelId.startsWith('google/') && env.GOOGLE_AI_API_KEY) return 'google-direct'
+    if (env.OPENROUTER_API_KEY) return 'openrouter'
+    return 'unknown'
+  }
+  if (modelId.startsWith('claude-') && env.ANTHROPIC_API_KEY) return 'anthropic-direct'
+  if (
+    (modelId.startsWith('gpt-') || modelId.startsWith('o1-') || modelId.startsWith('o3-') || modelId.startsWith('o4-')) &&
+    env.OPENAI_API_KEY
+  ) return 'openai-direct'
+  if (modelId.startsWith('gemini-') && env.GOOGLE_AI_API_KEY) return 'google-direct'
+  if (env.OPENROUTER_API_KEY) return 'openrouter'
+  return 'workers-ai'
 }
 
 export function getAvailableProviders(env: ProviderEnv): string[] {
