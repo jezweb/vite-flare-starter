@@ -43,7 +43,7 @@ importers:
         version: 0.8.9
       '@cloudflare/voice':
         specifier: ^0.1.2
-        version: 0.1.2(agents@0.11.5(@babel/core@7.29.0)(@babel/runtime@7.29.2)(@cloudflare/workers-types@4.20260412.1)(ai@6.0.161(zod@4.3.6))(react@19.2.5)(rolldown@1.0.0-rc.17)(vite@8.0.8(@types/node@24.10.1)(esbuild@0.27.3)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))(zod@4.3.6))(partysocket@1.1.16(react@19.2.5))(react@19.2.5)
+        version: 0.1.2(agents@0.11.5(@babel/core@7.29.0)(@babel/runtime@7.29.2)(@cloudflare/workers-types@4.20260412.1)(ai@6.0.161(zod@4.3.6))(react@19.2.5)(rolldown@1.0.0-rc.17)(vite@8.0.8(@types/node@24.10.1)(esbuild@0.27.3)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))(zod@4.3.6))(partysocket@1.1.18(react@19.2.5))(react@19.2.5)
       '@codemirror/lang-markdown':
         specifier: ^6.5.0
         version: 6.5.0
@@ -101,6 +101,9 @@ importers:
       '@milkdown/theme-nord':
         specifier: ^7.20.0
         version: 7.20.0
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.29.0
+        version: 1.29.0(@cfworker/json-schema@4.1.1)(zod@4.3.6)
       '@openrouter/ai-sdk-provider':
         specifier: ^2.5.1
         version: 2.5.1(ai@6.0.161(zod@4.3.6))(zod@4.3.6)
@@ -5030,14 +5033,6 @@ packages:
     peerDependencies:
       '@cloudflare/workers-types': ^4.20240729.0
 
-  partysocket@1.1.16:
-    resolution: {integrity: sha512-d7xFv+ZC7x0p/DAHWJ5FhxQhimIx+ucyZY+kxL0cKddLBmK9c4p2tEA/L+dOOrWm6EYrRwrBjKQV0uSzOY9x1w==}
-    peerDependencies:
-      react: '>=17'
-    peerDependenciesMeta:
-      react:
-        optional: true
-
   partysocket@1.1.18:
     resolution: {integrity: sha512-SyuvH9VavWOSa14v6dYdp3yfSUDII4BQB1+TkGOFBkjfZKjnDBiba4fhdhwBlqGBkqw4ea3gTA1DYhSffX24Wg==}
     peerDependencies:
@@ -6427,11 +6422,11 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@cloudflare/voice@0.1.2(agents@0.11.5(@babel/core@7.29.0)(@babel/runtime@7.29.2)(@cloudflare/workers-types@4.20260412.1)(ai@6.0.161(zod@4.3.6))(react@19.2.5)(rolldown@1.0.0-rc.17)(vite@8.0.8(@types/node@24.10.1)(esbuild@0.27.3)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))(zod@4.3.6))(partysocket@1.1.16(react@19.2.5))(react@19.2.5)':
+  '@cloudflare/voice@0.1.2(agents@0.11.5(@babel/core@7.29.0)(@babel/runtime@7.29.2)(@cloudflare/workers-types@4.20260412.1)(ai@6.0.161(zod@4.3.6))(react@19.2.5)(rolldown@1.0.0-rc.17)(vite@8.0.8(@types/node@24.10.1)(esbuild@0.27.3)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))(zod@4.3.6))(partysocket@1.1.18(react@19.2.5))(react@19.2.5)':
     dependencies:
       agents: 0.11.5(@babel/core@7.29.0)(@babel/runtime@7.29.2)(@cloudflare/workers-types@4.20260412.1)(ai@6.0.161(zod@4.3.6))(react@19.2.5)(rolldown@1.0.0-rc.17)(vite@8.0.8(@types/node@24.10.1)(esbuild@0.27.3)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))(zod@4.3.6)
     optionalDependencies:
-      partysocket: 1.1.16(react@19.2.5)
+      partysocket: 1.1.18(react@19.2.5)
       react: 19.2.5
 
   '@cloudflare/workerd-darwin-64@1.20260409.1':
@@ -11060,13 +11055,6 @@ snapshots:
     dependencies:
       '@cloudflare/workers-types': 4.20260412.1
       nanoid: 5.1.9
-
-  partysocket@1.1.16(react@19.2.5):
-    dependencies:
-      event-target-polyfill: 0.0.4
-    optionalDependencies:
-      react: 19.2.5
-    optional: true
 
   partysocket@1.1.18(react@19.2.5):
     dependencies:

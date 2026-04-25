@@ -39,7 +39,8 @@ VITE_FEATURE_ACTIVITY=false
 | **skills** | Claude Agent Skills registry + editor + AI-sparkle rewrite + diff approval | `server/modules/skills/routes.ts` |
 | **config-diff** | Shared primitive for staged user-config changes (skills, prompts, …) | `server/modules/config-diff/` |
 | **scheduled-agents** | DO scheduled work via agents SDK `schedule()` / `retry()` — no hand-rolled alarms | `server/modules/scheduled-agents/reminder-agent.ts` |
-| **autonomous-agents** | Stateful AI agent base — persona + memory blocks + tools + decision loop | `server/lib/agents/autonomous-agent.ts`, `server/modules/autonomous-agents/assistant-agent.ts` |
+| **autonomous-agents** | Stateful AI agent base — persona + memory blocks + tools + decision loop. Plus multi-agent handoff (researcher → writer) | `server/lib/agents/autonomous-agent.ts`, `server/modules/autonomous-agents/{assistant,researcher,writer}-agent.ts` |
+| **mcp-agents** | Agent-as-MCP-server pattern — exposes app data over MCP for external Claude Code / clients | `server/modules/mcp-agents/scratchpad-mcp-agent.ts` |
 
 ---
 
@@ -192,6 +193,8 @@ SDK. **Don't extend raw `DurableObject` — use the SDK base.**
 | Live mic / camera / WebSocket | `Agent` + `withVoiceInput` mixin | `VoiceInputExample` |
 | Scheduled non-AI work | `Agent` directly + `this.schedule()` | `ReminderAgent` |
 | Stateful AI agent (persona + memory + tools) | `AutonomousAgent` | `AssistantAgent` |
+| Multi-agent handoff (specialist → specialist) | `AutonomousAgent` + inline `delegate_to_X` tool | `ResearcherAgent` → `WriterAgent` |
+| Expose agent's data over MCP | `McpAgent` from `agents/mcp` + `McpServer` from `@modelcontextprotocol/sdk` | `ScratchpadMcpAgent` at `/mcp/scratchpad/<id>` |
 | Multi-session AI chat surface | `AIChatAgent` from `agents/chat` | _SDK class — chat module not yet adopted_ |
 
 Full architecture, decision matrix, naming conventions, and migration

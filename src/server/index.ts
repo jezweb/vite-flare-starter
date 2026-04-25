@@ -42,6 +42,7 @@ import connectorsRoutes from './modules/connectors/routes'
 import scheduledAgentsRoutes from './modules/scheduled-agents/routes'
 import autonomousAgentsRoutes from './modules/autonomous-agents/routes'
 import { routeAgentRequest } from 'agents'
+import { ScratchpadMcpAgent } from './modules/mcp-agents/scratchpad-mcp-agent'
 // Re-export DO class(es) so wrangler migrations can locate them. Every DO
 // referenced in `durable_objects.bindings` must be exported from the
 // Worker entry module.
@@ -50,6 +51,9 @@ export { VoiceInputExample } from './modules/voice/voice-agent'
 export { VideoInputExample } from './modules/video/video-agent'
 export { ReminderAgent } from './modules/scheduled-agents/reminder-agent'
 export { AssistantAgent } from './modules/autonomous-agents/assistant-agent'
+export { ResearcherAgent } from './modules/autonomous-agents/researcher-agent'
+export { WriterAgent } from './modules/autonomous-agents/writer-agent'
+export { ScratchpadMcpAgent }
 import { securityHeaders } from './middleware/security'
 import { rateLimiter } from './middleware/rate-limit'
 import { authMiddleware, requireScopes } from './middleware/auth'
@@ -423,9 +427,23 @@ app.onError((err, c) => {
 // Session cleanup fixes ADM2 (morning audit): "Active Sessions: 8 vs Total
 // Users: 4" — better-auth doesn't reap expired rows itself, so without
 // this the admin dashboard drifts over time.
+// MCP server handler — exposes the ScratchpadMcpAgent over
+// Streamable-HTTP at /mcp/scratchpad/<sessionId>. Built once at
+// module load. See src/server/modules/mcp-agents/scratchpad-mcp-agent.ts
+// for the worked example pattern.
+const scratchpadMcpHandler = ScratchpadMcpAgent.serve('/mcp/scratchpad', {
+  binding: 'ScratchpadMcpAgent',
+})
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext) {
-    // Try Durable Object agent routing first — any request matching
+    // MCP server routing first — /mcp/* paths are MCP protocol
+    // traffic and don't go through Hono.
+    const url = new URL(request.url)
+    if (url.pathname.startsWith('/mcp/scratchpad')) {
+      return scratchpadMcpHandler.fetch(request, env, ctx)
+    }
+    // Try Durable Object agent routing — any request matching
     // /agents/{agent-name-kebab-case}/{instance-name} is routed to the
     // corresponding DO by the agents SDK. Falls through to Hono if
     // the path doesn't match.

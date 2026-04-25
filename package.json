@@ -62,6 +62,7 @@
     "@milkdown/preset-gfm": "^7.20.0",
     "@milkdown/react": "^7.20.0",
     "@milkdown/theme-nord": "^7.20.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@openrouter/ai-sdk-provider": "^2.5.1",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",

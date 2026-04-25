@@ -21,9 +21,11 @@ import { z } from 'zod'
 import { getAgentByName } from 'agents'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import type { AssistantAgent } from './assistant-agent'
+import type { ResearcherAgent } from './researcher-agent'
 
 interface AssistantEnv {
   AssistantAgent: DurableObjectNamespace<AssistantAgent>
+  ResearcherAgent: DurableObjectNamespace<ResearcherAgent>
 }
 
 const app = new Hono<AuthContext>()
@@ -163,6 +165,41 @@ app.post('/:slug/schedule', zValidator('json', ScheduleSchema), async (c) => {
 })
 
 // ─── History ─────────────────────────────────────────────────────
+
+// ─── Multi-agent handoff (researcher + writer) ──────────────────
+//
+// Worked example of agents-as-tools handoff. Researcher uses
+// web_search, then delegates prose to Writer via an inline
+// `delegate_to_writer` tool. See researcher-agent.ts for the
+// pattern; writer-agent.ts for the receiving end.
+
+const ResearchInputSchema = z.object({
+  topic: z.string().min(3).max(2000),
+  /** Optional researcher-side model override. Writer's model is
+   *  decided per-tool-call by the researcher. */
+  model: z.string().optional(),
+  maxSteps: z.number().int().min(1).max(20).optional(),
+})
+
+app.post('/researcher/:slug', zValidator('json', ResearchInputSchema), async (c) => {
+  const slug = c.req.param('slug')
+  if (!validSlug(slug)) return c.json({ error: 'Invalid slug' }, 400)
+  const userId = c.get('userId')
+  const env = c.env as unknown as AssistantEnv
+  if (!env.ResearcherAgent) return c.json({ error: 'ResearcherAgent binding not configured' }, 503)
+
+  const { topic, model, maxSteps } = c.req.valid('json')
+  const researcher = await getAgentByName(env.ResearcherAgent, `${userId}:${slug}`)
+  await researcher.setOwner(userId, slug)
+  // Cap the loop at 10 by default — research + handoff fits well
+  // within that. Higher caps risk runaway tool loops.
+  const result = await researcher.runOnce({
+    input: `Research and write up: ${topic}`,
+    ...(model && { model }),
+    maxSteps: maxSteps ?? 10,
+  })
+  return c.json({ slug, ...result })
+})
 
 app.delete('/:slug/history', async (c) => {
   const slug = c.req.param('slug')

@@ -176,6 +176,29 @@
         // and src/server/modules/autonomous-agents/ for the worked example.
         "name": "AssistantAgent",
         "class_name": "AssistantAgent"
+      },
+      {
+        // ResearcherAgent + WriterAgent — multi-agent handoff worked
+        // example. Researcher uses web_search, then delegates prose
+        // composition to Writer via an inline `delegate_to_writer`
+        // tool (agents-as-tools pattern).
+        "name": "ResearcherAgent",
+        "class_name": "ResearcherAgent"
+      },
+      {
+        "name": "WriterAgent",
+        "class_name": "WriterAgent"
+      },
+      {
+        // ScratchpadMcpAgent — agent-as-MCP-server worked example.
+        // Per-user persistent scratchpad accessible via Streamable-HTTP
+        // MCP at /mcp/scratchpad/<userId>. External MCP clients (other
+        // Claude Code sessions, Anthropic Workbench) connect and call
+        // get/set/append/clear tools.
+        // **Auth**: this binding is unauthenticated for the demo. Add
+        // OAuth via AgentMcpOAuthProvider before exposing real data.
+        "name": "ScratchpadMcpAgent",
+        "class_name": "ScratchpadMcpAgent"
       }
     ]
   },
@@ -201,6 +224,14 @@
     {
       "tag": "v4",
       "new_sqlite_classes": ["AssistantAgent"]
+    },
+    {
+      "tag": "v5",
+      "new_sqlite_classes": ["ResearcherAgent", "WriterAgent"]
+    },
+    {
+      "tag": "v6",
+      "new_sqlite_classes": ["ScratchpadMcpAgent"]
     }
   ],
 

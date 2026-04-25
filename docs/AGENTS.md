@@ -15,9 +15,14 @@ Agent (from agents SDK)              ← all stateful long-lived things
 ├── AIChatAgent (SDK class)          ← multi-session chat surface
 │   (NOT yet adopted by chat module — see the deferred Phase 0b refactor)
 │
-└── AutonomousAgent                  ← stateful AI with persona + memory + tools
-    (in this starter)
-    └── AssistantAgent               ← worked example: per-user persistent assistant
+├── AutonomousAgent                  ← stateful AI with persona + memory + tools
+│   (in this starter)
+│   ├── AssistantAgent               ← worked: per-user persistent assistant
+│   ├── ResearcherAgent              ← worked: web_search + delegate_to_writer
+│   └── WriterAgent                  ← worked: prose composer (handoff target)
+│
+└── McpAgent (SDK class)             ← agent exposed AS an MCP server
+    └── ScratchpadMcpAgent           ← worked: per-user scratchpad over MCP
 ```
 
 ## Decision matrix
@@ -27,6 +32,8 @@ Agent (from agents SDK)              ← all stateful long-lived things
 | Live mic / camera / WebSocket session per user | `Agent` + `withVoiceInput` (or `withVideoInput`) mixin | `VoiceInputExample`, `VideoInputExample` |
 | Scheduled fire (one-shot or recurring) for non-AI work | `Agent` directly + `this.schedule()` / `this.scheduleEvery()` | `ReminderAgent` |
 | Stateful AI assistant with persona + memory + tools | `AutonomousAgent` | `AssistantAgent` |
+| Multi-agent handoff (specialist agents call each other) | `AutonomousAgent` + custom `delegate_to_X` tool that calls another agent's stub | `ResearcherAgent` → `WriterAgent` |
+| Expose agent's data over MCP for external clients | `McpAgent` from `agents/mcp` (SDK) + `McpServer` from `@modelcontextprotocol/sdk` | `ScratchpadMcpAgent` |
 | Multi-session AI chat with state-sync to clients | `AIChatAgent` from `agents/chat` (SDK) | _not yet adopted; see chat module refactor TODO_ |
 | Long-running multi-step business logic with checkpointing | Cloudflare Workflows + `AgentWorkflow` from `agents/workflows` | _not yet shipped_ |
 | High-throughput async fan-out | Cloudflare Queues | _not yet shipped_ |
@@ -209,6 +216,114 @@ export class ReminderAgent extends Agent<Env, ReminderState> {
   }
 }
 ```
+
+## Multi-agent handoff (worked example)
+
+The agents-as-tools pattern, where the LLM decides when to hand off
+by calling a tool that invokes another agent. From OpenAI Agents SDK,
+Mastra, and Anthropic Claude Agent SDK conventions.
+
+**Files**: `src/server/modules/autonomous-agents/researcher-agent.ts`
++ `writer-agent.ts`. Route: `POST /api/autonomous-agents/researcher/:slug { topic }`.
+
+Flow:
+1. ResearcherAgent's LLM uses `web_search` to gather facts
+2. When it has enough material, the LLM calls `delegate_to_writer`
+   with notes + brief
+3. The `delegate_to_writer` tool fetches the WriterAgent stub and
+   calls `runOnce` on it
+4. Writer composes the polished response (no tools, just LLM)
+5. Researcher returns the writer's text as its final answer
+
+The handoff tool is **inline to the delegating agent** — partition
+logic (which Writer instance to invoke) is explicit. Forks adapting
+to a different topology (multiple writers routed by topic, parallel
+fan-out) customise the tool body. Don't over-abstract this into a
+shared factory until you have 3+ delegators with the same wiring.
+
+```typescript
+private delegateToWriterTool(): ToolDefinition<...> {
+  const userId = this.state.userId ?? ''
+  const env = this.env
+  return {
+    name: 'delegate_to_writer',
+    description: '...',
+    inputSchema: z.object({ notes: z.string(), brief: z.string() }),
+    execute: async ({ notes, brief }) => {
+      const writer = await getAgentByName(env.WriterAgent, `${userId}:writer`)
+      await writer.setOwner(userId, 'writer')
+      const result = await writer.runOnce({
+        input: `Brief: ${brief}\n\n## Notes\n\n${notes}`,
+      })
+      return { ok: true, text: result.text }
+    },
+  }
+}
+```
+
+Cost shape: researcher uses Sonnet (research strategy benefits from
+flagship); writer uses Haiku (cheap prose generation). Each agent
+sets its own `state.modelId` default; per-call overrides pass through
+the tool input.
+
+## Agent-as-MCP-server (worked example)
+
+The inverse of the chat module's MCP-client pattern: here, the agent
+**is** the MCP server. External MCP clients (other Claude Code
+sessions, Anthropic Workbench, custom tooling) connect over
+Streamable-HTTP and call our tools.
+
+**Files**: `src/server/modules/mcp-agents/scratchpad-mcp-agent.ts`,
+mounted at `/mcp/scratchpad/<sessionId>` in `src/server/index.ts`.
+
+The example exposes a per-user persistent scratchpad — get / set /
+append / clear tools. Trivial to demonstrate the pattern; forks
+adapt to expose whatever app data they want over MCP (notes, todos,
+conversation history, R2 files, search indices).
+
+Subclass shape:
+
+```typescript
+import { McpAgent } from 'agents/mcp'
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+
+export class ScratchpadMcpAgent extends McpAgent<Env, State> {
+  server = new McpServer({ name: 'scratchpad', version: '1.0.0' })
+
+  async init() {
+    this.server.registerTool('get_scratchpad', { ... }, async () => ({ ... }))
+    this.server.registerTool('set_scratchpad', { ... }, async ({ text }) => { ... })
+    // ... more tools
+  }
+}
+```
+
+Mounted in `src/server/index.ts`:
+
+```typescript
+const scratchpadMcpHandler = ScratchpadMcpAgent.serve('/mcp/scratchpad', {
+  binding: 'ScratchpadMcpAgent',
+})
+
+export default {
+  async fetch(request, env, ctx) {
+    if (new URL(request.url).pathname.startsWith('/mcp/scratchpad')) {
+      return scratchpadMcpHandler.fetch(request, env, ctx)
+    }
+    // ... rest of routing
+  },
+}
+```
+
+Connect from Claude Code:
+```bash
+claude mcp add scratchpad https://your-worker.dev/mcp/scratchpad/<sessionId>
+```
+
+⚠ **Auth note**: the worked example is unauthenticated for demo
+clarity. Production forks MUST add auth — the agents SDK exports
+`AgentMcpOAuthProvider` for OAuth-protected MCP endpoints. Or wrap
+the path in your auth middleware before the handler runs.
 
 ## Routes pattern
 
