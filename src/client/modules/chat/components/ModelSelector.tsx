@@ -32,6 +32,60 @@ interface Model {
   isReasoning: boolean
   /** Derived from input-token pricing server-side — drives the CostTierDots. */
   costTier?: 'free' | 'low' | 'mid' | 'high'
+  /** Which network path the model takes given the operator's configured keys. */
+  route?:
+    | 'workers-ai'
+    | 'anthropic-direct'
+    | 'openai-direct'
+    | 'google-direct'
+    | 'openrouter'
+    | 'unknown'
+}
+
+/**
+ * Tiny chip showing whether a model goes direct or via OpenRouter.
+ * Hidden for Workers AI (already labelled "Free · Workers AI" group),
+ * shown only on paid models where the path actually matters.
+ *
+ * Why expose it: native SDK features (Anthropic prompt caching, 1M
+ * context beta, native streaming details) sometimes lag on OpenRouter.
+ * The chip tells the user which path their request will take so the
+ * "why isn't prompt caching working" question gets answered visually.
+ */
+function RouteChip({ route }: { route?: Model['route'] }) {
+  if (!route || route === 'workers-ai') return null
+  if (route === 'unknown') {
+    return (
+      <Badge
+        variant="outline"
+        className="text-[10px] px-1 py-0 font-normal border-destructive/40 text-destructive"
+        title="No API key configured for this model"
+      >
+        no key
+      </Badge>
+    )
+  }
+  if (route.endsWith('-direct')) {
+    return (
+      <Badge
+        variant="outline"
+        className="text-[10px] px-1 py-0 font-normal border-emerald-500/40 text-emerald-700 dark:text-emerald-400"
+        title="Routed directly via the provider's native SDK — full feature parity"
+      >
+        direct
+      </Badge>
+    )
+  }
+  // openrouter
+  return (
+    <Badge
+      variant="outline"
+      className="text-[10px] px-1 py-0 font-normal text-muted-foreground"
+      title="Routed via OpenRouter — convenient (one key) but native features may lag"
+    >
+      via OpenRouter
+    </Badge>
+  )
 }
 
 /** Tiny pricing indicator — 0-3 filled dots next to the model name.
@@ -181,6 +235,7 @@ export function ModelSelector({ value, onChange, disabled }: ModelSelectorProps)
                 <div className="flex items-center gap-2">
                   <span>{model.name}</span>
                   <CostTierDots tier={model.costTier} size="md" />
+                  <RouteChip route={model.route} />
                   {/* Only show badges for exceptions, not the common case. */}
                   {!model.supportsTools && (
                     <Badge variant="outline" className="text-[10px] px-1 py-0 font-normal">

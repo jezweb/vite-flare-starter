@@ -51,7 +51,7 @@ import { authMiddleware, requireScopes } from './middleware/auth'
 import { requestIdMiddleware } from './middleware/request-id'
 import { captureServerException } from './lib/sentry'
 import { AVATAR, APP_VERSION } from '@/shared/config/constants'
-import { listModels, DEFAULT_MODEL, getAvailableProviders } from './lib/ai'
+import { listModels, DEFAULT_MODEL, getAvailableProviders, routeFor } from './lib/ai'
 
 // Define Cloudflare Workers environment bindings
 export interface Env {
@@ -314,6 +314,12 @@ app.get('/api/ai/models', authMiddleware, requireScopes('ai:use'), async (c) => 
       supportsVision: m.supportsVision,
       isReasoning: m.isReasoning,
       costTier: m.costTier,
+      // Which network path this model takes — driven by which API keys
+      // the operator configured. Lets the client show a "direct" or
+      // "via OpenRouter" chip per row in the picker.
+      //   'workers-ai' | 'anthropic-direct' | 'openai-direct' |
+      //   'google-direct' | 'openrouter' | 'unknown'
+      route: routeFor(c.env, m.id),
     })),
     defaultModel: DEFAULT_MODEL,
     providers: getAvailableProviders(c.env),

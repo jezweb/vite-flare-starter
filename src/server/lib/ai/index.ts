@@ -16,7 +16,7 @@
  */
 
 // Provider registry + factory
-export { resolveModel, getAvailableProviders, buildRegistry } from './providers'
+export { resolveModel, getAvailableProviders, buildRegistry, routeFor } from './providers'
 
 // Model middleware (reasoning extraction, etc.)
 export { buildModel } from './middleware'
