@@ -66,6 +66,7 @@ import { streamText, convertToModelMessages, type UIMessage } from 'ai'
 import { drizzle } from 'drizzle-orm/d1'
 import { resolveModel } from '@/server/lib/ai/providers'
 import { collectAvailableTools } from '@/server/lib/ai/tool-adapter'
+import { generateWebhookSecret } from './webhook-verify'
 import { pendingApprovals } from '@/server/modules/approvals/db/schema'
 import { nullTelemetry } from '@/shared/agent'
 import type { ToolDefinition, AgentContext as CanonicalAgentContext, AgentUser } from '@/shared/agent'
@@ -111,6 +112,10 @@ export interface AutonomousAgentState {
     lastActiveAt: number | null
     createdAt: number
   }
+  /** Per-agent webhook secret. Lazy-initialised on first request via
+   *  `getWebhookSecret()`. Empty string until then so the JSON shape
+   *  stays stable. Rotate via `regenerateWebhookSecret()`. */
+  webhookSecret: string
 }
 
 export interface RunOnceInput {
@@ -173,6 +178,7 @@ export abstract class AutonomousAgent<
         lastActiveAt: null,
         createdAt: Date.now(),
       },
+      webhookSecret: '',
     }
   }
 
@@ -444,6 +450,58 @@ export abstract class AutonomousAgent<
       status: 'pending',
     })
     return { approvalId: id, status: 'pending' }
+  }
+
+  // ─── Webhooks ─────────────────────────────────────────────────
+
+  /**
+   * Get this agent's webhook secret (used to verify incoming webhook
+   * signatures). Lazy-initialised — first call mints a new secret;
+   * subsequent calls return the same one until rotated.
+   *
+   * The secret is stored in agent state, so it survives DO eviction
+   * + persists across the agent's lifetime. Treat it like a password —
+   * never log it; only return to the agent's owner.
+   */
+  async getWebhookSecret(): Promise<string> {
+    if (this.state.webhookSecret) return this.state.webhookSecret
+    const secret = generateWebhookSecret()
+    this.setState({ ...this.state, webhookSecret: secret })
+    return secret
+  }
+
+  /**
+   * Rotate the webhook secret. After rotation, any senders using the
+   * old secret will fail signature verification — coordinate the
+   * rotation with the sender.
+   */
+  async regenerateWebhookSecret(): Promise<{ secret: string }> {
+    const secret = generateWebhookSecret()
+    this.setState({ ...this.state, webhookSecret: secret })
+    return { secret }
+  }
+
+  /**
+   * Webhook handler — called by the webhook receiver route after the
+   * sender's signature has been verified. Default behaviour: invoke
+   * the agent's decision loop with the payload as input.
+   *
+   * Subclasses override to do something more specific:
+   *   - Parse the payload structure (Slack event, GitHub PR webhook)
+   *   - Extract just the relevant field as the LLM input
+   *   - Skip the LLM entirely for routine events (heartbeats, acks)
+   *   - Queue an approval rather than running directly
+   *
+   * The default's `runOnce({ input: JSON.stringify(payload) })` works
+   * for ad-hoc structured payloads but isn't great for verbose
+   * webhook envelopes (Slack, GitHub) that wrap a small interesting
+   * field in a lot of metadata.
+   */
+  async handleWebhook(
+    payload: unknown,
+    _headers: Record<string, string>,
+  ): Promise<RunOnceResult | { skipped: true; reason: string }> {
+    return this.runOnce({ input: JSON.stringify(payload) })
   }
 
   /**
