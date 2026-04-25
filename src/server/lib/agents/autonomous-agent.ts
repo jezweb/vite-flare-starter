@@ -64,10 +64,13 @@
 import { Agent } from 'agents'
 import { streamText, convertToModelMessages, type UIMessage } from 'ai'
 import { drizzle } from 'drizzle-orm/d1'
+import { eq } from 'drizzle-orm'
 import { resolveModel } from '@/server/lib/ai/providers'
 import { collectAvailableTools } from '@/server/lib/ai/tool-adapter'
+import { costFor } from '@/server/lib/ai/cost'
 import { generateWebhookSecret } from './webhook-verify'
 import { pendingApprovals } from '@/server/modules/approvals/db/schema'
+import { agentRuns, type AgentRunTrigger } from '@/server/modules/agent-observability/db/schema'
 import { nullTelemetry } from '@/shared/agent'
 import type { ToolDefinition, AgentContext as CanonicalAgentContext, AgentUser } from '@/shared/agent'
 
@@ -130,6 +133,11 @@ export interface RunOnceInput {
   systemPromptOverride?: string
   /** Cap on assistant turns within this run. Defaults to 5. */
   maxSteps?: number
+  /** What triggered this run — surfaced in agent_runs.trigger for
+   *  observability. Defaults to 'rest'. Set 'schedule' from
+   *  runScheduled, 'webhook' from handleWebhook, 'inter_agent' when
+   *  another agent's stub invokes us. */
+  trigger?: AgentRunTrigger
 }
 
 export interface RunOnceResult {
@@ -321,6 +329,14 @@ export abstract class AutonomousAgent<
     const userMessage = input?.input
     const modelId = input?.model ?? this.state.modelId
     const maxSteps = input?.maxSteps ?? DEFAULT_MAX_STEPS
+    const trigger: AgentRunTrigger = input?.trigger ?? 'rest'
+
+    // Audit row id + start time captured BEFORE any work so we can
+    // always finalise it (success OR failure path).
+    const runId = crypto.randomUUID()
+    const startedAtMs = Date.now()
+    const startedAtSec = Math.floor(startedAtMs / 1000)
+    const inputSummary = userMessage ? userMessage.slice(0, 500) : null
 
     // Build the message array. Append the new user turn (if any) to
     // the existing history before calling the model.
@@ -336,64 +352,140 @@ export abstract class AutonomousAgent<
       throw new Error('AutonomousAgent.runOnce called with no input and empty history')
     }
 
-    // Build the system prompt. Persona first, then blocks (one
-    // labelled section each), then any subclass extras, then semantic
-    // recall snippets for this turn (if recallSemantic is wired).
-    const recall = userMessage ? await this.recallSemantic(userMessage) : []
-    const systemPrompt = await this.buildSystemPrompt(input?.systemPromptOverride, recall)
-
-    // Resolve tools. Each tool sees an AgentContext with the agent's
-    // owner (state.userId) so user-scoped tools work correctly.
-    const tools = await this.buildToolset()
-
-    // Resolve the model. resolveModel handles all the routing
-    // (Workers AI, OpenRouter, direct providers).
-    const model = resolveModel(this.env, modelId)
-
-    const result = streamText({
-      model,
-      system: systemPrompt,
-      messages: await convertToModelMessages(messages),
-      tools,
-      stopWhen: ({ steps }) => steps.length >= maxSteps,
-    })
-
-    // Drain the stream. We don't expose streaming in this base — for
-    // streaming UI, build a separate AIChatAgent-shaped subclass or
-    // use the chat module. Here we accumulate the final text.
-    let text = ''
-    for await (const chunk of result.textStream) {
-      text += chunk
+    // Insert the audit row up-front in 'ok' shape; we'll update on
+    // finish (or override outcome on error). Best-effort — a write
+    // failure here doesn't break the run.
+    const auditEnv = this.env as { DB: D1Database }
+    const insertAudit = async () => {
+      try {
+        await drizzle(auditEnv.DB).insert(agentRuns).values({
+          id: runId,
+          agentClass: (this.constructor as typeof AutonomousAgent).className,
+          agentName: this.state.name,
+          userId: this.state.userId ?? '',
+          trigger,
+          inputSummary,
+          startedAt: startedAtSec,
+          outcome: 'ok',
+        })
+      } catch (err) {
+        console.error(JSON.stringify({ event: 'agent_run_audit_insert_failed', runId, error: String(err) }))
+      }
     }
-    const finalResult = await result
-    const usage = await finalResult.usage
-    const steps = (await finalResult.steps).length
+    await insertAudit()
 
-    // Append assistant turn to history + persist.
-    const assistantMsg: UIMessage = {
-      id: crypto.randomUUID(),
-      role: 'assistant',
-      parts: [{ type: 'text', text }],
-    } as unknown as UIMessage
-    const nextHistory = [...messages, assistantMsg].slice(-this.maxRecentMessages)
+    try {
+      // Build the system prompt. Persona first, then blocks (one
+      // labelled section each), then any subclass extras, then
+      // semantic recall snippets for this turn (if recallSemantic is
+      // wired).
+      const recall = userMessage ? await this.recallSemantic(userMessage) : []
+      const systemPrompt = await this.buildSystemPrompt(input?.systemPromptOverride, recall)
 
-    this.setState({
-      ...this.state,
-      recentMessages: nextHistory,
-      meta: {
-        ...this.state.meta,
-        invocations: this.state.meta.invocations + 1,
-        lastActiveAt: Date.now(),
-      },
-    })
+      // Resolve tools. Each tool sees an AgentContext with the
+      // agent's owner (state.userId) so user-scoped tools work.
+      const tools = await this.buildToolset()
 
-    return {
-      text,
-      usage: {
-        inputTokens: usage.inputTokens ?? 0,
-        outputTokens: usage.outputTokens ?? 0,
-      },
-      steps,
+      // Resolve the model. resolveModel handles routing (Workers AI,
+      // OpenRouter, direct providers).
+      const model = resolveModel(this.env, modelId)
+
+      const result = streamText({
+        model,
+        system: systemPrompt,
+        messages: await convertToModelMessages(messages),
+        tools,
+        stopWhen: ({ steps }) => steps.length >= maxSteps,
+      })
+
+      // Drain the stream. We don't expose streaming in this base —
+      // for streaming UI, extend AIChatAgent. Accumulate the final
+      // text here.
+      let text = ''
+      for await (const chunk of result.textStream) {
+        text += chunk
+      }
+      const finalResult = await result
+      const usage = await finalResult.usage
+      const allSteps = await finalResult.steps
+      const steps = allSteps.length
+
+      // Collect tool names from each step's toolCalls. Bounded to
+      // avoid pathological "agent calls 100 tools" rows.
+      const toolNames = new Set<string>()
+      for (const step of allSteps) {
+        for (const tc of step.toolCalls ?? []) {
+          if (typeof (tc as { toolName?: unknown }).toolName === 'string') {
+            toolNames.add((tc as { toolName: string }).toolName)
+          }
+        }
+      }
+      const toolsCalled = Array.from(toolNames).join(',').slice(0, 500)
+
+      // Append assistant turn to history + persist.
+      const assistantMsg: UIMessage = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        parts: [{ type: 'text', text }],
+      } as unknown as UIMessage
+      const nextHistory = [...messages, assistantMsg].slice(-this.maxRecentMessages)
+
+      this.setState({
+        ...this.state,
+        recentMessages: nextHistory,
+        meta: {
+          ...this.state.meta,
+          invocations: this.state.meta.invocations + 1,
+          lastActiveAt: Date.now(),
+        },
+      })
+
+      // Finalise the audit row with usage + cost + steps + tools.
+      const finishedAtMs = Date.now()
+      const inputTokens = usage.inputTokens ?? 0
+      const outputTokens = usage.outputTokens ?? 0
+      try {
+        await drizzle(auditEnv.DB)
+          .update(agentRuns)
+          .set({
+            finishedAt: Math.floor(finishedAtMs / 1000),
+            durationMs: finishedAtMs - startedAtMs,
+            outcome: 'ok',
+            inputTokens,
+            outputTokens,
+            costUsd: costFor(modelId, inputTokens, outputTokens),
+            steps,
+            ...(toolsCalled && { toolsCalled }),
+          })
+          .where(eq(agentRuns.id, runId))
+      } catch (err) {
+        console.error(JSON.stringify({ event: 'agent_run_audit_finalise_failed', runId, error: String(err) }))
+      }
+
+      return {
+        text,
+        usage: { inputTokens, outputTokens },
+        steps,
+      }
+    } catch (err) {
+      // Failure path — update the audit row with the error before
+      // re-throwing. The agent loop can surface a meaningful error
+      // to the caller without losing the audit trail.
+      const finishedAtMs = Date.now()
+      try {
+        await drizzle(auditEnv.DB)
+          .update(agentRuns)
+          .set({
+            finishedAt: Math.floor(finishedAtMs / 1000),
+            durationMs: finishedAtMs - startedAtMs,
+            outcome: 'error',
+            errorMessage: err instanceof Error ? err.message : String(err),
+          })
+          .where(eq(agentRuns.id, runId))
+      } catch {
+        /* swallow audit write failure */
+      }
+      throw err
     }
   }
 

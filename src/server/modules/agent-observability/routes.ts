@@ -1,0 +1,99 @@
+/**
+ * Agent observability — query the agent_runs audit log
+ *
+ * Routes scoped to the authenticated user (no admin check; users
+ * see only their own agent runs). Forks wanting cross-tenant
+ * visibility add the admin gate at the route layer.
+ *
+ * Routes:
+ *   GET /api/agent-observability/runs
+ *     ?class=&name=&trigger=&outcome=&limit=&since=
+ *
+ *   GET /api/agent-observability/runs/:id
+ *
+ *   GET /api/agent-observability/summary
+ *     Cost + count per agent class for the user, last 30 days.
+ */
+import { Hono } from 'hono'
+import { zValidator } from '@hono/zod-validator'
+import { z } from 'zod'
+import { drizzle } from 'drizzle-orm/d1'
+import { and, desc, eq, gte, sql } from 'drizzle-orm'
+import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
+import { agentRuns } from './db/schema'
+
+const app = new Hono<AuthContext>()
+app.use('*', authMiddleware)
+
+const ListSchema = z.object({
+  class: z.string().optional(),
+  name: z.string().optional(),
+  trigger: z.enum(['rest', 'schedule', 'webhook', 'inter_agent']).optional(),
+  outcome: z.enum(['ok', 'error', 'budget_exceeded']).optional(),
+  limit: z.coerce.number().int().min(1).max(500).optional(),
+  /** Unix seconds — only return runs started after this time. */
+  since: z.coerce.number().int().optional(),
+})
+
+app.get('/runs', zValidator('query', ListSchema), async (c) => {
+  const userId = c.get('userId')
+  const { class: agentClass, name, trigger, outcome, limit = 100, since } = c.req.valid('query')
+  const db = drizzle(c.env.DB)
+  const conditions = [eq(agentRuns.userId, userId)]
+  if (agentClass) conditions.push(eq(agentRuns.agentClass, agentClass))
+  if (name) conditions.push(eq(agentRuns.agentName, name))
+  if (trigger) conditions.push(eq(agentRuns.trigger, trigger))
+  if (outcome) conditions.push(eq(agentRuns.outcome, outcome))
+  if (since) conditions.push(gte(agentRuns.startedAt, since))
+
+  const rows = await db
+    .select()
+    .from(agentRuns)
+    .where(and(...conditions))
+    .orderBy(desc(agentRuns.startedAt))
+    .limit(limit)
+  return c.json({ total: rows.length, runs: rows })
+})
+
+app.get('/runs/:id', async (c) => {
+  const userId = c.get('userId')
+  const id = c.req.param('id')
+  const db = drizzle(c.env.DB)
+  const [row] = await db
+    .select()
+    .from(agentRuns)
+    .where(and(eq(agentRuns.id, id), eq(agentRuns.userId, userId)))
+    .limit(1)
+  if (!row) return c.json({ error: 'Not found' }, 404)
+  return c.json(row)
+})
+
+app.get('/summary', async (c) => {
+  const userId = c.get('userId')
+  const db = drizzle(c.env.DB)
+  // Last 30 days, grouped by agent class. SUM(cost_usd) is null-safe
+  // — null entries (Workers AI / unpriced) just don't contribute.
+  const thirtyDaysAgo = Math.floor(Date.now() / 1000) - 30 * 24 * 60 * 60
+  // Drizzle doesn't have a typed groupBy that infers the alias columns
+  // safely without raw SQL — use a tagged template for the aggregate.
+  const rows = await db
+    .select({
+      agentClass: agentRuns.agentClass,
+      runCount: sql<number>`COUNT(*)`,
+      totalCostUsd: sql<number | null>`SUM(${agentRuns.costUsd})`,
+      totalInputTokens: sql<number>`SUM(${agentRuns.inputTokens})`,
+      totalOutputTokens: sql<number>`SUM(${agentRuns.outputTokens})`,
+      errorCount: sql<number>`SUM(CASE WHEN ${agentRuns.outcome} = 'error' THEN 1 ELSE 0 END)`,
+    })
+    .from(agentRuns)
+    .where(and(eq(agentRuns.userId, userId), gte(agentRuns.startedAt, thirtyDaysAgo)))
+    .groupBy(agentRuns.agentClass)
+    .orderBy(desc(sql`COUNT(*)`))
+
+  return c.json({
+    sinceSeconds: thirtyDaysAgo,
+    classes: rows,
+  })
+})
+
+export default app
