@@ -1,35 +1,35 @@
 /**
  * Scheduled Agents — REST surface
  *
- * Companion to the ReminderAgent worked example. The same shape
- * generalises to any ScheduledAgent subclass — point the routes at a
- * different DO binding and you get the same admin surface for free.
+ * Companion to the ReminderAgent worked example. Demonstrates the
+ * canonical pattern for talking to a Cloudflare `agents` SDK Agent
+ * from a Hono route:
+ *
+ *   1. Get a typed agent stub via `getAgentByName(env.MyAgent, partition)`
+ *   2. Call `@callable` methods on the stub (RPC over the DO transport)
+ *
+ * The same shape generalises to any Agent subclass — point at a
+ * different binding and you get the same admin surface for free.
  *
  * Routes:
  *   POST   /api/scheduled-agents/reminders
- *     { message, title?, link?, fireAt: <ms> }
- *     Schedules a reminder for the authenticated user.
+ *     { message, title?, link?, fireAt: <ms>, slug? }
  *
- *   GET    /api/scheduled-agents/reminders/:slug/status
- *     Returns the current schedule state (if any) for a named slot.
+ *   GET    /api/scheduled-agents/reminders/:slug
+ *     Lists pending reminders for the authenticated user's partition.
  *
- *   DELETE /api/scheduled-agents/reminders/:slug
- *     Cancels a pending reminder.
- *
- *   GET    /api/scheduled-agents/runs
- *     ?className=&limit=&onlyErrors=
- *     Lists recent run telemetry. Scoped to the authenticated user.
+ *   DELETE /api/scheduled-agents/reminders/:slug/:scheduleId
+ *     Cancels a specific scheduled reminder.
  */
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
-import { drizzle } from 'drizzle-orm/d1'
-import { and, desc, eq } from 'drizzle-orm'
+import { getAgentByName } from 'agents'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
-import { scheduledRuns } from './db/schema'
+import type { ReminderAgent, ReminderPayload, ReminderInfo } from './reminder-agent'
 
 interface SchedulerEnv {
-  ReminderAgent: DurableObjectNamespace
+  ReminderAgent: DurableObjectNamespace<ReminderAgent>
 }
 
 const app = new Hono<AuthContext>()
@@ -45,9 +45,8 @@ const ScheduleReminderSchema = z.object({
     .int()
     .refine((t) => t > Date.now() + 1000, 'fireAt must be at least 1 second in the future')
     .refine((t) => t < Date.now() + 365 * 24 * 60 * 60 * 1000, 'fireAt cannot be more than 1 year out'),
-  /** Optional slot name for the reminder. Lets the user have multiple
-   *  active reminders (e.g. "morning-news", "evening-tasks"). Defaults
-   *  to a UUID. */
+  /** Slot name for the reminder. Lets one user hold multiple active
+   *  reminders ("morning-news", "evening-tasks"). Defaults to a UUID. */
   slug: z
     .string()
     .min(1)
@@ -56,6 +55,15 @@ const ScheduleReminderSchema = z.object({
     .optional(),
 })
 
+/** Resolve the per-user agent stub. Each `${userId}:${slug}` partition
+ *  maps to one DO instance — same partition = same agent across calls. */
+async function getReminderAgent(env: SchedulerEnv, userId: string, slug: string) {
+  const partition = `${userId}:${slug}`
+  // getAgentByName returns a typed RPC stub. Methods marked `@callable`
+  // on the agent class are directly callable over this stub.
+  return getAgentByName(env.ReminderAgent, partition)
+}
+
 app.post('/reminders', zValidator('json', ScheduleReminderSchema), async (c) => {
   const userId = c.get('userId')
   const { message, title, link, fireAt, slug } = c.req.valid('json')
@@ -63,93 +71,51 @@ app.post('/reminders', zValidator('json', ScheduleReminderSchema), async (c) => 
   if (!env.ReminderAgent) return c.json({ error: 'ReminderAgent binding not configured' }, 503)
 
   const finalSlug = slug ?? crypto.randomUUID()
-  const partition = `${userId}:${finalSlug}`
-  const id = env.ReminderAgent.idFromName(partition)
-  const stub = env.ReminderAgent.get(id) as unknown as {
-    schedule: (when: number, payload: { message: string; title?: string; link?: string }, opts?: { userId?: string }) => Promise<void>
-  }
-  await stub.schedule(fireAt, { message, title, link }, { userId })
+  const agent = await getReminderAgent(env, userId, finalSlug)
+  const payload: ReminderPayload = { message, userId, ...(title && { title }), ...(link && { link }) }
+  const result = await agent.scheduleReminder(fireAt, payload)
 
   return c.json({
     success: true,
     slug: finalSlug,
-    fireAt,
-    fireAtIso: new Date(fireAt).toISOString(),
+    scheduleId: result.scheduleId,
+    fireAt: result.fireAt,
+    fireAtIso: new Date(result.fireAt).toISOString(),
   })
 })
 
-app.get('/reminders/:slug/status', async (c) => {
+app.get('/reminders/:slug', async (c) => {
   const userId = c.get('userId')
   const slug = c.req.param('slug')
   if (!/^[a-zA-Z0-9_-]+$/.test(slug)) return c.json({ error: 'Invalid slug' }, 400)
   const env = c.env as unknown as SchedulerEnv
   if (!env.ReminderAgent) return c.json({ error: 'ReminderAgent binding not configured' }, 503)
 
-  const partition = `${userId}:${slug}`
-  const id = env.ReminderAgent.idFromName(partition)
-  const stub = env.ReminderAgent.get(id) as unknown as {
-    getSchedule: () => Promise<{ scheduledAt: number | null; state: { attempt: number; payload: unknown } | null }>
-  }
-  const schedule = await stub.getSchedule()
+  const agent = await getReminderAgent(env, userId, slug)
+  const pending: ReminderInfo[] = await agent.listPendingReminders()
   return c.json({
     slug,
-    scheduledAt: schedule.scheduledAt,
-    scheduledAtIso: schedule.scheduledAt ? new Date(schedule.scheduledAt).toISOString() : null,
-    pending: !!schedule.scheduledAt,
-    attempt: schedule.state?.attempt ?? null,
-    payload: schedule.state?.payload ?? null,
+    pending: pending.map((p) => ({
+      id: p.id,
+      fireAt: p.fireAt,
+      fireAtIso: new Date(p.fireAt).toISOString(),
+      payload: p.payload,
+    })),
+    count: pending.length,
   })
 })
 
-app.delete('/reminders/:slug', async (c) => {
+app.delete('/reminders/:slug/:scheduleId', async (c) => {
   const userId = c.get('userId')
   const slug = c.req.param('slug')
+  const scheduleId = c.req.param('scheduleId')
   if (!/^[a-zA-Z0-9_-]+$/.test(slug)) return c.json({ error: 'Invalid slug' }, 400)
   const env = c.env as unknown as SchedulerEnv
   if (!env.ReminderAgent) return c.json({ error: 'ReminderAgent binding not configured' }, 503)
 
-  const partition = `${userId}:${slug}`
-  const id = env.ReminderAgent.idFromName(partition)
-  const stub = env.ReminderAgent.get(id) as unknown as { cancel: () => Promise<void> }
-  await stub.cancel()
-  return c.json({ success: true, slug })
-})
-
-app.get('/runs', async (c) => {
-  const userId = c.get('userId')
-  const className = c.req.query('className')
-  const onlyErrors = c.req.query('onlyErrors') === '1' || c.req.query('onlyErrors') === 'true'
-  const limit = Math.min(Number(c.req.query('limit') ?? '50'), 200)
-
-  const db = drizzle(c.env.DB)
-  const conditions = [eq(scheduledRuns.userId, userId)]
-  if (className) conditions.push(eq(scheduledRuns.className, className))
-  // SQL: outcome IN ('error', 'final_error') — Drizzle's `inArray`
-  // works but for two values an OR via two eq's keeps the index path
-  // simpler. We use the `outcome != 'ok'` shape via a raw fragment.
-  const rows = await db
-    .select()
-    .from(scheduledRuns)
-    .where(and(...conditions))
-    .orderBy(desc(scheduledRuns.firedAt))
-    .limit(limit)
-
-  const filtered = onlyErrors ? rows.filter((r) => r.outcome !== 'ok') : rows
-  return c.json({
-    total: filtered.length,
-    runs: filtered.map((r) => ({
-      id: r.id,
-      className: r.className,
-      name: r.name,
-      scheduledAt: r.scheduledAt,
-      firedAt: r.firedAt,
-      durationMs: r.durationMs,
-      outcome: r.outcome,
-      attempt: r.attempt,
-      errorMessage: r.errorMessage,
-      result: r.resultJson ? JSON.parse(r.resultJson) : null,
-    })),
-  })
+  const agent = await getReminderAgent(env, userId, slug)
+  const result = await agent.cancelReminder(scheduleId)
+  return c.json({ success: result.cancelled, slug, scheduleId })
 })
 
 export default app
