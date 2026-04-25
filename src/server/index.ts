@@ -39,6 +39,7 @@ import slackRoutes from './modules/slack/routes'
 import notionRoutes from './modules/notion/routes'
 import atlassianRoutes from './modules/atlassian/routes'
 import connectorsRoutes from './modules/connectors/routes'
+import scheduledAgentsRoutes from './modules/scheduled-agents/routes'
 import { routeAgentRequest } from 'agents'
 // Re-export DO class(es) so wrangler migrations can locate them. Every DO
 // referenced in `durable_objects.bindings` must be exported from the
@@ -46,6 +47,7 @@ import { routeAgentRequest } from 'agents'
 // See CLAUDE.md → "Pattern 10: Durable Object Agent (voice / streaming WS)".
 export { VoiceInputExample } from './modules/voice/voice-agent'
 export { VideoInputExample } from './modules/video/video-agent'
+export { ReminderAgent } from './modules/scheduled-agents/reminder-agent'
 import { securityHeaders } from './middleware/security'
 import { rateLimiter } from './middleware/rate-limit'
 import { authMiddleware, requireScopes } from './middleware/auth'
@@ -268,6 +270,7 @@ app.route('/api/chat', chatRoutes)
 app.route('/api/audio', audioRoutes)
 app.route('/api/files', filesRoutes)
 app.route('/api/data', dataRoutes)
+app.route('/api/scheduled-agents', scheduledAgentsRoutes)
 app.route('/api/webhooks', webhookRoutes)
 app.route('/api/user-meta', userMetaRoutes)
 app.route('/api/skills', skillsRoutes)

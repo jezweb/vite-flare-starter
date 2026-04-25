@@ -160,6 +160,14 @@
       {
         "name": "VideoInputExample",
         "class_name": "VideoInputExample"
+      },
+      {
+        // ReminderAgent — worked example of the ScheduledAgent pattern.
+        // Per-user scheduled work via DO alarms. See
+        // src/server/lib/agents/scheduled-agent.ts for the base class
+        // and src/server/modules/scheduled-agents/ for the routes.
+        "name": "ReminderAgent",
+        "class_name": "ReminderAgent"
       }
     ]
   },
@@ -177,6 +185,10 @@
     {
       "tag": "v2",
       "new_sqlite_classes": ["VideoInputExample"]
+    },
+    {
+      "tag": "v3",
+      "new_sqlite_classes": ["ReminderAgent"]
     }
   ],
 
