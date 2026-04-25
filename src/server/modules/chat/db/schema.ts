@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core'
+import { sqliteTable, text, integer, real, index } from 'drizzle-orm/sqlite-core'
 import { user } from '@/server/modules/auth/db/schema'
 
 export const aiUsageLogs = sqliteTable('ai_usage_logs', {
@@ -10,6 +10,12 @@ export const aiUsageLogs = sqliteTable('ai_usage_logs', {
   totalTokens: integer('total_tokens').notNull().default(0),
   finishReason: text('finish_reason'),
   durationMs: integer('duration_ms'),
+  /** Estimated USD cost of this turn — input_tokens × inputPrice/M
+   *  + output_tokens × outputPrice/M. Pulled from the bundled model
+   *  catalogue. Null when the model isn't priced (Workers AI, unknown
+   *  ids). Costs reflect catalogue list prices; OpenRouter adds a
+   *  small markup over direct provider rates which we don't model here. */
+  costUsd: real('cost_usd'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 }, (table) => [
   index('ai_usage_logs_user_id_idx').on(table.userId),
@@ -34,6 +40,11 @@ export const aiToolCalls = sqliteTable('ai_tool_calls', {
   toolError: text('tool_error'),
   inputTokens: integer('input_tokens').default(0),
   outputTokens: integer('output_tokens').default(0),
+  /** Estimated USD cost of this step. Per-step costs sum to roughly
+   *  the parent aiUsageLogs row's costUsd — minor drift is expected
+   *  because total-usage tokens are reported separately from step
+   *  usage by the AI SDK. */
+  costUsd: real('cost_usd'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 }, (table) => [
   index('ai_tool_calls_user_id_idx').on(table.userId),

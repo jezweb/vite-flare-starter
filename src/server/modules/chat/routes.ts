@@ -12,6 +12,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { and, desc, eq, sql } from 'drizzle-orm'
 import { authMiddleware, requireScopes, type AuthContext } from '@/server/middleware/auth'
 import { DEFAULT_MODEL, getModel, resolveModel, buildChatAgent } from '@/server/lib/ai'
+import { costFor } from '@/server/lib/ai/cost'
 import { convertToMarkdown } from '@/server/lib/ai/documents'
 import { trimHistoryToTokenBudget } from '@/server/lib/ai/trim-history'
 import { createD1ChatStorage } from '@/server/modules/conversations/storage'
@@ -336,6 +337,12 @@ app.post('/', async (c) => {
               toolError,
               inputTokens: usage.inputTokens ?? 0,
               outputTokens: usage.outputTokens ?? 0,
+              // Per-step USD cost. Per-step usage isn't perfectly
+              // partitioned by the AI SDK (a step's usage is the
+              // tokens delivered to/from the model on that step), so
+              // summing per-step costs may drift slightly from the
+              // aiUsageLogs total. Acceptable for cost-by-tool reports.
+              costUsd: costFor(modelId, usage.inputTokens ?? 0, usage.outputTokens ?? 0),
             }
           })
           await db.insert(aiToolCalls).values(rows)

@@ -17,6 +17,7 @@ import { tokenBudgetPrepareStep, computeActiveTools } from './prepare-step'
 import { drizzle } from 'drizzle-orm/d1'
 import { and, eq } from 'drizzle-orm'
 import { resolveModel } from './providers'
+import { costFor } from './cost'
 import { buildModel } from './middleware'
 import { buildSystemPrompt } from './context'
 import { getMCPTools } from './mcp'
@@ -275,13 +276,19 @@ export async function buildChatAgent(ctx: AgentContext): Promise<AgentResult> {
       // Log usage to D1
       try {
         const db = drizzle(ctx.env.DB)
+        const inputTokens = usage.inputTokens ?? 0
+        const outputTokens = usage.outputTokens ?? 0
         await db.insert(aiUsageLogs).values({
           userId: ctx.userId,
           model: modelId,
-          promptTokens: usage.inputTokens ?? 0,
-          completionTokens: usage.outputTokens ?? 0,
-          totalTokens: (usage.inputTokens ?? 0) + (usage.outputTokens ?? 0),
+          promptTokens: inputTokens,
+          completionTokens: outputTokens,
+          totalTokens: inputTokens + outputTokens,
           durationMs: Date.now() - startTime,
+          // Catalogue-derived USD cost; null for Workers AI / unknown
+          // ids. Cost reports become a SQL SUM(cost_usd) instead of a
+          // join + JS price walk.
+          costUsd: costFor(modelId, inputTokens, outputTokens),
         })
       } catch (err) {
         console.error('Failed to log AI usage:', err)
