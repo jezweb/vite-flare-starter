@@ -13,6 +13,11 @@
 
   // Static Assets Configuration (Workers with Static Assets)
   // https://developers.cloudflare.com/workers/static-assets/
+  //
+  // ⚠ Cache key is PATH ONLY — `?v=1.2.3` does NOT invalidate. Edge cache
+  //   busts only when the file's bytes change (etag updates automatically)
+  //   or via a CF API purge by URL. Plan asset cache-busting around
+  //   content-hashed filenames, not query strings.
   "assets": {
     "directory": "./dist/client",
     // SPA routing - serve index.html for all non-asset routes

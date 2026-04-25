@@ -198,6 +198,24 @@ Always use `printf` not `echo` — `echo` appends a newline that breaks HMAC sig
 | `pnpm test` | Run tests |
 | `pnpm type-check` | Strict TypeScript check |
 
+### Two gotchas when extending the build
+
+These trip every fork that ships an embeddable widget or secondary bundle:
+
+**1. Build order matters when writing into `public/`**. `vite build` copies `public/` into `dist/client/` early in its pipeline. Any secondary build that writes into `public/` must run **before** the main build, otherwise the stale copy gets shipped:
+
+```jsonc
+// ❌ Wrong — widget bundle lands in public/ after vite already copied
+"build:all": "pnpm build && pnpm build:widget"
+
+// ✅ Right — widget bundle gets picked up
+"build:all": "pnpm build:widget && pnpm build"
+```
+
+Or output the secondary bundle directly into `dist/client/` and skip `public/`.
+
+**2. Cloudflare Workers Static Assets cache by path, not query string**. Bumping `?v=1.2.3` does NOT invalidate the edge cache for `widget.js`. The only ways: ship new bytes (etag changes automatically) or purge by URL via the CF API. Plan your asset cache-busting around content hashes, not query params.
+
 ---
 
 ## Philosophy
