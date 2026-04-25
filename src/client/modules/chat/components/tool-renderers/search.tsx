@@ -16,17 +16,13 @@ export const webSearchRenderer: ToolRenderer = {
     (toolName === 'web_search' || toolName === 'search') && isWebSearchOutput(output),
   icon: Globe,
   displayName: 'Web Search',
-  summary: (output) => {
-    if (!isWebSearchOutput(output)) return null
-    const n = output.count ?? output.results?.length ?? 0
-    if (n === 0) return 'no results'
-    return `${n} ${n === 1 ? 'result' : 'results'}`
-  },
+  // bare: WebSearchResults owns its own header + collapsible chrome (globe
+  // icon, query as title, "N results" count, expand chevron). Wrapping it
+  // in a ToolCard Collapsible would create a redundant outer pill. Matches
+  // claude.ai's flat single-level treatment of inline search results.
+  bare: true,
   expanded: ({ output }) => {
     if (!isWebSearchOutput(output)) return null
-    // WebSearchResults already has its own header + collapsible body, so we
-    // render it bare inside our expanded card. The user sees a consistent
-    // outer shell now.
     return <WebSearchResults output={output} />
   },
 }

@@ -154,6 +154,27 @@ the conversation from a previous edit. Strip it and the model errors with
 "Image part is missing a thought_signature" on turn 2+. See
 `~/.claude/rules/gemini-image.md` for the full pattern.
 
+### OpenRouter vs direct Google AI Studio
+
+The starter ships two paths for Gemini image work:
+
+| Path | Use when | Key |
+|---|---|---|
+| `provider: 'nano-banana-2'` (OpenRouter) | Single-turn edit, OpenRouter already configured for other models | `OPENROUTER_API_KEY` |
+| `provider: 'gemini-direct'` (Google AI Studio) | Multi-turn editing chains, want lowest latency, no markup | `GEMINI_API_KEY` |
+
+The `edit_image` tool prefers `gemini-direct` automatically when
+`GEMINI_API_KEY` is set and `provider` isn't passed explicitly. The direct
+path also preserves Gemini's encrypted `thoughtSignature` parts — OpenRouter
+sometimes drops them, which kills iterative edits. Get a key at
+[aistudio.google.com/apikey](https://aistudio.google.com/apikey).
+
+Implementation lives at `src/server/lib/gemini-image.ts` — a thin
+`callGeminiImage(apiKey, prompt, sourceImage?)` helper that handles both
+generation (no source) and edit (with source). Add multi-turn support by
+extending it to take a prior `contents[]` history including the
+`thoughtSignature` parts from the previous response.
+
 ### When to prefer Nano Banana 2 vs alternatives
 
 | Need | Use |

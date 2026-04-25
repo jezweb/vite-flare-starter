@@ -22,11 +22,13 @@
 import { z } from 'zod'
 import { Wand2 } from 'lucide-react'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
+import { callGeminiImage, NANO_BANANA_2_DIRECT_LABEL } from '@/server/lib/gemini-image'
 
 type ImageEditEnv = {
   AI: Ai
   FILES?: R2Bucket
   OPENROUTER_API_KEY?: string
+  GEMINI_API_KEY?: string
 }
 
 function getEnv(ctx: AgentContext): ImageEditEnv {
@@ -48,6 +50,12 @@ const EditImageInput = z.object({
     .enum(['1:1', '4:3', '3:4', '16:9', '9:16', '4:5', '21:9'])
     .optional()
     .describe('Optional output aspect ratio. Default: matches source.'),
+  provider: z
+    .enum(['nano-banana-2', 'gemini-direct'])
+    .optional()
+    .describe(
+      "'nano-banana-2' (default, via OpenRouter) or 'gemini-direct' (direct Google AI Studio API — better multi-turn parity). Both use the same Gemini 3.1 Flash Image model.",
+    ),
 })
 
 const EditImageOutput = z.union([
@@ -119,15 +127,19 @@ export const editImageDefinition: ToolDefinition<
   outputSchema: EditImageOutput,
   isAvailable: (ctx) => {
     const env = getEnv(ctx)
-    return !!(env.OPENROUTER_API_KEY && env.FILES)
+    return !!(env.FILES && (env.OPENROUTER_API_KEY || env.GEMINI_API_KEY))
   },
   execute: async (input, ctx) => {
     const env = getEnv(ctx)
-    if (!env.OPENROUTER_API_KEY) {
-      return { error: 'OPENROUTER_API_KEY not set — image editing requires Nano Banana 2 via OpenRouter.' }
-    }
+    const provider = input.provider ?? (env.GEMINI_API_KEY ? 'gemini-direct' : 'nano-banana-2')
     if (!env.FILES) {
       return { error: 'FILES R2 bucket not bound — cannot persist edited image.' }
+    }
+    if (provider === 'gemini-direct' && !env.GEMINI_API_KEY) {
+      return { error: "provider='gemini-direct' requires GEMINI_API_KEY (Google AI Studio key)." }
+    }
+    if (provider === 'nano-banana-2' && !env.OPENROUTER_API_KEY) {
+      return { error: "provider='nano-banana-2' requires OPENROUTER_API_KEY." }
     }
 
     let resolved: { bytes: Uint8Array; mimeType: string }
@@ -140,83 +152,31 @@ export const editImageDefinition: ToolDefinition<
     }
 
     try {
-      // OpenRouter chat-completions API supports image inputs as
-      // image_url content parts. Gemini 3.1 Flash Image returns the
-      // edited image as an image_url part on the assistant message.
-      const dataUrl = `data:${resolved.mimeType};base64,${bytesToBase64(resolved.bytes)}`
-      const userText = input.aspectRatio
-        ? `${input.prompt}\n\nOutput aspect ratio: ${input.aspectRatio}.`
-        : input.prompt
+      let outBytes: Uint8Array
+      let outMime: string
+      let modelLabel: string
 
-      const resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://vite-flare-starter.workers.dev',
-          'X-Title': 'vite-flare-starter',
-        },
-        body: JSON.stringify({
-          model: NANO_BANANA_2_ID,
-          modalities: ['image', 'text'],
-          messages: [
-            {
-              role: 'user',
-              content: [
-                { type: 'text', text: userText },
-                { type: 'image_url', image_url: { url: dataUrl } },
-              ],
-            },
-          ],
-        }),
-      })
-      if (!resp.ok) {
-        const text = await resp.text()
-        return {
-          error: `Nano Banana 2 edit failed: ${resp.status} ${text.slice(0, 300)}`,
-        }
+      if (provider === 'gemini-direct') {
+        const result = await callGeminiImage(
+          env.GEMINI_API_KEY!,
+          input.prompt,
+          resolved,
+          input.aspectRatio ? { aspectRatio: input.aspectRatio } : {},
+        )
+        outBytes = result.bytes
+        outMime = result.mimeType
+        modelLabel = NANO_BANANA_2_DIRECT_LABEL
+      } else {
+        const result = await callOpenRouterEdit(
+          env.OPENROUTER_API_KEY!,
+          input.prompt,
+          resolved,
+          input.aspectRatio,
+        )
+        outBytes = result.bytes
+        outMime = result.mimeType
+        modelLabel = NANO_BANANA_2_ID
       }
-      const json = (await resp.json()) as {
-        choices?: Array<{
-          message?: {
-            images?: Array<{
-              type?: string
-              image_url?: { url?: string }
-            }>
-            content?: unknown
-          }
-        }>
-      }
-      const msg = json.choices?.[0]?.message
-      // OpenRouter for Gemini image returns generated images on
-      // `message.images[]` as data URLs. Some providers may instead
-      // embed them in `content` as image_url parts — handle both.
-      let imageDataUrl: string | undefined
-      const imgs = msg?.images
-      if (Array.isArray(imgs) && imgs.length > 0) {
-        imageDataUrl = imgs[0]?.image_url?.url
-      }
-      if (!imageDataUrl && Array.isArray(msg?.content)) {
-        for (const part of msg.content as Array<{ type?: string; image_url?: { url?: string } }>) {
-          if (part.type === 'image_url' && part.image_url?.url) {
-            imageDataUrl = part.image_url.url
-            break
-          }
-        }
-      }
-      if (!imageDataUrl) {
-        return {
-          error: 'Nano Banana 2 returned no image — possibly refused or the model misinterpreted the prompt.',
-        }
-      }
-      const m = imageDataUrl.match(/^data:([^;]+);base64,(.+)$/)
-      if (!m?.[1] || !m?.[2]) {
-        return { error: 'Edited image was not in the expected data URL format.' }
-      }
-      const outMime = m[1]
-      const bin = atob(m[2])
-      const outBytes = new Uint8Array(bin.length)
-      for (let i = 0; i < bin.length; i++) outBytes[i] = bin.charCodeAt(i)
 
       // Key MUST start with `users/${userId}/` so /api/files/download/* ownership check passes.
       const ext = outMime === 'image/png' ? 'png' : outMime === 'image/webp' ? 'webp' : 'jpg'
@@ -225,7 +185,7 @@ export const editImageDefinition: ToolDefinition<
         httpMetadata: { contentType: outMime },
         customMetadata: {
           prompt: input.prompt,
-          model: NANO_BANANA_2_ID,
+          model: modelLabel,
           userId: ctx.userId,
         },
       })
@@ -235,7 +195,7 @@ export const editImageDefinition: ToolDefinition<
         key,
         prompt: input.prompt,
         sizeBytes: outBytes.length,
-        model: NANO_BANANA_2_ID,
+        model: modelLabel,
       }
     } catch (err) {
       return {
@@ -244,6 +204,74 @@ export const editImageDefinition: ToolDefinition<
     }
   },
   render: { icon: Wand2, displayName: 'Edit Image' },
+}
+
+/**
+ * OpenRouter chat-completions path for Nano Banana 2. Returns the
+ * edited image bytes + mime type from the assistant `message.images[]`
+ * payload (or `content` image_url parts as a fallback).
+ */
+async function callOpenRouterEdit(
+  apiKey: string,
+  prompt: string,
+  source: { bytes: Uint8Array; mimeType: string },
+  aspectRatio: string | undefined,
+): Promise<{ bytes: Uint8Array; mimeType: string }> {
+  const dataUrl = `data:${source.mimeType};base64,${bytesToBase64(source.bytes)}`
+  const userText = aspectRatio ? `${prompt}\n\nOutput aspect ratio: ${aspectRatio}.` : prompt
+  const resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': 'https://vite-flare-starter.workers.dev',
+      'X-Title': 'vite-flare-starter',
+    },
+    body: JSON.stringify({
+      model: NANO_BANANA_2_ID,
+      modalities: ['image', 'text'],
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: userText },
+            { type: 'image_url', image_url: { url: dataUrl } },
+          ],
+        },
+      ],
+    }),
+  })
+  if (!resp.ok) {
+    const text = await resp.text()
+    throw new Error(`Nano Banana 2 edit failed: ${resp.status} ${text.slice(0, 300)}`)
+  }
+  const json = (await resp.json()) as {
+    choices?: Array<{
+      message?: {
+        images?: Array<{ type?: string; image_url?: { url?: string } }>
+        content?: unknown
+      }
+    }>
+  }
+  const msg = json.choices?.[0]?.message
+  let imageDataUrl: string | undefined = msg?.images?.[0]?.image_url?.url
+  if (!imageDataUrl && Array.isArray(msg?.content)) {
+    for (const part of msg.content as Array<{ type?: string; image_url?: { url?: string } }>) {
+      if (part.type === 'image_url' && part.image_url?.url) {
+        imageDataUrl = part.image_url.url
+        break
+      }
+    }
+  }
+  if (!imageDataUrl) {
+    throw new Error('Nano Banana 2 returned no image — possibly refused or the model misinterpreted the prompt.')
+  }
+  const m = imageDataUrl.match(/^data:([^;]+);base64,(.+)$/)
+  if (!m?.[1] || !m?.[2]) throw new Error('Edited image was not in the expected data URL format.')
+  const bin = atob(m[2])
+  const bytes = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
+  return { bytes, mimeType: m[1] }
 }
 
 export const imageEditDefinitions = [

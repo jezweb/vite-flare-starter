@@ -9,6 +9,9 @@
  *      "model not found" until then. Paid, needs OPENAI_API_KEY.
  *   - 'nano-banana-2' — Gemini 3.1 Flash Image Preview via OpenRouter.
  *      Paid, needs OPENROUTER_API_KEY. Pro-quality at Flash speed.
+ *   - 'gemini-direct' — same Gemini model, direct via Google AI Studio.
+ *      Better for multi-turn editing chains (preserves thoughtSignature).
+ *      Paid, needs GEMINI_API_KEY.
  *
  * Generated images are stored in R2 under `users/${userId}/generated/`
  * and a download URL is returned. Requires the FILES bucket binding.
@@ -20,12 +23,14 @@ import { z } from 'zod'
 import { createWorkersAI } from 'workers-ai-provider'
 import { ImageIcon } from 'lucide-react'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
+import { callGeminiImage, NANO_BANANA_2_DIRECT_LABEL } from '@/server/lib/gemini-image'
 
 type ImageEnv = {
   AI: Ai
   FILES?: R2Bucket
   OPENAI_API_KEY?: string
   OPENROUTER_API_KEY?: string
+  GEMINI_API_KEY?: string
 }
 
 function getImageEnv(ctx: AgentContext): ImageEnv {
@@ -37,6 +42,7 @@ const ProviderEnum = z.enum([
   'openai',
   'openai-2',
   'nano-banana-2',
+  'gemini-direct',
 ])
 
 const GenerateImageInput = z.object({
@@ -46,7 +52,7 @@ const GenerateImageInput = z.object({
     .optional()
     .describe('Image size: 1024x1024 (default), 1536x1024, 1024x1536. Some providers (Workers AI FLUX) ignore non-square sizes.'),
   provider: ProviderEnum.optional().describe(
-    "Image provider. 'workers-ai' (default, free FLUX), 'openai' (GPT Image 1), 'openai-2' (GPT Image 2 — early May), 'nano-banana-2' (Gemini 3.1 Flash Image via OpenRouter).",
+    "Image provider. 'workers-ai' (default, free FLUX), 'openai' (GPT Image 1, direct), 'openai-2' (GPT Image 2 — early May), 'nano-banana-2' (Gemini via OpenRouter), 'gemini-direct' (Gemini direct — best for multi-turn).",
   ),
 })
 
@@ -147,7 +153,15 @@ export const generateImageDefinition: ToolDefinition<
       let mimeType = 'image/png'
       let modelLabel = ''
 
-      if (provider === 'nano-banana-2') {
+      if (provider === 'gemini-direct') {
+        if (!env.GEMINI_API_KEY) {
+          return { error: "provider='gemini-direct' requires GEMINI_API_KEY (Google AI Studio key)." }
+        }
+        const out = await callGeminiImage(env.GEMINI_API_KEY, prompt)
+        bytes = out.bytes
+        mimeType = out.mimeType
+        modelLabel = NANO_BANANA_2_DIRECT_LABEL
+      } else if (provider === 'nano-banana-2') {
         if (!env.OPENROUTER_API_KEY) {
           return { error: "provider='nano-banana-2' requires OPENROUTER_API_KEY." }
         }
