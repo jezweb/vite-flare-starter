@@ -247,6 +247,162 @@ ASSISTANT: ${textOf(firstAssistant)}
 })
 
 /**
+ * POST /api/conversations/:id/compact
+ *
+ * "Summarise & start fresh." Loads the full conversation, asks Haiku
+ * (via OpenRouter) or Kimi K2.6 (Workers AI fallback) for a dense
+ * recap, creates a new conversation seeded with that recap as the
+ * first assistant turn, and returns the new conversation id so the
+ * client can navigate to it.
+ *
+ * Companion to the conversation-size indicator in the chat UI — when
+ * a thread crosses the 60% / 90% threshold the user can compact rather
+ * than dragging context bloat forward forever (or hitting a hard stop).
+ *
+ * Auth: scoped by userId via storage.isOwner. The new conversation
+ * inherits the original's model + projectId so the compacted thread
+ * lands in the right place in the sidebar.
+ */
+app.post('/:id/compact', async (c) => {
+  const conversationId = c.req.param('id')
+  const userId = c.get('userId')
+  const storage = createD1ChatStorage(c.env.DB)
+
+  if (!(await storage.isOwner(conversationId, userId))) {
+    return c.json({ error: 'Not found' }, 404)
+  }
+
+  const messages = await storage.loadChat(conversationId)
+  if (messages.length < 2) {
+    return c.json({ skipped: true, reason: 'too-short-to-compact' })
+  }
+
+  // Pull the original conversation's model + projectId so the new
+  // conversation lands in the same project + uses the same model.
+  // Direct query — storage.listConversations is paginated and would be
+  // overkill for one row.
+  const { drizzle } = await import('drizzle-orm/d1')
+  const { conversations } = await import('./db/schema')
+  const { eq, and } = await import('drizzle-orm')
+  const d = drizzle(c.env.DB)
+  const [original] = await d
+    .select({
+      title: conversations.title,
+      model: conversations.model,
+      projectId: conversations.projectId,
+      systemPrompt: conversations.systemPrompt,
+    })
+    .from(conversations)
+    .where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)))
+    .limit(1)
+
+  // Render the conversation as a plain transcript for the summariser.
+  // Skip <skill_content> wrappers and tool input/output JSON — Haiku
+  // produces tighter recaps from the user-facing turns alone.
+  const stripSkill = (text: string): string =>
+    text.replace(/<skill_content\b[^>]*>[\s\S]*?<\/skill_content>\s*/gi, '').trim()
+  const transcript = messages
+    .map((m) => {
+      const text = (m.parts ?? [])
+        .filter(
+          (p): p is { type: 'text'; text: string } =>
+            (p as { type: string }).type === 'text',
+        )
+        .map((p) => stripSkill(p.text))
+        .filter(Boolean)
+        .join('\n')
+      return text ? `${m.role.toUpperCase()}: ${text.slice(0, 4000)}` : ''
+    })
+    .filter(Boolean)
+    .join('\n\n')
+    .slice(0, 80_000)
+
+  // Summarise. Prefer Haiku via OpenRouter for quality; fall back to
+  // Kimi K2.6 on Workers AI (free, no key needed) so the feature works
+  // out of the box for forks without an API key.
+  let summary: string | null = null
+  const env = c.env as { OPENROUTER_API_KEY?: string }
+  if (env.OPENROUTER_API_KEY) {
+    try {
+      const { generateText } = await import('ai')
+      const { createOpenRouter } = await import('@openrouter/ai-sdk-provider')
+      const openrouter = createOpenRouter({ apiKey: env.OPENROUTER_API_KEY })
+      const result = await generateText({
+        model: openrouter('anthropic/claude-haiku-4.5'),
+        prompt:
+          'Summarise the following conversation transcript into a dense recap that would let the same assistant pick up the thread without the original context. Cover: what the user is working on, key facts they shared (names, numbers, decisions, file paths, identifiers), what the assistant has done so far (tools called, results found), and any open threads or next steps.\n\nWrite as a single block of structured prose, no headings, ~5-8 sentences. Be specific.\n\nTRANSCRIPT:\n---\n' +
+          transcript +
+          '\n---\n\nRecap:',
+        maxOutputTokens: 600,
+      })
+      summary = result.text?.trim() || null
+    } catch (err) {
+      console.error(
+        JSON.stringify({ event: 'compact_haiku_failed', conversationId, error: String(err) }),
+      )
+    }
+  }
+  if (!summary) {
+    // Workers AI fallback. Kimi K2.6 handles long input fine and is
+    // free, so this is the right default when no OpenRouter key.
+    try {
+      const { generateText } = await import('ai')
+      const workersai = createWorkersAI({ binding: c.env.AI })
+      const result = await generateText({
+        model: workersai('@cf/moonshotai/kimi-k2.6'),
+        prompt:
+          'Summarise this conversation transcript into a dense 5-8 sentence recap. Include: what the user is working on, key facts (names, numbers, decisions), what was done, and any open threads.\n\nTRANSCRIPT:\n---\n' +
+          transcript +
+          '\n---\n\nRecap:',
+        maxOutputTokens: 600,
+      })
+      summary = result.text?.trim() || null
+    } catch (err) {
+      console.error(
+        JSON.stringify({ event: 'compact_kimi_failed', conversationId, error: String(err) }),
+      )
+    }
+  }
+  if (!summary) {
+    return c.json({ error: 'compact failed — no summary produced' }, 500)
+  }
+
+  // Create the new conversation row + seed the recap as the FIRST
+  // assistant message. Using the assistant role (not user) lets the
+  // model treat it as established context rather than a fresh request.
+  const newId = await storage.createConversation(userId, {
+    title: original?.title ? `Continued: ${original.title}` : 'Continued conversation',
+    model: original?.model ?? undefined,
+    systemPrompt: original?.systemPrompt ?? undefined,
+    projectId: original?.projectId ?? null,
+  })
+  await storage.saveChat({
+    conversationId: newId,
+    messages: [
+      {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        parts: [
+          {
+            type: 'text',
+            text:
+              `**Continued from a previous conversation.** Here's a recap of what we covered:\n\n${summary}\n\n` +
+              `_Ask anything to pick up from here._`,
+          },
+        ],
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ] as any,
+  })
+
+  return c.json({
+    success: true,
+    newConversationId: newId,
+    summary,
+  })
+})
+
+/**
  * POST   /api/conversations/:id/star  — pin to the top of the sidebar
  * DELETE /api/conversations/:id/star  — unpin
  */

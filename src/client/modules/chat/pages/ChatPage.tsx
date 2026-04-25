@@ -43,6 +43,7 @@ import { ConversationSidebar } from '../components/ConversationSidebar'
 import { ArtifactSidebar, countArtifactsAndFiles } from '../components/ArtifactSidebar'
 import { MessageRenderer } from '../components/MessageRenderer'
 import { ModelSelector } from '../components'
+import { ConversationSizeIndicator } from '../components/ConversationSizeIndicator'
 import { AttachmentTiles } from '../components/AttachmentTiles'
 import { DropOverlay } from '../components/DropOverlay'
 import { ActionChips } from '../components/ActionChips'
@@ -1107,6 +1108,11 @@ export function ChatPage() {
                             userId={session?.user?.id}
                           />
                           <ModelSelector value={model} onChange={setModel} disabled={isLoading} />
+                          <ConversationSizeIndicator
+                            messages={messages as unknown as { role: string; metadata?: { inputTokens?: number } }[]}
+                            model={model}
+                            conversationId={urlConversationId ?? conversationId ?? null}
+                          />
                         </PromptInputTools>
                         <PromptInputSubmit status={status} onStop={stop} />
                       </PromptInputFooter>
