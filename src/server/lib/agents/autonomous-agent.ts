@@ -64,7 +64,7 @@
 import { Agent } from 'agents'
 import { streamText, convertToModelMessages, type UIMessage } from 'ai'
 import { drizzle } from 'drizzle-orm/d1'
-import { eq } from 'drizzle-orm'
+import { and, eq, gte, sql } from 'drizzle-orm'
 import { resolveModel } from '@/server/lib/ai/providers'
 import { collectAvailableTools } from '@/server/lib/ai/tool-adapter'
 import { costFor } from '@/server/lib/ai/cost'
@@ -119,6 +119,11 @@ export interface AutonomousAgentState {
    *  `getWebhookSecret()`. Empty string until then so the JSON shape
    *  stays stable. Rotate via `regenerateWebhookSecret()`. */
   webhookSecret: string
+  /** Daily USD spending cap (queried from agent_runs.cost_usd). Null
+   *  = no cap. When set, runOnce throws BudgetExceededError and the
+   *  audit row is recorded with outcome='budget_exceeded'. Soft-warn
+   *  log fires at 80% of cap. Set via `setDailyBudget(usd | null)`. */
+  dailyBudgetUsd: number | null
 }
 
 export interface RunOnceInput {
@@ -155,6 +160,19 @@ export interface RunOnceResult {
 const DEFAULT_MAX_RECENT_MESSAGES = 30
 const DEFAULT_MAX_STEPS = 5
 
+/** Distinct error type for budget-cap rejections. Routes catch this
+ *  to return a 429 (or whatever status code your API uses for "limit
+ *  exceeded") instead of treating it as a generic failure. */
+export class BudgetExceededError extends Error {
+  constructor(
+    public readonly spentUsd: number,
+    public readonly capUsd: number,
+  ) {
+    super(`Daily budget cap exceeded: $${spentUsd.toFixed(4)} of $${capUsd.toFixed(2)}`)
+    this.name = 'BudgetExceededError'
+  }
+}
+
 export abstract class AutonomousAgent<
   Env extends AutonomousAgentEnv = AutonomousAgentEnv,
   State extends AutonomousAgentState = AutonomousAgentState,
@@ -187,6 +205,7 @@ export abstract class AutonomousAgent<
         createdAt: Date.now(),
       },
       webhookSecret: '',
+      dailyBudgetUsd: null,
     }
   }
 
@@ -374,6 +393,44 @@ export abstract class AutonomousAgent<
     }
     await insertAudit()
 
+    // Budget gate. Only enforced when state.dailyBudgetUsd is set;
+    // null = no cap. Soft-warn at 80% via structured log; hard-stop
+    // at 100% with BudgetExceededError. Caller (route) catches and
+    // returns 429.
+    if (this.state.dailyBudgetUsd !== null) {
+      const spent = await this.todaysSpendUsd()
+      const cap = this.state.dailyBudgetUsd
+      if (spent >= cap) {
+        try {
+          await drizzle(auditEnv.DB)
+            .update(agentRuns)
+            .set({
+              finishedAt: Math.floor(Date.now() / 1000),
+              durationMs: Date.now() - startedAtMs,
+              outcome: 'budget_exceeded',
+              errorMessage: `Daily cap $${cap.toFixed(2)} reached (spent $${spent.toFixed(4)})`,
+            })
+            .where(eq(agentRuns.id, runId))
+        } catch {
+          /* best-effort */
+        }
+        throw new BudgetExceededError(spent, cap)
+      }
+      if (spent >= cap * 0.8) {
+        console.warn(
+          JSON.stringify({
+            event: 'agent_budget_warning',
+            agentClass: (this.constructor as typeof AutonomousAgent).className,
+            agentName: this.state.name,
+            userId: this.state.userId,
+            spentUsd: spent,
+            capUsd: cap,
+            pct: Math.round((spent / cap) * 100),
+          }),
+        )
+      }
+    }
+
     try {
       // Build the system prompt. Persona first, then blocks (one
       // labelled section each), then any subclass extras, then
@@ -542,6 +599,44 @@ export abstract class AutonomousAgent<
       status: 'pending',
     })
     return { approvalId: id, status: 'pending' }
+  }
+
+  // ─── Budget gate ──────────────────────────────────────────────
+
+  /**
+   * Set the agent's daily USD spending cap. Pass `null` to remove
+   * the cap (no limit). Cost is computed from agent_runs.cost_usd
+   * over the rolling 24-hour window — UTC midnight isn't great for
+   * agents serving multiple timezones, so we use rolling 24h instead.
+   */
+  async setDailyBudget(usd: number | null): Promise<void> {
+    if (usd !== null && (!Number.isFinite(usd) || usd <= 0)) {
+      throw new Error('Daily budget must be a positive number or null')
+    }
+    this.setState({ ...this.state, dailyBudgetUsd: usd })
+  }
+
+  /**
+   * Sum cost_usd from agent_runs for THIS agent instance over the
+   * rolling 24-hour window. Returns 0 if no priced runs (Workers AI
+   * runs have null cost which SUM ignores).
+   */
+  async todaysSpendUsd(): Promise<number> {
+    const env = this.env as { DB: D1Database }
+    const oneDayAgo = Math.floor(Date.now() / 1000) - 24 * 60 * 60
+    const result = await drizzle(env.DB)
+      .select({
+        total: sql<number | null>`SUM(${agentRuns.costUsd})`,
+      })
+      .from(agentRuns)
+      .where(
+        and(
+          eq(agentRuns.agentClass, (this.constructor as typeof AutonomousAgent).className),
+          eq(agentRuns.agentName, this.state.name),
+          gte(agentRuns.startedAt, oneDayAgo),
+        ),
+      )
+    return result[0]?.total ?? 0
   }
 
   // ─── Webhooks ─────────────────────────────────────────────────

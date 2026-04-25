@@ -58,8 +58,43 @@ app.post('/:slug', zValidator('json', ChatInputSchema), async (c) => {
   // Bind owner on first interaction. setOwner is idempotent for the
   // same user; throws on attempted reassignment to a different user.
   await agent.setOwner(userId, slug)
-  const result = await agent.runOnce(c.req.valid('json'))
-  return c.json({ slug, ...result })
+  try {
+    const result = await agent.runOnce(c.req.valid('json'))
+    return c.json({ slug, ...result })
+  } catch (err) {
+    // BudgetExceededError surfaces as 429. Distinct status from
+    // generic 500 so clients can show a meaningful "agent paused —
+    // daily budget reached" message.
+    if (err instanceof Error && err.name === 'BudgetExceededError') {
+      return c.json({ error: err.message, code: 'budget_exceeded' }, 429)
+    }
+    throw err
+  }
+})
+
+// ─── Budget management ───────────────────────────────────────────
+
+const BudgetSchema = z.object({
+  dailyUsd: z.number().positive().nullable().describe('Daily USD cap, or null to remove'),
+})
+
+app.put('/:slug/budget', zValidator('json', BudgetSchema), async (c) => {
+  const slug = c.req.param('slug')
+  if (!validSlug(slug)) return c.json({ error: 'Invalid slug' }, 400)
+  const userId = c.get('userId')
+  const env = c.env as unknown as AssistantEnv
+  if (!env.AssistantAgent) return c.json({ error: 'AssistantAgent binding not configured' }, 503)
+
+  const agent = await getAssistant(env, userId, slug)
+  await agent.setOwner(userId, slug)
+  await agent.setDailyBudget(c.req.valid('json').dailyUsd)
+  const spent = await agent.todaysSpendUsd()
+  return c.json({
+    success: true,
+    slug,
+    dailyUsd: c.req.valid('json').dailyUsd,
+    spentToday: spent,
+  })
 })
 
 // ─── Status / introspection ──────────────────────────────────────
