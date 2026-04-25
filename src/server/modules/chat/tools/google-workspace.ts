@@ -31,6 +31,7 @@ import {
   FilePlus,
   FilePen,
   FileDown,
+  FileType,
   Sheet,
   Table2,
   Rows4,
@@ -1763,6 +1764,139 @@ export const docsAppendDefinition: ToolDefinition<DocsAppendInput, DocsAppendOut
   },
 }
 
+// ─── docs_create_from_markdown ───────────────────────────────────
+// One-shot create-formatted-doc-from-markdown. Most agent output is
+// markdown-shaped; the existing docs_create + docs_append force the
+// agent through plain-text APIs and lose all structure. This tool
+// renders the markdown to a Doc batchUpdate sequence in a single call.
+//
+// Supports: headings (H1-H6), paragraphs, bold/italic, inline code,
+// code blocks (monospace + grey background), links, bulleted lists,
+// numbered lists, task items (☐ / ☑). Tables fall through as plain
+// pipe-separated text — the converter is deliberately minimal; for
+// proper Doc tables either pre-render via Sheets or build a
+// fork-specific extension.
+
+const DocsCreateFromMarkdownInput = z.object({
+  title: z.string().min(1).max(200),
+  markdown: z
+    .string()
+    .min(1)
+    .max(200_000)
+    .describe(
+      'Full markdown document. Headings, bold/italic, code, lists, links, task items render as native Docs structure.',
+    ),
+})
+
+const DocsCreateFromMarkdownOutput = z.union([
+  z.object({
+    ok: z.literal(true),
+    docId: z.string(),
+    title: z.string(),
+    url: z.string(),
+    /** Number of insert/style requests emitted — useful for debugging
+     *  formatting issues against the markdown the agent sent. */
+    requestCount: z.number(),
+  }),
+  z.object({ error: z.string() }),
+])
+
+export type DocsCreateFromMarkdownInput = z.infer<typeof DocsCreateFromMarkdownInput>
+export type DocsCreateFromMarkdownOutput = z.infer<typeof DocsCreateFromMarkdownOutput>
+
+export const docsCreateFromMarkdownDefinition: ToolDefinition<
+  DocsCreateFromMarkdownInput,
+  DocsCreateFromMarkdownOutput
+> = {
+  name: 'docs_create_from_markdown',
+  description:
+    'Create a new Google Doc from a markdown source. Headings, bold/italic, inline code, code blocks, links, bulleted lists, numbered lists, and task items all render as native Docs formatting in one call. Prefer this over docs_create + docs_append when the content has any structure.',
+  inputSchema: DocsCreateFromMarkdownInput,
+  outputSchema: DocsCreateFromMarkdownOutput,
+  isAvailable: gwsAvailable,
+  needsApproval: true,
+  execute: async ({ title, markdown }, ctx) => {
+    const auth = await requireActiveToken(ctx, 'documents')
+    if ('error' in auth) return auth
+
+    // Step 1: create the empty doc.
+    const createResp = await fetch('https://docs.googleapis.com/v1/documents', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${auth.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ title }),
+    })
+    if (!createResp.ok) {
+      const errBody = await createResp.text()
+      return { error: `Docs create failed: ${createResp.status} ${errBody.slice(0, 200)}` }
+    }
+    const created = (await createResp.json()) as { documentId?: string }
+    const docId = created.documentId
+    if (!docId) return { error: 'Docs create returned no documentId' }
+
+    // Step 2: convert markdown → batchUpdate requests. New docs
+    // always have an empty body whose first valid insert index is 1.
+    const { markdownToDocsRequests } = await import('@/server/lib/google/markdown-to-docs')
+    const { requests } = markdownToDocsRequests(markdown, 1)
+
+    if (requests.length === 0) {
+      return {
+        ok: true as const,
+        docId,
+        title,
+        url: `https://docs.google.com/document/d/${docId}/edit`,
+        requestCount: 0,
+      }
+    }
+
+    // Step 3: apply. The Docs API caps batchUpdate at ~1000 requests
+    // and ~10MB. Our converter typically emits well under that even
+    // for long docs, but we chunk defensively at 500 just in case.
+    const CHUNK = 500
+    for (let i = 0; i < requests.length; i += CHUNK) {
+      const chunk = requests.slice(i, i + CHUNK)
+      const resp = await fetch(
+        `https://docs.googleapis.com/v1/documents/${encodeURIComponent(docId)}:batchUpdate`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${auth.token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ requests: chunk }),
+        },
+      )
+      if (!resp.ok) {
+        const errBody = await resp.text()
+        return {
+          error: `Doc created (${docId}) but markdown render failed at chunk ${
+            i / CHUNK
+          }: ${resp.status} ${errBody.slice(0, 300)}`,
+        }
+      }
+    }
+
+    return {
+      ok: true as const,
+      docId,
+      title,
+      url: `https://docs.google.com/document/d/${docId}/edit`,
+      requestCount: requests.length,
+    }
+  },
+  render: {
+    icon: FileType,
+    displayName: 'Docs — From Markdown',
+    summary: (output) => {
+      if ('error' in output) return 'failed'
+      if (output.ok) return `${truncate(output.title, 26)} (${output.requestCount} ops)`
+      return null
+    },
+  },
+}
+
 // ─── sheets_list_tabs ────────────────────────────────────────────
 
 const SheetsListTabsInput = z.object({
@@ -2484,6 +2618,7 @@ export const googleWorkspaceDefinitions = [
   docsGetDefinition,
   docsCreateDefinition,
   docsAppendDefinition,
+  docsCreateFromMarkdownDefinition,
   // Sheets
   sheetsListTabsDefinition,
   sheetsReadRangeDefinition,
