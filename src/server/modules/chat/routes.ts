@@ -13,6 +13,7 @@ import { and, desc, eq, sql } from 'drizzle-orm'
 import { authMiddleware, requireScopes, type AuthContext } from '@/server/middleware/auth'
 import { DEFAULT_MODEL, getModel, resolveModel, buildChatAgent } from '@/server/lib/ai'
 import { convertToMarkdown } from '@/server/lib/ai/documents'
+import { trimHistoryToTokenBudget } from '@/server/lib/ai/trim-history'
 import { createD1ChatStorage } from '@/server/modules/conversations/storage'
 import { conversations } from '@/server/modules/conversations/db/schema'
 import { logActivityFromContext } from '@/server/modules/activity/log'
@@ -255,10 +256,38 @@ app.post('/', async (c) => {
       }
     }
 
+    // Token-aware history trim — keeps the most recent 2 messages
+    // verbatim, drops oldest until under 80K tokens, optionally
+    // summarises the dropped block with Haiku 4.5 if OPENROUTER_API_KEY
+    // is set. Soft degradation when no key: messages are dropped and
+    // replaced with an "[N earlier messages omitted]" marker so the
+    // model knows context is missing rather than hallucinating.
+    //
+    // Pairs with the truncation gate in `tool-adapter.ts` — that one
+    // bounds individual tool results, this one bounds cumulative
+    // history growth across turns.
+    const openRouterKey = (c.env as { OPENROUTER_API_KEY?: string }).OPENROUTER_API_KEY
+    const trim = await trimHistoryToTokenBudget(messages, {
+      openRouterApiKey: openRouterKey,
+    })
+    if (trim.trimmed) {
+      console.log(
+        JSON.stringify({
+          event: 'chat_history_trimmed',
+          conversationId,
+          userId,
+          droppedCount: trim.droppedCount,
+          summarised: !!trim.summary,
+          estimatedTokensAfter: trim.estimatedTokens,
+        }),
+      )
+    }
+    const trimmedMessages = trim.messages
+
     // Validate loaded messages against current tool schemas (handles schema drift)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const validation = await safeValidateUIMessages({ messages, tools: agent.tools as any })
-    const validatedMessages = validation.success ? validation.data : messages
+    const validation = await safeValidateUIMessages({ messages: trimmedMessages, tools: agent.tools as any })
+    const validatedMessages = validation.success ? validation.data : trimmedMessages
 
     // Stream the agent response to the client
     const response = await createAgentUIStreamResponse({
