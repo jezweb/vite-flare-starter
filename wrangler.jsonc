@@ -162,12 +162,20 @@
         "class_name": "VideoInputExample"
       },
       {
-        // ReminderAgent — worked example of the ScheduledAgent pattern.
-        // Per-user scheduled work via DO alarms. See
-        // src/server/lib/agents/scheduled-agent.ts for the base class
-        // and src/server/modules/scheduled-agents/ for the routes.
+        // ReminderAgent — worked example of the agents-SDK schedule pattern.
+        // Per-user scheduled work using Agent.schedule() / .retry().
+        // See src/server/modules/scheduled-agents/.
         "name": "ReminderAgent",
         "class_name": "ReminderAgent"
+      },
+      {
+        // AssistantAgent — worked example of AutonomousAgent.
+        // Stateful AI assistant per (user, slug) partition. Persona +
+        // memory blocks + tool catalog + schedule. See
+        // src/server/lib/agents/autonomous-agent.ts for the base class
+        // and src/server/modules/autonomous-agents/ for the worked example.
+        "name": "AssistantAgent",
+        "class_name": "AssistantAgent"
       }
     ]
   },
@@ -189,6 +197,10 @@
     {
       "tag": "v3",
       "new_sqlite_classes": ["ReminderAgent"]
+    },
+    {
+      "tag": "v4",
+      "new_sqlite_classes": ["AssistantAgent"]
     }
   ],
 
