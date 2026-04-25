@@ -72,9 +72,36 @@ interface AutonomousAgentState {
 - **Episodic** — recent UIMessage history persisted in agent state,
   sliding-window capped at `maxRecentMessages` (default 30). The agent
   picks up where it left off on the next invocation.
-- **Semantic** — NOT in the base. Wire Cloudflare's `AgentMemory`
-  service in subclasses that need vector recall over long-term
-  conversation history.
+- **Semantic** — extension hook (`recallSemantic(input)`) on the
+  base; default returns `[]`. Override in subclasses to inject
+  long-term memory snippets that get rendered as a `## Relevant
+  memory` block in the system prompt for that turn only (NOT
+  persisted to state.blocks).
+
+  Three wiring options:
+
+  | Option | Status (Apr 2026) | When to pick it |
+  |---|---|---|
+  | **Cloudflare AgentMemory** (`env.MEMORY.recall(...)`) | Private beta — waitlist only | The SDK-blessed long-term path once GA |
+  | **Vectorize directly** | Generally available | Want full control; OK with embedding via Workers AI |
+  | **D1 FTS5** | Already in starter (conversations search) | Cheaper, keyword recall over precise phrases |
+
+  Worked example with Vectorize:
+
+  ```typescript
+  protected override async recallSemantic(input: string): Promise<string[]> {
+    if (!this.env.MEMORY_INDEX) return []
+    const embeddings = await this.env.AI.run('@cf/baai/bge-base-en-v1.5', { text: input })
+    const matches = await this.env.MEMORY_INDEX.query(embeddings.data[0], {
+      topK: 5,
+      filter: { ownerKey: `${this.state.userId}:${this.state.name}` },
+    })
+    return matches.matches
+      .filter((m) => m.score > 0.7)
+      .map((m) => String(m.metadata?.text ?? ''))
+      .filter(Boolean)
+  }
+  ```
 
 ### Decision loop
 
@@ -227,7 +254,8 @@ class name in the structured payload.
 
 - **Phase 0b** — refactor chat module onto `AIChatAgent` for state
   sync + sub-agent routing
-- **AgentMemory** wiring for vector recall over long history
+- **AgentMemory** binding (waitlist as of April 2026) — wire when GA;
+  the `recallSemantic` hook is the slot
 - **AgentWorkflow** worked example for long pipelines
 - **A2A** endpoint adapter when the spec stabilises further
 - **`McpAgent`** worked example (your agent as an MCP server)

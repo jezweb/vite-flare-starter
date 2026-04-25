@@ -201,6 +201,30 @@ export abstract class AutonomousAgent<
     return null
   }
 
+  /**
+   * Semantic recall hook — return relevant long-term memory snippets
+   * for the given input. Default returns `[]`.
+   *
+   * Wiring options for subclasses:
+   *
+   *   - **Cloudflare AgentMemory** (private beta as of April 2026):
+   *     `await this.env.MEMORY.recall({ ... })` once you have the
+   *     binding. The SDK-blessed long-term path.
+   *   - **Vectorize directly**: query a Vectorize index keyed by
+   *     `${this.state.userId}:${this.state.name}` to scope per-agent.
+   *     Use Workers AI embeddings (`@cf/baai/bge-base-en-v1.5`) to
+   *     vectorise both stored memories and the current input.
+   *   - **D1 FTS5**: cheaper for keyword recall. Already used by the
+   *     conversations module for chat search.
+   *
+   * Returned snippets are joined and injected as a "## Relevant memory"
+   * block into the system prompt for this turn only — they don't
+   * become part of the persistent state.blocks.
+   */
+  protected async recallSemantic(_input: string): Promise<string[]> {
+    return []
+  }
+
   // ─── State accessors ──────────────────────────────────────────
 
   /** Update or create a memory block. Empty value deletes the block. */
@@ -305,8 +329,10 @@ export abstract class AutonomousAgent<
     }
 
     // Build the system prompt. Persona first, then blocks (one
-    // labelled section each), then any subclass extras.
-    const systemPrompt = await this.buildSystemPrompt(input?.systemPromptOverride)
+    // labelled section each), then any subclass extras, then semantic
+    // recall snippets for this turn (if recallSemantic is wired).
+    const recall = userMessage ? await this.recallSemantic(userMessage) : []
+    const systemPrompt = await this.buildSystemPrompt(input?.systemPromptOverride, recall)
 
     // Resolve tools. Each tool sees an AgentContext with the agent's
     // owner (state.userId) so user-scoped tools work correctly.
@@ -388,10 +414,10 @@ export abstract class AutonomousAgent<
 
   /**
    * Compose the system prompt. Persona always first; blocks rendered
-   * under their label; subclass extras appended last so they can
-   * reference everything above.
+   * under their label; subclass extras appended; semantic recall
+   * snippets last so they're closest to the conversation context.
    */
-  protected async buildSystemPrompt(override?: string): Promise<string> {
+  protected async buildSystemPrompt(override?: string, recall: string[] = []): Promise<string> {
     if (override) return override
     const parts: string[] = [this.state.persona]
     const blockNames = Object.keys(this.state.blocks).sort()
@@ -403,6 +429,10 @@ export abstract class AutonomousAgent<
     }
     const extra = await this.buildExtraInstructions()
     if (extra) parts.push(extra)
+    if (recall.length > 0) {
+      parts.push('## Relevant memory')
+      parts.push(recall.map((s, i) => `${i + 1}. ${s}`).join('\n'))
+    }
     return parts.join('\n\n')
   }
 
