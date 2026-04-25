@@ -39,8 +39,13 @@ VITE_FEATURE_ACTIVITY=false
 | **skills** | Claude Agent Skills registry + editor + AI-sparkle rewrite + diff approval | `server/modules/skills/routes.ts` |
 | **config-diff** | Shared primitive for staged user-config changes (skills, prompts, …) | `server/modules/config-diff/` |
 | **scheduled-agents** | DO scheduled work via agents SDK `schedule()` / `retry()` — no hand-rolled alarms | `server/modules/scheduled-agents/reminder-agent.ts` |
-| **autonomous-agents** | Stateful AI agent base — persona + memory blocks + tools + decision loop. Plus multi-agent handoff (researcher → writer) | `server/lib/agents/autonomous-agent.ts`, `server/modules/autonomous-agents/{assistant,researcher,writer}-agent.ts` |
+| **autonomous-agents** | Stateful AI agent base — persona + memory blocks + tools + decision loop + approval queue + webhooks + budget gate + run audit. Plus multi-agent handoff (researcher → writer) | `server/lib/agents/autonomous-agent.ts`, `server/modules/autonomous-agents/{assistant,researcher,writer}-agent.ts` |
 | **mcp-agents** | Agent-as-MCP-server pattern — exposes app data over MCP for external Claude Code / clients | `server/modules/mcp-agents/scratchpad-mcp-agent.ts` |
+| **approvals** | Human-in-the-loop queue for autonomous agent actions — draft → review → approve → execute | `server/modules/approvals/routes.ts` |
+| **webhook-agents** | External event ingestion — HMAC-verified webhook → agent.handleWebhook | `server/lib/agents/webhook-verify.ts`, `server/modules/webhook-agents/routes.ts` |
+| **agent-observability** | `agent_runs` audit table + endpoints (cost / runs / errors per agent) | `server/modules/agent-observability/routes.ts` |
+| **entities** | Generic typed entity store + CRUD for CRM / Atlassian-style apps + agent tools | `server/modules/entities/`, `server/modules/chat/tools/entities.ts` |
+| **agent-memory** | Vectorize-backed semantic recall (opt-in via `AGENT_MEMORY` binding) | `server/lib/agents/agent-memory.ts` |
 
 ---
 

@@ -365,6 +365,129 @@ class name in the structured payload.
 | Partition key: `${userId}:${slug}` | Per-user scoping; slug lets one user hold multiple named agents |
 | Tool definitions: existing `ToolDefinition` contract | Same telemetry, truncation gate, approval flow as chat tools |
 
+## Approval queue (human-in-the-loop)
+
+Pattern for "agent drafts an action, user reviews + approves before
+execute." Universal need for any agent that takes destructive
+actions (send email, post message, transact).
+
+**Files**: `src/server/modules/approvals/` + base-class methods on
+`AutonomousAgent`. Routes: `/api/approvals/*`.
+
+How it works:
+
+1. Agent's tool calls `this.requestApproval(action, payload, summary)`
+   from inside its execute body. Stores a row in `pending_approvals`,
+   returns the id. Nothing fires.
+2. LLM relays "I queued N approvals" to the user.
+3. User reviews via `GET /api/approvals?status=pending` (or future UI).
+4. On `POST /api/approvals/:id/approve`, the route looks up the
+   originating agent and calls `agent.executeApproved(action, payload)`
+   which performs the action with full env access.
+5. Subclass implements `executeApproved(action, payload)` — switch on
+   `action`, dispatch to per-action methods.
+
+Worked example: `AssistantAgent.requestEmailApprovalTool()` queues
+`send_email`; `AssistantAgent.executeApproved` handles `send_email` by
+calling Gmail API with the user's OAuth token.
+
+## Webhook ingestion
+
+External event triggers (Slack messages, GitHub PRs, Stripe events,
+custom integrations). Each agent instance has a per-agent webhook
+secret; the receiver verifies HMAC SHA-256 (preferred) or plain
+shared secret, then dispatches to `agent.handleWebhook(payload, headers)`.
+
+**Files**: `src/server/lib/agents/webhook-verify.ts` + `src/server/modules/webhook-agents/routes.ts`.
+
+Routes:
+- `POST /api/webhooks/agent/:class/:slug` — public, signature is the auth
+- `GET /api/webhooks/agent/:class/:slug/info` — auth-gated, returns URL + secret to copy into the sender
+- `POST /api/webhooks/agent/:class/:slug/rotate` — rotate secret
+
+`handleWebhook` default invokes `runOnce({ input: JSON.stringify(payload) })`.
+Subclasses override to parse webhook envelopes (Slack event, GitHub PR
+hook, Telegram update) into something LLM-friendlier.
+
+## Observability
+
+Every `runOnce` invocation writes a row to `agent_runs` (id, class,
+name, userId, trigger, input summary, started/finished, duration,
+outcome, usage, cost, steps, tools called).
+
+**Files**: `src/server/modules/agent-observability/`.
+
+Routes:
+- `GET /api/agent-observability/runs?class=&name=&trigger=&outcome=&since=&limit=`
+- `GET /api/agent-observability/runs/:id`
+- `GET /api/agent-observability/summary` — last 30 days, grouped by class
+
+Different shape from `aiUsageLogs` (per-LLM-call): `agent_runs` groups
+LLM calls under their agent invocation. "Show me everything
+ResearcherAgent:cf-workers did today" is one query.
+
+## Per-agent budget gate
+
+`state.dailyBudgetUsd` per agent instance — `runOnce` checks today's
+spend (rolling 24h from `agent_runs.cost_usd`) before firing. Over
+budget = `BudgetExceededError` (route returns 429). Soft warn at 80%.
+
+Set via `PUT /api/autonomous-agents/:slug/budget {dailyUsd}`. Pass
+`null` to remove.
+
+Free model runs (Workers AI) don't count — `cost_usd` is null for
+unpriced models. The cap protects against paid-model spend.
+
+## Tracked entities
+
+Generic typed entity store for CRM / Atlassian-style apps. One
+`entities` table discriminated by `type`; type-specific data in a
+`fields` JSON blob.
+
+**Files**: `src/server/modules/entities/` (CRUD) + `src/server/modules/chat/tools/entities.ts` (agent-callable).
+
+Tools: `entity_create`, `entity_update`, `entity_get`, `entity_list`,
+`entity_search`. All scoped to `ctx.userId`.
+
+Routes:
+- `GET    /api/entities?type=&status=&assignee=&q=&limit=`
+- `POST   /api/entities`
+- `GET    /api/entities/:id`
+- `PATCH  /api/entities/:id` — partial; `null` in fields clears keys
+- `DELETE /api/entities/:id`
+- `GET    /api/entities/stats/by-type/:type`
+
+Use cases: `type='ticket'` (Atlassian), `type='deal'` (CRM),
+`type='task'` (project management). Forks evolve out into typed
+tables when a type grows past ~10 indexed fields or needs FK
+relationships.
+
+## Semantic memory (Vectorize)
+
+`recallSemantic(input)` extension hook fires before each `runOnce`
+turn — returns relevant memory snippets injected as `## Relevant
+memory` block in the system prompt for that turn only.
+
+**Files**: `src/server/lib/agents/agent-memory.ts` — `agentRemember`
+/ `agentRecall` / `agentForgetAll`.
+
+Storage: one shared Vectorize index per fork, per-agent scoping via
+`metadata.ownerKey = \`\${userId}:\${agentName}\``. BGE Base (768-dim,
+free Workers AI binding).
+
+Opt-in: uncomment the `AGENT_MEMORY` binding in wrangler.jsonc + run
+the `wrangler vectorize create` commands listed there. Without the
+binding, `recallSemantic` returns `[]` and agents work without
+semantic memory (agent-memory tools also don't register).
+
+`AssistantAgent` demonstrates the pattern: overrides `recallSemantic`
+to call `agentRecall`; conditionally registers a `remember` tool when
+`AGENT_MEMORY` is bound.
+
+When Cloudflare AgentMemory ships GA (currently private beta), swap
+the helper internals for `env.MEMORY.recall(...)` — subclasses don't
+change.
+
 ## Future extensions (not yet shipped)
 
 - **Phase 0b** — refactor chat module onto `AIChatAgent` for state
