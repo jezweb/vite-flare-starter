@@ -9,6 +9,12 @@
 import { z } from 'zod'
 import { FileText, Database, Camera, Link2, Code } from 'lucide-react'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
+import {
+  detectInterstitial,
+  interstitialError,
+  REALISTIC_USER_AGENT,
+  titleFromMarkdown,
+} from '@/server/lib/interstitial-detect'
 
 interface BrowserEnv {
   CLOUDFLARE_ACCOUNT_ID?: string
@@ -70,9 +76,21 @@ export const browserMarkdownDefinition: ToolDefinition<
   isAvailable: browserAvailable,
   execute: async ({ url, waitForSelector }, ctx) => {
     try {
-      const body: Record<string, unknown> = { url }
+      // Realistic Chrome UA — defeats CF Bot Fight Mode's first-pass
+      // detection (the default `HeadlessChrome` UA is the simplest tell).
+      const body: Record<string, unknown> = { url, userAgent: REALISTIC_USER_AGENT }
       if (waitForSelector) body['waitForSelector'] = waitForSelector
       const markdown = await callBrowserAPI<string>(getBrowserEnv(ctx), 'markdown', body)
+
+      // Quality gate: a "successful" 200 + non-empty markdown could still
+      // be a CF / Akamai / Imperva / Sucuri / DataDome / PerimeterX
+      // interstitial. Reject silently-garbage results so the agent gets
+      // a clear error instead of 51 chars of "Please wait while your
+      // request is being verified..."
+      const detection = detectInterstitial(titleFromMarkdown(markdown), markdown)
+      if (detection.isInterstitial) {
+        return { url, error: interstitialError(url, detection) }
+      }
       return { url, markdown }
     } catch (error) {
       return { url, error: error instanceof Error ? error.message : String(error) }
@@ -105,7 +123,21 @@ export const browserExtractDefinition: ToolDefinition<
   isAvailable: browserAvailable,
   execute: async ({ url, prompt }, ctx) => {
     try {
-      const result = await callBrowserAPI<unknown>(getBrowserEnv(ctx), 'json', { url, prompt })
+      const result = await callBrowserAPI<unknown>(getBrowserEnv(ctx), 'json', {
+        url,
+        prompt,
+        userAgent: REALISTIC_USER_AGENT,
+      })
+      // The /json endpoint returns AI-extracted structured data — if the
+      // page was an interstitial, the model usually returns garbage like
+      // empty strings, "verification" labels, or a near-empty object.
+      // Run the detector on the stringified result + look for a
+      // suspicious-looking shape.
+      const stringified = JSON.stringify(result ?? {})
+      const detection = detectInterstitial(undefined, stringified)
+      if (detection.isInterstitial) {
+        return { url, error: interstitialError(url, detection) }
+      }
       return { url, data: result }
     } catch (error) {
       return { url, error: error instanceof Error ? error.message : String(error) }
@@ -139,7 +171,7 @@ export const browserScreenshotDefinition: ToolDefinition<
   execute: async ({ url, fullPage }, ctx) => {
     const env = getBrowserEnv(ctx)
     try {
-      const body: Record<string, unknown> = { url }
+      const body: Record<string, unknown> = { url, userAgent: REALISTIC_USER_AGENT }
       if (fullPage) body['screenshotOptions'] = { fullPage: true }
       const apiUrl = `https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/browser-rendering/screenshot`
       const response = await fetch(apiUrl, {
@@ -182,7 +214,10 @@ export const browserLinksDefinition: ToolDefinition<{ url: string }, z.infer<typ
   isAvailable: browserAvailable,
   execute: async ({ url }, ctx) => {
     try {
-      const links = await callBrowserAPI<string[]>(getBrowserEnv(ctx), 'links', { url })
+      const links = await callBrowserAPI<string[]>(getBrowserEnv(ctx), 'links', {
+        url,
+        userAgent: REALISTIC_USER_AGENT,
+      })
       return { url, links, count: Array.isArray(links) ? links.length : 0 }
     } catch (error) {
       return { url, error: error instanceof Error ? error.message : String(error) }
@@ -210,9 +245,18 @@ export const browserContentDefinition: ToolDefinition<
   isAvailable: browserAvailable,
   execute: async ({ url, waitForSelector }, ctx) => {
     try {
-      const body: Record<string, unknown> = { url }
+      const body: Record<string, unknown> = { url, userAgent: REALISTIC_USER_AGENT }
       if (waitForSelector) body['waitForSelector'] = waitForSelector
       const html = await callBrowserAPI<string>(getBrowserEnv(ctx), 'content', body)
+      // HTML title extraction for the interstitial detector — matches
+      // <title>...</title> tag content. Plain regex is fine; we don't
+      // need a full HTML parser for a single tag.
+      const titleMatch = typeof html === 'string' ? html.match(/<title[^>]*>([^<]*)<\/title>/i) : null
+      const title = titleMatch?.[1]?.trim() ?? ''
+      const detection = detectInterstitial(title, typeof html === 'string' ? html : '')
+      if (detection.isInterstitial) {
+        return { url, error: interstitialError(url, detection) }
+      }
       return { url, html, length: typeof html === 'string' ? html.length : 0 }
     } catch (error) {
       return { url, error: error instanceof Error ? error.message : String(error) }
