@@ -27,15 +27,16 @@
  *     long conversation history (replaces the sliding window)
  */
 import { z } from 'zod'
-import { Mail } from 'lucide-react'
+import { Mail, BookmarkPlus } from 'lucide-react'
 import { AutonomousAgent, type AutonomousAgentEnv, type AutonomousAgentState } from '@/server/lib/agents/autonomous-agent'
+import { agentRemember, agentRecall } from '@/server/lib/agents/agent-memory'
 import { getAccessToken } from '@/server/modules/google-workspace/tokens'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 
 interface Env extends AutonomousAgentEnv {
-  // Agents inheriting AutonomousAgentEnv get all the AI provider keys
-  // from the parent shape — no need to redeclare unless you need
-  // additional bindings (R2 buckets, KV, etc).
+  /** Optional Vectorize binding for semantic recall. When present,
+   *  recallSemantic actually queries; when absent, returns [] (no-op). */
+  AGENT_MEMORY?: VectorizeIndex
 }
 
 /** Schema for the queued send_email payload. Used both client-side
@@ -61,24 +62,6 @@ export class AssistantAgent extends AutonomousAgent<Env, AutonomousAgentState> {
    * model picks reliably. Add more in your fork as use cases prove
    * out the value.
    */
-  protected override async getToolDefinitions(): Promise<ToolDefinition<unknown, unknown>[]> {
-    // Lazy import — keeps the cold-start cost off this file's import
-    // graph. Only paid when an agent actually runs.
-    const { coreDefinitions } = await import('@/server/modules/chat/tools/core')
-    const { todoDefinitions } = await import('@/server/modules/chat/tools/todo')
-    const { memoryDefinitions } = await import('@/server/modules/chat/tools/memory')
-    const { searchDefinitions } = await import('@/server/modules/chat/tools/search')
-    const { entityDefinitions } = await import('@/server/modules/chat/tools/entities')
-    return [
-      ...coreDefinitions,
-      ...memoryDefinitions,
-      ...todoDefinitions,
-      ...searchDefinitions,
-      ...entityDefinitions,
-      this.requestEmailApprovalTool(),
-    ] as ToolDefinition<unknown, unknown>[]
-  }
-
   /**
    * Worked example of the approval-queue pattern. The LLM calls this
    * INSTEAD of sending email directly. The tool stores the request
@@ -184,6 +167,118 @@ export class AssistantAgent extends AutonomousAgent<Env, AutonomousAgentState> {
     }
     const result = (await resp.json()) as { id?: string }
     return { ok: true, messageId: result.id ?? 'unknown' }
+  }
+
+  /**
+   * Compose the tool catalog. Includes the `remember` tool only
+   * when AGENT_MEMORY is bound (semantic memory is opt-in per fork —
+   * no point exposing the tool if the index doesn't exist).
+   */
+  protected override async getToolDefinitions(): Promise<ToolDefinition<unknown, unknown>[]> {
+    const tools = await this.baseTools()
+    if ((this.env as Env).AGENT_MEMORY) {
+      tools.push(this.rememberTool() as ToolDefinition<unknown, unknown>)
+    }
+    return tools
+  }
+
+  /**
+   * Internal — the always-on tools. Pulled out so the AGENT_MEMORY
+   * conditional is the only thing in `getToolDefinitions`.
+   */
+  private async baseTools(): Promise<ToolDefinition<unknown, unknown>[]> {
+    const { coreDefinitions } = await import('@/server/modules/chat/tools/core')
+    const { todoDefinitions } = await import('@/server/modules/chat/tools/todo')
+    const { memoryDefinitions } = await import('@/server/modules/chat/tools/memory')
+    const { searchDefinitions } = await import('@/server/modules/chat/tools/search')
+    const { entityDefinitions } = await import('@/server/modules/chat/tools/entities')
+    return [
+      ...coreDefinitions,
+      ...memoryDefinitions,
+      ...todoDefinitions,
+      ...searchDefinitions,
+      ...entityDefinitions,
+      this.requestEmailApprovalTool(),
+    ] as ToolDefinition<unknown, unknown>[]
+  }
+
+  /**
+   * Override `recallSemantic` — fires before each turn with the
+   * user's input. Returns relevant snippets to inject as a
+   * "## Relevant memory" block in the system prompt.
+   *
+   * When AGENT_MEMORY is bound, this queries Vectorize scoped by
+   * `${userId}:${name}` so each agent instance has its own memory.
+   * When not bound, returns [] and the system prompt stays clean.
+   */
+  protected override async recallSemantic(input: string): Promise<string[]> {
+    const env = this.env as Env
+    if (!env.AGENT_MEMORY || !this.state.userId) return []
+    try {
+      return await agentRecall(env, `${this.state.userId}:${this.state.name}`, input, {
+        topK: 5,
+        minScore: 0.7,
+      })
+    } catch (err) {
+      console.error(
+        JSON.stringify({
+          event: 'agent_recall_failed',
+          agentName: this.state.name,
+          error: err instanceof Error ? err.message : String(err),
+        }),
+      )
+      return []
+    }
+  }
+
+  /**
+   * The `remember` tool — agent-callable. Stores a snippet in
+   * Vectorize so future turns can recall it.
+   *
+   * Use it when the user shares something the agent should know
+   * persistently across conversations (preferences, ongoing
+   * project context, "always include X in my standup"). The
+   * persona's blocks are better for SHORT, structured rules; this
+   * tool is better for LONG-TAIL prose facts the agent will
+   * surface based on relevance.
+   */
+  private rememberTool(): ToolDefinition<
+    { text: string; tags?: string[]; source?: string },
+    { ok: true; id: string } | { ok: false; error: string }
+  > {
+    const userId = this.state.userId ?? ''
+    const name = this.state.name
+    const env = this.env as Env
+    return {
+      name: 'remember',
+      description:
+        'Save a fact / preference / context snippet to long-term semantic memory. Returns a memory id. Future turns will surface this snippet when relevant. Prefer this over context blocks for prose / story-shaped memories the user wants persistently retained.',
+      inputSchema: z.object({
+        text: z.string().min(5).max(2000),
+        tags: z.array(z.string().max(40)).max(10).optional(),
+        source: z.string().max(200).optional().describe('Where this came from (URL, conversation id, etc).'),
+      }),
+      outputSchema: z.union([
+        z.object({ ok: z.literal(true), id: z.string() }),
+        z.object({ ok: z.literal(false), error: z.string() }),
+      ]),
+      execute: async ({ text, tags, source }) => {
+        if (!userId) return { ok: false, error: 'No owner set' }
+        try {
+          const opts: { tags?: string[]; source?: string } = {}
+          if (tags) opts.tags = tags
+          if (source) opts.source = source
+          const result = await agentRemember(env, `${userId}:${name}`, text, opts)
+          return { ok: true as const, id: result.id }
+        } catch (err) {
+          return {
+            ok: false as const,
+            error: err instanceof Error ? err.message : String(err),
+          }
+        }
+      },
+      render: { icon: BookmarkPlus, displayName: 'Remember' },
+    }
   }
 
   /**

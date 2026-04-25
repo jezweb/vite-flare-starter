@@ -77,6 +77,25 @@
     }
   ],
 
+  // Vectorize — semantic memory for AutonomousAgent.recallSemantic.
+  // Opt-in: uncomment, then create the index + metadata indexes:
+  //   wrangler vectorize create agent-memory --dimensions=768 --metric=cosine
+  //   wrangler vectorize create-metadata-index agent-memory --property-name=ownerKey --type=string
+  //   wrangler vectorize create-metadata-index agent-memory --property-name=tags --type=string
+  //
+  // CRITICAL — metadata indexes MUST exist BEFORE you insert vectors,
+  // otherwise queries with filter:{ownerKey} return 0 matches even
+  // though the data is there. See .claude/rules/cloudflare-vectorize.md.
+  //
+  // Without this binding, AutonomousAgent.recallSemantic returns []
+  // (default) and agents work without semantic memory.
+  // "vectorize": [
+  //   {
+  //     "binding": "AGENT_MEMORY",
+  //     "index_name": "agent-memory"
+  //   }
+  // ],
+
   // KV Namespace (key-value storage)
   // Create with: wrangler kv namespace create CACHE
   // "kv_namespaces": [
