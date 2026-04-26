@@ -780,10 +780,23 @@ export abstract class AutonomousAgent<
   /**
    * Build the AI SDK tool record from the subclass's tool definitions,
    * filtered by isAvailable() and wired with the canonical AgentContext.
+   *
+   * Also layers in the agent owner's MCP connections (from the
+   * existing per-user mcp_connections table) so an agent inherits any
+   * MCP server the user has connected via Connectors → Add MCP.
+   *
+   * Net effect: a fork pointing AssistantAgent at the user's
+   * Jezweb google-chat MCP gets `chat_spaces` / `chat_messages` /
+   * `chat_members` tools automatically — no native code needed. Same
+   * pattern for any future MCP integration; we don't have to write
+   * native tools for every service.
+   *
+   * MCP cleanup is fire-and-forget on the next tick — we don't have
+   * a clean lifecycle hook tied to the agent run, but the SDK's
+   * connection pool reuses idle connections so the cost is bounded.
    */
   protected async buildToolset(): Promise<Awaited<ReturnType<typeof collectAvailableTools>>> {
     const defs = await this.getToolDefinitions()
-    if (defs.length === 0) return {}
     const agentUser: AgentUser = {
       id: this.state.userId ?? '',
       email: '',
@@ -803,6 +816,32 @@ export abstract class AutonomousAgent<
       },
       telemetry: nullTelemetry,
     }
-    return collectAvailableTools(defs, ctx)
+    const localTools = defs.length === 0 ? {} : await collectAvailableTools(defs, ctx)
+
+    // Per-user MCP — only when we know the owner. Best-effort: a
+    // failing MCP load shouldn't break the agent run.
+    let mcpTools: Record<string, unknown> = {}
+    if (this.state.userId) {
+      try {
+        const { getUserMcpTools } = await import('@/server/lib/ai/user-mcp')
+        const env = this.env as unknown as Parameters<typeof getUserMcpTools>[0]
+        const result = await getUserMcpTools(env, this.state.userId)
+        mcpTools = result.tools
+        // Schedule cleanup off the hot path. The MCP client pool
+        // tolerates being closed mid-conversation (next call
+        // re-establishes); cost is small.
+        this.ctx.waitUntil(result.cleanup())
+      } catch (err) {
+        console.error(
+          JSON.stringify({
+            event: 'autonomous_agent_mcp_load_failed',
+            agentName: this.state.name,
+            error: err instanceof Error ? err.message : String(err),
+          }),
+        )
+      }
+    }
+
+    return { ...localTools, ...mcpTools } as Awaited<ReturnType<typeof collectAvailableTools>>
   }
 }
