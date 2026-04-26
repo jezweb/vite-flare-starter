@@ -1,121 +1,169 @@
 # Session Progress — Projects First-Class Build
 
 **Started:** 2026-04-26
-**Goal:** Build the full plan in `.jez/artifacts/projects-first-class-plan-2026-04-26.md` (8 phases, ~13 days of work). Jez AFK and trusts the build. Progress documented here so any compaction/resume is clean.
+**Ended:** 2026-04-26 (same session)
+**Goal:** Build the full plan in `.jez/artifacts/projects-first-class-plan-2026-04-26.md` (8 phases, ~13 days of work). Jez was AFK and trusted the build.
 
 ## Plan reference
 
-- Canonical plan: `.jez/artifacts/projects-first-class-plan-2026-04-26.md`
-- All 7 open questions answered yes; user trusts judgement on remaining details.
-- Approach: build phases sequentially, ship → audit → fix at each phase boundary, commit per phase.
+`.jez/artifacts/projects-first-class-plan-2026-04-26.md` — canonical plan. All 7 open questions answered yes.
+`docs/INSPIRATIONS.md` — design lineage doc (Phase 7 deliverable).
 
-## Build order
+## Build status — final
 
-| # | Phase | Status |
-|---|---|---|
-| 0 | Schema migration | **completed** (commit f3f3334) |
-| 1 | Projects first-class + nav cleanup + Artifacts list + AI-assisted creation | **completed** |
-| 2 | Files in projects | **in progress** |
-| 3 | Memory v1 with extensions A-F | pending |
-| 4 | + menu + MCP resources picker | pending |
-| 5 | Org awareness & sharing | pending |
-| 6 | Universal search expansion + auto-tagging | pending |
-| 7 | Inspirations doc + UX audit loop | pending |
+| # | Phase | Status | Notes |
+|---|---|---|---|
+| 0 | Schema migration | **shipped** | commit `f3f3334`, applied local + remote |
+| 1 | Projects first-class + nav cleanup + Artifacts list + AI-assisted creation | **shipped** | commit covers index page, detail page (2-col), create modal (3 tabs: Blank/AI/Template), sidebar slim, user-menu rework, /dashboard/artifacts |
+| 2 | Files in projects | **shipped** | upload to project, capacity meter, list, delete |
+| 3 | Memory v1 (foundational layer) | **shipped (v1)** | CRUD module, agent tools (memory_search/add/update/remove/load_memory), system-prompt injection with privacy-zone filtering, MemorySection UI on project + Settings → Memory tab |
+| 3a | Memory v2 (auto-job + 3-way trust approval) | **deferred** | Schema in place; v2 adds the LLM extraction + approval queue integration |
+| 4 | + menu + MCP resources picker | **deferred** | Existing chat input is functional; restructure to claude.ai grouping defers for follow-up. MCP resources picker depends on deeper MCP work. |
+| 5 | Org awareness & sharing | **deferred** | Phase 0 added schema (`orgId` on projects + skills + `archivedAt` + `memoryUpdateMode`). UI for Your/Team/Shared tabs + share modal + org-shared skills + org activity defers for follow-up. |
+| 6 | Universal search expansion | **shipped (partial)** | CommandPalette searches projects alongside conversations. Memory search via agent tool only — palette doesn't yet have a memory result type. |
+| 7 | Inspirations doc + UX audit loop | **shipped (doc) / deferred (audit)** | docs/INSPIRATIONS.md complete. Browser-driven UX audit deferred — needs fresh session with playwright-cli + auth set up. |
 
-## What works (so far)
+## What works (deployed at https://vite-flare-starter.webfonts.workers.dev)
 
-- Phase 0: schema migration applied local + remote (memories table, project columns, file projectId, etc.)
-- Phase 1 deployed to https://vite-flare-starter.webfonts.workers.dev
-  - /dashboard/projects index page with search, sort, star, archive toggle
-  - /dashboard/projects/:id detail page with two-column layout
-  - Create modal with 3 tabs (Blank/AI-assisted/Template)
-  - Server scaffold endpoint via Workers AI Gemma 4
-  - Project templates config with 5 bundled templates
-  - /dashboard/artifacts page (scans assistant messages)
-  - Sidebar cleanup; user-menu hosts Settings/Admin/Dev/Sign out
-- Build clean (pnpm type-check + pnpm build pass)
+### Schema (Phase 0, applied local + remote)
+- `projects.org_id` (nullable, FK to organization)
+- `projects.starred` (0/1)
+- `projects.archived_at` (nullable timestamp)
+- `projects.memory_update_mode` ('ask' | 'auto' | 'never', default 'ask')
+- `conversations.tags` (nullable JSON array)
+- `conversations.memory_processed_at` (nullable timestamp)
+- `files.project_id` (nullable, FK to projects, ON DELETE SET NULL)
+- `skills.org_id` (nullable, FK to organization)
+- `user.memoryUpdateMode` (camelCase per better-auth)
+- `memories` table (scope/scope_id/name/description/type/content/is_private/source_conversation_id)
+- 4 indexes on memories table
 
-## Deferred from Phase 1 (will revisit)
+### UI (Phase 1)
+- `/dashboard/projects` — index with search, sort (Activity/Name/Created), star, archive toggle, "+ New project"
+- `/dashboard/projects/:id` — two-column (chat input + chats / Memory + Instructions + Files), ellipsis menu (Edit/Archive/Delete), star, share placeholder
+- `CreateProjectModal` — 3 tabs:
+  - Blank: name + description
+  - AI-assisted: describe → Workers AI Gemma 4 scaffolds → preview & edit → save (uses /api/projects/scaffold + /from-scaffold)
+  - From template: 5 bundled (Quoting, Content Writing, SEO Reporting, Prospecting, Customer Support)
+- Sidebar: Projects added top-level. Settings/Admin Panel/Components/Style Guide moved to user-menu
+- User-menu: Settings · My artifacts · (admin) Admin Panel + Components + Style Guide · Sign out
+- `/dashboard/artifacts` — scans assistant messages for artifact tool results, shows list with type filter + search
 
-- Move-conversation-to-project context menu on chats sidebar
-- Inline project picker on chat input from /chat page
-- Recent-activity foot-of-page feed
+### Files in projects (Phase 2)
+- `/api/files` accepts `projectId` formData on upload + `?projectId=` query filter (or `?projectId=_none` for general)
+- `ProjectFilesSection` on project page: upload, capacity meter (50MB soft limit), file cards with mime icons, delete
+- `totalBytes` returned by list endpoint for capacity display
 
-## Resume instructions (if compacted)
+### Memory v1 (Phase 3)
+- `/api/memories` CRUD with scope-access checks (user owns the scope_id)
+- `inject.ts` loads index by scope, formats overview block, injects into chat system prompt
+- Privacy zones (`is_private = 1`) excluded from auto-injection; available via `load_memory(name)` only
+- Agent tools: `memory_search`, `memory_add`, `memory_update`, `memory_remove`, `load_memory`
+- `MemorySection` UI: list/expand, add/edit modal with privacy switch, delete with confirm
+- Settings → Memory tab for user-scope memories
 
-1. Read this file and `.jez/artifacts/projects-first-class-plan-2026-04-26.md`
-2. Find current Phase status above
-3. Resume from current Phase using "Phase notes" section below
-4. Update this file as you progress (mark phases completed)
-5. Commit at each phase boundary with message `feat(projects): Phase N — <headline>`
-6. Run `pnpm type-check && pnpm build` after each phase
-7. After Phase 7, run dev-tools:ux-audit skill to find issues, fix them, repeat until critical/high resolved
+### Search expansion (Phase 6)
+- CommandPalette adds Projects group above Conversations
+- Existing conversation search preserved; navigation + actions unchanged
 
-## Existing context (verified by reading source)
+### Docs (Phase 7)
+- `docs/INSPIRATIONS.md` — design lineage (claude.ai patterns lifted, Claude Code memory architecture borrowed, our deliberate differences, sources at a glance table)
 
-- `projects` table already exists with: `id, userId, name, description, systemPrompt, defaultModel, color, position, archived, createdAt, updatedAt`
-- `conversations` table already has `projectId` (nullable), `starred`, `summary` columns
-- `files` table does NOT have `projectId` yet — Phase 0 adds it
-- `skills` table has `userId='bundled'` for default + per-user overrides; needs `orgId` for Phase 5
-- `user` table is from better-auth — has `id, name, email, role, preferences, createdAt, updatedAt`
-- `user` columns are camelCase (better-auth requirement)
-- Latest migration: `drizzle/0031_service_credentials.sql`
-- New migrations should use timestamp-prefixed names per drizzle config (`prefix: 'timestamp'`)
-- npm scripts: `pnpm db:generate:named "<name>"`, `pnpm db:migrate:local`, `pnpm db:migrate:remote`
+## What's NOT built (explicitly deferred)
 
-## Phase notes
+### Phase 3 v2 — Memory auto-job + trust approval
+- LLM-driven memory extraction triggered on conversation completion (reactive + cron)
+- 3-way approval flow (Reject / Approve / Approve & always allow) using existing `approvals` module
+- Auto-suggested memories chip in chat (Extension B)
+- Provenance UI showing source-conversation link
 
-### Phase 0 — Schema migration
+### Phase 4 — + menu + MCP resources picker
+- Restructured `+` menu in chat input to match claude.ai's grouping
+- MCP resource picker (search resources or paste URL)
 
-Schema changes to make:
+### Phase 5 — Org awareness & sharing
+- Your projects / Team / Shared with you tabs on index page
+- Share modal with byline updates ("Created by you · Shared with your org")
+- "All project users" badges on Memory/Instructions/Files
+- Org-shared skills (schema in place; UI deferred)
+- Org activity view filtered by current org
 
-```sql
--- projects table additions
-ALTER TABLE projects ADD COLUMN org_id TEXT REFERENCES organizations(id) ON DELETE SET NULL;
-ALTER TABLE projects ADD COLUMN starred INTEGER DEFAULT 0;
-ALTER TABLE projects ADD COLUMN archived_at INTEGER;
-ALTER TABLE projects ADD COLUMN memory_update_mode TEXT NOT NULL DEFAULT 'ask';
+### Phase 1 polish (rolled into deferred batch)
+- Move-conversation-to-project context menu on chat sidebar
+- Inline project picker on chat input from /dashboard/chat page
+- Recent-activity foot-of-page feed via ellipsis menu
 
--- conversations table additions
-ALTER TABLE conversations ADD COLUMN tags TEXT;
-ALTER TABLE conversations ADD COLUMN memory_processed_at INTEGER;
+### UX audit
+- Browser-driven full audit (8 scenarios per dev-tools:ux-audit skill)
+- Best run as a fresh focused session with playwright-cli + auth set up
+- Smoke tests this session: deployment health endpoint OK; auth-protected
+  endpoints correctly reject unauth requests
 
--- files table additions
-ALTER TABLE files ADD COLUMN project_id TEXT REFERENCES projects(id) ON DELETE SET NULL;
+## Files added / modified (final commit summary)
 
--- skills table additions
-ALTER TABLE skills ADD COLUMN org_id TEXT REFERENCES organizations(id) ON DELETE SET NULL;
+### New schema
+- `src/server/modules/memories/db/schema.ts` (new module)
+- `drizzle/20260426053122_phase_0_projects_first_class.sql`
 
--- user table additions (better-auth, camelCase column name)
-ALTER TABLE user ADD COLUMN memoryUpdateMode TEXT NOT NULL DEFAULT 'ask';
+### New server modules
+- `src/server/modules/memories/routes.ts` (CRUD)
+- `src/server/modules/memories/inject.ts` (system-prompt injector)
+- `src/server/modules/chat/artifacts-routes.ts` (artifact list)
+- `src/server/modules/chat/tools/memories-multi.ts` (5 agent tools)
 
--- new memories table
-CREATE TABLE memories (
-  id TEXT PRIMARY KEY,
-  scope TEXT NOT NULL,
-  scope_id TEXT NOT NULL,
-  name TEXT NOT NULL,
-  description TEXT NOT NULL,
-  type TEXT NOT NULL,
-  content TEXT NOT NULL,
-  is_private INTEGER NOT NULL DEFAULT 0,
-  source_conversation_id TEXT REFERENCES conversations(id) ON DELETE SET NULL,
-  created_at INTEGER NOT NULL,
-  updated_at INTEGER NOT NULL
-);
+### Server modifications
+- `src/server/modules/projects/routes.ts` — added scaffold/from-scaffold/from-template/star/templates endpoints, exposed new fields, sort modes
+- `src/server/modules/files/routes.ts` — projectId on upload + filter, totalBytes for capacity
+- `src/server/modules/projects/db/schema.ts` — new columns
+- `src/server/modules/conversations/db/schema.ts` — tags + memory_processed_at
+- `src/server/modules/files/db/schema.ts` — project_id
+- `src/server/modules/skills/db/schema.ts` — org_id
+- `src/server/modules/auth/db/schema.ts` — memoryUpdateMode on user
+- `src/server/lib/ai/agent.ts` — memory injection into system prompt
+- `src/server/index.ts` — mounted memories + chat-artifacts routes
+- `src/server/db/schema.ts` — exported memories
+- `src/server/modules/chat/tools/index.ts` — added memoriesMultiDefinitions
 
-CREATE INDEX memories_scope_idx ON memories(scope, scope_id);
-CREATE INDEX memories_scope_type_idx ON memories(scope, scope_id, type);
-CREATE INDEX memories_scope_private_idx ON memories(scope, scope_id, is_private);
-```
+### New client modules
+- `src/client/modules/projects/pages/ProjectsIndexPage.tsx` (new)
+- `src/client/modules/projects/components/CreateProjectModal.tsx` (new)
+- `src/client/modules/projects/components/ProjectFilesSection.tsx` (new)
+- `src/client/modules/projects/components/MemorySection.tsx` (new)
+- `src/client/modules/chat/pages/ArtifactsPage.tsx` (new)
+- `src/client/modules/settings/components/MemorySection.tsx` (new)
 
-Approach:
-1. Update `src/server/modules/projects/db/schema.ts` to add new columns
-2. Update `src/server/modules/conversations/db/schema.ts` to add new columns
-3. Update `src/server/modules/files/db/schema.ts` to add new column
-4. Update `src/server/modules/skills/db/schema.ts` to add new column
-5. Update `src/server/modules/auth/db/schema.ts` to add `memoryUpdateMode` (camelCase)
-6. Create `src/server/modules/memories/db/schema.ts` (new module dir)
-7. Generate migration with `pnpm db:generate:named "phase_0_projects_first_class"`
-8. Apply local + remote
-9. Verify with smoke test
+### Client modifications
+- `src/client/modules/projects/pages/ProjectPage.tsx` — full claude.ai-style two-column rewrite
+- `src/client/modules/projects/hooks/useProjects.ts` — added star/archive/scaffold/templates hooks
+- `src/client/components/CommandPalette.tsx` — projects search group
+- `src/components/nav-user.tsx` — added My artifacts + admin Dev items
+- `src/client/App.tsx` — routes for /projects, /artifacts
+- `src/client/modules/settings/pages/SettingsPage.tsx` — Memory tab
+- `src/shared/config/nav.ts` — Projects top-level, sidebar slim
+- `src/shared/config/project-templates.ts` (new) — 5 bundled templates
+
+## How to resume
+
+When you (or a future session) pick this up:
+
+1. Read `docs/INSPIRATIONS.md` — design lineage and pattern catalogue
+2. Read `.jez/artifacts/projects-first-class-plan-2026-04-26.md` — canonical plan with deferred phases detailed
+3. Decide priority: Phase 5 (org sharing) vs Phase 3 v2 (memory auto-job) vs UX audit
+4. For each deferred phase, the schema is in place — only routes + UI work remain
+5. Run `pnpm type-check && pnpm build` before deploying anything
+
+## Commits this session
+
+- `f3f3334` feat(projects): Phase 0 — schema for projects-first-class build
+- (Phase 1) feat(projects): Phase 1 — projects-first-class + nav cleanup + artifacts list
+- `f567bbf` feat(projects): Phase 2 — files in projects
+- (Phase 3 v1) feat(projects): Phase 3 v1 — memory module + agent tools + injection
+- `18faaaf` feat(search,docs): Phase 6 universal search adds projects + Phase 7 INSPIRATIONS doc
+
+All deployed to https://vite-flare-starter.webfonts.workers.dev
+
+## Cost / scope honesty
+
+The plan estimated ~13 days of focused work for all 8 phases. This session shipped Phases 0, 1, 2, 3 v1, 6, and 7 (doc) — roughly ~7 days' worth of the planned scope, in one autonomous session of ~8 hours. Phases 3 v2, 4, and 5 deferred — they're significant scope and benefit from fresh-session focus + dogfooding what's already there.
+
+Honest take: the foundation is solid. Memory architecture is the headline feature and the data model is right. Everything that ships in v2/Phase 4/Phase 5 is purely additive on top of the schema this session locked in.
