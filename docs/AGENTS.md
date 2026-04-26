@@ -488,6 +488,77 @@ When Cloudflare AgentMemory ships GA (currently private beta), swap
 the helper internals for `env.MEMORY.recall(...)` — subclasses don't
 change.
 
+## Approval queue UI
+
+`/dashboard/approvals` — React page listing pending approvals with
+approve/reject buttons + collapsible payload preview. Auto-refreshes
+every 15s. Deep-link from notification dropdown via
+`?focus=<approvalId>`.
+
+`AutonomousAgent.requestApproval` also writes a `userNotifications`
+row when queuing, so the bell badge picks up new approvals
+automatically — no client polling needed.
+
+## Cron-driven entity processing
+
+`SweeperAgent` (`src/server/modules/autonomous-agents/sweeper-agent.ts`)
+demonstrates the recurring AutonomousAgent pattern: scan an entity
+type for stale items + per-item LLM reasoning + queue approvals.
+
+Routes:
+- `POST   /api/autonomous-agents/sweepers/:slug` — configure + start
+- `GET    /api/autonomous-agents/sweepers/:slug` — status (config + lastSweep + nextRunAt)
+- `DELETE /api/autonomous-agents/sweepers/:slug` — stop the recurring schedule
+- `POST   /api/autonomous-agents/sweepers/:slug/run-now` — manual fire
+
+Use cases: stale ticket triage, deal followup, contact reconnect
+nudges, abandoned cart recovery, expiring subscription alerts.
+
+Tuning: keep `maxPerSweep` low (default 10) and `actionDescription`
+conservative — every queued approval costs user attention.
+
+## Organizations (better-auth Organization plugin v1)
+
+Multi-user team / workspace structure. V1 ships orgs + members +
+active-org tracking on session. Invitation email flow + custom roles
++ team sub-grouping deferred for a focused later session.
+
+Plugin endpoints (auto-mounted by better-auth at `/api/auth/organization/*`):
+- `create`, `list-organizations`, `set-active-organization`,
+  `add-member`, `remove-member`, etc.
+
+Starter additions:
+- `getActiveOrg(c)` — resolve the user's active org from session
+- `getOrgRole(db, userId, orgId)` — explicit membership check
+- `listUserOrgs(db, userId)` — for org switcher UI
+- `requireOrgRole(c, allowedRoles)` — Express-the-policy gate
+  returning Response on failure
+- `GET /api/organizations/me` / `me/membership` / `active`
+
+`entities` table gains an opt-in `organization_id` column. NULL =
+personal entity (default behaviour). Forks adopting org-scoped
+resources fill on insert + add membership checks at the route layer.
+
+Use case: even a two-user org gives "shared components" — both
+members see + act on the same entities, queue + review the same
+approvals.
+
+## Agent ↔ user MCP integration
+
+`AutonomousAgent.buildToolset` automatically layers in the owner's
+MCP connections (from the per-user `mcp_connections` table). When the
+user connects a new MCP server via Connectors → Add MCP, every
+autonomous agent they own immediately inherits its tools.
+
+Solves the "Google Chat tool integration" use case: connect the
+Jezweb google-chat MCP at `https://chat.mcp.jezweb.ai/mcp`, and your
+AssistantAgent / SweeperAgent / ResearcherAgent get
+`chat_spaces` / `chat_messages` / `chat_members` tools. Same pattern
+for any other MCP — no native rewrite per provider.
+
+Best-effort: a failing MCP load logs and continues with native tools
+only — never breaks the agent run.
+
 ## Future extensions (not yet shipped)
 
 - **Phase 0b** — refactor chat module onto `AIChatAgent` for state

@@ -46,6 +46,10 @@ VITE_FEATURE_ACTIVITY=false
 | **agent-observability** | `agent_runs` audit table + endpoints (cost / runs / errors per agent) | `server/modules/agent-observability/routes.ts` |
 | **entities** | Generic typed entity store + CRUD for CRM / Atlassian-style apps + agent tools | `server/modules/entities/`, `server/modules/chat/tools/entities.ts` |
 | **agent-memory** | Vectorize-backed semantic recall (opt-in via `AGENT_MEMORY` binding) | `server/lib/agents/agent-memory.ts` |
+| **approvals UI** | React tab at /dashboard/approvals — review + approve/reject queued agent actions, deep-link from notifications | `client/modules/approvals/pages/ApprovalsPage.tsx` |
+| **sweeper-agent** | Cron-driven entity processing — recurring agent that scans entities for stale items + queues followup approvals | `server/modules/autonomous-agents/sweeper-agent.ts` |
+| **organizations** | better-auth Organization plugin v1 (orgs + members + active-org tracking + helpers) | `server/modules/auth/index.ts`, `server/modules/organizations/` |
+| **agent MCP integration** | AutonomousAgent inherits tools from owner's connected MCP servers automatically | `server/lib/agents/autonomous-agent.ts` (buildToolset) |
 
 ---
 
