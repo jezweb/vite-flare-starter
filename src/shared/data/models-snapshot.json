@@ -1,15 +1,15 @@
 {
-  "updated": "2026-04-25T10:06:32.957Z",
+  "updated": "2026-04-26T09:53:11.781Z",
   "total": 174,
   "sources": {
     "openrouter": {
       "url": "https://models.flared.au/json",
-      "updated": "2026-04-25T10:06:31.325Z",
+      "updated": "2026-04-26T09:53:11.747Z",
       "count": 119
     },
     "workersai": {
       "url": "https://ai.flared.au/json",
-      "updated": "2026-04-25T10:06:32.942Z",
+      "updated": "2026-04-26T09:53:10.205Z",
       "count": 91
     }
   },
@@ -617,8 +617,8 @@
       "context_length": 1048576,
       "max_output": 384000,
       "pricing": {
-        "input": 1.74,
-        "output": 3.48
+        "input": 0.435,
+        "output": 0.87
       },
       "modality": "text->text",
       "category": "text",
