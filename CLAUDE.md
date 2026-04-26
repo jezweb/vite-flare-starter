@@ -78,6 +78,9 @@ reference lives in `docs/`, loaded only when you need it.
 
 | Want to… | Read |
 |---|---|
+| **Onboard fresh** (humans OR AI sessions) — fastest orientation | [`docs/ONBOARDING.md`](./docs/ONBOARDING.md) |
+| **Build a specific product** (email triage, CRM, Jira, support, docs) | [`docs/AGENT_PLAYBOOKS.md`](./docs/AGENT_PLAYBOOKS.md) |
+| **Architectural rationale** — why the starter looks like this, what we adopted from other frameworks | [`docs/PLATFORM_OBSERVATIONS.md`](./docs/PLATFORM_OBSERVATIONS.md) |
 | Build a CRUD feature, table, hook | [`docs/PATTERNS.md`](./docs/PATTERNS.md) |
 | Build an AI agent / scheduled agent / agent swarm | [`docs/AGENTS.md`](./docs/AGENTS.md) |
 | Wire voice, video, or any DO streaming agent | [`docs/DO_AGENTS.md`](./docs/DO_AGENTS.md) |
