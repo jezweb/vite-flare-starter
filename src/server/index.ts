@@ -57,6 +57,7 @@ export { ReminderAgent } from './modules/scheduled-agents/reminder-agent'
 export { AssistantAgent } from './modules/autonomous-agents/assistant-agent'
 export { ResearcherAgent } from './modules/autonomous-agents/researcher-agent'
 export { WriterAgent } from './modules/autonomous-agents/writer-agent'
+export { SweeperAgent } from './modules/autonomous-agents/sweeper-agent'
 export { ScratchpadMcpAgent }
 import { securityHeaders } from './middleware/security'
 import { rateLimiter } from './middleware/rate-limit'

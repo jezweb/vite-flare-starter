@@ -22,10 +22,12 @@ import { getAgentByName } from 'agents'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import type { AssistantAgent } from './assistant-agent'
 import type { ResearcherAgent } from './researcher-agent'
+import type { SweeperAgent } from './sweeper-agent'
 
 interface AssistantEnv {
   AssistantAgent: DurableObjectNamespace<AssistantAgent>
   ResearcherAgent: DurableObjectNamespace<ResearcherAgent>
+  SweeperAgent: DurableObjectNamespace<SweeperAgent>
 }
 
 const app = new Hono<AuthContext>()
@@ -233,6 +235,75 @@ app.post('/researcher/:slug', zValidator('json', ResearchInputSchema), async (c)
     ...(model && { model }),
     maxSteps: maxSteps ?? 10,
   })
+  return c.json({ slug, ...result })
+})
+
+// ─── Sweeper agent (cron-driven entity processing) ──────────────
+//
+// Worked example of recurring AutonomousAgent that scans entities
+// table for stale items and queues followup approvals. See
+// sweeper-agent.ts for the pattern.
+
+const SweeperConfigureSchema = z.object({
+  entityType: z.string().min(1).max(50).regex(/^[a-zA-Z0-9_-]+$/),
+  staleAfterDays: z.number().int().min(1).max(365).optional(),
+  maxPerSweep: z.number().int().min(1).max(100).optional(),
+  intervalSeconds: z.number().int().min(60).max(86400 * 7).optional(),
+  actionDescription: z.string().min(10).max(2000),
+  statusFilter: z.array(z.string().regex(/^[a-zA-Z0-9_-]+$/)).max(10).optional(),
+})
+
+app.post('/sweepers/:slug', zValidator('json', SweeperConfigureSchema), async (c) => {
+  const slug = c.req.param('slug')
+  if (!validSlug(slug)) return c.json({ error: 'Invalid slug' }, 400)
+  const userId = c.get('userId')
+  const env = c.env as unknown as AssistantEnv
+  if (!env.SweeperAgent) return c.json({ error: 'SweeperAgent binding not configured' }, 503)
+
+  const agent = await getAgentByName(env.SweeperAgent, `${userId}:${slug}`)
+  await agent.setOwner(userId, slug)
+  const result = await agent.configureAndStart(c.req.valid('json'))
+  return c.json({ slug, ...result })
+})
+
+app.get('/sweepers/:slug', async (c) => {
+  const slug = c.req.param('slug')
+  if (!validSlug(slug)) return c.json({ error: 'Invalid slug' }, 400)
+  const userId = c.get('userId')
+  const env = c.env as unknown as AssistantEnv
+  if (!env.SweeperAgent) return c.json({ error: 'SweeperAgent binding not configured' }, 503)
+
+  const agent = await getAgentByName(env.SweeperAgent, `${userId}:${slug}`)
+  await agent.setOwner(userId, slug)
+  const status = await agent.sweepStatus()
+  return c.json({ slug, ...status })
+})
+
+app.delete('/sweepers/:slug', async (c) => {
+  const slug = c.req.param('slug')
+  if (!validSlug(slug)) return c.json({ error: 'Invalid slug' }, 400)
+  const userId = c.get('userId')
+  const env = c.env as unknown as AssistantEnv
+  if (!env.SweeperAgent) return c.json({ error: 'SweeperAgent binding not configured' }, 503)
+
+  const agent = await getAgentByName(env.SweeperAgent, `${userId}:${slug}`)
+  await agent.setOwner(userId, slug)
+  const result = await agent.stop()
+  return c.json({ slug, ...result })
+})
+
+// Manual fire — useful for testing / immediate sweep without waiting
+// for the next scheduled tick.
+app.post('/sweepers/:slug/run-now', async (c) => {
+  const slug = c.req.param('slug')
+  if (!validSlug(slug)) return c.json({ error: 'Invalid slug' }, 400)
+  const userId = c.get('userId')
+  const env = c.env as unknown as AssistantEnv
+  if (!env.SweeperAgent) return c.json({ error: 'SweeperAgent binding not configured' }, 503)
+
+  const agent = await getAgentByName(env.SweeperAgent, `${userId}:${slug}`)
+  await agent.setOwner(userId, slug)
+  const result = await agent.doSweep()
   return c.json({ slug, ...result })
 })
 
