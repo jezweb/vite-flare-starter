@@ -9,7 +9,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { apiClient } from '@/client/lib/api-client'
 import { Button } from '@/components/ui/button'
 import {
   PromptInput,

@@ -87,7 +87,7 @@ export class SweeperAgent extends AutonomousAgent<Env, SweeperState> {
     sweep: {
       entityType: '',
       staleAfterDays: 7,
-      maxPerSweep: 10,
+      maxPerSweep: 3,
       intervalSeconds: 3600,
       actionDescription: '',
       statusFilter: [],
@@ -130,7 +130,7 @@ export class SweeperAgent extends AutonomousAgent<Env, SweeperState> {
       sweep: {
         entityType: config.entityType,
         staleAfterDays: config.staleAfterDays ?? 7,
-        maxPerSweep: config.maxPerSweep ?? 10,
+        maxPerSweep: config.maxPerSweep ?? 3,
         intervalSeconds: config.intervalSeconds ?? 3600,
         actionDescription: config.actionDescription,
         statusFilter: config.statusFilter ?? [],
@@ -188,7 +188,16 @@ export class SweeperAgent extends AutonomousAgent<Env, SweeperState> {
    * queued approvals."
    *
    * Caps are critical: a stale-entity sweep that runs unbounded on
-   * 10,000 rows would exhaust budget instantly.
+   * 10,000 rows would exhaust budget instantly. The default
+   * `maxPerSweep=3` is deliberately conservative: each runOnce can
+   * take 5-30s (LLM + tools + audit), so 3 keeps us comfortably under
+   * the DO alarm's 30s CPU budget. Forks with longer alarm budgets
+   * (set via top-level `[limits].cpu_ms` in wrangler.jsonc) can raise
+   * this; a bigger sweep amortises model resolution overhead.
+   *
+   * Model resolution is cached at the start of the sweep — see
+   * `prebuiltModel` in RunOnceInput. Without that cache, every entity
+   * triggers a fresh BYOK key lookup against D1.
    */
   async doSweep(): Promise<{ processed: number; queued: number; skipped: number }> {
     const cfg = this.state.sweep
@@ -214,6 +223,28 @@ export class SweeperAgent extends AutonomousAgent<Env, SweeperState> {
       .where(and(...conditions))
       .limit(cfg.maxPerSweep)
 
+    // Resolve the model ONCE for the whole sweep (Phase 3 v2 / issue #38).
+    // Otherwise each runOnce hits D1 1-2 times for BYOK key lookup —
+    // pure overhead since the model doesn't change mid-sweep. Best-effort:
+    // if resolution fails (e.g. transient D1 hiccup), fall through and
+    // let runOnce attempt fresh resolution per entity.
+    let prebuiltModel: unknown = undefined
+    try {
+      const { resolveModel, resolveModelForUser } = await import('@/server/lib/ai/providers')
+      prebuiltModel = this.state.userId
+        ? await resolveModelForUser(
+            this.env as Parameters<typeof resolveModelForUser>[0],
+            { userId: this.state.userId },
+            this.state.modelId,
+          )
+        : resolveModel(this.env, this.state.modelId)
+    } catch (err) {
+      console.warn(JSON.stringify({
+        event: 'sweeper_prebuild_model_failed',
+        error: err instanceof Error ? err.message : String(err),
+      }))
+    }
+
     let queued = 0
     let skipped = 0
     for (const entity of candidates) {
@@ -237,6 +268,7 @@ export class SweeperAgent extends AutonomousAgent<Env, SweeperState> {
         trigger: 'schedule',
         // Per-entity step cap — sweep should be cheap per-item.
         maxSteps: 4,
+        prebuiltModel: prebuiltModel ?? undefined,
       })
       // Heuristic: if the response mentions "queued" or "approval" treat
       // as queued; otherwise skipped. This is approximate — for accurate

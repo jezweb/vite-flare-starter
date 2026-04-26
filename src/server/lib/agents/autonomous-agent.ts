@@ -143,6 +143,16 @@ export interface RunOnceInput {
    *  runScheduled, 'webhook' from handleWebhook, 'inter_agent' when
    *  another agent's stub invokes us. */
   trigger?: AgentRunTrigger
+  /**
+   * Pre-resolved model instance to skip the per-run resolveModelForUser
+   * call. Useful for batch loops (e.g. SweeperAgent.doSweep) that fire
+   * runOnce N times for the same owner — the model doesn't change
+   * mid-sweep, so resolving once + passing it through saves N D1
+   * round-trips for BYOK key lookup. Type is the AI SDK's LanguageModel
+   * shape; cast through unknown so we don't pull the SDK type into the
+   * public interface.
+   */
+  prebuiltModel?: unknown
 }
 
 export interface RunOnceResult {
@@ -184,6 +194,20 @@ export abstract class AutonomousAgent<
 
   /** Override to change the recent-messages window size. */
   protected readonly maxRecentMessages: number = DEFAULT_MAX_RECENT_MESSAGES
+
+  /**
+   * Pending MCP cleanup from the previous buildToolset call. The cleanup
+   * function comes from getUserMcpTools and tears down the per-user MCP
+   * client pool. We hold it on the instance so we can run it at the
+   * START of the next buildToolset (synchronously) — guarantees at most
+   * one outstanding cleanup per agent instance, regardless of whether
+   * the previous waitUntil window completed.
+   *
+   * Issue #39 — without this, long agent runs could exit before the
+   * waitUntil window expired, leaving orphaned MCP connections in the
+   * SDK's pool. Now: any orphans get reaped on the next invocation.
+   */
+  private pendingMcpCleanup: (() => Promise<void>) | null = null
 
   /**
    * Default state factory. Subclasses spread this into their own
@@ -445,7 +469,14 @@ export abstract class AutonomousAgent<
 
       // Resolve the model. BYOK-aware: user-supplied keys override
       // env defaults. Falls back to plain resolveModel when no owner.
-      const model = this.state.userId
+      // Skip resolution entirely when the caller passed a prebuiltModel —
+      // batch loops (SweeperAgent.doSweep) cache the resolved model
+      // across N runOnce invocations to avoid N D1 round-trips for the
+      // BYOK key lookup. Cast through unknown to keep the AI SDK's
+      // LanguageModel type out of the public RunOnceInput shape.
+      const model = input?.prebuiltModel
+        ? (input.prebuiltModel as Parameters<typeof streamText>[0]['model'])
+        : this.state.userId
         ? await resolveModelForUser(
             this.env as Parameters<typeof resolveModelForUser>[0],
             { userId: this.state.userId },
@@ -828,15 +859,57 @@ export abstract class AutonomousAgent<
     // failing MCP load shouldn't break the agent run.
     let mcpTools: Record<string, unknown> = {}
     if (this.state.userId) {
+      // Issue #39: drain any pending cleanup from the previous run BEFORE
+      // opening fresh connections. Guarantees at most one outstanding
+      // cleanup per agent instance even if a prior waitUntil never
+      // completed (long runs that exited before the post-response window
+      // closed). Catch + swallow — a stale cleanup failure shouldn't
+      // block this turn.
+      if (this.pendingMcpCleanup) {
+        const prev = this.pendingMcpCleanup
+        this.pendingMcpCleanup = null
+        try {
+          await prev()
+        } catch (err) {
+          console.warn(
+            JSON.stringify({
+              event: 'autonomous_agent_mcp_stale_cleanup_failed',
+              agentName: this.state.name,
+              error: err instanceof Error ? err.message : String(err),
+            }),
+          )
+        }
+      }
+
       try {
         const { getUserMcpTools } = await import('@/server/lib/ai/user-mcp')
         const env = this.env as unknown as Parameters<typeof getUserMcpTools>[0]
         const result = await getUserMcpTools(env, this.state.userId)
         mcpTools = result.tools
-        // Schedule cleanup off the hot path. The MCP client pool
-        // tolerates being closed mid-conversation (next call
-        // re-establishes); cost is small.
-        this.ctx.waitUntil(result.cleanup())
+        // Schedule cleanup off the hot path AND record it on the
+        // instance so the NEXT buildToolset call drains it
+        // synchronously if the waitUntil window didn't complete first.
+        this.pendingMcpCleanup = result.cleanup
+        this.ctx.waitUntil(
+          result
+            .cleanup()
+            .then(() => {
+              // Cleanup completed via waitUntil — clear the pending
+              // reference so we don't double-run on the next turn.
+              if (this.pendingMcpCleanup === result.cleanup) {
+                this.pendingMcpCleanup = null
+              }
+            })
+            .catch((err) => {
+              console.warn(
+                JSON.stringify({
+                  event: 'autonomous_agent_mcp_cleanup_failed',
+                  agentName: this.state.name,
+                  error: err instanceof Error ? err.message : String(err),
+                }),
+              )
+            }),
+        )
       } catch (err) {
         console.error(
           JSON.stringify({
