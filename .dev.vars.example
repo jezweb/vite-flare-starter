@@ -100,6 +100,37 @@ NODE_ENV=development
 # Never commit production secrets to git!
 
 # ============================================
+# AI Provider API Keys (optional)
+# ============================================
+# Workers AI (env.AI binding) is free and needs no key. Set the keys for the
+# providers you actually want to call. One OPENROUTER_API_KEY unlocks every
+# `provider/model` ID in src/shared/config/models.ts. The direct keys below
+# are useful when you want native billing, lower latency, or extra models
+# OpenRouter doesn't proxy.
+
+# Anthropic direct (claude-* model IDs)
+# ANTHROPIC_API_KEY=sk-ant-...
+
+# OpenAI direct (gpt-*, o1-*, o3-*, o4-* model IDs)
+# OPENAI_API_KEY=sk-...
+
+# Google AI Studio direct (gemini-* model IDs)
+# GOOGLE_AI_API_KEY=AIza...
+
+# Alibaba DashScope direct (dashscope/* model IDs — Qwen Max/Plus/Turbo, VL, Coder)
+# Sign up: https://dashscope.console.aliyun.com/ (international region)
+# Endpoint used: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+# DASHSCOPE_API_KEY=sk-...
+
+# HuggingFace Inference Providers direct (huggingface/* model IDs)
+# Generate token: https://huggingface.co/settings/tokens (read scope is enough)
+# Endpoint used: https://router.huggingface.co/v1
+# HUGGINGFACE_API_KEY=hf_...
+
+# OpenRouter (any other provider/model ID — the simplest option)
+# OPENROUTER_API_KEY=sk-or-...
+
+# ============================================
 # Google Places (optional — powers places_search + show_map)
 # ============================================
 # Pairs with the show_map inline UI tool to render map answers like claude.ai.

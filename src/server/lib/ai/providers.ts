@@ -13,7 +13,21 @@ export interface ProviderEnv {
   OPENAI_API_KEY?: string
   GOOGLE_AI_API_KEY?: string
   OPENROUTER_API_KEY?: string
+  DASHSCOPE_API_KEY?: string
+  HUGGINGFACE_API_KEY?: string
 }
+
+/**
+ * Alibaba DashScope — international endpoint, OpenAI-compatible mode.
+ * China-region keys should override via `DASHSCOPE_BASE_URL` (not yet wired).
+ */
+const DASHSCOPE_BASE_URL = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1'
+
+/**
+ * HuggingFace Inference Providers router — OpenAI-compatible, fans out to the
+ * cheapest available provider for each model (Sambanova, Together, Fireworks…).
+ */
+const HUGGINGFACE_BASE_URL = 'https://router.huggingface.co/v1'
 
 export function resolveModel(env: ProviderEnv, modelId: string) {
   // Workers AI — native binding, free.
@@ -27,6 +41,23 @@ export function resolveModel(env: ProviderEnv, modelId: string) {
     if (!env.OPENROUTER_API_KEY) throw new Error(`OPENROUTER_API_KEY required for model: ${modelId}`)
     const openrouter = createOpenRouter({ apiKey: env.OPENROUTER_API_KEY })
     return openrouter(modelId.replace('openrouter/', ''))
+  }
+
+  // Alibaba Qwen direct via DashScope (OpenAI-compatible). Must be checked
+  // before the generic `provider/model → openrouter` rule below.
+  if (modelId.startsWith('dashscope/')) {
+    if (!env.DASHSCOPE_API_KEY) throw new Error(`DASHSCOPE_API_KEY required for model: ${modelId}`)
+    const dashscope = createOpenAI({ apiKey: env.DASHSCOPE_API_KEY, baseURL: DASHSCOPE_BASE_URL })
+    return dashscope(modelId.replace('dashscope/', ''))
+  }
+
+  // HuggingFace Inference Providers direct. The downstream model ID can itself
+  // contain a slash (e.g. `meta-llama/Llama-3.3-70B-Instruct`), so we strip
+  // only the `huggingface/` prefix and forward the rest verbatim.
+  if (modelId.startsWith('huggingface/')) {
+    if (!env.HUGGINGFACE_API_KEY) throw new Error(`HUGGINGFACE_API_KEY required for model: ${modelId}`)
+    const hf = createOpenAI({ apiKey: env.HUGGINGFACE_API_KEY, baseURL: HUGGINGFACE_BASE_URL })
+    return hf(modelId.replace('huggingface/', ''))
   }
 
   // `provider/model` shape (e.g. `anthropic/claude-sonnet-4.6`) → OpenRouter.
@@ -66,6 +97,8 @@ export function getAvailableProviders(env: ProviderEnv): string[] {
   if (env.ANTHROPIC_API_KEY) providers.push('anthropic')
   if (env.OPENAI_API_KEY) providers.push('openai')
   if (env.GOOGLE_AI_API_KEY) providers.push('google')
+  if (env.DASHSCOPE_API_KEY) providers.push('dashscope')
+  if (env.HUGGINGFACE_API_KEY) providers.push('huggingface')
   if (env.OPENROUTER_API_KEY) providers.push('openrouter')
   return providers
 }

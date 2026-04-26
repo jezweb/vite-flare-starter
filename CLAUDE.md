@@ -607,7 +607,14 @@ Use for: heavy ML inference, video processing, anything that exceeds Workers CPU
 | **xAI** | Grok 4.1 Fast | Via OpenRouter |
 | **Z.AI** | GLM 5 | Via OpenRouter |
 
-One `OPENROUTER_API_KEY` unlocks all non-Workers-AI models. Direct-provider SDKs (`@ai-sdk/anthropic`, `@ai-sdk/openai`, `@ai-sdk/google`) are kept as fallbacks if you prefer native routing.
+Plus two direct API routes (no OpenRouter middleman) for users who want native billing or models OpenRouter doesn't proxy:
+
+| Source | Models | ID prefix | Required key |
+|--------|--------|-----------|--------------|
+| **Alibaba DashScope** (Qwen direct) | Qwen 3.6 Max / Plus / Turbo, Qwen3 Coder Plus, Qwen-VL Max | `dashscope/` | `DASHSCOPE_API_KEY` |
+| **HuggingFace Inference Providers** | Llama 3.3 70B, Qwen2.5 72B, DeepSeek V3, Mistral Nemo (anything on the HF Router) | `huggingface/owner/repo` | `HUGGINGFACE_API_KEY` |
+
+One `OPENROUTER_API_KEY` unlocks all `provider/model` IDs. Direct-provider SDKs (`@ai-sdk/anthropic`, `@ai-sdk/openai`, `@ai-sdk/google`) are kept as fallbacks for native routing. DashScope + HuggingFace both speak OpenAI-compatible mode, so they're wired via `createOpenAI({ baseURL })` rather than dedicated SDK packages — no extra dependencies. To add another OpenAI-compatible provider (Together, Groq, Fireworks, Cerebras), copy the dashscope/huggingface block in `src/server/lib/ai/providers.ts:resolveModel`.
 
 AI features in the chat module: streaming, tool calling, reasoning extraction, vision (image attachments), structured output, token usage logging, message metadata, regenerate, **message editing** (truncate + re-send), **conversation search** (FTS5), **conversation export** (JSON/Markdown), response duration display, conversation persistence, MCP integration, MCP-UI rendering, **sources footer** (claude.ai-style citation strip aggregated from web_search / gmail_search / drive_search / places_search outputs plus native `source-url` / `source-document` parts), **per-tool telemetry** (`ai_tool_calls` D1 table + admin "Tool errors" tab), **privileged-tool gating** (`gmail_send` / `run_shell` / `drive_delete` etc. hidden unless user intent is clear), **single-retry tool repair** (`experimental_repairToolCall` logs then emits parse error — no cost-bearing retry yet).
 

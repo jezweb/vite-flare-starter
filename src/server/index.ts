@@ -108,6 +108,8 @@ export interface Env {
   ANTHROPIC_API_KEY?: string  // Claude models
   OPENAI_API_KEY?: string     // GPT models
   GOOGLE_AI_API_KEY?: string  // Gemini models
+  DASHSCOPE_API_KEY?: string  // Alibaba Qwen models direct (dashscope/* prefix)
+  HUGGINGFACE_API_KEY?: string // HuggingFace Inference Providers direct (huggingface/* prefix)
   OPENROUTER_API_KEY?: string // Any model via OpenRouter (single key)
 
   // Browser Rendering (optional — enables browser_* agent tools)

@@ -11,6 +11,11 @@
  * - `@cf/...`  → free Cloudflare Workers AI (no API key required)
  * - `provider/model` (e.g. `anthropic/claude-sonnet-4.6`) → routed through
  *   OpenRouter. Requires OPENROUTER_API_KEY secret.
+ * - `dashscope/...` → Alibaba Qwen direct via DashScope (OpenAI-compatible).
+ *   Requires DASHSCOPE_API_KEY. Cheaper than OpenRouter for Qwen-only use.
+ * - `huggingface/owner/model` → HuggingFace Inference Providers router
+ *   (OpenAI-compatible). Requires HUGGINGFACE_API_KEY. Unlocks the long
+ *   tail of open models (Llama, Mistral, Qwen weights, DeepSeek, etc).
  *
  * Browse the full catalogue at https://models.flared.au/ and just paste the
  * `id` field of any model you want.
@@ -60,10 +65,42 @@ export const OPENROUTER_MODELS = [
   'z-ai/glm-5',
 ] as const
 
+/**
+ * Alibaba Qwen via DashScope direct (requires DASHSCOPE_API_KEY).
+ *
+ * IDs are the model name DashScope's OpenAI-compatible endpoint expects —
+ * see https://help.aliyun.com/zh/model-studio/getting-started/models for the
+ * current catalogue. The international endpoint is used by default.
+ */
+export const DASHSCOPE_MODELS = [
+  'dashscope/qwen3.6-max',
+  'dashscope/qwen3.6-plus',
+  'dashscope/qwen3.6-turbo',
+  'dashscope/qwen3-coder-plus',
+  'dashscope/qwen-vl-max-latest',
+] as const
+
+/**
+ * HuggingFace Inference Providers (requires HUGGINGFACE_API_KEY).
+ *
+ * The router fans out to whichever provider currently serves the model
+ * cheapest (Sambanova, Together, Fireworks, Replicate, …). Pick any
+ * `owner/repo` from https://huggingface.co/models?inference_provider=all
+ * that supports chat-completions.
+ */
+export const HUGGINGFACE_MODELS = [
+  'huggingface/meta-llama/Llama-3.3-70B-Instruct',
+  'huggingface/Qwen/Qwen2.5-72B-Instruct',
+  'huggingface/deepseek-ai/DeepSeek-V3',
+  'huggingface/mistralai/Mistral-Nemo-Instruct-2407',
+] as const
+
 /** Every enabled model ID — used by the chat model selector. */
 export const ENABLED_MODEL_IDS: readonly string[] = [
   ...WORKERS_AI_MODELS,
   ...OPENROUTER_MODELS,
+  ...DASHSCOPE_MODELS,
+  ...HUGGINGFACE_MODELS,
 ]
 
 /**
