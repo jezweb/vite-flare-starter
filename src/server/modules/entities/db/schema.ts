@@ -25,6 +25,12 @@ export const entities = sqliteTable(
   {
     id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
     userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+    /** Optional organisation scoping. NULL = personal entity (default).
+     *  When set, the entity belongs to an org and access is gated by
+     *  org membership rather than (or alongside) userId ownership.
+     *  Forks adopt this incrementally — keep userId as creator,
+     *  add orgId when sharing matters. */
+    organizationId: text('organization_id'),
     /** Type discriminator — caller-defined, no enum constraint. */
     type: text('type').notNull(),
     /** External system id (Stripe customer, Jira issue, GitHub PR). */
@@ -47,6 +53,7 @@ export const entities = sqliteTable(
     index('entities_external_id_idx').on(table.externalId),
     index('entities_assignee_idx').on(table.assigneeId),
     index('entities_updated_at_idx').on(table.updatedAt),
+    index('entities_org_idx').on(table.organizationId),
   ],
 )
 

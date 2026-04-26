@@ -1,4 +1,5 @@
 import { betterAuth } from 'better-auth'
+import { organization } from 'better-auth/plugins/organization'
 import type { D1Database } from '@cloudflare/workers-types'
 import { SESSION } from '@/shared/config/constants'
 import { logActivity } from '@/server/modules/activity/log'
@@ -303,5 +304,21 @@ export function createAuth(
         },
       },
     },
+
+    // Organization plugin — multi-user team / workspace structure.
+    // V1 ships with org create/list + member add/remove + active-org
+    // tracking on the session. Invitation email flow + custom roles
+    // (organizationRole) deferred for a later phase.
+    //
+    // Migration 0030_organization_plugin.sql provides the tables.
+    // Plugin auto-detects them and exposes /api/auth/organization/*.
+    plugins: [
+      organization({
+        // Default roles: owner, admin, member. Forks needing custom
+        // roles configure `ac` here per the AC docs.
+        // Async invite flow not configured — deferred.
+        sendInvitationEmail: undefined,
+      }),
+    ],
   })
 }
