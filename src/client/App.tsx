@@ -33,6 +33,7 @@ const ActivityPage = lazy(() => import('./modules/activity/pages/ActivityPage').
 const FilesPage = lazy(() => import('./modules/files/pages/FilesPage').then(m => ({ default: m.FilesPage })))
 const SkillsPage = lazy(() => import('./modules/skills/pages/SkillsPage').then(m => ({ default: m.SkillsPage })))
 const NotificationsPage = lazy(() => import('./modules/notifications/pages/NotificationsPage').then(m => ({ default: m.NotificationsPage })))
+const ApprovalsPage = lazy(() => import('./modules/approvals/pages/ApprovalsPage').then(m => ({ default: m.ApprovalsPage })))
 const ConnectorsPage = lazy(() => import('./modules/connectors/pages/ConnectorsPage').then(m => ({ default: m.ConnectorsPage })))
 const VoiceInputExamplePage = lazy(() => import('./modules/voice/pages/VoiceInputExamplePage').then(m => ({ default: m.VoiceInputExamplePage })))
 const VideoInputExamplePage = lazy(() => import('./modules/video/pages/VideoInputExamplePage').then(m => ({ default: m.VideoInputExamplePage })))
@@ -122,6 +123,9 @@ function App() {
 
             {/* Notifications full history (bell dropdown shows top 10) */}
             <Route path="notifications" element={<NotificationsPage />} />
+
+            {/* Approval queue — autonomous-agent action review */}
+            <Route path="approvals" element={<ApprovalsPage />} />
 
             {/* MCP Connectors — per-user OAuth + bearer connections */}
             <Route path="connectors" element={<ConnectorsPage />} />

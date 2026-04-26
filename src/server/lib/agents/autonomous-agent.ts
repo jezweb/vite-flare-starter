@@ -598,6 +598,36 @@ export abstract class AutonomousAgent<
       ...(summary !== undefined && { summary }),
       status: 'pending',
     })
+    // Notify the user — uses the existing in-app notifications system.
+    // The bell badge picks this up automatically. Best-effort: a
+    // notification write failure shouldn't break the approval.
+    try {
+      const { userNotifications } = await import(
+        '@/server/modules/notifications/db/schema'
+      )
+      await db.insert(userNotifications).values({
+        id: crypto.randomUUID(),
+        userId: this.state.userId,
+        type: 'info',
+        title: 'Approval needed',
+        message:
+          summary ?? `${(this.constructor as typeof AutonomousAgent).className} needs approval to ${action}`,
+        data: JSON.stringify({
+          link: `/dashboard/approvals?focus=${id}`,
+          approvalId: id,
+          agentClass: (this.constructor as typeof AutonomousAgent).className,
+          action,
+        }),
+      })
+    } catch (err) {
+      console.error(
+        JSON.stringify({
+          event: 'approval_notification_failed',
+          approvalId: id,
+          error: err instanceof Error ? err.message : String(err),
+        }),
+      )
+    }
     return { approvalId: id, status: 'pending' }
   }
 
