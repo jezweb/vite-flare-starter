@@ -40,7 +40,7 @@
  *     proposed action
  */
 import { drizzle } from 'drizzle-orm/d1'
-import { and, eq, lte } from 'drizzle-orm'
+import { and, eq, inArray, lte } from 'drizzle-orm'
 import { AutonomousAgent, type AutonomousAgentEnv, type AutonomousAgentState } from '@/server/lib/agents/autonomous-agent'
 import { entities } from '@/server/modules/entities/db/schema'
 import type { ToolDefinition } from '@/shared/agent'
@@ -201,19 +201,18 @@ export class SweeperAgent extends AutonomousAgent<Env, SweeperState> {
       eq(entities.type, cfg.entityType),
       lte(entities.updatedAt, cutoff),
     ]
+    // Push status filter into the SQL so maxPerSweep applies to MATCHING
+    // rows, not pre-filtered ones. Earlier post-query filter could
+    // silently under-process if the filter rejected most of the limit.
+    if (cfg.statusFilter.length > 0) {
+      conditions.push(inArray(entities.status, cfg.statusFilter))
+    }
     const db = drizzle(this.env.DB)
-    const stale = await db
+    const candidates = await db
       .select()
       .from(entities)
       .where(and(...conditions))
       .limit(cfg.maxPerSweep)
-
-    // Filter by status in JS (status filter is a list — Drizzle's `inArray`
-    // works but needs an explicit non-empty guard; cleaner to filter post-query).
-    const candidates =
-      cfg.statusFilter.length > 0
-        ? stale.filter((e) => cfg.statusFilter.includes(e.status))
-        : stale
 
     let queued = 0
     let skipped = 0

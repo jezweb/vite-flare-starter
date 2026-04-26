@@ -112,16 +112,21 @@ app.post('/:id/approve', zValidator('json', ApproveSchema), async (c) => {
   }
   const db = drizzle(c.env.DB)
   const now = Math.floor(Date.now() / 1000)
-  // Mark approved BEFORE executing — if execute throws, the row's
-  // status reflects "approved but failed" rather than "still pending".
-  await db
+  // Atomic claim: update only if still pending. Returns the rows that
+  // matched. If 0, another request already approved/rejected it
+  // (double-click, retry) — return 409 to prevent double-execute.
+  const claimed = await db
     .update(pendingApprovals)
     .set({
       status: 'approved',
       ...(note !== undefined && { note }),
       resolvedAt: now,
     })
-    .where(eq(pendingApprovals.id, id))
+    .where(and(eq(pendingApprovals.id, id), eq(pendingApprovals.status, 'pending')))
+    .returning({ id: pendingApprovals.id })
+  if (claimed.length === 0) {
+    return c.json({ error: 'Already resolved by another request' }, 409)
+  }
 
   // Resolve the agent binding by class name. Bindings are exposed
   // on env at the upper-case class name (matching the wrangler.jsonc
@@ -176,14 +181,20 @@ app.post('/:id/reject', zValidator('json', ApproveSchema), async (c) => {
     return c.json({ error: `Already ${row.status}` }, 409)
   }
   const db = drizzle(c.env.DB)
-  await db
+  // Atomic claim — same pattern as approve. Prevents double-resolve
+  // races between concurrent UI clicks.
+  const claimed = await db
     .update(pendingApprovals)
     .set({
       status: 'rejected',
       ...(note !== undefined && { note }),
       resolvedAt: Math.floor(Date.now() / 1000),
     })
-    .where(eq(pendingApprovals.id, id))
+    .where(and(eq(pendingApprovals.id, id), eq(pendingApprovals.status, 'pending')))
+    .returning({ id: pendingApprovals.id })
+  if (claimed.length === 0) {
+    return c.json({ error: 'Already resolved by another request' }, 409)
+  }
   return c.json({ success: true, status: 'rejected' })
 })
 

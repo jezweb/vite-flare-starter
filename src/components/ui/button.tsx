@@ -43,12 +43,20 @@ function Button({
   variant = "default",
   size = "default",
   asChild = false,
+  type,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean
   }) {
   const Comp = asChild ? Slot.Root : "button"
+
+  // Default `type="button"` when rendering as a real <button> to stop
+  // accidental form submits when nested in a <form> (e.g. PromptInput).
+  // The "New chat" button reloading the page was caused by the
+  // browser's HTML default of type="submit" inside a form context.
+  // asChild means we're rendering some other element — leave type alone.
+  const resolvedType = !asChild && type === undefined ? 'button' : type
 
   return (
     <Comp
@@ -57,6 +65,7 @@ function Button({
       data-size={size}
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
+      {...(resolvedType !== undefined && { type: resolvedType })}
     />
   )
 }
