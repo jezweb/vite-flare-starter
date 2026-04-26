@@ -559,6 +559,114 @@ for any other MCP — no native rewrite per provider.
 Best-effort: a failing MCP load logs and continues with native tools
 only — never breaks the agent run.
 
+## Tool Search (progressive tool disclosure)
+
+Pattern from Matt Carey's "Every API Is a Tool for Agents" talk
+(Cloudflare AI Engineer 2026). Instead of injecting all 60+ tool
+definitions into the model's context every turn, expose a small
+`CORE_TOOL_NAMES` set + a `find_tools(query)` search tool. The agent
+searches for what it needs; prepareStep activates discovered tools
+on subsequent steps.
+
+**Files**: `src/server/lib/ai/tool-search.ts`, wired in
+`src/server/lib/ai/agent.ts` (chat module). Composes with the
+existing privileged-tool gating in `prepare-step.ts`.
+
+Always-active core (~10 tools): `find_tools`, `done`,
+`get_server_time`, `calculate`, `show_*` UI tools, `load_skill`,
+`recall`, `remember`. Specialised tools (Gmail, Calendar, Drive,
+browser, image gen, MCP-inherited) are search-required.
+
+Typical savings: 8-12K input tokens per turn on a fully-equipped
+chat session. Pairs with the truncation gate (#30) and history trim
+(#31) — three layers of input-budget management.
+
+To opt out: omit `coreToolNames` from the `computeActiveTools` call
+in your fork's prepareStep. All tools become visible (legacy
+behaviour); privileged-tool gating still applies.
+
+AutonomousAgent doesn't use Tool Search yet — its subclasses ship
+smaller curated catalogs (10-20 tools) where savings are marginal.
+Easy to add by threading the same prepareStep into runOnce; deferred
+until a fork has an autonomous agent with 30+ tools.
+
+## Cloudflare patterns we're NOT yet using
+
+From Matt Carey's "Every API Is a Tool for Agents" talk + general
+Cloudflare AI Engineer direction. None of these are blockers for
+the current architecture; flagging so we don't forget the design
+space exists.
+
+### Code Mode
+
+**Idea**: instead of one tool per API endpoint, give the agent a
+typed TypeScript SDK and let it write code that calls the SDK in a
+sandboxed isolate. Cloudflare's REST API is 2.3M tokens; their
+typed SDK is ~1K tokens. 99.9% reduction in context cost.
+
+**When it'd matter for us**: products with many similar API
+operations (CRM with 50+ entity-CRUD variations, Atlassian-clone
+with issue + project + sprint + comment + attachment APIs). Less
+relevant when the tool count is bounded (<30) and operations are
+distinct.
+
+**What we'd need to build**: a typed SDK exposing app primitives
+(entities, agents, conversations, files, etc), an `eval_typescript`
+tool that runs in `@cloudflare/sandbox` isolates with the SDK in
+scope, response collection back to the agent. Architectural shift
+— roughly 2-3 days of focused work.
+
+**Reference**: Cloudflare's own implementation lives in their
+internal agent runtime; the public talk is the best summary.
+
+### Dynamic Workers as agent runtime
+
+**Idea**: agent runtime IS a sandboxed V8 isolate. Stateless agent
+loops with programmable guardrails, scales like Workers. Composes
+with Code Mode — the agent emits TS, we exec it in an isolate, the
+isolate is the agent's "body".
+
+**When it'd matter for us**: when agents need to run user-supplied
+or LLM-generated code beyond the tool catalog. Less critical for
+the "draft and queue for approval" pattern most of our worked
+examples follow.
+
+**What we have today**: `@cloudflare/sandbox` is wired for the
+`code` tool (run_python, run_js as user-callable tools). NOT used as
+the agent's own execution surface.
+
+### Stateless MCP by default
+
+**Idea**: MCP servers reach for sessions + Durable Objects unreflexively
+when many don't actually need them. Cloudflare is pushing stateless
+defaults into the MCP TypeScript SDK.
+
+**Where we already do this badly**: `ScratchpadMcpAgent`
+deliberately uses DO state (per-user persistent scratchpad — needs
+state). For a fork building a STATELESS MCP (tools that just call
+external APIs without per-session state), the McpAgent base is
+overkill — use `createMcpHandler` from `agents/mcp` directly.
+
+**What we'd add**: a stateless companion example
+(e.g. `WeatherMcpAgent` — tools that just call openweathermap with no
+per-session state) + documentation note about when to pick which.
+
+### MCP-as-middleware (Hono-native)
+
+**Prediction from the talk**: MCP becomes a standard middleware flag
+in web frameworks. Hono / Express expose any API to agents natively
+without writing tool definitions.
+
+**Where we partially do this**:
+- Phase J: any user-connected MCP becomes available to autonomous agents
+- McpAgent: any AutonomousAgent we build can expose itself as an MCP
+  server (other Claude Code sessions consume it)
+
+**What we'd add**: a `mcpFromHono(app)` helper that walks a Hono
+app's routes + auto-generates an MCP server from them. Forks would
+get "your REST API is now also an MCP server" with one line.
+Requires Hono route introspection + a route-to-tool-schema converter.
+
 ## Future extensions (not yet shipped)
 
 - **Phase 0b** — refactor chat module onto `AIChatAgent` for state

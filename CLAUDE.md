@@ -50,6 +50,7 @@ VITE_FEATURE_ACTIVITY=false
 | **sweeper-agent** | Cron-driven entity processing — recurring agent that scans entities for stale items + queues followup approvals | `server/modules/autonomous-agents/sweeper-agent.ts` |
 | **organizations** | better-auth Organization plugin v1 (orgs + members + active-org tracking + helpers) | `server/modules/auth/index.ts`, `server/modules/organizations/` |
 | **agent MCP integration** | AutonomousAgent inherits tools from owner's connected MCP servers automatically | `server/lib/agents/autonomous-agent.ts` (buildToolset) |
+| **tool-search** | Progressive tool disclosure — agent gets `find_tools(query)` + ~10 core tools, the rest load on demand. ~10K tokens/turn saved | `server/lib/ai/tool-search.ts`, wired in chat agent.ts |
 
 ---
 

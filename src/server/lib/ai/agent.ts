@@ -14,6 +14,13 @@
  */
 import { ToolLoopAgent, stepCountIs, hasToolCall, type ToolSet, type PrepareStepResult } from 'ai'
 import { tokenBudgetPrepareStep, computeActiveTools } from './prepare-step'
+import {
+  buildFindToolsTool,
+  CORE_TOOL_NAMES,
+  extractDiscoveredToolNames,
+  type SearchableTool,
+} from './tool-search'
+import { toAiSdkTool } from './tool-adapter'
 import { drizzle } from 'drizzle-orm/d1'
 import { and, eq } from 'drizzle-orm'
 import { resolveModel } from './providers'
@@ -183,6 +190,27 @@ export async function buildChatAgent(ctx: AgentContext): Promise<AgentResult> {
       await userMcp.cleanup()
     }
     tools = { ...chatTools, ...mcpTools, ...userMcp.tools } as ToolSet
+
+    // Tool Search — inject find_tools and let prepareStep gate the
+    // rest behind it. The agent sees ~10 always-active tools (core
+    // utilities + UI + find_tools); everything else loads on
+    // discovery via find_tools(query). Saves 8-12K input tokens per
+    // turn when the catalog is fully loaded (chat tools + per-user
+    // MCPs + entity tools).
+    //
+    // Build the searchable catalog from the FULL toolset BEFORE
+    // adding find_tools itself (don't list find_tools as a search
+    // result; it's always visible).
+    const searchCatalog: SearchableTool[] = Object.entries(tools).map(
+      ([name, tool]) => ({
+        name,
+        description: typeof tool === 'object' && tool && 'description' in tool && typeof tool.description === 'string'
+          ? tool.description
+          : name,
+      }),
+    )
+    const findTools = buildFindToolsTool(searchCatalog)
+    tools['find_tools'] = toAiSdkTool(findTools as unknown as Parameters<typeof toAiSdkTool>[0], agentCtx)
   }
 
   // If a places-capable tool is available (native places_search, or an MCP
@@ -230,10 +258,21 @@ export async function buildChatAgent(ctx: AgentContext): Promise<AgentResult> {
         if (budgetResult && 'activeTools' in budgetResult && Array.isArray(budgetResult.activeTools) && budgetResult.activeTools.length === 0) {
           return budgetResult
         }
-        // 2. Dangerous-op gating — privileged tools (gmail_send etc.) are
-        //    hidden unless the latest user message references them OR they
-        //    were already invoked successfully earlier in the conversation.
-        const activeTools = computeActiveTools(tools, opts.messages, opts.steps)
+        // 2. Tool Search + privileged-op gating combined. Visible tools
+        //    per step = (CORE_TOOL_NAMES ∪ discovered-via-find_tools ∪
+        //    already-used) ∩ (privileged-unlocked).
+        //
+        //    Discovered names extracted from the agent's step history
+        //    by reading prior find_tools tool results.
+        //
+        //    Forks that want the legacy "all tools always visible"
+        //    behaviour: omit `coreToolNames`. The privileged-tool gate
+        //    still applies.
+        const discovered = extractDiscoveredToolNames(opts.steps as Parameters<typeof extractDiscoveredToolNames>[0])
+        const activeTools = computeActiveTools(tools, opts.messages, opts.steps, {
+          coreToolNames: CORE_TOOL_NAMES,
+          discoveredToolNames: discovered,
+        })
         if (activeTools.length !== Object.keys(tools).length) {
           return { activeTools } as PrepareStepResult
         }

@@ -87,16 +87,42 @@ const UNLOCK_KEYWORDS: Record<PrivilegedTool, RegExp> = {
   run_shell: /\brun\b|\bexecute\b|\bshell\b|\bbash\b|\bcommand\b|\bscript\b/i,
 }
 
+export interface ComputeActiveToolsOptions {
+  /** When set, only tools in `coreToolNames` plus tools "discovered"
+   *  via find_tools in earlier steps (extracted by the caller) are
+   *  visible. Without this set, ALL tools are visible (legacy behaviour).
+   *  Pass an empty Set to disable Tool Search entirely.
+   *
+   *  Always-active set should include find_tools itself so the agent
+   *  can discover more, plus a tight UI/utility core. See
+   *  `tool-search.ts` `CORE_TOOL_NAMES`. */
+  coreToolNames?: Set<string>
+  /** Tool names the agent has discovered via find_tools in this run.
+   *  Caller computes via `extractDiscoveredToolNames(steps)` from
+   *  `tool-search.ts` so prepare-step stays decoupled from the
+   *  search tool's specific output shape. */
+  discoveredToolNames?: Set<string>
+}
+
 /**
- * Compute which tools are active for the current step, given the history
- * and available tool set. Starts from ALL tools, subtracts privileged
- * tools whose keywords don't appear in the last user message AND which
- * haven't been used successfully in earlier steps.
+ * Compute which tools are active for the current step, given the
+ * history and available tool set.
+ *
+ * Two layered filters:
+ *   1. **Tool Search** (when `coreToolNames` is set): only core +
+ *      discovered tools are visible. Privileged-tool gating still
+ *      applies on top. Without `coreToolNames`, all tools are
+ *      candidates (legacy behaviour).
+ *   2. **Privileged-tool gating**: privileged tools (gmail_send,
+ *      calendar_create, etc) are hidden unless the latest user
+ *      message references them OR they were already invoked
+ *      successfully earlier in the run.
  */
 export function computeActiveTools<TOOLS extends ToolSet>(
   allTools: TOOLS,
   messages: ModelMessage[],
   steps: Array<{ toolCalls?: ReadonlyArray<{ toolName: string }> }>,
+  options: ComputeActiveToolsOptions = {},
 ): Array<keyof TOOLS & string> {
   const allNames = Object.keys(allTools) as Array<keyof TOOLS & string>
   const lastUser = [...messages].reverse().find((m) => m.role === 'user')
@@ -117,7 +143,23 @@ export function computeActiveTools<TOOLS extends ToolSet>(
     }
   }
 
-  return allNames.filter((name) => {
+  // Tool Search filter — only fires when the caller passes coreToolNames.
+  // The set is the AGENT's view; whatever's not in it gets hidden until
+  // discovered via find_tools.
+  const useToolSearch = options.coreToolNames !== undefined
+  const visibleNames = useToolSearch
+    ? allNames.filter(
+        (name) =>
+          options.coreToolNames!.has(name) ||
+          options.discoveredToolNames?.has(name) ||
+          // Tools the agent already used successfully stay visible —
+          // it can re-call them without re-searching.
+          alreadyUsed.has(name),
+      )
+    : allNames
+
+  // Privileged-tool gating layered on top.
+  return visibleNames.filter((name) => {
     if (!PRIVILEGED_TOOLS.includes(name as PrivilegedTool)) return true
     const privileged = name as PrivilegedTool
     if (alreadyUsed.has(privileged)) return true
