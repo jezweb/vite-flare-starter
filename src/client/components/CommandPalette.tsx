@@ -19,7 +19,7 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from '@/components/ui/command'
-import { Moon, Sun, LogOut, Settings, MessagesSquare } from 'lucide-react'
+import { Moon, Sun, LogOut, Settings, MessagesSquare, FolderKanban } from 'lucide-react'
 import { useTheme } from '@/client/components/theme-provider'
 import { authClient } from '@/client/lib/auth'
 import { apiClient } from '@/client/lib/api-client'
@@ -46,6 +46,18 @@ export function CommandPalette() {
     staleTime: 5_000,
   })
   const conversationHits = searchResults?.results ?? []
+
+  // Project search — uses the existing list endpoint with q= param
+  const { data: projectsData } = useQuery({
+    queryKey: ['cmd-palette', 'projects', deferredQuery],
+    queryFn: () =>
+      apiClient.get<{ projects: { id: string; name: string; description: string | null }[] }>(
+        `/api/projects?q=${encodeURIComponent(deferredQuery)}`,
+      ),
+    enabled: open && deferredQuery.length >= 2,
+    staleTime: 5_000,
+  })
+  const projectHits = projectsData?.projects ?? []
 
   // Reset query when the palette closes so the next open starts fresh.
   useEffect(() => {
@@ -93,6 +105,32 @@ export function CommandPalette() {
       />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
+
+        {/* Project hits (only when the user has typed a real query) */}
+        {deferredQuery.length >= 2 && projectHits.length > 0 && (
+          <>
+            <CommandGroup heading="Projects">
+              {projectHits.slice(0, 5).map((p) => (
+                <CommandItem
+                  key={`project-${p.id}`}
+                  value={`project-${p.id}-${p.name}`}
+                  onSelect={() =>
+                    runCommand(() => navigate(`/dashboard/projects/${p.id}`))
+                  }
+                >
+                  <FolderKanban className="mr-2 h-4 w-4" />
+                  <div className="flex-1 min-w-0">
+                    <div className="truncate font-medium">{p.name}</div>
+                    {p.description && (
+                      <div className="truncate text-xs text-muted-foreground">{p.description}</div>
+                    )}
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            <CommandSeparator />
+          </>
+        )}
 
         {/* Conversation hits (only when the user has typed a real query) */}
         {deferredQuery.length >= 2 && conversationHits.length > 0 && (
