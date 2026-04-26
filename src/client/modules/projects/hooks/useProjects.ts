@@ -2,21 +2,23 @@
  * Projects — TanStack Query hooks.
  *
  * Mirrors the server contract in src/server/modules/projects/routes.ts.
- * Kept separate from the conversations hooks because projects are a
- * standalone entity with their own page (Phase 2) and lifecycle.
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/client/lib/api-client'
 
 export interface Project {
   id: string
+  orgId: string | null
   name: string
   description: string | null
   systemPrompt: string | null
   defaultModel: string | null
   color: string | null
   position: number
+  starred: number
   archived: number
+  archivedAt: string | null
+  memoryUpdateMode: 'ask' | 'auto' | 'never'
   conversationCount?: number
   createdAt: string | null
   updatedAt: string | null
@@ -26,10 +28,22 @@ interface ListResponse {
   projects: Project[]
 }
 
-export function useProjectList() {
+export interface ProjectListOptions {
+  sort?: 'activity' | 'name' | 'created'
+  search?: string
+  includeArchived?: boolean
+}
+
+export function useProjectList(options: ProjectListOptions = {}) {
+  const { sort = 'activity', search = '', includeArchived = false } = options
+  const params = new URLSearchParams()
+  if (sort !== 'activity') params.set('sort', sort)
+  if (search) params.set('q', search)
+  if (includeArchived) params.set('includeArchived', '1')
+  const qs = params.toString()
   return useQuery({
-    queryKey: ['projects'],
-    queryFn: () => apiClient.get<ListResponse>('/api/projects'),
+    queryKey: ['projects', { sort, search, includeArchived }],
+    queryFn: () => apiClient.get<ListResponse>(`/api/projects${qs ? `?${qs}` : ''}`),
   })
 }
 
@@ -48,13 +62,6 @@ interface CreateContext {
   prev?: { projects: Project[] }
 }
 
-/**
- * Optimistically prepends a new project so the sidebar re-sorts instantly,
- * then reconciles with the real row on settle. Without this, the row
- * appears at the *bottom* of the cached list for the ~200ms between
- * POST and refetch (server sets position=0, but our cache still has the
- * old positions). Reported as M3 in ux-audit-2026-04-18-projects.md.
- */
 export function useCreateProject() {
   const queryClient = useQueryClient()
   return useMutation<
@@ -65,40 +72,7 @@ export function useCreateProject() {
   >({
     mutationFn: (input) =>
       apiClient.post<{ id: string; success: boolean }>('/api/projects', input),
-    onMutate: async (input) => {
-      await queryClient.cancelQueries({ queryKey: ['projects'] })
-      const prev = queryClient.getQueryData<{ projects: Project[] }>(['projects'])
-      if (prev) {
-        // Stub project: the server will return the real UUID shortly and
-        // invalidate this cache. Until then the row renders with a temp id
-        // so React keys don't collide on refetch.
-        const now = new Date().toISOString()
-        const optimistic: Project = {
-          id: `optimistic-${now}`,
-          name: input.name,
-          description: input.description ?? null,
-          systemPrompt: input.systemPrompt ?? null,
-          defaultModel: input.defaultModel ?? null,
-          color: input.color ?? null,
-          position: 0,
-          archived: 0,
-          conversationCount: 0,
-          createdAt: now,
-          updatedAt: now,
-        }
-        queryClient.setQueryData(['projects'], {
-          projects: [
-            optimistic,
-            ...prev.projects.map((p) => ({ ...p, position: p.position + 1 })),
-          ],
-        })
-      }
-      return { prev }
-    },
-    onError: (_err, _vars, ctx) => {
-      if (ctx?.prev) queryClient.setQueryData(['projects'], ctx.prev)
-    },
-    onSettled: () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] })
     },
   })
@@ -118,6 +92,7 @@ export function useUpdateProject() {
       defaultModel?: string | null
       color?: string | null
       position?: number
+      memoryUpdateMode?: 'ask' | 'auto' | 'never'
     }) => apiClient.patch<{ success: boolean }>(`/api/projects/${id}`, patch),
     onSuccess: (_d, vars) => {
       queryClient.invalidateQueries({ queryKey: ['projects'] })
@@ -133,18 +108,134 @@ export function useDeleteProject() {
       apiClient.delete<{ success: boolean }>(`/api/projects/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] })
-      // Conversations may have been released back to "ungrouped" via the
-      // ON DELETE SET NULL FK — refresh their list too.
       queryClient.invalidateQueries({ queryKey: ['conversations'] })
     },
   })
 }
 
-/**
- * Move a conversation into or out of a project. Pass `projectId: null` to
- * remove the grouping. Optimistically updates the conversations list so the
- * row re-buckets immediately in the sidebar.
- */
+/** Star / unstar a project. Optimistic — projects re-sort instantly. */
+export function useStarProject() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, starred }: { id: string; starred: boolean }) =>
+      starred
+        ? apiClient.post<{ success: boolean }>(`/api/projects/${id}/star`, {})
+        : apiClient.delete<{ success: boolean }>(`/api/projects/${id}/star`),
+    onSuccess: (_d, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
+      queryClient.invalidateQueries({ queryKey: ['projects', vars.id] })
+    },
+  })
+}
+
+/** Archive / restore a project. */
+export function useArchiveProject() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, archived }: { id: string; archived: boolean }) =>
+      archived
+        ? apiClient.post<{ success: boolean }>(`/api/projects/${id}/archive`, {})
+        : apiClient.delete<{ success: boolean }>(`/api/projects/${id}/archive`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
+    },
+  })
+}
+
+// Templates -----------------------------------------------------------------
+
+export interface TemplateSummary {
+  slug: string
+  name: string
+  description: string
+  emoji?: string
+  color?: string
+  includes: string[]
+}
+
+export function useProjectTemplates() {
+  return useQuery({
+    queryKey: ['project-templates'],
+    queryFn: () =>
+      apiClient.get<{ templates: TemplateSummary[] }>('/api/projects/templates'),
+    staleTime: 1000 * 60 * 60, // templates are static, cache for an hour
+  })
+}
+
+export function useCreateFromTemplate() {
+  const queryClient = useQueryClient()
+  return useMutation<
+    { id: string; success: boolean; suggestedFirstPrompts: string[] },
+    Error,
+    { templateSlug: string; name?: string }
+  >({
+    mutationFn: (input) =>
+      apiClient.post<{
+        id: string
+        success: boolean
+        suggestedFirstPrompts: string[]
+      }>('/api/projects/from-template', input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
+    },
+  })
+}
+
+// AI scaffolding ------------------------------------------------------------
+
+export interface ScaffoldDraft {
+  name: string
+  description: string
+  systemPrompt: string
+  starterMemories: Array<{
+    name: string
+    description: string
+    content: string
+    type: 'fact' | 'preference' | 'decision' | 'context' | 'reference'
+  }>
+  suggestedFirstPrompts: string[]
+}
+
+export function useScaffoldProject() {
+  return useMutation<
+    { success: boolean; draft: ScaffoldDraft },
+    Error,
+    { prompt: string }
+  >({
+    mutationFn: (input) =>
+      apiClient.post<{ success: boolean; draft: ScaffoldDraft }>(
+        '/api/projects/scaffold',
+        input,
+      ),
+  })
+}
+
+export function useCreateFromScaffold() {
+  const queryClient = useQueryClient()
+  return useMutation<
+    { id: string; success: boolean },
+    Error,
+    {
+      name: string
+      description?: string
+      systemPrompt?: string
+      color?: string
+      starterMemories?: ScaffoldDraft['starterMemories']
+    }
+  >({
+    mutationFn: (input) =>
+      apiClient.post<{ id: string; success: boolean }>(
+        '/api/projects/from-scaffold',
+        input,
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
+    },
+  })
+}
+
+// Move conversation between projects ----------------------------------------
+
 interface MoveContext {
   prev?: { conversations: Array<{ id: string; projectId: string | null; [k: string]: unknown }> }
 }

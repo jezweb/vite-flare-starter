@@ -10,6 +10,11 @@
  * 3. The module code stays in the repo as reference implementations
  *
  * @see src/shared/config/features.ts for feature flag definitions
+ *
+ * Phase 1 (Projects first-class) cleanup:
+ * - Added top-level Projects nav item
+ * - Moved Settings, Admin Panel, Components, Style Guide to user-menu
+ * - Sidebar reserved for primary destinations only
  */
 import type { LucideIcon } from 'lucide-react'
 import {
@@ -18,16 +23,13 @@ import {
   Sparkles,
   Activity,
   FolderOpen,
-  Component,
-  Palette,
-  Shield,
   Zap,
   Plug,
-  Settings as SettingsIcon,
   Bell,
   Mic,
   Camera,
   CheckSquare,
+  FolderKanban,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -57,6 +59,10 @@ export interface NavSection {
  *
  * Sections are rendered in order. Items within each section are filtered
  * by feature flags and user role before rendering.
+ *
+ * Settings / Admin Panel / Components / Style Guide are deliberately
+ * NOT in the sidebar — they live in the user-menu dropdown to keep the
+ * sidebar focused on primary destinations.
  */
 export const NAV_SECTIONS: NavSection[] = [
   {
@@ -64,11 +70,12 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { to: '/dashboard', label: 'Home', icon: Home },
       { to: '/dashboard/chat', label: 'AI Chat', icon: MessageSquare, feature: 'chat' },
+      { to: '/dashboard/projects', label: 'Projects', icon: FolderKanban },
       { to: '/dashboard/extract', label: 'Extract', icon: Sparkles, feature: 'chat' },
-      { to: '/dashboard/activity', label: 'Activity', icon: Activity, feature: 'activity' },
       { to: '/dashboard/files', label: 'Files', icon: FolderOpen, feature: 'files' },
       { to: '/dashboard/skills', label: 'Skills', icon: Zap, feature: 'skills' },
       { to: '/dashboard/connectors', label: 'Connectors', icon: Plug, feature: 'connectors' },
+      { to: '/dashboard/activity', label: 'Activity', icon: Activity, feature: 'activity' },
       { to: '/dashboard/voice-example', label: 'Voice Example', icon: Mic, feature: 'voiceAgent' },
       { to: '/dashboard/video-example', label: 'Video Example', icon: Camera, feature: 'videoAgent' },
     ],
@@ -78,21 +85,6 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { to: '/dashboard/notifications', label: 'Notifications', icon: Bell, feature: 'notifications' },
       { to: '/dashboard/approvals', label: 'Approvals', icon: CheckSquare },
-      { to: '/dashboard/settings', label: 'Settings', icon: SettingsIcon },
-    ],
-  },
-  {
-    label: 'Dev Tools',
-    defaultCollapsed: true,
-    items: [
-      { to: '/dashboard/components', label: 'Components', icon: Component, feature: 'components' },
-      { to: '/dashboard/style-guide', label: 'Style Guide', icon: Palette, feature: 'styleGuide' },
-    ],
-  },
-  {
-    label: 'Admin',
-    items: [
-      { to: '/dashboard/admin', label: 'Admin Panel', icon: Shield, minRole: 'admin' },
     ],
   },
 ]

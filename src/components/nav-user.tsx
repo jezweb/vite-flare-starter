@@ -17,7 +17,7 @@ import {
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar'
 import { useSession, authClient } from '@/client/lib/auth'
 import { useAdminStatus } from '@/client/modules/admin/hooks/useAdminStatus'
-import { LogOut, MoreVertical, Settings, Shield } from 'lucide-react'
+import { LogOut, MoreVertical, Settings, Shield, Sparkles, Component, Palette } from 'lucide-react'
 
 export function NavUser() {
   const { data: session } = useSession()
@@ -81,6 +81,10 @@ export function NavUser() {
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/dashboard/artifacts')}>
+                <Sparkles className="mr-2 h-4 w-4" />
+                My artifacts
+              </DropdownMenuItem>
             </DropdownMenuGroup>
             {isAdmin && (
               <>
@@ -88,6 +92,14 @@ export function NavUser() {
                 <DropdownMenuItem onClick={() => navigate('/dashboard/admin')}>
                   <Shield className="mr-2 h-4 w-4" />
                   Admin Panel
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/dashboard/components')}>
+                  <Component className="mr-2 h-4 w-4" />
+                  Components
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/dashboard/style-guide')}>
+                  <Palette className="mr-2 h-4 w-4" />
+                  Style Guide
                 </DropdownMenuItem>
               </>
             )}

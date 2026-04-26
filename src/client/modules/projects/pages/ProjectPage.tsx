@@ -1,33 +1,59 @@
 /**
- * ProjectPage — /dashboard/projects/:id
+ * ProjectPage — `/dashboard/projects/:id`
  *
- * Claude.ai-inspired project page. One project = one page with:
- *   - name + description (editable)
- *   - project instructions (system prompt, editable)
- *   - default model (dropdown)
- *   - list of conversations in this project
- *   - "New chat in this project" button
+ * Claude.ai-style two-column layout:
+ *   Left:  Quick chat input + chats list
+ *   Right: Memory section (placeholder until Phase 3) + Instructions + Files (placeholder until Phase 2)
  *
- * Phase 2 scope: everything except knowledge files (Phase 3) and
- * vectorised search (Phase 4).
+ * Mobile: right column collapses below the chat column.
  *
- * All edits use inline save-on-blur with optimistic cache updates via
- * `useUpdateProject`. No separate "Save" button per field — matches the
- * lightweight editing feel of the rest of the app.
+ * See `.jez/artifacts/projects-first-class-plan-2026-04-26.md` Phase 1 UI spec.
  */
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { ArrowLeft, Plus, Pencil, Folder, Archive, MessageSquare, Loader2, Star } from 'lucide-react'
+import {
+  ArrowLeft,
+  Plus,
+  Star,
+  Share2,
+  MoreVertical,
+  Archive,
+  Trash2,
+  Edit3,
+  MessageSquare,
+  Loader2,
+  Lock,
+  FileStack,
+  PencilLine,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { apiClient } from '@/client/lib/api-client'
-import { useProject, useUpdateProject } from '../hooks/useProjects'
-import { PROJECT_COLORS, PROJECT_COLOR_CLASSES, isProjectColor } from '../colors'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import {
+  useProject,
+  useUpdateProject,
+  useDeleteProject,
+  useArchiveProject,
+  useStarProject,
+} from '../hooks/useProjects'
 import { cn } from '@/lib/utils'
 
 interface ProjectConversation {
@@ -36,14 +62,8 @@ interface ProjectConversation {
   summary: string | null
   starred: number
   model: string | null
+  tags: string | null
   updatedAt: string | null
-}
-
-interface AiModel {
-  id: string
-  name: string
-  provider: string
-  tier: string
 }
 
 function timeAgo(dateStr: string | null): string {
@@ -62,64 +82,36 @@ export function ProjectPage() {
   const queryClient = useQueryClient()
   const { data, isLoading, error } = useProject(id)
   const updateProject = useUpdateProject()
+  const deleteProject = useDeleteProject()
+  const archiveProject = useArchiveProject()
+  const starProject = useStarProject()
 
-  // Load the models catalogue so the "default model" picker shows the same
-  // options as the chat composer. Same endpoint, keeps the source of truth
-  // on the server.
-  const { data: modelsData } = useQuery({
-    queryKey: ['ai-models'],
-    queryFn: () => apiClient.get<{ models: AiModel[]; recommended: string }>('/api/ai/models'),
-    staleTime: 1000 * 60 * 5,
-  })
+  const [instructionsOpen, setInstructionsOpen] = useState(false)
+  const [editProjectOpen, setEditProjectOpen] = useState(false)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [shareInfoOpen, setShareInfoOpen] = useState(false)
+  const [chatInput, setChatInput] = useState('')
 
   const project = data?.project
   const conversations = (data?.conversations ?? []) as ProjectConversation[]
 
-  // Local editable mirrors. Sync when the server copy lands.
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
-  const [systemPrompt, setSystemPrompt] = useState('')
-  const [defaultModel, setDefaultModel] = useState<string>('')
+  const isArchived = project?.archived === 1
 
-  // Only re-sync local state when we navigate to a *different* project. A
-  // background refetch (window focus, mutation invalidation) produces a new
-  // `project` object reference but the same id — re-seeding from that would
-  // clobber unsaved edits in a textarea mid-type.
-  useEffect(() => {
-    if (!project) return
-    setName(project.name ?? '')
-    setDescription(project.description ?? '')
-    setSystemPrompt(project.systemPrompt ?? '')
-    setDefaultModel(project.defaultModel ?? '')
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [project?.id])
-
-  const saveIfChanged = useCallback(
-    (field: 'name' | 'description' | 'systemPrompt' | 'defaultModel', next: string) => {
-      if (!project || !id) return
-      const current = project[field] ?? ''
-      if (next === current) return
-      // Normalise empty → null except for name (which requires at least 1 char).
-      if (field === 'name') {
-        const trimmed = next.trim()
-        if (!trimmed) {
-          setName(current) // revert
-          return
-        }
-        updateProject.mutate({ id, name: trimmed })
-      } else {
-        updateProject.mutate({ id, [field]: next || null })
-      }
+  const startChatInProject = useCallback(
+    (initialMessage?: string) => {
+      const params = new URLSearchParams()
+      params.set('projectId', String(id))
+      if (initialMessage) params.set('q', initialMessage)
+      navigate(`/dashboard/chat?${params.toString()}`)
     },
-    [project, id, updateProject],
+    [id, navigate],
   )
 
-  const startChatInProject = useCallback(() => {
-    // The chat page reads `?projectId=` on first render to stamp the new
-    // conversation with the project. Phase 2 server changes make the server
-    // enforce the linkage even if the client omits it — this is just UX.
-    navigate(`/dashboard/chat?projectId=${id}`)
-  }, [id, navigate])
+  const handleSubmitChat = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!chatInput.trim()) return
+    startChatInProject(chatInput.trim())
+  }
 
   if (isLoading) {
     return (
@@ -130,7 +122,7 @@ export function ProjectPage() {
     )
   }
 
-  if (error || !project) {
+  if (error || !project || !id) {
     return (
       <div className="max-w-2xl mx-auto py-12 text-center">
         <h1 className="text-xl font-semibold">Project not found</h1>
@@ -138,257 +130,436 @@ export function ProjectPage() {
           This project may have been deleted, or you don't have access to it.
         </p>
         <Button asChild variant="outline" className="mt-4">
-          <Link to="/dashboard/chat">Back to chat</Link>
+          <Link to="/dashboard/projects">All projects</Link>
         </Button>
       </div>
     )
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 py-4">
-      {/* Breadcrumb */}
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" asChild className="text-muted-foreground">
-          <Link to="/dashboard/chat">
+    <div className="max-w-6xl mx-auto py-4 space-y-6">
+      {/* Top bar — back link */}
+      <div>
+        <Button variant="ghost" size="sm" asChild className="text-muted-foreground -ml-2">
+          <Link to="/dashboard/projects">
             <ArrowLeft className="size-3.5 mr-1.5" />
-            Back to chat
+            All projects
           </Link>
         </Button>
-        <Button onClick={startChatInProject} size="sm">
-          <Plus className="size-3.5 mr-1.5" />
-          New chat in this project
-        </Button>
       </div>
 
-      {/* Header — inline editable name + description. Blur saves. */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <Folder className={cn('size-5 shrink-0', isProjectColor(project.color) ? PROJECT_COLOR_CLASSES[project.color].fill : 'text-muted-foreground')} />
-          <Label htmlFor="project-name" className="sr-only">Project name</Label>
-          <Input
-            id="project-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onBlur={() => saveIfChanged('name', name)}
-            onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
-            className="text-xl font-semibold border-0 shadow-none px-2 focus-visible:ring-1 focus-visible:ring-primary/40 bg-transparent"
-            maxLength={100}
-            placeholder="Untitled project"
-          />
-        </div>
-        <Label htmlFor="project-description" className="sr-only">Project description</Label>
-        <Textarea
-          id="project-description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          onBlur={() => saveIfChanged('description', description)}
-          placeholder="Add a short description of what this project is about…"
-          rows={2}
-          maxLength={500}
-          className="border-0 shadow-none px-2 focus-visible:ring-1 focus-visible:ring-primary/40 bg-transparent resize-none text-sm text-muted-foreground"
-        />
-      </div>
-
-      {/* Colour — a 6-slot picker plus "none". Purely a visual aid in the
-          sidebar; no semantic effect on instructions or behaviour. Clicks
-          fire the same updateProject mutation so the sidebar re-renders
-          immediately via the query invalidation. */}
-      <div className="flex items-center gap-2 px-2">
-        <span className="text-xs text-muted-foreground">Colour</span>
-        <button
-          type="button"
-          onClick={() => {
-            if (!id) return
-            updateProject.mutate({ id, color: null })
-          }}
-          className={cn(
-            'size-5 rounded-full border border-border transition-colors',
-            !project.color ? 'ring-2 ring-primary/40 ring-offset-1 ring-offset-background' : 'hover:bg-muted',
+      {/* Header row */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-3xl font-semibold tracking-tight truncate">{project.name}</h1>
+          {project.description && (
+            <p className="text-sm text-muted-foreground mt-1 max-w-2xl">{project.description}</p>
           )}
-          title="No colour"
-          aria-label="No colour"
-        />
-        {PROJECT_COLORS.map((c) => (
-          <button
-            key={c}
-            type="button"
-            onClick={() => {
-              if (!id) return
-              updateProject.mutate({ id, color: c })
-            }}
-            className={cn(
-              'size-5 rounded-full transition-transform',
-              PROJECT_COLOR_CLASSES[c].dot,
-              project.color === c
-                ? 'ring-2 ring-primary/40 ring-offset-1 ring-offset-background scale-110'
-                : 'hover:scale-110',
+          <p className="text-xs text-muted-foreground mt-2">
+            Created by you
+            {isArchived && (
+              <>
+                <span className="mx-1.5">·</span>
+                <span className="inline-flex items-center gap-1">
+                  <Archive className="size-3" />
+                  Archived
+                </span>
+              </>
             )}
-            title={PROJECT_COLOR_CLASSES[c].label}
-            aria-label={PROJECT_COLOR_CLASSES[c].label}
-            aria-pressed={project.color === c}
-          />
-        ))}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label="Project options">
+                <MoreVertical className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={() => setEditProjectOpen(true)}>
+                <Edit3 className="size-3.5 mr-2" />
+                Edit project
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => archiveProject.mutate({ id, archived: !isArchived })}
+              >
+                <Archive className="size-3.5 mr-2" />
+                {isArchived ? 'Restore from archive' : 'Archive project'}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onSelect={() => setDeleteConfirmOpen(true)}
+              >
+                <Trash2 className="size-3.5 mr-2" />
+                Delete project
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => starProject.mutate({ id, starred: project.starred === 0 })}
+            aria-label={project.starred ? 'Unstar project' : 'Star project'}
+          >
+            <Star
+              className={cn('size-4', project.starred && 'fill-yellow-500 text-yellow-500')}
+            />
+          </Button>
+          <Button variant="outline" onClick={() => setShareInfoOpen(true)}>
+            <Share2 className="size-3.5 mr-1.5" />
+            Share
+          </Button>
+        </div>
       </div>
 
-      {/* Project instructions — the juice. This becomes the system prompt
-          prefix for every chat in this project. */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Pencil className="size-4 text-muted-foreground" />
-                Project instructions
-              </CardTitle>
-              <CardDescription className="text-xs mt-1">
-                These get injected into every chat in this project. Good place for tone,
-                domain context, terminology, spelling preferences — anything repeat-you for
-                the same kind of work.
-              </CardDescription>
-            </div>
-            <span className="text-xs text-muted-foreground tabular-nums">
-              {systemPrompt.length}/4000
-            </span>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Textarea
-            value={systemPrompt}
-            onChange={(e) => setSystemPrompt(e.target.value)}
-            onBlur={() => saveIfChanged('systemPrompt', systemPrompt)}
-            placeholder={`e.g. This project is for editing the Clark Forklifts website. Use EN-AU spelling. When the user asks about service packages, default to the 2026 pricing sheet. Tone: warm, direct, no em-dashes.`}
-            rows={8}
-            maxLength={4000}
-            className="resize-y min-h-32 font-mono text-xs md:text-xs"
-          />
-        </CardContent>
-      </Card>
-
-      {/* Default model — optional. Falls back to user default if unset. */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Default model</CardTitle>
-          <CardDescription className="text-xs mt-1">
-            New chats in this project start with this model selected. Per-chat model is
-            still switchable in the composer.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-2">
-            <Label htmlFor="default-model" className="sr-only">Default model</Label>
-            <select
-              id="default-model"
-              value={defaultModel}
-              onChange={(e) => {
-                setDefaultModel(e.target.value)
-                saveIfChanged('defaultModel', e.target.value)
+      {/* Two-column layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left column: chat input + chats list */}
+        <div className="lg:col-span-2 space-y-4">
+          {/* Quick chat input */}
+          <form onSubmit={handleSubmitChat} className="rounded-2xl border bg-card p-4 space-y-3">
+            <Textarea
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                  handleSubmitChat(e as unknown as React.FormEvent)
+                }
               }}
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
-            >
-              <option value="">(use account default)</option>
-              {modelsData?.models.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name} — {m.provider}
-                </option>
-              ))}
-            </select>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Conversations list */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-base flex items-center gap-2">
-                <MessageSquare className="size-4 text-muted-foreground" />
-                Conversations
-                <span className="text-xs text-muted-foreground font-normal">
-                  ({conversations.length})
-                </span>
-              </CardTitle>
-              <CardDescription className="text-xs mt-1">
-                Chats that belong to this project. Starred rows are pinned.
-              </CardDescription>
+              placeholder="How can I help you today?"
+              rows={2}
+              className="border-0 shadow-none focus-visible:ring-0 resize-none px-0 text-base"
+              disabled={isArchived}
+            />
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">
+                {project.defaultModel ?? 'Default model'}
+              </span>
+              <Button type="submit" size="sm" disabled={!chatInput.trim() || isArchived}>
+                <Plus className="size-3.5 mr-1.5" />
+                Start chat
+              </Button>
             </div>
-            <Button onClick={startChatInProject} size="sm" variant="outline">
-              <Plus className="size-3.5 mr-1.5" />
-              New chat
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
+          </form>
+
+          {/* Chats list */}
           {conversations.length === 0 ? (
-            <div className="rounded-md border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
-              No conversations yet.{' '}
-              <button
-                type="button"
-                onClick={startChatInProject}
-                className="underline underline-offset-2 hover:text-foreground"
-              >
-                Start the first one
-              </button>
-              .
+            <div className="rounded-lg border border-dashed border-border px-4 py-8 text-center">
+              <p className="text-sm text-muted-foreground italic">
+                Start a chat to keep conversations organised and re-use project knowledge.
+              </p>
             </div>
           ) : (
-            <ul className="space-y-1">
-              {conversations.map((c) => (
-                <li key={c.id}>
-                  <Link
-                    to={`/dashboard/chat/${c.id}`}
-                    className="group flex items-center gap-2 rounded-md px-2 py-2 transition-colors hover:bg-muted"
-                  >
-                    {c.starred ? (
-                      <Star className="size-3.5 shrink-0 fill-yellow-500 text-yellow-500" />
-                    ) : (
-                      <MessageSquare className="size-3.5 shrink-0 text-muted-foreground" />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="truncate text-sm font-medium">
-                        {c.title || 'Untitled'}
-                      </div>
-                      {c.summary && (
-                        <div className="truncate text-[11px] text-muted-foreground">
-                          {c.summary}
-                        </div>
+            <div className="space-y-1">
+              <h2 className="text-sm font-semibold text-muted-foreground px-2 py-1">
+                Your chats
+              </h2>
+              <ul className="space-y-1">
+                {conversations.map((c) => (
+                  <li key={c.id}>
+                    <Link
+                      to={`/dashboard/chat/${c.id}`}
+                      className="group flex items-center gap-3 rounded-md px-3 py-2.5 transition-colors hover:bg-muted"
+                    >
+                      {c.starred ? (
+                        <Star className="size-3.5 shrink-0 fill-yellow-500 text-yellow-500" />
+                      ) : (
+                        <MessageSquare className="size-3.5 shrink-0 text-muted-foreground" />
                       )}
-                    </div>
-                    <span className="shrink-0 text-[11px] text-muted-foreground">
-                      {timeAgo(c.updatedAt)}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+                      <div className="flex-1 min-w-0">
+                        <div className="truncate text-sm font-medium">
+                          {c.title || 'Untitled'}
+                        </div>
+                        {c.summary && (
+                          <div className="truncate text-xs text-muted-foreground">
+                            {c.summary}
+                          </div>
+                        )}
+                      </div>
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {timeAgo(c.updatedAt)}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Danger zone — archive / delete. Delete routes back to chat via
-          invalidation handled inside the hook. */}
-      <div className="flex justify-end gap-2 pt-4 border-t border-border/40">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-muted-foreground"
-          onClick={async () => {
-            try {
-              await apiClient.post(`/api/projects/${id}/archive`, {})
-              queryClient.invalidateQueries({ queryKey: ['projects'] })
-              toast.success('Project archived')
-              navigate('/dashboard/chat')
-            } catch (err) {
-              console.error('Failed to archive project', err)
-              toast.error('Could not archive project. Check your connection and try again.')
-            }
-          }}
-        >
-          <Archive className="size-3.5 mr-1.5" />
-          Archive
-        </Button>
+        {/* Right column: Memory + Instructions + Files */}
+        <div className="space-y-4 lg:sticky lg:top-4 lg:self-start">
+          {/* Memory section */}
+          <div className="rounded-lg border bg-card p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold">Memory</h3>
+              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                <Lock className="size-3" />
+                Only you
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground italic">
+              Project memory will show here after a few chats.
+            </p>
+          </div>
+
+          {/* Instructions section */}
+          <div className="rounded-lg border bg-card p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold">Instructions</h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-6"
+                onClick={() => setInstructionsOpen(true)}
+                aria-label="Edit instructions"
+              >
+                {project.systemPrompt ? <PencilLine className="size-3.5" /> : <Plus className="size-3.5" />}
+              </Button>
+            </div>
+            {project.systemPrompt ? (
+              <p className="text-xs text-foreground line-clamp-4 whitespace-pre-wrap">
+                {project.systemPrompt}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground italic">
+                Add instructions to tailor Claude's responses
+              </p>
+            )}
+          </div>
+
+          {/* Files section (placeholder for Phase 2) */}
+          <div className="rounded-lg border bg-card p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold">Files</h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-6"
+                disabled
+                aria-label="Add file"
+              >
+                <Plus className="size-3.5" />
+              </Button>
+            </div>
+            <div className="rounded-md border border-dashed border-border px-3 py-6 text-center">
+              <FileStack className="size-6 mx-auto text-muted-foreground mb-2" />
+              <p className="text-xs text-muted-foreground italic">
+                Add PDFs, documents, or other text to reference in this project.
+              </p>
+              <p className="text-[10px] text-muted-foreground mt-1.5">Coming in Phase 2</p>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* Set Instructions Modal */}
+      <SetInstructionsModal
+        open={instructionsOpen}
+        onOpenChange={setInstructionsOpen}
+        projectName={project.name}
+        currentValue={project.systemPrompt ?? ''}
+        onSave={(value) => {
+          updateProject.mutate(
+            { id, systemPrompt: value || null },
+            {
+              onSuccess: () => {
+                toast.success('Instructions saved')
+                setInstructionsOpen(false)
+              },
+              onError: () => toast.error('Could not save instructions'),
+            },
+          )
+        }}
+        isPending={updateProject.isPending}
+      />
+
+      {/* Edit Project Modal */}
+      <EditProjectModal
+        open={editProjectOpen}
+        onOpenChange={setEditProjectOpen}
+        project={project}
+        onSave={(name, description) => {
+          updateProject.mutate(
+            { id, name, description: description || null },
+            {
+              onSuccess: () => {
+                toast.success('Project updated')
+                setEditProjectOpen(false)
+              },
+              onError: () => toast.error('Could not update project'),
+            },
+          )
+        }}
+        isPending={updateProject.isPending}
+      />
+
+      {/* Delete confirmation */}
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title="Delete this project?"
+        description="The project will be permanently deleted. Conversations will return to your main chat list (they're not deleted)."
+        confirmLabel="Delete project"
+        variant="destructive"
+        onConfirm={() => {
+          deleteProject.mutate(id, {
+            onSuccess: () => {
+              queryClient.invalidateQueries({ queryKey: ['conversations'] })
+              toast.success('Project deleted')
+              navigate('/dashboard/projects')
+            },
+            onError: () => toast.error('Could not delete project'),
+          })
+        }}
+      />
+
+      {/* Share placeholder */}
+      <Dialog open={shareInfoOpen} onOpenChange={setShareInfoOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Sharing</DialogTitle>
+            <DialogDescription>
+              Project sharing — including team and per-link sharing — arrives in Phase 5 of the projects build.
+              For now, this project is private to you.
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
     </div>
+  )
+}
+
+// --- Set Instructions Modal ----------------------------------------------
+
+function SetInstructionsModal({
+  open,
+  onOpenChange,
+  projectName,
+  currentValue,
+  onSave,
+  isPending,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  projectName: string
+  currentValue: string
+  onSave: (value: string) => void
+  isPending: boolean
+}) {
+  const [value, setValue] = useState(currentValue)
+
+  useEffect(() => {
+    if (open) setValue(currentValue)
+  }, [open, currentValue])
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Set project instructions</DialogTitle>
+          <DialogDescription>
+            Provide Claude with relevant instructions and information for chats within{' '}
+            <span className="font-medium text-foreground">{projectName}</span>. This will work alongside{' '}
+            <Link to="/dashboard/settings" className="underline underline-offset-2">user preferences</Link>{' '}
+            and the selected style in a chat.
+          </DialogDescription>
+        </DialogHeader>
+        <Textarea
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder="Break down large tasks and ask clarifying questions when needed."
+          rows={12}
+          maxLength={8000}
+          className="font-mono text-xs md:text-xs"
+        />
+        <div className="flex items-center justify-between text-xs text-muted-foreground -mt-2">
+          <span></span>
+          <span className="tabular-nums">{value.length}/8000</span>
+        </div>
+        <div className="flex justify-end gap-2 pt-2">
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={() => onSave(value)} disabled={isPending}>
+            {isPending ? <Loader2 className="size-3.5 animate-spin mr-1.5" /> : null}
+            Save instructions
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// --- Edit Project Modal --------------------------------------------------
+
+function EditProjectModal({
+  open,
+  onOpenChange,
+  project,
+  onSave,
+  isPending,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  project: { name: string; description: string | null }
+  onSave: (name: string, description: string) => void
+  isPending: boolean
+}) {
+  const [name, setName] = useState(project.name)
+  const [description, setDescription] = useState(project.description ?? '')
+
+  useEffect(() => {
+    if (open) {
+      setName(project.name)
+      setDescription(project.description ?? '')
+    }
+  }, [open, project.name, project.description])
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!name.trim()) return
+    onSave(name.trim(), description.trim())
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit project</DialogTitle>
+          <DialogDescription className="sr-only">Update the project name and description.</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={submit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="edit-name">Name</Label>
+            <Input
+              id="edit-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              maxLength={100}
+              required
+              autoFocus
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-description">Description</Label>
+            <Textarea
+              id="edit-description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              maxLength={500}
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button type="submit" disabled={!name.trim() || isPending}>
+              {isPending ? <Loader2 className="size-3.5 animate-spin mr-1.5" /> : null}
+              Save
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }
 

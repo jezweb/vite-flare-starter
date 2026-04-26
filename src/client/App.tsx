@@ -29,6 +29,8 @@ const AdminPage = lazy(() => import('./modules/admin/pages/AdminPage').then(m =>
 const ChatPage = lazy(() => import('./modules/chat/pages/ChatPage').then(m => ({ default: m.ChatPage })))
 const ExtractPage = lazy(() => import('./modules/chat/pages/ExtractPage').then(m => ({ default: m.ExtractPage })))
 const ProjectPage = lazy(() => import('./modules/projects/pages/ProjectPage').then(m => ({ default: m.ProjectPage })))
+const ProjectsIndexPage = lazy(() => import('./modules/projects/pages/ProjectsIndexPage').then(m => ({ default: m.ProjectsIndexPage })))
+const ArtifactsPage = lazy(() => import('./modules/chat/pages/ArtifactsPage').then(m => ({ default: m.ArtifactsPage })))
 const ActivityPage = lazy(() => import('./modules/activity/pages/ActivityPage').then(m => ({ default: m.ActivityPage })))
 const FilesPage = lazy(() => import('./modules/files/pages/FilesPage').then(m => ({ default: m.FilesPage })))
 const SkillsPage = lazy(() => import('./modules/skills/pages/SkillsPage').then(m => ({ default: m.SkillsPage })))
@@ -109,7 +111,9 @@ function App() {
                 state. Two separate routes was the C1 regression cause:
                 navigate(replace:true) between Route entries unmounts. */}
             <Route path="chat/:conversationId?" element={<ChatPage />} />
+            <Route path="projects" element={<ProjectsIndexPage />} />
             <Route path="projects/:id" element={<ProjectPage />} />
+            <Route path="artifacts" element={<ArtifactsPage />} />
             <Route path="extract" element={<ExtractPage />} />
 
             {/* Activity log */}
