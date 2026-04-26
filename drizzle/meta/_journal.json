@@ -218,6 +218,13 @@
       "when": 1777253000000,
       "tag": "0030_organization_plugin",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "6",
+      "when": 1777254000000,
+      "tag": "0031_service_credentials",
+      "breakpoints": true
     }
   ]
 }

@@ -23,7 +23,7 @@ import {
 import { toAiSdkTool } from './tool-adapter'
 import { drizzle } from 'drizzle-orm/d1'
 import { and, eq } from 'drizzle-orm'
-import { resolveModel } from './providers'
+import { resolveModelForUser } from './providers'
 import { costFor } from './cost'
 import { buildModel } from './middleware'
 import { buildSystemPrompt } from './context'
@@ -88,7 +88,13 @@ export async function buildChatAgent(ctx: AgentContext): Promise<AgentResult> {
   const startTime = Date.now()
 
   // Resolve model + apply middleware (reasoning extraction, etc.)
-  const baseModel = resolveModel(ctx.env as Parameters<typeof resolveModel>[0], modelId)
+  // BYOK-aware: user/org credentials override env defaults when set.
+  // Worker AI ids are unaffected (no key needed).
+  const baseModel = await resolveModelForUser(
+    ctx.env as Parameters<typeof resolveModelForUser>[0],
+    { userId: ctx.userId },
+    modelId,
+  )
   const model = buildModel(baseModel, modelId)
 
   // Load skill catalog for system prompt injection (Level 1 progressive disclosure).

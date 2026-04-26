@@ -45,6 +45,7 @@ import { atlassianDefinitions } from './atlassian'
 import { proposePatchDefinitions } from './propose-patch'
 import { dataDefinitions } from './data'
 import { entityDefinitions } from './entities'
+import { firecrawlDefinitions } from './firecrawl'
 import { collectAvailableTools } from '@/server/lib/ai/tool-adapter'
 import {
   getAllowedConnectorTools,
@@ -88,6 +89,7 @@ export async function buildChatTools(ctx: AgentContext, options: { availableSkil
     ...proposePatchDefinitions,
     ...dataDefinitions,
     ...entityDefinitions,
+    ...firecrawlDefinitions,
   ]
 
   // Per-user connector filter — keeps connector tools the user has

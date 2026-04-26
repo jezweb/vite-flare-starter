@@ -46,6 +46,7 @@ import webhookAgentsRoutes from './modules/webhook-agents/routes'
 import agentObservabilityRoutes from './modules/agent-observability/routes'
 import entitiesRoutes from './modules/entities/routes'
 import organizationsRoutes from './modules/organizations/routes'
+import credentialsRoutes from './modules/credentials/routes'
 import { routeAgentRequest } from 'agents'
 import { ScratchpadMcpAgent } from './modules/mcp-agents/scratchpad-mcp-agent'
 // Re-export DO class(es) so wrangler migrations can locate them. Every DO
@@ -289,6 +290,7 @@ app.route('/api/webhooks', webhookAgentsRoutes)
 app.route('/api/agent-observability', agentObservabilityRoutes)
 app.route('/api/entities', entitiesRoutes)
 app.route('/api/organizations', organizationsRoutes)
+app.route('/api/credentials', credentialsRoutes)
 app.route('/api/webhooks', webhookRoutes)
 app.route('/api/user-meta', userMetaRoutes)
 app.route('/api/skills', skillsRoutes)

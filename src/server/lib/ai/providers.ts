@@ -41,6 +41,7 @@ import { createDeepSeek } from '@ai-sdk/deepseek'
 import { createMistral } from '@ai-sdk/mistral'
 import { createXai } from '@ai-sdk/xai'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
+import { getServiceKey, type CredentialEnv, type CredentialOwner } from '@/server/lib/credentials'
 
 export interface ProviderEnv {
   AI: Ai
@@ -51,6 +52,82 @@ export interface ProviderEnv {
   MISTRAL_API_KEY?: string
   XAI_API_KEY?: string
   OPENROUTER_API_KEY?: string
+}
+
+/**
+ * Modelid → provider id (matches credentials.ts `SUPPORTED_PROVIDERS`).
+ * Returns null for Workers AI (no key) and unknown patterns.
+ */
+function providerIdForModel(modelId: string): string | null {
+  if (modelId.startsWith('@cf/') || modelId.startsWith('@hf/')) return null
+  if (modelId.startsWith('openrouter/')) return 'openrouter'
+  if (modelId.startsWith('anthropic/') || modelId.startsWith('claude-')) return 'anthropic'
+  if (
+    modelId.startsWith('openai/') ||
+    modelId.startsWith('gpt-') ||
+    modelId.startsWith('o1-') ||
+    modelId.startsWith('o3-') ||
+    modelId.startsWith('o4-')
+  ) return 'openai'
+  if (modelId.startsWith('google/') || modelId.startsWith('gemini-')) return 'google_ai'
+  if (modelId.startsWith('deepseek/') || modelId.startsWith('deepseek-')) return 'deepseek'
+  if (
+    modelId.startsWith('mistralai/') ||
+    modelId.startsWith('mistral-') ||
+    modelId.startsWith('codestral-') ||
+    modelId.startsWith('pixtral-')
+  ) return 'mistral'
+  if (modelId.startsWith('x-ai/') || modelId.startsWith('grok-')) return 'xai'
+  return null
+}
+
+/**
+ * Build a ProviderEnv overlay where the key for THIS modelId's
+ * provider is BYOK-resolved (user → org → env). All other keys come
+ * from env unchanged. Lets resolveModel stay sync without duplicating
+ * its routing rules.
+ *
+ * Workers AI ids return env unchanged (no key needed).
+ */
+async function buildBYOKEnv(
+  baseEnv: ProviderEnv & CredentialEnv,
+  owner: CredentialOwner,
+  modelId: string,
+): Promise<ProviderEnv> {
+  const provider = providerIdForModel(modelId)
+  if (!provider) return baseEnv
+  const key = await getServiceKey(baseEnv, owner, provider)
+  if (key === null) return baseEnv
+  // Map provider id → ProviderEnv slot
+  const slotMap: Record<string, keyof ProviderEnv> = {
+    anthropic: 'ANTHROPIC_API_KEY',
+    openai: 'OPENAI_API_KEY',
+    google_ai: 'GOOGLE_AI_API_KEY',
+    openrouter: 'OPENROUTER_API_KEY',
+    deepseek: 'DEEPSEEK_API_KEY',
+    mistral: 'MISTRAL_API_KEY',
+    xai: 'XAI_API_KEY',
+  }
+  const slot = slotMap[provider]
+  if (!slot) return baseEnv
+  return { ...baseEnv, [slot]: key }
+}
+
+/**
+ * BYOK-aware resolveModel. Use this from agents that have user
+ * context (chat module, AutonomousAgent). Falls back to env keys
+ * when the user/org has no credential set.
+ *
+ * Sync `resolveModel` is preserved for callers without user context
+ * (e.g. background scheduled tasks running as the operator).
+ */
+export async function resolveModelForUser(
+  env: ProviderEnv & CredentialEnv,
+  owner: CredentialOwner,
+  modelId: string,
+) {
+  const overlay = await buildBYOKEnv(env, owner, modelId)
+  return resolveModel(overlay, modelId)
 }
 
 /**

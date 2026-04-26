@@ -65,7 +65,7 @@ import { Agent } from 'agents'
 import { streamText, convertToModelMessages, type UIMessage } from 'ai'
 import { drizzle } from 'drizzle-orm/d1'
 import { and, eq, gte, sql } from 'drizzle-orm'
-import { resolveModel } from '@/server/lib/ai/providers'
+import { resolveModel, resolveModelForUser } from '@/server/lib/ai/providers'
 import { collectAvailableTools } from '@/server/lib/ai/tool-adapter'
 import { costFor } from '@/server/lib/ai/cost'
 import { generateWebhookSecret } from './webhook-verify'
@@ -443,9 +443,15 @@ export abstract class AutonomousAgent<
       // agent's owner (state.userId) so user-scoped tools work.
       const tools = await this.buildToolset()
 
-      // Resolve the model. resolveModel handles routing (Workers AI,
-      // OpenRouter, direct providers).
-      const model = resolveModel(this.env, modelId)
+      // Resolve the model. BYOK-aware: user-supplied keys override
+      // env defaults. Falls back to plain resolveModel when no owner.
+      const model = this.state.userId
+        ? await resolveModelForUser(
+            this.env as Parameters<typeof resolveModelForUser>[0],
+            { userId: this.state.userId },
+            modelId,
+          )
+        : resolveModel(this.env, modelId)
 
       const result = streamText({
         model,
