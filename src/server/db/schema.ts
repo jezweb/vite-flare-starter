@@ -44,6 +44,9 @@ export { conversations, conversationMessages } from '@/server/modules/conversati
 // Projects — groupings of conversations with shared instructions
 export { projects } from '@/server/modules/projects/db/schema'
 
+// Memories — multi-entry three-scope (project/user/org) persistent memory
+export { memories } from '@/server/modules/memories/db/schema'
+
 // Email log — every outbound email attempt with provider + status
 export { emailLog } from '@/server/modules/email/db/schema'
 

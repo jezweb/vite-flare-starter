@@ -22,6 +22,12 @@ export const BUNDLED_USER_ID = 'bundled'
 export const skills = sqliteTable('skills', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   userId: text('user_id').notNull().default(BUNDLED_USER_ID),
+  /**
+   * Optional org scoping (Phase 5). Null = personal/bundled. Value = visible
+   * to all members of this org. Org table is `organization` (better-auth
+   * plugin), no Drizzle FK reference — managed via raw SQL migration 0030.
+   */
+  orgId: text('org_id'),
   name: text('name').notNull(),
   description: text('description').notNull(),
   source: text('source', { enum: ['bundled', 'r2', 'github'] }).notNull(),
@@ -36,4 +42,5 @@ export const skills = sqliteTable('skills', {
   uniqueIndex('skills_user_name_idx').on(table.userId, table.name),
   index('skills_source_idx').on(table.source),
   index('skills_enabled_idx').on(table.enabled),
+  index('skills_org_id_idx').on(table.orgId),
 ])

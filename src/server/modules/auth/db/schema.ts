@@ -26,6 +26,12 @@ export const user = sqliteTable('user', {
   preferences: text('preferences', { mode: 'json' })
     .$type<UserPreferences>()
     .$defaultFn(() => ({ theme: 'default', mode: 'system' })),
+  /**
+   * Memory update trust mode for user-scope memories (Phase 3 / Extension E).
+   * Default 'ask' — first-time users see the diff approval flow before auto-mode.
+   * Stored on the user table (better-auth requires camelCase column names).
+   */
+  memoryUpdateMode: text('memoryUpdateMode', { enum: ['ask', 'auto', 'never'] }).notNull().default('ask'),
   createdAt: isoTimestamp('createdAt').notNull().$defaultFn(() => new Date()),
   updatedAt: isoTimestamp('updatedAt').notNull().$defaultFn(() => new Date()),
 })

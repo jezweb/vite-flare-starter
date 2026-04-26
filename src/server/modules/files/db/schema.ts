@@ -1,5 +1,6 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
+import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core'
 import { user } from '@/server/modules/auth/db/schema'
+import { projects } from '@/server/modules/projects/db/schema'
 
 /**
  * Files table - stores metadata for user-uploaded files
@@ -8,6 +9,14 @@ import { user } from '@/server/modules/auth/db/schema'
 export const files = sqliteTable('files', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   userId: text('userId').notNull().references(() => user.id, { onDelete: 'cascade' }),
+
+  /**
+   * Optional project scoping. Null = general/personal file (default behaviour).
+   * Value = scoped to a project, shown on the project's Files section, and
+   * automatically injected as context into chats started in that project.
+   * ON DELETE SET NULL — files survive the project deletion.
+   */
+  projectId: text('project_id').references(() => projects.id, { onDelete: 'set null' }),
 
   // File metadata
   name: text('name').notNull(),
@@ -32,7 +41,9 @@ export const files = sqliteTable('files', {
   // Timestamps
   createdAt: integer('createdAt', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
   updatedAt: integer('updatedAt', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
-})
+}, (table) => [
+  index('files_project_id_idx').on(table.projectId),
+])
 
 export type File = typeof files.$inferSelect
 export type NewFile = typeof files.$inferInsert
