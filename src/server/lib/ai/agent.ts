@@ -144,6 +144,26 @@ export async function buildChatAgent(ctx: AgentContext): Promise<AgentResult> {
     extraSections['Project instructions'] = `${header}\n\n${project.systemPrompt}`
   }
 
+  // Memory injection (Phase 3) — overview-only, full content on-demand
+  // via load_memory tool. User memories always inject; project memories
+  // only when there's an active project. Privacy-flagged entries are
+  // filtered out — they're available only via explicit load_memory.
+  try {
+    const { loadMemoryIndex, formatMemoryBlock } = await import('@/server/modules/memories/inject')
+    const memoryIndex = await loadMemoryIndex({
+      db: (ctx.env as unknown as { DB: D1Database }).DB,
+      userId: ctx.userId,
+      projectId: ctx.projectId ?? null,
+    })
+    const memoryBlock = formatMemoryBlock(memoryIndex)
+    if (memoryBlock) {
+      extraSections['Memory'] = memoryBlock
+    }
+  } catch (err) {
+    // Memory is best-effort; never break the chat flow on injection failure.
+    console.error(JSON.stringify({ event: 'memory_injection_failed', error: String(err) }))
+  }
+
   // Assemble system prompt with user context, date, skills, and preferences
   const instructions = buildSystemPrompt({
     baseInstructions: ctx.systemPrompt || 'You are a helpful assistant.',

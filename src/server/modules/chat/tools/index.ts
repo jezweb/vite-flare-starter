@@ -17,6 +17,7 @@ import { coreDefinitions } from './core'
 import { browserDefinitions } from './browser'
 import { searchDefinitions } from './search'
 import { memoryDefinitions } from './memory'
+import { memoriesMultiDefinitions } from './memories-multi'
 import { fileDefinitions } from './files'
 import { uiDefinitions } from './ui'
 import { skillsDefinitions } from './skills'
@@ -59,6 +60,7 @@ export async function buildChatTools(ctx: AgentContext, options: { availableSkil
   const allDefinitions: ToolDefinition<unknown, unknown>[] = [
     ...coreDefinitions,
     ...memoryDefinitions,
+    ...memoriesMultiDefinitions,
     ...todoDefinitions,
     ...uiDefinitions,
     ...artifactDefinitions,

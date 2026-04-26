@@ -8,6 +8,7 @@ import { PreferencesSection } from '../components/PreferencesSection'
 import { ChatPreferencesSection } from '../components/ChatPreferencesSection'
 import { ApiTokensSection } from '../components/ApiTokensSection'
 import { OrganizationSection } from '@/client/modules/organization/components/OrganizationSection'
+import { MemorySection } from '../components/MemorySection'
 import { features } from '@/shared/config/features'
 
 export function SettingsPage() {
@@ -22,13 +23,14 @@ export function SettingsPage() {
   // the chat feature is enabled (gates chat preferences together with the
   // chat module itself).
   const showChatTab = !!features.chat
-  const tabCount = (features.apiTokens ? 6 : 5) + (showChatTab ? 1 : 0)
+  // Tab count: profile + organization + security + sessions + (api-tokens) + (ai) + memory + preferences
+  const tabCount = (features.apiTokens ? 7 : 6) + (showChatTab ? 1 : 0)
   const gridCols =
-    tabCount === 7
-      ? 'grid-cols-3 sm:grid-cols-7'
-      : tabCount === 6
-        ? 'grid-cols-3 sm:grid-cols-6'
-        : 'grid-cols-3 sm:grid-cols-5'
+    tabCount >= 8
+      ? 'grid-cols-3 sm:grid-cols-8'
+      : tabCount === 7
+        ? 'grid-cols-3 sm:grid-cols-7'
+        : 'grid-cols-3 sm:grid-cols-6'
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -63,6 +65,7 @@ export function SettingsPage() {
             <TabsTrigger value="api-tokens">API Tokens</TabsTrigger>
           )}
           {showChatTab && <TabsTrigger value="ai">AI</TabsTrigger>}
+          <TabsTrigger value="memory">Memory</TabsTrigger>
           <TabsTrigger value="preferences">Preferences</TabsTrigger>
         </TabsList>
 
@@ -93,6 +96,10 @@ export function SettingsPage() {
             <ChatPreferencesSection />
           </TabsContent>
         )}
+
+        <TabsContent value="memory">
+          <MemorySection />
+        </TabsContent>
 
         <TabsContent value="preferences">
           <PreferencesSection />

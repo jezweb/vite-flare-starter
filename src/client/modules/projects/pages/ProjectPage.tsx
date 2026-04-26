@@ -24,7 +24,6 @@ import {
   Edit3,
   MessageSquare,
   Loader2,
-  Lock,
   PencilLine,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -54,6 +53,7 @@ import {
   useStarProject,
 } from '../hooks/useProjects'
 import { ProjectFilesSection } from '../components/ProjectFilesSection'
+import { MemorySection } from '../components/MemorySection'
 import { cn } from '@/lib/utils'
 
 interface ProjectConversation {
@@ -291,18 +291,7 @@ export function ProjectPage() {
         {/* Right column: Memory + Instructions + Files */}
         <div className="space-y-4 lg:sticky lg:top-4 lg:self-start">
           {/* Memory section */}
-          <div className="rounded-lg border bg-card p-4">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold">Memory</h3>
-              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                <Lock className="size-3" />
-                Only you
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground italic">
-              Project memory will show here after a few chats.
-            </p>
-          </div>
+          <MemorySection scope="project" scopeId={id} />
 
           {/* Instructions section */}
           <div className="rounded-lg border bg-card p-4">
