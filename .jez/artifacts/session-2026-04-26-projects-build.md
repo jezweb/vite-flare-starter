@@ -17,7 +17,7 @@
 | 1 | Projects first-class + nav cleanup + Artifacts list + AI-assisted creation | **shipped** | commit covers index page, detail page (2-col), create modal (3 tabs: Blank/AI/Template), sidebar slim, user-menu rework, /dashboard/artifacts |
 | 2 | Files in projects | **shipped** | upload to project, capacity meter, list, delete |
 | 3 | Memory v1 (foundational layer) | **shipped (v1)** | CRUD module, agent tools (memory_search/add/update/remove/load_memory), system-prompt injection with privacy-zone filtering, MemorySection UI on project + Settings → Memory tab |
-| 3a | Memory v2 (auto-job + 3-way trust approval) | **deferred** | Schema in place; v2 adds the LLM extraction + approval queue integration |
+| 3a | Memory v2 (auto-job + 3-way trust approval) | **shipped** | LLM extraction (Gemma 4 26B), 3 triggers (reactive/cron/manual), apply-updates handler with mode branching, approvals route synthetic dispatch, approval-card 3-button UI, mode toggle in MemorySection header, source-conversation provenance link |
 | 4 | + menu + MCP resources picker | **deferred** | Existing chat input is functional; restructure to claude.ai grouping defers for follow-up. MCP resources picker depends on deeper MCP work. |
 | 5 | Org awareness & sharing | **deferred** | Phase 0 added schema (`orgId` on projects + skills + `archivedAt` + `memoryUpdateMode`). UI for Your/Team/Shared tabs + share modal + org-shared skills + org activity defers for follow-up. |
 | 6 | Universal search expansion | **shipped (partial)** | CommandPalette searches projects alongside conversations. Memory search via agent tool only — palette doesn't yet have a memory result type. |
@@ -71,11 +71,11 @@
 
 ## What's NOT built (explicitly deferred)
 
-### Phase 3 v2 — Memory auto-job + trust approval
-- LLM-driven memory extraction triggered on conversation completion (reactive + cron)
-- 3-way approval flow (Reject / Approve / Approve & always allow) using existing `approvals` module
-- Auto-suggested memories chip in chat (Extension B)
-- Provenance UI showing source-conversation link
+### Phase 3 v2 Extension B — Auto-suggested memories chip (mid-chat)
+- Active flow: agent calls `memory_add` with `mode: 'suggest'` mid-conversation
+- Chat surfaces an inline chip ("💡 Add to memory: …") with Add/Dismiss/Always-add buttons
+- More invasive mid-stream UI work — best as a focused session
+- The reactive + cron + manual extraction paths shipped in Phase 3 v2 already cover the passive case
 
 ### Phase 4 — + menu + MCP resources picker
 - Restructured `+` menu in chat input to match claude.ai's grouping
@@ -159,6 +159,8 @@ When you (or a future session) pick this up:
 - `f567bbf` feat(projects): Phase 2 — files in projects
 - (Phase 3 v1) feat(projects): Phase 3 v1 — memory module + agent tools + injection
 - `18faaaf` feat(search,docs): Phase 6 universal search adds projects + Phase 7 INSPIRATIONS doc
+- `44edd66` docs(session): final progress + handoff for projects-first-class build
+- `22cea7c` feat(memory): Phase 3 v2 — auto-extraction job + 3-way trust approval
 
 All deployed to https://vite-flare-starter.webfonts.workers.dev
 
