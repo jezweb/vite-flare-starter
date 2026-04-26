@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
-import { eq, and, desc } from 'drizzle-orm'
+import { eq, and, desc, isNull, sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import { files, type File } from './db/schema'
@@ -29,10 +29,17 @@ const updateSchema = z.object({
   name: z.string().min(1).max(255).optional(),
   folder: z.string().max(500).optional(),
   isPublic: z.boolean().optional(),
+  projectId: z.string().nullable().optional(),
 })
 
 const listQuerySchema = z.object({
   folder: z.string().optional(),
+  /**
+   * Optional project filter. Pass a project UUID to fetch files scoped to
+   * that project. Pass the literal "_none" to fetch only un-scoped files
+   * (general/personal). Omit to fetch all of the user's files.
+   */
+  projectId: z.string().optional(),
   limit: z.coerce.number().min(1).max(100).optional().default(50),
   offset: z.coerce.number().min(0).optional().default(0),
 })
@@ -47,12 +54,18 @@ app.use('*', authMiddleware)
  */
 app.get('/', zValidator('query', listQuerySchema), async (c) => {
   const userId = c.get('userId')
-  const { folder, limit, offset } = c.req.valid('query')
+  const { folder, projectId, limit, offset } = c.req.valid('query')
   const db = drizzle(c.env.DB)
 
   const conditions = [eq(files.userId, userId)]
   if (folder) {
     conditions.push(eq(files.folder, folder))
+  }
+  if (projectId === '_none') {
+    // Files that don't belong to any project (default for the global Files page)
+    conditions.push(isNull(files.projectId))
+  } else if (projectId) {
+    conditions.push(eq(files.projectId, projectId))
   }
 
   const userFiles = await db
@@ -69,9 +82,17 @@ app.get('/', zValidator('query', listQuerySchema), async (c) => {
     .from(files)
     .where(and(...conditions))
 
+  // Total bytes for capacity meter (Phase 2 — per-project)
+  const totalBytesRow = await db
+    .select({ total: sql<number>`COALESCE(SUM(${files.size}), 0)` })
+    .from(files)
+    .where(and(...conditions))
+  const totalBytes = totalBytesRow[0]?.total ?? 0
+
   return c.json({
     files: userFiles,
     total: countResult.length,
+    totalBytes,
     limit,
     offset,
   })
@@ -151,6 +172,8 @@ app.post('/', async (c) => {
   const file = formData.get('file') as globalThis.File | null
   const folder = (formData.get('folder') as string) || '/'
   const isPublic = formData.get('isPublic') === 'true'
+  const projectIdRaw = formData.get('projectId')
+  const projectId = typeof projectIdRaw === 'string' && projectIdRaw.trim() ? projectIdRaw : null
 
   if (!file) {
     return c.json({ error: 'No file provided' }, 400)
@@ -192,6 +215,7 @@ app.post('/', async (c) => {
     .values({
       id: fileId,
       userId,
+      projectId,
       name: file.name,
       key,
       mimeType: file.type,
@@ -268,6 +292,9 @@ app.patch('/:id', zValidator('json', updateSchema), async (c) => {
   if (updates.isPublic !== undefined) {
     updateData.isPublic = updates.isPublic
     updateData.publicUrl = updates.isPublic ? `/api/files/${fileId}/download` : null
+  }
+  if (updates.projectId !== undefined) {
+    updateData.projectId = updates.projectId
   }
 
   const [updatedFile] = await db

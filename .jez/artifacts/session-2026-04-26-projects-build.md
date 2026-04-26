@@ -13,9 +13,9 @@
 
 | # | Phase | Status |
 |---|---|---|
-| 0 | Schema migration | **in progress** |
-| 1 | Projects first-class + nav cleanup + Artifacts list + AI-assisted creation | pending |
-| 2 | Files in projects | pending |
+| 0 | Schema migration | **completed** (commit f3f3334) |
+| 1 | Projects first-class + nav cleanup + Artifacts list + AI-assisted creation | **completed** |
+| 2 | Files in projects | **in progress** |
 | 3 | Memory v1 with extensions A-F | pending |
 | 4 | + menu + MCP resources picker | pending |
 | 5 | Org awareness & sharing | pending |
@@ -24,7 +24,22 @@
 
 ## What works (so far)
 
-(Nothing built yet — Phase 0 starting)
+- Phase 0: schema migration applied local + remote (memories table, project columns, file projectId, etc.)
+- Phase 1 deployed to https://vite-flare-starter.webfonts.workers.dev
+  - /dashboard/projects index page with search, sort, star, archive toggle
+  - /dashboard/projects/:id detail page with two-column layout
+  - Create modal with 3 tabs (Blank/AI-assisted/Template)
+  - Server scaffold endpoint via Workers AI Gemma 4
+  - Project templates config with 5 bundled templates
+  - /dashboard/artifacts page (scans assistant messages)
+  - Sidebar cleanup; user-menu hosts Settings/Admin/Dev/Sign out
+- Build clean (pnpm type-check + pnpm build pass)
+
+## Deferred from Phase 1 (will revisit)
+
+- Move-conversation-to-project context menu on chats sidebar
+- Inline project picker on chat input from /chat page
+- Recent-activity foot-of-page feed
 
 ## Resume instructions (if compacted)
 

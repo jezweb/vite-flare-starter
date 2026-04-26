@@ -25,7 +25,6 @@ import {
   MessageSquare,
   Loader2,
   Lock,
-  FileStack,
   PencilLine,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -54,6 +53,7 @@ import {
   useArchiveProject,
   useStarProject,
 } from '../hooks/useProjects'
+import { ProjectFilesSection } from '../components/ProjectFilesSection'
 import { cn } from '@/lib/utils'
 
 interface ProjectConversation {
@@ -329,28 +329,8 @@ export function ProjectPage() {
             )}
           </div>
 
-          {/* Files section (placeholder for Phase 2) */}
-          <div className="rounded-lg border bg-card p-4">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold">Files</h3>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-6"
-                disabled
-                aria-label="Add file"
-              >
-                <Plus className="size-3.5" />
-              </Button>
-            </div>
-            <div className="rounded-md border border-dashed border-border px-3 py-6 text-center">
-              <FileStack className="size-6 mx-auto text-muted-foreground mb-2" />
-              <p className="text-xs text-muted-foreground italic">
-                Add PDFs, documents, or other text to reference in this project.
-              </p>
-              <p className="text-[10px] text-muted-foreground mt-1.5">Coming in Phase 2</p>
-            </div>
-          </div>
+          {/* Files section */}
+          <ProjectFilesSection projectId={id} />
         </div>
       </div>
 
