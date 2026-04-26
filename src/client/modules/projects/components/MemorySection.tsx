@@ -6,6 +6,7 @@
  */
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import {
   Plus,
   Loader2,
@@ -15,6 +16,7 @@ import {
   ChevronRight,
   Trash2,
   PencilLine,
+  ArrowUpRight,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -53,11 +55,16 @@ export function MemorySection({
   scopeId,
   emptyHint,
   privacyLabel,
+  mode,
+  onModeChange,
 }: {
   scope: 'project' | 'user' | 'org'
   scopeId: string
   emptyHint?: string
   privacyLabel?: string
+  /** Optional 3-way memoryUpdateMode — when present, renders a header dropdown. */
+  mode?: 'ask' | 'auto' | 'never'
+  onModeChange?: (next: 'ask' | 'auto' | 'never') => void
 }) {
   const [addOpen, setAddOpen] = useState(false)
   const [editing, setEditing] = useState<Memory | null>(null)
@@ -158,6 +165,23 @@ export function MemorySection({
             </Button>
           </div>
         </div>
+        {mode && onModeChange && (
+          <div className="mb-3 flex items-center justify-between gap-2 rounded-md border border-dashed border-border/70 bg-muted/30 px-2 py-1.5 text-[11px] text-muted-foreground">
+            <span title="What happens when the AI proposes new memories from your chats">
+              When the AI suggests memory updates:
+            </span>
+            <select
+              value={mode}
+              onChange={(e) => onModeChange(e.target.value as 'ask' | 'auto' | 'never')}
+              aria-label="Memory update behaviour"
+              className="rounded-sm border border-input bg-background px-1.5 py-0.5 text-[11px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
+            >
+              <option value="ask">Ask me first</option>
+              <option value="auto">Apply automatically</option>
+              <option value="never">Never auto-update</option>
+            </select>
+          </div>
+        )}
 
         {isLoading ? (
           <div className="flex items-center justify-center py-4 text-muted-foreground">
@@ -205,9 +229,23 @@ export function MemorySection({
                     <div className="ml-5 mt-1 mb-2 rounded-md border bg-muted/20 p-3 space-y-2">
                       <div className="text-xs whitespace-pre-wrap">{m.content}</div>
                       <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-2 border-t border-border/50">
-                        <span>
-                          Updated {m.updatedAt ? new Date(m.updatedAt).toLocaleDateString() : 'recently'}
-                          {m.sourceConversationId && ' · from chat'}
+                        <span className="inline-flex items-center gap-1.5 flex-wrap">
+                          <span>
+                            Updated {m.updatedAt ? new Date(m.updatedAt).toLocaleDateString() : 'recently'}
+                          </span>
+                          {m.sourceConversationId && (
+                            <>
+                              <span aria-hidden>·</span>
+                              <Link
+                                to={`/dashboard/chat/${m.sourceConversationId}`}
+                                className="inline-flex items-center gap-0.5 underline decoration-dotted underline-offset-2 hover:text-foreground"
+                                title="Open the conversation that produced this memory"
+                              >
+                                from chat
+                                <ArrowUpRight className="size-2.5" />
+                              </Link>
+                            </>
+                          )}
                         </span>
                         <div className="flex items-center gap-1">
                           <button

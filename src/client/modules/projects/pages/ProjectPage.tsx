@@ -291,7 +291,14 @@ export function ProjectPage() {
         {/* Right column: Memory + Instructions + Files */}
         <div className="space-y-4 lg:sticky lg:top-4 lg:self-start">
           {/* Memory section */}
-          <MemorySection scope="project" scopeId={id} />
+          <MemorySection
+            scope="project"
+            scopeId={id}
+            mode={data?.project?.memoryUpdateMode ?? 'ask'}
+            onModeChange={(next) =>
+              updateProject.mutate({ id, memoryUpdateMode: next })
+            }
+          />
 
           {/* Instructions section */}
           <div className="rounded-lg border bg-card p-4">

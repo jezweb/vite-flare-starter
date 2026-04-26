@@ -499,6 +499,21 @@ export default {
       logs['cleanupError'] = err instanceof Error ? err.message : String(err)
     }
 
+    // 4. Memory extraction sweep (Phase 3 v2) — picks up conversations that
+    // went idle without triggering the reactive path. Caps at 5 per tick
+    // to keep wall-clock under the cron budget; the next tick handles
+    // any backlog.
+    try {
+      const { sweepIdleConversationsForMemory } = await import('./modules/memories/triggers')
+      const result = await sweepIdleConversationsForMemory(
+        env as unknown as { DB: D1Database; AI: Ai },
+      )
+      if (result.processed > 0) logs['memoryProcessed'] = result.processed
+      if (result.errors > 0) logs['memoryErrors'] = result.errors
+    } catch (err) {
+      logs['memorySweepError'] = err instanceof Error ? err.message : String(err)
+    }
+
     if (Object.keys(logs).length > 1) {
       console.log(JSON.stringify({ event: 'cron_tick', ...logs }))
     }

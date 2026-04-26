@@ -427,6 +427,28 @@ app.post('/', async (c) => {
           if (isNewConversation) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             autoTitleConversation(c.env as any, conversationId!, userId, finalMessages as any)
+            // Reactive memory trigger (Phase 3 v2) — when a new conversation
+            // starts in a scope, the prior conversation in that scope is a
+            // candidate for memory extraction. Fire-and-forget via
+            // ctx.waitUntil so the response stream isn't blocked.
+            try {
+              const { triggerPriorConversationMemoryExtraction } = await import(
+                '@/server/modules/memories/triggers'
+              )
+              const task = triggerPriorConversationMemoryExtraction({
+                env: c.env as unknown as { DB: D1Database; AI: Ai },
+                userId,
+                currentConversationId: conversationId!,
+                projectId: effectiveProjectId ?? null,
+              })
+              try {
+                c.executionCtx.waitUntil(task)
+              } catch {
+                await task
+              }
+            } catch (err) {
+              console.warn(JSON.stringify({ event: 'memory_reactive_trigger_failed', error: String(err) }))
+            }
           }
         } catch (err) {
           console.error(JSON.stringify({ event: 'chat_save_error', error: String(err), conversationId }))

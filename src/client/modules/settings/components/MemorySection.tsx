@@ -5,11 +5,34 @@
  * to the current user's id. Shown on Settings → Memory tab.
  */
 import { useSession } from '@/client/lib/auth'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { MemorySection as ProjectMemorySection } from '@/client/modules/projects/components/MemorySection'
+import { apiClient } from '@/client/lib/api-client'
 import { Brain, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 
 export function MemorySection() {
   const { data: session, isPending } = useSession()
+  const queryClient = useQueryClient()
+
+  const { data: modeData } = useQuery({
+    queryKey: ['memory-user-mode'],
+    queryFn: () => apiClient.get<{ memoryUpdateMode: 'ask' | 'auto' | 'never' }>('/api/memories/user-mode'),
+    enabled: !!session?.user,
+  })
+
+  const updateMode = useMutation({
+    mutationFn: (memoryUpdateMode: 'ask' | 'auto' | 'never') =>
+      apiClient.patch<{ success: boolean; memoryUpdateMode: 'ask' | 'auto' | 'never' }>(
+        '/api/memories/user-mode',
+        { memoryUpdateMode },
+      ),
+    onSuccess: (_, mode) => {
+      queryClient.setQueryData(['memory-user-mode'], { memoryUpdateMode: mode })
+      toast.success('Memory mode updated')
+    },
+    onError: () => toast.error('Could not update mode'),
+  })
 
   if (isPending) {
     return (
@@ -42,6 +65,8 @@ export function MemorySection() {
         scopeId={session.user.id}
         emptyHint="No personal memories yet. The AI can add them as you chat (via the memory_add tool), or you can create them manually here."
         privacyLabel="Only you"
+        mode={modeData?.memoryUpdateMode ?? 'ask'}
+        onModeChange={(next) => updateMode.mutate(next)}
       />
     </div>
   )

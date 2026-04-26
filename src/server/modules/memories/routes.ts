@@ -26,6 +26,10 @@ import { eq, and, desc } from 'drizzle-orm'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import { memories, MEMORY_SCOPES, MEMORY_TYPES } from './db/schema'
 import { projects } from '@/server/modules/projects/db/schema'
+import { conversations } from '@/server/modules/conversations/db/schema'
+import { user } from '@/server/modules/auth/db/schema'
+import { extractMemoryFromConversation } from './extract-job'
+import { applyExtractionResult } from './apply-updates'
 
 const app = new Hono<AuthContext>()
 app.use('*', authMiddleware)
@@ -215,6 +219,85 @@ app.delete('/:id', async (c) => {
   await d.delete(memories).where(eq(memories.id, id))
 
   return c.json({ success: true })
+})
+
+// ─── User memory mode (Phase 3 v2) ──────────────────────────────────
+//
+// User-scope `memoryUpdateMode` lives on the `user` table. Project-scope
+// is on the `projects` table and gets PATCHed via the existing project
+// route. This endpoint is the user-scope twin.
+const userModeSchema = z.object({
+  memoryUpdateMode: z.enum(['ask', 'auto', 'never']),
+})
+
+app.get('/user-mode', async (c) => {
+  const userId = c.get('userId')
+  const d = drizzle(c.env.DB)
+  const [row] = await d
+    .select({ memoryUpdateMode: user.memoryUpdateMode })
+    .from(user)
+    .where(eq(user.id, userId))
+    .limit(1)
+  return c.json({ memoryUpdateMode: row?.memoryUpdateMode ?? 'ask' })
+})
+
+app.patch('/user-mode', zValidator('json', userModeSchema), async (c) => {
+  const userId = c.get('userId')
+  const { memoryUpdateMode } = c.req.valid('json')
+  const d = drizzle(c.env.DB)
+  await d.update(user).set({ memoryUpdateMode }).where(eq(user.id, userId))
+  return c.json({ success: true, memoryUpdateMode })
+})
+
+// ─── Manual regenerate (Phase 3 v2) ─────────────────────────────────
+//
+// Synchronous re-run of the memory extraction job for a single
+// conversation. Used by the "Regenerate now" button on the project
+// page Memory section. Returns the structured proposal + apply
+// summary so the UI can show what changed (or routed to approvals).
+//
+// The auto path uses fire-and-forget via ctx.waitUntil from the chat
+// onFinish hook (reactive trigger) and the cron sweep. This endpoint
+// is the manual third trigger — handy for testing and for users who
+// want to force a re-pass after correcting earlier rejections.
+const regenerateSchema = z.object({
+  conversationId: z.string().uuid(),
+})
+
+app.post('/regenerate', zValidator('json', regenerateSchema), async (c) => {
+  const userId = c.get('userId')
+  const { conversationId } = c.req.valid('json')
+  const d = drizzle(c.env.DB)
+
+  // Ownership check
+  const [conv] = await d
+    .select({ id: conversations.id, projectId: conversations.projectId, title: conversations.title })
+    .from(conversations)
+    .where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)))
+    .limit(1)
+  if (!conv) return c.json({ error: 'Not found' }, 404)
+
+  const job = await extractMemoryFromConversation({
+    db: c.env.DB,
+    ai: c.env.AI,
+    conversationId,
+    userId,
+  })
+  if (!job.ok || !job.result) {
+    return c.json({ ok: false, error: job.error ?? 'extract_failed' }, 200)
+  }
+
+  const allowTitleReplace =
+    !conv.title || conv.title.trim().length === 0 || conv.title === 'New conversation'
+  const summary = await applyExtractionResult({
+    db: c.env.DB,
+    userId,
+    conversationId,
+    projectId: conv.projectId ?? null,
+    result: job.result,
+    allowTitleReplace,
+  })
+  return c.json({ ok: true, result: job.result, summary })
 })
 
 export default app

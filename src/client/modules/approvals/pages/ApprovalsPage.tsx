@@ -12,7 +12,7 @@
  * notification toast). ?status=all shows resolved approvals too.
  */
 import { useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { formatDistanceToNow } from 'date-fns'
 import {
@@ -24,6 +24,9 @@ import {
   Inbox,
   ChevronDown,
   ChevronRight,
+  Brain,
+  ArrowUpRight,
+  Lock,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -136,7 +139,11 @@ function ApprovalCard({ approval, highlight }: { approval: Approval; highlight: 
   const [note, setNote] = useState('')
 
   const approve = useMutation({
-    mutationFn: () => apiClient.post(`/api/approvals/${approval.id}/approve`, { note: note || undefined }),
+    mutationFn: (opts?: { alwaysAllow?: boolean }) =>
+      apiClient.post(`/api/approvals/${approval.id}/approve`, {
+        note: note || undefined,
+        ...(opts?.alwaysAllow && { alwaysAllow: true }),
+      }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['approvals'] }),
   })
   const reject = useMutation({
@@ -145,6 +152,7 @@ function ApprovalCard({ approval, highlight }: { approval: Approval; highlight: 
   })
 
   const isPending = approval.status === 'pending'
+  const isMemory = approval.agentClass === 'memory_extraction'
   const ageStr = useMemo(
     () => formatDistanceToNow(new Date(approval.createdAt * 1000), { addSuffix: true }),
     [approval.createdAt],
@@ -185,6 +193,7 @@ function ApprovalCard({ approval, highlight }: { approval: Approval; highlight: 
         </div>
       </CardHeader>
       <CardContent className="space-y-3 pt-0">
+        {isMemory && <MemoryProposalPreview payload={approval.payload} />}
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
@@ -222,26 +231,46 @@ function ApprovalCard({ approval, highlight }: { approval: Approval; highlight: 
             <div className="flex flex-wrap items-center gap-2">
               <Button
                 size="sm"
-                onClick={() => approve.mutate()}
-                disabled={approve.isPending || reject.isPending}
-              >
-                {approve.isPending ? (
-                  <>
-                    <Loader2 className="size-3 animate-spin" />
-                    Approving…
-                  </>
-                ) : (
-                  'Approve & execute'
-                )}
-              </Button>
-              <Button
-                size="sm"
                 variant="outline"
                 onClick={() => reject.mutate()}
                 disabled={approve.isPending || reject.isPending}
               >
                 {reject.isPending ? 'Rejecting…' : 'Reject'}
               </Button>
+              <Button
+                size="sm"
+                onClick={() => approve.mutate({})}
+                disabled={approve.isPending || reject.isPending}
+              >
+                {approve.isPending && !approve.variables?.alwaysAllow ? (
+                  <>
+                    <Loader2 className="size-3 animate-spin" />
+                    Approving…
+                  </>
+                ) : isMemory ? (
+                  'Approve'
+                ) : (
+                  'Approve & execute'
+                )}
+              </Button>
+              {isMemory && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => approve.mutate({ alwaysAllow: true })}
+                  disabled={approve.isPending || reject.isPending}
+                  title="Approve and switch this scope to auto-mode for future memory updates"
+                >
+                  {approve.isPending && approve.variables?.alwaysAllow ? (
+                    <>
+                      <Loader2 className="size-3 animate-spin" />
+                      Approving…
+                    </>
+                  ) : (
+                    'Approve & always allow'
+                  )}
+                </Button>
+              )}
             </div>
             {approve.isError && (
               <div className="text-xs text-destructive">
@@ -252,6 +281,93 @@ function ApprovalCard({ approval, highlight }: { approval: Approval; highlight: 
         )}
       </CardContent>
     </Card>
+  )
+}
+
+// ─── Memory proposal preview ──────────────────────────────────────────
+//
+// memory_extraction approvals carry a structured payload:
+//   { update: MemoryUpdate, conversationId, projectId, userId }
+// Render a friendly preview rather than dumping JSON. Add/update/remove
+// each get distinct visual treatment + a link back to the source chat
+// for provenance.
+interface MemoryUpdatePayload {
+  update?: {
+    scope?: 'project' | 'user'
+    action?: 'add' | 'update' | 'remove'
+    name?: string
+    description?: string
+    type?: string
+    content?: string
+    targetMemoryId?: string
+    isPrivate?: boolean
+    reason?: string
+  }
+  conversationId?: string
+}
+
+function MemoryProposalPreview({ payload }: { payload: unknown }) {
+  if (!payload || typeof payload !== 'object') return null
+  const p = payload as MemoryUpdatePayload
+  const update = p.update
+  if (!update) return null
+
+  const action = update.action ?? 'add'
+  const scope = update.scope ?? 'user'
+  const verbColor =
+    action === 'remove'
+      ? 'text-destructive bg-destructive/5 border-destructive/30'
+      : action === 'update'
+      ? 'text-amber-700 dark:text-amber-400 bg-amber-500/10 border-amber-500/30'
+      : 'text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/30'
+
+  return (
+    <div className="rounded-md border bg-muted/30 p-3 space-y-2">
+      <div className="flex items-center gap-2 flex-wrap text-xs">
+        <Brain className="size-3.5 text-muted-foreground" />
+        <span className={cn('rounded px-1.5 py-0.5 text-[10px] uppercase tracking-wider border', verbColor)}>
+          {action}
+        </span>
+        <span className="text-muted-foreground">in</span>
+        <span className="font-medium">{scope === 'project' ? 'project memory' : 'your memory'}</span>
+        {update.isPrivate && (
+          <span title="Sensitive — never auto-injected">
+            <Lock className="size-3 text-amber-600" aria-label="Private" />
+          </span>
+        )}
+        {update.type && (
+          <span className="text-[10px] uppercase tracking-wider rounded-full bg-muted px-1.5 py-0.5">
+            {update.type}
+          </span>
+        )}
+      </div>
+      {update.name && (
+        <div className="text-sm font-medium">{update.name}</div>
+      )}
+      {update.description && (
+        <div className="text-xs text-muted-foreground">{update.description}</div>
+      )}
+      {update.content && action !== 'remove' && (
+        <pre className="rounded border bg-background p-2 text-xs whitespace-pre-wrap break-words max-h-40 overflow-auto font-sans">
+          {update.content}
+        </pre>
+      )}
+      {update.reason && (
+        <div className="text-[11px] text-muted-foreground italic border-l-2 border-border pl-2">
+          {update.reason}
+        </div>
+      )}
+      {p.conversationId && (
+        <Link
+          to={`/dashboard/chat/${p.conversationId}`}
+          className="inline-flex items-center gap-1 text-[11px] text-muted-foreground underline decoration-dotted underline-offset-2 hover:text-foreground"
+          title="Open the conversation that produced this proposal"
+        >
+          from chat
+          <ArrowUpRight className="size-2.5" />
+        </Link>
+      )}
+    </div>
   )
 }
 
