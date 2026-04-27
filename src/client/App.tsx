@@ -32,6 +32,8 @@ const ChatPage = lazy(() => import('./modules/chat/pages/ChatPage').then(m => ({
 const ExtractPage = lazy(() => import('./modules/chat/pages/ExtractPage').then(m => ({ default: m.ExtractPage })))
 const ProjectPage = lazy(() => import('./modules/projects/pages/ProjectPage').then(m => ({ default: m.ProjectPage })))
 const ProjectsIndexPage = lazy(() => import('./modules/projects/pages/ProjectsIndexPage').then(m => ({ default: m.ProjectsIndexPage })))
+const SpacesIndexPage = lazy(() => import('./modules/spaces/pages/SpacesIndexPage').then(m => ({ default: m.SpacesIndexPage })))
+const SpacePage = lazy(() => import('./modules/spaces/pages/SpacePage').then(m => ({ default: m.SpacePage })))
 const ArtifactsPage = lazy(() => import('./modules/chat/pages/ArtifactsPage').then(m => ({ default: m.ArtifactsPage })))
 const ActivityPage = lazy(() => import('./modules/activity/pages/ActivityPage').then(m => ({ default: m.ActivityPage })))
 const FilesPage = lazy(() => import('./modules/files/pages/FilesPage').then(m => ({ default: m.FilesPage })))
@@ -148,6 +150,12 @@ function App() {
             <Route path="chat/:conversationId?" element={<ChatPage />} />
             <Route path="projects" element={<ProjectsIndexPage />} />
             <Route path="projects/:id" element={<ProjectPage />} />
+            {features.spaces && (
+              <>
+                <Route path="spaces" element={<SpacesIndexPage />} />
+                <Route path="spaces/:id" element={<SpacePage />} />
+              </>
+            )}
             <Route path="artifacts" element={<ArtifactsPage />} />
             <Route path="extract" element={<ExtractPage />} />
 

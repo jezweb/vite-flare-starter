@@ -27,6 +27,14 @@ export const features = {
   /** AI Chat + Extract pages */
   chat: isEnabled('VITE_FEATURE_CHAT'),
 
+  /**
+   * Spaces — multi-user multi-agent rooms (top-level surface).
+   * Default ON for forks; opt out by setting VITE_FEATURE_SPACES=false.
+   * The supporting REST + DO ship regardless of the flag, but the
+   * sidebar entry + page routes hide when the flag is off.
+   */
+  spaces: isEnabled('VITE_FEATURE_SPACES'),
+
   /** File upload/management */
   files: isEnabled('VITE_FEATURE_FILES'),
 

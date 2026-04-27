@@ -30,6 +30,7 @@ import {
   Camera,
   CheckSquare,
   FolderKanban,
+  Users,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -71,6 +72,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { to: '/dashboard', label: 'Home', icon: Home },
       { to: '/dashboard/chat', label: 'AI Chat', icon: MessageSquare, feature: 'chat' },
       { to: '/dashboard/projects', label: 'Projects', icon: FolderKanban },
+      { to: '/dashboard/spaces', label: 'Spaces', icon: Users, feature: 'spaces' },
       { to: '/dashboard/extract', label: 'Extract', icon: Sparkles, feature: 'chat' },
       { to: '/dashboard/files', label: 'Files', icon: FolderOpen, feature: 'files' },
       { to: '/dashboard/skills', label: 'Skills', icon: Zap, feature: 'skills' },

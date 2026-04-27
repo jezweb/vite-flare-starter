@@ -50,6 +50,7 @@ import entitiesRoutes from './modules/entities/routes'
 import organizationsRoutes from './modules/organizations/routes'
 import credentialsRoutes from './modules/credentials/routes'
 import spacesRoutes from './modules/spaces/routes'
+import messagesRoutes from './modules/spaces/messages-routes'
 import { routeAgentRequest } from 'agents'
 import { ScratchpadMcpAgent } from './modules/mcp-agents/scratchpad-mcp-agent'
 // Re-export DO class(es) so wrangler migrations can locate them. Every DO
@@ -302,6 +303,7 @@ app.route('/api/skills', skillsRoutes)
 app.route('/api/config-diff', configDiffRoutes)
 app.route('/api/conversations', conversationsRoutes)
 app.route('/api/spaces', spacesRoutes)
+app.route('/api/messages', messagesRoutes)
 app.route('/api/projects', projectsRoutes)
 app.route('/api/memories', memoriesRoutes)
 app.route('/api/comments', commentsRoutes)
