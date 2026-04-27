@@ -84,7 +84,16 @@ export interface AutonomousAgentEnv {
   MISTRAL_API_KEY?: string
   XAI_API_KEY?: string
   OPENROUTER_API_KEY?: string
+  /** Optional R2 bucket for R2-sourced skills. */
+  SKILLS?: R2Bucket
 }
+
+/**
+ * Lifecycle events at which skills can be hooked. Slice 4 ships
+ * SessionEnd as the only fired event; the rest are reserved so subclass
+ * configs don't need to change when they land.
+ */
+export type HookEvent = 'SessionStart' | 'SessionEnd' | 'PreToolUse' | 'PostToolUse'
 
 export interface AutonomousAgentState {
   /** Friendly identity. Set once via init(); the agent's DO id is the
@@ -126,6 +135,19 @@ export interface AutonomousAgentState {
    *  exposed). Set per-routine in slice 3+; for now sub-classes can opt
    *  in directly via `setToolsAllowed`. */
   toolsAllowed?: string[] | null
+  /** Optional list of skill names the agent loads on each fire. When set,
+   *  `buildExtraInstructions` fetches each skill's body via the central
+   *  `loadSkill` registry and injects them as `## Skills` blocks into the
+   *  system prompt. Skills are markdown procedures the agent reads and
+   *  follows — see issue #50 + ~/.claude/rules/trust-skills-not-elaborate-code.md
+   *  for the rationale. */
+  skillsLoaded?: string[] | null
+  /** Optional hook map: { SessionStart: skillName, SessionEnd: skillName,
+   *  PreToolUse: skillName, PostToolUse: skillName }. Hooks run skills at
+   *  lifecycle events. Slice 4 fires SessionEnd only (to produce a clean
+   *  summary for routine_runs.outputSummary); other events deferred to
+   *  slice 6+ when the per-step loop callback exists. */
+  hooks?: Partial<Record<HookEvent, string>> | null
   /** Daily USD spending cap (queried from agent_runs.cost_usd). Null
    *  = no cap. When set, runOnce throws BudgetExceededError and the
    *  audit row is recorded with outcome='budget_exceeded'. Soft-warn
@@ -199,6 +221,14 @@ export interface RunOnceResult {
   }
   /** Number of tool/agent steps the loop took. */
   steps: number
+  /**
+   * Optional output of the SessionEnd hook (when configured via
+   * `setHooks({ SessionEnd: '<skillName>' })`). Routines surface this
+   * as `routine_runs.outputSummary` so the next-fire run-tail context
+   * gets a clean 1-paragraph "what happened" rather than the
+   * mechanically-truncated last-280-chars fallback.
+   */
+  hookSummary?: string | null
 }
 
 const DEFAULT_MAX_RECENT_MESSAGES = 30
@@ -265,6 +295,8 @@ export abstract class AutonomousAgent<
       webhookSecret: '',
       dailyBudgetUsd: null,
       toolsAllowed: null,
+      skillsLoaded: null,
+      hooks: null,
     }
   }
 
@@ -290,9 +322,104 @@ export abstract class AutonomousAgent<
    * Hook for additional system-prompt content beyond persona + blocks.
    * Useful for injecting current date, recent notifications, etc.
    * Returns a string to append to the system prompt, or null to skip.
+   *
+   * The base implementation auto-injects loaded skill bodies (set via
+   * `setSkillsLoaded`) so subclasses overriding this hook should call
+   * `super.buildExtraInstructions()` and concatenate.
    */
   protected async buildExtraInstructions(): Promise<string | null> {
-    return null
+    return await this.loadConfiguredSkills()
+  }
+
+  /**
+   * Fetch all skills configured via `setSkillsLoaded` and concatenate
+   * their bodies as a single `## Skills` block. Returns null when no
+   * skills are configured or every fetch fails.
+   *
+   * Resolution rules match the central `loadSkill` registry: user's
+   * personal override wins, falls back to bundled. Disabled skills are
+   * silently omitted (returning null from the registry).
+   */
+  protected async loadConfiguredSkills(): Promise<string | null> {
+    const names = this.state.skillsLoaded
+    if (!names || names.length === 0) return null
+    if (!this.state.userId) return null
+    const { loadSkill } = await import('@/server/lib/ai/skills/registry')
+    const env = this.env as unknown as Parameters<typeof loadSkill>[0]
+    const blocks: string[] = []
+    for (const name of names) {
+      try {
+        const loaded = await loadSkill(env, name, this.state.userId)
+        if (loaded?.body) {
+          blocks.push(`### Skill: ${name}\n\n${loaded.body.trim()}`)
+        }
+      } catch (err) {
+        console.warn(
+          JSON.stringify({
+            event: 'autonomous_agent_skill_load_failed',
+            agentName: this.state.name,
+            skill: name,
+            error: err instanceof Error ? err.message : String(err),
+          }),
+        )
+      }
+    }
+    if (blocks.length === 0) return null
+    return ['## Skills', '', ...blocks].join('\n\n')
+  }
+
+  /**
+   * Run a hook skill at a lifecycle event. Slice 4 only fires
+   * SessionEnd, called from `runOnce` after the main loop terminates.
+   *
+   * The hook skill body is loaded via the registry then prepended to a
+   * sub-prompt that asks the same model to produce a brief output. The
+   * caller decides what to do with the returned string (e.g. SessionEnd
+   * stores it as routine_runs.outputSummary).
+   *
+   * Returns null when the hook isn't configured, the skill can't be
+   * loaded, or the LLM call fails. Hooks are best-effort — never let a
+   * hook failure break the main run.
+   */
+  protected async fireHook(
+    event: HookEvent,
+    context: { input: string; userId: string; modelId: string },
+  ): Promise<string | null> {
+    const skillName = this.state.hooks?.[event]
+    if (!skillName) return null
+    if (!this.state.userId) return null
+    try {
+      const { loadSkill } = await import('@/server/lib/ai/skills/registry')
+      const env = this.env as unknown as Parameters<typeof loadSkill>[0]
+      const loaded = await loadSkill(env, skillName, this.state.userId)
+      if (!loaded?.body) return null
+
+      // Run the hook as a one-shot generateText call against the same
+      // model the main run uses. We don't expose tools to the hook —
+      // hooks are about reasoning over an input, not taking actions.
+      const model = await resolveModelForUser(
+        env as Parameters<typeof resolveModelForUser>[0],
+        { userId: context.userId },
+        context.modelId,
+      )
+      const { generateText } = await import('ai')
+      const result = await generateText({
+        model: model as never,
+        system: loaded.body,
+        prompt: context.input,
+      })
+      return result.text?.trim() || null
+    } catch (err) {
+      console.warn(
+        JSON.stringify({
+          event: 'autonomous_agent_hook_failed',
+          agentName: this.state.name,
+          hookEvent: event,
+          error: err instanceof Error ? err.message : String(err),
+        }),
+      )
+      return null
+    }
   }
 
   /**
@@ -618,10 +745,28 @@ export abstract class AutonomousAgent<
         console.error(JSON.stringify({ event: 'agent_run_audit_finalise_failed', runId, error: String(err) }))
       }
 
+      // Slice 4: fire SessionEnd hook (if configured) — runs the configured
+      // skill as a sub-prompt with the input + assistant text and stores
+      // the result on the result so callers can use it (e.g. routine
+      // scheduler stores it as `routine_runs.outputSummary`).
+      let hookSummary: string | null = null
+      if (this.state.hooks?.SessionEnd) {
+        try {
+          hookSummary = await this.fireHook('SessionEnd', {
+            input: `User input: ${userMessage ?? '(none)'}\n\nAssistant output:\n${text}`,
+            userId: this.state.userId ?? '',
+            modelId,
+          })
+        } catch {
+          // best-effort — never let a hook failure surface to the caller
+        }
+      }
+
       return {
         text,
         usage: { inputTokens, outputTokens },
         steps,
+        ...(hookSummary !== null ? { hookSummary } : {}),
       }
     } catch (err) {
       // Failure path — update the audit row with the error before
@@ -758,6 +903,31 @@ export abstract class AutonomousAgent<
   async setToolsAllowed(names: string[] | null): Promise<void> {
     const next = names && names.length > 0 ? Array.from(new Set(names)) : null
     this.setState({ ...this.state, toolsAllowed: next })
+  }
+
+  /**
+   * Configure which skills (markdown SKILL.md procedures) the agent
+   * loads on each fire. The skills are fetched via the central
+   * `loadSkill` registry the next time `buildExtraInstructions` runs
+   * and injected as `## Skills` blocks into the system prompt.
+   *
+   * Pass null to remove the configuration and stop loading any skills.
+   */
+  async setSkillsLoaded(names: string[] | null): Promise<void> {
+    const next = names && names.length > 0 ? Array.from(new Set(names)) : null
+    this.setState({ ...this.state, skillsLoaded: next })
+  }
+
+  /**
+   * Configure lifecycle hooks. The map values are skill names — when
+   * an event fires (currently only SessionEnd), the corresponding skill
+   * is loaded + run as a sub-prompt.
+   *
+   * Pass null or {} to clear all hooks.
+   */
+  async setHooks(hooks: Partial<Record<HookEvent, string>> | null): Promise<void> {
+    const next = hooks && Object.keys(hooks).length > 0 ? hooks : null
+    this.setState({ ...this.state, hooks: next })
   }
 
   /**

@@ -144,25 +144,27 @@ export async function fireRoutine(env: SchedulerEnv, routine: typeof routines.$i
   }
 
   const stub = ns.get(ns.idFromName(routine.agentName)) as {
-    runOnce: (input: unknown) => Promise<{ text: string; usage: unknown; steps: number }>
+    runOnce: (input: unknown) => Promise<{
+      text: string
+      usage: unknown
+      steps: number
+      hookSummary?: string | null
+    }>
     setToolsAllowed?: (names: string[] | null) => Promise<void>
+    setSkillsLoaded?: (names: string[] | null) => Promise<void>
+    setHooks?: (hooks: Record<string, string> | null) => Promise<void>
   }
 
-  // Apply tools allowlist for this fire (per slice 2 contract).
+  // Apply tools allowlist + skills + hooks for this fire (slice 2 + 4
+  // contracts). Each is a "best-effort" call — older agent classes that
+  // haven't yet inherited the latest AutonomousAgent base might not have
+  // the setter; the scheduler logs and continues.
   const toolsAllowed = parseStringArray(routine.toolsAllowedJson)
-  if (toolsAllowed && stub.setToolsAllowed) {
-    try {
-      await stub.setToolsAllowed(toolsAllowed)
-    } catch (err) {
-      console.warn(
-        JSON.stringify({
-          event: 'routine_tools_allowed_warn',
-          routineId: routine.id,
-          error: err instanceof Error ? err.message : String(err),
-        }),
-      )
-    }
-  }
+  const skillsLoaded = parseStringArray(routine.skillsLoadedJson)
+  const hooks = parseHooksMap(routine.hooksJson)
+  await applyConfig(routine.id, () => stub.setToolsAllowed?.(toolsAllowed))
+  await applyConfig(routine.id, () => stub.setSkillsLoaded?.(skillsLoaded))
+  await applyConfig(routine.id, () => stub.setHooks?.(hooks))
 
   // Fire. Outcome is rough — the run audit row in agent_runs holds the
   // detailed cost/tokens/steps; here we just record success/error and
@@ -174,10 +176,12 @@ export async function fireRoutine(env: SchedulerEnv, routine: typeof routines.$i
       input: composedInput,
       trigger: 'schedule',
     })
-    // Truncate to ~280 chars for the tail. The agent can be coached
-    // (via skill) to emit a 1-line summary at the end of its run; if
-    // it doesn't, use the trailing N chars as a fallback.
-    outputSummary = (result.text ?? '').trim().slice(-280) || null
+    // Prefer the SessionEnd hook output if the routine configured one.
+    // Falls back to the trailing 280 chars of the assistant text — the
+    // agent can be coached via a SessionEnd skill to produce a clean
+    // 1-line summary instead.
+    const hookOut = (result.hookSummary ?? '').trim()
+    outputSummary = hookOut || (result.text ?? '').trim().slice(-280) || null
   } catch (err) {
     outcome = 'error'
     outputSummary = `error: ${err instanceof Error ? err.message : String(err)}`.slice(0, 280)
@@ -222,5 +226,43 @@ function parseStringArray(json: string | null): string[] | null {
     return Array.isArray(v) && v.every((x) => typeof x === 'string') ? v : null
   } catch {
     return null
+  }
+}
+
+function parseHooksMap(json: string | null): Record<string, string> | null {
+  if (!json) return null
+  try {
+    const v = JSON.parse(json)
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return null
+    const out: Record<string, string> = {}
+    for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
+      if (typeof val === 'string' && val.length > 0) out[k] = val
+    }
+    return Object.keys(out).length > 0 ? out : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Run a config-setter and swallow + log failures. Each routine fire
+ * applies tools allowlist / skills / hooks from its row; if any of
+ * those fail (older agent class missing a setter, transient DO error)
+ * we log and continue rather than aborting the whole fire.
+ */
+async function applyConfig(
+  routineId: string,
+  fn: () => Promise<unknown> | void,
+): Promise<void> {
+  try {
+    await fn()
+  } catch (err) {
+    console.warn(
+      JSON.stringify({
+        event: 'routine_config_apply_warn',
+        routineId,
+        error: err instanceof Error ? err.message : String(err),
+      }),
+    )
   }
 }
