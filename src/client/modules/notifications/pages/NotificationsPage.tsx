@@ -5,7 +5,9 @@
  * everything with filters and bulk actions. Complements the dropdown — users
  * can either peek at new items or come here for the full audit trail.
  */
+import { useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { formatDistanceToNow, format } from 'date-fns'
 import { Bell, Check, CheckCheck, Info, AlertTriangle, AlertCircle, Loader2, Inbox } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -17,6 +19,7 @@ import {
   useNotifications,
   useMarkAsRead,
   useMarkAllAsRead,
+  NOTIFICATION_KEYS,
   type Notification,
 } from '@/client/hooks/useNotifications'
 
@@ -36,6 +39,16 @@ function iconFor(type: string) {
 }
 
 export function NotificationsPage() {
+  // Force a fresh unread-count fetch on page mount so the bell badge
+  // stops drifting from the page-level Unread tab count. The bell uses
+  // a 60s poll which can lag noticeably right after the user takes an
+  // action elsewhere; landing on this page is a strong signal to
+  // resync. Was a finding in the slice 1+2 UX audit.
+  const queryClient = useQueryClient()
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: NOTIFICATION_KEYS.unreadCount() })
+  }, [queryClient])
+
   // Persist filter to the URL so it survives page reloads + back-nav.
   // ?filter=unread → "unread" tab, anything else → "all".
   const [searchParams, setSearchParams] = useSearchParams()

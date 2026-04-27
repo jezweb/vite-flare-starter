@@ -36,7 +36,7 @@ export interface UnreadCountResponse {
 // Query Keys
 // =============================================================================
 
-const NOTIFICATION_KEYS = {
+export const NOTIFICATION_KEYS = {
   all: ['notifications'] as const,
   list: (params?: { limit?: number; unreadOnly?: boolean }) =>
     [...NOTIFICATION_KEYS.all, 'list', params] as const,

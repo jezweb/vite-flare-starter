@@ -55,6 +55,7 @@ import { hasUiMarker } from '../components/chat-ui/ChatUiElement'
 import { VoiceDictationButton } from '@/client/modules/chat/components/VoiceDictationButton'
 import { usePasteUpload } from '@/client/hooks/usePasteUpload'
 import { useSession } from '@/client/lib/auth'
+import { getGreeting } from '@/shared/lib/greeting'
 import { cn } from '@/lib/utils'
 import { SkillsSlashMenu, parseSlashQuery } from '../components/SkillsSlashMenu'
 import { useSkillSummary, type SkillSummary } from '@/client/modules/skills/hooks/useSkills'
@@ -86,15 +87,12 @@ const ACCEPT_ALL = [
   'application/epub+zip',
 ].join(',')
 
+// Greeting helper now lives in `src/shared/lib/greeting.ts` so dashboard
+// and chat surface the same string at the same time-of-day. Was a finding
+// in the slice 1+2 UX audit.
 function greetingForTime(name: string | undefined): string {
-  const hour = new Date().getHours()
   const who = name ? `, ${name}` : ''
-  // 0-4 night · 5-11 morning · 12-16 afternoon · 17-20 evening · 21-23 night
-  if (hour < 5) return `Good night${who}`
-  if (hour < 12) return `Good morning${who}`
-  if (hour < 17) return `Good afternoon${who}`
-  if (hour < 21) return `Good evening${who}`
-  return `Good night${who}`
+  return `${getGreeting()}${who}`
 }
 
 export function ChatPage() {

@@ -46,6 +46,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { useSession } from '@/client/lib/auth'
 import { apiClient } from '@/client/lib/api-client'
+import { getGreeting } from '@/shared/lib/greeting'
 import { cn } from '@/lib/utils'
 
 interface Approval {
@@ -93,7 +94,7 @@ export function DashboardPage() {
     <div className="flex flex-col gap-6">
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">
-          {greeting()}{session?.user?.name ? `, ${session.user.name.split(' ')[0]}` : ''}
+          {getGreeting()}{session?.user?.name ? `, ${session.user.name.split(' ')[0]}` : ''}
         </h1>
         <p className="text-sm text-muted-foreground">
           {pendingCount > 0
@@ -114,12 +115,8 @@ export function DashboardPage() {
   )
 }
 
-function greeting(): string {
-  const hour = new Date().getHours()
-  if (hour < 12) return 'Good morning'
-  if (hour < 18) return 'Good afternoon'
-  return 'Good evening'
-}
+// Greeting helper imported from shared/lib so chat + dashboard agree on
+// time-of-day cutoffs (was a finding in the slice 1+2 UX audit).
 
 // ─── What needs you ───────────────────────────────────────────────────
 

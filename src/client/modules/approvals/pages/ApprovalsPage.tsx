@@ -361,14 +361,19 @@ function MemoryProposalPreview({ payload }: { payload: unknown }) {
       {update.name && (
         <div className="text-sm font-medium">{update.name}</div>
       )}
-      {update.description && (
-        <div className="text-xs text-muted-foreground">{update.description}</div>
-      )}
-      {update.content && action !== 'remove' && (
+      {/*
+        * Render content when present (richer); fall back to description
+        * only when content is empty. Avoids the description+content
+        * "looks duplicated" effect when content is description plus a
+        * few extra clauses.
+        */}
+      {action !== 'remove' && update.content ? (
         <pre className="rounded border bg-background p-2 text-xs whitespace-pre-wrap break-words max-h-40 overflow-auto font-sans">
           {update.content}
         </pre>
-      )}
+      ) : update.description ? (
+        <div className="text-xs text-muted-foreground">{update.description}</div>
+      ) : null}
       {update.reason && (
         <div className="text-[11px] text-muted-foreground italic border-l-2 border-border pl-2">
           {update.reason}
