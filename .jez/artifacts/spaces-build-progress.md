@@ -41,6 +41,22 @@
 - emoji-mart not installed — quick-bar good enough for now.
 - Phase 1 user-mention text scanning skipped server-side; pill-mention parts (with explicit userId in data) are the only way to mention a person. Phase 2 adds handle metadata on the user record.
 
+## Phase 2 + Phase 3 (shipped 2026-04-27)
+
+| Item | Status | Commit notes |
+|---|---|---|
+| **Phase 1 polish — agent picker + 6 templates** | ✅ | `8529754` — Custom tab gets checkboxes + reply-mode selector; Templates tab grid live with 6 starter packs |
+| **Pin-message + Pinned shelf** | ✅ | header pinned-count badge → inline list shelf |
+| **Star (personal bookmark)** | ✅ | star icon on starred rows + GET /api/messages/starred/me |
+| **Quote-in-reply** | ✅ | More-menu → quote chip above input → bordered preview on send |
+| **Per-thread subscription** | ✅ (server) | UI bell wiring deferred — endpoint exists |
+| **Parallel multi-mention dispatch** | ✅ | cap raised 1 → 3 with Promise.allSettled fan-out |
+| **Block member** | ✅ (server) | UI surfacing deferred — PATCH /:id/members/:memberId/block exists |
+| **History toggle** | ✅ | switch in settings + cron sweep at 15-min cadence (50 rows/tick) |
+| **Cross-space search** | ✅ | GET /api/search/messages?q= scoped to user's memberships |
+| **Forward message** | ✅ | dialog + endpoint; member-of-both-spaces gate |
+| **MessageMoreMenu** | ✅ | shadcn dropdown wired into hover bar |
+
 ## Audit follow-ups carrying forward
 
 - **H2** Last-owner-leave guard is non-atomic (low likelihood under Phase 1 dogfood traffic).
