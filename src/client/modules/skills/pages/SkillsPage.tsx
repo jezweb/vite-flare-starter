@@ -20,6 +20,8 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { EmptyState } from '@/client/components/EmptyState'
+import { Zap } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -153,24 +155,21 @@ export function SkillsPage() {
         </div>
       ) : skills.length === 0 ? (
         <Card>
-          <CardContent className="space-y-4 py-12 text-center">
-            <div>
-              <p className="text-muted-foreground">No skills yet.</p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Install one from GitHub or upload a SKILL.md / zip to get
-                started.
-              </p>
-            </div>
-            <div className="flex items-center justify-center gap-2">
-              <Button onClick={() => setUploadOpen(true)}>
-                <Upload className="mr-2 h-4 w-4" />
-                Add skill
-              </Button>
-              <Button variant="outline" onClick={() => setInstallOpen(true)}>
-                <GithubIcon className="mr-2 h-4 w-4" />
-                Install from GitHub
-              </Button>
-            </div>
+          <CardContent className="py-2">
+            <EmptyState
+              icon={Zap}
+              title="No skills yet"
+              description="Skills are reusable agent procedures the AI can invoke during chat."
+              tips={[
+                'Type /skill-name in any chat to activate a skill',
+                'Install bundled examples from GitHub, or paste your own SKILL.md',
+              ]}
+              action={{ label: 'Add skill', onClick: () => setUploadOpen(true) }}
+              secondaryAction={{
+                label: 'Install from GitHub',
+                onClick: () => setInstallOpen(true),
+              }}
+            />
           </CardContent>
         </Card>
       ) : (

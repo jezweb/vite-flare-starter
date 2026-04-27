@@ -12,7 +12,7 @@
  * notification toast). ?status=all shows resolved approvals too.
  */
 import { useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { formatDistanceToNow } from 'date-fns'
 import {
@@ -64,6 +64,7 @@ type Filter = 'pending' | 'all'
 
 export function ApprovalsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate()
   const filter: Filter = searchParams.get('status') === 'all' ? 'all' : 'pending'
   const focus = searchParams.get('focus')
 
@@ -116,8 +117,21 @@ export function ApprovalsPage() {
           title={filter === 'pending' ? 'No pending approvals' : 'No approvals yet'}
           description={
             filter === 'pending'
-              ? 'When an autonomous agent wants to take a destructive action (send email, post message), it queues here for your review.'
+              ? "Nothing to review. When the AI proposes a destructive action (sending an email, posting a message, saving a memory), it'll queue here first."
               : 'Resolved approvals will appear here once agents start queuing actions.'
+          }
+          tips={
+            filter === 'pending'
+              ? [
+                  'Ask the AI in chat to draft and send an email',
+                  'Memory updates the AI proposes also land here',
+                ]
+              : undefined
+          }
+          action={
+            filter === 'pending'
+              ? { label: 'Open chat', onClick: () => navigate('/dashboard/chat') }
+              : undefined
           }
         />
       )}

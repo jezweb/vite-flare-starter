@@ -232,8 +232,11 @@ export function ArtifactSidebar({ messages, onClose, scrollRoot: _scrollRoot }: 
 
       <div className="flex-1 min-h-0 overflow-y-auto px-2 py-2 space-y-4">
         {!hasAny && (
-          <div className="px-2 py-8 text-xs text-muted-foreground text-center">
-            No artifacts or files yet. Ask the AI for a chart, dashboard, diagram, or drop a file into the chat.
+          <div className="px-2 py-8 text-xs text-muted-foreground text-center space-y-2">
+            <p className="font-medium text-foreground/80">Nothing here yet</p>
+            <p>
+              Ask the AI for a chart, dashboard, or diagram — or drop a file into the chat. Both show up in this panel.
+            </p>
           </div>
         )}
 

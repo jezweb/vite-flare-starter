@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/client/components/EmptyState'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,6 +55,12 @@ interface FileListProps {
    * folder, the empty state clarifies the filter is narrowing the view.
    */
   folder?: string
+  /**
+   * If set, the empty state shows an "Upload file" CTA that calls this.
+   * Wire it to the same dialog opener used by the page-header upload
+   * button so the user can act without scrolling back to the header.
+   */
+  onUploadClick?: () => void
 }
 
 const iconMap = {
@@ -64,7 +71,7 @@ const iconMap = {
   file: FileIcon,
 }
 
-export function FileList({ files, isLoading, folder }: FileListProps) {
+export function FileList({ files, isLoading, folder, onUploadClick }: FileListProps) {
   const [deleteTarget, setDeleteTarget] = useState<FileItem | null>(null)
   const [editTarget, setEditTarget] = useState<FileItem | null>(null)
   const [editName, setEditName] = useState('')
@@ -145,17 +152,20 @@ export function FileList({ files, isLoading, folder }: FileListProps) {
     const isFiltered = !!folder && folder !== 'all'
     const folderLabel = folder === '/' ? 'the root folder' : `"${folder}"`
     return (
-      <div className="text-center py-12 text-muted-foreground">
-        <FileIcon className="mx-auto h-12 w-12 mb-4 opacity-50" />
-        <p className="text-lg font-medium">
-          {isFiltered ? `No files in ${folderLabel}` : 'No files yet'}
-        </p>
-        <p className="text-sm">
-          {isFiltered
+      <EmptyState
+        icon={FileIcon}
+        title={isFiltered ? `No files in ${folderLabel}` : 'No files yet'}
+        description={
+          isFiltered
             ? 'Try a different folder, or upload a file here.'
-            : 'Upload your first file to get started.'}
-        </p>
-      </div>
+            : 'Drop a PDF, image, doc, or zip — uploads are private by default and can be shared via link.'
+        }
+        action={
+          onUploadClick
+            ? { label: 'Upload file', onClick: onUploadClick }
+            : undefined
+        }
+      />
     )
   }
 

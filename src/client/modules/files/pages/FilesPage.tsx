@@ -129,7 +129,12 @@ export function FilesPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <FileList files={files} isLoading={isLoading} folder={currentFolder} />
+          <FileList
+            files={files}
+            isLoading={isLoading}
+            folder={currentFolder}
+            onUploadClick={() => setUploadOpen(true)}
+          />
         </CardContent>
       </Card>
     </div>

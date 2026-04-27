@@ -128,10 +128,16 @@ export function ChatPage() {
   // loads so the server, not the UI, has the final say.
   const { data: modelsData } = useQuery({
     queryKey: ['ai-models'],
-    queryFn: () => apiClient.get<{ models: Array<{ id: string; supportsVision: boolean }>; recommended: string }>('/api/ai/models'),
+    queryFn: () => apiClient.get<{ models: Array<{ id: string; supportsVision: boolean; route?: string }>; recommended: string }>('/api/ai/models'),
     staleTime: 5 * 60 * 1000,
   })
-  const supportsVision = modelsData?.models.find((m) => m.id === model)?.supportsVision ?? true
+  const selectedModelInfo = modelsData?.models.find((m) => m.id === model)
+  const supportsVision = selectedModelInfo?.supportsVision ?? true
+  // The model selector tags an unroutable model with `route: 'unknown'` —
+  // it means the operator hasn't configured the API key for the provider.
+  // Surface this in the chat welcome state so the user doesn't fire off a
+  // first message and get a routing error mid-stream.
+  const selectedModelMissingKey = selectedModelInfo?.route === 'unknown'
   // Accept is "everything" for vision-capable models, or "everything minus images"
   // for text-only models. Drop, paste, and the + menu all respect this.
   const acceptString = supportsVision
@@ -970,6 +976,8 @@ export function ChatPage() {
                   userEmail={session?.user?.email}
                   onPresetPick={handlePresetPick}
                   onPresetPreview={handlePresetPreview}
+                  modelMissingKey={selectedModelMissingKey}
+                  modelName={selectedModelInfo?.id}
                 />
               </div>
             </div>
@@ -1152,11 +1160,15 @@ function EmptyStateBody({
   userEmail,
   onPresetPick,
   onPresetPreview,
+  modelMissingKey,
+  modelName,
 }: {
   userName?: string
   userEmail?: string
   onPresetPick: (text: string) => void
   onPresetPreview: (text: string | null) => void
+  modelMissingKey?: boolean
+  modelName?: string
 }) {
   return (
     <>
@@ -1171,6 +1183,16 @@ function EmptyStateBody({
       <p className="text-sm text-muted-foreground/60 -mt-3">
         Ask anything, drop a file, or pick a starter below.
       </p>
+      {modelMissingKey && (
+        <div className="mx-auto max-w-xl rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-left text-xs text-amber-900 dark:text-amber-200">
+          <div className="font-medium">
+            {modelName ? `${modelName} ` : 'This model '}needs an API key to send messages.
+          </div>
+          <p className="mt-0.5 text-amber-800/90 dark:text-amber-200/80">
+            Pick a free Workers AI model from the dropdown below, or ask the operator to set the provider's API key.
+          </p>
+        </div>
+      )}
       <ActionChips onPick={onPresetPick} onPreview={onPresetPreview} />
       <ExampleQuestions onPick={onPresetPick} />
     </>
