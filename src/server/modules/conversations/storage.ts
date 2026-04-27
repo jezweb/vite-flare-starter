@@ -9,7 +9,7 @@
  */
 import { drizzle } from 'drizzle-orm/d1'
 import { eq, desc, and } from 'drizzle-orm'
-import { conversations, conversationMessages } from './db/schema'
+import { conversations, conversationMessages, conversationMembers } from './db/schema'
 import { projects } from '@/server/modules/projects/db/schema'
 import type { UIMessage } from 'ai'
 
@@ -35,8 +35,24 @@ export interface ChatStorage {
    * actual DB row is deferred until first successful message save.
    */
   createConversationWithId(id: string, userId: string, opts?: { title?: string; model?: string; systemPrompt?: string; projectId?: string | null }): Promise<void>
-  /** Check if a user owns a conversation. Returns false if not found or not owned. */
+  /**
+   * True if this user is the owner (creator) of the conversation.
+   *
+   * Spaces Phase 1 dual-read: prefers `conversation_members` (role='owner')
+   * so unified storage works for both legacy 1:1 chats (backfilled with
+   * a single owner-user) and new spaces. Falls back to the legacy
+   * `conversations.user_id` column if no member rows exist for the row
+   * (defensive — handles the brief window between create and member
+   * insert).
+   */
   isOwner(conversationId: string, userId: string): Promise<boolean>
+  /**
+   * True if this user is a member of the conversation regardless of
+   * role. Used by spaces routes where read access is broader than
+   * owner-only. Phase 1 also returns true for legacy 1:1 chat owners
+   * via the same member backfill.
+   */
+  isMember(conversationId: string, userId: string): Promise<boolean>
   /**
    * Fetch the projectId for a conversation (or null if ungrouped / missing).
    * Used by the chat route to layer project instructions into the system
@@ -79,6 +95,12 @@ export function createD1ChatStorage(db: D1Database): ChatStorage {
         systemPrompt: opts?.systemPrompt || null,
         projectId: opts?.projectId ?? null,
       })
+      // Spaces Phase 1: insert membership rows for the legacy 1:1 chat
+      // shape — the creating user as 'owner' and the default
+      // AssistantAgent ('assistant', always-replying). This keeps the
+      // dual-read isOwner / isMember checks working without any code
+      // path having to look at the legacy conversations.user_id column.
+      await seedDefaultChatMembers(d, id, userId)
       return id
     },
 
@@ -95,6 +117,7 @@ export function createD1ChatStorage(db: D1Database): ChatStorage {
           projectId: opts?.projectId ?? null,
         })
         .onConflictDoNothing()
+      await seedDefaultChatMembers(d, id, userId)
     },
 
     async getProjectId(conversationId, userId) {
@@ -107,12 +130,51 @@ export function createD1ChatStorage(db: D1Database): ChatStorage {
     },
 
     async isOwner(conversationId, userId) {
+      // Prefer the unified members table — dual-read supports legacy
+      // chats (backfilled with role='owner') and new spaces.
+      const [memberRow] = await d
+        .select({ id: conversationMembers.id })
+        .from(conversationMembers)
+        .where(
+          and(
+            eq(conversationMembers.conversationId, conversationId),
+            eq(conversationMembers.kind, 'user'),
+            eq(conversationMembers.userId, userId),
+            eq(conversationMembers.role, 'owner'),
+          ),
+        )
+        .limit(1)
+      if (memberRow) return true
+      // Defensive fallback for the brief window after create where the
+      // member row insert might not have committed yet.
       const [row] = await d
         .select({ id: conversations.id })
         .from(conversations)
         .where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)))
         .limit(1)
       return !!row
+    },
+
+    async isMember(conversationId, userId) {
+      const [row] = await d
+        .select({ id: conversationMembers.id })
+        .from(conversationMembers)
+        .where(
+          and(
+            eq(conversationMembers.conversationId, conversationId),
+            eq(conversationMembers.kind, 'user'),
+            eq(conversationMembers.userId, userId),
+          ),
+        )
+        .limit(1)
+      if (row) return true
+      // Legacy fallback — same defensive path as isOwner.
+      const [legacyRow] = await d
+        .select({ id: conversations.id })
+        .from(conversations)
+        .where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)))
+        .limit(1)
+      return !!legacyRow
     },
 
     async loadChat(conversationId) {
@@ -290,4 +352,49 @@ export function createD1ChatStorage(db: D1Database): ChatStorage {
         .where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)))
     },
   }
+}
+
+/**
+ * Seed the default 1:1 chat membership shape — one user-owner + one
+ * always-replying AssistantAgent member. Idempotent via
+ * onConflictDoNothing (the unique indexes on conversation_id+user_id
+ * and conversation_id+agent_name guarantee uniqueness).
+ *
+ * Pulled out as a free function so spaces routes can also reuse the
+ * member-insert pattern when creating a Space (with different role /
+ * replyMode defaults).
+ */
+async function seedDefaultChatMembers(
+  d: ReturnType<typeof drizzle>,
+  conversationId: string,
+  ownerUserId: string,
+): Promise<void> {
+  const now = Math.floor(Date.now() / 1000)
+  await d
+    .insert(conversationMembers)
+    .values({
+      conversationId,
+      kind: 'user',
+      userId: ownerUserId,
+      role: 'owner',
+      replyMode: null,
+      joinedAt: now,
+      notificationLevel: 'all',
+      pinnedToSidebar: 0,
+    })
+    .onConflictDoNothing()
+  await d
+    .insert(conversationMembers)
+    .values({
+      conversationId,
+      kind: 'agent',
+      agentClass: 'AssistantAgent',
+      agentName: 'assistant',
+      replyMode: 'always',
+      role: 'member',
+      joinedAt: now,
+      notificationLevel: 'all',
+      pinnedToSidebar: 0,
+    })
+    .onConflictDoNothing()
 }
