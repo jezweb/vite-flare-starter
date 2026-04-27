@@ -41,6 +41,9 @@ const SkillsPage = lazy(() => import('./modules/skills/pages/SkillsPage').then(m
 const NotificationsPage = lazy(() => import('./modules/notifications/pages/NotificationsPage').then(m => ({ default: m.NotificationsPage })))
 const ApprovalsPage = lazy(() => import('./modules/approvals/pages/ApprovalsPage').then(m => ({ default: m.ApprovalsPage })))
 const InboxPage = lazy(() => import('./modules/inbox/pages/InboxPage').then(m => ({ default: m.InboxPage })))
+const RoutinesPage = lazy(() => import('./modules/routines/pages/RoutinesPage').then(m => ({ default: m.RoutinesPage })))
+const NewRoutinePage = lazy(() => import('./modules/routines/pages/NewRoutinePage').then(m => ({ default: m.NewRoutinePage })))
+const RoutineDetailPage = lazy(() => import('./modules/routines/pages/RoutineDetailPage').then(m => ({ default: m.RoutineDetailPage })))
 const ConnectorsPage = lazy(() => import('./modules/connectors/pages/ConnectorsPage').then(m => ({ default: m.ConnectorsPage })))
 const VoiceInputExamplePage = lazy(() => import('./modules/voice/pages/VoiceInputExamplePage').then(m => ({ default: m.VoiceInputExamplePage })))
 const VideoInputExamplePage = lazy(() => import('./modules/video/pages/VideoInputExamplePage').then(m => ({ default: m.VideoInputExamplePage })))
@@ -175,6 +178,9 @@ function App() {
             {/* Approval queue — autonomous-agent action review */}
             <Route path="approvals" element={<ApprovalsPage />} />
             <Route path="inbox" element={<InboxPage />} />
+            <Route path="routines" element={<RoutinesPage />} />
+            <Route path="routines/new" element={<NewRoutinePage />} />
+            <Route path="routines/:routineId" element={<RoutineDetailPage />} />
 
             {/* MCP Connectors — per-user OAuth + bearer connections */}
             <Route path="connectors" element={<ConnectorsPage />} />

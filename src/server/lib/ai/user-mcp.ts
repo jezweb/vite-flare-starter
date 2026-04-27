@@ -28,14 +28,29 @@ export async function getUserMcpTools(
     TOKEN_ENCRYPTION_KEY?: string
   },
   userId: string,
+  /**
+   * Optional agent NAME (DO instance name). When supplied, connections
+   * whose `allowedAgentNamesJson` is set AND non-empty AND does not
+   * include this name are skipped. Empty / null on the row means the
+   * connection is available to any agent. See issue #50 slice 9 —
+   * Connection Profiles.
+   */
+  agentName?: string,
 ): Promise<UserMcpResult> {
   const db = drizzle(env.DB)
-  const rows = await db
+  const allRows = await db
     .select()
     .from(userMcpConnections)
     .where(
       and(eq(userMcpConnections.userId, userId), eq(userMcpConnections.status, 'active')),
     )
+
+  // Apply Connection-Profile allow-list. A connection with
+  // allowedAgentNamesJson = null / empty array is available to all
+  // agents; anything else is restricted to the listed agent names.
+  const rows = agentName
+    ? allRows.filter((r) => isConnectionAllowedFor(r.allowedAgentNamesJson, agentName))
+    : allRows
 
   if (rows.length === 0) {
     return { tools: {}, cleanup: async () => {}, connections: [] }
@@ -127,4 +142,22 @@ export async function getUserMcpTools(
   }
 
   return { tools: allTools, cleanup, connections }
+}
+
+/**
+ * Decide whether a connection's allow-list permits this agentName.
+ *
+ *   null / undefined / empty array  → permitted (no restriction)
+ *   array contains agentName        → permitted
+ *   array does NOT contain agentName → blocked
+ */
+function isConnectionAllowedFor(json: string | null, agentName: string): boolean {
+  if (!json) return true
+  try {
+    const v = JSON.parse(json)
+    if (!Array.isArray(v) || v.length === 0) return true
+    return v.some((x) => typeof x === 'string' && x === agentName)
+  } catch {
+    return true
+  }
 }

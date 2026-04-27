@@ -1135,7 +1135,10 @@ export abstract class AutonomousAgent<
       try {
         const { getUserMcpTools } = await import('@/server/lib/ai/user-mcp')
         const env = this.env as unknown as Parameters<typeof getUserMcpTools>[0]
-        const result = await getUserMcpTools(env, this.state.userId)
+        // Slice 9: pass agent name so per-agent Connection Profiles
+        // can scope which connections this agent sees. Connections
+        // without an allow-list are still visible to every agent.
+        const result = await getUserMcpTools(env, this.state.userId, this.state.name)
         mcpTools = result.tools
         // Schedule cleanup off the hot path AND record it on the
         // instance so the NEXT buildToolset call drains it

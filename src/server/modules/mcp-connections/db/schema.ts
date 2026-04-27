@@ -43,12 +43,31 @@ export const userMcpConnections = sqliteTable(
     lastError: text('last_error'),
     lastUsedAt: integer('last_used_at', { mode: 'timestamp' }),
 
+    /**
+     * Connection profiles (issue #50 slice 9) — let a user have multiple
+     * connections to the same MCP server type, each labelled, each
+     * scoped to a specific subset of agents.
+     *
+     * personalityLabel: short identifier the user picks (e.g. "personal",
+     *   "work", "team"). Surfaces in routine setup wizard so users can
+     *   pick which connection a routine uses.
+     *
+     * allowedAgentNamesJson: JSON string array of agent NAMES (DO instance
+     *   names) that may use this connection. Empty / null = available to
+     *   any agent. Used by buildToolset to gate per-user MCP tools to
+     *   specific agents — solves "I want my newsletter routine to use my
+     *   work Gmail, not personal".
+     */
+    personalityLabel: text('personality_label'),
+    allowedAgentNamesJson: text('allowed_agent_names_json'),
+
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
   },
   (t) => [
     index('user_mcp_connections_user_idx').on(t.userId),
     uniqueIndex('user_mcp_connections_user_connector_url_idx').on(t.userId, t.connectorId, t.url),
+    index('user_mcp_connections_user_label_idx').on(t.userId, t.personalityLabel),
   ],
 )
 

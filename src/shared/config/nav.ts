@@ -32,6 +32,7 @@ import {
   FolderKanban,
   Users,
   Inbox,
+  Repeat,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -76,6 +77,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { to: '/dashboard/spaces', label: 'Spaces', icon: Users, feature: 'spaces' },
       { to: '/dashboard/skills', label: 'Skills', icon: Zap, feature: 'skills' },
       { to: '/dashboard/connectors', label: 'Connectors', icon: Plug, feature: 'connectors' },
+      { to: '/dashboard/routines', label: 'Routines', icon: Repeat },
     ],
   },
   {
