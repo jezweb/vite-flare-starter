@@ -9,14 +9,22 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Loader2, ChevronLeft, X, Hash, MessageSquare, Search } from 'lucide-react'
-import { useSpace, useSendSpaceMessage, useSpaceMessages, useMarkSpaceRead } from '../hooks/useSpaces'
+import { Loader2, ChevronLeft, X, Hash, MessageSquare, Search, Pin, Quote as QuoteIcon } from 'lucide-react'
+import { useSession } from '@/client/lib/auth'
+import {
+  useSpace,
+  useSendSpaceMessage,
+  useSpaceMessages,
+  useMarkSpaceRead,
+  usePinnedMessages,
+} from '../hooks/useSpaces'
 import { useSpaceWebSocket } from '../hooks/useSpaceWebSocket'
 import { MemberList } from '../components/MemberList'
 import { MessageInput } from '../components/MessageInput'
 import { SpaceMessageView } from '../components/SpaceMessageView'
 import { SpaceHeaderMenu } from '../components/SpaceHeaderMenu'
 import { SearchInSpacePane } from '../components/SearchInSpacePane'
+import type { SpaceMessage } from '../hooks/useSpaces'
 
 export function SpacePage() {
   const { id } = useParams<{ id: string }>()
@@ -26,6 +34,11 @@ export function SpacePage() {
   const { online, connected } = useSpaceWebSocket(id)
   const [threadParentId, setThreadParentId] = useState<string | null>(null)
   const [searchOpen, setSearchOpen] = useState(false)
+  const [quoted, setQuoted] = useState<SpaceMessage | null>(null)
+  const [pinnedShelfOpen, setPinnedShelfOpen] = useState(false)
+  const { data: session } = useSession()
+  const sessionUserId = session?.user?.id
+  const pinnedQuery = usePinnedMessages(id)
   const messageScrollRef = useRef<HTMLDivElement | null>(null)
 
   // Always read the latest top-level messages from the cache. The
@@ -74,6 +87,9 @@ export function SpacePage() {
   }
 
   const { space, members, users } = data
+  const meMember = members.find((m) => m.kind === 'user' && m.userId === sessionUserId) ?? null
+  const canPin = meMember?.role === 'owner' || meMember?.role === 'admin'
+  const pinnedCount = pinnedQuery.data?.pinned.length ?? 0
 
   return (
     <div className="flex h-[calc(100vh-3.75rem)] flex-col">
@@ -100,6 +116,17 @@ export function SpacePage() {
           </div>
         </div>
         <div className="flex items-center gap-1">
+          {pinnedCount > 0 && (
+            <button
+              type="button"
+              onClick={() => setPinnedShelfOpen((p) => !p)}
+              className="flex h-8 items-center gap-1 rounded-md px-2 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+              aria-label={`${pinnedCount} pinned messages`}
+            >
+              <Pin className="size-3.5" />
+              {pinnedCount}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setSearchOpen((s) => !s)}
@@ -111,6 +138,33 @@ export function SpacePage() {
           <SpaceHeaderMenu space={space} />
         </div>
       </header>
+      {pinnedShelfOpen && pinnedCount > 0 && (
+        <div className="shrink-0 border-b border-amber-500/20 bg-amber-500/5 px-4 py-2 text-xs">
+          <div className="mb-1 flex items-center justify-between">
+            <span className="font-medium uppercase tracking-wider text-amber-700 dark:text-amber-300">
+              Pinned messages
+            </span>
+            <button
+              type="button"
+              onClick={() => setPinnedShelfOpen(false)}
+              className="rounded-md p-0.5 text-muted-foreground hover:bg-accent"
+            >
+              <X className="size-3" />
+            </button>
+          </div>
+          <ul className="space-y-1">
+            {pinnedQuery.data?.pinned.map((p) => {
+              const partsArr = Array.isArray(p.parts) ? p.parts as Array<{ text?: string }> : []
+              const txt = partsArr.map((pp) => pp.text ?? '').filter(Boolean).join(' ').trim()
+              return (
+                <li key={p.id} className="truncate text-muted-foreground">
+                  • {txt.slice(0, 140) || '<no text>'}
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      )}
 
       {/* Body */}
       <div className="flex flex-1 min-h-0">
@@ -139,19 +193,45 @@ export function SpacePage() {
                     key={m.id}
                     message={m}
                     users={users}
+                    allMessages={messages}
+                    canPin={canPin}
                     onOpenThread={(mid) => setThreadParentId(mid)}
+                    onQuote={(msg) => setQuoted(msg)}
                   />
                 ))}
               </div>
             )}
           </div>
           <div className="border-t border-border bg-background/80 p-3 backdrop-blur">
+            {quoted && (
+              <div className="mb-2 flex items-start gap-2 rounded-md border-l-2 border-primary/60 bg-primary/5 px-2 py-1.5 text-xs">
+                <QuoteIcon className="mt-0.5 size-3 text-primary/70" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Quoting</div>
+                  <div className="line-clamp-2 truncate text-muted-foreground">
+                    {(() => {
+                      const arr = Array.isArray(quoted.parts) ? (quoted.parts as Array<{ text?: string }>) : []
+                      return arr.map((p) => p.text ?? '').filter(Boolean).join(' ').slice(0, 140)
+                    })()}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setQuoted(null)}
+                  className="rounded-md p-0.5 text-muted-foreground hover:bg-accent"
+                  aria-label="Cancel quote"
+                >
+                  <X className="size-3" />
+                </button>
+              </div>
+            )}
             <MessageInput
               members={members}
               users={users}
               busy={send.isPending}
               onSend={async (parts) => {
-                await send.mutateAsync({ parts })
+                await send.mutateAsync({ parts, quotedMessageId: quoted?.id ?? null })
+                setQuoted(null)
               }}
             />
           </div>

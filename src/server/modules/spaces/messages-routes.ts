@@ -14,11 +14,12 @@ import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
-import { and, eq, sql } from 'drizzle-orm'
+import { and, desc, eq, like, sql } from 'drizzle-orm'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import {
   conversationMembers,
   conversationMessages,
+  threadSubscriptions,
 } from '@/server/modules/conversations/db/schema'
 import type { SpaceAgent } from './space-agent'
 import { shapeMessage } from './storage'
@@ -205,6 +206,175 @@ app.delete('/:id', async (c) => {
   return c.json({ ok: true })
 })
 
+/** PATCH /:id/pin — toggle pin-to-space (admin/owner only). */
+const PinSchema = z.object({ pinned: z.boolean() })
+app.patch('/:id/pin', zValidator('json', PinSchema), async (c) => {
+  const userId = c.get('userId')
+  const id = c.req.param('id')
+  const { pinned } = c.req.valid('json')
+  const d = drizzle(c.env.DB)
+  const [row] = await d.select().from(conversationMessages).where(eq(conversationMessages.id, id)).limit(1)
+  if (!row) return c.json({ error: 'Not found' }, 404)
+  // Pin requires admin/owner role on the conversation.
+  if (!(await isAdminOf(c.env.DB, row.conversationId, userId))) {
+    return c.json({ error: 'Forbidden' }, 403)
+  }
+  await d
+    .update(conversationMessages)
+    .set({
+      pinnedAt: pinned ? Math.floor(Date.now() / 1000) : null,
+      pinnedByUserId: pinned ? userId : null,
+    })
+    .where(eq(conversationMessages.id, id))
+  // Broadcast updated row.
+  const env = c.env as unknown as MessagesEnv
+  if (env.SpaceAgent) {
+    const stub = env.SpaceAgent.get(env.SpaceAgent.idFromName(row.conversationId)) as unknown as {
+      broadcastNewMessage: (mid: string) => Promise<void>
+    }
+    try {
+      await stub.broadcastNewMessage(id)
+    } catch {
+      /* best-effort */
+    }
+  }
+  return c.json({ ok: true })
+})
+
+/** PATCH /:id/star — toggle personal star (any member). */
+const StarSchema = z.object({ starred: z.boolean() })
+app.patch('/:id/star', zValidator('json', StarSchema), async (c) => {
+  const userId = c.get('userId')
+  const id = c.req.param('id')
+  const { starred } = c.req.valid('json')
+  const d = drizzle(c.env.DB)
+  const [row] = await d.select().from(conversationMessages).where(eq(conversationMessages.id, id)).limit(1)
+  if (!row) return c.json({ error: 'Not found' }, 404)
+  if (!(await isMemberOf(c.env.DB, row.conversationId, userId))) {
+    return c.json({ error: 'Forbidden' }, 403)
+  }
+  let stars: string[] = []
+  if (row.starredByUserIds) {
+    try {
+      const parsed = typeof row.starredByUserIds === 'string'
+        ? JSON.parse(row.starredByUserIds)
+        : row.starredByUserIds
+      if (Array.isArray(parsed)) stars = parsed.filter((x) => typeof x === 'string')
+    } catch {
+      stars = []
+    }
+  }
+  if (starred && !stars.includes(userId)) stars.push(userId)
+  if (!starred) stars = stars.filter((u) => u !== userId)
+  await d
+    .update(conversationMessages)
+    .set({ starredByUserIds: stars.length ? JSON.stringify(stars) : null })
+    .where(eq(conversationMessages.id, id))
+  return c.json({ ok: true, starredByUserIds: stars })
+})
+
+/** GET /api/messages/starred — current user's starred messages. */
+app.get('/starred/me', async (c) => {
+  const userId = c.get('userId')
+  // SQLite has no native JSON_CONTAINS — use LIKE on the JSON shape.
+  // Stars JSON is `["userIdA","userIdB"]`; a contains check is a quoted
+  // userId substring.
+  const needle = `%"${userId}"%`
+  const rows = await drizzle(c.env.DB)
+    .select()
+    .from(conversationMessages)
+    .where(like(conversationMessages.starredByUserIds, needle))
+    .orderBy(desc(conversationMessages.createdAt))
+    .limit(100)
+  return c.json({ messages: rows.map(shapeMessage) })
+})
+
+/** POST /:id/forward — forward a message to another space. Phase 3. */
+const ForwardSchema = z.object({
+  targetSpaceId: z.string(),
+  note: z.string().max(500).optional(),
+})
+app.post('/:id/forward', zValidator('json', ForwardSchema), async (c) => {
+  const userId = c.get('userId')
+  const id = c.req.param('id')
+  const { targetSpaceId, note } = c.req.valid('json')
+  const d = drizzle(c.env.DB)
+  const [src] = await d.select().from(conversationMessages).where(eq(conversationMessages.id, id)).limit(1)
+  if (!src) return c.json({ error: 'Not found' }, 404)
+  // Sender must be a member of BOTH spaces.
+  if (!(await isMemberOf(c.env.DB, src.conversationId, userId))) {
+    return c.json({ error: 'Forbidden — not a member of source space' }, 403)
+  }
+  if (!(await isMemberOf(c.env.DB, targetSpaceId, userId))) {
+    return c.json({ error: 'Forbidden — not a member of target space' }, 403)
+  }
+  // Build the forwarded message: the original parts + a forward header.
+  const sourceParts = (() => {
+    try {
+      return typeof src.parts === 'string' ? JSON.parse(src.parts) : src.parts
+    } catch {
+      return [{ type: 'text', text: '' }]
+    }
+  })() as Array<Record<string, unknown>>
+  const newId = crypto.randomUUID()
+  const partsJson = JSON.stringify([
+    ...(note ? [{ type: 'text', text: note }] : []),
+    { type: 'text', text: '↳ Forwarded message:' },
+    ...sourceParts,
+  ])
+  const metadataJson = JSON.stringify({
+    senderKind: 'user',
+    senderUserId: userId,
+    forwardedFromMessageId: id,
+    forwardedFromConversationId: src.conversationId,
+  })
+  await d.insert(conversationMessages).values({
+    id: newId,
+    conversationId: targetSpaceId,
+    role: 'user',
+    parts: partsJson,
+    metadata: metadataJson,
+  })
+  // Broadcast to the target space's connected clients.
+  const env = c.env as unknown as MessagesEnv
+  if (env.SpaceAgent) {
+    const stub = env.SpaceAgent.get(env.SpaceAgent.idFromName(targetSpaceId)) as unknown as {
+      broadcastNewMessage: (mid: string) => Promise<void>
+    }
+    try {
+      await stub.broadcastNewMessage(newId)
+    } catch {
+      /* best-effort */
+    }
+  }
+  return c.json({ id: newId }, 201)
+})
+
+/** PATCH /:id/thread/subscription — set per-thread notification level. */
+const ThreadSubSchema = z.object({ level: z.enum(['all', 'mute']) })
+app.patch('/:id/thread/subscription', zValidator('json', ThreadSubSchema), async (c) => {
+  const userId = c.get('userId')
+  const threadId = c.req.param('id')
+  const { level } = c.req.valid('json')
+  const d = drizzle(c.env.DB)
+  const [parent] = await d
+    .select()
+    .from(conversationMessages)
+    .where(eq(conversationMessages.id, threadId))
+    .limit(1)
+  if (!parent) return c.json({ error: 'Not found' }, 404)
+  if (!(await isMemberOf(c.env.DB, parent.conversationId, userId))) {
+    return c.json({ error: 'Forbidden' }, 403)
+  }
+  // Upsert via DELETE + INSERT (SQLite ON CONFLICT works too, but the
+  // unique index gives us idempotency for free).
+  await d
+    .delete(threadSubscriptions)
+    .where(and(eq(threadSubscriptions.threadId, threadId), eq(threadSubscriptions.userId, userId)))
+  await d.insert(threadSubscriptions).values({ threadId, userId, level })
+  return c.json({ ok: true })
+})
+
 async function isMemberOf(db: D1Database, conversationId: string, userId: string): Promise<boolean> {
   const [row] = await drizzle(db)
     .select({ id: conversationMembers.id })
@@ -218,6 +388,22 @@ async function isMemberOf(db: D1Database, conversationId: string, userId: string
     )
     .limit(1)
   return !!row
+}
+
+async function isAdminOf(db: D1Database, conversationId: string, userId: string): Promise<boolean> {
+  const rows = await drizzle(db)
+    .select({ role: conversationMembers.role })
+    .from(conversationMembers)
+    .where(
+      and(
+        eq(conversationMembers.conversationId, conversationId),
+        eq(conversationMembers.kind, 'user'),
+        eq(conversationMembers.userId, userId),
+      ),
+    )
+    .limit(1)
+  const role = rows[0]?.role
+  return role === 'owner' || role === 'admin'
 }
 
 export default app

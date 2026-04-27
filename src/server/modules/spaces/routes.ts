@@ -296,6 +296,8 @@ const SendMessageSchema = z.object({
     .max(20),
   metadata: z.record(z.string(), z.unknown()).optional(),
   parentMessageId: z.string().nullable().optional(),
+  /** Phase 2: quoted source message — UI renders an inline quote chip. */
+  quotedMessageId: z.string().nullable().optional(),
 })
 
 app.post('/:id/messages', zValidator('json', SendMessageSchema), async (c) => {
@@ -315,6 +317,7 @@ app.post('/:id/messages', zValidator('json', SendMessageSchema), async (c) => {
     parts: partsJson,
     metadata: metadataJson,
     parentMessageId: body.parentMessageId ?? null,
+    quotedMessageId: body.quotedMessageId ?? null,
   })
   // Bump conversation updated_at for sidebar ordering.
   await drizzle(c.env.DB).update(conversations).set({ updatedAt: new Date() }).where(eq(conversations.id, id))
@@ -554,6 +557,62 @@ app.patch('/:id/membership', zValidator('json', UpdateMembershipSchema), async (
   return c.json({ ok: true })
 })
 
+/** GET /:id/messages/pinned — list pinned messages (Phase 2 shelf). */
+app.get('/:id/messages/pinned', async (c) => {
+  const userId = c.get('userId')
+  const id = c.req.param('id')
+  if (!(await isSpaceMember(c.env.DB, id, userId))) return c.json({ error: 'Forbidden' }, 403)
+  const rows = await drizzle(c.env.DB)
+    .select()
+    .from(conversationMessages)
+    .where(and(eq(conversationMessages.conversationId, id), sql`${conversationMessages.pinnedAt} IS NOT NULL`))
+    .orderBy(desc(conversationMessages.pinnedAt))
+    .limit(50)
+  return c.json({ pinned: rows.map((r) => ({
+    id: r.id,
+    parts: safeParse(r.parts),
+    metadata: safeParse(r.metadata),
+    pinnedAt: r.pinnedAt,
+    pinnedByUserId: r.pinnedByUserId,
+    createdAt:
+      r.createdAt instanceof Date
+        ? r.createdAt.toISOString()
+        : new Date((r.createdAt as unknown as number) * 1000).toISOString(),
+  })) })
+})
+
+/** PATCH /:id/members/:memberId/block — owner/admin blocks a member. */
+const BlockSchema = z.object({ blocked: z.boolean() })
+app.patch('/:id/members/:memberId/block', zValidator('json', BlockSchema), async (c) => {
+  const userId = c.get('userId')
+  const id = c.req.param('id')
+  const memberId = c.req.param('memberId')
+  if (!(await isSpaceOwner(c.env.DB, id, userId))) return c.json({ error: 'Forbidden' }, 403)
+  const { blocked } = c.req.valid('json')
+  await drizzle(c.env.DB)
+    .update(conversationMembers)
+    .set({ blockedAt: blocked ? Math.floor(Date.now() / 1000) : null })
+    .where(and(eq(conversationMembers.id, memberId), eq(conversationMembers.conversationId, id)))
+  return c.json({ ok: true })
+})
+
+/** PATCH /:id/history — turn off history (Phase 3 — auto-delete sweep). */
+const HistorySchema = z.object({ enabled: z.boolean() })
+app.patch('/:id/history', zValidator('json', HistorySchema), async (c) => {
+  const userId = c.get('userId')
+  const id = c.req.param('id')
+  if (!(await isSpaceOwner(c.env.DB, id, userId))) return c.json({ error: 'Forbidden' }, 403)
+  const { enabled } = c.req.valid('json')
+  await drizzle(c.env.DB)
+    .update(conversations)
+    .set({
+      historyEnabled: enabled ? 1 : 0,
+      historyDisabledAt: enabled ? null : Math.floor(Date.now() / 1000),
+    })
+    .where(eq(conversations.id, id))
+  return c.json({ ok: true })
+})
+
 app.get('/:id/agents', async (c) => {
   const userId = c.get('userId')
   const id = c.req.param('id')
@@ -612,6 +671,16 @@ async function isSpaceOwner(db: D1Database, spaceId: string, userId: string): Pr
     )
     .limit(1)
   return !!row
+}
+
+function safeParse(v: unknown): unknown {
+  if (v == null) return v
+  if (typeof v !== 'string') return v
+  try {
+    return JSON.parse(v)
+  } catch {
+    return v
+  }
 }
 
 function toIso(v: Date | number | string | null): string {

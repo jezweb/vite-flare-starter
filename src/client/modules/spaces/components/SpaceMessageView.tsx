@@ -7,9 +7,10 @@
  *   - Thread count indicator + "Reply in thread" link
  *   - Pinned-at indicator (Phase 2 polish)
  */
-import { Bot, MessageSquare, User } from 'lucide-react'
+import { Bot, MessageSquare, Pin, Quote as QuoteIcon, Star, User } from 'lucide-react'
 import { MentionPill } from './MentionPill'
 import { MessageReactions } from './MessageReactions'
+import { MessageMoreMenu } from './MessageMoreMenu'
 import { useSession } from '@/client/lib/auth'
 import { cn } from '@/lib/utils'
 import type { SpaceMessage, SpaceUserInfo } from '../hooks/useSpaces'
@@ -23,15 +24,28 @@ interface PartLike {
 interface Props {
   message: SpaceMessage
   users: SpaceUserInfo[]
+  /** Caller hands us all messages so quoted previews resolve client-side. */
+  allMessages?: SpaceMessage[]
   onOpenThread?: (messageId: string) => void
+  onQuote?: (msg: SpaceMessage) => void
+  /** True when the requesting user is owner/admin (controls pin enable). */
+  canPin?: boolean
 }
 
-export function SpaceMessageView({ message, users, onOpenThread }: Props) {
+export function SpaceMessageView({ message, users, allMessages, onOpenThread, onQuote, canPin }: Props) {
   const { data: session } = useSession()
   const currentUserId = session?.user?.id
   const meta = message.metadata ?? {}
   const senderKind = meta.senderKind ?? (message.role === 'assistant' ? 'agent' : 'user')
   const senderUser = meta.senderUserId ? users.find((u) => u.id === meta.senderUserId) : null
+  const stars: string[] = Array.isArray((message as unknown as { starredByUserIds?: string[] }).starredByUserIds)
+    ? ((message as unknown as { starredByUserIds: string[] }).starredByUserIds)
+    : []
+  const isStarred = currentUserId ? stars.includes(currentUserId) : false
+  const isPinned = !!message.pinnedAt
+  const quotedId = (message as unknown as { quotedMessageId?: string | null }).quotedMessageId ?? null
+  const quotedSource =
+    quotedId && allMessages ? allMessages.find((m) => m.id === quotedId) ?? null : null
   const senderLabel =
     senderKind === 'agent'
       ? `@${meta.senderAgentName ?? 'agent'}`
@@ -70,7 +84,22 @@ export function SpaceMessageView({ message, users, onOpenThread }: Props) {
             </span>
           )}
           <span className="text-muted-foreground">{relTime(message.createdAt)}</span>
+          {isStarred && <Star className="size-3 text-amber-500" aria-label="Starred" />}
+          {isPinned && <Pin className="size-3 text-amber-500" aria-label="Pinned to space" />}
         </div>
+        {quotedSource ? (
+          <div className="mt-1 rounded-md border-l-2 border-muted-foreground/40 bg-muted/30 px-2 py-1.5 text-xs text-muted-foreground">
+            <div className="mb-0.5 flex items-center gap-1 text-[10px] uppercase tracking-wider">
+              <QuoteIcon className="size-2.5" />
+              Quote
+            </div>
+            <div className="line-clamp-3 whitespace-pre-wrap break-words">
+              {renderParts(
+                Array.isArray(quotedSource.parts) ? (quotedSource.parts as PartLike[]) : [],
+              )}
+            </div>
+          </div>
+        ) : null}
         <div className="mt-0.5 whitespace-pre-wrap break-words text-sm leading-relaxed">
           {renderParts(parts)}
         </div>
@@ -90,8 +119,8 @@ export function SpaceMessageView({ message, users, onOpenThread }: Props) {
           </button>
         )}
       </div>
-      {/* Hover action bar — quick emojis + thread shortcut. Hidden until hover. */}
-      <div className="ml-auto flex shrink-0 items-start opacity-0 transition-opacity group-hover:opacity-100">
+      {/* Hover action bar — quick emojis + thread shortcut + more menu. */}
+      <div className="ml-auto flex shrink-0 items-start opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
         <div className="flex items-center gap-0.5 rounded-md border border-border bg-background p-0.5 shadow-sm">
           <MessageReactions messageId={message.id} reactions={message.reactions} currentUserId={currentUserId} quickBar />
           {onOpenThread && (
@@ -105,6 +134,7 @@ export function SpaceMessageView({ message, users, onOpenThread }: Props) {
               <MessageSquare className="size-3.5" />
             </button>
           )}
+          <MessageMoreMenu message={message} onQuote={onQuote} canPin={!!canPin} />
         </div>
       </div>
     </div>

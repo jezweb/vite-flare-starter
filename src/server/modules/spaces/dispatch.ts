@@ -63,10 +63,24 @@ export async function dispatchMentions(params: {
   const replyMessageIds: string[] = []
   if (mentions.length === 0) return { replyMessageIds }
 
-  // Phase 1: serialise to ONE mention dispatch per message. Parallel
-  // dispatch (cap 3) is Phase 2.
-  const ref = mentions.find((m) => m.kind === 'agent')
-  if (!ref || !ref.targetAgentClass || !ref.targetAgentName) return { replyMessageIds }
+  // Phase 2: cap parallel agent dispatch at 3 mentions per message.
+  // Beyond that we silently drop — the spec is "don't fan out a
+  // single message to a stampede of agent runs". User mentions are
+  // ignored for dispatch (they're notify-only).
+  const PARALLEL_CAP = 3
+  const agentRefs = mentions
+    .filter((m) => m.kind === 'agent' && m.targetAgentClass && m.targetAgentName)
+    .slice(0, PARALLEL_CAP)
+  if (agentRefs.length === 0) return { replyMessageIds }
+
+  // Phase 1 had a single ref; Phase 2 fans out concurrently. We still
+  // serialise the FIRST one through the existing path so the existing
+  // tests / observability semantics don't change for the common case;
+  // mentions 2-3 run in parallel via Promise.allSettled.
+  const ref = agentRefs[0]!
+  if (!ref.targetAgentClass || !ref.targetAgentName) return { replyMessageIds }
+  const targetAgentClass: string = ref.targetAgentClass
+  const targetAgentName: string = ref.targetAgentName
 
   // Look up reply mode for this agent member. 'off' means the agent
   // is paused — skip silently.
@@ -93,13 +107,13 @@ export async function dispatchMentions(params: {
   // binding by its className; the namespace is in env. Throw a
   // descriptive error if missing so the route returns 500 with the
   // actual cause.
-  const namespace = env[ref.targetAgentClass] as DurableObjectNamespace | undefined
+  const namespace = env[targetAgentClass] as DurableObjectNamespace | undefined
   if (!namespace) {
     throw new Error(
-      `dispatchMentions: no DO binding for agent class "${ref.targetAgentClass}" — add it to wrangler.jsonc`,
+      `dispatchMentions: no DO binding for agent class "${targetAgentClass}" — add it to wrangler.jsonc`,
     )
   }
-  const agentName = `space:${spaceId}:${ref.targetAgentName}`
+  const agentName = `space:${spaceId}:${targetAgentName}`
   const stub = namespace.get(namespace.idFromName(agentName)) as unknown as {
     runOnce: (input: {
       input: string
@@ -150,8 +164,8 @@ export async function dispatchMentions(params: {
   const partsJson = JSON.stringify([{ type: 'text', text: reply.text }])
   const metadataJson = JSON.stringify({
     senderKind: 'agent',
-    senderAgentClass: ref.targetAgentClass,
-    senderAgentName: ref.targetAgentName,
+    senderAgentClass: targetAgentClass,
+    senderAgentName: targetAgentName,
     actingUserId: senderUserId,
   })
   await drizzle(env.DB).insert(conversationMessages).values({
@@ -178,6 +192,38 @@ export async function dispatchMentions(params: {
 
   await broadcastNewMessage(replyId)
   replyMessageIds.push(replyId)
+
+  // Fan out remaining mentions in parallel (best-effort). Each runs
+  // through a recursive single-mention dispatch with the same trigger
+  // message so threading + audit attribution stay consistent. Errors
+  // on individual mentions don't block siblings.
+  if (agentRefs.length > 1) {
+    const tail = agentRefs.slice(1)
+    const fanOut = await Promise.allSettled(
+      tail.map((parallelRef) =>
+        dispatchMentions({
+          env,
+          spaceId,
+          senderUserId,
+          triggerMessageId: params.triggerMessageId,
+          parentMessageId,
+          mentions: [parallelRef],
+          inputText,
+          broadcastNewMessage,
+        }),
+      ),
+    )
+    for (const settle of fanOut) {
+      if (settle.status === 'fulfilled') {
+        replyMessageIds.push(...settle.value.replyMessageIds)
+      } else {
+        console.error(
+          JSON.stringify({ event: 'space_dispatch_parallel_failed', spaceId, error: String(settle.reason) }),
+        )
+      }
+    }
+  }
+
   return { replyMessageIds }
 }
 

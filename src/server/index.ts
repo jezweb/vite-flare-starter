@@ -51,6 +51,7 @@ import organizationsRoutes from './modules/organizations/routes'
 import credentialsRoutes from './modules/credentials/routes'
 import spacesRoutes from './modules/spaces/routes'
 import messagesRoutes from './modules/spaces/messages-routes'
+import globalSearchRoutes from './modules/spaces/global-search'
 import { routeAgentRequest } from 'agents'
 import { ScratchpadMcpAgent } from './modules/mcp-agents/scratchpad-mcp-agent'
 // Re-export DO class(es) so wrangler migrations can locate them. Every DO
@@ -304,6 +305,7 @@ app.route('/api/config-diff', configDiffRoutes)
 app.route('/api/conversations', conversationsRoutes)
 app.route('/api/spaces', spacesRoutes)
 app.route('/api/messages', messagesRoutes)
+app.route('/api/search', globalSearchRoutes)
 app.route('/api/projects', projectsRoutes)
 app.route('/api/memories', memoriesRoutes)
 app.route('/api/comments', commentsRoutes)
@@ -517,6 +519,17 @@ export default {
       if (result.errors > 0) logs['memoryErrors'] = result.errors
     } catch (err) {
       logs['memorySweepError'] = err instanceof Error ? err.message : String(err)
+    }
+
+    // 5. Spaces — turn-off-history sweep. Spaces with historyEnabled=0
+    // get their messages auto-deleted after 24h. Bounded delete (50 rows
+    // per tick) so we never blow the cron budget.
+    try {
+      const { sweepHistoryDisabledSpaces } = await import('./modules/spaces/history-sweep')
+      const removed = await sweepHistoryDisabledSpaces(env.DB)
+      if (removed > 0) logs['spacesHistorySwept'] = removed
+    } catch (err) {
+      logs['spacesHistoryError'] = err instanceof Error ? err.message : String(err)
     }
 
     if (Object.keys(logs).length > 1) {

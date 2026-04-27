@@ -76,6 +76,12 @@ export const conversations = sqliteTable('conversations', {
    * a TTL (24h, Phase 3 cron sweep). Default 1.
    */
   historyEnabled: integer('history_enabled').notNull().default(1),
+  /**
+   * Phase 3: when historyEnabled flipped 1→0. Cron sweep deletes
+   * messages older than this timestamp + 24h. Set on every transition,
+   * cleared when flipped back to enabled.
+   */
+  historyDisabledAt: integer('history_disabled_at'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 }, (table) => [
@@ -118,6 +124,19 @@ export const conversationMessages = sqliteTable('conversation_messages', {
   /** Pin-to-space metadata. Both null = not pinned. */
   pinnedAt: integer('pinned_at'),
   pinnedByUserId: text('pinned_by_user_id'),
+  /**
+   * Phase 2: personal stars — JSON array of user ids who've bookmarked
+   * this message. Null = no stars. Stored as a JSON column rather than
+   * a join table because typical fan-out per message is small.
+   */
+  starredByUserIds: text('starred_by_user_ids'),
+  /**
+   * Phase 2: quote-in-reply linkage — if this message is a quoted
+   * reply, points at the quoted source message. Quote text is rendered
+   * client-side from the source's parts, so we don't duplicate body
+   * here. Distinct from parentMessageId (which is for threads).
+   */
+  quotedMessageId: text('quoted_message_id'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 }, (table) => [
   index('conversation_messages_conversation_id_idx').on(table.conversationId),
@@ -127,6 +146,30 @@ export const conversationMessages = sqliteTable('conversation_messages', {
   // Pinned-shelf query (Phase 2).
   index('conversation_messages_pinned_idx').on(table.conversationId, table.pinnedAt),
 ])
+
+/**
+ * thread_subscriptions — per-thread notification override.
+ *
+ * Phase 2: when a user replies in a thread we auto-subscribe them
+ * (level='all'); they can mute via the thread bell. The space-level
+ * notificationLevel still applies; this table only OVERRIDES for a
+ * specific thread.
+ */
+export const threadSubscriptions = sqliteTable(
+  'thread_subscriptions',
+  {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    /** Parent message id (the thread "root"). */
+    threadId: text('thread_id').notNull(),
+    userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+    level: text('level').$type<'all' | 'mute'>().notNull().default('all'),
+    createdAt: integer('created_at').notNull().$defaultFn(() => Math.floor(Date.now() / 1000)),
+  },
+  (table) => [
+    index('thread_subscriptions_thread_idx').on(table.threadId),
+    uniqueIndex('thread_subscriptions_user_thread_unique').on(table.userId, table.threadId),
+  ],
+)
 
 /**
  * conversation_members — multi-participant membership table.

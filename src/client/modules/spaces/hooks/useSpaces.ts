@@ -123,7 +123,17 @@ export function useCreateSpace() {
 
 export function useSendSpaceMessage(spaceId: string | undefined) {
   const qc = useQueryClient()
-  return useMutation<{ id: string; dispatched: number }, Error, { parts: unknown[]; parentMessageId?: string | null; metadata?: Record<string, unknown> }>({
+  return useMutation<
+    { id: string; dispatched: number },
+    Error,
+    {
+      parts: unknown[]
+      parentMessageId?: string | null
+      metadata?: Record<string, unknown>
+      /** Phase 2: quoted source message for inline quote-in-reply chip. */
+      quotedMessageId?: string | null
+    }
+  >({
     mutationFn: (body) =>
       apiClient.post<{ id: string; dispatched: number }>(`/api/spaces/${spaceId}/messages`, body),
     onSuccess: () => {
@@ -209,6 +219,90 @@ export function useInviteAgent(spaceId: string | undefined) {
   >({
     mutationFn: (body) =>
       apiClient.post<{ ok: boolean }>(`/api/spaces/${spaceId}/members`, { kind: 'agent', ...body }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['spaces', spaceId] })
+    },
+  })
+}
+
+// ─── Phase 2/3 hooks ─────────────────────────────────────────────
+
+export function usePinMessage() {
+  const qc = useQueryClient()
+  return useMutation<{ ok: boolean }, Error, { messageId: string; pinned: boolean }>({
+    mutationFn: ({ messageId, pinned }) =>
+      apiClient.patch<{ ok: boolean }>(`/api/messages/${messageId}/pin`, { pinned }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['spaces'] })
+    },
+  })
+}
+
+export function useStarMessage() {
+  return useMutation<
+    { ok: boolean; starredByUserIds: string[] },
+    Error,
+    { messageId: string; starred: boolean }
+  >({
+    mutationFn: ({ messageId, starred }) =>
+      apiClient.patch<{ ok: boolean; starredByUserIds: string[] }>(
+        `/api/messages/${messageId}/star`,
+        { starred },
+      ),
+  })
+}
+
+export function useForwardMessage() {
+  return useMutation<{ id: string }, Error, { messageId: string; targetSpaceId: string; note?: string }>({
+    mutationFn: ({ messageId, targetSpaceId, note }) =>
+      apiClient.post<{ id: string }>(`/api/messages/${messageId}/forward`, { targetSpaceId, note }),
+  })
+}
+
+export function useThreadSubscription() {
+  return useMutation<{ ok: boolean }, Error, { threadId: string; level: 'all' | 'mute' }>({
+    mutationFn: ({ threadId, level }) =>
+      apiClient.patch<{ ok: boolean }>(`/api/messages/${threadId}/thread/subscription`, { level }),
+  })
+}
+
+export function useToggleSpaceHistory(spaceId: string | undefined) {
+  const qc = useQueryClient()
+  return useMutation<{ ok: boolean }, Error, boolean>({
+    mutationFn: (enabled) => apiClient.patch<{ ok: boolean }>(`/api/spaces/${spaceId}/history`, { enabled }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['spaces', spaceId] })
+    },
+  })
+}
+
+export function usePinnedMessages(spaceId: string | undefined) {
+  return useQuery({
+    queryKey: ['spaces', spaceId, 'pinned'],
+    queryFn: () =>
+      apiClient.get<{ pinned: Array<{ id: string; parts: unknown; createdAt: string; pinnedAt: number; pinnedByUserId: string }> }>(
+        `/api/spaces/${spaceId}/messages/pinned`,
+      ),
+    enabled: !!spaceId,
+  })
+}
+
+export function useGlobalSearch(query: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['global-search', query],
+    queryFn: () =>
+      apiClient.get<{ results: Array<SpaceMessage & { conversationTitle: string | null; conversationKind: string }> }>(
+        `/api/search/messages?q=${encodeURIComponent(query)}`,
+      ),
+    enabled: enabled && query.length >= 2,
+  })
+}
+
+export function useBlockMember(spaceId: string | undefined) {
+  const qc = useQueryClient()
+  return useMutation<{ ok: boolean }, Error, { memberId: string; blocked: boolean }>({
+    mutationFn: ({ memberId, blocked }) =>
+      apiClient.patch<{ ok: boolean }>(`/api/spaces/${spaceId}/members/${memberId}/block`, { blocked }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['spaces', spaceId] })
     },

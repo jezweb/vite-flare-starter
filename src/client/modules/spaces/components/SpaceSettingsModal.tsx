@@ -30,6 +30,7 @@ import {
   useAvailableAgents,
   useDeleteSpace,
   useLeaveSpace,
+  useToggleSpaceHistory,
 } from '../hooks/useSpaces'
 
 interface Props {
@@ -45,6 +46,7 @@ export function SpaceSettingsModal({ spaceId, open, initialTab, onClose }: Props
   const { data } = useSpace(spaceId)
   const updateSettings = useUpdateSpaceSettings(spaceId)
   const updateMembership = useUpdateSpaceMembership(spaceId)
+  const toggleHistory = useToggleSpaceHistory(spaceId)
   const inviteAgent = useInviteAgent(spaceId)
   const { data: agentsData } = useAvailableAgents(open ? spaceId : undefined)
   const deleteSpace = useDeleteSpace()
@@ -125,10 +127,17 @@ export function SpaceSettingsModal({ spaceId, open, initialTab, onClose }: Props
               <div>
                 <div className="text-sm font-medium">Keep history</div>
                 <p className="text-xs text-muted-foreground">
-                  When off, messages auto-delete after 24 hours (Phase 3 — disable to opt in once it ships).
+                  When off, messages older than 24 hours are auto-deleted on the next sweep. Useful for ephemeral rooms.
                 </p>
               </div>
-              <Switch checked={historyEnabled} onCheckedChange={setHistoryEnabled} disabled />
+              <Switch
+                checked={historyEnabled}
+                onCheckedChange={(v) => {
+                  setHistoryEnabled(v)
+                  if (isOwner) toggleHistory.mutate(v)
+                }}
+                disabled={!isOwner || toggleHistory.isPending}
+              />
             </div>
             <div className="flex justify-end">
               <Button onClick={handleSaveGeneral} disabled={!isOwner || updateSettings.isPending}>
