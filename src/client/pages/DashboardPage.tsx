@@ -258,7 +258,7 @@ function RunRow({ run }: { run: AgentRun }) {
     <li className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted/40 transition-colors">
       <Icon className={cn('size-3.5 shrink-0', colour)} />
       <span className="font-mono text-xs truncate flex-1">{run.agentClass}</span>
-      <span className="text-[11px] text-muted-foreground capitalize hidden sm:inline">
+      <span className="text-[11px] text-muted-foreground capitalize hidden xl:inline">
         {run.trigger.replace('_', ' ')}
       </span>
       <span className="text-[11px] text-muted-foreground tabular-nums">

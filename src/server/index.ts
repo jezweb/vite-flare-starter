@@ -44,6 +44,7 @@ import connectorsRoutes from './modules/connectors/routes'
 import scheduledAgentsRoutes from './modules/scheduled-agents/routes'
 import autonomousAgentsRoutes from './modules/autonomous-agents/routes'
 import approvalsRoutes from './modules/approvals/routes'
+import routinesRoutes from './modules/routines/routes'
 import webhookAgentsRoutes from './modules/webhook-agents/routes'
 import agentObservabilityRoutes from './modules/agent-observability/routes'
 import entitiesRoutes from './modules/entities/routes'
@@ -293,6 +294,7 @@ app.route('/api/data', dataRoutes)
 app.route('/api/scheduled-agents', scheduledAgentsRoutes)
 app.route('/api/autonomous-agents', autonomousAgentsRoutes)
 app.route('/api/approvals', approvalsRoutes)
+app.route('/api/routines', routinesRoutes)
 app.route('/api/webhooks', webhookAgentsRoutes)
 app.route('/api/agent-observability', agentObservabilityRoutes)
 app.route('/api/entities', entitiesRoutes)
@@ -521,7 +523,20 @@ export default {
       logs['memorySweepError'] = err instanceof Error ? err.message : String(err)
     }
 
-    // 5. Spaces — turn-off-history sweep. Spaces with historyEnabled=0
+    // 5. Routines (issue #50) — fire any due schedule-triggered routines.
+    //    Bounded at 5 per tick to keep the cron budget. Each fire records
+    //    a routine_runs row + invokes the target agent's DO via setToolsAllowed
+    //    (slice 2 contract) + runOnce.
+    try {
+      const { processDueRoutines } = await import('./modules/routines/scheduler')
+      const result = await processDueRoutines(env as unknown as { DB: D1Database; [k: string]: unknown })
+      if (result.fired > 0) logs['routinesFired'] = result.fired
+      if (result.errors > 0) logs['routinesErrors'] = result.errors
+    } catch (err) {
+      logs['routinesError'] = err instanceof Error ? err.message : String(err)
+    }
+
+    // 6. Spaces — turn-off-history sweep. Spaces with historyEnabled=0
     // get their messages auto-deleted after 24h. Bounded delete (50 rows
     // per tick) so we never blow the cron budget.
     try {

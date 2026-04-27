@@ -77,6 +77,13 @@ export { atlassianTokens } from '@/server/modules/atlassian/db/schema'
 // (skills, system prompts, settings) awaiting user review + approval.
 export { configDiffProposals } from '@/server/modules/config-diff/db/schema'
 
+// Routines (issue #50) — declarative recurring agent workflows
+export {
+  routines,
+  routineRuns,
+  routineCadenceChanges,
+} from '@/server/modules/routines/db/schema'
+
 // Polymorphic modules (entity_type + entity_id pattern)
 export { comments } from '@/server/modules/comments/db/schema'
 export { tags, entityTags } from '@/server/modules/tags/db/schema'

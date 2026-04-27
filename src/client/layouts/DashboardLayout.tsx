@@ -58,6 +58,15 @@ export function DashboardLayout() {
           } as CSSProperties
         }
       >
+        {/* Skip-to-main-content — visible only on keyboard focus, lets
+            users bypass the 9-item sidebar nav on every page. First focusable
+            element. */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:rounded-md focus:bg-primary focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-primary-foreground focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring"
+        >
+          Skip to main content
+        </a>
         <AppSidebar />
         <CommandPalette />
         <KeyboardShortcuts />
@@ -65,7 +74,7 @@ export function DashboardLayout() {
         <SidebarInset className="flex h-full min-w-0 flex-col">
           <SiteHeader />
           <EmailVerificationBanner />
-          <main className="flex-1 min-h-0 overflow-y-auto">
+          <main id="main-content" tabIndex={-1} className="flex-1 min-h-0 overflow-y-auto">
             <div className="p-4 md:p-6">
               <Outlet />
             </div>

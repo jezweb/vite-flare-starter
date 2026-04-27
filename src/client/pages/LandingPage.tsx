@@ -188,7 +188,7 @@ export function LandingPage() {
       <section className="relative overflow-hidden border-b border-border">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-background" />
 
-        <div className="container relative mx-auto max-w-6xl px-4 py-16 md:py-24">
+        <div className="container relative mx-auto max-w-6xl px-4 py-12 md:py-16">
           <div className="flex flex-col items-center text-center">
             <Badge variant="secondary" className="mb-4">
               AI-native starter for Cloudflare Workers
@@ -237,7 +237,7 @@ export function LandingPage() {
       </section>
 
       {/* Primary surfaces */}
-      <section className="py-16 md:py-20">
+      <section className="py-12 md:py-14">
         <div className="container mx-auto max-w-6xl px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Four primary surfaces</h2>
@@ -281,7 +281,7 @@ export function LandingPage() {
       </section>
 
       {/* Spaces deep-dive */}
-      <section className="py-16 bg-muted/30 border-y border-border">
+      <section className="py-12 bg-muted/30 border-y border-border">
         <div className="container mx-auto max-w-6xl px-4">
           <div className="text-center mb-10">
             <Badge variant="secondary" className="mb-3">Headline feature</Badge>
@@ -345,7 +345,7 @@ export function LandingPage() {
       </section>
 
       {/* Dashboard tour — real screenshots */}
-      <section className="py-16">
+      <section className="py-12">
         <div className="container mx-auto max-w-6xl px-4">
           <div className="text-center mb-10">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">A tour of the dashboard</h2>
@@ -392,7 +392,7 @@ export function LandingPage() {
       </section>
 
       {/* Wide feature grid */}
-      <section className="py-16">
+      <section className="py-12">
         <div className="container mx-auto max-w-6xl px-4">
           <div className="text-center mb-10">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Everything else, included.</h2>
@@ -419,7 +419,7 @@ export function LandingPage() {
       </section>
 
       {/* Architecture */}
-      <section className="py-16 bg-muted/30 border-y border-border">
+      <section className="py-12 bg-muted/30 border-y border-border">
         <div className="container mx-auto max-w-6xl px-4">
           <div className="grid gap-8 lg:grid-cols-2 items-center">
             <div>

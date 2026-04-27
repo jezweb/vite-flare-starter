@@ -171,6 +171,13 @@ function ApprovalCard({ approval, highlight }: { approval: Approval; highlight: 
     () => formatDistanceToNow(new Date(approval.createdAt * 1000), { addSuffix: true }),
     [approval.createdAt],
   )
+  // Stale = pending for more than 24h. Subtle indicator only — colour-only
+  // signalling would fail accessibility, so the badge has both icon + text.
+  const isStale = useMemo(() => {
+    if (approval.status !== 'pending') return false
+    const ageSeconds = Math.floor(Date.now() / 1000) - approval.createdAt
+    return ageSeconds > 24 * 60 * 60
+  }, [approval.status, approval.createdAt])
 
   return (
     <Card
@@ -188,6 +195,16 @@ function ApprovalCard({ approval, highlight }: { approval: Approval; highlight: 
             <div className="flex items-center gap-2 flex-wrap">
               <StatusBadge status={approval.status} />
               <span className="text-xs text-muted-foreground">queued {ageStr}</span>
+              {isStale && (
+                <Badge
+                  variant="outline"
+                  className="gap-1 text-[10px] px-1.5 py-0 border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                  title="Pending for more than 24 hours"
+                >
+                  <Clock className="size-2.5" />
+                  Stale
+                </Badge>
+              )}
             </div>
             <CardTitle className="mt-2 text-base leading-snug">
               {approval.summary || prettifyAction(approval.action)}
