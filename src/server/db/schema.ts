@@ -84,6 +84,9 @@ export {
   routineCadenceChanges,
 } from '@/server/modules/routines/db/schema'
 
+// Inbox (issue #50 slice 5) — agent-emitted findings the user reviews
+export { inboxItems } from '@/server/modules/inbox/db/schema'
+
 // Polymorphic modules (entity_type + entity_id pattern)
 export { comments } from '@/server/modules/comments/db/schema'
 export { tags, entityTags } from '@/server/modules/tags/db/schema'

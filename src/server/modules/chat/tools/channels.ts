@@ -37,12 +37,13 @@
 import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
 import { and, eq } from 'drizzle-orm'
-import { CheckSquare, Bell, Send, Webhook } from 'lucide-react'
+import { CheckSquare, Bell, Send, Webhook, Inbox } from 'lucide-react'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 import { pendingApprovals } from '@/server/modules/approvals/db/schema'
 import { userNotifications } from '@/server/modules/notifications/db/schema'
 import { conversationMembers } from '@/server/modules/spaces/db/schema'
 import { conversationMessages } from '@/server/modules/conversations/db/schema'
+import { inboxItems } from '@/server/modules/inbox/db/schema'
 
 interface ChannelsEnv {
   DB: D1Database
@@ -54,6 +55,91 @@ interface ChannelsEnv {
 
 function envOf(ctx: AgentContext): ChannelsEnv {
   return ctx.env as unknown as ChannelsEnv
+}
+
+// ─── inbox_add ─────────────────────────────────────────────────────────
+
+const InboxAddInput = z.object({
+  kind: z
+    .string()
+    .min(1)
+    .describe('Domain tag for grouping (e.g. "lead", "youtube_summary", "stuck_ticket"). snake_case.'),
+  summary: z.string().min(1).describe('1-line headline shown in the Inbox row.'),
+  payload: z.unknown().optional().describe('Free-form structured data (any JSON-serialisable value).'),
+  importance: z.enum(['high', 'medium', 'low']).optional(),
+  confidence: z.number().min(0).max(1).optional(),
+  reasoning: z.string().max(2000).optional().describe('Brief why-this-matters note.'),
+  suggestedAction: z
+    .object({ label: z.string(), link: z.string() })
+    .optional()
+    .describe('Optional one-click action; the user opens link from the row.'),
+  sources: z
+    .array(
+      z.object({
+        kind: z.string(),
+        ref: z.string(),
+        label: z.string().optional(),
+      }),
+    )
+    .optional()
+    .describe('Provenance — what the agent cited.'),
+  dueAt: z
+    .number()
+    .int()
+    .optional()
+    .describe('Unix seconds — when the user should act on this.'),
+  expiresAt: z
+    .number()
+    .int()
+    .optional()
+    .describe('Unix seconds — auto-archive after this.'),
+  effortMinutes: z.number().int().min(1).optional(),
+  tags: z.array(z.string()).optional(),
+  threadSpaceId: z.string().optional().describe('Optional Space link for cross-team discussion.'),
+})
+
+const InboxAddOutput = z.object({ id: z.string() })
+
+export const inboxAdd: ToolDefinition<
+  z.infer<typeof InboxAddInput>,
+  z.infer<typeof InboxAddOutput>
+> = {
+  name: 'inbox_add',
+  description:
+    'Drop a finding into the user\'s Inbox. Use this to surface things the user might want to know / review / decide that don\'t require immediate action — leads worth following up, summaries, errors detected by a meta-routine, ideas, anomalies. Different from approval_queue (which gates a specific destructive action) and notify (which is a transient bell ping).',
+  inputSchema: InboxAddInput,
+  outputSchema: InboxAddOutput,
+  execute: async (input, ctx) => {
+    const env = envOf(ctx)
+    const id = crypto.randomUUID()
+    await drizzle(env.DB)
+      .insert(inboxItems)
+      .values({
+        id,
+        userId: ctx.userId,
+        kind: input.kind,
+        summary: input.summary,
+        payloadJson: input.payload !== undefined ? JSON.stringify(input.payload) : null,
+        importance: input.importance ?? null,
+        confidence: input.confidence ?? null,
+        reasoning: input.reasoning ?? null,
+        suggestedActionJson: input.suggestedAction
+          ? JSON.stringify(input.suggestedAction)
+          : null,
+        sourcesJson: input.sources ? JSON.stringify(input.sources) : null,
+        dueAt: input.dueAt ?? null,
+        expiresAt: input.expiresAt ?? null,
+        effortMinutes: input.effortMinutes ?? null,
+        tagsJson: input.tags ? JSON.stringify(input.tags) : null,
+        threadSpaceId: input.threadSpaceId ?? null,
+      })
+    return { id }
+  },
+  render: {
+    icon: Inbox,
+    displayName: 'Inbox: add finding',
+    summary: (out) => `${out.id.slice(0, 8)}…`,
+  },
 }
 
 // ─── approval_queue ────────────────────────────────────────────────────
@@ -310,6 +396,7 @@ export const webhookPost: ToolDefinition<
 // to expose by default.
 
 export const channelsDefinitions: ToolDefinition<unknown, unknown>[] = [
+  inboxAdd as unknown as ToolDefinition<unknown, unknown>,
   approvalQueue as unknown as ToolDefinition<unknown, unknown>,
   notify as unknown as ToolDefinition<unknown, unknown>,
   spaceSend as unknown as ToolDefinition<unknown, unknown>,

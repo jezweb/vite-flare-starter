@@ -45,6 +45,7 @@ import scheduledAgentsRoutes from './modules/scheduled-agents/routes'
 import autonomousAgentsRoutes from './modules/autonomous-agents/routes'
 import approvalsRoutes from './modules/approvals/routes'
 import routinesRoutes from './modules/routines/routes'
+import inboxRoutes from './modules/inbox/routes'
 import webhookAgentsRoutes from './modules/webhook-agents/routes'
 import agentObservabilityRoutes from './modules/agent-observability/routes'
 import entitiesRoutes from './modules/entities/routes'
@@ -295,6 +296,7 @@ app.route('/api/scheduled-agents', scheduledAgentsRoutes)
 app.route('/api/autonomous-agents', autonomousAgentsRoutes)
 app.route('/api/approvals', approvalsRoutes)
 app.route('/api/routines', routinesRoutes)
+app.route('/api/inbox', inboxRoutes)
 app.route('/api/webhooks', webhookAgentsRoutes)
 app.route('/api/agent-observability', agentObservabilityRoutes)
 app.route('/api/entities', entitiesRoutes)

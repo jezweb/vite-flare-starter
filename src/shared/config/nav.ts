@@ -31,6 +31,7 @@ import {
   CheckSquare,
   FolderKanban,
   Users,
+  Inbox,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -80,6 +81,7 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     label: 'You',
     items: [
+      { to: '/dashboard/inbox', label: 'Inbox', icon: Inbox },
       { to: '/dashboard/notifications', label: 'Notifications', icon: Bell, feature: 'notifications' },
       { to: '/dashboard/approvals', label: 'Approvals', icon: CheckSquare },
     ],
