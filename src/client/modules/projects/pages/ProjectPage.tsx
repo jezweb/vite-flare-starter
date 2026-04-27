@@ -45,6 +45,7 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { ShareProjectDialog } from '../components/ShareProjectDialog'
 import {
   useProject,
   useUpdateProject,
@@ -391,18 +392,12 @@ export function ProjectPage() {
         }}
       />
 
-      {/* Share placeholder */}
-      <Dialog open={shareInfoOpen} onOpenChange={setShareInfoOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Sharing</DialogTitle>
-            <DialogDescription>
-              Project sharing — including team and per-link sharing — arrives in Phase 5 of the projects build.
-              For now, this project is private to you.
-            </DialogDescription>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
+      {/* Share — multi-user projects (Phase 5) */}
+      <ShareProjectDialog
+        projectId={id}
+        open={shareInfoOpen}
+        onClose={() => setShareInfoOpen(false)}
+      />
     </div>
   )
 }

@@ -26,6 +26,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { eq, and, desc, sql } from 'drizzle-orm'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import { projects } from './db/schema'
+import membershipRoutes, { isProjectMember } from './membership'
 import { conversations } from '@/server/modules/conversations/db/schema'
 import { memories } from '@/server/modules/memories/db/schema'
 import { PROJECT_TEMPLATES, getTemplate } from '@/shared/config/project-templates'
@@ -131,15 +132,12 @@ app.get('/:id', async (c) => {
   const id = c.req.param('id')
   const d = drizzle(c.env.DB)
 
-  const [project] = await d
-    .select()
-    .from(projects)
-    .where(and(eq(projects.id, id), eq(projects.userId, userId)))
-    .limit(1)
-
-  if (!project) {
+  // Phase 5 dual-read: members can also fetch shared projects.
+  if (!(await isProjectMember(c.env.DB, id, userId))) {
     return c.json({ error: 'Project not found' }, 404)
   }
+  const [project] = await d.select().from(projects).where(eq(projects.id, id)).limit(1)
+  if (!project) return c.json({ error: 'Project not found' }, 404)
 
   const convs = await d
     .select({
@@ -553,5 +551,9 @@ app.delete('/:id/archive', async (c) => {
     .where(and(eq(projects.id, id), eq(projects.userId, userId)))
   return c.json({ success: true, archived: false })
 })
+
+// Mount the project_members sub-router. Hono mounts under the same
+// base path ('/api/projects') so endpoints land at /:id/members.
+app.route('/', membershipRoutes)
 
 export default app

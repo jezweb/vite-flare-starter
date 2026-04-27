@@ -15,7 +15,7 @@
  * — null = ungrouped). Deleting a project uses `ON DELETE SET NULL` so the
  * conversations survive and return to the flat list.
  */
-import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core'
+import { sqliteTable, text, integer, index, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import { user } from '@/server/modules/auth/db/schema'
 
 export const projects = sqliteTable('projects', {
@@ -66,3 +66,37 @@ export const projects = sqliteTable('projects', {
 
 export type Project = typeof projects.$inferSelect
 export type NewProject = typeof projects.$inferInsert
+
+/**
+ * project_members — multi-user Project membership (Phase 5).
+ *
+ * Existing solo projects keep the legacy `projects.user_id` semantics:
+ * the creator is always treated as an implicit owner. The dual-read
+ * helpers in storage check this table first; absence falls back to
+ * legacy ownership so no migration of every existing row is needed.
+ *
+ * Roles:
+ *   owner   — creator; can invite, remove members, delete project
+ *   editor  — read + write everything in the project
+ *   viewer  — read-only; cannot create conversations, edit memory, etc.
+ */
+export type ProjectMemberRole = 'owner' | 'editor' | 'viewer'
+
+export const projectMembers = sqliteTable(
+  'project_members',
+  {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    projectId: text('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+    role: text('role').$type<ProjectMemberRole>().notNull().default('editor'),
+    invitedByUserId: text('invited_by_user_id'),
+    joinedAt: integer('joined_at').notNull().$defaultFn(() => Math.floor(Date.now() / 1000)),
+  },
+  (table) => [
+    index('project_members_project_idx').on(table.projectId),
+    index('project_members_user_idx').on(table.userId),
+    uniqueIndex('project_members_project_user_unique').on(table.projectId, table.userId),
+  ],
+)
+
+export type ProjectMember = typeof projectMembers.$inferSelect
