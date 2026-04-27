@@ -16,6 +16,21 @@ import {
   Activity,
   Bell,
   ShieldCheck,
+  MessageSquare,
+  FolderKanban,
+  Sparkles,
+  Pin,
+  Hash,
+  CheckSquare,
+  Plug,
+  Mic,
+  Camera,
+  Search,
+  FileText,
+  Eye,
+  Workflow,
+  GitBranch,
+  Lock,
 } from 'lucide-react'
 import { appConfig } from '@/shared/config/app'
 
@@ -37,61 +52,121 @@ function GithubIcon({ className }: { className?: string }) {
   )
 }
 
-const features = [
+/**
+ * The four primary surfaces — these are the things a user spends
+ * their day inside. They get top billing on the landing page.
+ */
+const primarySurfaces = [
+  {
+    icon: Hash,
+    title: 'Spaces',
+    badge: 'New',
+    description:
+      'Multi-user, multi-agent rooms. @-mention an agent to ask for help; threads, reactions, pinned messages, quote-in-reply, presence — all the Slack/Google-Chat-style primitives.',
+    bullets: [
+      'Per-agent reply modes: mention · proactive · ambient · always · off',
+      '6 starter templates + checkbox agent picker',
+      'Threads, reactions, pin, star, forward, search',
+      'Cross-space FTS5 search at /api/search/messages',
+      'WebSocket presence + live broadcast via Cloudflare Agents SDK',
+    ],
+  },
+  {
+    icon: FolderKanban,
+    title: 'Projects',
+    description:
+      'Long-lived workspaces grouping conversations, files, instructions, and memory. Shareable with editors and viewers — a private project becomes a team room with one invite.',
+    bullets: [
+      'Project-level system prompt injected on every chat',
+      'Memory blocks (project / user / org scope) with privacy zones',
+      'Multi-user share — owner / editor / viewer roles',
+      '3-way memory trust (ask / auto / never)',
+      'Auto-tagging + universal search across every conversation',
+    ],
+  },
+  {
+    icon: MessageSquare,
+    title: 'AI Chat',
+    description:
+      "AI SDK v6 ToolLoopAgent — 95+ tools across Gmail, Calendar, Drive, Sheets, browser automation, web search, places, code execution, audio, and the rest.",
+    bullets: [
+      '16 models across 8 providers (Workers AI free + OpenRouter)',
+      'Streaming, vision, structured output, citations footer',
+      'Per-tool telemetry in `ai_tool_calls` D1 table',
+      'Privileged-tool gating + needsApproval flow',
+      'Subagent delegation + skills system (Claude Agent Skills)',
+    ],
+  },
   {
     icon: Bot,
-    title: 'AI Agent (60+ Tools)',
-    description: 'ToolLoopAgent with browser, search, memory, files, code execution, scheduling, audio, and subagent delegation.',
+    title: 'Autonomous Agents',
+    description:
+      'Stateful AI agents living in Durable Objects. Persona + memory blocks + tool catalog + scheduled triggers + webhook ingestion + full observability.',
+    bullets: [
+      'AssistantAgent / ResearcherAgent / WriterAgent worked examples',
+      'Multi-agent handoff (agents-as-tools pattern)',
+      'Cron-driven SweeperAgent for entity processing',
+      'Approval queue with run audit (cost / tokens / steps)',
+      'Daily budget cap + BYOK key resolution per user',
+    ],
+  },
+]
+
+/**
+ * The everything-else feature grid. Compact cards that map to the
+ * actual modules in the repo, so a fork browsing the landing knows
+ * exactly what they get.
+ */
+const features = [
+  { icon: Zap, title: 'Skills System', description: 'Claude Agent Skills compatible. 14 bundled skills + R2 + GitHub sources, AI-sparkle rewrite, diff approval.' },
+  { icon: Plug, title: 'MCP Connectors', description: 'Per-user OAuth to external MCP servers. PKCE + DCR, AES-GCM tokens, per-tool always/ask/never.' },
+  { icon: CheckSquare, title: 'Approvals Queue', description: 'Human-in-the-loop for agent actions. Memory updates, sends, posts — review before execute.' },
+  { icon: Activity, title: 'Agent Observability', description: '`agent_runs` audit table — cost, tokens, duration, steps per agent invocation. Stuck-run detection.' },
+  { icon: Search, title: 'FTS5 Search', description: 'Universal search across conversations, spaces, messages. Cross-space + in-space scoped queries.' },
+  { icon: Pin, title: 'Pin / Star / Forward', description: 'Per-space pinned shelf, personal stars, forward to any space you\'re a member of.' },
+  { icon: Mic, title: 'Voice Agent', description: 'Cloudflare Voice SDK — withVoiceInput mixin streams audio + Workers AI Deepgram Nova 3 transcription.' },
+  { icon: Camera, title: 'Video Agent', description: 'getUserMedia → canvas frame sample → vision model. Companion to the voice agent — no SDK, just primitives.' },
+  { icon: FileText, title: 'Files + Image + Video', description: 'R2 with metadata, Cloudflare Images for resize/crop/face/bg-remove, Media Transformations for video.' },
+  { icon: Database, title: 'Conversation Persistence', description: 'D1-backed messages + sidebar UI + summary + tags + auto-resume. ChatStorage interface (DO-ready).' },
+  { icon: Bell, title: 'Notifications', description: 'In-app bell, unread counts, URL-persisted filter, deep-links to source pages.' },
+  { icon: Key, title: 'API Tokens', description: 'SHA-256 hashed, scope-based access. Useful for ElevenLabs voice agents, MCP clients, external services.' },
+  { icon: Users, title: 'Better-Auth + Orgs', description: 'Google OAuth, optional email/password, role gating, org plugin, deep-link preserved through sign-in.' },
+  { icon: Flag, title: 'Feature Flags', description: 'DB-backed toggles, public + admin endpoints. Hide modules from the sidebar without deleting code.' },
+  { icon: GitBranch, title: 'Pattern Library', description: 'Every module is a worked example. Don\'t delete what you don\'t need — disable via flags. Reference for AI agents reading your codebase.' },
+  { icon: Lock, title: 'BYOK + Trust', description: 'Per-user model keys (Anthropic, OpenAI, Google, OpenRouter). Service credentials encrypted at rest.' },
+  { icon: Workflow, title: 'Cron + Background', description: 'Memory sweep, history-disabled cleanup, due-job processor. Existing 15-min cron has 5 sweep tasks already.' },
+  { icon: Eye, title: 'Comments + Watchers + Tags', description: 'Polymorphic business modules. Comments on any entity, watchers for changes, tags for organisation.' },
+  { icon: Palette, title: '59 UI Components', description: 'shadcn/ui complete + Tailwind v4, 8 themes, dark/light/system, command palette, keyboard shortcuts.' },
+  { icon: ShieldCheck, title: 'Sentry + Activity Log', description: 'Server-side error reporting hooks + audit trail with pagination, filters, entity history.' },
+  { icon: Sparkles, title: 'Card-format Bot Messages', description: 'Agents emit metadata.cardFormat for daily digests / reports — UI renders structured cards instead of text.' },
+  { icon: Shield, title: 'Privileged-tool Gating', description: 'Destructive tools (gmail_send, calendar_delete, sheets_write) need user-intent keyword unlock.' },
+]
+
+/**
+ * Spaces is the headline new thing — it gets a dedicated section
+ * because "multi-user multi-agent chat" doesn't compress well into a
+ * card.
+ */
+const spacesScenes: Array<{ icon: typeof Hash; title: string; body: string }> = [
+  {
+    icon: Bot,
+    title: 'Agents reply when called',
+    body: '@-mention @research and they answer. Stay quiet otherwise. Per-agent reply modes (mention / proactive / ambient / always / off) so each room sets its own vibe.',
   },
   {
-    icon: Database,
-    title: 'Conversation Persistence',
-    description: 'Chat history saved to D1 with sidebar UI, conversation resume, and message validation.',
+    icon: MessageSquare,
+    title: 'Threads keep the timeline glanceable',
+    body: 'Long agent replies auto-thread. Replies inside a thread stay there. The thread pane has a per-thread bell so you can mute noisy ones.',
   },
   {
-    icon: Zap,
-    title: 'Image + Video Processing',
-    description: 'Cloudflare Images and Media bindings for resize, crop, background removal, face detection, and video clipping.',
+    icon: Sparkles,
+    title: 'Reactions are first-class',
+    body: '👍 ✅ ❤️ quick-bar plus the full emoji-mart picker. Bots react with the same emojis humans do. Classifier-driven `ambient` agents react silently when there\'s signal.',
   },
   {
-    icon: Shield,
-    title: 'Auth + Admin',
-    description: 'Google OAuth, email/password, role-based access, API tokens with scopes, session management.',
-  },
-  {
-    icon: Flag,
-    title: 'Skills System',
-    description: 'Claude Agent Skills compatible. 14 bundled skills, plus install from R2 or GitHub at runtime.',
-  },
-  {
-    icon: Key,
-    title: 'MCP Integration',
-    description: 'Full MCP spec support: tools, resources, prompts, elicitation. Connect to any MCP server.',
-  },
-  {
-    icon: Users,
-    title: 'Business Modules',
-    description: 'Comments, tags, watchers, favourites, recent views, soft delete — all polymorphic.',
-  },
-  {
-    icon: Activity,
-    title: 'Semantic Search',
-    description: 'AI SDK embeddings with Vectorize-ready vector storage. Cosine similarity with in-memory fallback.',
-  },
-  {
-    icon: Bell,
-    title: 'DataTable + Editor',
-    description: 'TanStack Table with sort, filter, pagination, bulk actions. Milkdown markdown editor.',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Human-in-the-Loop',
-    description: 'needsApproval on destructive tools, token budget tracking via prepareStep, tool approval UI.',
-  },
-  {
-    icon: Palette,
-    title: '59 UI Components',
-    description: 'Complete shadcn/ui library with Tailwind v4, 8 themes, dark/light mode, command palette.',
+    icon: Pin,
+    title: 'Pin · Star · Quote · Forward',
+    body: 'Pin to space (collective), star (personal bookmark), quote-in-reply with a chip preview, forward a message to any other space you\'re in.',
   },
 ]
 
@@ -100,28 +175,28 @@ export function LandingPage() {
   const isAuthed = !!session?.user
   const primaryCtaHref = isAuthed ? '/dashboard' : '/sign-up'
   const primaryCtaLabel = isAuthed ? 'Open Dashboard' : 'Get Started'
-  const secondaryCtaLabel = isAuthed ? 'Open Dashboard' : 'Try the Demo'
 
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
       <section className="relative overflow-hidden border-b border-border">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-background" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-background" />
 
-        <div className="container relative mx-auto max-w-6xl px-4 py-16 md:py-20">
+        <div className="container relative mx-auto max-w-6xl px-4 py-16 md:py-24">
           <div className="flex flex-col items-center text-center">
             <Badge variant="secondary" className="mb-4">
-              AI Agent Starter Kit for Cloudflare
+              AI-native starter for Cloudflare Workers
             </Badge>
 
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl max-w-4xl">
-              Build AI apps{' '}
-              <span className="text-primary">at the edge</span>
+              Multi-user. Multi-agent.{' '}
+              <span className="bg-gradient-to-r from-primary to-emerald-500 bg-clip-text text-transparent">
+                Built at the edge.
+              </span>
             </h1>
 
             <p className="mt-6 text-lg text-muted-foreground max-w-2xl md:text-xl">
-              60+ agent tools, conversation persistence, image and video processing,
-              semantic search, and a full business module library. All on Cloudflare Workers.
+              Spaces, Projects, AI chat with 95+ tools, autonomous agents, MCP, voice, video, observability. Every module is a worked example you can fork, rebrand, and ship.
             </p>
 
             <div className="mt-10 flex flex-col sm:flex-row gap-4">
@@ -145,63 +220,53 @@ export function LandingPage() {
               )}
             </div>
 
-            <div className="mt-8 flex items-center gap-6 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-green-500 dark:bg-green-400" />
-                MIT Licensed
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-blue-500 dark:bg-blue-400" />
-                TypeScript
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-orange-500 dark:bg-orange-400" />
-                Cloudflare Ready
-              </div>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
+              <Stat value="95+" label="agent tools" />
+              <Stat value="16" label="AI models" />
+              <Stat value="30+" label="modules" />
+              <Stat value="4" label="agent kinds" />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Features Grid */}
-      <section className="py-16 bg-muted/30">
+      {/* Primary surfaces */}
+      <section className="py-16 md:py-20">
         <div className="container mx-auto max-w-6xl px-4">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Everything you need to ship
-            </h2>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Four primary surfaces</h2>
             <p className="mt-3 text-lg text-muted-foreground max-w-2xl mx-auto">
-              AI agent toolkit, edge platform integration, and production-ready business modules.
+              Where users spend their time. Each one is a complete reference implementation with patterns you can copy.
             </p>
           </div>
-
-          {/* Hero features — top 3 get extra prominence */}
-          <div className="grid gap-4 md:grid-cols-3 mb-4">
-            {features.slice(0, 3).map((feature) => (
-              <Card key={feature.title} className="border-primary/20 bg-primary/[0.02]">
-                <CardContent className="pt-6 pb-5">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary mb-3">
-                    <feature.icon className="h-5 w-5" />
-                  </div>
-                  <h3 className="text-base font-semibold mb-1.5">{feature.title}</h3>
-                  <p className="text-muted-foreground text-sm">{feature.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Remaining features — compact grid */}
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {features.slice(3).map((feature) => (
-              <Card key={feature.title} className="border-border/50">
-                <CardContent className="pt-4 pb-4">
-                  <div className="flex items-center gap-2.5 mb-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted text-muted-foreground shrink-0">
-                      <feature.icon className="h-4 w-4" />
+          <div className="grid gap-4 md:grid-cols-2">
+            {primarySurfaces.map((surface) => (
+              <Card key={surface.title} className="border-primary/20 bg-gradient-to-br from-primary/[0.03] to-background">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <surface.icon className="h-5 w-5" />
                     </div>
-                    <h3 className="text-sm font-semibold">{feature.title}</h3>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-lg font-semibold">{surface.title}</h3>
+                        {surface.badge && (
+                          <Badge variant="default" className="text-[10px] uppercase tracking-wider">
+                            {surface.badge}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-muted-foreground text-xs leading-relaxed">{feature.description}</p>
+                  <p className="text-sm text-muted-foreground mb-3">{surface.description}</p>
+                  <ul className="space-y-1 text-xs text-muted-foreground">
+                    {surface.bullets.map((b) => (
+                      <li key={b} className="flex items-start gap-1.5">
+                        <span className="mt-1 inline-block h-1 w-1 rounded-full bg-primary/50" />
+                        <span>{b}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </CardContent>
               </Card>
             ))}
@@ -209,34 +274,123 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Tech Stack */}
+      {/* Spaces deep-dive */}
+      <section className="py-16 bg-muted/30 border-y border-border">
+        <div className="container mx-auto max-w-6xl px-4">
+          <div className="grid gap-10 lg:grid-cols-[1fr_1.4fr] items-start">
+            <div>
+              <Badge variant="secondary" className="mb-3">Headline feature</Badge>
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-3">
+                Spaces — Slack-style rooms with AI as a first-class member.
+              </h2>
+              <p className="text-muted-foreground mb-4">
+                The pattern that big-LLM products haven&apos;t shipped yet: a multi-user chat where AI agents are members alongside humans. @-mention them and they answer. Set their reply mode and they jump in proactively, react ambiently, or stay quiet.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Built on Cloudflare Agents SDK + Durable Objects for presence and live broadcast. D1 is canonical storage. Approval queue routes destructive agent actions through a human-in-the-loop. WebSocket is just for live fan-out.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-2">
+                <Badge variant="outline">@-autocomplete</Badge>
+                <Badge variant="outline">Threads · Reactions</Badge>
+                <Badge variant="outline">Templates</Badge>
+                <Badge variant="outline">Cross-space search</Badge>
+                <Badge variant="outline">MCP attachments</Badge>
+                <Badge variant="outline">Slash sub-commands</Badge>
+                <Badge variant="outline">Per-thread mute</Badge>
+                <Badge variant="outline">Block / Pin / Star / Forward</Badge>
+              </div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {spacesScenes.map((s) => (
+                <Card key={s.title} className="border-border/60">
+                  <CardContent className="p-4">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mb-2">
+                      <s.icon className="h-4 w-4" />
+                    </div>
+                    <h3 className="text-sm font-semibold mb-1">{s.title}</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{s.body}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Wide feature grid */}
+      <section className="py-16">
+        <div className="container mx-auto max-w-6xl px-4">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Everything else, included.</h2>
+            <p className="mt-3 text-lg text-muted-foreground max-w-2xl mx-auto">
+              30+ modules. Not toy demos — production patterns shaped by real apps.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {features.map((f) => (
+              <Card key={f.title} className="border-border/50">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2.5 mb-2">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                      <f.icon className="h-4 w-4" />
+                    </div>
+                    <h3 className="text-sm font-semibold">{f.title}</h3>
+                  </div>
+                  <p className="text-muted-foreground text-xs leading-relaxed">{f.description}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Architecture */}
+      <section className="py-16 bg-muted/30 border-y border-border">
+        <div className="container mx-auto max-w-6xl px-4">
+          <div className="grid gap-8 lg:grid-cols-2 items-center">
+            <div>
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-3">
+                Built the way you should build on Cloudflare.
+              </h2>
+              <p className="text-muted-foreground mb-4">
+                Workers + Static Assets at the edge. D1 for persistence. R2 for files. Durable Objects for stateful agents. Workers AI free tier + OpenRouter for everything else. Vectorize-ready when you need semantic memory.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Every module is opt-in via feature flags. Don&apos;t delete what you don&apos;t need — keep it as a worked example for the next person (or AI agent) reading your code.
+              </p>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-5 font-mono text-xs leading-relaxed">
+              <div className="text-muted-foreground">// wrangler.jsonc — opt-in bindings</div>
+              <div className="mt-2"><span className="text-muted-foreground">d1_databases</span>: [DB]</div>
+              <div><span className="text-muted-foreground">r2_buckets</span>: [AVATARS, FILES, SKILLS, DATA_LAKE]</div>
+              <div><span className="text-muted-foreground">ai</span>: AI</div>
+              <div><span className="text-muted-foreground">images</span>: IMAGES</div>
+              <div><span className="text-muted-foreground">media</span>: MEDIA</div>
+              <div><span className="text-muted-foreground">durable_objects</span>:</div>
+              <div className="ml-4">VoiceInputExample · VideoInputExample</div>
+              <div className="ml-4">ReminderAgent · AssistantAgent</div>
+              <div className="ml-4">ResearcherAgent · WriterAgent</div>
+              <div className="ml-4">SweeperAgent · ScratchpadMcpAgent</div>
+              <div className="ml-4 text-emerald-600 dark:text-emerald-400">SpaceAgent ← new</div>
+              <div className="mt-2"><span className="text-muted-foreground">triggers.crons</span>: [&quot;*/15 * * * *&quot;]</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Tech stack */}
       <section className="py-12">
         <div className="container mx-auto max-w-6xl px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">
-              Modern Tech Stack
-            </h2>
-            <p className="text-muted-foreground">
-              Built with the best tools for developer experience and performance.
-            </p>
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">Modern stack</h2>
+            <p className="text-muted-foreground">Latest of everything. Updated weekly as the ecosystem ships.</p>
           </div>
-
-          <div className="flex flex-wrap justify-center gap-4">
+          <div className="flex flex-wrap justify-center gap-2">
             {[
-              'React 19',
-              'Vite 7',
-              'Hono',
-              'AI SDK v6',
-              'Cloudflare Workers',
-              'Workers AI',
-              'D1 + Drizzle ORM',
-              'R2 Storage',
-              'better-auth',
-              'Tailwind v4',
-              'shadcn/ui (59)',
-              'TanStack Query + Table',
-              'Milkdown Editor',
-              'Zod',
+              'React 19', 'Vite 7', 'Hono 4.12', 'AI SDK v6', 'Cloudflare Agents SDK',
+              'Workers AI', 'D1 + Drizzle', 'R2', 'Durable Objects', 'Vectorize',
+              'better-auth 1.6', 'Tailwind v4', 'shadcn/ui (59)', 'TanStack Query 5',
+              'Milkdown', 'Zod', 'emoji-mart', 'OpenRouter',
             ].map((tech) => (
               <Badge key={tech} variant="secondary" className="text-sm py-1.5 px-3">
                 {tech}
@@ -246,17 +400,15 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-24 bg-muted/30">
+      {/* CTA */}
+      <section className="py-20 bg-gradient-to-b from-muted/30 to-background border-t border-border">
         <div className="container mx-auto max-w-4xl px-4 text-center">
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">
-            Ready to build?
+            Fork it. Ship something nobody else has.
           </h2>
           <p className="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto">
-            Clone the repo and start building your next project in minutes.
+            The pattern library that lets you build assistive SaaS at the edge — without rebuilding the platform every time.
           </p>
-          {/* Copy-pasteable clone command — meets "Clone the repo" copy
-              with an actual clone command so the CTA isn't just words. */}
           {appConfig.githubUrl && (
             <div className="mb-8 max-w-2xl mx-auto">
               <div className="rounded-lg border bg-background/60 px-4 py-3 text-left font-mono text-sm text-muted-foreground overflow-x-auto">
@@ -272,25 +424,21 @@ export function LandingPage() {
                   className="underline underline-offset-2 hover:text-foreground"
                 >
                   FORKING.md
-                </a>
-                {' '}for the rebrand + customise checklist.
+                </a>{' '}
+                for the rebrand + customise checklist.
               </p>
             </div>
           )}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" asChild>
               <Link to={primaryCtaHref}>
-                {secondaryCtaLabel}
+                Try it live
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
             {appConfig.githubUrl && (
               <Button size="lg" variant="outline" asChild>
-                <a
-                  href={appConfig.githubUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
+                <a href={appConfig.githubUrl} target="_blank" rel="noopener noreferrer">
                   <GithubIcon className="mr-2 h-4 w-4" />
                   Star on GitHub
                 </a>
@@ -299,6 +447,15 @@ export function LandingPage() {
           </div>
         </div>
       </section>
+    </div>
+  )
+}
+
+function Stat({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="flex items-baseline gap-1.5">
+      <span className="text-base font-bold text-foreground">{value}</span>
+      <span>{label}</span>
     </div>
   )
 }

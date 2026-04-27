@@ -16,6 +16,28 @@ One prompt, two tool calls (`get_server_time` + `calculate`), streamed response 
 
 ---
 
+## Headline feature: Spaces
+
+Multi-user, multi-agent rooms — the pattern big-LLM products haven't shipped yet. @-mention an agent and they answer; threads, reactions, pinned messages, presence, the works. Built on Cloudflare Agents SDK + Durable Objects with D1 as canonical storage.
+
+```
+┌─────────────┬──────────────────────────────┬──────────────┐
+│ Members     │  # marketing-pod             │ Thread       │
+│ 🟢 Sarah    │  Sarah: hey @research, can   │ "@research…" │
+│ 🟢 Tom      │    you grab the latest…      │ ──────────   │
+│ ── Agents ──│  🤖 research: Here are the   │ Reply 1      │
+│ 🤖 research │    top 3 sources I found…    │ Reply 2      │
+│ 🤖 writer   │    └ 5 replies →             │ ─ Unread ─   │
+│             │  Tom: 👍 ✅                  │ Reply 3      │
+└─────────────┴──────────────────────────────┴──────────────┘
+```
+
+Per-agent reply modes (`mention` / `proactive` / `ambient` / `always` / `off`), 6 starter templates, threads, reactions (👍 ✅ ❤️ + emoji-mart picker), pin to space, personal star, quote-in-reply, forward to any space, cross-space FTS5 search, MCP attachments, slash sub-commands, per-thread mute, mobile drawer, history toggle. All shipped.
+
+→ See [`docs/AGENTS.md`](./docs/AGENTS.md) and `.jez/artifacts/spaces-unified-plan-2026-04-27.md` for the architecture.
+
+---
+
 ## Tour
 
 | | |
@@ -23,6 +45,8 @@ One prompt, two tool calls (`get_server_time` + `calculate`), streamed response 
 | ![Dashboard](./docs/screenshots/03-dashboard.png) | **Dashboard shell** — config-driven sidebar with role + feature-flag gating. Edit `nav.ts`, not layouts. |
 | ![Chat](./docs/screenshots/04-chat-empty.png) | **AI Chat** — greeting by time of day, preset prompts, persisted conversations. 16 models across 8 providers. |
 | ![Chat with tools](./docs/screenshots/05-chat-with-tools.png) | **Agent loop in one turn** — tool chips, reasoning, streamed answer. Every call logs tokens and duration. |
+| `/dashboard/spaces` | **Spaces (NEW)** — multi-user multi-agent rooms with @-mentions, threads, reactions, pin/star/quote/forward, cross-space search, proactive/ambient modes, slash sub-commands, MCP attachments. |
+| `/dashboard/projects` | **Projects** — long-lived workspaces grouping conversations, files, instructions, memory. Multi-user share with editor/viewer roles (Phase 5). |
 | ![Extract](./docs/screenshots/06-extract.png) | **Structured output** — upload a document, get JSON matching a Zod schema. Uses `env.AI.toMarkdown()` for PDFs. |
 | ![Components](./docs/screenshots/07-components.png) | **Components showcase** — a living pattern library of the UI primitives used throughout the app. |
 | ![Admin](./docs/screenshots/08-admin.png) | **Admin panel** — user + role management, stats, auto-promotion via `ADMIN_EMAILS`. |
@@ -32,6 +56,21 @@ One prompt, two tool calls (`get_server_time` + `calculate`), streamed response 
 ---
 
 ## What it gives you
+
+**Multi-user multi-agent rooms (Spaces)**
+
+- @-mention dispatch — agent members reply when called by name; per-agent reply modes (mention / proactive / ambient / always / off)
+- Proactive + ambient classifier path — Workers AI Gemma 4 26B decides "should @<name> jump in or react?" with 2-call cap per top-level message
+- Threads with auto-thread for long agent replies (>800 chars), per-thread bell mute via `thread_subscriptions`
+- Reactions: 👍 ✅ ❤️ quick-bar + lazy-loaded emoji-mart full picker; bots react with the same icons humans do
+- Pin to space (admin/owner — pinned shelf in the header), personal star, quote-in-reply with chip preview, forward message to any space you're in
+- 6 starter templates (Solo workshop, Marketing pod, Support war room, Research room, Writer's desk, Blank) + per-agent checkbox + reply-mode picker
+- Cross-space FTS5 search (`/api/search/messages?q=`) + in-space FTS5 (LIKE-scan fallback)
+- WebSocket presence + live broadcast via Cloudflare Agents SDK; D1 is canonical storage, DO is just for live fan-out
+- "+ menu" attachments — Attach file, Reference project, Reference MCP resource (server-side `resources/list` JSON-RPC)
+- Slash sub-commands — `@research /summarise <url>` lifts the slash command into structured agent guidance
+- Block member, history toggle (24h auto-delete sweep), card-format bot messages for daily digests
+- Multi-user Projects (Phase 5) — `project_members` table, owner/editor/viewer, share dialog with invite
 
 **AI agent layer**
 
