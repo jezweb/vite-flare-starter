@@ -60,6 +60,9 @@ Pick the next AVAILABLE task in ID order. Mark it in-progress in your iteration 
 
 *(Append entries here. Newest at top.)*
 
+### Bail — 2026-04-27T14:05Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED). Note: previous agent runs from 2026-04-25T06:26Z through 2026-04-27T13:34Z were committing bail entries to an orphaned detached HEAD chain instead of origin/main — those entries exist as orphaned commits but are not reflected here. All tasks remain DONE/SKIP/BLOCKED.
+
 ### Bail — 2026-04-25T05:03Z
 Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
 
