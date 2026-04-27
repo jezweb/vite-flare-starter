@@ -119,6 +119,13 @@ export interface AutonomousAgentState {
    *  `getWebhookSecret()`. Empty string until then so the JSON shape
    *  stays stable. Rotate via `regenerateWebhookSecret()`. */
   webhookSecret: string
+  /** Optional allow-list of tool names this agent may call. When non-null
+   *  and non-empty, `buildToolset` filters BOTH local ToolDefinitions and
+   *  per-user MCP tools down to entries whose name appears in the list.
+   *  Null / undefined / empty array = no filtering (all available tools
+   *  exposed). Set per-routine in slice 3+; for now sub-classes can opt
+   *  in directly via `setToolsAllowed`. */
+  toolsAllowed?: string[] | null
   /** Daily USD spending cap (queried from agent_runs.cost_usd). Null
    *  = no cap. When set, runOnce throws BudgetExceededError and the
    *  audit row is recorded with outcome='budget_exceeded'. Soft-warn
@@ -257,6 +264,7 @@ export abstract class AutonomousAgent<
       },
       webhookSecret: '',
       dailyBudgetUsd: null,
+      toolsAllowed: null,
     }
   }
 
@@ -738,6 +746,21 @@ export abstract class AutonomousAgent<
   }
 
   /**
+   * Restrict the agent to a specific allow-list of tool names. Pass
+   * null (or call with no arg) to remove the restriction and expose all
+   * available tools again.
+   *
+   * Tools are filtered by name on each `buildToolset` call. Names that
+   * don't match any registered tool (local or MCP) are silently
+   * ignored — the allow-list is a filter, not a contract that all
+   * names exist.
+   */
+  async setToolsAllowed(names: string[] | null): Promise<void> {
+    const next = names && names.length > 0 ? Array.from(new Set(names)) : null
+    this.setState({ ...this.state, toolsAllowed: next })
+  }
+
+  /**
    * Sum cost_usd from agent_runs for THIS agent instance over the
    * rolling 24-hour window. Returns 0 if no priced runs (Workers AI
    * runs have null cost which SUM ignores).
@@ -887,7 +910,11 @@ export abstract class AutonomousAgent<
    * connection pool reuses idle connections so the cost is bounded.
    */
   protected async buildToolset(): Promise<Awaited<ReturnType<typeof collectAvailableTools>>> {
-    const defs = await this.getToolDefinitions()
+    const allowed = this.state.toolsAllowed
+    const allowedSet = allowed && allowed.length > 0 ? new Set(allowed) : null
+    const defs = (await this.getToolDefinitions()).filter(
+      (d) => !allowedSet || allowedSet.has(d.name),
+    )
     const agentUser: AgentUser = {
       id: this.state.userId ?? '',
       email: '',
@@ -975,6 +1002,16 @@ export abstract class AutonomousAgent<
       }
     }
 
-    return { ...localTools, ...mcpTools } as Awaited<ReturnType<typeof collectAvailableTools>>
+    // Apply the same allow-list to MCP tools — names from the user's
+    // connected MCP servers may not be known up front, but if a routine
+    // declares e.g. ['gmail_search', 'inbox_add'] we only want those
+    // exposed regardless of where they originate.
+    const filteredMcp = allowedSet
+      ? Object.fromEntries(
+          Object.entries(mcpTools).filter(([name]) => allowedSet.has(name)),
+        )
+      : mcpTools
+
+    return { ...localTools, ...filteredMcp } as Awaited<ReturnType<typeof collectAvailableTools>>
   }
 }

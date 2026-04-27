@@ -187,39 +187,42 @@ function ApprovalCard({ approval, highlight }: { approval: Approval; highlight: 
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <StatusBadge status={approval.status} />
-              <span className="text-xs font-mono text-muted-foreground">
-                {approval.agentClass}
-              </span>
-              <span className="text-xs text-muted-foreground">·</span>
-              <span className="text-xs font-mono text-muted-foreground truncate">
-                {approval.agentName}
-              </span>
-              <span className="text-xs text-muted-foreground">·</span>
-              <Badge variant="outline" className="text-[10px] px-1 py-0 font-mono font-normal">
-                {approval.action}
-              </Badge>
+              <span className="text-xs text-muted-foreground">queued {ageStr}</span>
             </div>
             <CardTitle className="mt-2 text-base leading-snug">
-              {approval.summary || `${approval.action} (no summary)`}
+              {approval.summary || prettifyAction(approval.action)}
             </CardTitle>
-            <p className="mt-1 text-xs text-muted-foreground">queued {ageStr}</p>
           </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-3 pt-0">
         {isMemory && <MemoryProposalPreview payload={approval.payload} />}
+
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
           className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
         >
           {open ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
-          {open ? 'Hide' : 'Show'} payload
+          {open ? 'Hide details' : 'Show details'}
         </button>
         {open && (
-          <pre className="rounded-md border bg-muted/40 p-3 text-[11px] leading-relaxed font-mono whitespace-pre-wrap break-words max-h-72 overflow-auto">
-            {JSON.stringify(approval.payload, null, 2)}
-          </pre>
+          <div className="space-y-2 rounded-md border bg-muted/30 p-3">
+            <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+              <dt className="text-muted-foreground">Agent</dt>
+              <dd className="font-mono">{approval.agentClass}</dd>
+              <dt className="text-muted-foreground">Instance</dt>
+              <dd className="font-mono break-all">{approval.agentName}</dd>
+              <dt className="text-muted-foreground">Action</dt>
+              <dd className="font-mono">{approval.action}</dd>
+            </dl>
+            <div>
+              <p className="mb-1 text-[11px] uppercase tracking-wider text-muted-foreground">Payload</p>
+              <pre className="rounded border bg-background p-2 text-[11px] leading-relaxed font-mono whitespace-pre-wrap break-words max-h-72 overflow-auto">
+                {JSON.stringify(approval.payload, null, 2)}
+              </pre>
+            </div>
+          </div>
         )}
 
         {approval.error && (
@@ -383,6 +386,14 @@ function MemoryProposalPreview({ payload }: { payload: unknown }) {
       )}
     </div>
   )
+}
+
+// Friendlier fallback when an agent didn't supply a summary.
+// Turns `send_email` → `Send email`, falls back to the raw token.
+function prettifyAction(action: string): string {
+  if (!action) return 'Action'
+  const spaced = action.replace(/[_-]+/g, ' ').trim()
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1)
 }
 
 function StatusBadge({ status }: { status: Status }) {

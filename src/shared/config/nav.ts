@@ -73,13 +73,8 @@ export const NAV_SECTIONS: NavSection[] = [
       { to: '/dashboard/chat', label: 'AI Chat', icon: MessageSquare, feature: 'chat' },
       { to: '/dashboard/projects', label: 'Projects', icon: FolderKanban },
       { to: '/dashboard/spaces', label: 'Spaces', icon: Users, feature: 'spaces' },
-      { to: '/dashboard/extract', label: 'Extract', icon: Sparkles, feature: 'chat' },
-      { to: '/dashboard/files', label: 'Files', icon: FolderOpen, feature: 'files' },
       { to: '/dashboard/skills', label: 'Skills', icon: Zap, feature: 'skills' },
       { to: '/dashboard/connectors', label: 'Connectors', icon: Plug, feature: 'connectors' },
-      { to: '/dashboard/activity', label: 'Activity', icon: Activity, feature: 'activity' },
-      { to: '/dashboard/voice-example', label: 'Voice Example', icon: Mic, feature: 'voiceAgent' },
-      { to: '/dashboard/video-example', label: 'Video Example', icon: Camera, feature: 'videoAgent' },
     ],
   },
   {
@@ -87,6 +82,17 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { to: '/dashboard/notifications', label: 'Notifications', icon: Bell, feature: 'notifications' },
       { to: '/dashboard/approvals', label: 'Approvals', icon: CheckSquare },
+    ],
+  },
+  {
+    label: 'More',
+    defaultCollapsed: true,
+    items: [
+      { to: '/dashboard/extract', label: 'Extract', icon: Sparkles, feature: 'chat' },
+      { to: '/dashboard/files', label: 'Files', icon: FolderOpen, feature: 'files' },
+      { to: '/dashboard/activity', label: 'Activity', icon: Activity, feature: 'activity' },
+      { to: '/dashboard/voice-example', label: 'Voice Example', icon: Mic, feature: 'voiceAgent' },
+      { to: '/dashboard/video-example', label: 'Video Example', icon: Camera, feature: 'videoAgent' },
     ],
   },
 ]

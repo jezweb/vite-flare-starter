@@ -84,7 +84,12 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
 
       <SidebarContent>
         {visibleSections.map((section) => (
-          <NavMain key={section.label} label={section.label} items={section.items} />
+          <NavMain
+            key={section.label}
+            label={section.label}
+            items={section.items}
+            defaultCollapsed={section.defaultCollapsed}
+          />
         ))}
       </SidebarContent>
 
