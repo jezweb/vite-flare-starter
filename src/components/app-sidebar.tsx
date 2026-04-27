@@ -60,8 +60,18 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
               <Link to="/">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <span className="text-xs font-bold">{appConfig.name.charAt(0)}</span>
+                <div className="flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg bg-primary text-primary-foreground">
+                  {appConfig.logoUrl ? (
+                    // Real logo image — fork sets VITE_APP_LOGO_URL.
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={appConfig.logoUrl}
+                      alt={appConfig.name}
+                      className="size-full object-contain"
+                    />
+                  ) : (
+                    <span className="text-xs font-bold">{appConfig.name.charAt(0)}</span>
+                  )}
                 </div>
                 <div className="grid flex-1 text-left leading-tight">
                   <span className="truncate text-base font-semibold">{appConfig.name}</span>

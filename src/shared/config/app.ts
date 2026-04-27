@@ -69,6 +69,19 @@ export const appConfig = {
    * @env VITE_FOOTER_TEXT
    */
   footerText: import.meta.env['VITE_FOOTER_TEXT'] || '',
+
+  /**
+   * Optional logo URL (PNG / SVG / etc.) shown in the sidebar header
+   * + landing page header. When set, replaces the auto-generated
+   * initial-letter badge with a real image.
+   *
+   *   VITE_APP_LOGO_URL=/logo.png             (drop the file in public/)
+   *   VITE_APP_LOGO_URL=https://cdn.../logo.svg
+   *
+   * Leave empty to fall back to the initial-letter badge.
+   * @env VITE_APP_LOGO_URL
+   */
+  logoUrl: import.meta.env['VITE_APP_LOGO_URL'] || '',
 } as const
 
 /**

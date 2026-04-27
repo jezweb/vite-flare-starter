@@ -411,6 +411,7 @@ If you don't change these, attackers can identify your site uses this starter:
 |----------|---------------|---------------|
 | Page title | "Vite Flare Starter" | `index.html` |
 | App name in UI | "Vite Flare Starter" | `VITE_APP_NAME` env var |
+| Sidebar logo badge | Auto-generated "V" from name | `VITE_APP_LOGO_URL=/logo.png` (drop logo in `public/`) |
 | localStorage keys | `vite-flare-starter-theme` | `VITE_APP_ID` env var |
 | API tokens | `vfs_` prefix | `VITE_TOKEN_PREFIX` env var |
 | Sentry release | `vite-flare-starter@x.x.x` | `VITE_APP_ID` env var |
