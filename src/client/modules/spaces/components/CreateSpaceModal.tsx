@@ -1,9 +1,10 @@
 /**
- * CreateSpaceModal — three options: Blank, Solo workshop, From template (Phase 2).
+ * CreateSpaceModal — three options: Blank (custom), Templates, Solo.
  *
- * Phase 1 ships only Blank and Solo workshop. Solo is a shortcut: just
- * the creator + a few default agents in mention mode. Both surfaces
- * call the same POST /api/spaces under the hood.
+ * Phase 1 ships ALL three. Templates are config-driven (see
+ * `src/shared/config/space-templates.ts`), Blank lets the user pick
+ * agents via checkboxes + per-agent reply mode, Solo is a one-click
+ * shortcut (you + every default agent in mention mode).
  */
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -20,57 +21,118 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Checkbox } from '@/components/ui/checkbox'
 import { useCreateSpace } from '../hooks/useSpaces'
+import {
+  AGENT_CATALOGUE,
+  SPACE_TEMPLATES,
+  type SpaceTemplate,
+  type ReplyMode,
+} from '@/shared/config/space-templates'
+import { cn } from '@/lib/utils'
 
 interface Props {
   open: boolean
   onClose: () => void
 }
 
+interface AgentSelection {
+  enabled: boolean
+  replyMode: ReplyMode
+}
+
 export function CreateSpaceModal({ open, onClose }: Props) {
   const navigate = useNavigate()
   const create = useCreateSpace()
-  const [tab, setTab] = useState<'blank' | 'solo' | 'template'>('blank')
+  const [tab, setTab] = useState<'blank' | 'template' | 'solo'>('blank')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  const [defaultReplyMode, setDefaultReplyMode] = useState<ReplyMode>('mention')
+  // One row per catalogue entry — tracks enabled + replyMode for each.
+  const [agentSel, setAgentSel] = useState<Record<string, AgentSelection>>(() =>
+    Object.fromEntries(
+      AGENT_CATALOGUE.map((a) => [a.agentName, { enabled: true, replyMode: 'mention' as ReplyMode }]),
+    ),
+  )
 
   useEffect(() => {
     if (!open) {
       setTitle('')
       setDescription('')
+      setDefaultReplyMode('mention')
       setTab('blank')
+      setAgentSel(
+        Object.fromEntries(
+          AGENT_CATALOGUE.map((a) => [a.agentName, { enabled: true, replyMode: 'mention' }]),
+        ),
+      )
     }
   }, [open])
 
-  const submit = async (mode: 'blank' | 'solo') => {
+  const enabledAgents = AGENT_CATALOGUE.filter((a) => agentSel[a.agentName]?.enabled).map((a) => ({
+    agentClass: a.agentClass,
+    agentName: a.agentName,
+    replyMode: agentSel[a.agentName]?.replyMode ?? 'mention',
+  }))
+
+  const submitBlank = async () => {
     if (!title.trim()) return
-    const agents =
-      mode === 'solo'
-        ? [
-            { agentClass: 'AssistantAgent', agentName: 'assistant', replyMode: 'mention' as const },
-            { agentClass: 'ResearcherAgent', agentName: 'research', replyMode: 'mention' as const },
-            { agentClass: 'WriterAgent', agentName: 'writer', replyMode: 'mention' as const },
-          ]
-        : [{ agentClass: 'AssistantAgent', agentName: 'assistant', replyMode: 'mention' as const }]
     try {
       const result = await create.mutateAsync({
         title: title.trim(),
         description: description.trim() || undefined,
         spaceMode: 'invite',
-        defaultReplyMode: 'mention',
-        agents,
+        defaultReplyMode,
+        agents: enabledAgents,
       })
       onClose()
       navigate(`/dashboard/spaces/${result.id}`)
     } catch (err) {
-      // Surface the error inline. The mutation tracks state via create.error.
+      console.error(err)
+    }
+  }
+
+  const submitTemplate = async (tpl: SpaceTemplate) => {
+    const finalTitle = title.trim() || tpl.suggestedTitle.trim() || tpl.name
+    try {
+      const result = await create.mutateAsync({
+        title: finalTitle,
+        description: tpl.description || undefined,
+        spaceMode: 'invite',
+        defaultReplyMode: 'mention',
+        agents: tpl.agents.map((a) => ({ ...a })),
+      })
+      onClose()
+      navigate(`/dashboard/spaces/${result.id}`)
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const submitSolo = async () => {
+    if (!title.trim()) return
+    try {
+      const result = await create.mutateAsync({
+        title: title.trim(),
+        description: 'Solo workshop — me + every default agent in @-mention mode.',
+        spaceMode: 'invite',
+        defaultReplyMode: 'mention',
+        agents: AGENT_CATALOGUE.map((a) => ({
+          agentClass: a.agentClass,
+          agentName: a.agentName,
+          replyMode: 'mention' as ReplyMode,
+        })),
+      })
+      onClose()
+      navigate(`/dashboard/spaces/${result.id}`)
+    } catch (err) {
       console.error(err)
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>New space</DialogTitle>
           <DialogDescription>
@@ -81,18 +143,20 @@ export function CreateSpaceModal({ open, onClose }: Props) {
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="blank">
               <Hash className="mr-1.5 size-3.5" />
-              Blank
+              Custom
             </TabsTrigger>
-            <TabsTrigger value="solo">
-              <Sparkles className="mr-1.5 size-3.5" />
-              Solo workshop
-            </TabsTrigger>
-            <TabsTrigger value="template" disabled>
+            <TabsTrigger value="template">
               <FolderKanban className="mr-1.5 size-3.5" />
               Templates
             </TabsTrigger>
+            <TabsTrigger value="solo">
+              <Sparkles className="mr-1.5 size-3.5" />
+              Solo
+            </TabsTrigger>
           </TabsList>
-          <TabsContent value="blank" className="space-y-3 pt-3">
+
+          {/* Custom — pick agents + reply modes */}
+          <TabsContent value="blank" className="space-y-4 pt-3">
             <div className="space-y-1.5">
               <Label htmlFor="space-title">Name</Label>
               <Input
@@ -110,11 +174,67 @@ export function CreateSpaceModal({ open, onClose }: Props) {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="What is this space for?"
-                rows={3}
+                rows={2}
               />
             </div>
-            <div className="text-xs text-muted-foreground">
-              Default: agents reply only when @-mentioned. You can change this in space settings.
+            <div className="space-y-2">
+              <Label>Agents</Label>
+              <p className="text-xs text-muted-foreground">
+                Tick the agents to invite, then choose how each one responds. You can change this later.
+              </p>
+              <div className="space-y-2 rounded-md border border-border p-2">
+                {AGENT_CATALOGUE.map((a) => {
+                  const sel = agentSel[a.agentName] ?? { enabled: false, replyMode: 'mention' }
+                  return (
+                    <div key={a.agentName} className="flex items-start gap-3 rounded-md p-2 hover:bg-accent/40">
+                      <Checkbox
+                        id={`agent-${a.agentName}`}
+                        checked={sel.enabled}
+                        onCheckedChange={(checked) =>
+                          setAgentSel((prev) => ({
+                            ...prev,
+                            [a.agentName]: { ...sel, enabled: !!checked },
+                          }))
+                        }
+                        className="mt-0.5"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <label htmlFor={`agent-${a.agentName}`} className="cursor-pointer text-sm font-medium">
+                          @{a.agentName}
+                        </label>
+                        <p className="text-xs text-muted-foreground">{a.description}</p>
+                      </div>
+                      <select
+                        value={sel.replyMode}
+                        onChange={(e) =>
+                          setAgentSel((prev) => ({
+                            ...prev,
+                            [a.agentName]: { ...sel, replyMode: e.target.value as ReplyMode },
+                          }))
+                        }
+                        disabled={!sel.enabled}
+                        className="h-8 shrink-0 rounded-md border border-input bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 disabled:opacity-40"
+                      >
+                        <option value="mention">@-mention only</option>
+                        <option value="always">Replies always</option>
+                        <option value="off">Paused</option>
+                      </select>
+                    </div>
+                  )
+                })}
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Default reply mode for new members:{' '}
+                <select
+                  value={defaultReplyMode}
+                  onChange={(e) => setDefaultReplyMode(e.target.value as ReplyMode)}
+                  className="ml-1 h-6 rounded border border-input bg-background px-1 text-[11px]"
+                >
+                  <option value="mention">@-mention only</option>
+                  <option value="always">always</option>
+                  <option value="off">paused</option>
+                </select>
+              </p>
             </div>
             {create.error ? (
               <div className="text-xs text-destructive">{(create.error as Error).message}</div>
@@ -123,15 +243,58 @@ export function CreateSpaceModal({ open, onClose }: Props) {
               <Button variant="ghost" onClick={onClose} disabled={create.isPending}>
                 Cancel
               </Button>
-              <Button onClick={() => submit('blank')} disabled={!title.trim() || create.isPending}>
+              <Button onClick={submitBlank} disabled={!title.trim() || create.isPending}>
                 {create.isPending ? <Loader2 className="size-4 animate-spin" /> : 'Create'}
               </Button>
             </div>
           </TabsContent>
+
+          {/* Templates */}
+          <TabsContent value="template" className="space-y-3 pt-3">
+            <p className="text-xs text-muted-foreground">
+              Pick a template to start with a curated agent set + suggested name. Edit anything after.
+            </p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {SPACE_TEMPLATES.map((tpl) => (
+                <button
+                  key={tpl.id}
+                  type="button"
+                  className={cn(
+                    'group flex flex-col items-start gap-1 rounded-md border border-border bg-background p-3 text-left transition-colors',
+                    'hover:border-foreground/30 hover:bg-accent/40',
+                    'disabled:cursor-not-allowed disabled:opacity-50',
+                  )}
+                  onClick={() => submitTemplate(tpl)}
+                  disabled={create.isPending}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg leading-none">{tpl.emoji}</span>
+                    <span className="text-sm font-medium">{tpl.name}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{tpl.tagline}</p>
+                  {tpl.agents.length > 0 ? (
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {tpl.agents.map((a) => (
+                        <span key={a.agentName} className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] text-emerald-700 dark:text-emerald-300">
+                          @{a.agentName}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="mt-1 text-[10px] text-muted-foreground">No agents — add later</span>
+                  )}
+                </button>
+              ))}
+            </div>
+            {create.error ? (
+              <div className="text-xs text-destructive">{(create.error as Error).message}</div>
+            ) : null}
+          </TabsContent>
+
+          {/* Solo */}
           <TabsContent value="solo" className="space-y-3 pt-3">
             <p className="text-sm text-muted-foreground">
-              Just you + AssistantAgent, ResearcherAgent, and WriterAgent. All in @-mention mode —
-              they only reply when you call them by name.
+              Just you + every default agent (@assistant, @research, @writer) in @-mention mode.
             </p>
             <div className="space-y-1.5">
               <Label htmlFor="solo-title">Name</Label>
@@ -149,13 +312,10 @@ export function CreateSpaceModal({ open, onClose }: Props) {
               <Button variant="ghost" onClick={onClose} disabled={create.isPending}>
                 Cancel
               </Button>
-              <Button onClick={() => submit('solo')} disabled={!title.trim() || create.isPending}>
+              <Button onClick={submitSolo} disabled={!title.trim() || create.isPending}>
                 {create.isPending ? <Loader2 className="size-4 animate-spin" /> : 'Create solo workshop'}
               </Button>
             </div>
-          </TabsContent>
-          <TabsContent value="template" className="pt-3 text-sm text-muted-foreground">
-            Templates land in Phase 2 — Marketing pod, Solo workshop, Customer support war room.
           </TabsContent>
         </Tabs>
       </DialogContent>
