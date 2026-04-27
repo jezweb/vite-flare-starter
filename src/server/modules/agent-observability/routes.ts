@@ -29,7 +29,7 @@ const ListSchema = z.object({
   class: z.string().optional(),
   name: z.string().optional(),
   trigger: z.enum(['rest', 'schedule', 'webhook', 'inter_agent']).optional(),
-  outcome: z.enum(['ok', 'error', 'budget_exceeded']).optional(),
+  outcome: z.enum(['started', 'ok', 'error', 'budget_exceeded']).optional(),
   limit: z.coerce.number().int().min(1).max(500).optional(),
   /** Unix seconds — only return runs started after this time. */
   since: z.coerce.number().int().optional(),
@@ -84,6 +84,9 @@ app.get('/summary', async (c) => {
       totalInputTokens: sql<number>`SUM(${agentRuns.inputTokens})`,
       totalOutputTokens: sql<number>`SUM(${agentRuns.outputTokens})`,
       errorCount: sql<number>`SUM(CASE WHEN ${agentRuns.outcome} = 'error' THEN 1 ELSE 0 END)`,
+      // Stuck rows: never moved off 'started'. Surfaces missed final
+      // updates (process killed, OOM) that previously hid as 'ok'.
+      stuckCount: sql<number>`SUM(CASE WHEN ${agentRuns.outcome} = 'started' THEN 1 ELSE 0 END)`,
     })
     .from(agentRuns)
     .where(and(eq(agentRuns.userId, userId), gte(agentRuns.startedAt, thirtyDaysAgo)))

@@ -14,7 +14,20 @@
 import { sqliteTable, text, integer, real, index } from 'drizzle-orm/sqlite-core'
 import { user } from '@/server/modules/auth/db/schema'
 
-export type AgentRunOutcome = 'ok' | 'error' | 'budget_exceeded'
+/**
+ * Run outcome states.
+ *
+ *   - 'started'         — row inserted, run hasn't terminated yet. Any row
+ *                         that's still in this state long after `startedAt`
+ *                         is a stuck/incomplete run (process killed,
+ *                         missed final update, OOM). Surface those in
+ *                         observability as a real failure mode rather
+ *                         than silently showing them as 'ok'.
+ *   - 'ok'              — terminal: completed normally
+ *   - 'error'           — terminal: threw or hit a tool failure
+ *   - 'budget_exceeded' — terminal: stopped by daily-cap gate
+ */
+export type AgentRunOutcome = 'started' | 'ok' | 'error' | 'budget_exceeded'
 export type AgentRunTrigger = 'rest' | 'schedule' | 'webhook' | 'inter_agent'
 
 export const agentRuns = sqliteTable(
@@ -31,7 +44,7 @@ export const agentRuns = sqliteTable(
     startedAt: integer('started_at').notNull(),
     finishedAt: integer('finished_at'),
     durationMs: integer('duration_ms'),
-    outcome: text('outcome').$type<AgentRunOutcome>().notNull().default('ok'),
+    outcome: text('outcome').$type<AgentRunOutcome>().notNull().default('started'),
     errorMessage: text('error_message'),
     inputTokens: integer('input_tokens').notNull().default(0),
     outputTokens: integer('output_tokens').notNull().default(0),

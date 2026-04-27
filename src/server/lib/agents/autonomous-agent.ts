@@ -395,8 +395,11 @@ export abstract class AutonomousAgent<
       throw new Error('AutonomousAgent.runOnce called with no input and empty history')
     }
 
-    // Insert the audit row up-front in 'ok' shape; we'll update on
-    // finish (or override outcome on error). Best-effort — a write
+    // Insert the audit row up-front in 'started' shape; success path
+    // flips it to 'ok', error/budget paths flip to 'error'/'budget_exceeded'.
+    // Any row left at 'started' is a stuck run (process killed, missed
+    // final update) — surfaces as a real failure mode rather than
+    // silently looking like a successful 'ok'. Best-effort write — a
     // failure here doesn't break the run.
     const auditEnv = this.env as { DB: D1Database }
     const insertAudit = async () => {
@@ -409,7 +412,7 @@ export abstract class AutonomousAgent<
           trigger,
           inputSummary,
           startedAt: startedAtSec,
-          outcome: 'ok',
+          outcome: 'started',
         })
       } catch (err) {
         console.error(JSON.stringify({ event: 'agent_run_audit_insert_failed', runId, error: String(err) }))
