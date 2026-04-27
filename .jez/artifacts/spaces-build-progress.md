@@ -21,7 +21,7 @@
 | 4 | Reactions + emoji-mart | ✅ (partial) | 3 quick emojis (👍 ✅ ❤️). Full emoji-mart picker deferred — dep not added |
 | 4 | Header menu + Settings modal | ✅ | SpaceHeaderMenu + SpaceSettingsModal (4 tabs) |
 | 4 | Search in space | ✅ | SearchInSpacePane (LIKE-scan; FTS5 follow-up) |
-| post | UX audit + fixes | in progress | next |
+| post | UX audit + Critical/High fixes | ✅ | C1, C2, H1, H3, H4, M2, L1 fixed inline; H2/H5/C3/M1/M3 documented as follow-ups |
 
 ## Decisions made during build
 
@@ -40,6 +40,14 @@
 - TS4111 `noPropertyAccessFromIndexSignature` requires bracket-access on both sides of zod-validated body assignments. Not worth adding strict types.
 - emoji-mart not installed — quick-bar good enough for now.
 - Phase 1 user-mention text scanning skipped server-side; pill-mention parts (with explicit userId in data) are the only way to mention a person. Phase 2 adds handle metadata on the user record.
+
+## Audit follow-ups carrying forward
+
+- **H2** Last-owner-leave guard is non-atomic (low likelihood under Phase 1 dogfood traffic).
+- **H5** Backfilled member ids use 32-char hex (no hyphens) vs UUID-v4 from `crypto.randomUUID()` — cosmetic.
+- **C3** Reactions read-modify-write race — Phase 1 acceptable for small rooms.
+- **M1** `markRead` fires every page mount; debounce.
+- **M3** Members rail invisible on phones; add a Sheet drawer.
 
 ## Follow-ups to file
 

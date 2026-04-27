@@ -139,6 +139,16 @@ export class SpaceAgent extends Agent<any, Record<string, never>> {
     )
   }
 
+  /**
+   * Tell every connected client a message was deleted. Called from
+   * the DELETE /api/messages/:id handler BEFORE the row is removed
+   * from D1 (so the broadcast can include the conversationId for
+   * cache routing).
+   */
+  async broadcastDelete(messageId: string): Promise<void> {
+    this.broadcast(JSON.stringify({ type: 'message_deleted', messageId }))
+  }
+
   /** Broadcast the current member-online set. Use after connect / close. */
   broadcastPresence(excludeIds: string[] = []): void {
     this.broadcast(

@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
+import { useSession } from '@/client/lib/auth'
 import {
   useSpace,
   useUpdateSpaceSettings,
@@ -39,6 +40,8 @@ interface Props {
 }
 
 export function SpaceSettingsModal({ spaceId, open, initialTab, onClose }: Props) {
+  const { data: session } = useSession()
+  const sessionUserId = session?.user?.id
   const { data } = useSpace(spaceId)
   const updateSettings = useUpdateSpaceSettings(spaceId)
   const updateMembership = useUpdateSpaceMembership(spaceId)
@@ -66,7 +69,7 @@ export function SpaceSettingsModal({ spaceId, open, initialTab, onClose }: Props
   }, [open, initialTab])
 
   if (!data) return null
-  const meMember = data.members.find((m) => m.kind === 'user')
+  const meMember = data.members.find((m) => m.kind === 'user' && m.userId === sessionUserId) ?? null
   const isOwner = meMember?.role === 'owner'
   const memberAgentNames = new Set(
     data.members.filter((m) => m.kind === 'agent').map((m) => m.agentName ?? ''),

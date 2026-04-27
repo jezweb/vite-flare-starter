@@ -18,7 +18,7 @@
  * 1:1 chat memory doesn't bleed into the space.
  */
 import { drizzle } from 'drizzle-orm/d1'
-import { and, asc, eq, isNull } from 'drizzle-orm'
+import { and, asc, eq, isNull, sql } from 'drizzle-orm'
 import type { UIMessage } from 'ai'
 import { conversationMembers, conversationMessages } from '@/server/modules/conversations/db/schema'
 import type { MentionRef } from './mention-parser'
@@ -163,21 +163,16 @@ export async function dispatchMentions(params: {
     parentMessageId: finalParentId,
   })
 
-  // If we landed in a thread, bump the parent's threadCount + lastThreadAt.
+  // If we landed in a thread, bump the parent's threadCount +
+  // lastThreadAt in a SINGLE UPDATE so concurrent thread replies
+  // don't race a SELECT-then-UPDATE pattern.
   if (finalParentId) {
     await drizzle(env.DB)
       .update(conversationMessages)
-      .set({ lastThreadAt: Math.floor(Date.now() / 1000) })
-      .where(eq(conversationMessages.id, finalParentId))
-    // SQLite doesn't have a clean way to do COUNT-and-UPDATE in one
-    // statement via Drizzle, so we run a fresh count + write back.
-    const replies = await drizzle(env.DB)
-      .select({ id: conversationMessages.id })
-      .from(conversationMessages)
-      .where(eq(conversationMessages.parentMessageId, finalParentId))
-    await drizzle(env.DB)
-      .update(conversationMessages)
-      .set({ threadCount: replies.length })
+      .set({
+        threadCount: sql`${conversationMessages.threadCount} + 1`,
+        lastThreadAt: Math.floor(Date.now() / 1000),
+      })
       .where(eq(conversationMessages.id, finalParentId))
   }
 

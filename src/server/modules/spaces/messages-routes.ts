@@ -14,7 +14,7 @@ import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import {
   conversationMembers,
@@ -115,14 +115,13 @@ app.post('/:id/thread', zValidator('json', ThreadReplySchema), async (c) => {
     metadata: JSON.stringify({ ...(body.metadata ?? {}), senderKind: 'user', senderUserId: userId }),
     parentMessageId: parentId,
   })
-  // Bump parent's threadCount + lastThreadAt.
-  const replies = await d
-    .select({ id: conversationMessages.id })
-    .from(conversationMessages)
-    .where(eq(conversationMessages.parentMessageId, parentId))
+  // Bump parent's threadCount + lastThreadAt atomically.
   await d
     .update(conversationMessages)
-    .set({ threadCount: replies.length, lastThreadAt: Math.floor(Date.now() / 1000) })
+    .set({
+      threadCount: sql`${conversationMessages.threadCount} + 1`,
+      lastThreadAt: Math.floor(Date.now() / 1000),
+    })
     .where(eq(conversationMessages.id, parentId))
 
   const env = c.env as unknown as MessagesEnv
@@ -188,21 +187,21 @@ app.delete('/:id', async (c) => {
     }
   }
   if (senderUserId !== userId) return c.json({ error: 'Forbidden' }, 403)
-  await d.delete(conversationMessages).where(eq(conversationMessages.id, id))
-  // Broadcast a tombstone so connected clients can remove the row from
-  // their UI without a refetch. We re-use broadcastNewMessage which
-  // will skip when the row is gone — clients should handle null.
+  // Broadcast the tombstone BEFORE deleting so we can resolve the DO
+  // by the message's conversationId without re-loading the deleted
+  // row. The DO call doesn't depend on the row existing.
   const env = c.env as unknown as MessagesEnv
   if (env.SpaceAgent) {
     const stub = env.SpaceAgent.get(env.SpaceAgent.idFromName(row.conversationId)) as unknown as {
-      broadcastNewMessage: (mid: string) => Promise<void>
+      broadcastDelete: (mid: string) => Promise<void>
     }
     try {
-      await stub.broadcastNewMessage(id)
+      await stub.broadcastDelete(id)
     } catch {
       /* best-effort */
     }
   }
+  await d.delete(conversationMessages).where(eq(conversationMessages.id, id))
   return c.json({ ok: true })
 })
 

@@ -36,6 +36,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { useSession } from '@/client/lib/auth'
 import {
   useUpdateSpaceMembership,
   useDeleteSpace,
@@ -54,6 +55,7 @@ interface Props {
 
 export function SpaceHeaderMenu({ space }: Props) {
   const navigate = useNavigate()
+  const { data: session } = useSession()
   const { data } = useSpace(space.id)
   const updateMembership = useUpdateSpaceMembership(space.id)
   const markRead = useMarkSpaceRead(space.id)
@@ -63,15 +65,11 @@ export function SpaceHeaderMenu({ space }: Props) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [confirmLeave, setConfirmLeave] = useState(false)
 
-  // Find the requesting user's member row from the detail payload — we
-  // need its memberId to leave + its current pin / notification state.
-  const myMember = data?.members.find((m) => m.kind === 'user' && (data as { space: { id: string } } | undefined) && false)
-  // Fallback: take the first user-kind member whose userId matches the
-  // session — better-auth doesn't expose a hook here, so we derive
-  // from members list by matching against the unique-per-conversation
-  // user member. We don't actually need the userId; the membership
-  // endpoint scopes to the session.
-  const meMember = data?.members.find((m) => m.kind === 'user') ?? myMember ?? null
+  // Resolve the *current* user's member row by matching on session id —
+  // not "first user member", which picks the wrong row in multi-user spaces.
+  const sessionUserId = session?.user?.id
+  const meMember =
+    data?.members.find((m) => m.kind === 'user' && m.userId === sessionUserId) ?? null
   const isOwner = !!meMember && meMember.role === 'owner'
   const isPinned = !!meMember && meMember.pinnedToSidebar
   const notificationLevel = meMember?.notificationLevel ?? 'all'

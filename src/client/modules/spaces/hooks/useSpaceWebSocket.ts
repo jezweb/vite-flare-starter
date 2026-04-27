@@ -30,8 +30,12 @@ interface SpaceMessageFrame {
   type: 'message'
   message: SpaceMessage
 }
+interface SpaceDeleteFrame {
+  type: 'message_deleted'
+  messageId: string
+}
 
-type Frame = SpaceWelcome | SpacePresence | SpaceMessageFrame
+type Frame = SpaceWelcome | SpacePresence | SpaceMessageFrame | SpaceDeleteFrame
 
 export function useSpaceWebSocket(spaceId: string | undefined) {
   const qc = useQueryClient()
@@ -57,15 +61,23 @@ export function useSpaceWebSocket(spaceId: string | undefined) {
         }
         if (data.type === 'message' && data.message) {
           // Push the new message into the top-level + thread caches.
-          // We don't know the thread parent ahead of time, so update
-          // both possible buckets.
+          // Idempotent: skip if we've already inserted by id (a
+          // concurrent message reaction broadcast or the sender's own
+          // POST response can race).
           const msg = data.message
           const isThread = !!msg.parentMessageId
           qc.setQueryData<{ messages: SpaceMessage[] }>(
             ['spaces', spaceId, 'messages', isThread ? msg.parentMessageId : 'top'],
             (prev) => {
               if (!prev) return prev
-              if (prev.messages.some((m) => m.id === msg.id)) return prev
+              const existingIdx = prev.messages.findIndex((m) => m.id === msg.id)
+              if (existingIdx >= 0) {
+                // Update in place — covers reaction broadcasts on
+                // already-rendered messages.
+                const next = prev.messages.slice()
+                next[existingIdx] = msg
+                return { messages: next }
+              }
               return { messages: [...prev.messages, msg] }
             },
           )
@@ -86,14 +98,20 @@ export function useSpaceWebSocket(spaceId: string | undefined) {
               },
             )
           }
-          // Also update the conversation detail's recent-message slice,
-          // so deep-links that loaded /api/spaces/:id render the new
-          // message immediately.
-          qc.setQueryData<{ messages: SpaceMessage[] }>(['spaces', spaceId, 'messages', 'top'], (prev) => {
-            if (!prev || isThread) return prev
-            if (prev.messages.some((m) => m.id === msg.id)) return prev
-            return { messages: [...prev.messages, msg] }
-          })
+        } else if (data.type === 'message_deleted') {
+          // Remove the row from every cached bucket — top-level and
+          // any open thread. Also strip thread replies whose parent is
+          // the deleted message (cascade is server-side via FK, but
+          // this keeps the UI in sync without a refetch).
+          const queries = qc.getQueriesData<{ messages: SpaceMessage[] }>({ queryKey: ['spaces', spaceId, 'messages'] })
+          for (const [key, value] of queries) {
+            if (!value || !Array.isArray(value.messages)) continue
+            qc.setQueryData(key, {
+              messages: value.messages.filter(
+                (m) => m.id !== data.messageId && m.parentMessageId !== data.messageId,
+              ),
+            })
+          }
         }
       } catch {
         /* ignore non-JSON frames */

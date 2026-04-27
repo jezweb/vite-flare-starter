@@ -29,7 +29,7 @@ import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
-import { and, desc, eq, inArray, like } from 'drizzle-orm'
+import { and, desc, eq, inArray, like, sql } from 'drizzle-orm'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import {
   conversations,
@@ -53,6 +53,14 @@ interface SpacesEnv {
   // biome-ignore lint/suspicious/noExplicitAny: cross-DO env shape
   WriterAgent?: DurableObjectNamespace<any>
 }
+
+/**
+ * Allowlist of agent classes the spaces routes will accept on
+ * invite. Refusing other classes (e.g. 'SpaceAgent', 'ReminderAgent')
+ * keeps the dispatcher honest and surfaces typos before they
+ * become "agent member exists but never replies" mysteries.
+ */
+const ALLOWED_AGENT_CLASSES = new Set(['AssistantAgent', 'ResearcherAgent', 'WriterAgent'])
 
 const app = new Hono<AuthContext>()
 app.use('*', authMiddleware)
@@ -132,9 +140,11 @@ app.post('/', zValidator('json', CreateSpaceSchema), async (c) => {
       }
     }
   }
-  // Agents.
+  // Agents — refuse unknown classes so a typo in the request payload
+  // doesn't quietly create a member that the dispatcher can't route.
   const agents = body.agents ?? []
   for (const agent of agents) {
+    if (!ALLOWED_AGENT_CLASSES.has(agent.agentClass)) continue
     await d
       .insert(conversationMembers)
       .values({
@@ -150,6 +160,24 @@ app.post('/', zValidator('json', CreateSpaceSchema), async (c) => {
         invitedByUserId: userId,
       })
       .onConflictDoNothing()
+    // Pre-bind the agent's owner to the space creator so per-user
+    // tools (BYOK keys, MCP scope) work from the first @-mention
+    // onwards — instead of being captured by whoever happens to
+    // mention them first. setOwner is idempotent for the same user.
+    const envRec = c.env as unknown as Record<string, unknown>
+    const nsRaw = envRec[agent.agentClass] as
+      | { idFromName(name: string): unknown; get(id: unknown): unknown }
+      | undefined
+    if (nsRaw) {
+      const stub = nsRaw.get(nsRaw.idFromName(`space:${id}:${agent.agentName}`)) as {
+        setOwner: (userId: string) => Promise<void>
+      }
+      try {
+        await stub.setOwner(userId)
+      } catch {
+        /* setOwner throws on reassign — fine */
+      }
+    }
   }
   return c.json({ id, title: body.title }, 201)
 })
@@ -290,20 +318,16 @@ app.post('/:id/messages', zValidator('json', SendMessageSchema), async (c) => {
   })
   // Bump conversation updated_at for sidebar ordering.
   await drizzle(c.env.DB).update(conversations).set({ updatedAt: new Date() }).where(eq(conversations.id, id))
-  // If reply landed in a thread, bump the parent's threadCount + lastThreadAt.
+  // If reply landed in a thread, bump the parent's threadCount +
+  // lastThreadAt in a SINGLE UPDATE — concurrent replies don't race.
   if (body.parentMessageId) {
     const parentId = body.parentMessageId
     await drizzle(c.env.DB)
       .update(conversationMessages)
-      .set({ lastThreadAt: Math.floor(Date.now() / 1000) })
-      .where(eq(conversationMessages.id, parentId))
-    const replies = await drizzle(c.env.DB)
-      .select({ id: conversationMessages.id })
-      .from(conversationMessages)
-      .where(eq(conversationMessages.parentMessageId, parentId))
-    await drizzle(c.env.DB)
-      .update(conversationMessages)
-      .set({ threadCount: replies.length })
+      .set({
+        threadCount: sql`${conversationMessages.threadCount} + 1`,
+        lastThreadAt: Math.floor(Date.now() / 1000),
+      })
       .where(eq(conversationMessages.id, parentId))
   }
 
@@ -360,14 +384,14 @@ app.get('/:id/messages/search', async (c) => {
   if (!(await isSpaceMember(c.env.DB, id, userId))) return c.json({ error: 'Forbidden' }, 403)
   const q = (c.req.query('q') ?? '').trim()
   if (!q) return c.json({ results: [] })
-  // Phase 1: simple LIKE scan against parts JSON. FTS5 hookup deferred —
-  // existing conversation_messages_fts virtual table also covers this
-  // surface; we'd just need to add a spaceId filter. For Phase 1 dogfood
-  // a LIKE scan is fast enough up to a few thousand messages.
+  // Escape SQL LIKE wildcards so a user passing "%" doesn't match
+  // every message in the space. Phase 1 LIKE-scan; FTS5 follow-up
+  // for performance + smarter ranking.
+  const escaped = q.replace(/[\\_%]/g, (m) => `\\${m}`)
   const rows = await drizzle(c.env.DB)
     .select()
     .from(conversationMessages)
-    .where(and(eq(conversationMessages.conversationId, id), like(conversationMessages.parts, `%${q}%`)))
+    .where(and(eq(conversationMessages.conversationId, id), like(conversationMessages.parts, `%${escaped}%`)))
     .orderBy(desc(conversationMessages.createdAt))
     .limit(20)
   return c.json({ results: rows.map(shapeMessage) })
@@ -434,6 +458,9 @@ app.post('/:id/members', zValidator('json', InviteSchema), async (c) => {
       })
       .onConflictDoNothing()
   } else {
+    if (!ALLOWED_AGENT_CLASSES.has(body.agentClass)) {
+      return c.json({ error: `Unknown agent class: ${body.agentClass}` }, 400)
+    }
     await drizzle(c.env.DB)
       .insert(conversationMembers)
       .values({
