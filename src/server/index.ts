@@ -49,6 +49,7 @@ import agentObservabilityRoutes from './modules/agent-observability/routes'
 import entitiesRoutes from './modules/entities/routes'
 import organizationsRoutes from './modules/organizations/routes'
 import credentialsRoutes from './modules/credentials/routes'
+import spacesRoutes from './modules/spaces/routes'
 import { routeAgentRequest } from 'agents'
 import { ScratchpadMcpAgent } from './modules/mcp-agents/scratchpad-mcp-agent'
 // Re-export DO class(es) so wrangler migrations can locate them. Every DO
@@ -63,6 +64,7 @@ export { ResearcherAgent } from './modules/autonomous-agents/researcher-agent'
 export { WriterAgent } from './modules/autonomous-agents/writer-agent'
 export { SweeperAgent } from './modules/autonomous-agents/sweeper-agent'
 export { ScratchpadMcpAgent }
+export { SpaceAgent } from './modules/spaces/space-agent'
 import { securityHeaders } from './middleware/security'
 import { rateLimiter } from './middleware/rate-limit'
 import { authMiddleware, requireScopes } from './middleware/auth'
@@ -299,6 +301,7 @@ app.route('/api/user-meta', userMetaRoutes)
 app.route('/api/skills', skillsRoutes)
 app.route('/api/config-diff', configDiffRoutes)
 app.route('/api/conversations', conversationsRoutes)
+app.route('/api/spaces', spacesRoutes)
 app.route('/api/projects', projectsRoutes)
 app.route('/api/memories', memoriesRoutes)
 app.route('/api/comments', commentsRoutes)

@@ -153,6 +153,33 @@ export interface RunOnceInput {
    * public interface.
    */
   prebuiltModel?: unknown
+  /**
+   * Spaces (Phase 1): the user who triggered this run on behalf of
+   * the agent's owner. In a Space, an agent is owned by the space
+   * creator but acts on behalf of whoever @-mentioned it. This id is
+   * surfaced on `agent_runs.user_id` so audits attribute correctly,
+   * and on any approvals queued during the run as
+   * `requestedByUserId`. Defaults to `state.userId` (legacy 1:1
+   * behaviour — agent acts for its own owner).
+   */
+  actingUserId?: string
+  /**
+   * Spaces (Phase 1): explicit message context for this run. When
+   * provided, the agent uses these messages instead of
+   * `state.recentMessages` AND does NOT append the new turn to its
+   * own state — the canonical history lives in the space's
+   * `conversation_messages` table. Use for cross-conversation
+   * dispatch so the agent doesn't accumulate stale duplicate
+   * history.
+   */
+  contextMessages?: UIMessage[]
+  /**
+   * Spaces (Phase 1): when the @-mention happened inside a thread,
+   * this is the thread parent message id. The agent's reply will be
+   * persisted with `parentMessageId = parentMessageId` so it lands
+   * in the same thread.
+   */
+  parentMessageId?: string
 }
 
 export interface RunOnceResult {
@@ -381,9 +408,14 @@ export abstract class AutonomousAgent<
     const startedAtSec = Math.floor(startedAtMs / 1000)
     const inputSummary = userMessage ? userMessage.slice(0, 500) : null
 
-    // Build the message array. Append the new user turn (if any) to
-    // the existing history before calling the model.
-    const messages: UIMessage[] = [...this.state.recentMessages]
+    // Build the message array. When the caller passes `contextMessages`
+    // (Spaces dispatch), use those instead of the agent's own state — the
+    // canonical history lives in the space's conversation_messages table
+    // and we don't want to accumulate duplicates in this DO's recentMessages.
+    const usingExternalContext = Array.isArray(input?.contextMessages)
+    const messages: UIMessage[] = usingExternalContext
+      ? [...(input!.contextMessages as UIMessage[])]
+      : [...this.state.recentMessages]
     if (userMessage) {
       messages.push({
         id: crypto.randomUUID(),
@@ -401,6 +433,10 @@ export abstract class AutonomousAgent<
     // final update) — surfaces as a real failure mode rather than
     // silently looking like a successful 'ok'. Best-effort write — a
     // failure here doesn't break the run.
+    // Spaces: when a Space @-mention triggers this run, attribute the
+    // audit row to the actual actor user (input.actingUserId), not the
+    // agent's owner. Default to owner for legacy 1:1 invocations.
+    const actingUserId = input?.actingUserId ?? this.state.userId ?? ''
     const auditEnv = this.env as { DB: D1Database }
     const insertAudit = async () => {
       try {
@@ -408,7 +444,7 @@ export abstract class AutonomousAgent<
           id: runId,
           agentClass: (this.constructor as typeof AutonomousAgent).className,
           agentName: this.state.name,
-          userId: this.state.userId ?? '',
+          userId: actingUserId,
           trigger,
           inputSummary,
           startedAt: startedAtSec,
@@ -519,23 +555,38 @@ export abstract class AutonomousAgent<
       }
       const toolsCalled = Array.from(toolNames).join(',').slice(0, 500)
 
-      // Append assistant turn to history + persist.
-      const assistantMsg: UIMessage = {
-        id: crypto.randomUUID(),
-        role: 'assistant',
-        parts: [{ type: 'text', text }],
-      } as unknown as UIMessage
-      const nextHistory = [...messages, assistantMsg].slice(-this.maxRecentMessages)
+      // Append assistant turn to history + persist (skip when this run
+      // used external context — the canonical history is the caller's,
+      // not the agent's own state).
+      if (!usingExternalContext) {
+        const assistantMsg: UIMessage = {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          parts: [{ type: 'text', text }],
+        } as unknown as UIMessage
+        const nextHistory = [...messages, assistantMsg].slice(-this.maxRecentMessages)
 
-      this.setState({
-        ...this.state,
-        recentMessages: nextHistory,
-        meta: {
-          ...this.state.meta,
-          invocations: this.state.meta.invocations + 1,
-          lastActiveAt: Date.now(),
-        },
-      })
+        this.setState({
+          ...this.state,
+          recentMessages: nextHistory,
+          meta: {
+            ...this.state.meta,
+            invocations: this.state.meta.invocations + 1,
+            lastActiveAt: Date.now(),
+          },
+        })
+      } else {
+        // Bump invocation count + lastActiveAt even when not persisting
+        // history — the agent did do work, observability should show it.
+        this.setState({
+          ...this.state,
+          meta: {
+            ...this.state.meta,
+            invocations: this.state.meta.invocations + 1,
+            lastActiveAt: Date.now(),
+          },
+        })
+      }
 
       // Finalise the audit row with usage + cost + steps + tools.
       const finishedAtMs = Date.now()

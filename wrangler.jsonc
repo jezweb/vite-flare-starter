@@ -225,6 +225,14 @@
         // OAuth via AgentMcpOAuthProvider before exposing real data.
         "name": "ScratchpadMcpAgent",
         "class_name": "ScratchpadMcpAgent"
+      },
+      {
+        // SpaceAgent — multi-user multi-agent room (Spaces feature).
+        // One DO per Space (idFromName(spaceId)). Holds presence +
+        // WebSocket fan-out; all message persistence lives in D1.
+        // See src/server/modules/spaces/space-agent.ts.
+        "name": "SpaceAgent",
+        "class_name": "SpaceAgent"
       }
     ]
   },
@@ -262,6 +270,10 @@
     {
       "tag": "v7",
       "new_sqlite_classes": ["SweeperAgent"]
+    },
+    {
+      "tag": "v8",
+      "new_sqlite_classes": ["SpaceAgent"]
     }
   ],
 
