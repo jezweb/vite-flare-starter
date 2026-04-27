@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { useSession } from '@/client/lib/auth'
 import {
   Shield,
@@ -175,6 +177,10 @@ export function LandingPage() {
   const isAuthed = !!session?.user
   const primaryCtaHref = isAuthed ? '/dashboard' : '/sign-up'
   const primaryCtaLabel = isAuthed ? 'Open Dashboard' : 'Get Started'
+  // Lightbox: which screenshot is open. null = closed. Stores the
+  // shot's data so the dialog can render title + body + image without
+  // a separate state hop.
+  const [zoom, setZoom] = useState<{ src: string; title: string; body: string } | null>(null)
 
   return (
     <div className="flex flex-col">
@@ -287,14 +293,23 @@ export function LandingPage() {
             </p>
           </div>
 
-          {/* Real screenshot of a live Space — captured signed-in. */}
-          <div className="mb-10 overflow-hidden rounded-xl border border-border shadow-2xl">
+          {/* Real screenshot of a live Space — click to zoom. */}
+          <button
+            type="button"
+            onClick={() => setZoom({
+              src: '/spaces-hero.png',
+              title: 'Spaces — live three-pane layout',
+              body: 'Members rail · timeline · thread pane. @-mention pills, hover action bar with quick reactions + emoji picker + thread + more menu, "1 reply" indicator. Real authed UI, not a mockup.',
+            })}
+            className="mb-10 block w-full cursor-zoom-in overflow-hidden rounded-xl border border-border shadow-2xl transition-transform hover:scale-[1.005]"
+            aria-label="Zoom Spaces screenshot"
+          >
             <img
               src="/spaces-hero.png"
               alt="Marketing-pod Space — three-pane layout with @-mentioned message and 1 reply thread"
               className="w-full"
             />
-          </div>
+          </button>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-6">
             {spacesScenes.map((s) => (
@@ -346,14 +361,31 @@ export function LandingPage() {
               { src: '/tour/04-connectors.png', title: 'MCP Connectors', body: 'Per-user OAuth to Google Workspace, Microsoft 365, any MCP server. PKCE + DCR, AES-GCM tokens.' },
               { src: '/tour/05-approvals.png', title: 'Approvals queue', body: 'Human-in-the-loop for autonomous agents — review memory updates, sends, posts before they execute.' },
               { src: '/tour/06-activity.png', title: 'Activity log', body: 'Audit trail with daily/weekly stats, filters, entity history. Pagination built-in.' },
+              { src: '/tour/03-create-modal.png', title: 'New space — Custom', body: 'Per-agent checkbox + reply-mode picker. Pick exactly the agent set + behaviour you want.' },
+              { src: '/tour/04-templates.png', title: 'New space — Templates', body: '6 starter packs: Solo workshop, Marketing pod, Support war room, Research room, Writer\'s desk, Blank.' },
+              { src: '/tour/06-mention-autocomplete.png', title: '@-mention autocomplete', body: 'People + Agents sections, keyboard nav (↑/↓/Enter/Escape), inserts a real pill chip.' },
             ].map((shot) => (
-              <Card key={shot.title} className="overflow-hidden border-border/50">
-                <img src={shot.src} alt={shot.title} className="w-full" />
-                <CardContent className="p-3">
-                  <h3 className="text-sm font-semibold mb-0.5">{shot.title}</h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{shot.body}</p>
-                </CardContent>
-              </Card>
+              <button
+                type="button"
+                key={shot.title}
+                onClick={() => setZoom(shot)}
+                className="group block w-full text-left"
+                aria-label={`Zoom ${shot.title}`}
+              >
+                <Card className="overflow-hidden border-border/50 transition-colors group-hover:border-primary/40">
+                  <div className="overflow-hidden">
+                    <img
+                      src={shot.src}
+                      alt={shot.title}
+                      className="w-full cursor-zoom-in transition-transform duration-300 group-hover:scale-[1.02]"
+                    />
+                  </div>
+                  <CardContent className="p-3">
+                    <h3 className="text-sm font-semibold mb-0.5">{shot.title}</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{shot.body}</p>
+                  </CardContent>
+                </Card>
+              </button>
             ))}
           </div>
         </div>
@@ -489,6 +521,29 @@ export function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* Lightbox — opens when any tour screenshot is clicked. Esc /
+          click-outside / X dismiss. Image renders at natural size up
+          to 95vw / 90vh so detail is visible without forcing a
+          full-page navigation. */}
+      <Dialog open={!!zoom} onOpenChange={(o) => !o && setZoom(null)}>
+        <DialogContent
+          className="max-h-[95vh] w-[95vw] max-w-[1600px] overflow-y-auto p-0 sm:!max-w-[1600px]"
+          showCloseButton
+        >
+          {zoom && (
+            <div className="flex flex-col">
+              <img src={zoom.src} alt={zoom.title} className="w-full" />
+              <div className="border-t border-border bg-card px-5 py-3">
+                <DialogTitle className="text-base font-semibold">{zoom.title}</DialogTitle>
+                <DialogDescription className="mt-1 text-xs leading-relaxed">
+                  {zoom.body}
+                </DialogDescription>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
