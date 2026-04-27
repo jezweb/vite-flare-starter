@@ -10,9 +10,15 @@
 
 ## See it in action
 
+![Landing page tour — scroll-through of the four primary surfaces (Spaces, Projects, Chat, Agents)](./docs/gifs/landing-tour.gif)
+
+Scroll-through of the new landing page covering the four primary surfaces and 22 supporting modules.
+
 ![Agent loop — user asks for Sydney time and a calculation, the agent calls two tools and returns the answer in one turn](./docs/vfs-agent-loop.gif)
 
 One prompt, two tool calls (`get_server_time` + `calculate`), streamed response with reasoning, token + latency footer. This is the `ToolLoopAgent` pattern — every tool in the starter works the same way.
+
+> **Authenticated GIFs (Spaces create / @-mention dispatch / threads / settings) are pending — they need a Google-signed-in session that survives across playwright-cli runs. Run** `playwright-cli -s=audit open https://vite-flare-starter.webfonts.workers.dev/sign-in`, **sign in once via Google, then** `playwright-cli -s=audit state-save ~/.jez/vfs-session.json`. **A `/schedule` job can then capture the authed flows automatically each release.**
 
 ---
 
