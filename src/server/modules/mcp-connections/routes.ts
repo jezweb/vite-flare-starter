@@ -412,6 +412,52 @@ app.delete('/:id', async (c) => {
 })
 
 /** GET /:id/tools — discover tools via JSON-RPC tools/list + effective policies. */
+/**
+ * GET /:id/resources — list MCP resources exposed by a connected
+ * server. Mirrors the tools-list pattern but uses MCP's
+ * `resources/list` JSON-RPC method. Best-effort — servers that don't
+ * implement resources return [].
+ */
+app.get('/:id/resources', async (c) => {
+  const userId = c.get('userId')
+  const id = c.req.param('id')
+  const db = drizzle(c.env.DB)
+  const [conn] = await db
+    .select()
+    .from(userMcpConnections)
+    .where(and(eq(userMcpConnections.id, id), eq(userMcpConnections.userId, userId)))
+    .limit(1)
+  if (!conn) return c.json({ error: 'Not found' }, 404)
+  const tokenKey = (c.env as unknown as { TOKEN_ENCRYPTION_KEY?: string }).TOKEN_ENCRYPTION_KEY
+  const accessToken = await decrypt(conn.accessToken, tokenKey)
+  let resources: Array<{ uri: string; name?: string; description?: string; mimeType?: string }> = []
+  try {
+    const resp = await fetch(conn.url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'resources/list',
+        params: {},
+      }),
+    })
+    if (resp.ok) {
+      const json = (await resp.json()) as {
+        result?: { resources?: Array<{ uri: string; name?: string; description?: string; mimeType?: string }> }
+      }
+      resources = json.result?.resources ?? []
+    }
+  } catch {
+    // Best-effort — many servers don't implement resources.
+  }
+  return c.json({ resources, server: conn.displayName })
+})
+
 app.get('/:id/tools', async (c) => {
   const userId = c.get('userId')
   const id = c.req.param('id')

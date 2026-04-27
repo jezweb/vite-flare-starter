@@ -7,10 +7,11 @@
  * textarea can show (`@research`) so the user keeps WYSIWYG.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Loader2, Send } from 'lucide-react'
+import { Loader2, Send, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { MentionAutocomplete, type MentionPick } from './MentionAutocomplete'
+import { AttachmentMenu, type AttachmentRef } from './AttachmentMenu'
 import type { SpaceMember, SpaceUserInfo } from '../hooks/useSpaces'
 
 interface Props {
@@ -32,6 +33,7 @@ interface MentionToken {
 export function MessageInput({ members, users, placeholder, busy, onSend, threadParentId }: Props) {
   const [value, setValue] = useState('')
   const [tokens, setTokens] = useState<MentionToken[]>([])
+  const [attachments, setAttachments] = useState<AttachmentRef[]>([])
   const [acOpen, setAcOpen] = useState(false)
   const [acQuery, setAcQuery] = useState('')
   const [acAnchor, setAcAnchor] = useState<number | null>(null)
@@ -115,9 +117,15 @@ export function MessageInput({ members, users, placeholder, busy, onSend, thread
     if (cursor < value.length) parts.push({ type: 'text', text: value.slice(cursor) })
     if (parts.length === 0) parts.push({ type: 'text', text })
 
+    // Append attachments as structured parts so the agent can see them.
+    for (const att of attachments) {
+      parts.push({ type: att.type, data: att.data })
+    }
+
     await onSend(parts)
     setValue('')
     setTokens([])
+    setAttachments([])
   }
 
   useEffect(() => {
@@ -143,14 +151,35 @@ export function MessageInput({ members, users, placeholder, busy, onSend, thread
           onCancel={() => setAcOpen(false)}
         />
       )}
-      <div className="flex items-end gap-2">
+      {attachments.length > 0 && (
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          {attachments.map((att, i) => (
+            <span
+              key={i}
+              className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-2 py-1 text-xs"
+            >
+              <span className="truncate max-w-[160px]">{att.label}</span>
+              <button
+                type="button"
+                onClick={() => setAttachments((prev) => prev.filter((_, j) => j !== i))}
+                className="rounded p-0.5 text-muted-foreground hover:bg-accent"
+                aria-label="Remove attachment"
+              >
+                <X className="size-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="flex items-end gap-1">
+        <AttachmentMenu onAttach={(ref) => setAttachments((prev) => [...prev, ref])} />
         <Textarea
           ref={taRef}
           value={value}
           onChange={handleChange}
           placeholder={placeholder ?? 'Type a message — @ to mention'}
           rows={2}
-          className="min-h-[44px] resize-none"
+          className="min-h-[44px] flex-1 resize-none"
         />
         <Button onClick={send} disabled={!value.trim() || busy} size="sm">
           {busy ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
