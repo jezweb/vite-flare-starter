@@ -9,7 +9,8 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Loader2, ChevronLeft, X, Hash, MessageSquare, Search, Pin, Quote as QuoteIcon } from 'lucide-react'
+import { Loader2, ChevronLeft, X, Hash, MessageSquare, Search, Pin, Quote as QuoteIcon, Users, Bell, BellOff } from 'lucide-react'
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { useSession } from '@/client/lib/auth'
 import {
   useSpace,
@@ -17,6 +18,7 @@ import {
   useSpaceMessages,
   useMarkSpaceRead,
   usePinnedMessages,
+  useThreadSubscription,
 } from '../hooks/useSpaces'
 import { useSpaceWebSocket } from '../hooks/useSpaceWebSocket'
 import { MemberList } from '../components/MemberList'
@@ -24,7 +26,7 @@ import { MessageInput } from '../components/MessageInput'
 import { SpaceMessageView } from '../components/SpaceMessageView'
 import { SpaceHeaderMenu } from '../components/SpaceHeaderMenu'
 import { SearchInSpacePane } from '../components/SearchInSpacePane'
-import type { SpaceMessage } from '../hooks/useSpaces'
+import type { SpaceMessage, SpaceMember, SpaceUserInfo } from '../hooks/useSpaces'
 
 export function SpacePage() {
   const { id } = useParams<{ id: string }>()
@@ -49,9 +51,13 @@ export function SpacePage() {
   const messages = topMessagesQuery.data?.messages ?? data?.messages ?? []
   const threadMessages = threadQuery.data?.messages ?? []
 
-  // Mark the space as read on mount.
+  // Mark the space as read after the user has been on the page for a
+  // beat. Debounced so rapid back/forward navigation doesn't flood
+  // the API with mark-read writes.
   useEffect(() => {
-    if (id) markRead.mutate()
+    if (!id) return
+    const t = setTimeout(() => markRead.mutate(), 1000)
+    return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
@@ -103,6 +109,22 @@ export function SpacePage() {
           >
             <ChevronLeft className="size-4" />
           </Link>
+          {/* Mobile-only members button — opens the Sheet drawer. Hidden on md+ where the rail is visible. */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <button
+                type="button"
+                className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground md:hidden"
+                aria-label="Show members"
+              >
+                <Users className="size-4" />
+              </button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-72 p-3">
+              <SheetTitle className="sr-only">Members</SheetTitle>
+              <MemberList members={members} users={users} online={online} />
+            </SheetContent>
+          </Sheet>
           <Hash className="size-4 shrink-0 text-muted-foreground" />
           <div className="min-w-0">
             <h1 className="truncate text-sm font-semibold">{space.title || 'Untitled space'}</h1>
@@ -241,48 +263,110 @@ export function SpacePage() {
         {searchOpen && id ? (
           <SearchInSpacePane spaceId={id} users={users} open={searchOpen} onClose={() => setSearchOpen(false)} />
         ) : threadParentId && threadParent ? (
-          <aside className="hidden w-96 shrink-0 flex-col border-l border-border bg-background/60 lg:flex">
-            <div className="flex shrink-0 items-center justify-between border-b border-border px-3 py-2 text-xs">
-              <div className="flex items-center gap-1.5">
-                <MessageSquare className="size-3.5 text-muted-foreground" />
-                <span className="font-medium">Thread</span>
-              </div>
-              <button
-                type="button"
-                className="rounded-md p-1 text-muted-foreground hover:bg-accent"
-                onClick={() => setThreadParentId(null)}
-              >
-                <X className="size-3.5" />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto px-3 py-2">
-              <SpaceMessageView message={threadParent} users={users} />
-              <div className="my-2 border-t border-border" />
-              {threadMessages.length === 0 ? (
-                <p className="px-3 text-xs text-muted-foreground">No replies yet.</p>
-              ) : (
-                <div className="space-y-1">
-                  {threadMessages.map((m) => (
-                    <SpaceMessageView key={m.id} message={m} users={users} />
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="border-t border-border bg-background/80 p-3">
-              <MessageInput
-                members={members}
-                users={users}
-                threadParentId={threadParentId}
-                busy={send.isPending}
-                placeholder="Reply in thread…"
-                onSend={async (parts) => {
-                  await send.mutateAsync({ parts, parentMessageId: threadParentId })
-                }}
-              />
-            </div>
-          </aside>
+          <ThreadAside
+            spaceMessages={messages}
+            users={users}
+            members={members}
+            canPin={canPin}
+            onQuote={(msg) => setQuoted(msg)}
+            send={send}
+            threadParentId={threadParentId}
+            threadParent={threadParent}
+            threadMessages={threadMessages}
+            onClose={() => setThreadParentId(null)}
+          />
         ) : null}
       </div>
     </div>
+  )
+}
+
+interface ThreadAsideProps {
+  spaceMessages: SpaceMessage[]
+  users: SpaceUserInfo[]
+  members: SpaceMember[]
+  canPin: boolean
+  onQuote: (msg: SpaceMessage) => void
+  send: ReturnType<typeof useSendSpaceMessage>
+  threadParentId: string
+  threadParent: SpaceMessage
+  threadMessages: SpaceMessage[]
+  onClose: () => void
+}
+
+function ThreadAside(props: ThreadAsideProps) {
+  const { threadParentId, threadParent, threadMessages, members, users, send, onClose, canPin, onQuote, spaceMessages } = props
+  const subscribe = useThreadSubscription()
+  const [muted, setMuted] = useState(false)
+  return (
+    <aside className="hidden w-96 shrink-0 flex-col border-l border-border bg-background/60 lg:flex">
+      <div className="flex shrink-0 items-center justify-between border-b border-border px-3 py-2 text-xs">
+        <div className="flex items-center gap-1.5">
+          <MessageSquare className="size-3.5 text-muted-foreground" />
+          <span className="font-medium">Thread</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => {
+              const next = !muted
+              setMuted(next)
+              subscribe.mutate({ threadId: threadParentId, level: next ? 'mute' : 'all' })
+            }}
+            className="rounded-md p-1 text-muted-foreground hover:bg-accent"
+            title={muted ? 'Unmute thread' : 'Mute thread'}
+            aria-label={muted ? 'Unmute thread' : 'Mute thread'}
+          >
+            {muted ? <BellOff className="size-3.5" /> : <Bell className="size-3.5" />}
+          </button>
+          <button
+            type="button"
+            className="rounded-md p-1 text-muted-foreground hover:bg-accent"
+            onClick={onClose}
+            aria-label="Close thread"
+          >
+            <X className="size-3.5" />
+          </button>
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto px-3 py-2">
+        <SpaceMessageView
+          message={threadParent}
+          users={users}
+          allMessages={spaceMessages}
+          canPin={canPin}
+          onQuote={onQuote}
+        />
+        <div className="my-2 border-t border-border" />
+        {threadMessages.length === 0 ? (
+          <p className="px-3 text-xs text-muted-foreground">No replies yet.</p>
+        ) : (
+          <div className="space-y-1">
+            {threadMessages.map((m) => (
+              <SpaceMessageView
+                key={m.id}
+                message={m}
+                users={users}
+                allMessages={spaceMessages}
+                canPin={canPin}
+                onQuote={onQuote}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="border-t border-border bg-background/80 p-3">
+        <MessageInput
+          members={members}
+          users={users}
+          threadParentId={threadParentId}
+          busy={send.isPending}
+          placeholder="Reply in thread…"
+          onSend={async (parts) => {
+            await send.mutateAsync({ parts, parentMessageId: threadParentId })
+          }}
+        />
+      </div>
+    </aside>
   )
 }

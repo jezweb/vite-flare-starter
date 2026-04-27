@@ -134,10 +134,21 @@ export async function dispatchMentions(params: {
     /* already set — fine */
   }
 
+  // Slash sub-command extraction. `@research /summarise <url>` lifts
+  // the slash command into structured guidance the agent sees up
+  // front. We detect the first @<handle> followed by /<cmd> and
+  // prepend a "[Slash command: /cmd; args: ...]" preamble so the
+  // model treats it as an explicit instruction.
+  const slashRegex = new RegExp(`@${targetAgentName}\\s+/([A-Za-z0-9_-]+)([^\\n]*)`, 'i')
+  const slashMatch = inputText.match(slashRegex)
+  const augmentedInput = slashMatch
+    ? `[Slash command for @${targetAgentName}: /${slashMatch[1]} ${(slashMatch[2] ?? '').trim()}]\n\n${inputText}`
+    : inputText
+
   let reply: { text: string }
   try {
     reply = await stub.runOnce({
-      input: inputText,
+      input: augmentedInput,
       actingUserId: senderUserId,
       contextMessages: ctxMessages,
       parentMessageId: parentMessageId ?? undefined,

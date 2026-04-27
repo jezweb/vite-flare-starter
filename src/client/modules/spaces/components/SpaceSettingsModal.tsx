@@ -7,7 +7,7 @@
  */
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Loader2, UserPlus, Bot, Trash2, LogOut } from 'lucide-react'
+import { Loader2, UserPlus, Bot, Trash2, LogOut, Ban } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -31,6 +31,7 @@ import {
   useDeleteSpace,
   useLeaveSpace,
   useToggleSpaceHistory,
+  useBlockMember,
 } from '../hooks/useSpaces'
 
 interface Props {
@@ -47,6 +48,7 @@ export function SpaceSettingsModal({ spaceId, open, initialTab, onClose }: Props
   const updateSettings = useUpdateSpaceSettings(spaceId)
   const updateMembership = useUpdateSpaceMembership(spaceId)
   const toggleHistory = useToggleSpaceHistory(spaceId)
+  const blockMember = useBlockMember(spaceId)
   const inviteAgent = useInviteAgent(spaceId)
   const { data: agentsData } = useAvailableAgents(open ? spaceId : undefined)
   const deleteSpace = useDeleteSpace()
@@ -154,16 +156,36 @@ export function SpaceSettingsModal({ spaceId, open, initialTab, onClose }: Props
                   .filter((m) => m.kind === 'user')
                   .map((m) => {
                     const u = m.userId ? data.users.find((x) => x.id === m.userId) : null
+                    const isBlocked = !!(m as unknown as { blockedAt?: number | null }).blockedAt
+                    const isMe = m.userId === sessionUserId
                     return (
                       <li key={m.id} className="flex items-center justify-between rounded-md px-2 py-1.5 hover:bg-accent">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium">{u?.name ?? 'Member'}</span>
+                          <span className={`font-medium ${isBlocked ? 'line-through text-muted-foreground' : ''}`}>
+                            {u?.name ?? 'Member'}
+                          </span>
                           {m.role === 'owner' && (
                             <span className="rounded bg-amber-500/15 px-1 py-0.5 text-[9px] font-medium uppercase tracking-wider text-amber-700 dark:text-amber-300">
                               Owner
                             </span>
                           )}
+                          {isBlocked && (
+                            <span className="rounded bg-destructive/15 px-1 py-0.5 text-[9px] font-medium uppercase tracking-wider text-destructive">
+                              Blocked
+                            </span>
+                          )}
                         </div>
+                        {isOwner && !isMe && m.role !== 'owner' && (
+                          <button
+                            type="button"
+                            onClick={() => blockMember.mutate({ memberId: m.id, blocked: !isBlocked })}
+                            className="rounded-md p-1 text-muted-foreground hover:bg-destructive/15 hover:text-destructive"
+                            title={isBlocked ? 'Unblock member' : 'Block member'}
+                            aria-label={isBlocked ? 'Unblock member' : 'Block member'}
+                          >
+                            <Ban className="size-3.5" />
+                          </button>
+                        )}
                       </li>
                     )
                   })}

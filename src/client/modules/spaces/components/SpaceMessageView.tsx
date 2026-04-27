@@ -100,9 +100,13 @@ export function SpaceMessageView({ message, users, allMessages, onOpenThread, on
             </div>
           </div>
         ) : null}
-        <div className="mt-0.5 whitespace-pre-wrap break-words text-sm leading-relaxed">
-          {renderParts(parts)}
-        </div>
+        {(meta as { cardFormat?: SpaceMessageCard }).cardFormat ? (
+          <CardMessage card={(meta as { cardFormat: SpaceMessageCard }).cardFormat} />
+        ) : (
+          <div className="mt-0.5 whitespace-pre-wrap break-words text-sm leading-relaxed">
+            {renderParts(parts)}
+          </div>
+        )}
         <MessageReactions
           messageId={message.id}
           reactions={message.reactions}
@@ -137,6 +141,50 @@ export function SpaceMessageView({ message, users, allMessages, onOpenThread, on
           <MessageMoreMenu message={message} onQuote={onQuote} canPin={!!canPin} />
         </div>
       </div>
+    </div>
+  )
+}
+
+/**
+ * Bot card-format payload. Agents producing daily digests / reports
+ * emit this shape on metadata.cardFormat so the UI renders a
+ * structured card instead of a plain text message.
+ */
+export interface SpaceMessageCard {
+  title?: string
+  subtitle?: string
+  body?: string
+  fields?: Array<{ label: string; value: string }>
+  /** Optional tone — default 'neutral'. Affects accent border colour. */
+  tone?: 'neutral' | 'success' | 'warning' | 'danger' | 'info'
+}
+
+function CardMessage({ card }: { card: SpaceMessageCard }) {
+  const tone = card.tone ?? 'neutral'
+  const toneClass = {
+    neutral: 'border-border bg-card',
+    success: 'border-emerald-500/40 bg-emerald-500/5',
+    warning: 'border-amber-500/40 bg-amber-500/5',
+    danger: 'border-destructive/40 bg-destructive/5',
+    info: 'border-sky-500/40 bg-sky-500/5',
+  }[tone]
+  return (
+    <div className={`mt-1 rounded-md border-l-4 px-3 py-2 ${toneClass}`}>
+      {card.title && <div className="text-sm font-semibold">{card.title}</div>}
+      {card.subtitle && <div className="text-xs text-muted-foreground">{card.subtitle}</div>}
+      {card.body && (
+        <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed">{card.body}</p>
+      )}
+      {card.fields && card.fields.length > 0 && (
+        <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+          {card.fields.map((f, i) => (
+            <div key={i} className="contents">
+              <dt className="text-muted-foreground">{f.label}</dt>
+              <dd className="font-medium">{f.value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
     </div>
   )
 }
