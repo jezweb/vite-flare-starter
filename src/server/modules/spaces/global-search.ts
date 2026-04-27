@@ -25,7 +25,6 @@ app.get('/messages', async (c) => {
   const userId = c.get('userId')
   const q = (c.req.query('q') ?? '').trim()
   if (q.length < 2) return c.json({ results: [] })
-  const escaped = q.replace(/[\\_%]/g, (m) => `\\${m}`)
   const d = drizzle(c.env.DB)
   // Step 1: collect every conversation the user is a member of.
   const memberships = await d
@@ -39,29 +38,103 @@ app.get('/messages', async (c) => {
     )
   const conversationIds = memberships.map((m) => m.conversationId)
   if (conversationIds.length === 0) return c.json({ results: [] })
-  // Step 2: search messages within those conversations. Bounded to 30.
-  const rows = await d
-    .select({
-      message: conversationMessages,
-      conversationTitle: conversations.title,
-      conversationKind: conversations.kind,
+
+  // Step 2: search via FTS5 for fast BM25-ranked hits. Build the IN
+  // clause as a quoted list so we can pass it as a where fragment.
+  try {
+    const { searchFTS } = await import('@/server/lib/search')
+    // SQLite IN list: build a `?,?,?` placeholder string + bind values.
+    const placeholders = conversationIds.map(() => '?').join(',')
+    const { results } = await searchFTS<{
+      id: string
+      conversation_id: string
+      role: string
+      parts: string
+      metadata: string | null
+      parent_message_id: string | null
+      thread_count: number
+      last_thread_at: number | null
+      reactions: string | null
+      pinned_at: number | null
+      pinned_by_user_id: string | null
+      starred_by_user_ids: string | null
+      quoted_message_id: string | null
+      created_at: number | string | Date
+    }>(c.env.DB, {
+      ftsTable: 'conversation_messages_fts',
+      sourceTable: 'conversation_messages',
+      query: q,
+      limit: 30,
+      where: `"conversation_messages".conversation_id IN (${placeholders})`,
+      whereParams: conversationIds,
     })
-    .from(conversationMessages)
-    .innerJoin(conversations, eq(conversationMessages.conversationId, conversations.id))
-    .where(
-      and(
-        inArray(conversationMessages.conversationId, conversationIds),
-        like(conversationMessages.parts, `%${escaped}%`),
-      ),
-    )
-    .orderBy(desc(conversationMessages.createdAt))
-    .limit(30)
-  const results = rows.map((r) => ({
-    ...shapeMessage(r.message),
-    conversationTitle: r.conversationTitle,
-    conversationKind: r.conversationKind,
-  }))
-  return c.json({ results })
+    // Hydrate conversation titles in one IN query for the matched ids.
+    const matchedConvIds = Array.from(new Set(results.map((r) => r.conversation_id)))
+    const titles = matchedConvIds.length
+      ? await d
+          .select({ id: conversations.id, title: conversations.title, kind: conversations.kind })
+          .from(conversations)
+          .where(inArray(conversations.id, matchedConvIds))
+      : []
+    const titleMap = new Map(titles.map((t) => [t.id, t]))
+    const shaped = results.map((r) => ({
+      id: r.id,
+      conversationId: r.conversation_id,
+      role: r.role,
+      parts: safeJson(r.parts),
+      metadata: safeJson(r.metadata),
+      parentMessageId: r.parent_message_id,
+      threadCount: r.thread_count,
+      lastThreadAt: r.last_thread_at,
+      reactions: safeJson(r.reactions),
+      pinnedAt: r.pinned_at,
+      pinnedByUserId: r.pinned_by_user_id,
+      createdAt:
+        r.created_at instanceof Date
+          ? r.created_at.toISOString()
+          : typeof r.created_at === 'number'
+            ? new Date(r.created_at * 1000).toISOString()
+            : String(r.created_at),
+      conversationTitle: titleMap.get(r.conversation_id)?.title ?? null,
+      conversationKind: titleMap.get(r.conversation_id)?.kind ?? null,
+    }))
+    return c.json({ results: shaped })
+  } catch {
+    // LIKE fallback — same shape as before so clients work either way.
+    const escaped = q.replace(/[\\_%]/g, (m) => `\\${m}`)
+    const rows = await d
+      .select({
+        message: conversationMessages,
+        conversationTitle: conversations.title,
+        conversationKind: conversations.kind,
+      })
+      .from(conversationMessages)
+      .innerJoin(conversations, eq(conversationMessages.conversationId, conversations.id))
+      .where(
+        and(
+          inArray(conversationMessages.conversationId, conversationIds),
+          like(conversationMessages.parts, `%${escaped}%`),
+        ),
+      )
+      .orderBy(desc(conversationMessages.createdAt))
+      .limit(30)
+    const results = rows.map((r) => ({
+      ...shapeMessage(r.message),
+      conversationTitle: r.conversationTitle,
+      conversationKind: r.conversationKind,
+    }))
+    return c.json({ results })
+  }
 })
+
+function safeJson(v: unknown): unknown {
+  if (v == null) return v
+  if (typeof v !== 'string') return v
+  try {
+    return JSON.parse(v)
+  } catch {
+    return v
+  }
+}
 
 export default app

@@ -216,6 +216,8 @@ export function CreateSpaceModal({ open, onClose }: Props) {
                         className="h-8 shrink-0 rounded-md border border-input bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 disabled:opacity-40"
                       >
                         <option value="mention">@-mention only</option>
+                        <option value="proactive">Proactive (jumps in if relevant)</option>
+                        <option value="ambient">Ambient (reacts only)</option>
                         <option value="always">Replies always</option>
                         <option value="off">Paused</option>
                       </select>

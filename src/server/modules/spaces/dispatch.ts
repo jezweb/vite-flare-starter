@@ -25,6 +25,7 @@ import type { MentionRef } from './mention-parser'
 
 interface DispatchEnv {
   DB: D1Database
+  AI?: Ai
   // Each agent class has its own DO namespace binding. We accept the
   // env loosely and do a lookup by class name.
   [key: string]: unknown
@@ -71,7 +72,24 @@ export async function dispatchMentions(params: {
   const agentRefs = mentions
     .filter((m) => m.kind === 'agent' && m.targetAgentClass && m.targetAgentName)
     .slice(0, PARALLEL_CAP)
-  if (agentRefs.length === 0) return { replyMessageIds }
+
+  // Phase 3: when no @-mention targeted an agent, evaluate every agent
+  // member in proactive/ambient mode. Cap at 2 classifier calls per
+  // top-level message so a busy room doesn't burn budget.
+  if (agentRefs.length === 0) {
+    if (parentMessageId !== null) return { replyMessageIds } // Phase 3 proactive only fires top-level
+    await runProactiveAgents({
+      env,
+      spaceId,
+      senderUserId,
+      triggerMessageId: params.triggerMessageId,
+      parentMessageId,
+      inputText,
+      broadcastNewMessage,
+      replyMessageIds,
+    })
+    return { replyMessageIds }
+  }
 
   // Phase 1 had a single ref; Phase 2 fans out concurrently. We still
   // serialise the FIRST one through the existing path so the existing
@@ -236,6 +254,202 @@ export async function dispatchMentions(params: {
   }
 
   return { replyMessageIds }
+}
+
+/**
+ * Phase 3 — proactive + ambient classifier path.
+ *
+ * Walks every agent member in `proactive` or `ambient` mode and asks
+ * a tiny Workers AI model (Gemma 4 26B) "should this agent reply or
+ * react?". Cap at 2 evaluations per message so a busy room doesn't
+ * fan out classifier calls.
+ *
+ * Proactive: classifier returns 'reply' | 'silent'. On 'reply', the
+ * agent is dispatched as if @-mentioned.
+ * Ambient: classifier returns 'react:<emoji>' | 'silent'. On react,
+ * we add a reaction to the trigger message instead of replying.
+ */
+async function runProactiveAgents(params: {
+  env: DispatchEnv
+  spaceId: string
+  senderUserId: string
+  triggerMessageId: string
+  parentMessageId: string | null
+  inputText: string
+  broadcastNewMessage: (messageId: string) => Promise<void>
+  replyMessageIds: string[]
+}): Promise<void> {
+  const { env, spaceId, senderUserId, triggerMessageId, parentMessageId, inputText, broadcastNewMessage, replyMessageIds } = params
+  const PROACTIVE_CAP = 2
+  if (!env.AI) return
+  const d = drizzle(env.DB)
+  const candidateRows = await d
+    .select({
+      id: conversationMembers.id,
+      agentClass: conversationMembers.agentClass,
+      agentName: conversationMembers.agentName,
+      replyMode: conversationMembers.replyMode,
+    })
+    .from(conversationMembers)
+    .where(
+      and(
+        eq(conversationMembers.conversationId, spaceId),
+        eq(conversationMembers.kind, 'agent'),
+      ),
+    )
+  const candidates = candidateRows
+    .filter((r) => r.replyMode === 'proactive' || r.replyMode === 'ambient')
+    .filter((r) => !!r.agentClass && !!r.agentName)
+    .slice(0, PROACTIVE_CAP)
+  if (candidates.length === 0) return
+
+  for (const cand of candidates) {
+    const agentClass = cand.agentClass as string
+    const agentName = cand.agentName as string
+    const mode = cand.replyMode as 'proactive' | 'ambient'
+    const decision = await classifyTurn(env.AI, mode, agentName, inputText).catch((err) => {
+      console.error(JSON.stringify({ event: 'space_proactive_classify_failed', spaceId, agentName, error: String(err) }))
+      return { kind: 'silent' as const }
+    })
+
+    if (decision.kind === 'silent') continue
+
+    if (decision.kind === 'react') {
+      // Ambient mode — add a reaction to the trigger message.
+      try {
+        const [row] = await d
+          .select()
+          .from(conversationMessages)
+          .where(eq(conversationMessages.id, triggerMessageId))
+          .limit(1)
+        if (!row) continue
+        let reactions: Record<string, string[]> = {}
+        if (row.reactions) {
+          try {
+            const parsed = typeof row.reactions === 'string' ? JSON.parse(row.reactions) : row.reactions
+            if (parsed && typeof parsed === 'object') reactions = parsed as Record<string, string[]>
+          } catch {
+            reactions = {}
+          }
+        }
+        const actorKey = `agent:${agentName}`
+        const list = reactions[decision.emoji] ?? []
+        if (!list.includes(actorKey)) list.push(actorKey)
+        reactions[decision.emoji] = list
+        await d
+          .update(conversationMessages)
+          .set({ reactions: JSON.stringify(reactions) })
+          .where(eq(conversationMessages.id, triggerMessageId))
+        await broadcastNewMessage(triggerMessageId)
+      } catch (err) {
+        console.error(JSON.stringify({ event: 'space_proactive_react_failed', spaceId, agentName, error: String(err) }))
+      }
+      continue
+    }
+
+    // decision.kind === 'reply' — dispatch the agent as if @-mentioned.
+    const ctxMessages = await loadContextMessages(env.DB, spaceId, parentMessageId)
+    const namespace = env[agentClass] as DurableObjectNamespace | undefined
+    if (!namespace) continue
+    const stub = namespace.get(namespace.idFromName(`space:${spaceId}:${agentName}`)) as unknown as {
+      runOnce: (input: {
+        input: string
+        actingUserId: string
+        contextMessages: UIMessage[]
+        parentMessageId?: string
+        trigger: 'inter_agent'
+      }) => Promise<{ text: string }>
+      setOwner: (userId: string) => Promise<void>
+    }
+    try {
+      await stub.setOwner(senderUserId)
+    } catch {
+      /* already set */
+    }
+    let reply: { text: string }
+    try {
+      reply = await stub.runOnce({
+        input: inputText,
+        actingUserId: senderUserId,
+        contextMessages: ctxMessages,
+        parentMessageId: parentMessageId ?? undefined,
+        trigger: 'inter_agent',
+      })
+    } catch (err) {
+      console.error(JSON.stringify({ event: 'space_proactive_dispatch_failed', spaceId, agentName, error: String(err) }))
+      continue
+    }
+    if (!reply.text || !reply.text.trim()) continue
+    const replyId = crypto.randomUUID()
+    const partsJson = JSON.stringify([{ type: 'text', text: reply.text }])
+    const metadataJson = JSON.stringify({
+      senderKind: 'agent',
+      senderAgentClass: agentClass,
+      senderAgentName: agentName,
+      actingUserId: senderUserId,
+      proactive: true,
+    })
+    await d.insert(conversationMessages).values({
+      id: replyId,
+      conversationId: spaceId,
+      role: 'assistant',
+      parts: partsJson,
+      metadata: metadataJson,
+      parentMessageId: parentMessageId,
+    })
+    await broadcastNewMessage(replyId)
+    replyMessageIds.push(replyId)
+  }
+}
+
+/**
+ * Tiny classifier — single Workers AI call. Returns silent / reply /
+ * react:<emoji>. Bounded to a small token output to keep cost
+ * negligible. We use the json structure prompted in plain text and
+ * parse out the verb.
+ */
+async function classifyTurn(
+  ai: Ai,
+  mode: 'proactive' | 'ambient',
+  agentName: string,
+  text: string,
+): Promise<{ kind: 'silent' } | { kind: 'reply' } | { kind: 'react'; emoji: string }> {
+  const trimmed = text.trim()
+  if (!trimmed) return { kind: 'silent' }
+  const sample = trimmed.length > 600 ? `${trimmed.slice(0, 600)}…` : trimmed
+  const system =
+    mode === 'proactive'
+      ? `You are deciding whether an AI agent named @${agentName} should jump into a multi-user chat unprompted.
+- Reply ONLY if @${agentName} can clearly add value (e.g. answers a directly relevant question, surfaces missing context).
+- Stay silent for chitchat, off-topic banter, anything not in @${agentName}'s expertise.
+- Output JSON: {"action":"reply"} or {"action":"silent"}.`
+      : `You are deciding whether an AI agent named @${agentName} should react to a chat message with an emoji (no text reply).
+- React when there's clear signal worth acknowledging (a job done, a kind word, a question that's been answered).
+- Output JSON: {"action":"react","emoji":"👍"} or {"action":"silent"}.`
+  const user = `Latest message:\n${sample}`
+  // biome-ignore lint/suspicious/noExplicitAny: Workers AI response shape
+  const result: any = await ai.run('@cf/google/gemma-4-26b-a4b-it', {
+    messages: [
+      { role: 'system', content: system },
+      { role: 'user', content: user },
+    ],
+    max_tokens: 60,
+    temperature: 0.1,
+  })
+  const responseText = typeof result?.response === 'string' ? result.response : ''
+  // Extract first {…} block — robust against the model wrapping prose.
+  const match = responseText.match(/\{[^{}]*\}/)
+  if (!match) return { kind: 'silent' }
+  try {
+    const parsed = JSON.parse(match[0])
+    if (parsed?.action === 'reply') return { kind: 'reply' }
+    if (parsed?.action === 'react' && typeof parsed.emoji === 'string') {
+      return { kind: 'react', emoji: parsed.emoji }
+    }
+  } catch {
+    /* fall through */
+  }
+  return { kind: 'silent' }
 }
 
 /**

@@ -387,17 +387,31 @@ app.get('/:id/messages/search', async (c) => {
   if (!(await isSpaceMember(c.env.DB, id, userId))) return c.json({ error: 'Forbidden' }, 403)
   const q = (c.req.query('q') ?? '').trim()
   if (!q) return c.json({ results: [] })
-  // Escape SQL LIKE wildcards so a user passing "%" doesn't match
-  // every message in the space. Phase 1 LIKE-scan; FTS5 follow-up
-  // for performance + smarter ranking.
-  const escaped = q.replace(/[\\_%]/g, (m) => `\\${m}`)
-  const rows = await drizzle(c.env.DB)
-    .select()
-    .from(conversationMessages)
-    .where(and(eq(conversationMessages.conversationId, id), like(conversationMessages.parts, `%${escaped}%`)))
-    .orderBy(desc(conversationMessages.createdAt))
-    .limit(20)
-  return c.json({ results: rows.map(shapeMessage) })
+  try {
+    // FTS5 path — fast + BM25-ranked. Falls back to LIKE on errors
+    // (covers the case where the FTS virtual table was dropped or a
+    // query parsing issue with FTS5's MATCH syntax).
+    const { searchFTS } = await import('@/server/lib/search')
+    const { results } = await searchFTS<typeof conversationMessages.$inferSelect>(c.env.DB, {
+      ftsTable: 'conversation_messages_fts',
+      sourceTable: 'conversation_messages',
+      query: q,
+      limit: 20,
+      where: '"conversation_messages".conversation_id = ?',
+      whereParams: [id],
+    })
+    return c.json({ results: results.map(shapeMessage) })
+  } catch {
+    // Fallback — LIKE-scan with wildcard escape.
+    const escaped = q.replace(/[\\_%]/g, (m) => `\\${m}`)
+    const rows = await drizzle(c.env.DB)
+      .select()
+      .from(conversationMessages)
+      .where(and(eq(conversationMessages.conversationId, id), like(conversationMessages.parts, `%${escaped}%`)))
+      .orderBy(desc(conversationMessages.createdAt))
+      .limit(20)
+    return c.json({ results: rows.map(shapeMessage) })
+  }
 })
 
 app.patch('/:id/read', async (c) => {
@@ -518,14 +532,24 @@ app.delete('/:id/members/:memberId', async (c) => {
   const isOwnerRemoval = await isSpaceOwner(c.env.DB, id, userId)
   if (!isSelfLeave && !isOwnerRemoval) return c.json({ error: 'Forbidden' }, 403)
   if (target.role === 'owner') {
-    // Forbid last-owner exit. Phase 2 introduces ownership transfer.
-    const owners = await d
-      .select({ id: conversationMembers.id })
-      .from(conversationMembers)
-      .where(and(eq(conversationMembers.conversationId, id), eq(conversationMembers.role, 'owner')))
-    if (owners.length <= 1) {
+    // H2 audit fix: atomic last-owner check via subquery in the DELETE.
+    // We attempt a guarded delete; if zero rows changed we can
+    // confidently return the "last owner" error without racing against
+    // a concurrent leave.
+    const result = await c.env.DB
+      .prepare(
+        `DELETE FROM conversation_members
+         WHERE id = ?1
+           AND (SELECT COUNT(*) FROM conversation_members
+                WHERE conversation_id = ?2 AND role = 'owner') > 1`,
+      )
+      .bind(memberId, id)
+      .run()
+    const changes = (result.meta as { changes?: number } | undefined)?.changes ?? 0
+    if (changes === 0) {
       return c.json({ error: 'Cannot leave as the last owner — transfer ownership or delete the space' }, 400)
     }
+    return c.json({ ok: true })
   }
   await d.delete(conversationMembers).where(eq(conversationMembers.id, memberId))
   return c.json({ ok: true })
