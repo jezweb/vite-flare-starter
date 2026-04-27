@@ -21,6 +21,7 @@ import { useUsers } from '../hooks/useAdmin'
 import { UserList } from './UserList'
 import { Search, ChevronLeft, ChevronRight, Users } from 'lucide-react'
 import { useDebounce } from '@/client/hooks/useDebounce'
+import { EmptyState } from '@/client/components/EmptyState'
 
 const SORT_OPTIONS = [
   { value: 'createdAt:desc', label: 'Newest first' },
@@ -140,9 +141,15 @@ export function UsersTabContent() {
             Failed to load users. Please try again.
           </div>
         ) : data?.users.length === 0 ? (
-          <div className="py-8 text-center text-muted-foreground">
-            {debouncedSearch ? 'No users match your search.' : 'No users found.'}
-          </div>
+          <EmptyState
+            icon={Users}
+            title={debouncedSearch ? 'No matching users' : 'No users yet'}
+            description={
+              debouncedSearch
+                ? `Nothing matches "${debouncedSearch}". Try a different name or email.`
+                : 'Once people sign in, you’ll be able to manage their roles and access here.'
+            }
+          />
         ) : (
           <UserList users={data?.users || []} />
         )}

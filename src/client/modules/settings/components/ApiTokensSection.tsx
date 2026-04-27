@@ -15,6 +15,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ConfirmDialog, useConfirmDialog } from '@/components/ui/confirm-dialog'
+import { EmptyState } from '@/client/components/EmptyState'
 import { appConfig } from '@/shared/config/app'
 import {
   Dialog,
@@ -392,13 +393,12 @@ export function ApiTokensSection() {
               </TableBody>
             </Table>
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <Key className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No API tokens created yet</p>
-              <p className="text-sm mt-1">
-                Create a token to allow external services to access your data
-              </p>
-            </div>
+            <EmptyState
+              icon={Key}
+              title="No API tokens yet"
+              description="Tokens let external services (ElevenLabs, n8n, your own scripts) call this app on your behalf with scoped permissions."
+              action={{ label: 'Create token', onClick: () => setShowCreateDialog(true) }}
+            />
           )}
         </CardContent>
       </Card>

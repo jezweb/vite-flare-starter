@@ -20,6 +20,7 @@ import { useProjectList, useStarProject, type Project } from '../hooks/useProjec
 import { CreateProjectModal } from '../components/CreateProjectModal'
 import { PROJECT_COLOR_CLASSES, isProjectColor } from '../colors'
 import { cn } from '@/lib/utils'
+import { EmptyState as SharedEmptyState } from '@/client/components/EmptyState'
 
 type SortKey = 'activity' | 'name' | 'created'
 
@@ -146,17 +147,12 @@ function EmptyState({ search, showArchived, onCreate }: { search: string; showAr
     )
   }
   return (
-    <div className="rounded-lg border border-dashed border-border px-6 py-16 text-center space-y-3">
-      <FolderOpen className="size-10 mx-auto text-muted-foreground" />
-      <h3 className="font-semibold">No projects yet</h3>
-      <p className="text-sm text-muted-foreground max-w-md mx-auto">
-        Create your first project to organise chats with persistent memory, instructions, and files.
-      </p>
-      <Button onClick={onCreate}>
-        <Plus className="size-4 mr-1.5" />
-        New project
-      </Button>
-    </div>
+    <SharedEmptyState
+      icon={FolderOpen}
+      title="No projects yet"
+      description="Projects bundle a set of chats with shared memory, instructions, and files — handy for ongoing work like a side product, a customer, or a research thread."
+      action={{ label: 'New project', onClick: onCreate }}
+    />
   )
 }
 

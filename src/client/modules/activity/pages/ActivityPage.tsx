@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useActivities, useActivityStats, type Activity } from '../hooks/useActivity'
+import { EmptyState } from '@/client/components/EmptyState'
 import {
   Activity as ActivityIcon,
   Plus,
@@ -215,13 +216,15 @@ export function ActivityPage() {
               ))}
             </div>
           ) : activities.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <ActivityIcon className="h-12 w-12 text-muted-foreground/50" />
-              <p className="mt-4 text-lg font-medium">No Activity Yet</p>
-              <p className="text-sm text-muted-foreground">
-                Your actions will appear here as you use the application.
-              </p>
-            </div>
+            <EmptyState
+              icon={ActivityIcon}
+              title={actionFilter !== 'all' ? `No ${actionFilter} actions yet` : 'No activity yet'}
+              description={
+                actionFilter !== 'all'
+                  ? 'Try a different filter, or come back after using the app.'
+                  : 'Creating, editing, or deleting anything in the app will show up here as an audit trail.'
+              }
+            />
           ) : (
             <div className="space-y-4">
               {activities.map((activity) => (

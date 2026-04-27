@@ -11,12 +11,13 @@
  * could add a per-artifact preview pane.
  */
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Sparkles, Search, MessageSquare, Code2, Image as ImageIcon, GitBranch, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { apiClient } from '@/client/lib/api-client'
 import { cn } from '@/lib/utils'
+import { EmptyState as SharedEmptyState } from '@/client/components/EmptyState'
 
 interface Artifact {
   conversationId: string
@@ -153,6 +154,7 @@ export function ArtifactsPage() {
 }
 
 function EmptyState({ search, typeFilter }: { search: string; typeFilter: string }) {
+  const navigate = useNavigate()
   if (search || typeFilter !== 'all') {
     return (
       <div className="rounded-lg border border-dashed border-border px-6 py-12 text-center">
@@ -161,13 +163,16 @@ function EmptyState({ search, typeFilter }: { search: string; typeFilter: string
     )
   }
   return (
-    <div className="rounded-lg border border-dashed border-border px-6 py-16 text-center space-y-3">
-      <Sparkles className="size-10 mx-auto text-muted-foreground" />
-      <h3 className="font-semibold">No artifacts yet</h3>
-      <p className="text-sm text-muted-foreground max-w-md mx-auto">
-        Ask the AI to create an HTML page, SVG illustration, or Mermaid diagram in any chat — they'll appear here.
-      </p>
-    </div>
+    <SharedEmptyState
+      icon={Sparkles}
+      title="No artifacts yet"
+      description="The AI can build interactive HTML pages, SVG illustrations, and Mermaid diagrams right inside a chat."
+      tips={[
+        'Try: "Make me a Mermaid diagram of our auth flow"',
+        'Try: "Build an SVG icon for a coffee cup"',
+      ]}
+      action={{ label: 'Open chat', onClick: () => navigate('/dashboard/chat') }}
+    />
   )
 }
 

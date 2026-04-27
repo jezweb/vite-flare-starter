@@ -7,7 +7,9 @@ import { createErrorHandler } from './lib/error-reporting'
 import { ProtectedRoute } from './components/shared/ProtectedRoute'
 import { PublicOnlyRoute } from './components/shared/PublicOnlyRoute'
 import { ThemeURLHandler } from './components/ThemeURLHandler'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Mic, Camera } from 'lucide-react'
+import { features } from '@/shared/config/features'
+import { EmptyState } from './components/EmptyState'
 
 // Critical-path imports (always in the main bundle)
 import { LandingPage } from './pages/LandingPage'
@@ -46,6 +48,39 @@ function PageSpinner() {
   return (
     <div className="flex h-64 items-center justify-center">
       <Loader2 className="size-6 animate-spin text-muted-foreground" />
+    </div>
+  )
+}
+
+/**
+ * Renders the page when the feature is enabled; otherwise renders a
+ * gentle "this feature is opt-in" empty state. Stops bookmarked links
+ * to disabled features from looking like a 404.
+ */
+function FeatureGatedPage({
+  enabled,
+  icon,
+  title,
+  description,
+  envVar,
+  children,
+}: {
+  enabled: boolean
+  icon: typeof Mic
+  title: string
+  description: string
+  envVar: string
+  children: React.ReactNode
+}) {
+  if (enabled) return <>{children}</>
+  return (
+    <div className="container mx-auto py-12">
+      <EmptyState
+        icon={icon}
+        title={title}
+        description={description}
+        tips={[`Set ${envVar}=true in your .dev.vars (or production env) and reload.`]}
+      />
     </div>
   )
 }
@@ -135,15 +170,40 @@ function App() {
             <Route path="connectors" element={<ConnectorsPage />} />
 
             {/* Voice agent reference — @cloudflare/voice + agents SDK.
-                Gated behind `voiceAgent` feature flag (default OFF); the
-                scaffold is always compiled but the route only resolves
-                if a user navigates there manually. */}
-            <Route path="voice-example" element={<VoiceInputExamplePage />} />
+                Gated behind `voiceAgent` feature flag (default OFF). When
+                disabled, the route still resolves but renders a friendly
+                "opt-in" page so bookmarks don't 404. */}
+            <Route
+              path="voice-example"
+              element={
+                <FeatureGatedPage
+                  enabled={features.voiceAgent}
+                  icon={Mic}
+                  title="Voice agent is opt-in"
+                  description="The voice example streams microphone audio to a Durable Object for live transcription. It ships disabled by default — turn it on with a feature flag."
+                  envVar="VITE_FEATURE_VOICE_AGENT"
+                >
+                  <VoiceInputExamplePage />
+                </FeatureGatedPage>
+              }
+            />
 
             {/* Video agent reference — sampled frames → WS → Durable Object
-                → Workers AI vision model. No Cloudflare Realtime SFU needed
-                for the sampled pattern. Gated behind `videoAgent` flag. */}
-            <Route path="video-example" element={<VideoInputExamplePage />} />
+                → Workers AI vision model. Same opt-in pattern as voice. */}
+            <Route
+              path="video-example"
+              element={
+                <FeatureGatedPage
+                  enabled={features.videoAgent}
+                  icon={Camera}
+                  title="Video agent is opt-in"
+                  description="The video example samples webcam frames and sends them to a vision model for live captions. It ships disabled by default — turn it on with a feature flag."
+                  envVar="VITE_FEATURE_VIDEO_AGENT"
+                >
+                  <VideoInputExamplePage />
+                </FeatureGatedPage>
+              }
+            />
 
             {/* Profile redirects to Settings (Profile tab is default) */}
             <Route path="profile" element={<Navigate to="/dashboard/settings" replace />} />
