@@ -57,6 +57,22 @@ export const pendingApprovals = sqliteTable(
     resolvedAt: integer('resolved_at'),
     /** When executeApproved finished (only set for status='executed'/'failed'). */
     executedAt: integer('executed_at'),
+    /**
+     * Spaces (Phase 1): the conversation this approval belongs to when
+     * the action was triggered from a Space. Nullable — personal
+     * approvals don't set this. Used to scope the approvals UI ("show
+     * me only the queue for #marketing") and to deep-link from the
+     * approval row back to the source space.
+     */
+    spaceId: text('space_id'),
+    /**
+     * Spaces (Phase 1): the actor user who triggered this approval —
+     * distinct from `userId` (the agent owner). In a Space, the agent
+     * is owned by the space creator but acts on behalf of whoever
+     * @-mentioned it. The approve / reject row carries both so we can
+     * audit fairly.
+     */
+    requestedByUserId: text('requested_by_user_id'),
   },
   (table) => [
     index('pending_approvals_user_id_idx').on(table.userId),
@@ -64,5 +80,6 @@ export const pendingApprovals = sqliteTable(
     index('pending_approvals_user_status_idx').on(table.userId, table.status),
     index('pending_approvals_agent_idx').on(table.agentClass, table.agentName),
     index('pending_approvals_created_at_idx').on(table.createdAt),
+    index('pending_approvals_space_idx').on(table.spaceId),
   ],
 )

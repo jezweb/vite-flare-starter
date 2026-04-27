@@ -1,6 +1,23 @@
-import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core'
+import { sqliteTable, text, integer, index, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import { user } from '@/server/modules/auth/db/schema'
 import { projects } from '@/server/modules/projects/db/schema'
+
+/**
+ * Conversation kind — affects how the surface renders.
+ *   'chat'  — 1:1 chat UI (single user + one always-replying agent)
+ *   'space' — multi-user / multi-agent room (member list, @ mentions, threads)
+ *
+ * Detection rule on the client: if the conversation has exactly one user
+ * member and one agent member with replyMode='always', render simple Chat;
+ * otherwise render Space. The kind column is a denormalised cache of the
+ * member shape for fast filtering on list pages.
+ */
+export type ConversationKind = 'chat' | 'space'
+export type SpaceMode = 'open' | 'invite' | 'org'
+export type ReplyMode = 'always' | 'mention' | 'proactive' | 'ambient' | 'off'
+export type MemberKind = 'user' | 'agent'
+export type MemberRole = 'owner' | 'admin' | 'member'
+export type NotificationLevel = 'all' | 'mentions' | 'muted'
 
 export const conversations = sqliteTable('conversations', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -38,6 +55,27 @@ export const conversations = sqliteTable('conversations', {
    * "not yet processed". Set even on rejection so the cron doesn't retry.
    */
   memoryProcessedAt: integer('memory_processed_at', { mode: 'timestamp' }),
+  /**
+   * Spaces: cached conversation kind. Backfilled to 'chat' during
+   * Spaces phase 1 migration. New rows default to 'chat'; spaces are
+   * created with kind='space' explicitly.
+   */
+  kind: text('kind').$type<ConversationKind>().notNull().default('chat'),
+  /**
+   * Spaces: visibility / invite policy when kind='space'.
+   *   'open'   — anyone with the link can join (Phase 2+)
+   *   'invite' — invitees only (Phase 1 default)
+   *   'org'    — org members only (Phase 2+)
+   */
+  spaceMode: text('space_mode').$type<SpaceMode>(),
+  /** Per-space override for new agent members. Nullable — falls back to
+   *  whatever default the dispatcher uses for the agent class. */
+  defaultReplyMode: text('default_reply_mode').$type<ReplyMode>(),
+  /**
+   * Spaces: 1 = retain message history forever, 0 = auto-delete after
+   * a TTL (24h, Phase 3 cron sweep). Default 1.
+   */
+  historyEnabled: integer('history_enabled').notNull().default(1),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 }, (table) => [
@@ -49,6 +87,8 @@ export const conversations = sqliteTable('conversations', {
   index('conversations_project_id_idx').on(table.projectId),
   // Memory cron sweep finds eligible conversations.
   index('conversations_memory_processed_idx').on(table.memoryProcessedAt),
+  // Space-list filter ("show me only spaces") and chat-list filter.
+  index('conversations_kind_idx').on(table.kind),
 ])
 
 export const conversationMessages = sqliteTable('conversation_messages', {
@@ -57,8 +97,82 @@ export const conversationMessages = sqliteTable('conversation_messages', {
   role: text('role').notNull(),
   parts: text('parts').notNull(), // JSON blob of UIMessage parts
   metadata: text('metadata'), // JSON blob of message metadata
+  /**
+   * Spaces: nullable thread parent. NULL = top-level message; set =
+   * thread reply. Threads never close in Spaces — kept replyable
+   * indefinitely.
+   */
+  parentMessageId: text('parent_message_id'),
+  /** Cached count of replies in the thread when this row IS a parent.
+   *  Updated on each reply insert. Renders the "N replies" indicator. */
+  threadCount: integer('thread_count').notNull().default(0),
+  /** Timestamp of the latest reply in the thread. Used to surface
+   *  recently-active threads in the side pane. */
+  lastThreadAt: integer('last_thread_at'),
+  /**
+   * Reactions JSON: { "👍": ["user:abc", "agent:research"], "🚀": [...] }.
+   * Storing as a single JSON column keeps the messages-table compact;
+   * reaction frequency is low enough that we don't need a join.
+   */
+  reactions: text('reactions'),
+  /** Pin-to-space metadata. Both null = not pinned. */
+  pinnedAt: integer('pinned_at'),
+  pinnedByUserId: text('pinned_by_user_id'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 }, (table) => [
   index('conversation_messages_conversation_id_idx').on(table.conversationId),
   index('conversation_messages_created_at_idx').on(table.createdAt),
+  // Thread-pane query: find replies for a parent quickly.
+  index('conversation_messages_parent_idx').on(table.parentMessageId),
+  // Pinned-shelf query (Phase 2).
+  index('conversation_messages_pinned_idx').on(table.conversationId, table.pinnedAt),
+])
+
+/**
+ * conversation_members — multi-participant membership table.
+ *
+ * One row per (conversation, user|agent). Backfilled for existing
+ * conversations during Spaces Phase 1 migration so the dual-read path
+ * works without code changes downstream.
+ */
+export const conversationMembers = sqliteTable('conversation_members', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  conversationId: text('conversation_id').notNull().references(() => conversations.id, { onDelete: 'cascade' }),
+  kind: text('kind').$type<MemberKind>().notNull(),
+  /** Set when kind='user'. References user.id; ON DELETE CASCADE so a
+   *  deleted user is silently removed from any space they were in. */
+  userId: text('user_id').references(() => user.id, { onDelete: 'cascade' }),
+  /** Set when kind='agent'. The DO class name (e.g. 'AssistantAgent'). */
+  agentClass: text('agent_class'),
+  /** Set when kind='agent'. The @-handle ('research', 'writer') —
+   *  unique within a space, used by mention parser to resolve targets. */
+  agentName: text('agent_name'),
+  /** Per-agent reply behaviour. NULL = inherit from the agent class
+   *  default. Always 'always' for the legacy 1:1 chat backfill so
+   *  existing conversations behave identically. */
+  replyMode: text('reply_mode').$type<ReplyMode>(),
+  /** Member role. Owner is the creator; can promote others to admin.
+   *  Phase 1: roles exist but only owner-only / member checks fire. */
+  role: text('role').$type<MemberRole>().notNull().default('member'),
+  joinedAt: integer('joined_at').notNull().$defaultFn(() => Math.floor(Date.now() / 1000)),
+  /** Unread indicator — last message timestamp the user has seen. */
+  lastReadAt: integer('last_read_at'),
+  notificationLevel: text('notification_level').$type<NotificationLevel>().notNull().default('all'),
+  /** User's personal pin of the space to the top of their sidebar.
+   *  Distinct from pinning a single message inside the space. */
+  pinnedToSidebar: integer('pinned_to_sidebar').notNull().default(0),
+  invitedByUserId: text('invited_by_user_id'),
+  /** Set by an admin/owner to soft-block this member (Phase 2). */
+  blockedAt: integer('blocked_at'),
+}, (table) => [
+  index('conversation_members_conversation_idx').on(table.conversationId),
+  index('conversation_members_user_idx').on(table.userId),
+  index('conversation_members_agent_idx').on(table.agentClass, table.agentName),
+  index('conversation_members_kind_idx').on(table.conversationId, table.kind),
+  // Prevent duplicate user memberships within a single conversation.
+  uniqueIndex('conversation_members_user_unique').on(table.conversationId, table.userId),
+  // Agent @-handles are unique within a space (mention parser depends
+  // on this). Per-conversation, so 'research' can be a handle in
+  // multiple spaces without conflict.
+  uniqueIndex('conversation_members_agent_unique').on(table.conversationId, table.agentName),
 ])
