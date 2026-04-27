@@ -10,15 +10,46 @@
 
 ## See it in action
 
-![Landing page tour — scroll-through of the four primary surfaces (Spaces, Projects, Chat, Agents)](./docs/gifs/landing-tour.gif)
+### Spaces — multi-user, multi-agent rooms
 
-Scroll-through of the new landing page covering the four primary surfaces and 22 supporting modules.
+![Spaces in action — @-mentioned an agent, it auto-threaded a long reply, hover bar shows quick reactions + emoji picker + thread + more menu](./docs/gifs/spaces-mention-flow-900.gif)
 
-![Agent loop — user asks for Sydney time and a calculation, the agent calls two tools and returns the answer in one turn](./docs/vfs-agent-loop.gif)
+The full @-mention flow: open the create modal, pick the Marketing pod template, drop into the live three-pane room with @assistant / @research / @writer as members, type `@`, the autocomplete pops, message ships with a mention pill, the agent replies in a thread, and hovering reveals the action bar. Every interaction is real — no mockups.
 
-One prompt, two tool calls (`get_server_time` + `calculate`), streamed response with reasoning, token + latency footer. This is the `ToolLoopAgent` pattern — every tool in the starter works the same way.
+### Headline screenshot
 
-> **Authenticated GIFs (Spaces create / @-mention dispatch / threads / settings) are pending — they need a Google-signed-in session that survives across playwright-cli runs. Run** `playwright-cli -s=audit open https://vite-flare-starter.webfonts.workers.dev/sign-in`, **sign in once via Google, then** `playwright-cli -s=audit state-save ~/.jez/vfs-session.json`. **A `/schedule` job can then capture the authed flows automatically each release.**
+![Marketing-pod Space — 4 members live, two messages with @mention pills, hover action bar with quick reactions + emoji picker + thread + more menu, 1 reply thread indicator](./docs/screenshots/spaces/08-hover-actions.png)
+
+### Dashboard tour
+
+| | |
+|---|---|
+| ![AI Chat](./docs/screenshots/dashboard/01-chat.png) | **AI Chat** — `"Good evening, Jeremy"` greeting, 5 preset chips (Write / Research / Code / Plan / Local), starter suggestions, 16-model picker (Kimi K2.6 default), Attach + voice + drag-drop. |
+| ![Projects](./docs/screenshots/dashboard/02-projects.png) | **Projects** — long-lived workspaces grouping conversations + files + memory + instructions. Search, archive toggle, sort by activity, multi-user share. |
+| ![Skills](./docs/screenshots/dashboard/03-skills.png) | **Skills** — 14 bundled Claude Agent Skills + Sync bundled / Install from GitHub / Add skill. AI Sparkle rewrite + History (4 versions). Source / Preview / History tabs. |
+| ![Connectors](./docs/screenshots/dashboard/04-connectors.png) | **MCP Connectors** — Google Workspace + Microsoft 365 connect (OAuth + bearer both), per-tool always/ask/never, AES-GCM tokens at rest. |
+| ![Approvals](./docs/screenshots/dashboard/05-approvals.png) | **Approvals queue** — human-in-the-loop for autonomous agents. 3 pending memory updates with full payload preview, "from chat" deep-link to the source conversation. |
+| ![Activity](./docs/screenshots/dashboard/06-activity.png) | **Activity log** — 36 total / 0 today / 25 this week stats, filtered audit trail with entity links and pagination. |
+
+### Spaces flow — frame by frame
+
+| | |
+|---|---|
+| ![Spaces empty](./docs/screenshots/spaces/02-spaces-empty.png) | **Empty state** — clear "Spaces are multiplayer rooms" copy + CTA. |
+| ![Create modal — Custom](./docs/screenshots/spaces/03-create-modal.png) | **Create — Custom tab** — name + description + agent checkboxes + per-agent reply mode dropdown + default reply mode picker. |
+| ![Create modal — Templates](./docs/screenshots/spaces/04-templates.png) | **Create — Templates tab** — 6 starter packs (Solo workshop, Marketing pod, Support war room, Research room, Writer's desk, Blank). |
+| ![Detail empty](./docs/screenshots/spaces/05-detail-empty.png) | **Detail empty** — three-pane layout (members rail · timeline · thread when open). Live presence indicator shows green when WS connected. |
+| ![Mention autocomplete](./docs/screenshots/spaces/06-mention-autocomplete.png) | **@-autocomplete** — People + Agents sections, keyboard navigation (↑/↓/Enter/Escape), inserts a real pill chip not text. |
+
+### Other GIFs
+
+![Landing page tour — scroll-through of the four primary surfaces](./docs/gifs/landing-tour.gif)
+
+Scroll-through of the public landing page (this README's source of truth).
+
+![Agent loop — Sydney time + calculation in one turn](./docs/vfs-agent-loop.gif)
+
+The classic `ToolLoopAgent` pattern — one prompt, two tool calls, streamed response with reasoning, token + latency footer.
 
 ---
 

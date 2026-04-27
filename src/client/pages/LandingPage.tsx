@@ -277,42 +277,84 @@ export function LandingPage() {
       {/* Spaces deep-dive */}
       <section className="py-16 bg-muted/30 border-y border-border">
         <div className="container mx-auto max-w-6xl px-4">
-          <div className="grid gap-10 lg:grid-cols-[1fr_1.4fr] items-start">
-            <div>
-              <Badge variant="secondary" className="mb-3">Headline feature</Badge>
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-3">
-                Spaces — Slack-style rooms with AI as a first-class member.
-              </h2>
-              <p className="text-muted-foreground mb-4">
-                The pattern that big-LLM products haven&apos;t shipped yet: a multi-user chat where AI agents are members alongside humans. @-mention them and they answer. Set their reply mode and they jump in proactively, react ambiently, or stay quiet.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Built on Cloudflare Agents SDK + Durable Objects for presence and live broadcast. D1 is canonical storage. Approval queue routes destructive agent actions through a human-in-the-loop. WebSocket is just for live fan-out.
-              </p>
-              <div className="mt-6 flex flex-wrap gap-2">
-                <Badge variant="outline">@-autocomplete</Badge>
-                <Badge variant="outline">Threads · Reactions</Badge>
-                <Badge variant="outline">Templates</Badge>
-                <Badge variant="outline">Cross-space search</Badge>
-                <Badge variant="outline">MCP attachments</Badge>
-                <Badge variant="outline">Slash sub-commands</Badge>
-                <Badge variant="outline">Per-thread mute</Badge>
-                <Badge variant="outline">Block / Pin / Star / Forward</Badge>
-              </div>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {spacesScenes.map((s) => (
-                <Card key={s.title} className="border-border/60">
-                  <CardContent className="p-4">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mb-2">
-                      <s.icon className="h-4 w-4" />
-                    </div>
-                    <h3 className="text-sm font-semibold mb-1">{s.title}</h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{s.body}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+          <div className="text-center mb-10">
+            <Badge variant="secondary" className="mb-3">Headline feature</Badge>
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-3">
+              Spaces — Slack-style rooms with AI as a first-class member.
+            </h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              The pattern that big-LLM products haven&apos;t shipped yet: a multi-user chat where AI agents are members alongside humans. @-mention them and they answer. Set their reply mode and they jump in proactively, react ambiently, or stay quiet.
+            </p>
+          </div>
+
+          {/* Real screenshot of a live Space — captured signed-in. */}
+          <div className="mb-10 overflow-hidden rounded-xl border border-border shadow-2xl">
+            <img
+              src="/spaces-hero.png"
+              alt="Marketing-pod Space — three-pane layout with @-mentioned message and 1 reply thread"
+              className="w-full"
+            />
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+            {spacesScenes.map((s) => (
+              <Card key={s.title} className="border-border/60">
+                <CardContent className="p-4">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mb-2">
+                    <s.icon className="h-4 w-4" />
+                  </div>
+                  <h3 className="text-sm font-semibold mb-1">{s.title}</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{s.body}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-2">
+            <Badge variant="outline">@-autocomplete</Badge>
+            <Badge variant="outline">Threads · Reactions</Badge>
+            <Badge variant="outline">Templates</Badge>
+            <Badge variant="outline">Cross-space search</Badge>
+            <Badge variant="outline">MCP attachments</Badge>
+            <Badge variant="outline">Slash sub-commands</Badge>
+            <Badge variant="outline">Per-thread mute</Badge>
+            <Badge variant="outline">Block / Pin / Star / Forward</Badge>
+            <Badge variant="outline">Proactive · Ambient modes</Badge>
+            <Badge variant="outline">Card-format bot messages</Badge>
+          </div>
+
+          <div className="mt-6 text-center text-xs text-muted-foreground">
+            Built on Cloudflare Agents SDK + Durable Objects for presence and live broadcast. D1 is canonical storage. WebSocket is just for live fan-out.
+          </div>
+        </div>
+      </section>
+
+      {/* Dashboard tour — real screenshots */}
+      <section className="py-16">
+        <div className="container mx-auto max-w-6xl px-4">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">A tour of the dashboard</h2>
+            <p className="mt-3 text-lg text-muted-foreground max-w-2xl mx-auto">
+              Real screenshots — not mockups — of every primary surface inside the app.
+            </p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {[
+              { src: '/tour/01-chat.png', title: 'AI Chat', body: '"Good evening, Jeremy" greeting, preset chips, 16-model picker, persistent history.' },
+              { src: '/tour/02-projects.png', title: 'Projects', body: 'Long-lived workspaces — search, sort by activity, archive, multi-user share with editor/viewer roles.' },
+              { src: '/tour/03-skills.png', title: 'Skills', body: '14 bundled Claude Agent Skills + R2 + GitHub sources. AI Sparkle rewrite + diff approval flow.' },
+              { src: '/tour/04-connectors.png', title: 'MCP Connectors', body: 'Per-user OAuth to Google Workspace, Microsoft 365, any MCP server. PKCE + DCR, AES-GCM tokens.' },
+              { src: '/tour/05-approvals.png', title: 'Approvals queue', body: 'Human-in-the-loop for autonomous agents — review memory updates, sends, posts before they execute.' },
+              { src: '/tour/06-activity.png', title: 'Activity log', body: 'Audit trail with daily/weekly stats, filters, entity history. Pagination built-in.' },
+            ].map((shot) => (
+              <Card key={shot.title} className="overflow-hidden border-border/50">
+                <img src={shot.src} alt={shot.title} className="w-full" />
+                <CardContent className="p-3">
+                  <h3 className="text-sm font-semibold mb-0.5">{shot.title}</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{shot.body}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
