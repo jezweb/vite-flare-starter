@@ -79,6 +79,12 @@ Be conservative. The user reviews everything you queue, and a noisy sweeper teac
 
 export class SweeperAgent extends AutonomousAgent<Env, SweeperState> {
   static override readonly className = 'SweeperAgent'
+  static readonly metadata = {
+    displayName: 'Sweeper',
+    description:
+      'Periodically scans entities (tickets, leads, etc.) for stale items and proposes followup actions. Use for: stuck-ticket sweeps, lead-followup queues, anything "remind me to act on stale X".',
+    category: 'sweeper' as const,
+  }
 
   override initialState: SweeperState = {
     ...AutonomousAgent.defaultInitialState(),

@@ -52,6 +52,12 @@ type SendEmailPayload = z.infer<typeof SendEmailPayload>
 
 export class AssistantAgent extends AutonomousAgent<Env, AutonomousAgentState> {
   static override readonly className = 'AssistantAgent'
+  static readonly metadata = {
+    displayName: 'AI assistant',
+    description:
+      'A general-purpose chat agent with persistent memory + a curated tool catalog. Good default for most routines.',
+    category: 'general' as const,
+  }
 
   /**
    * Tool catalog for this agent. Pulled from the chat module's

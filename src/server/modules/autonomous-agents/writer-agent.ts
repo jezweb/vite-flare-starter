@@ -35,6 +35,12 @@ You don't have tools. Your only job is to compose the response.`
 
 export class WriterAgent extends AutonomousAgent<Env, AutonomousAgentState> {
   static override readonly className = 'WriterAgent'
+  static readonly metadata = {
+    displayName: 'Writer',
+    description:
+      'Composes prose from a brief — emails, summaries, posts. Usually invoked by the Researcher; rarely runs solo.',
+    category: 'writer' as const,
+  }
 
   override initialState: AutonomousAgentState = {
     ...AutonomousAgent.defaultInitialState(),

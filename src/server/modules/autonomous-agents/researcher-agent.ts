@@ -53,6 +53,12 @@ If the topic is too narrow / personal / opinion-based for web search, skip searc
 
 export class ResearcherAgent extends AutonomousAgent<Env, AutonomousAgentState> {
   static override readonly className = 'ResearcherAgent'
+  static readonly metadata = {
+    displayName: 'Researcher',
+    description:
+      'Searches the web, gathers information on a topic, then hands off a brief to the Writer. Use for: market research, competitor scans, "what\'s happening with X" digests.',
+    category: 'researcher' as const,
+  }
 
   override initialState: AutonomousAgentState = {
     ...AutonomousAgent.defaultInitialState(),

@@ -46,6 +46,7 @@ import autonomousAgentsRoutes from './modules/autonomous-agents/routes'
 import approvalsRoutes from './modules/approvals/routes'
 import routinesRoutes from './modules/routines/routes'
 import inboxRoutes from './modules/inbox/routes'
+import agentsRoutes from './lib/agents/routes'
 import webhookAgentsRoutes from './modules/webhook-agents/routes'
 import agentObservabilityRoutes from './modules/agent-observability/routes'
 import entitiesRoutes from './modules/entities/routes'
@@ -297,6 +298,7 @@ app.route('/api/autonomous-agents', autonomousAgentsRoutes)
 app.route('/api/approvals', approvalsRoutes)
 app.route('/api/routines', routinesRoutes)
 app.route('/api/inbox', inboxRoutes)
+app.route('/api/agents', agentsRoutes)
 app.route('/api/webhooks', webhookAgentsRoutes)
 app.route('/api/agent-observability', agentObservabilityRoutes)
 app.route('/api/entities', entitiesRoutes)

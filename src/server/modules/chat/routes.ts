@@ -658,6 +658,55 @@ app.post('/stream-extract', async (c) => {
  * import type { ChatRoutes } from '@/server/modules/chat/routes'
  * const client = hc<ChatRoutes>('/api/chat')
  */
+/**
+ * GET /catalog — tools catalogue for routine setup wizard pickers.
+ *
+ * Returns the tool definitions the chat agent ships with, filtered to
+ * the user's connector settings. Each entry has `name + description +
+ * category` so a UI can render a grouped checkbox list.
+ *
+ * Categories are derived from a short prefix heuristic (gmail_/drive_/
+ * notion_/atlassian_ → connector group; everything else → 'Built-in').
+ */
+app.get('/catalog', async (c) => {
+  const userId = c.get('userId')
+  // Build a stub AgentContext just for the availability filter.
+  const { buildChatTools } = await import('./tools')
+  const ctx = {
+    env: c.env as unknown as Record<string, unknown>,
+    userId,
+    user: { id: userId, email: '', name: null, image: null, role: 'user' as const },
+    projectId: null,
+    model: { id: 'stub', provider: 'other' as const, supportsVision: false, supportsTools: true },
+    telemetry: { recordToolCall: () => {}, recordError: () => {} } as never,
+  }
+  const tools = await buildChatTools(ctx as never)
+  const catalog = Object.entries(tools).map(([name, tool]) => {
+    const description = (tool as { description?: string }).description ?? ''
+    return { name, description, category: categoriseTool(name) }
+  })
+  catalog.sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name))
+  return c.json({ tools: catalog })
+})
+
+function categoriseTool(name: string): string {
+  if (name.startsWith('gmail_') || name.startsWith('google_workspace_') || name === 'show_link' || name === 'show_image') {
+    return name.startsWith('gmail_') ? 'Gmail' : name.startsWith('google_') ? 'Google Workspace' : 'UI'
+  }
+  if (name.startsWith('drive_') || name.includes('drive')) return 'Google Drive'
+  if (name.startsWith('calendar_')) return 'Google Calendar'
+  if (name.startsWith('notion_')) return 'Notion'
+  if (name.startsWith('atlassian_') || name.startsWith('jira_')) return 'Atlassian'
+  if (name.startsWith('slack_')) return 'Slack'
+  if (name.startsWith('microsoft_')) return 'Microsoft 365'
+  if (name.startsWith('image_') || name.includes('image')) return 'Images'
+  if (name.startsWith('media_') || name.includes('video')) return 'Media'
+  if (name.startsWith('inbox_') || name === 'notify' || name === 'space_send' || name === 'webhook_post' || name === 'approval_queue') return 'Channels'
+  if (name === 'find_tools' || name === 'load_skill' || name === 'recall' || name === 'remember' || name === 'done') return 'Core'
+  if (name === 'web_search' || name.includes('search') || name.includes('browse')) return 'Search & web'
+  return 'Other'
+}
+
 export type ChatRoutes = typeof app
 
 export default app
