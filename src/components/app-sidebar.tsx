@@ -6,22 +6,18 @@
  * floating sidebar style.
  */
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar'
 import { NavMain } from '@/components/nav-main'
 import { NavUser } from '@/components/nav-user'
 import { useSession } from '@/client/lib/auth'
 import { features } from '@/shared/config/features'
-import { appConfig } from '@/shared/config/app'
+import { OrgSwitcher } from '@/client/modules/organizations/components/OrgSwitcher'
 import { NAV_SECTIONS, type NavItem } from '@/shared/config/nav'
 
 function filterItems(
@@ -56,30 +52,14 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" variant="inset" {...props}>
       <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
-              <Link to="/">
-                <div className="flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg bg-primary text-primary-foreground">
-                  {appConfig.logoUrl ? (
-                    // Real logo image — fork sets VITE_APP_LOGO_URL.
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={appConfig.logoUrl}
-                      alt={appConfig.name}
-                      className="size-full object-contain"
-                    />
-                  ) : (
-                    <span className="text-xs font-bold">{appConfig.name.charAt(0)}</span>
-                  )}
-                </div>
-                <div className="grid flex-1 text-left leading-tight">
-                  <span className="truncate text-base font-semibold">{appConfig.name}</span>
-                </div>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        {/*
+          * Once authed, the sidebar header shows the user's active
+          * organisation context (Slack / Linear / Notion convention).
+          * The product brand (`appConfig.name` + logo) still appears
+          * on public pages and the tab title — it's the platform
+          * identity. The sidebar header is the tenant identity.
+          */}
+        <OrgSwitcher />
       </SidebarHeader>
 
       <SidebarContent>

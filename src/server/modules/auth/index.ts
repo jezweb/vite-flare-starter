@@ -184,6 +184,30 @@ export function createAuth(
               entityName: newUser.email,
               metadata: { event: 'signup' },
             })
+            // Auto-create a personal org for the new user so the
+            // multi-tenant UI has something to render from day one.
+            // Idempotent — see ensurePersonalOrg for the guards.
+            try {
+              const { ensurePersonalOrg } = await import(
+                '@/server/modules/organizations/seed'
+              )
+              await ensurePersonalOrg(
+                { DB: d1 },
+                {
+                  userId: newUser.id,
+                  userName: newUser.name,
+                  userEmail: newUser.email,
+                },
+              )
+            } catch (err) {
+              console.error(
+                JSON.stringify({
+                  event: 'auth_user_create_personal_org_failed',
+                  userId: newUser.id,
+                  error: err instanceof Error ? err.message : String(err),
+                }),
+              )
+            }
           },
         },
       },
@@ -201,6 +225,27 @@ export function createAuth(
                 userAgent: newSession.userAgent ?? null,
               },
             })
+            // Default the session's active org to the user's earliest
+            // membership (usually their personal org) so the dashboard
+            // never lands on a "(no active org)" empty state.
+            try {
+              const { setDefaultActiveOrgForSession } = await import(
+                '@/server/modules/organizations/seed'
+              )
+              await setDefaultActiveOrgForSession(
+                { DB: d1 },
+                newSession.id,
+                newSession.userId,
+              )
+            } catch (err) {
+              console.error(
+                JSON.stringify({
+                  event: 'auth_session_set_active_org_failed',
+                  sessionId: newSession.id,
+                  error: err instanceof Error ? err.message : String(err),
+                }),
+              )
+            }
           },
         },
       },
