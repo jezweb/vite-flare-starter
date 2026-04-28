@@ -22,6 +22,24 @@ export function formatAgentClass(
 ): string {
   const meta = registry?.get(className)
   if (meta) return meta.displayName
+  // Well-known non-AutonomousAgent sources of approvals + findings.
+  // These are emitted by the platform itself rather than by a registered
+  // agent class, so the registry lookup misses them and the fallback
+  // would otherwise leak the snake_case enum into the UI.
+  switch (className) {
+    case 'memory_extraction':
+    case 'memory':
+      return 'AI memory'
+    case 'system':
+      return 'system'
+  }
+  // Snake_case fallback (agentClass arrived as `my_custom_class`).
+  if (className.includes('_')) {
+    return className
+      .replace(/_+/g, ' ')
+      .replace(/\b\w/g, (m) => m.toUpperCase())
+  }
+  // CamelCase fallback (`MyCustomAgent` → `My Custom`).
   return className.replace(/Agent$/, '').replace(/([A-Z])/g, ' $1').trim() || className
 }
 
