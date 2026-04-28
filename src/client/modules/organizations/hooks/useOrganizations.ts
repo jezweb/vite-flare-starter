@@ -44,7 +44,11 @@ export interface OrgMember {
   organizationId: string
   userId: string
   role: OrgRole
-  createdAt: number
+  /** Unix integer when the row was inserted by raw SQL (backfill
+   *  migration) or ISO 8601 string when inserted via the better-auth
+   *  adapter. Components must handle both — see parseDate() in
+   *  MembersList. */
+  createdAt: number | string
   user: {
     id: string
     name: string | null

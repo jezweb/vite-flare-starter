@@ -45,6 +45,7 @@ const RoutinesPage = lazy(() => import('./modules/routines/pages/RoutinesPage').
 const NewRoutinePage = lazy(() => import('./modules/routines/pages/NewRoutinePage').then(m => ({ default: m.NewRoutinePage })))
 const RoutineDetailPage = lazy(() => import('./modules/routines/pages/RoutineDetailPage').then(m => ({ default: m.RoutineDetailPage })))
 const OrganizationPage = lazy(() => import('./modules/organizations/pages/OrganizationPage').then(m => ({ default: m.OrganizationPage })))
+const AcceptInvitationPage = lazy(() => import('./pages/AcceptInvitationPage').then(m => ({ default: m.AcceptInvitationPage })))
 const ConnectorsPage = lazy(() => import('./modules/connectors/pages/ConnectorsPage').then(m => ({ default: m.ConnectorsPage })))
 const VoiceInputExamplePage = lazy(() => import('./modules/voice/pages/VoiceInputExamplePage').then(m => ({ default: m.VoiceInputExamplePage })))
 const VideoInputExamplePage = lazy(() => import('./modules/video/pages/VideoInputExamplePage').then(m => ({ default: m.VideoInputExamplePage })))
@@ -128,6 +129,9 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
+          {/* Accept-invitation — handles both signed-in (accept now) and
+              signed-out (stash + bounce to sign-in) cases. */}
+          <Route path="/accept-invitation/:invitationId" element={<AcceptInvitationPage />} />
 
           {/* Protected dashboard routes */}
           <Route

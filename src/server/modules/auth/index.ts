@@ -361,8 +361,44 @@ export function createAuth(
       organization({
         // Default roles: owner, admin, member. Forks needing custom
         // roles configure `ac` here per the AC docs.
-        // Async invite flow not configured — deferred.
-        sendInvitationEmail: undefined,
+        sendInvitationEmail: async (data) => {
+          // Phase 5 — send the invite via SMTP2Go (or whatever the
+          // email service is wired to). Best-effort: failures are
+          // logged but never thrown so the invite-member endpoint
+          // still succeeds and the inviter can copy the link instead.
+          //
+          // Provider falls back to 'console' when EMAIL_API_KEY isn't
+          // set, so dev environments still get an email_log row but
+          // no real send. Set EMAIL_API_KEY (SMTP2Go) in production.
+          try {
+            const { sendEmail } = await import('@/server/modules/email/service')
+            const baseUrl = String(env.BETTER_AUTH_URL ?? '')
+            const signUpUrl = `${baseUrl}/accept-invitation/${data.id}`
+            // Use mailEnv (closure-captured) — it includes DB +
+            // email-provider bindings. Plain `env` doesn't have DB, so
+            // sendEmail would fail logging without it.
+            await sendEmail(mailEnv, {
+              to: data.email,
+              template: 'invite',
+              templateData: {
+                inviterName: data.inviter.user.name ?? data.inviter.user.email,
+                inviterEmail: data.inviter.user.email,
+                organizationName: data.organization.name,
+                signUpUrl,
+                appName: String(env.APP_NAME ?? 'Vite Flare Starter'),
+              },
+            })
+          } catch (err) {
+            console.error(
+              JSON.stringify({
+                event: 'auth_send_invitation_email_failed',
+                invitationId: data.id,
+                email: data.email,
+                error: err instanceof Error ? err.message : String(err),
+              }),
+            )
+          }
+        },
       }),
     ],
   })

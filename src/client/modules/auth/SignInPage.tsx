@@ -46,8 +46,11 @@ function resolveNextUrl(raw: string | null): string {
   if (!raw) return '/dashboard'
   try {
     const decoded = decodeURIComponent(raw)
-    // Must be an absolute path starting with /dashboard (no protocol, no host)
-    if (!decoded.startsWith('/dashboard')) return '/dashboard'
+    // Allowlist: dashboard or accept-invitation paths only.
+    // (Open-redirect protection — never trust the raw query param.)
+    const isDashboard = decoded.startsWith('/dashboard')
+    const isAcceptInvite = decoded.startsWith('/accept-invitation/')
+    if (!isDashboard && !isAcceptInvite) return '/dashboard'
     // Block URLs that'd loop back to sign-in
     if (decoded.includes('/sign-in') || decoded.includes('/login')) return '/dashboard'
     return decoded

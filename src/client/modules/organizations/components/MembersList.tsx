@@ -117,7 +117,7 @@ export function MembersList({ organizationId, myRole }: Props) {
                 {m.role}
               </Badge>
               <span className="hidden sm:inline text-[11px] text-muted-foreground tabular-nums">
-                joined {formatDistanceToNow(new Date(m.createdAt * 1000), { addSuffix: true })}
+                joined {formatDistanceToNow(parseDate(m.createdAt), { addSuffix: true })}
               </span>
               {(canChangeRole || canRemoveThisMember) ? (
                 <DropdownMenu>
@@ -181,6 +181,17 @@ export function MembersList({ organizationId, myRole }: Props) {
       />
     </>
   )
+}
+
+/**
+ * Better-auth's adapter returns createdAt as either a Unix integer
+ * (when the row was inserted by raw SQL — e.g. our backfill migration)
+ * OR an ISO 8601 string (when inserted via the plugin's adapter).
+ * Normalise to Date.
+ */
+function parseDate(raw: number | string): Date {
+  if (typeof raw === 'number') return new Date(raw * 1000)
+  return new Date(raw)
 }
 
 function Avatar({ member }: { member: OrgMember }) {
