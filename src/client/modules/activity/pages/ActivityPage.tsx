@@ -20,6 +20,14 @@ import {
 import { useActivities, useActivityStats, type Activity } from '../hooks/useActivity'
 import { EmptyState } from '@/client/components/EmptyState'
 import {
+  ListRow,
+  ListRowGroup,
+  ListRowIcon,
+  ListRowBody,
+  ListRowMeta,
+  ListRowTrailing,
+} from '@/components/ui/list-row'
+import {
   Activity as ActivityIcon,
   Plus,
   Pencil,
@@ -121,42 +129,44 @@ function ActivityItem({ activity }: { activity: Activity }) {
   const colorClass = ACTION_COLORS[activity.action] || 'bg-muted text-muted-foreground'
   const href = activityHref(activity)
 
-  const body = (
+  const inner = (
     <>
-      <div className={`flex h-10 w-10 items-center justify-center rounded-full ${colorClass}`}>
-        <Icon className="h-5 w-5" />
-      </div>
-      <div className="flex-1 space-y-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <p className="font-medium">{formatActionVerb(activity.action)}</p>
-          <Badge variant="outline" className="text-xs">
+      <ListRowIcon>
+        <div className={`flex size-7 items-center justify-center rounded-full ${colorClass}`}>
+          <Icon className="size-3.5" />
+        </div>
+      </ListRowIcon>
+      <ListRowBody>
+        <div className="flex items-center gap-2 min-w-0">
+          <p className="text-sm font-medium shrink-0">{formatActionVerb(activity.action)}</p>
+          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 leading-3">
             {formatEntityType(activity.entityType)}
           </Badge>
+          <span className="text-sm text-muted-foreground truncate">
+            {activity.entityName || activity.entityId}
+          </span>
         </div>
-        <p className="text-sm text-muted-foreground truncate">
-          {activity.entityName || activity.entityId}
-        </p>
-        <p className="text-xs text-muted-foreground">{formatTime(activity.createdAt)}</p>
-      </div>
+        <ListRowMeta>
+          <span>{formatTime(activity.createdAt)}</span>
+        </ListRowMeta>
+      </ListRowBody>
+      {href && (
+        <ListRowTrailing>
+          <ChevronRight className="size-3.5 text-muted-foreground/50 group-hover/list-row:text-foreground transition-colors" />
+        </ListRowTrailing>
+      )}
     </>
   )
 
   if (href) {
     return (
-      <Link
-        to={href}
-        className="flex items-start gap-4 rounded-lg border p-4 hover:bg-muted/50 transition-colors"
-      >
-        {body}
-      </Link>
+      <ListRow asChild>
+        <Link to={href}>{inner}</Link>
+      </ListRow>
     )
   }
 
-  return (
-    <div className="flex items-start gap-4 rounded-lg border p-4">
-      {body}
-    </div>
-  )
+  return <ListRow variant="plain">{inner}</ListRow>
 }
 
 function StatsCard({ title, value, loading }: { title: string; value: number; loading: boolean }) {
@@ -199,7 +209,7 @@ export function ActivityPage() {
         </div>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Activity</h1>
-          <p className="text-sm text-muted-foreground">View your recent activity and actions</p>
+          <p className="text-sm text-muted-foreground">Audit trail of changes you've made — created, updated, archived.</p>
         </div>
       </div>
 
@@ -257,11 +267,13 @@ export function ActivityPage() {
               }
             />
           ) : (
-            <div className="space-y-4">
+            <ListRowGroup>
               {activities.map((activity) => (
-                <ActivityItem key={activity.id} activity={activity} />
+                <li key={activity.id}>
+                  <ActivityItem activity={activity} />
+                </li>
               ))}
-            </div>
+            </ListRowGroup>
           )}
 
           {/* Pagination — hidden while loading so the "Page 1" label

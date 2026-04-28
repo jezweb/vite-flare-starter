@@ -119,8 +119,8 @@ export function AdminPage() {
           <Shield className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Admin Panel</h1>
-          <p className="text-sm text-muted-foreground">Manage users, features, and API tokens</p>
+          <h1 className="text-2xl font-bold tracking-tight">Admin</h1>
+          <p className="text-sm text-muted-foreground">Manage people, features, tokens, email logs, and tool errors.</p>
         </div>
       </div>
 

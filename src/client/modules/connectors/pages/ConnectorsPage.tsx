@@ -50,6 +50,7 @@ import { ConnectionDetail } from '../components/ConnectionDetail'
 import { GoogleWorkspacePanel } from '../components/GoogleWorkspacePanel'
 import { MicrosoftWorkspacePanel } from '../components/MicrosoftWorkspacePanel'
 import { StubConnectorPanel } from '../components/StubConnectorPanel'
+import { Section } from '@/components/ui/section'
 
 function resolveIcon(name: string): LucideIcon {
   const icons = LucideIcons as unknown as Record<string, LucideIcon>
@@ -132,63 +133,78 @@ export function ConnectorsPage() {
         </div>
       </div>
 
-      {/* Native integrations — shown above MCP connectors because they're
-          first-class (no MCP indirection, no token pasting). Self-hides when
-          the fork hasn't configured GOOGLE_WORKSPACE_CLIENT_ID. */}
-      <GoogleWorkspacePanel />
-      <MicrosoftWorkspacePanel />
-      <StubConnectorPanel
-        providerId="slack"
-        logo={
-          <svg viewBox="0 0 24 24" aria-hidden className="h-6 w-6" fill="#E01E5A">
-            <path d="M5 15a2 2 0 1 1-2-2h2v2zm1 0a2 2 0 1 1 4 0v5a2 2 0 1 1-4 0v-5zm2-8a2 2 0 1 1-2-2V3a2 2 0 1 1 4 0v2H8zm0 1a2 2 0 1 1 0 4H3a2 2 0 1 1 0-4h5zm11 6a2 2 0 1 1 2 2h-2v-2zm-1 0a2 2 0 1 1-4 0V9a2 2 0 1 1 4 0v5zm-2 8a2 2 0 1 1 2 2v2a2 2 0 1 1-4 0v-2h2zm0-1a2 2 0 1 1 0-4h5a2 2 0 1 1 0 4h-5z" />
-          </svg>
-        }
-      />
-      <StubConnectorPanel
-        providerId="notion"
-        logo={
-          <svg viewBox="0 0 24 24" aria-hidden className="h-6 w-6" fill="currentColor">
-            <path d="M4.5 3.4L14 2.7c1.2-.1 1.5 0 2.3.5l3 2.1c.6.4.8.5.8 1v15.3c0 .8-.3 1.3-1.3 1.4l-11 .7c-.8.1-1.2 0-1.6-.5L3.9 21c-.4-.6-.6-1-.6-1.5V4.7c0-.7.3-1.2 1.2-1.3z" />
-          </svg>
-        }
-      />
-      <StubConnectorPanel
-        providerId="atlassian"
-        logo={
-          <svg viewBox="0 0 24 24" aria-hidden className="h-6 w-6" fill="#2684FF">
-            <path d="M6.5 11.5L2 20h8.5c.2 0 .4-.2.4-.4 0-.1 0-.2-.1-.3L6.8 11.6c-.2-.2-.4-.2-.3-.1z" />
-            <path d="M11.4 4c-.2 0-.4.1-.5.3l-3.6 7.2-.8 1.6 4.6 8.5c.1.2.3.4.6.4H22c.3 0 .5-.2.5-.5 0-.1 0-.2-.1-.3L12 4.3c-.2-.2-.4-.3-.6-.3z" fill="#0052CC" />
-          </svg>
-        }
-      />
+      {/* Native integrations — first-class connections that aren't MCP.
+          Each panel self-hides if its provider isn't configured. */}
+      <Section
+        title="Workspace integrations"
+        description="Sign in with Google or Microsoft for one-click access to email, calendar, drive and more."
+      >
+        <GoogleWorkspacePanel />
+        <MicrosoftWorkspacePanel />
+      </Section>
 
-      {connectionsLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </div>
-      ) : connections.length === 0 ? (
-        <EmptyState
-          icon={Plug}
-          title="No connectors yet"
-          description="Paste any MCP server URL to connect. Start with an example to see the flow, or add your own custom connector — we'll probe the endpoint and walk you through OAuth or bearer auth."
-          action={{ label: 'Add connector', onClick: () => setCustomOpen(true) }}
+      <Section
+        title="Coming soon"
+        description="These integrations aren't wired up yet — let us know if you want them."
+      >
+        <StubConnectorPanel
+          providerId="slack"
+          logo={
+            <svg viewBox="0 0 24 24" aria-hidden className="h-6 w-6" fill="#E01E5A">
+              <path d="M5 15a2 2 0 1 1-2-2h2v2zm1 0a2 2 0 1 1 4 0v5a2 2 0 1 1-4 0v-5zm2-8a2 2 0 1 1-2-2V3a2 2 0 1 1 4 0v2H8zm0 1a2 2 0 1 1 0 4H3a2 2 0 1 1 0-4h5zm11 6a2 2 0 1 1 2 2h-2v-2zm-1 0a2 2 0 1 1-4 0V9a2 2 0 1 1 4 0v5zm-2 8a2 2 0 1 1 2 2v2a2 2 0 1 1-4 0v-2h2zm0-1a2 2 0 1 1 0-4h5a2 2 0 1 1 0 4h-5z" />
+            </svg>
+          }
         />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {connections.map((conn) => {
-            const catalogEntry = catalog.find((c) => c.id === conn.connectorId)
-            return (
-              <ConnectionCard
-                key={conn.id}
-                connection={conn}
-                catalog={catalogEntry}
-                onOpen={() => setDetailId(conn.id)}
-              />
-            )
-          })}
-        </div>
-      )}
+        <StubConnectorPanel
+          providerId="notion"
+          logo={
+            <svg viewBox="0 0 24 24" aria-hidden className="h-6 w-6" fill="currentColor">
+              <path d="M4.5 3.4L14 2.7c1.2-.1 1.5 0 2.3.5l3 2.1c.6.4.8.5.8 1v15.3c0 .8-.3 1.3-1.3 1.4l-11 .7c-.8.1-1.2 0-1.6-.5L3.9 21c-.4-.6-.6-1-.6-1.5V4.7c0-.7.3-1.2 1.2-1.3z" />
+            </svg>
+          }
+        />
+        <StubConnectorPanel
+          providerId="atlassian"
+          logo={
+            <svg viewBox="0 0 24 24" aria-hidden className="h-6 w-6" fill="#2684FF">
+              <path d="M6.5 11.5L2 20h8.5c.2 0 .4-.2.4-.4 0-.1 0-.2-.1-.3L6.8 11.6c-.2-.2-.4-.2-.3-.1z" />
+              <path d="M11.4 4c-.2 0-.4.1-.5.3l-3.6 7.2-.8 1.6 4.6 8.5c.1.2.3.4.6.4H22c.3 0 .5-.2.5-.5 0-.1 0-.2-.1-.3L12 4.3c-.2-.2-.4-.3-.6-.3z" fill="#0052CC" />
+            </svg>
+          }
+        />
+      </Section>
+
+      <Section
+        title="Connected apps"
+        description="External tools you've connected via MCP. The AI uses these when chatting or running routines."
+      >
+        {connectionsLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : connections.length === 0 ? (
+          <EmptyState
+            icon={Plug}
+            title="No apps connected yet"
+            description="Click 'Browse apps' above to see ready-made connections, or 'Add custom app' if you have your own connection URL."
+            action={{ label: 'Browse apps', onClick: () => setBrowseOpen(true) }}
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {connections.map((conn) => {
+              const catalogEntry = catalog.find((c) => c.id === conn.connectorId)
+              return (
+                <ConnectionCard
+                  key={conn.id}
+                  connection={conn}
+                  catalog={catalogEntry}
+                  onOpen={() => setDetailId(conn.id)}
+                />
+              )
+            })}
+          </div>
+        )}
+      </Section>
 
       {/* Detail sheet for selected connection */}
       {detailId && (

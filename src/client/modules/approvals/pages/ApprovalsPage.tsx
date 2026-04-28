@@ -88,7 +88,8 @@ export function ApprovalsPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Approvals</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Actions queued by autonomous agents waiting for your review.
+          Your AI is asking before sending an email, posting a message,
+          or updating its memory. Approve, reject, or edit before it acts.
         </p>
       </div>
 

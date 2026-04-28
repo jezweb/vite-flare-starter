@@ -11,10 +11,18 @@ import { useQueryClient } from '@tanstack/react-query'
 import { formatDistanceToNow, format } from 'date-fns'
 import { Bell, Check, CheckCheck, Info, AlertTriangle, AlertCircle, Loader2, Inbox } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { EmptyState } from '@/client/components/EmptyState'
-import { cn } from '@/lib/utils'
+import {
+  ListRow,
+  ListRowGroup,
+  ListRowIcon,
+  ListRowBody,
+  ListRowTitle,
+  ListRowMeta,
+  ListRowTrailing,
+} from '@/components/ui/list-row'
 import {
   useNotifications,
   useMarkAsRead,
@@ -75,7 +83,8 @@ export function NotificationsPage() {
         <div>
           <h1 className="text-2xl font-semibold">Notifications</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Every notification sent to your account. The header bell shows the 10 most recent.
+            Quick pings from across the app. The bell in the header
+            shows the latest 10; this is the full history.
           </p>
         </div>
         {unreadCount > 0 && (
@@ -126,25 +135,16 @@ export function NotificationsPage() {
           }
         />
       ) : (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Recent</CardTitle>
-            <CardDescription>
-              Click an unread item to mark it read. Oldest items will be pruned automatically.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <ul className="divide-y">
-              {notifications.map((n) => (
-                <NotificationRow
-                  key={n.id}
-                  notification={n}
-                  onMarkRead={() => markAsRead.mutate(n.id)}
-                />
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+        <ListRowGroup>
+          {notifications.map((n) => (
+            <li key={n.id}>
+              <NotificationRow
+                notification={n}
+                onMarkRead={() => markAsRead.mutate(n.id)}
+              />
+            </li>
+          ))}
+        </ListRowGroup>
       )}
     </div>
   )
@@ -159,43 +159,37 @@ function NotificationRow({
 }) {
   const created = new Date(notification.createdAt)
   return (
-    <li
-      className={cn(
-        'flex items-start gap-3 p-4 hover:bg-muted/50 transition-colors',
-        !notification.read && 'bg-muted/30',
-      )}
-    >
-      <div className="mt-0.5">{iconFor(notification.type)}</div>
-      <div className="flex-1 min-w-0 space-y-1">
-        <div className="flex items-center gap-2">
-          <p className={cn('text-sm', !notification.read && 'font-medium')}>
-            {notification.title}
-          </p>
-          {!notification.read && <span className="h-2 w-2 rounded-full bg-primary shrink-0" />}
-        </div>
-        {notification.message && (
-          <p className="text-sm text-muted-foreground">{notification.message}</p>
-        )}
-        <p
-          className="text-xs text-muted-foreground"
-          title={format(created, 'PPpp')}
-        >
-          {formatDistanceToNow(created, { addSuffix: true })}
-        </p>
-      </div>
+    <ListRow state={notification.read ? 'default' : 'unread'}>
+      <ListRowIcon>{iconFor(notification.type)}</ListRowIcon>
+      <ListRowBody>
+        <ListRowTitle unread={!notification.read}>{notification.title}</ListRowTitle>
+        <ListRowMeta>
+          {notification.message && (
+            <>
+              <span>{notification.message}</span>
+              <span>·</span>
+            </>
+          )}
+          <span className="shrink-0" title={format(created, 'PPpp')}>
+            {formatDistanceToNow(created, { addSuffix: true })}
+          </span>
+        </ListRowMeta>
+      </ListRowBody>
       {!notification.read && (
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={onMarkRead}
-          title="Mark as read"
-          aria-label="Mark as read"
-          className="text-muted-foreground hover:text-foreground"
-        >
-          <Check className="h-4 w-4" />
-        </Button>
+        <ListRowTrailing>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={onMarkRead}
+            title="Mark as read"
+            aria-label="Mark as read"
+            className="text-muted-foreground group-hover/list-row:text-foreground"
+          >
+            <Check className="h-4 w-4" />
+          </Button>
+        </ListRowTrailing>
       )}
-    </li>
+    </ListRow>
   )
 }
 

@@ -21,10 +21,18 @@ import {
   Zap,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { EmptyState } from '@/client/components/EmptyState'
+import {
+  ListRow,
+  ListRowGroup,
+  ListRowIcon,
+  ListRowBody,
+  ListRowTitle,
+  ListRowMeta,
+  ListRowTrailing,
+} from '@/components/ui/list-row'
 import { useRoutines, useUpdateRoutine, type Routine } from '../hooks/useRoutines'
 import { useAgentCatalog } from '../hooks/useAgentCatalog'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -52,8 +60,9 @@ export function RoutinesPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Routines</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Recurring agent workflows. Each routine fires its target agent on a
-            schedule (or webhook), with a tool allow-list, skills, and hooks.
+            Have your AI do something on a schedule — a daily morning brief,
+            a weekly digest, a check on stuck leads. Each routine drops its
+            findings into your Inbox.
           </p>
         </div>
         <Button asChild className="gap-1.5">
@@ -106,11 +115,13 @@ export function RoutinesPage() {
       )}
 
       {!isLoading && data && data.total > 0 && (
-        <ul className="space-y-2">
+        <ListRowGroup>
           {data.routines.map((r) => (
-            <RoutineRow key={r.id} routine={r} agentRegistry={agentRegistry} />
+            <li key={r.id}>
+              <RoutineRow routine={r} agentRegistry={agentRegistry} />
+            </li>
           ))}
-        </ul>
+        </ListRowGroup>
       )}
     </div>
   )
@@ -135,49 +146,51 @@ function RoutineRow({
     : 'never'
 
   return (
-    <li>
-      <Card className="transition-colors hover:bg-muted/30">
-        <CardContent className="p-3">
-          <div className="flex items-start gap-3">
-            <div className="mt-1 shrink-0">
-              <TriggerIcon kind={routine.triggerKind} />
-            </div>
-            <Link to={`/dashboard/routines/${routine.id}`} className="min-w-0 flex-1 block">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-medium text-sm truncate">{routine.name}</span>
-                <span className="text-[11px] text-muted-foreground">{agentLabel}</span>
-                {!routine.enabled && (
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">Disabled</Badge>
-                )}
-              </div>
-              {routine.description && (
-                <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1">
-                  {routine.description}
-                </p>
-              )}
-              <div className="mt-1 flex items-center gap-3 text-[11px] text-muted-foreground">
-                <span className="inline-flex items-center gap-1">
-                  <Clock className="size-3" />
-                  {cadence}
-                </span>
-                <span className="inline-flex items-center gap-1">
-                  <Activity className="size-3" />
-                  last run {lastRun}
-                </span>
-                {routine.lastOutcome && <OutcomeBadge outcome={routine.lastOutcome} />}
-              </div>
-            </Link>
-            <div className="shrink-0 flex items-center gap-2">
-              <Switch
-                checked={routine.enabled}
-                onCheckedChange={onToggle}
-                aria-label={`${routine.enabled ? 'Disable' : 'Enable'} ${routine.name}`}
-              />
-            </div>
+    <ListRow state={routine.enabled ? 'default' : 'disabled'}>
+      <ListRowIcon>
+        <TriggerIcon kind={routine.triggerKind} />
+      </ListRowIcon>
+      <Link to={`/dashboard/routines/${routine.id}`} className="min-w-0 flex-1 block">
+        <ListRowBody>
+          <div className="flex items-center gap-2 min-w-0">
+            <ListRowTitle unread>{routine.name}</ListRowTitle>
+            <span className="text-[11px] text-muted-foreground shrink-0">{agentLabel}</span>
+            {!routine.enabled && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 leading-3">Disabled</Badge>
+            )}
           </div>
-        </CardContent>
-      </Card>
-    </li>
+          {routine.description && (
+            <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1">
+              {routine.description}
+            </p>
+          )}
+          <ListRowMeta>
+            <span className="inline-flex items-center gap-1">
+              <Clock className="size-3" />
+              {cadence}
+            </span>
+            <span>·</span>
+            <span className="inline-flex items-center gap-1">
+              <Activity className="size-3" />
+              last run {lastRun}
+            </span>
+            {routine.lastOutcome && (
+              <>
+                <span>·</span>
+                <OutcomeBadge outcome={routine.lastOutcome} />
+              </>
+            )}
+          </ListRowMeta>
+        </ListRowBody>
+      </Link>
+      <ListRowTrailing>
+        <Switch
+          checked={routine.enabled}
+          onCheckedChange={onToggle}
+          aria-label={`${routine.enabled ? 'Disable' : 'Enable'} ${routine.name}`}
+        />
+      </ListRowTrailing>
+    </ListRow>
   )
 }
 

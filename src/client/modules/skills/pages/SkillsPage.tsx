@@ -108,7 +108,12 @@ export function SkillsPage() {
         <div>
           <h1 className="text-2xl font-bold">Skills</h1>
           <p className="mt-1 max-w-prose text-sm text-muted-foreground">
-            Reusable agent procedures — compatible with the{' '}
+            Teach your AI to do specific jobs — write a morning brief,
+            review a contract, draft an email. Type{' '}
+            <code className="rounded bg-muted px-1 whitespace-nowrap">
+              /skill-name
+            </code>{' '}
+            in chat to use one. Compatible with the{' '}
             <a
               href="https://agentskills.io/specification"
               target="_blank"
@@ -117,11 +122,7 @@ export function SkillsPage() {
             >
               agentskills.io spec
             </a>
-            . Use{' '}
-            <code className="rounded bg-muted px-1 whitespace-nowrap">
-              /skill-name
-            </code>{' '}
-            in chat to activate explicitly.
+            .
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

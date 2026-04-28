@@ -23,6 +23,15 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import {
+  ListRow,
+  ListRowGroup,
+  ListRowIcon,
+  ListRowBody,
+  ListRowTitle,
+  ListRowMeta,
+  ListRowTrailing,
+} from '@/components/ui/list-row'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { EmptyState } from '@/client/components/EmptyState'
 import { apiClient } from '@/client/lib/api-client'
@@ -94,7 +103,8 @@ export function InboxPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Inbox</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Findings + approvals, sorted by importance and due date.
+          Things your AI noticed, plus anything waiting on a yes / no.
+          Most-important first.
         </p>
       </div>
 
@@ -165,11 +175,13 @@ export function InboxPage() {
       )}
 
       {!isLoading && data && data.total > 0 && (
-        <ul className="divide-y rounded-md border bg-card">
+        <ListRowGroup>
           {data.items.map((row) => (
-            <InboxRow key={`${row.source}:${row.id}`} row={row} />
+            <li key={`${row.source}:${row.id}`}>
+              <InboxRow row={row} />
+            </li>
           ))}
-        </ul>
+        </ListRowGroup>
       )}
     </div>
   )
@@ -203,92 +215,85 @@ function InboxRow({ row }: { row: UnifiedRow }) {
   const ageStr = formatDistanceToNow(new Date(row.createdAt * 1000), { addSuffix: true })
 
   return (
-    <li>
-      <div
-        className={cn(
-          'group flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors hover:bg-muted/30',
-          isUnread && 'bg-primary/5',
-          isUrgent && 'bg-amber-500/5',
+    <ListRow
+      state={isUnread ? 'unread' : isUrgent ? 'urgent' : 'default'}
+      interactive
+      onClick={handleClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          handleClick()
+        }
+      }}
+      role="button"
+      tabIndex={0}
+    >
+      <ListRowIcon>
+        {isApproval ? (
+          <CheckSquare className="text-amber-500" />
+        ) : (
+          <Inbox className={cn(isUnread ? 'text-primary' : 'text-muted-foreground')} />
         )}
-        onClick={handleClick}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault()
-            handleClick()
-          }
-        }}
-        role="button"
-        tabIndex={0}
-      >
-        <div className="shrink-0">
-          {isApproval ? (
-            <CheckSquare className="size-4 text-amber-500" />
-          ) : (
-            <Inbox className={cn('size-4', isUnread ? 'text-primary' : 'text-muted-foreground')} />
+      </ListRowIcon>
+      <ListRowBody>
+        <div className="flex items-center gap-2 min-w-0">
+          <ListRowTitle unread={isUnread}>{row.summary}</ListRowTitle>
+          {row.importance === 'high' && <ImportancePill importance="high" />}
+        </div>
+        <ListRowMeta>
+          {isApproval && (
+            <>
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 leading-3">
+                Needs approval
+              </Badge>
+              <span>·</span>
+            </>
           )}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 min-w-0">
-            <p className={cn('text-sm truncate', isUnread && 'font-medium')}>
-              {row.summary}
-            </p>
-            {row.importance === 'high' && (
-              <ImportancePill importance="high" />
+          <span>
+            {formatKind(row.kind)}
+            {row.agentClass && (
+              <> from {formatAgentClass(row.agentClass, agentRegistry)}</>
             )}
-          </div>
-          <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground truncate">
-            {isApproval && (
-              <>
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 leading-3">
-                  Needs approval
-                </Badge>
-                <span>·</span>
-              </>
-            )}
-            <span className="truncate">
-              {formatKind(row.kind)}
-              {row.agentClass && (
-                <> from {formatAgentClass(row.agentClass, agentRegistry)}</>
-              )}
-            </span>
-            <span>·</span>
-            <span className="shrink-0">{ageStr}</span>
-            {row.dueAt && (
-              <>
-                <span>·</span>
-                <span className="inline-flex items-center gap-1 shrink-0">
-                  {row.dueAt * 1000 < Date.now() && (
-                    <AlertTriangle className="size-3 text-amber-500" />
-                  )}
-                  <Clock className="size-3" />
-                  due {formatDistanceToNow(new Date(row.dueAt * 1000), { addSuffix: true })}
-                </span>
-              </>
-            )}
-            {row.status && row.status !== 'pending' && (
-              <>
-                <span>·</span>
-                <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 leading-3 capitalize">
-                  {row.status}
-                </Badge>
-              </>
-            )}
-          </div>
-        </div>
+          </span>
+          <span>·</span>
+          <span className="shrink-0">{ageStr}</span>
+          {row.dueAt && (
+            <>
+              <span>·</span>
+              <span className="inline-flex items-center gap-1 shrink-0">
+                {row.dueAt * 1000 < Date.now() && (
+                  <AlertTriangle className="size-3 text-amber-500" />
+                )}
+                <Clock className="size-3" />
+                due {formatDistanceToNow(new Date(row.dueAt * 1000), { addSuffix: true })}
+              </span>
+            </>
+          )}
+          {row.status && row.status !== 'pending' && (
+            <>
+              <span>·</span>
+              <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 leading-3 capitalize">
+                {row.status}
+              </Badge>
+            </>
+          )}
+        </ListRowMeta>
+      </ListRowBody>
+      <ListRowTrailing>
         {isApproval ? (
           <Link
             to={`/dashboard/approvals?focus=${row.id}`}
-            className="shrink-0 inline-flex items-center gap-1 text-xs text-muted-foreground group-hover:text-foreground"
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground group-hover/list-row:text-foreground transition-colors"
             onClick={(e) => e.stopPropagation()}
           >
             Review
             <ChevronRight className="size-3" />
           </Link>
         ) : (
-          <ChevronRight className="size-3.5 shrink-0 text-muted-foreground/50 group-hover:text-foreground transition-colors" />
+          <ChevronRight className="size-3.5 text-muted-foreground/50 group-hover/list-row:text-foreground transition-colors" />
         )}
-      </div>
-    </li>
+      </ListRowTrailing>
+    </ListRow>
   )
 }
 

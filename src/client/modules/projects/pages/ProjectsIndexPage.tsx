@@ -47,8 +47,14 @@ export function ProjectsIndexPage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 py-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-semibold tracking-tight">Projects</h1>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight">Projects</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Long-running spaces for your work — chats, files, notes, and
+            memory all in one place. Share with teammates as needed.
+          </p>
+        </div>
         <Button onClick={() => setCreateOpen(true)}>
           <Plus className="size-4 mr-1.5" />
           New project

@@ -76,6 +76,8 @@ import {
   confluenceCreateRenderer,
 } from './atlassian'
 import { proposePatchRenderer } from './propose-patch'
+import { findToolsRenderer } from './tool-search'
+import { memoryRenderers } from './memory'
 import { defaultRenderers } from './defaults'
 import { matchesRenderer, type ToolRenderer } from './_shared'
 
@@ -142,6 +144,10 @@ export const TOOL_RENDERERS: ToolRenderer[] = [
   confluenceCreateRenderer,
   // Config-diff (propose_patch tool) — inline ApprovalCard in chat
   proposePatchRenderer,
+  // Tool Search — find_tools (the progressive tool disclosure entry point)
+  findToolsRenderer,
+  // Memory — remember / recall / search_memory / list_all_memories / forget
+  ...memoryRenderers,
   // Default renderers for tools without a custom expanded view — icon +
   // displayName only, falls back to JSON body. Kept LAST so custom
   // renderers above win. See defaults.tsx for the metadata table.
