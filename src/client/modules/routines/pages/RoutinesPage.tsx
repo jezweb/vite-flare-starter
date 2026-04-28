@@ -26,13 +26,21 @@ import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { EmptyState } from '@/client/components/EmptyState'
 import { useRoutines, useUpdateRoutine, type Routine } from '../hooks/useRoutines'
+import { useAgentCatalog } from '../hooks/useAgentCatalog'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/client/lib/api-client'
 import { cn } from '@/lib/utils'
+import {
+  formatAgentClass,
+  formatOutcome,
+  formatCadenceInterval,
+} from '@/shared/format/agent'
 
 export function RoutinesPage() {
   const { data, isLoading } = useRoutines()
+  const { data: agentCatalog } = useAgentCatalog()
   const queryClient = useQueryClient()
+  const agentRegistry = new Map((agentCatalog?.agents ?? []).map((a) => [a.className, a]))
   const seed = useMutation({
     mutationFn: () => apiClient.post('/api/routines/seed-examples', {}),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['routines'] }),
@@ -99,20 +107,29 @@ export function RoutinesPage() {
 
       {!isLoading && data && data.total > 0 && (
         <ul className="space-y-2">
-          {data.routines.map((r) => <RoutineRow key={r.id} routine={r} />)}
+          {data.routines.map((r) => (
+            <RoutineRow key={r.id} routine={r} agentRegistry={agentRegistry} />
+          ))}
         </ul>
       )}
     </div>
   )
 }
 
-function RoutineRow({ routine }: { routine: Routine }) {
+function RoutineRow({
+  routine,
+  agentRegistry,
+}: {
+  routine: Routine
+  agentRegistry: Map<string, { displayName: string }>
+}) {
   const update = useUpdateRoutine(routine.id)
 
   const onToggle = (next: boolean) => update.mutate({ enabled: next })
 
   const interval = routine.effectiveInterval ?? routine.baseInterval
   const cadence = formatCadence(routine.triggerKind, interval)
+  const agentLabel = formatAgentClass(routine.agentClass, agentRegistry)
   const lastRun = routine.lastRunAt
     ? formatDistanceToNow(new Date(routine.lastRunAt * 1000), { addSuffix: true })
     : 'never'
@@ -128,7 +145,7 @@ function RoutineRow({ routine }: { routine: Routine }) {
             <Link to={`/dashboard/routines/${routine.id}`} className="min-w-0 flex-1 block">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-medium text-sm truncate">{routine.name}</span>
-                <span className="font-mono text-[11px] text-muted-foreground">{routine.agentClass}</span>
+                <span className="text-[11px] text-muted-foreground">{agentLabel}</span>
                 {!routine.enabled && (
                   <Badge variant="outline" className="text-[10px] px-1.5 py-0">Disabled</Badge>
                 )}
@@ -179,17 +196,17 @@ function TriggerIcon({ kind }: { kind: Routine['triggerKind'] }) {
 }
 
 function OutcomeBadge({ outcome }: { outcome: NonNullable<Routine['lastOutcome']> }) {
-  const map = {
-    ok: { label: 'ok', icon: CheckCircle2, cls: 'text-emerald-600' },
-    error: { label: 'error', icon: XCircle, cls: 'text-destructive' },
-    budget_exceeded: { label: 'over budget', icon: AlertTriangle, cls: 'text-destructive' },
-    started: { label: 'running', icon: Loader2, cls: 'text-muted-foreground' },
+  const styleMap = {
+    ok: { icon: CheckCircle2, cls: 'text-emerald-600' },
+    error: { icon: XCircle, cls: 'text-destructive' },
+    budget_exceeded: { icon: AlertTriangle, cls: 'text-destructive' },
+    started: { icon: Loader2, cls: 'text-muted-foreground' },
   } as const
-  const { label, icon: Icon, cls } = map[outcome]
+  const { icon: Icon, cls } = styleMap[outcome]
   return (
     <span className={cn('inline-flex items-center gap-1', cls)}>
       <Icon className={cn('size-3', outcome === 'started' && 'animate-spin')} />
-      {label}
+      {formatOutcome(outcome)}
     </span>
   )
 }
@@ -198,23 +215,11 @@ export function formatCadence(
   kind: Routine['triggerKind'],
   intervalSeconds: number | null,
 ): string {
-  if (kind !== 'schedule') return capitalize(kind)
-  if (!intervalSeconds || intervalSeconds <= 0) return 'on demand'
-  const m = intervalSeconds / 60
-  if (m < 1) return `every ${intervalSeconds}s`
-  if (m < 60) return `every ${Math.round(m)}m`
-  const h = m / 60
-  if (h < 24) return `every ${formatNum(h)}h`
-  return `every ${formatNum(h / 24)}d`
-}
-
-function formatNum(n: number): string {
-  if (Math.round(n) === n) return String(n)
-  return n.toFixed(1)
-}
-
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1)
+  if (kind === 'schedule') return formatCadenceInterval(intervalSeconds)
+  if (kind === 'webhook') return 'On webhook'
+  if (kind === 'event') return 'On event'
+  if (kind === 'manual') return 'Manual only'
+  return kind
 }
 
 export default RoutinesPage

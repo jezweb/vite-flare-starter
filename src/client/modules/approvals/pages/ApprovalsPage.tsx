@@ -35,6 +35,8 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { EmptyState } from '@/client/components/EmptyState'
 import { apiClient } from '@/client/lib/api-client'
 import { cn } from '@/lib/utils'
+import { formatAgentClass } from '@/shared/format/agent'
+import { useAgentCatalog } from '@/client/modules/routines/hooks/useAgentCatalog'
 
 type Status = 'pending' | 'approved' | 'rejected' | 'executed' | 'failed'
 
@@ -149,6 +151,11 @@ export function ApprovalsPage() {
 
 function ApprovalCard({ approval, highlight }: { approval: Approval; highlight: boolean }) {
   const queryClient = useQueryClient()
+  const { data: agentCatalog } = useAgentCatalog()
+  const agentRegistry = useMemo(
+    () => new Map((agentCatalog?.agents ?? []).map((a) => [a.className, a])),
+    [agentCatalog],
+  )
   const [open, setOpen] = useState(false)
   const [note, setNote] = useState('')
 
@@ -194,7 +201,9 @@ function ApprovalCard({ approval, highlight }: { approval: Approval; highlight: 
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <StatusBadge status={approval.status} />
-              <span className="text-xs text-muted-foreground">queued {ageStr}</span>
+              <span className="text-xs text-muted-foreground">
+                {formatAgentClass(approval.agentClass, agentRegistry)} · queued {ageStr}
+              </span>
               {isStale && (
                 <Badge
                   variant="outline"
@@ -227,12 +236,23 @@ function ApprovalCard({ approval, highlight }: { approval: Approval; highlight: 
           <div className="space-y-2 rounded-md border bg-muted/30 p-3">
             <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
               <dt className="text-muted-foreground">Agent</dt>
-              <dd className="font-mono">{approval.agentClass}</dd>
-              <dt className="text-muted-foreground">Instance</dt>
-              <dd className="font-mono break-all">{approval.agentName}</dd>
+              <dd>{formatAgentClass(approval.agentClass, agentRegistry)}</dd>
               <dt className="text-muted-foreground">Action</dt>
-              <dd className="font-mono">{approval.action}</dd>
+              <dd>{prettifyAction(approval.action)}</dd>
             </dl>
+            <details className="text-[11px]">
+              <summary className="cursor-pointer text-muted-foreground select-none">
+                Internal details
+              </summary>
+              <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+                <dt className="text-muted-foreground">Class</dt>
+                <dd className="font-mono">{approval.agentClass}</dd>
+                <dt className="text-muted-foreground">Instance</dt>
+                <dd className="font-mono break-all">{approval.agentName}</dd>
+                <dt className="text-muted-foreground">Action ID</dt>
+                <dd className="font-mono">{approval.action}</dd>
+              </dl>
+            </details>
             <div>
               <p className="mb-1 text-[11px] uppercase tracking-wider text-muted-foreground">Payload</p>
               <pre className="rounded border bg-background p-2 text-[11px] leading-relaxed font-mono whitespace-pre-wrap break-words max-h-72 overflow-auto">

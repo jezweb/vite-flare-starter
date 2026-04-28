@@ -33,6 +33,7 @@ import {
   type OrgRole,
 } from '../hooks/useOrganizations'
 import { cn } from '@/lib/utils'
+import { formatRole } from '@/shared/format/agent'
 
 interface Props {
   organizationId: string
@@ -83,7 +84,7 @@ export function MembersList({ organizationId, myRole }: Props) {
         memberId: member.id,
         role,
       })
-      toast.success(`${member.user.name ?? member.user.email} is now ${role}`)
+      toast.success(`${member.user.name ?? member.user.email} is now ${formatRole(role)}`)
     } catch (err) {
       toast.error((err as Error)?.message ?? 'Role change failed')
     }
@@ -113,8 +114,8 @@ export function MembersList({ organizationId, myRole }: Props) {
                 </div>
                 <p className="text-[11px] text-muted-foreground truncate">{m.user.email}</p>
               </div>
-              <Badge variant="outline" className="capitalize text-xs px-2 py-0.5">
-                {m.role}
+              <Badge variant="outline" className="text-xs px-2 py-0.5">
+                {formatRole(m.role)}
               </Badge>
               <span className="hidden sm:inline text-[11px] text-muted-foreground tabular-nums">
                 joined {formatDistanceToNow(parseDate(m.createdAt), { addSuffix: true })}
@@ -142,10 +143,9 @@ export function MembersList({ organizationId, myRole }: Props) {
                             key={role}
                             onClick={() => handleRoleChange(m, role)}
                             disabled={m.role === role}
-                            className="capitalize"
                           >
                             <UserCog className="size-3.5" />
-                            {role === m.role ? `${role} (current)` : role}
+                            {role === m.role ? `${formatRole(role)} (current)` : formatRole(role)}
                           </DropdownMenuItem>
                         ))}
                       </>

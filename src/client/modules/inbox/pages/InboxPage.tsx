@@ -28,6 +28,8 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { EmptyState } from '@/client/components/EmptyState'
 import { apiClient } from '@/client/lib/api-client'
 import { cn } from '@/lib/utils'
+import { formatAgentClass, formatImportance } from '@/shared/format/agent'
+import { useAgentCatalog } from '@/client/modules/routines/hooks/useAgentCatalog'
 
 type Importance = 'high' | 'medium' | 'low'
 type Status = 'unread' | 'undecided' | 'all'
@@ -177,6 +179,11 @@ export function InboxPage() {
 function InboxRow({ row }: { row: UnifiedRow }) {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const { data: agentCatalog } = useAgentCatalog()
+  const agentRegistry = useMemo(
+    () => new Map((agentCatalog?.agents ?? []).map((a) => [a.className, a])),
+    [agentCatalog],
+  )
   const isApproval = row.source === 'approval'
   const isUnread = row.source === 'inbox' && row.readAt == null
   const isUrgent = row.importance === 'high' || (row.dueAt != null && row.dueAt * 1000 < Date.now())
@@ -230,14 +237,16 @@ function InboxRow({ row }: { row: UnifiedRow }) {
                 {row.importance && <ImportancePill importance={row.importance} />}
                 {isApproval && (
                   <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                    Approval
+                    Needs approval
                   </Badge>
                 )}
-                <span className="font-mono text-[11px] text-muted-foreground">{row.kind}</span>
+                <span className="text-[11px] text-muted-foreground">{formatKind(row.kind)}</span>
                 {row.agentClass && (
                   <>
                     <span className="text-[11px] text-muted-foreground">·</span>
-                    <span className="font-mono text-[11px] text-muted-foreground">{row.agentClass}</span>
+                    <span className="text-[11px] text-muted-foreground">
+                      from {formatAgentClass(row.agentClass, agentRegistry)}
+                    </span>
                   </>
                 )}
               </div>
@@ -282,10 +291,22 @@ function ImportancePill({ importance }: { importance: Importance }) {
     low: 'bg-muted text-muted-foreground border-muted-foreground/30',
   } as const
   return (
-    <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0 capitalize', map[importance])}>
-      {importance}
+    <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', map[importance])}>
+      {formatImportance(importance)}
     </Badge>
   )
+}
+
+/**
+ * `kind` is a free-form string set by the agent when it called
+ * `inbox_add` (e.g. "stale_lead", "stuck_ticket", "schema_drift").
+ * Convert snake_case → Title case for display.
+ */
+function formatKind(kind: string): string {
+  if (!kind) return ''
+  return kind
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b\w/g, (m) => m.toUpperCase())
 }
 
 export default InboxPage

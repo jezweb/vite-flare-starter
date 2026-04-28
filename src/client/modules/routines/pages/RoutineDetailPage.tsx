@@ -37,18 +37,23 @@ import {
   useUpdateRoutine,
   type RoutineRun,
 } from '../hooks/useRoutines'
+import { useAgentCatalog } from '../hooks/useAgentCatalog'
 import { formatCadence } from './RoutinesPage'
 import { cn } from '@/lib/utils'
+import { formatAgentClass, formatOutcome, formatTrigger } from '@/shared/format/agent'
 
 export function RoutineDetailPage() {
   const { routineId } = useParams<{ routineId: string }>()
   const navigate = useNavigate()
   const { data: routine, isLoading } = useRoutine(routineId)
   const { data: runsData } = useRoutineRuns(routineId)
+  const { data: agentCatalog } = useAgentCatalog()
   const fire = useFireRoutine()
   const del = useDeleteRoutine()
   const update = useUpdateRoutine(routineId ?? '')
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [showInternal, setShowInternal] = useState(false)
+  const agentRegistry = new Map((agentCatalog?.agents ?? []).map((a) => [a.className, a]))
 
   if (isLoading) {
     return (
@@ -96,7 +101,7 @@ export function RoutineDetailPage() {
             {!routine.enabled && <Badge variant="outline">Disabled</Badge>}
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            Fires <span className="font-mono">{routine.agentClass}:{routine.agentName}</span> {cadence}.
+            Runs the {formatAgentClass(routine.agentClass, agentRegistry)} {cadence.toLowerCase()}.
           </p>
           {routine.description && (
             <p className="mt-2 text-sm text-muted-foreground">{routine.description}</p>
@@ -146,11 +151,11 @@ export function RoutineDetailPage() {
             <CardTitle className="text-sm">Schedule</CardTitle>
           </CardHeader>
           <CardContent className="space-y-1.5 text-xs">
-            <KV k="Trigger" v={routine.triggerKind} />
+            <KV k="Trigger" v={formatTrigger(routine.triggerKind)} />
             <KV k="Cadence" v={cadence} />
             {routine.minInterval && <KV k="Min interval" v={`${routine.minInterval}s`} />}
             {routine.maxInterval && <KV k="Max interval" v={`${routine.maxInterval}s`} />}
-            <KV k="Adjust mode" v={routine.adjustMode} />
+            <KV k="Adjust mode" v={formatAdjustMode(routine.adjustMode)} />
             {routine.dailyBudgetUsd != null && <KV k="Daily budget" v={`$${routine.dailyBudgetUsd}`} />}
           </CardContent>
         </Card>
@@ -186,6 +191,26 @@ export function RoutineDetailPage() {
           </CardContent>
         </Card>
       )}
+
+      <details
+        className="group rounded border bg-muted/20 px-3 py-2"
+        open={showInternal}
+      >
+        <summary
+          className="cursor-pointer text-[11px] text-muted-foreground select-none"
+          onClick={(e) => {
+            e.preventDefault()
+            setShowInternal((v) => !v)
+          }}
+        >
+          {showInternal ? 'Hide' : 'Show'} internal IDs
+        </summary>
+        <div className="mt-2 space-y-1 text-[11px]">
+          <KV k="Routine ID" v={routine.id} mono />
+          <KV k="Agent class" v={routine.agentClass} mono />
+          <KV k="Agent instance" v={routine.agentName} mono />
+        </div>
+      </details>
 
       <Card>
         <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2">
@@ -233,7 +258,7 @@ function RunRow({ run }: { run: RoutineRun }) {
     <li className="rounded-md border p-2.5">
       <div className="flex items-center gap-2 text-xs">
         <Icon className={cn('size-3.5 shrink-0', colour)} />
-        <span className="font-mono">#{run.runNumber}</span>
+        <span className={cn('font-medium', colour)}>{formatOutcome(run.outcome)}</span>
         <span className="text-muted-foreground">·</span>
         <span className="text-muted-foreground">{ageStr}</span>
         {duration && (
@@ -251,12 +276,22 @@ function RunRow({ run }: { run: RoutineRun }) {
             <span className="font-mono text-muted-foreground">${run.costUsd.toFixed(4)}</span>
           </>
         )}
+        <span className="ml-auto font-mono text-[10px] text-muted-foreground">#{run.runNumber}</span>
       </div>
       {run.outputSummary && (
         <p className="mt-1 text-xs leading-snug">{run.outputSummary}</p>
       )}
     </li>
   )
+}
+
+function formatAdjustMode(mode: string | null | undefined): string {
+  switch (mode) {
+    case 'auto': return 'Auto-tune (slower when nothing happens)'
+    case 'locked': return 'Locked at base interval'
+    case 'manual': return 'Manual'
+    default: return mode ?? '—'
+  }
 }
 
 function KV({ k, v, mono }: { k: string; v: string; mono?: boolean }) {

@@ -75,6 +75,28 @@ function formatTime(dateString: string): string {
   }
 }
 
+function formatActionVerb(action: Activity['action']): string {
+  switch (action) {
+    case 'create': return 'Created'
+    case 'update': return 'Updated'
+    case 'delete': return 'Deleted'
+    case 'archive': return 'Archived'
+    case 'restore': return 'Restored'
+    case 'import': return 'Imported'
+    case 'export': return 'Exported'
+    case 'assign': return 'Assigned'
+    case 'unassign': return 'Unassigned'
+    case 'view': return 'Viewed'
+    case 'convert': return 'Converted'
+    default: return action
+  }
+}
+
+function formatEntityType(type: string): string {
+  if (!type) return ''
+  return type.replace(/[_-]+/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase())
+}
+
 /**
  * Derive a deep-link for an activity row, when the entity is reachable
  * in-app. Returns null for entities that have no destination page (e.g.
@@ -106,9 +128,9 @@ function ActivityItem({ activity }: { activity: Activity }) {
       </div>
       <div className="flex-1 space-y-1 min-w-0">
         <div className="flex items-center gap-2">
-          <p className="font-medium capitalize">{activity.action}</p>
+          <p className="font-medium">{formatActionVerb(activity.action)}</p>
           <Badge variant="outline" className="text-xs">
-            {activity.entityType}
+            {formatEntityType(activity.entityType)}
           </Badge>
         </div>
         <p className="text-sm text-muted-foreground truncate">
@@ -197,13 +219,22 @@ export function ActivityPage() {
               <CardDescription>A record of your actions</CardDescription>
             </div>
             <Select value={actionFilter} onValueChange={setActionFilter}>
-              <SelectTrigger className="w-[150px]">
+              <SelectTrigger className="w-[170px]">
                 <SelectValue placeholder="Filter by action" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Actions</SelectItem>
-                <SelectItem value="create">Create</SelectItem>
-                <SelectItem value="delete">Delete</SelectItem>
+                <SelectItem value="all">All actions</SelectItem>
+                <SelectItem value="create">Created</SelectItem>
+                <SelectItem value="update">Updated</SelectItem>
+                <SelectItem value="delete">Deleted</SelectItem>
+                <SelectItem value="archive">Archived</SelectItem>
+                <SelectItem value="restore">Restored</SelectItem>
+                <SelectItem value="import">Imported</SelectItem>
+                <SelectItem value="export">Exported</SelectItem>
+                <SelectItem value="assign">Assigned</SelectItem>
+                <SelectItem value="unassign">Unassigned</SelectItem>
+                <SelectItem value="view">Viewed</SelectItem>
+                <SelectItem value="convert">Converted</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -35,6 +35,15 @@ import {
   type ConnectionTool,
   type McpConnection,
 } from '../hooks/useConnectors'
+import { useRoutines, type Routine } from '@/client/modules/routines/hooks/useRoutines'
+import { useAgentCatalog } from '@/client/modules/routines/hooks/useAgentCatalog'
+import { formatAgentClass } from '@/shared/format/agent'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import { Check, ChevronsUpDown, Plus, X } from 'lucide-react'
 
 type Policy = 'always' | 'ask' | 'never'
 
@@ -369,33 +378,40 @@ function ResumeOAuthPanel({ connectionId }: { connectionId: string }) {
  * ProfilePanel — Connection Profiles editor (slice 9).
  *
  * Two fields:
- *   - Personality label: short identifier ("personal", "work")
- *   - Allowed agents: comma-separated agent NAMES (DO instances) that
- *     may use this connection. Empty = available to any agent.
+ *   - Label: short identifier ("personal", "work")
+ *   - Restrict to: which routines + ad-hoc agents can use this
+ *     connection. Empty = any agent. The picker shows the user's
+ *     current routines (by friendly name) plus the canonical chat
+ *     instance ('assistant'). Custom names can still be added.
  *
  * Both fields are optional. Empty values clear the restriction.
  */
 function ProfilePanel({ connection }: { connection: McpConnection }) {
   const update = useUpdateConnectionProfile(connection.id)
+  const { data: routinesData } = useRoutines()
+  const { data: agentCatalog } = useAgentCatalog()
+  const agentRegistry = useMemo(
+    () => new Map((agentCatalog?.agents ?? []).map((a) => [a.className, a])),
+    [agentCatalog],
+  )
   const [label, setLabel] = useState(connection.personalityLabel ?? '')
-  const [agentsCsv, setAgentsCsv] = useState((connection.allowedAgentNames ?? []).join(', '))
+  const [allowedNames, setAllowedNames] = useState<string[]>(connection.allowedAgentNames ?? [])
 
-  // Re-sync when the underlying connection changes (e.g. another tab
-  // saved a new label).
   useEffect(() => {
     setLabel(connection.personalityLabel ?? '')
-    setAgentsCsv((connection.allowedAgentNames ?? []).join(', '))
+    setAllowedNames(connection.allowedAgentNames ?? [])
   }, [connection.personalityLabel, connection.allowedAgentNames])
 
+  const initialAllowed = (connection.allowedAgentNames ?? []).join(',')
   const dirty =
     label.trim() !== (connection.personalityLabel ?? '').trim() ||
-    parseAgentList(agentsCsv).join(',') !== (connection.allowedAgentNames ?? []).join(',')
+    allowedNames.join(',') !== initialAllowed
 
   const save = () => {
     update.mutate(
       {
         personalityLabel: label.trim().length > 0 ? label.trim() : null,
-        allowedAgentNames: parseAgentList(agentsCsv).length > 0 ? parseAgentList(agentsCsv) : null,
+        allowedAgentNames: allowedNames.length > 0 ? allowedNames : null,
       },
       {
         onSuccess: () => toast.success('Profile updated'),
@@ -411,9 +427,9 @@ function ProfilePanel({ connection }: { connection: McpConnection }) {
         Connection profile
       </div>
       <p className="text-[11px] text-muted-foreground -mt-2">
-        Label this connection so routines can pick it. Restrict to specific
-        agent names if you have multiple identities (e.g. "personal Gmail" vs
-        "work Gmail"). Both optional.
+        Label this connection so it's easy to recognise. Optionally restrict
+        which routines or AI agents can use it (handy if you have a
+        "personal Gmail" vs "work Gmail").
       </p>
       <div className="space-y-2">
         <div className="space-y-1">
@@ -428,14 +444,18 @@ function ProfilePanel({ connection }: { connection: McpConnection }) {
           />
         </div>
         <div className="space-y-1">
-          <Label htmlFor="profile-agents" className="text-xs">Allowed agent names (comma-separated)</Label>
-          <Input
-            id="profile-agents"
-            value={agentsCsv}
-            onChange={(e) => setAgentsCsv(e.target.value)}
-            placeholder="leave blank for any agent"
-            className="text-sm font-mono"
+          <Label className="text-xs">Restrict to</Label>
+          <RestrictAgentPicker
+            value={allowedNames}
+            onChange={setAllowedNames}
+            routines={routinesData?.routines ?? []}
+            agentRegistry={agentRegistry}
           />
+          {allowedNames.length === 0 && (
+            <p className="text-[11px] text-muted-foreground">
+              Any agent or routine can use this connection.
+            </p>
+          )}
         </div>
       </div>
       <div className="flex items-center justify-end">
@@ -447,11 +467,161 @@ function ProfilePanel({ connection }: { connection: McpConnection }) {
   )
 }
 
-function parseAgentList(csv: string): string[] {
-  return csv
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean)
+/**
+ * RestrictAgentPicker — multi-select of agent instance names.
+ *
+ * The picker offers:
+ *   1. The user's current routines (each has a stable `agentName`)
+ *   2. The canonical chat agent instance ('assistant')
+ *   3. A free-text "add custom name…" row for advanced users who set
+ *      up agents outside the routines surface
+ *
+ * Selected names render as removable chips above the picker.
+ */
+function RestrictAgentPicker({
+  value,
+  onChange,
+  routines,
+  agentRegistry,
+}: {
+  value: string[]
+  onChange: (next: string[]) => void
+  routines: Routine[]
+  agentRegistry: Map<string, { displayName: string }>
+}) {
+  const [open, setOpen] = useState(false)
+  const [customName, setCustomName] = useState('')
+
+  const knownOptions = useMemo(() => {
+    const opts: { name: string; label: string; sublabel?: string }[] = []
+    opts.push({
+      name: 'assistant',
+      label: 'AI chat',
+      sublabel: 'Your main chat conversation',
+    })
+    for (const r of routines) {
+      opts.push({
+        name: r.agentName,
+        label: r.name,
+        sublabel: formatAgentClass(r.agentClass, agentRegistry),
+      })
+    }
+    return opts
+  }, [routines, agentRegistry])
+
+  const labelFor = (name: string): { label: string; sublabel?: string } => {
+    const known = knownOptions.find((o) => o.name === name)
+    if (known) return { label: known.label, sublabel: known.sublabel }
+    return { label: name, sublabel: 'Custom agent name' }
+  }
+
+  const toggle = (name: string) => {
+    if (value.includes(name)) onChange(value.filter((n) => n !== name))
+    else onChange([...value, name])
+  }
+
+  const addCustom = () => {
+    const trimmed = customName.trim()
+    if (!trimmed) return
+    if (!value.includes(trimmed)) onChange([...value, trimmed])
+    setCustomName('')
+  }
+
+  return (
+    <div className="space-y-2">
+      {value.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {value.map((name) => {
+            const { label, sublabel } = labelFor(name)
+            return (
+              <span
+                key={name}
+                className="inline-flex items-center gap-1 rounded-full border bg-background px-2 py-0.5 text-xs"
+                title={sublabel}
+              >
+                <span>{label}</span>
+                <button
+                  type="button"
+                  onClick={() => toggle(name)}
+                  className="text-muted-foreground hover:text-foreground"
+                  aria-label={`Remove ${label}`}
+                >
+                  <X className="size-3" />
+                </button>
+              </span>
+            )
+          })}
+        </div>
+      )}
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full justify-between text-xs font-normal"
+          >
+            <span className="text-muted-foreground">
+              {value.length === 0 ? 'Pick routines / agents…' : 'Edit selection'}
+            </span>
+            <ChevronsUpDown className="size-3 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+          <div className="max-h-72 overflow-y-auto p-1">
+            {knownOptions.map((opt) => {
+              const checked = value.includes(opt.name)
+              return (
+                <button
+                  key={opt.name}
+                  type="button"
+                  onClick={() => toggle(opt.name)}
+                  className={cn(
+                    'flex w-full items-start gap-2 rounded-sm px-2 py-1.5 text-left text-xs hover:bg-muted',
+                    checked && 'bg-muted',
+                  )}
+                >
+                  <Check className={cn('mt-0.5 size-3 shrink-0', checked ? 'opacity-100' : 'opacity-0')} />
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium">{opt.label}</div>
+                    {opt.sublabel && (
+                      <div className="text-[10px] text-muted-foreground">{opt.sublabel}</div>
+                    )}
+                  </div>
+                </button>
+              )
+            })}
+            <div className="mt-1 border-t p-1.5">
+              <p className="mb-1 text-[10px] text-muted-foreground">Add a custom agent name</p>
+              <div className="flex gap-1">
+                <Input
+                  value={customName}
+                  onChange={(e) => setCustomName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      addCustom()
+                    }
+                  }}
+                  placeholder="e.g. my-custom-agent"
+                  className="h-7 text-xs font-mono"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-7 px-2"
+                  onClick={addCustom}
+                  disabled={!customName.trim()}
+                >
+                  <Plus className="size-3" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  )
 }
 
 export default ConnectionDetail
