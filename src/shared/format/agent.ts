@@ -40,7 +40,7 @@ export function formatTrigger(trigger: string | null | undefined): string {
     case 'rest': return 'Manual'
     case 'schedule': return 'Scheduled'
     case 'webhook': return 'Webhook'
-    case 'inter_agent': return 'Another agent'
+    case 'inter_agent': return 'via another agent'
     default: return trigger ?? '—'
   }
 }

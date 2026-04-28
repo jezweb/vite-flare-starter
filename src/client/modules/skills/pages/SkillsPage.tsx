@@ -20,7 +20,6 @@ import {
   MoreHorizontal,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { EmptyState } from '@/client/components/EmptyState'
 import { Zap } from 'lucide-react'
 import { PageContainer } from '@/components/ui/page-container'
@@ -156,24 +155,20 @@ export function SkillsPage() {
           ))}
         </div>
       ) : skills.length === 0 ? (
-        <Card>
-          <CardContent className="py-2">
-            <EmptyState
-              icon={Zap}
-              title="No skills yet"
-              description="Skills are reusable agent procedures the AI can invoke during chat."
-              tips={[
-                'Type /skill-name in any chat to activate a skill',
-                'Install bundled examples from GitHub, or paste your own SKILL.md',
-              ]}
-              action={{ label: 'Add skill', onClick: () => setUploadOpen(true) }}
-              secondaryAction={{
-                label: 'Install from GitHub',
-                onClick: () => setInstallOpen(true),
-              }}
-            />
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={Zap}
+          title="No skills yet"
+          description="Skills are reusable agent procedures the AI can invoke during chat."
+          tips={[
+            'Type /skill-name in any chat to activate a skill',
+            'Install bundled examples from GitHub, or paste your own SKILL.md',
+          ]}
+          action={{ label: 'Add skill', onClick: () => setUploadOpen(true) }}
+          secondaryAction={{
+            label: 'Install from GitHub',
+            onClick: () => setInstallOpen(true),
+          }}
+        />
       ) : (
         <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
           {/* List column — hidden on mobile when a skill is selected so

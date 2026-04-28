@@ -298,10 +298,21 @@ function ImportancePill({ importance }: { importance: Importance }) {
 /**
  * `kind` is a free-form string set by the agent when it called
  * `inbox_add` (e.g. "stale_lead", "stuck_ticket", "schema_drift").
- * Convert snake_case → Title case for display.
+ * Convert snake_case → Title case for display, with friendlier names
+ * for the well-known internal kinds so the UI doesn't read like a
+ * database enum.
  */
 function formatKind(kind: string): string {
   if (!kind) return ''
+  // Special cases for internal events the agent emits directly. Keep
+  // the user-facing label aligned with the same surface elsewhere
+  // (Approvals page collapses memory_extraction the same way).
+  switch (kind) {
+    case 'memory_extraction':
+      return 'AI memory'
+    case 'memory':
+      return 'AI memory'
+  }
   return kind
     .replace(/[_-]+/g, ' ')
     .replace(/\b\w/g, (m) => m.toUpperCase())

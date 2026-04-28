@@ -1,31 +1,29 @@
 /**
  * Admin Stats Component
  *
- * Displays key metrics cards for the admin dashboard.
+ * Displays key metrics for the admin dashboard via the shared StatGrid
+ * primitive — same shape Files / Activity use, so all stat rows in the
+ * app look the same.
  */
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { StatGrid } from '@/components/ui/stat-grid'
 import { useAdminStats } from '../hooks/useAdmin'
-import { Users, Activity, TrendingUp, Calendar, AlertCircle } from 'lucide-react'
+import { AlertCircle } from 'lucide-react'
 
 export function AdminStats() {
   const { data: stats, isLoading, error } = useAdminStats()
 
   if (isLoading) {
     return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-4 w-4" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-8 w-16" />
-              <Skeleton className="mt-1 h-3 w-32" />
-            </CardContent>
-          </Card>
+          <div key={i} className="rounded-md border bg-card p-3 space-y-2">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-7 w-12" />
+            <Skeleton className="h-3 w-24" />
+          </div>
         ))}
       </div>
     )
@@ -49,50 +47,30 @@ export function AdminStats() {
     )
   }
 
-  const cards = [
-    {
-      title: 'Total Users',
-      value: stats.totalUsers,
-      description: 'Registered accounts',
-      icon: Users,
-    },
-    {
-      title: 'Active Sessions',
-      value: stats.activeSessionsCount,
-      description: 'Currently logged in',
-      icon: Activity,
-    },
-    {
-      title: 'New (7 days)',
-      value: stats.usersCreatedLast7Days,
-      description: 'Users this week',
-      icon: TrendingUp,
-    },
-    {
-      title: 'New (30 days)',
-      value: stats.usersCreatedLast30Days,
-      description: 'Users this month',
-      icon: Calendar,
-    },
-  ]
-
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      {cards.map((card) => {
-        const Icon = card.icon
-        return (
-          <Card key={card.title}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
-              <Icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{card.value.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">{card.description}</p>
-            </CardContent>
-          </Card>
-        )
-      })}
-    </div>
+    <StatGrid
+      items={[
+        {
+          label: 'Total users',
+          value: stats.totalUsers.toLocaleString(),
+          sub: 'Registered accounts',
+        },
+        {
+          label: 'Active sessions',
+          value: stats.activeSessionsCount.toLocaleString(),
+          sub: 'Currently logged in',
+        },
+        {
+          label: 'New (7 days)',
+          value: stats.usersCreatedLast7Days.toLocaleString(),
+          sub: 'Users this week',
+        },
+        {
+          label: 'New (30 days)',
+          value: stats.usersCreatedLast30Days.toLocaleString(),
+          sub: 'Users this month',
+        },
+      ]}
+    />
   )
 }
