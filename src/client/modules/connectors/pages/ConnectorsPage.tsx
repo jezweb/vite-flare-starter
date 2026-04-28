@@ -99,23 +99,35 @@ export function ConnectorsPage() {
   return (
     <div className="container mx-auto max-w-4xl py-8 px-4 space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
+        <div className="max-w-xl">
           <h1 className="text-2xl font-semibold flex items-center gap-2">
             <Plug className="h-5 w-5" />
             Connectors
           </h1>
-          <p className="text-sm text-muted-foreground mt-1 max-w-xl">
-            Give the AI access to external tools via the Model Context Protocol. Paste any MCP server URL — public, community-hosted, or your own Cloudflare Worker. OAuth and bearer tokens both work; tokens are encrypted at rest.
+          <p className="text-sm text-muted-foreground mt-1">
+            Connect Gmail, Calendar, Drive, Notion, Slack, and other apps so
+            the AI can read and act on them for you. Most connections take
+            30 seconds — sign in with the provider, click Approve.
           </p>
+          <details className="text-xs text-muted-foreground mt-2 group">
+            <summary className="cursor-pointer select-none hover:text-foreground transition-colors">
+              Technical details
+            </summary>
+            <p className="mt-1.5 max-w-xl">
+              Powered by Model Context Protocol (MCP). Paste any MCP server URL —
+              public, community-hosted, or your own Cloudflare Worker. OAuth
+              and bearer tokens both supported; tokens are encrypted at rest.
+            </p>
+          </details>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setBrowseOpen(true)}>
+          <Button onClick={() => setBrowseOpen(true)}>
             <Search className="mr-2 h-4 w-4" />
-            Examples
+            Browse apps
           </Button>
-          <Button onClick={() => setCustomOpen(true)}>
+          <Button variant="outline" onClick={() => setCustomOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Add connector
+            Add custom app
           </Button>
         </div>
       </div>
@@ -500,23 +512,25 @@ function CustomConnectorDialog({
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add custom connector</DialogTitle>
+          <DialogTitle>Connect a custom app</DialogTitle>
           <DialogDescription>
-            Point at any MCP server URL. We'll inspect the endpoint to discover its auth method, then walk you through OAuth or let you paste a bearer token.
+            If your business uses an app that isn't in our list, paste its
+            connection URL here and we'll set it up. Most apps come from the
+            "Browse apps" list — try that first if you're not sure.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label>Server URL</Label>
+            <Label>Connection URL</Label>
             <Input
-              placeholder="https://my-mcp-server.example.com/mcp"
+              placeholder="https://my-app.example.com/mcp"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               disabled={probe.isPending || connect.isPending}
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Display name (optional)</Label>
+            <Label>Name (optional)</Label>
             <Input
               placeholder="e.g. My Database"
               value={name}
@@ -528,11 +542,11 @@ function CustomConnectorDialog({
           {probe.data && (
             <div className="rounded-md bg-muted/50 p-3 text-xs space-y-1">
               <p>
-                <strong>Auth method:</strong> {probe.data.authType}
+                <strong>Sign-in method:</strong> {prettifyAuthType(probe.data.authType)}
               </p>
               {probe.data.authorizationEndpoint && (
-                <p className="truncate">
-                  <strong>Authorization endpoint:</strong> {probe.data.authorizationEndpoint}
+                <p className="truncate text-muted-foreground">
+                  <strong className="text-foreground">Endpoint:</strong> {probe.data.authorizationEndpoint}
                 </p>
               )}
               {probe.data.error && (
@@ -546,12 +560,17 @@ function CustomConnectorDialog({
 
           <p className="text-xs text-muted-foreground flex items-start gap-1">
             <AlertCircle className="h-3 w-3 mt-0.5 shrink-0" />
-            Only connect to servers you trust — the AI may call any tool the server exposes.
+            Only connect apps you trust — the AI may use any tool the app provides.
           </p>
         </div>
         <DialogFooter className="gap-2">
-          <Button variant="ghost" onClick={() => probe.mutate(url)} disabled={!url || probe.isPending}>
-            {probe.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Probe'}
+          <Button
+            variant="ghost"
+            onClick={() => probe.mutate(url)}
+            disabled={!url || probe.isPending}
+            title="Check that the URL responds and find out how to sign in"
+          >
+            {probe.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Test connection'}
           </Button>
           <Button onClick={handleConnect} disabled={!url || connect.isPending}>
             {connect.isPending ? (
@@ -567,6 +586,15 @@ function CustomConnectorDialog({
       </DialogContent>
     </Dialog>
   )
+}
+
+function prettifyAuthType(authType: string): string {
+  switch (authType) {
+    case 'oauth': return 'Sign in with the provider'
+    case 'bearer': return 'Paste an API token'
+    case 'none': return 'No sign-in needed'
+    default: return authType
+  }
 }
 
 export default ConnectorsPage

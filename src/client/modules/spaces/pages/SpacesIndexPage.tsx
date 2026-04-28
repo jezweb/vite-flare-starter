@@ -77,7 +77,11 @@ export function SpacesIndexPage() {
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Spaces</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Multi-user, multi-agent rooms. @-mention agents to ask them to help.
+            Group chats with the AI. Invite teammates, mix in different
+            AI agents (researcher, writer, support), and keep the history
+            in one place. Type{' '}
+            <code className="rounded bg-muted px-1 text-xs">@</code>{' '}
+            to call an agent into the chat.
           </p>
         </div>
         <Button onClick={() => setCreateOpen(true)}>

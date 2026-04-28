@@ -129,11 +129,12 @@ export function SkillsPage() {
             variant="outline"
             onClick={() => sync.mutate()}
             disabled={sync.isPending}
+            title="Re-imports the example skills bundled with the app. Safe to run any time."
           >
             <RefreshCw
               className={`mr-2 size-4 ${sync.isPending ? 'animate-spin' : ''}`}
             />
-            Sync bundled
+            Refresh starter skills
           </Button>
           <Button variant="outline" onClick={() => setInstallOpen(true)}>
             <GithubIcon className="mr-2 size-4" /> Install from GitHub

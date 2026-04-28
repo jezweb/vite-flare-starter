@@ -48,6 +48,8 @@ import { useSession } from '@/client/lib/auth'
 import { apiClient } from '@/client/lib/api-client'
 import { getGreeting } from '@/shared/lib/greeting'
 import { cn } from '@/lib/utils'
+import { formatAgentClass, formatTrigger } from '@/shared/format/agent'
+import { useAgentCatalog } from '@/client/modules/routines/hooks/useAgentCatalog'
 
 interface Approval {
   id: string
@@ -242,6 +244,8 @@ function RecentRunsPanel({ runs, loading }: { runs?: RunsList; loading: boolean 
 }
 
 function RunRow({ run }: { run: AgentRun }) {
+  const { data: agentCatalog } = useAgentCatalog()
+  const agentRegistry = new Map((agentCatalog?.agents ?? []).map((a) => [a.className, a]))
   const Icon = run.outcome === 'ok'
     ? CheckCircle2
     : run.outcome === 'error'
@@ -257,9 +261,9 @@ function RunRow({ run }: { run: AgentRun }) {
   return (
     <li className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted/40 transition-colors">
       <Icon className={cn('size-3.5 shrink-0', colour)} />
-      <span className="font-mono text-xs truncate flex-1">{run.agentClass}</span>
-      <span className="text-[11px] text-muted-foreground capitalize hidden xl:inline">
-        {run.trigger.replace('_', ' ')}
+      <span className="text-xs truncate flex-1">{formatAgentClass(run.agentClass, agentRegistry)}</span>
+      <span className="text-[11px] text-muted-foreground hidden xl:inline">
+        {formatTrigger(run.trigger)}
       </span>
       <span className="text-[11px] text-muted-foreground tabular-nums">
         {formatDistanceToNow(new Date(run.startedAt * 1000), { addSuffix: true })}
