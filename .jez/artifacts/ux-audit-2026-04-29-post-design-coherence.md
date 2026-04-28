@@ -234,16 +234,29 @@ Verified ✓ this run:
 
 ---
 
-## Fix-and-verify loop
+## Fix-and-verify loop — CLOSED THIS SESSION
 
-Recommend fixing A1 + A2 + A3 + A5 in this session (three quick wins +
-one half-hour). After patching, re-walk Dashboard / Inbox / Admin to
-verify, deploy, and close.
+Patched in two follow-up commits (`d6cc773` + `1c03d82`):
 
-The remaining items (A4, A7, A8, A9, A10) are best deferred to
-**Phase 5 (power layer + polish)** which I haven't started — they
-batch nicely with the keyboard shortcut work, stat layout work, and
-mass-action work.
+| # | Status | Verification |
+|---|---|---|
+| A1 | ✓ fixed | Dashboard QuickActions now reads "Connections" — verified live |
+| A2 | ✓ fixed | `formatTrigger('inter_agent')` now returns "via another agent" — drops the noun-confusion. Trigger column hidden on viewports < xl regardless |
+| A3 | ✓ fixed (after second patch) | First fix patched `formatKind` but the leak was actually `formatAgentClass`; second patch added `memory_extraction → "AI memory"` special case. Inbox now reads "Add from AI memory" — verified live |
+| A5 | ✓ fixed | `AdminStats` migrated to `<StatGrid>`; admin page now renders 4 `data-slot="stat-card"` items with the same chrome as Files / Activity |
+| A9 | ✓ fixed | Builder section uses `aria-expanded` on the trigger; dropped the `<span class="sr-only">expand/collapse Builder</span>` duplicate |
+| A10 | ✓ fixed | Skills empty state drops `<Card>` wrapper to match every other empty state |
+
+Remaining (deferred to **Phase 5 — Power layer + polish**):
+
+- A4 — Skills row labels lead with display name, not slug
+- A6 — Dashboard "Recent agent runs" rows clickable to detail
+- A7 — Settings 8 tabs use `<NativeSelect>` on mobile
+- A8 — Chat empty state gets a CapabilityChip row showing connected apps
+
+These batch nicely with the Phase 5 work (keyboard shortcuts, mass
+actions, stateful greetings). Logging here so the next session has a
+clean punch list.
 
 ---
 
