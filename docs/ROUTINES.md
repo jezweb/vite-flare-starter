@@ -159,6 +159,11 @@ Both seeded by `POST /api/routines/seed-examples`.
 | `skills/score-importance/SKILL.md` | Importance calibration |
 | `skills/enrich-error/SKILL.md` | Error → finding rewrite |
 | `skills/routine-health-check/SKILL.md` | Meta-watcher procedure |
+| `src/shared/agent/metadata.ts` | AgentMetadata interface — every AutonomousAgent declares displayName + description |
+| `src/server/lib/agents/registry.ts` | listRegisteredAgents() — backs the AgentPicker |
+| `src/server/lib/agents/routes.ts` | GET /api/agents/registered |
+| `src/shared/format/agent.ts` | Translation layer (formatAgentClass / formatOutcome / formatTrigger etc.) — single source of truth for enum → human label |
+| `src/client/modules/routines/components/RoutinePickers.tsx` | AgentPicker, SkillsPicker, SingleSkillPicker, ToolsPicker — all consume discovery endpoints |
 | `~/.claude/rules/trust-skills-not-elaborate-code.md` | The lesson banked in the design phase |
 
 ## Why not subclass AutonomousAgent for each routine?
@@ -196,5 +201,37 @@ When you'd reach for scheduled-agents instead of a routine:
 Slices 1-9 of issue #50 shipped (2026-04-28). Decisions A-F locked. Lesson banked.
 
 Per decision F, this doc + the CLAUDE.md update land after slice 5 has been dogfooded — covered. Connection-profile UI follow-up shipped alongside.
+
+## Self-describing primitives
+
+The routine setup form (and any future picker over agents / skills /
+tools) is built on the metadata pattern: every primitive declares
+`displayName + description` next to its definition, a discovery
+endpoint exposes the catalogue, and pickers consume it.
+
+To add a new agent that appears in the picker:
+
+```ts
+export class MyAgent extends AutonomousAgent<Env, AutonomousAgentState> {
+  static override readonly className = 'MyAgent'
+  static readonly metadata = {
+    displayName: 'Friendly name shown in pickers',
+    description: 'One sentence — what it does + when to reach for it.',
+    category: 'general' as const,
+  }
+  // ... rest of the class
+}
+```
+
+Then import it into `src/server/lib/agents/registry.ts` `AGENT_CLASSES`.
+That's it — the picker auto-discovers it on next deploy. No second
+config file.
+
+Tools categorise via name-prefix heuristics in
+`src/server/modules/chat/routes.ts` `categoriseTool()`. Add a new
+prefix (or a new explicit branch) when shipping a connector group.
+
+Skills already had `description` in YAML frontmatter — pattern the
+others copy.
 
 **Last updated**: 2026-04-28

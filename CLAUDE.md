@@ -1,7 +1,7 @@
 # CLAUDE.md — AI Developer Context
 
 **Project:** Vite Flare Starter
-**Version:** 2.2.0
+**Version:** 2.3.0
 **Purpose:** Pattern library and production-ready starter kit for Cloudflare Workers
 
 ---
@@ -48,13 +48,17 @@ VITE_FEATURE_ACTIVITY=false
 | **agent-memory** | Vectorize-backed semantic recall (opt-in via `AGENT_MEMORY` binding) | `server/lib/agents/agent-memory.ts` |
 | **approvals UI** | React tab at /dashboard/approvals — review + approve/reject queued agent actions, deep-link from notifications | `client/modules/approvals/pages/ApprovalsPage.tsx` |
 | **sweeper-agent** | Cron-driven entity processing — recurring agent that scans entities for stale items + queues followup approvals | `server/modules/autonomous-agents/sweeper-agent.ts` |
-| **organizations** | better-auth Organization plugin v1 (orgs + members + active-org tracking + helpers) | `server/modules/auth/index.ts`, `server/modules/organizations/` |
+| **organizations** | **Multi-tenant orgs** — better-auth plugin + auto-personal-org on signup + OrgSwitcher in sidebar + `/dashboard/organization` (members + invites + roles) + `/accept-invitation/:token` public flow. Slack/Linear/Notion convention: sidebar shows tenant context, product brand stays on public surfaces. | `server/modules/organizations/`, `client/modules/organizations/`, `docs/orgs-ui-plan-2026-04-28.md` |
 | **agent MCP integration** | AutonomousAgent inherits tools from owner's connected MCP servers automatically | `server/lib/agents/autonomous-agent.ts` (buildToolset) |
 | **tool-search** | Progressive tool disclosure — agent gets `find_tools(query)` + ~10 core tools, the rest load on demand. ~10K tokens/turn saved | `server/lib/ai/tool-search.ts`, wired in chat agent.ts |
 | **routines** | **Canonical recurring agent pattern** — declarative config (agent + schedule + skills + tools allow-list + hooks). Channels-as-tools (notify / approval_queue / inbox_add / space_send / webhook_post). Run-summary tail keeps cost flat over hundreds of fires. | `server/modules/routines/`, `client/modules/routines/`, `docs/ROUTINES.md` |
 | **inbox** | Unified review surface for findings + pending approvals. Sort by importance → due → created. Findings emitted by routines via `inbox_add` channel tool. | `server/modules/inbox/`, `client/modules/inbox/pages/InboxPage.tsx` |
 | **channels** | Internal MCP-equivalent tools the agent dispatches findings to. Routines opt in via `toolsAllowed`. | `server/modules/chat/tools/channels.ts` |
 | **connection profiles** | Per-MCP-connection labels + per-agent allow-list — solves "personal Gmail vs work Gmail" cleanly. Filter applied in `getUserMcpTools(env, userId, agentName)`. | `server/modules/mcp-connections/db/schema.ts`, `client/modules/connectors/components/ConnectionDetail.tsx` (ProfilePanel) |
+| **agent metadata + registry** | Every AutonomousAgent declares `static metadata = { displayName, description, category }`. `/api/agents/registered` exposes the catalogue; pickers consume it so users never see raw class names. Add an agent → metadata + import = auto-discovered. | `shared/agent/metadata.ts`, `server/lib/agents/registry.ts`, `server/lib/agents/routes.ts` |
+| **format helpers** | Single-source-of-truth translators: `formatAgentClass / formatOutcome / formatTrigger / formatRole / formatImportance / formatCadenceInterval / deriveInstanceName`. Stops snake_case enum strings from leaking into UI. | `shared/format/agent.ts` |
+| **routine pickers** | AgentPicker / SkillsPicker / ToolsPicker / SingleSkillPicker — replace raw text inputs in NewRoutinePage with discoverable combobox + multi-select. Tools grouped by category (Gmail / Notion / Channels / Core / etc.). | `client/modules/routines/components/RoutinePickers.tsx` |
+| **email providers** | Six pluggable providers (`email-service` / `smtp2go` / `mailgun` / `resend` / `email-routing-send` / `console`), one file each, registry resolves a priority list. `EMAIL_FAILOVER='true'` cascades on error; `EMAIL_PROVIDER_ORDER` overrides priority. | `server/modules/email/providers/` |
 
 ---
 
@@ -87,6 +91,7 @@ reference lives in `docs/`, loaded only when you need it.
 | **Architectural rationale** — why the starter looks like this, what we adopted from other frameworks | [`docs/PLATFORM_OBSERVATIONS.md`](./docs/PLATFORM_OBSERVATIONS.md) |
 | Build a CRUD feature, table, hook | [`docs/PATTERNS.md`](./docs/PATTERNS.md) |
 | **Build a recurring agent** ("watch X, emit findings") | [`docs/ROUTINES.md`](./docs/ROUTINES.md) |
+| **Multi-tenant orgs / invite flow / member management** | [`.jez/artifacts/orgs-ui-plan-2026-04-28.md`](./.jez/artifacts/orgs-ui-plan-2026-04-28.md) |
 | Build an AI agent / scheduled agent / agent swarm | [`docs/AGENTS.md`](./docs/AGENTS.md) |
 | Wire voice, video, or any DO streaming agent | [`docs/DO_AGENTS.md`](./docs/DO_AGENTS.md) |
 | Understand sources, gating, NLP, observability | [`docs/CHAT_INTERNALS.md`](./docs/CHAT_INTERNALS.md) |
@@ -256,6 +261,35 @@ The `~/.claude/rules/trust-skills-not-elaborate-code.md` user-global
 rule applies: before designing a config DSL or rules engine for an AI
 feature, ask whether channels-as-tools + a markdown skill covers it.
 The answer is almost always yes.
+
+---
+
+## Self-describing primitives — the metadata pattern
+
+Every primitive that a user picks from a list (agent, tool, skill,
+channel) **must self-describe** with a `displayName + description`.
+Without this, UIs fall back to raw class names / snake_case ids, and
+users have to ask developers what each option means.
+
+| Primitive | Where metadata lives | Discovery endpoint |
+|---|---|---|
+| **Agents** | `static metadata` on each AutonomousAgent class | `GET /api/agents/registered` |
+| **Tools** | `description` on each ToolDefinition (categorised by name prefix) | `GET /api/chat/catalog` |
+| **Skills** | YAML frontmatter (`name`, `description`) on each SKILL.md | `GET /api/skills/summary` |
+
+When you add a new agent / tool / skill: declare metadata in code,
+the picker UI auto-discovers it. No second config file to maintain.
+
+**Translation layer for enums** lives in `src/shared/format/agent.ts`
+(`formatAgentClass`, `formatOutcome`, `formatTrigger`, `formatRole`,
+`formatImportance`, `formatCadenceInterval`, `deriveInstanceName`).
+Anywhere you'd render a raw enum value, import the formatter — it's
+the single source of truth for "what does this string mean to a
+human?".
+
+**UX testing rule**: every multi-page feature must pass the
+"first-time user" persona — *"sign in, complete the task without
+reading source"*. Anywhere you'd say "click Skip", that's a UX bug.
 
 ---
 
