@@ -137,9 +137,21 @@ export const inboxAdd: ToolDefinition<
   },
   render: {
     icon: Inbox,
-    displayName: 'Inbox: add finding',
-    summary: (out) => `${out.id.slice(0, 8)}…`,
+    displayName: 'Add to Inbox',
+    // The agent passes the human-readable summary as input; show that
+    // as the tool-call summary instead of an opaque UUID prefix. The
+    // ID is irrelevant once the row exists — what the user wants to
+    // know is "what got dropped in".
+    summary: (_out, input) => {
+      const i = input as z.infer<typeof InboxAddInput> | undefined
+      return i?.summary ? truncateInline(i.summary, 80) : null
+    },
   },
+}
+
+function truncateInline(text: string, max: number): string {
+  if (text.length <= max) return text
+  return text.slice(0, max - 1).trimEnd() + '…'
 }
 
 // ─── approval_queue ────────────────────────────────────────────────────

@@ -130,10 +130,10 @@ function NeedsYouPanel({ approvals, loading }: { approvals?: ApprovalsList; load
           <div>
             <CardTitle className="flex items-center gap-2 text-base">
               <CheckSquare className="size-4 text-primary" />
-              What needs you
+              Pending review
             </CardTitle>
             <CardDescription className="mt-0.5">
-              Pending approvals from your agents.
+              Your AI is waiting on a yes / no before it acts.
             </CardDescription>
           </div>
           {approvals && approvals.total > 0 && (

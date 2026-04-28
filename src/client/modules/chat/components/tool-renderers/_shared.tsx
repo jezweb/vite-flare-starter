@@ -29,7 +29,6 @@ import {
 } from '@/components/ui/collapsible'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import { CodeBlock } from '@/components/ai-elements/code-block'
 
 export type ToolState =
   | 'approval-requested'
@@ -169,6 +168,14 @@ export function ToolCard({
  * Raw-JSON fallback body — used when a tool has no custom renderer. Matches
  * the old AI Elements ToolInput/ToolOutput layout but inside our own shell.
  */
+/**
+ * Raw-JSON fallback body — used when a tool has no custom renderer.
+ *
+ * Compact treatment: small mono font, max-height with scroll-overflow,
+ * line-wrapping so long values don't push the chat bubble wider. The
+ * fallback is for inspection / debugging — keep it visible but quiet.
+ * Tools with rich renderers should provide their own `expanded` view.
+ */
 function FallbackToolBody({
   input,
   output,
@@ -179,32 +186,32 @@ function FallbackToolBody({
   errorText?: string
 }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {input != null && (
-        <section className="space-y-1.5">
-          <h4 className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+        <details className="group">
+          <summary className="cursor-pointer select-none text-[11px] font-medium text-muted-foreground uppercase tracking-wide hover:text-foreground">
             Parameters
-          </h4>
-          <div className="rounded-md bg-muted/50 text-xs">
-            <CodeBlock code={safeJson(input)} language="json" />
-          </div>
-        </section>
+          </summary>
+          <pre className="mt-1.5 rounded bg-muted/50 p-2 text-[11px] leading-snug font-mono whitespace-pre-wrap break-all max-h-48 overflow-auto">
+            {safeJson(input)}
+          </pre>
+        </details>
       )}
       {(output != null || errorText) && (
-        <section className="space-y-1.5">
-          <h4 className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+        <details className="group" open>
+          <summary className="cursor-pointer select-none text-[11px] font-medium text-muted-foreground uppercase tracking-wide hover:text-foreground">
             {errorText ? 'Error' : 'Result'}
-          </h4>
+          </summary>
           {errorText ? (
-            <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
+            <div className="mt-1.5 rounded-md bg-destructive/10 text-destructive text-xs p-2 whitespace-pre-wrap break-words">
               {errorText}
             </div>
           ) : (
-            <div className="rounded-md bg-muted/50 text-xs">
-              <CodeBlock code={safeJson(output)} language="json" />
-            </div>
+            <pre className="mt-1.5 rounded bg-muted/50 p-2 text-[11px] leading-snug font-mono whitespace-pre-wrap break-all max-h-72 overflow-auto">
+              {safeJson(output)}
+            </pre>
           )}
-        </section>
+        </details>
       )}
     </div>
   )

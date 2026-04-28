@@ -22,7 +22,6 @@ import {
   Clock,
   Loader2,
   Inbox,
-  ChevronDown,
   ChevronRight,
   Brain,
   ArrowUpRight,
@@ -156,7 +155,6 @@ function ApprovalCard({ approval, highlight }: { approval: Approval; highlight: 
     () => new Map((agentCatalog?.agents ?? []).map((a) => [a.className, a])),
     [agentCatalog],
   )
-  const [open, setOpen] = useState(false)
   const [note, setNote] = useState('')
 
   const approve = useMutation({
@@ -199,10 +197,13 @@ function ApprovalCard({ approval, highlight }: { approval: Approval; highlight: 
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
+            <CardTitle className="text-base leading-snug">
+              {plainTitle(approval, isMemory)}
+            </CardTitle>
+            <div className="mt-1.5 flex items-center gap-2 flex-wrap">
               <StatusBadge status={approval.status} />
-              <span className="text-xs text-muted-foreground">
-                {formatAgentClass(approval.agentClass, agentRegistry)} · queued {ageStr}
+              <span className="text-[11px] text-muted-foreground">
+                {sourceLabel(approval, agentRegistry, isMemory)} · {ageStr}
               </span>
               {isStale && (
                 <Badge
@@ -215,52 +216,34 @@ function ApprovalCard({ approval, highlight }: { approval: Approval; highlight: 
                 </Badge>
               )}
             </div>
-            <CardTitle className="mt-2 text-base leading-snug">
-              {approval.summary || prettifyAction(approval.action)}
-            </CardTitle>
           </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-3 pt-0">
         {isMemory && <MemoryProposalPreview payload={approval.payload} />}
 
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-        >
-          {open ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
-          {open ? 'Hide details' : 'Show details'}
-        </button>
-        {open && (
-          <div className="space-y-2 rounded-md border bg-muted/30 p-3">
-            <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
-              <dt className="text-muted-foreground">Agent</dt>
-              <dd>{formatAgentClass(approval.agentClass, agentRegistry)}</dd>
-              <dt className="text-muted-foreground">Action</dt>
-              <dd>{prettifyAction(approval.action)}</dd>
+        <details className="group">
+          <summary className="inline-flex cursor-pointer items-center gap-1 text-xs text-muted-foreground select-none hover:text-foreground">
+            <ChevronRight className="size-3 transition-transform group-open:rotate-90" />
+            Technical details
+          </summary>
+          <div className="mt-2 space-y-2 rounded-md border bg-muted/20 p-3">
+            <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[11px]">
+              <dt className="text-muted-foreground">Agent class</dt>
+              <dd className="font-mono break-all">{approval.agentClass}</dd>
+              <dt className="text-muted-foreground">Instance</dt>
+              <dd className="font-mono break-all">{approval.agentName}</dd>
+              <dt className="text-muted-foreground">Action ID</dt>
+              <dd className="font-mono">{approval.action}</dd>
             </dl>
-            <details className="text-[11px]">
-              <summary className="cursor-pointer text-muted-foreground select-none">
-                Internal details
-              </summary>
-              <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
-                <dt className="text-muted-foreground">Class</dt>
-                <dd className="font-mono">{approval.agentClass}</dd>
-                <dt className="text-muted-foreground">Instance</dt>
-                <dd className="font-mono break-all">{approval.agentName}</dd>
-                <dt className="text-muted-foreground">Action ID</dt>
-                <dd className="font-mono">{approval.action}</dd>
-              </dl>
-            </details>
             <div>
-              <p className="mb-1 text-[11px] uppercase tracking-wider text-muted-foreground">Payload</p>
-              <pre className="rounded border bg-background p-2 text-[11px] leading-relaxed font-mono whitespace-pre-wrap break-words max-h-72 overflow-auto">
+              <p className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Raw payload</p>
+              <pre className="rounded border bg-background p-2 text-[11px] leading-relaxed font-mono whitespace-pre-wrap break-all max-h-56 overflow-auto">
                 {JSON.stringify(approval.payload, null, 2)}
               </pre>
             </div>
           </div>
-        )}
+        </details>
 
         {approval.error && (
           <div className="rounded-md border border-destructive/40 bg-destructive/5 p-2 text-xs text-destructive">
@@ -301,19 +284,18 @@ function ApprovalCard({ approval, highlight }: { approval: Approval; highlight: 
                     <Loader2 className="size-3 animate-spin" />
                     Approving…
                   </>
-                ) : isMemory ? (
-                  'Approve'
                 ) : (
-                  'Approve & execute'
+                  'Approve'
                 )}
               </Button>
               {isMemory && (
                 <Button
                   size="sm"
-                  variant="secondary"
+                  variant="ghost"
+                  className="text-xs"
                   onClick={() => approve.mutate({ alwaysAllow: true })}
                   disabled={approve.isPending || reject.isPending}
-                  title="Approve and switch this scope to auto-mode for future memory updates"
+                  title="Approve and stop asking for future memory updates in this scope"
                 >
                   {approve.isPending && approve.variables?.alwaysAllow ? (
                     <>
@@ -321,7 +303,7 @@ function ApprovalCard({ approval, highlight }: { approval: Approval; highlight: 
                       Approving…
                     </>
                   ) : (
-                    'Approve & always allow'
+                    'Approve and stop asking'
                   )}
                 </Button>
               )}
@@ -436,6 +418,40 @@ function prettifyAction(action: string): string {
   if (!action) return 'Action'
   const spaced = action.replace(/[_-]+/g, ' ').trim()
   return spaced.charAt(0).toUpperCase() + spaced.slice(1)
+}
+
+/**
+ * Plain-language title for the approval card hero. Memory approvals
+ * have a kebab-case ID for the slot ("tool-troubleshooting-preference")
+ * which is meaningless to a user; render it as a sentence instead. For
+ * other actions, the agent's `summary` is the canonical hero text;
+ * fall back to the prettified action name.
+ */
+function plainTitle(approval: Approval, isMemory: boolean): string {
+  if (isMemory) {
+    const p = approval.payload as MemoryUpdatePayload | null
+    const action = p?.update?.action ?? 'add'
+    const verb = action === 'remove' ? 'forget' : action === 'update' ? 'update' : 'remember'
+    const scope = p?.update?.scope === 'project' ? 'project memory' : 'your memory'
+    return `The AI wants to ${verb} something to ${scope}`
+  }
+  return approval.summary || prettifyAction(approval.action)
+}
+
+/**
+ * Friendly source label for the metadata strip. The synthetic
+ * `memory_extraction` agent class would format as "Memory Extraction"
+ * which is still jargon; collapse it to "AI memory" and fall back to
+ * `formatAgentClass` for everything else.
+ */
+function sourceLabel(
+  approval: Approval,
+  registry: Map<string, { displayName: string }>,
+  isMemory: boolean,
+): string {
+  if (isMemory) return 'From AI memory'
+  const friendly = formatAgentClass(approval.agentClass, registry)
+  return `From ${friendly}`
 }
 
 function StatusBadge({ status }: { status: Status }) {

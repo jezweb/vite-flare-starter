@@ -18,10 +18,9 @@ import {
   CheckSquare,
   Clock,
   AlertTriangle,
-  ArrowUpRight,
+  ChevronRight,
   Loader2,
 } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -166,7 +165,7 @@ export function InboxPage() {
       )}
 
       {!isLoading && data && data.total > 0 && (
-        <ul className="space-y-2">
+        <ul className="divide-y rounded-md border bg-card">
           {data.items.map((row) => (
             <InboxRow key={`${row.source}:${row.id}`} row={row} />
           ))}
@@ -205,81 +204,90 @@ function InboxRow({ row }: { row: UnifiedRow }) {
 
   return (
     <li>
-      <Card
+      <div
         className={cn(
-          'cursor-pointer transition-colors hover:bg-muted/30',
-          isUnread && 'border-primary/40',
-          isUrgent && 'border-amber-500/40',
+          'group flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors hover:bg-muted/30',
+          isUnread && 'bg-primary/5',
+          isUrgent && 'bg-amber-500/5',
         )}
+        onClick={handleClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            handleClick()
+          }
+        }}
+        role="button"
+        tabIndex={0}
       >
-        <CardContent className="p-3">
-          <div
-            className="flex items-start gap-3"
-            onClick={handleClick}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                handleClick()
-              }
-            }}
-            role="button"
-            tabIndex={0}
-          >
-            <div className="mt-1 shrink-0">
-              {isApproval ? (
-                <CheckSquare className="size-4 text-amber-500" />
-              ) : (
-                <Inbox className="size-4 text-primary" />
-              )}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                {row.importance && <ImportancePill importance={row.importance} />}
-                {isApproval && (
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                    Needs approval
-                  </Badge>
-                )}
-                <span className="text-[11px] text-muted-foreground">{formatKind(row.kind)}</span>
-                {row.agentClass && (
-                  <>
-                    <span className="text-[11px] text-muted-foreground">·</span>
-                    <span className="text-[11px] text-muted-foreground">
-                      from {formatAgentClass(row.agentClass, agentRegistry)}
-                    </span>
-                  </>
-                )}
-              </div>
-              <p className="mt-1 text-sm leading-snug">{row.summary}</p>
-              <div className="mt-1.5 flex items-center gap-3 text-[11px] text-muted-foreground">
-                <span>created {ageStr}</span>
-                {row.dueAt && (
-                  <span className="inline-flex items-center gap-1">
-                    {row.dueAt * 1000 < Date.now() && <AlertTriangle className="size-3 text-amber-500" />}
-                    <Clock className="size-3" />
-                    due {formatDistanceToNow(new Date(row.dueAt * 1000), { addSuffix: true })}
-                  </span>
-                )}
-                {row.status && row.status !== 'pending' && (
-                  <Badge variant="outline" className="text-[10px] px-1 py-0 capitalize">
-                    {row.status}
-                  </Badge>
-                )}
-              </div>
-            </div>
-            {isApproval && (
-              <Link
-                to={`/dashboard/approvals?focus=${row.id}`}
-                className="shrink-0 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-                onClick={(e) => e.stopPropagation()}
-              >
-                Review
-                <ArrowUpRight className="size-3" />
-              </Link>
+        <div className="shrink-0">
+          {isApproval ? (
+            <CheckSquare className="size-4 text-amber-500" />
+          ) : (
+            <Inbox className={cn('size-4', isUnread ? 'text-primary' : 'text-muted-foreground')} />
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 min-w-0">
+            <p className={cn('text-sm truncate', isUnread && 'font-medium')}>
+              {row.summary}
+            </p>
+            {row.importance === 'high' && (
+              <ImportancePill importance="high" />
             )}
           </div>
-        </CardContent>
-      </Card>
+          <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground truncate">
+            {isApproval && (
+              <>
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 leading-3">
+                  Needs approval
+                </Badge>
+                <span>·</span>
+              </>
+            )}
+            <span className="truncate">
+              {formatKind(row.kind)}
+              {row.agentClass && (
+                <> from {formatAgentClass(row.agentClass, agentRegistry)}</>
+              )}
+            </span>
+            <span>·</span>
+            <span className="shrink-0">{ageStr}</span>
+            {row.dueAt && (
+              <>
+                <span>·</span>
+                <span className="inline-flex items-center gap-1 shrink-0">
+                  {row.dueAt * 1000 < Date.now() && (
+                    <AlertTriangle className="size-3 text-amber-500" />
+                  )}
+                  <Clock className="size-3" />
+                  due {formatDistanceToNow(new Date(row.dueAt * 1000), { addSuffix: true })}
+                </span>
+              </>
+            )}
+            {row.status && row.status !== 'pending' && (
+              <>
+                <span>·</span>
+                <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 leading-3 capitalize">
+                  {row.status}
+                </Badge>
+              </>
+            )}
+          </div>
+        </div>
+        {isApproval ? (
+          <Link
+            to={`/dashboard/approvals?focus=${row.id}`}
+            className="shrink-0 inline-flex items-center gap-1 text-xs text-muted-foreground group-hover:text-foreground"
+            onClick={(e) => e.stopPropagation()}
+          >
+            Review
+            <ChevronRight className="size-3" />
+          </Link>
+        ) : (
+          <ChevronRight className="size-3.5 shrink-0 text-muted-foreground/50 group-hover:text-foreground transition-colors" />
+        )}
+      </div>
     </li>
   )
 }
