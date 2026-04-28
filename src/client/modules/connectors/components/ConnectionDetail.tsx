@@ -31,7 +31,9 @@ import {
   useDisconnect,
   useSaveBearer,
   useAuthorizeConnection,
+  useUpdateConnectionProfile,
   type ConnectionTool,
+  type McpConnection,
 } from '../hooks/useConnectors'
 
 type Policy = 'always' | 'ask' | 'never'
@@ -127,6 +129,8 @@ export function ConnectionDetail({
         {connection?.authType === 'oauth' && connection.status === 'pending' && (
           <ResumeOAuthPanel connectionId={connectionId} />
         )}
+
+        {connection && <ProfilePanel connection={connection} />}
 
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
@@ -359,6 +363,95 @@ function ResumeOAuthPanel({ connectionId }: { connectionId: string }) {
       </Button>
     </div>
   )
+}
+
+/**
+ * ProfilePanel — Connection Profiles editor (slice 9).
+ *
+ * Two fields:
+ *   - Personality label: short identifier ("personal", "work")
+ *   - Allowed agents: comma-separated agent NAMES (DO instances) that
+ *     may use this connection. Empty = available to any agent.
+ *
+ * Both fields are optional. Empty values clear the restriction.
+ */
+function ProfilePanel({ connection }: { connection: McpConnection }) {
+  const update = useUpdateConnectionProfile(connection.id)
+  const [label, setLabel] = useState(connection.personalityLabel ?? '')
+  const [agentsCsv, setAgentsCsv] = useState((connection.allowedAgentNames ?? []).join(', '))
+
+  // Re-sync when the underlying connection changes (e.g. another tab
+  // saved a new label).
+  useEffect(() => {
+    setLabel(connection.personalityLabel ?? '')
+    setAgentsCsv((connection.allowedAgentNames ?? []).join(', '))
+  }, [connection.personalityLabel, connection.allowedAgentNames])
+
+  const dirty =
+    label.trim() !== (connection.personalityLabel ?? '').trim() ||
+    parseAgentList(agentsCsv).join(',') !== (connection.allowedAgentNames ?? []).join(',')
+
+  const save = () => {
+    update.mutate(
+      {
+        personalityLabel: label.trim().length > 0 ? label.trim() : null,
+        allowedAgentNames: parseAgentList(agentsCsv).length > 0 ? parseAgentList(agentsCsv) : null,
+      },
+      {
+        onSuccess: () => toast.success('Profile updated'),
+        onError: (err) => toast.error((err as Error)?.message ?? 'Profile update failed'),
+      },
+    )
+  }
+
+  return (
+    <div className="rounded-lg border bg-muted/20 p-3 mt-6 space-y-3">
+      <div className="flex items-center gap-2 text-sm font-medium">
+        <KeyRound className="h-3.5 w-3.5" />
+        Connection profile
+      </div>
+      <p className="text-[11px] text-muted-foreground -mt-2">
+        Label this connection so routines can pick it. Restrict to specific
+        agent names if you have multiple identities (e.g. "personal Gmail" vs
+        "work Gmail"). Both optional.
+      </p>
+      <div className="space-y-2">
+        <div className="space-y-1">
+          <Label htmlFor="profile-label" className="text-xs">Label</Label>
+          <Input
+            id="profile-label"
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+            placeholder="personal · work · team"
+            maxLength={60}
+            className="text-sm"
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="profile-agents" className="text-xs">Allowed agent names (comma-separated)</Label>
+          <Input
+            id="profile-agents"
+            value={agentsCsv}
+            onChange={(e) => setAgentsCsv(e.target.value)}
+            placeholder="leave blank for any agent"
+            className="text-sm font-mono"
+          />
+        </div>
+      </div>
+      <div className="flex items-center justify-end">
+        <Button size="sm" disabled={!dirty || update.isPending} onClick={save}>
+          {update.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Save profile'}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+function parseAgentList(csv: string): string[] {
+  return csv
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
 }
 
 export default ConnectionDetail

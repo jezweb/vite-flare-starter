@@ -151,6 +151,11 @@ app.get('/', async (c) => {
       expiresAt: r.expiresAt,
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
+      // Slice 9 — Connection Profiles
+      personalityLabel: r.personalityLabel,
+      allowedAgentNames: r.allowedAgentNamesJson
+        ? safeParseStringArray(r.allowedAgentNamesJson)
+        : null,
     })),
   })
 })
@@ -516,6 +521,52 @@ app.get('/:id/tools', async (c) => {
   })
 })
 
+/**
+ * PATCH /:id/profile — update Connection Profile fields (slice 9).
+ *
+ * Connection Profiles let a user have multiple connections to the same
+ * MCP server type, each labelled, each scoped to a specific subset of
+ * agents. This endpoint manages those two fields.
+ */
+app.patch(
+  '/:id/profile',
+  zValidator(
+    'json',
+    z.object({
+      personalityLabel: z.string().max(60).nullable().optional(),
+      allowedAgentNames: z.array(z.string().min(1).max(120)).nullable().optional(),
+    }),
+  ),
+  async (c) => {
+    const userId = c.get('userId')
+    const id = c.req.param('id')
+    const body = c.req.valid('json')
+    const db = drizzle(c.env.DB)
+    const [conn] = await db
+      .select({ id: userMcpConnections.id })
+      .from(userMcpConnections)
+      .where(and(eq(userMcpConnections.id, id), eq(userMcpConnections.userId, userId)))
+      .limit(1)
+    if (!conn) return c.json({ error: 'Not found' }, 404)
+
+    const updates: Record<string, unknown> = { updatedAt: new Date() }
+    if (body['personalityLabel'] !== undefined) {
+      const label = body['personalityLabel']
+      updates['personalityLabel'] = label && label.trim().length > 0 ? label.trim() : null
+    }
+    if (body['allowedAgentNames'] !== undefined) {
+      const arr = body['allowedAgentNames']
+      updates['allowedAgentNamesJson'] =
+        arr && arr.length > 0 ? JSON.stringify(Array.from(new Set(arr))) : null
+    }
+    await db
+      .update(userMcpConnections)
+      .set(updates)
+      .where(and(eq(userMcpConnections.id, id), eq(userMcpConnections.userId, userId)))
+    return c.json({ success: true })
+  },
+)
+
 /** PUT /:id/tool-policies — batch-update policies for tools on a connection. */
 app.put(
   '/:id/tool-policies',
@@ -575,6 +626,16 @@ ${body}
   setTimeout(() => { try { window.close() } catch (_) {} }, 1500);
 </script>
 </body></html>`
+}
+
+/** Defensive JSON-array parse — returns null on any error. */
+function safeParseStringArray(json: string): string[] | null {
+  try {
+    const v = JSON.parse(json)
+    return Array.isArray(v) && v.every((x) => typeof x === 'string') ? v : null
+  } catch {
+    return null
+  }
 }
 
 export default app

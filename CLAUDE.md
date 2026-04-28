@@ -1,7 +1,7 @@
 # CLAUDE.md — AI Developer Context
 
 **Project:** Vite Flare Starter
-**Version:** 2.1.0
+**Version:** 2.2.0
 **Purpose:** Pattern library and production-ready starter kit for Cloudflare Workers
 
 ---
@@ -51,6 +51,10 @@ VITE_FEATURE_ACTIVITY=false
 | **organizations** | better-auth Organization plugin v1 (orgs + members + active-org tracking + helpers) | `server/modules/auth/index.ts`, `server/modules/organizations/` |
 | **agent MCP integration** | AutonomousAgent inherits tools from owner's connected MCP servers automatically | `server/lib/agents/autonomous-agent.ts` (buildToolset) |
 | **tool-search** | Progressive tool disclosure — agent gets `find_tools(query)` + ~10 core tools, the rest load on demand. ~10K tokens/turn saved | `server/lib/ai/tool-search.ts`, wired in chat agent.ts |
+| **routines** | **Canonical recurring agent pattern** — declarative config (agent + schedule + skills + tools allow-list + hooks). Channels-as-tools (notify / approval_queue / inbox_add / space_send / webhook_post). Run-summary tail keeps cost flat over hundreds of fires. | `server/modules/routines/`, `client/modules/routines/`, `docs/ROUTINES.md` |
+| **inbox** | Unified review surface for findings + pending approvals. Sort by importance → due → created. Findings emitted by routines via `inbox_add` channel tool. | `server/modules/inbox/`, `client/modules/inbox/pages/InboxPage.tsx` |
+| **channels** | Internal MCP-equivalent tools the agent dispatches findings to. Routines opt in via `toolsAllowed`. | `server/modules/chat/tools/channels.ts` |
+| **connection profiles** | Per-MCP-connection labels + per-agent allow-list — solves "personal Gmail vs work Gmail" cleanly. Filter applied in `getUserMcpTools(env, userId, agentName)`. | `server/modules/mcp-connections/db/schema.ts`, `client/modules/connectors/components/ConnectionDetail.tsx` (ProfilePanel) |
 
 ---
 
@@ -82,6 +86,7 @@ reference lives in `docs/`, loaded only when you need it.
 | **Build a specific product** (email triage, CRM, Jira, support, docs) | [`docs/AGENT_PLAYBOOKS.md`](./docs/AGENT_PLAYBOOKS.md) |
 | **Architectural rationale** — why the starter looks like this, what we adopted from other frameworks | [`docs/PLATFORM_OBSERVATIONS.md`](./docs/PLATFORM_OBSERVATIONS.md) |
 | Build a CRUD feature, table, hook | [`docs/PATTERNS.md`](./docs/PATTERNS.md) |
+| **Build a recurring agent** ("watch X, emit findings") | [`docs/ROUTINES.md`](./docs/ROUTINES.md) |
 | Build an AI agent / scheduled agent / agent swarm | [`docs/AGENTS.md`](./docs/AGENTS.md) |
 | Wire voice, video, or any DO streaming agent | [`docs/DO_AGENTS.md`](./docs/DO_AGENTS.md) |
 | Understand sources, gating, NLP, observability | [`docs/CHAT_INTERNALS.md`](./docs/CHAT_INTERNALS.md) |
@@ -212,6 +217,45 @@ SDK. **Don't extend raw `DurableObject` — use the SDK base.**
 
 Full architecture, decision matrix, naming conventions, and migration
 notes: [`docs/AGENTS.md`](./docs/AGENTS.md).
+
+---
+
+## Routines (canonical recurring-agent pattern)
+
+When a fork-user wants "an agent that watches X periodically and surfaces
+findings", **don't subclass AutonomousAgent**. Use a Routine.
+
+A Routine is a saved configuration that says: *fire this agent every N
+seconds, with these tools allowed, loading these skills, with hooks at
+these events.* It runs on the cron sweeper and posts findings into the
+unified Inbox.
+
+```
+Routine
+  ├── target  (agentClass + agentName — uses an existing AutonomousAgent)
+  ├── schedule (baseInterval, minInterval, maxInterval, adjustMode)
+  ├── input template  (what gets injected each fire)
+  ├── tools allowed   (allow-list filter on the agent's toolset)
+  ├── skills loaded   (markdown SKILL.md procedures auto-injected as system prompt)
+  └── hooks            (skill ids fired on SessionEnd → produce run summary)
+```
+
+**Channels = MCP-equivalent tools** that the agent calls to dispatch
+findings: `inbox_add`, `notify`, `approval_queue`, `space_send`,
+`webhook_post`. No rules engine — the agent reads its skill, decides
+where to send, calls the right tool. See
+[`docs/ROUTINES.md`](./docs/ROUTINES.md) for the full architecture.
+
+**`scheduled-agents` and `webhook-agents`** stay as the lower-level
+primitives (per issue #50 decision C+D). Reach for them when you need
+sub-routine timers or to ingest external events into a specific agent.
+For the user-facing pattern of "watch X, emit findings", **start with a
+Routine**.
+
+The `~/.claude/rules/trust-skills-not-elaborate-code.md` user-global
+rule applies: before designing a config DSL or rules engine for an AI
+feature, ask whether channels-as-tools + a markdown skill covers it.
+The answer is almost always yes.
 
 ---
 
@@ -356,4 +400,4 @@ pnpm type-check             # Type check
 
 ---
 
-**Created:** 2025-11-29 · **Updated:** 2026-04-24 · **Author:** Jeremy Dawes (Jezweb)
+**Created:** 2025-11-29 · **Updated:** 2026-04-28 · **Author:** Jeremy Dawes (Jezweb)

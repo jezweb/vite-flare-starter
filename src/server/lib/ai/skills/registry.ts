@@ -264,14 +264,16 @@ export async function loadSkill(
 export async function syncBundledSkills(env: SkillsEnv): Promise<{ added: number; updated: number; removed: number }> {
   const db = drizzle(env.DB)
   const bundled = await listBundledSkills()
-  // Only touch rows owned by the bundled sentinel — users' personal
-  // overrides are never affected by a bundled sync.
+  // Pull EVERY row owned by the bundled sentinel regardless of source.
+  // The previous version filtered to source='bundled' which missed
+  // orphaned r2/github rows under the same name + userId, and the
+  // subsequent INSERT hit a UNIQUE constraint on (userId, name).
+  // We treat any pre-existing row at (BUNDLED_USER_ID, name) as the
+  // target and upsert it back to source='bundled'.
   const existing = await db
     .select()
     .from(skills)
-    .where(
-      and(eq(skills.source, 'bundled'), eq(skills.userId, BUNDLED_USER_ID)),
-    )
+    .where(eq(skills.userId, BUNDLED_USER_ID))
 
   const existingByName = new Map(existing.map((s) => [s.name, s]))
   const bundledNames = new Set(bundled.map((s) => s.name))
@@ -293,20 +295,41 @@ export async function syncBundledSkills(env: SkillsEnv): Promise<{ added: number
         metadata,
       })
       added++
-    } else if (existing.description !== b.description || existing.metadata !== metadata) {
-      await db
-        .update(skills)
-        .set({ description: b.description, metadata, updatedAt: new Date() })
-        .where(eq(skills.id, existing.id))
-      updated++
+    } else {
+      // Upsert path — handles three cases:
+      //   1. existing.source === 'bundled' but description/metadata
+      //      drifted → rewrite the rendered fields.
+      //   2. existing.source === 'r2' / 'github' (orphan) → upgrade
+      //      back to bundled with the bundled path.
+      //   3. nothing changed → skip the write.
+      const sourceChanged = existing.source !== 'bundled'
+      const descriptionChanged = existing.description !== b.description
+      const metadataChanged = existing.metadata !== metadata
+      const pathChanged = existing.path !== b.path
+      if (sourceChanged || descriptionChanged || metadataChanged || pathChanged) {
+        await db
+          .update(skills)
+          .set({
+            source: 'bundled',
+            path: b.path,
+            description: b.description,
+            metadata,
+            updatedAt: new Date(),
+          })
+          .where(eq(skills.id, existing.id))
+        updated++
+      }
     }
   }
 
   // Remove bundled rows no longer in the source. User overrides with
   // the same name are left intact — the user keeps their copy even if
-  // the upstream bundled version goes away.
+  // the upstream bundled version goes away. (We only delete rows whose
+  // current source is 'bundled'; orphaned r2 rows for names that
+  // are no longer bundled are deliberately preserved — the user
+  // uploaded them deliberately.)
   for (const e of existing) {
-    if (!bundledNames.has(e.name)) {
+    if (e.source === 'bundled' && !bundledNames.has(e.name)) {
       await db.delete(skills).where(eq(skills.id, e.id))
       removed++
     }

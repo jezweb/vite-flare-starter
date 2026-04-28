@@ -16,6 +16,28 @@ export interface McpConnection {
   expiresAt: string | null
   createdAt: string
   updatedAt: string
+  /** Slice 9 — Connection Profiles. Short label the user picks
+   *  ("personal", "work"); shows in the routine setup wizard. */
+  personalityLabel: string | null
+  /** Agent NAMES that may use this connection. Empty / null = available
+   *  to any agent. */
+  allowedAgentNames: string[] | null
+}
+
+export interface UpdateProfileInput {
+  personalityLabel?: string | null
+  allowedAgentNames?: string[] | null
+}
+
+export function useUpdateConnectionProfile(connectionId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (patch: UpdateProfileInput) =>
+      apiClient.patch(`/api/mcp-connections/${connectionId}/profile`, patch),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['mcp-connections'] })
+    },
+  })
 }
 
 export function useConnections() {

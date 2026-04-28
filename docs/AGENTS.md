@@ -4,6 +4,14 @@ The starter ships **four kinds of agent**, all built on Cloudflare's
 `agents` SDK. Pick the right base for what you're building — they're
 not interchangeable.
 
+> **Building "an agent that watches X periodically and surfaces findings"?**
+> Don't subclass `AutonomousAgent` for it. Use a **Routine** —
+> declarative config (agent + schedule + tools allow-list + skills +
+> hooks) on top of an existing `AutonomousAgent`. See
+> [`ROUTINES.md`](./ROUTINES.md) for the canonical pattern. Issue #50
+> decision F: Routines is the user-facing pattern; `scheduled-agents`
+> and `webhook-agents` stay as the lower-level primitives.
+
 ```
 Agent (from agents SDK)              ← all stateful long-lived things
 │
