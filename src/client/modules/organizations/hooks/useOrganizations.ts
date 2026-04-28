@@ -100,18 +100,21 @@ export function useOrgMembers(orgId: string | undefined) {
 }
 
 /**
- * Pending invitations for an org. Returns an empty list when the
- * `invitation` table doesn't exist yet (deferred to Phase 4) — the
- * plugin returns 500 in that case, we swallow + fall back to [].
+ * Pending invitations for an org. Plugin returns a bare array; we
+ * normalise to { invitations, total } so callers don't have to know.
+ * Falls back to an empty list when the invitation table is missing
+ * (returns 500), so the UI keeps working even on partial schemas.
  */
 export function useOrgInvitations(orgId: string | undefined) {
   return useQuery({
     queryKey: orgId ? ORG_KEYS.invitations(orgId) : ['orgs', 'invitations', 'none'],
     queryFn: async () => {
       try {
-        return await apiClient.get<{ invitations: OrgInvitation[]; total: number }>(
+        const raw = await apiClient.get<OrgInvitation[] | { invitations: OrgInvitation[] }>(
           `/api/auth/organization/list-invitations?organizationId=${orgId}`,
         )
+        const invitations = Array.isArray(raw) ? raw : (raw.invitations ?? [])
+        return { invitations, total: invitations.length }
       } catch {
         // invitation table not present yet — empty list keeps the UI happy
         return { invitations: [], total: 0 }
@@ -119,6 +122,19 @@ export function useOrgInvitations(orgId: string | undefined) {
     },
     enabled: !!orgId,
     staleTime: 30_000,
+  })
+}
+
+/**
+ * Cancel a pending invitation. Better-auth doesn't ship a dedicated
+ * cancel endpoint — we POST to /reject (which sets status='rejected').
+ */
+export function useCancelInvitation() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (invitationId: string) =>
+      apiClient.post('/api/auth/organization/cancel-invitation', { invitationId }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ORG_KEYS.all }),
   })
 }
 
