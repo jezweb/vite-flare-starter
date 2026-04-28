@@ -1,54 +1,33 @@
 /**
  * Email service — single entry point for outbound email across the app.
  *
- * Provider priority (first available wins):
- *   1. Cloudflare Email Service binding (env.EMAIL)       — transactional, any recipient
- *   2. Cloudflare Email Routing SendEmail (env.SEND_EMAIL) — verified destinations only
- *   3. Resend HTTP API (env.EMAIL_API_KEY + EMAIL_FROM)   — HTTP fallback, works anywhere
- *   4. Console log (dev fallback)                         — never blocks auth flows
+ * Providers live in providers/ (one file each). The default priority
+ * order is defined in providers/index.ts:
  *
- * Every send is recorded in the email_log D1 table for debugging, rate
- * limiting, and the admin log viewer (Phase 3.5).
+ *   1. email-service        — Cloudflare Email Service binding
+ *   2. smtp2go              — SMTP2Go HTTP API
+ *   3. mailgun              — Mailgun HTTP API
+ *   4. resend               — Resend HTTP API
+ *   5. email-routing-send   — Cloudflare Email Routing legacy
+ *   6. console              — dev fallback, always available
  *
- * Templates are selected by key; TypeScript enforces data shape match.
+ * Override the order at runtime via EMAIL_PROVIDER_ORDER (comma-
+ * separated). Enable cascade-on-error via EMAIL_FAILOVER='true'.
+ *
+ * Every send is recorded in the email_log D1 table for debugging,
+ * rate limiting, and the admin log viewer.
  */
-import type { D1Database } from '@cloudflare/workers-types'
 import { drizzle } from 'drizzle-orm/d1'
 import { emailLog } from './db/schema'
 import { templates, type TemplateKey, type TemplateDataMap, htmlToText } from './templates'
+import {
+  resolveProviderList,
+  type EmailEnv,
+  type EmailProvider,
+  type NormalisedMessage,
+} from './providers'
 
-export type EmailProvider = 'email-service' | 'email-routing-send' | 'resend' | 'console'
-
-/**
- * Minimal typing for the Cloudflare Email Service binding. We keep this
- * local so the module doesn't require types from a specific @cloudflare
- * namespace release — the runtime behaviour is what matters.
- */
-interface CloudflareEmailServiceBinding {
-  send: (message: {
-    from: string
-    to: string | string[]
-    subject: string
-    html?: string
-    text?: string
-    replyTo?: string
-  }) => Promise<{ messageId?: string; id?: string } | void>
-}
-
-interface SendEmailBinding {
-  send: (message: unknown) => Promise<void>
-}
-
-export interface EmailEnv {
-  DB: D1Database
-  EMAIL?: CloudflareEmailServiceBinding
-  SEND_EMAIL?: SendEmailBinding
-  EMAIL_API_KEY?: string // Resend API key (legacy + HTTP fallback)
-  EMAIL_FROM?: string
-  APP_NAME?: string
-  APP_URL?: string
-  BETTER_AUTH_URL?: string
-}
+export type { EmailEnv, EmailProvider } from './providers'
 
 /**
  * Input shape for templated sends. When `template` is set, `subject`,
@@ -134,101 +113,64 @@ export async function sendEmail<K extends TemplateKey | undefined = undefined>(
     })
   }
 
-  // Provider selection
-  const provider = pickProvider(env)
+  // ─── Provider dispatch with optional failover ────────────────────
+  //
+  // Build the active provider list (priority + filtered by availability)
+  // then walk it in order. With EMAIL_FAILOVER='true', errors fall through
+  // to the next provider; without it, the first available provider's
+  // result is the final answer.
+  const providers = resolveProviderList(env)
+  const failoverEnabled = env.EMAIL_FAILOVER === 'true'
+  const message: NormalisedMessage = {
+    from,
+    to: recipients,
+    subject,
+    html,
+    text,
+    ...(input.replyTo ? { replyTo: input.replyTo } : {}),
+  }
+
+  let provider: EmailProvider = 'console'
   let status: SendResult['status'] = 'failed'
   let messageId: string | undefined
   let error: string | undefined
+  const attempted: Array<{ provider: EmailProvider; error?: string }> = []
 
-  try {
-    if (provider === 'email-service' && env.EMAIL) {
-      const res = await env.EMAIL.send({
-        from,
-        to: recipients,
-        subject,
-        html,
-        text,
-        replyTo: input.replyTo,
-      })
-      // Cloudflare Email Service returns `{ messageId }`; older builds
-      // returned `{ id }`. Accept either to stay forward + back compatible.
-      const r = res as { messageId?: string; id?: string } | undefined
-      messageId = r?.messageId ?? r?.id
-      status = 'sent'
-    } else if (provider === 'email-routing-send' && env.SEND_EMAIL) {
-      // Email Routing's SendEmail binding needs a RFC 5322 mime message.
-      // The `mimetext` package is a tiny mime builder — install it in your
-      // fork (`pnpm add mimetext`) to enable this path. We dynamic-import
-      // so apps without Email Routing don't need the dep.
-      //
-      const to = recipients[0]
-      if (!to) throw new Error('Email Routing send requires at least one recipient')
-      const mimetext = await import(/* @vite-ignore */ 'mimetext' as string).catch(() => null)
-      const cfEmail = await import(/* @vite-ignore */ 'cloudflare:email' as string).catch(() => null)
-      if (!mimetext || !cfEmail) {
-        throw new Error(
-          'Email Routing send requires `mimetext` (run `pnpm add mimetext`). Falling back.',
-        )
-      }
-      const msg = (mimetext as { createMimeMessage: () => { setSender: (s: string) => void; setRecipient: (r: string) => void; setSubject: (s: string) => void; addMessage: (m: { contentType: string; data: string }) => void; asRaw: () => string } }).createMimeMessage()
-      msg.setSender(from)
-      msg.setRecipient(to)
-      msg.setSubject(subject)
-      msg.addMessage({ contentType: 'text/plain', data: text })
-      msg.addMessage({ contentType: 'text/html', data: html })
-      const EmailMessage = (cfEmail as { EmailMessage: new (from: string, to: string, raw: string) => unknown }).EmailMessage
-      const message = new EmailMessage(from, to, msg.asRaw())
-      await env.SEND_EMAIL.send(message)
-      status = 'sent'
-    } else if (provider === 'resend' && env.EMAIL_API_KEY) {
-      const resp = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${env.EMAIL_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from,
-          to: recipients,
-          subject,
-          html,
-          text,
-          ...(input.replyTo ? { reply_to: input.replyTo } : {}),
-        }),
-      })
-      if (!resp.ok) {
-        const body = await resp.text()
-        throw new Error(`Resend ${resp.status}: ${body.slice(0, 200)}`)
-      }
-      const json = (await resp.json()) as { id?: string }
-      messageId = json.id
-      status = 'sent'
-    } else {
-      // Console fallback for dev — don't block flows just because nothing's configured.
-      console.log(
+  for (const p of providers) {
+    provider = p.id
+    try {
+      const result = await p.send(env, message)
+      messageId = result.messageId
+      status = p.id === 'console' ? 'skipped' : 'sent'
+      error = undefined
+      break
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err)
+      attempted.push({ provider: p.id, error: errMsg })
+      console.error(
         JSON.stringify({
-          event: 'email_console_fallback',
-          to: recipients,
-          from,
-          subject,
+          event: 'email_send_failed',
+          provider: p.id,
+          to: recipients[0],
           template: input.template,
-          hint: 'No email provider configured. Set env.EMAIL (Email Service), env.SEND_EMAIL (Email Routing), or EMAIL_API_KEY (Resend).',
+          error: errMsg,
+          willFailover: failoverEnabled,
         }),
       )
-      status = 'skipped'
+      // Without failover, surface the failure immediately.
+      if (!failoverEnabled) {
+        error = errMsg
+        status = 'failed'
+        break
+      }
+      // With failover, capture the error + continue to the next provider.
+      error = errMsg
     }
-  } catch (err) {
-    error = err instanceof Error ? err.message : String(err)
-    status = 'failed'
-    console.error(
-      JSON.stringify({
-        event: 'email_send_failed',
-        provider,
-        to: recipients[0],
-        template: input.template,
-        error,
-      }),
-    )
+  }
+  // If we walked the whole list with failover on and never hit a success,
+  // record the cumulative attempt list so the log row is debuggable.
+  if (failoverEnabled && status === 'failed' && attempted.length > 1) {
+    error = `All providers failed: ${attempted.map((a) => `${a.provider}=${a.error?.slice(0, 60)}`).join('; ')}`
   }
 
   return finaliseLog(env, {
@@ -239,13 +181,6 @@ export async function sendEmail<K extends TemplateKey | undefined = undefined>(
     messageId,
     error,
   })
-}
-
-function pickProvider(env: EmailEnv): EmailProvider {
-  if (env.EMAIL) return 'email-service'
-  if (env.SEND_EMAIL) return 'email-routing-send'
-  if (env.EMAIL_API_KEY) return 'resend'
-  return 'console'
 }
 
 /**

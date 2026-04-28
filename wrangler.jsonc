@@ -146,30 +146,33 @@
 
   // Email Sending
   // ------------
-  // Wrapped by src/server/modules/email/service.ts. Provider priority
-  // (first available wins, falls back to console.log in dev):
+  // Wrapped by src/server/modules/email/service.ts. Six providers ship
+  // (one file each in src/server/modules/email/providers/), default
+  // priority (first available wins):
   //
-  //   1. env.EMAIL          — Cloudflare Email Service (currently in beta,
-  //                           Workers Paid plan). Transactional, any verified
-  //                           sender. Requires onboarding the sending domain
-  //                           in dashboard → Compute & AI → Email Service
-  //                           (adds SPF + DKIM DNS records).
-  //   2. env.SEND_EMAIL     — Cloudflare Email Routing (older path, restricted
-  //                           to verified destination_address). Needs
-  //                           `mimetext` package — `pnpm add mimetext`.
-  //   3. EMAIL_API_KEY      — Resend HTTP API. Works without Cloudflare email
-  //                           setup. Set `EMAIL_API_KEY` + `EMAIL_FROM` as
-  //                           wrangler secrets.
+  //   1. env.EMAIL              — Cloudflare Email Service (beta, paid plan).
+  //                               Onboard domain in dashboard → Compute & AI
+  //                               → Email Service (SPF + DKIM auto on CF DNS).
+  //                               Uncomment the `send_email` block below.
+  //   2. SMTP2GO_API_KEY        — SMTP2Go HTTP. 1k/month free, paid above.
+  //                               Sender domain must be verified in dashboard.
+  //   3. MAILGUN_API_KEY        — Mailgun HTTP. Pay-as-you-go.
+  //   +  MAILGUN_DOMAIN           Required pair. Set MAILGUN_REGION='eu' for EU.
+  //   4. RESEND_API_KEY         — Resend HTTP. 100/day, 3k/month free.
+  //      (or EMAIL_API_KEY)       EMAIL_API_KEY accepted as legacy default.
+  //   5. env.SEND_EMAIL         — Cloudflare Email Routing (legacy, verified
+  //                               destinations only). Needs `mimetext`.
+  //   6. console                — never fails, logs only. Dev fallback.
   //
-  // Uncomment the block below + onboard your domain to use Cloudflare's
-  // Email Service. The unrestricted form sends from any domain you've
-  // verified in your Cloudflare account; the restricted form gates the
-  // sender address explicitly (defence-in-depth in case a bug constructs
-  // a `from` you didn't intend).
+  // Override priority via the EMAIL_PROVIDER_ORDER env (comma-separated
+  // provider ids), e.g. "smtp2go,email-service,resend".
+  //
+  // Set EMAIL_FAILOVER='true' to cascade through providers when one
+  // throws (default: strict — first available wins, errors surface).
   //
   // "send_email": [
   //   { "name": "EMAIL" }
-  //   // OR restrict the sender:
+  //   // OR restrict the sender for defence-in-depth:
   //   // { "name": "EMAIL", "allowed_sender_addresses": ["noreply@yourdomain.com"] }
   // ],
 
