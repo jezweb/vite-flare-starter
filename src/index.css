@@ -383,3 +383,35 @@
   color: color-mix(in oklch, var(--muted-foreground), transparent 60%);
   opacity: 1;
 }
+
+/* Motion language — locked-in tokens used across the app.
+ *
+ *   --motion-fast:    60–120ms   tap, hover, focus feedback
+ *   --motion-normal:  150–220ms  list rows, cards, drawers, popovers
+ *   --motion-slow:    300–400ms  page transitions, big surfaces
+ *
+ * Pick the right token instead of typing literal ms values everywhere.
+ * Easings: linear/in-out for predictable UI; the spring is reserved
+ * for novel motion that benefits from emphasis (drawer/sheet open).
+ */
+:root {
+  --motion-fast: 120ms;
+  --motion-normal: 200ms;
+  --motion-slow: 320ms;
+  --ease-out: cubic-bezier(0.2, 0.6, 0.2, 1);
+  --ease-spring: cubic-bezier(0.16, 1.2, 0.3, 1);
+}
+
+/* Reduce motion when the user has opted out — applies to all transitions
+   on common UI primitives. Doesn't disable purposeful animation (loaders,
+   live progress) — those are handled per-component. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

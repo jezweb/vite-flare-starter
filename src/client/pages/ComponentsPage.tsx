@@ -48,6 +48,8 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
+import { PageContainer } from '@/components/ui/page-container'
+import { PageHeader } from '@/components/ui/page-header'
 import {
   Tooltip,
   TooltipContent,
@@ -116,13 +118,11 @@ export function ComponentsPage() {
   const [radioValue, setRadioValue] = useState('comfortable')
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Components</h1>
-        <p className="text-sm text-muted-foreground">
-          shadcn/ui components + custom starter components with live examples.
-        </p>
-      </div>
+    <PageContainer type="form" maxWidth="6xl">
+      <PageHeader
+        title="Components"
+        subtitle="Live examples of every shadcn/ui primitive plus the starter's custom components. Builder-mode reference page."
+      />
 
       <Tabs defaultValue="buttons" className="w-full">
         <TabsList className="flex w-full overflow-x-auto">
@@ -711,7 +711,7 @@ export function ComponentsPage() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+    </PageContainer>
   )
 }
 

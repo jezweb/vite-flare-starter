@@ -13,6 +13,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { apiClient } from '@/client/lib/api-client'
+import { PageContainer } from '@/components/ui/page-container'
+import { PageHeader } from '@/components/ui/page-header'
+import { HelpDisclosure } from '@/components/ui/help-disclosure'
 
 type SchemaName = 'summary' | 'entities' | 'sentiment'
 
@@ -126,17 +129,20 @@ export function ExtractPage() {
   const isEmpty = !text.trim()
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <div>
-        <div className="flex items-center gap-2 mb-1">
-          <Sparkles className="size-5 text-primary" />
-          <h1 className="text-2xl font-semibold tracking-tight">Structured Extract</h1>
-        </div>
-        <p className="text-muted-foreground">
-          Extract structured data from any text using AI SDK with Zod schemas.
-          Demonstrates <code className="text-xs bg-muted px-1 py-0.5 rounded">Output.object()</code> with tool-capable models.
-        </p>
-      </div>
+    <PageContainer type="form">
+      <PageHeader
+        title="Extract"
+        subtitle="Pull structured data from any text — names, dates, sentiment, custom schemas. Useful for parsing emails, articles, and reports into JSON."
+        help={
+          <HelpDisclosure>
+            <p className="text-muted-foreground max-w-xl">
+              Powered by the AI SDK structured-output pipeline (<code className="font-mono">generateText</code>{' '}
+              with <code className="font-mono">Output.object()</code> + Zod schemas). Pick a schema, paste text,
+              and the AI returns a typed JSON object.
+            </p>
+          </HelpDisclosure>
+        }
+      />
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
@@ -257,7 +263,7 @@ export function ExtractPage() {
           </CardContent>
         </Card>
       )}
-    </div>
+    </PageContainer>
   )
 }
 

@@ -21,6 +21,8 @@ import { CreateProjectModal } from '../components/CreateProjectModal'
 import { PROJECT_COLOR_CLASSES, isProjectColor } from '../colors'
 import { cn } from '@/lib/utils'
 import { EmptyState as SharedEmptyState } from '@/client/components/EmptyState'
+import { PageContainer } from '@/components/ui/page-container'
+import { PageHeader } from '@/components/ui/page-header'
 
 type SortKey = 'activity' | 'name' | 'created'
 
@@ -46,20 +48,17 @@ export function ProjectsIndexPage() {
   const projects = data?.projects ?? []
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 py-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Projects</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Long-running spaces for your work — chats, files, notes, and
-            memory all in one place. Share with teammates as needed.
-          </p>
-        </div>
-        <Button onClick={() => setCreateOpen(true)}>
-          <Plus className="size-4 mr-1.5" />
-          New project
-        </Button>
-      </div>
+    <PageContainer type="index">
+      <PageHeader
+        title="Projects"
+        subtitle="Long-running spaces for your work — chats, files, notes, and memory all in one place. Share with teammates as needed."
+        trailing={
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus className="size-4 mr-1.5" />
+            New project
+          </Button>
+        }
+      />
 
       {/* Search + sort row */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -131,7 +130,7 @@ export function ProjectsIndexPage() {
       )}
 
       <CreateProjectModal open={createOpen} onOpenChange={setCreateOpen} />
-    </div>
+    </PageContainer>
   )
 }
 

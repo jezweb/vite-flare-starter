@@ -18,17 +18,29 @@ import { EmailVerificationBanner } from '@/client/components/EmailVerificationBa
 import { NAV_SECTIONS } from '@/shared/config/nav'
 import { appConfig } from '@/shared/config/app'
 
-// Resolve a human-readable label for the current path by matching against the
-// flattened nav config. Longest-prefix wins so `/dashboard/chat/abc` still
-// picks up the "AI Chat" title. Falls back to a Title-Cased derivation from
-// the last non-dashboard path segment so routes without nav entries still
-// produce a sensible tab title.
+// Fallback title resolver. The PageHeader primitive sets document.title
+// on each page mount via useEffect; this layout-level sync is the safety
+// net for routes that haven't adopted PageHeader yet AND for the brief
+// moment between route transition and PageHeader mount.
+//
+// Match strategy: prefer EXACT path match in the nav config. Don't
+// fall back to longest-prefix because `/dashboard` (Home) is a prefix
+// of every dashboard route — that was the original cause of the
+// "Home · Vite Flare Starter" title appearing on every page that
+// hadn't adopted PageHeader. Pages outside the nav (Settings, Admin,
+// Organization) get a Title-Cased derivation from the last segment.
 function resolveTitle(pathname: string): string | null {
   const items = NAV_SECTIONS.flatMap((s) => s.items)
-  const match = items
-    .filter((i) => pathname === i.to || pathname.startsWith(i.to + '/'))
+  // Exact match first — handles all nav items including /dashboard.
+  const exact = items.find((i) => i.to === pathname)
+  if (exact) return exact.label
+  // Then prefix match excluding the bare /dashboard root, so children
+  // like /dashboard/chat/abc still pick up the "AI Chat" parent title.
+  const prefix = items
+    .filter((i) => i.to !== '/dashboard' && pathname.startsWith(i.to + '/'))
     .sort((a, b) => b.to.length - a.to.length)[0]
-  if (match) return match.label
+  if (prefix) return prefix.label
+  // Last resort: derive from final non-dashboard segment.
   const segments = pathname.split('/').filter(Boolean)
   const last = segments[segments.length - 1]
   if (!last || last === 'dashboard') return null

@@ -14,6 +14,8 @@ import {
 import type { ThemeScheme, ThemeMode } from '@/shared/schemas/preferences.schema'
 import { applyTheme } from '@/lib/themes'
 import { appConfig } from '@/shared/config/app'
+import { PageContainer } from '@/components/ui/page-container'
+import { PageHeader } from '@/components/ui/page-header'
 import {
   Card,
   CardContent,
@@ -228,7 +230,12 @@ export function StyleGuidePage() {
   }
 
   return (
-    <div className="container mx-auto space-y-12 py-8">
+    <PageContainer type="form" maxWidth="6xl">
+      <PageHeader
+        title="Style guide"
+        subtitle="Theme tokens, typography scale, primitive showcase. Builder-mode reference."
+      />
+
       {/* Theme Preview Controls */}
       <Card>
         <CardHeader>
@@ -322,15 +329,6 @@ export function StyleGuidePage() {
           </div>
         </CardContent>
       </Card>
-
-      {/* Header */}
-      <div className="space-y-2">
-        <h1 className="text-4xl font-bold">UI Component Library</h1>
-        <p className="text-lg text-muted-foreground">
-          Comprehensive showcase of all available UI components built with shadcn/ui and
-          Tailwind CSS
-        </p>
-      </div>
 
       <Separator />
 
@@ -1656,6 +1654,6 @@ export function StyleGuidePage() {
           Reference for developers and AI coding agents
         </p>
       </div>
-    </div>
+    </PageContainer>
   )
 }

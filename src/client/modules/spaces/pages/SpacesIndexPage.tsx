@@ -14,6 +14,8 @@ import { useSpacesList, type SpaceSummary } from '../hooks/useSpaces'
 import { CreateSpaceModal } from '../components/CreateSpaceModal'
 import { EmptyState as SharedEmptyState } from '@/client/components/EmptyState'
 import { cn } from '@/lib/utils'
+import { PageContainer } from '@/components/ui/page-container'
+import { PageHeader } from '@/components/ui/page-header'
 
 function relTime(iso: string): string {
   const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
@@ -72,23 +74,17 @@ export function SpacesIndexPage() {
   const rest = filtered.filter((s) => !s.pinnedToSidebar)
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 py-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Spaces</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Group chats with the AI. Invite teammates, mix in different
-            AI agents (researcher, writer, support), and keep the history
-            in one place. Type{' '}
-            <code className="rounded bg-muted px-1 text-xs">@</code>{' '}
-            to call an agent into the chat.
-          </p>
-        </div>
-        <Button onClick={() => setCreateOpen(true)}>
-          <Plus className="size-4 mr-1.5" />
-          New space
-        </Button>
-      </div>
+    <PageContainer type="index">
+      <PageHeader
+        title="Spaces"
+        subtitle="Group chats with the AI. Invite teammates, mix in different AI agents (researcher, writer, support), and keep the history in one place. Type @ to call an agent into the chat."
+        trailing={
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus className="size-4 mr-1.5" />
+            New space
+          </Button>
+        }
+      />
 
       <div className="relative max-w-md">
         <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -143,6 +139,6 @@ export function SpacesIndexPage() {
       )}
 
       <CreateSpaceModal open={createOpen} onClose={() => setCreateOpen(false)} />
-    </div>
+    </PageContainer>
   )
 }

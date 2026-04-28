@@ -30,8 +30,12 @@ import {
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { TabsTrigger } from '@/components/ui/tabs'
 import { EmptyState } from '@/client/components/EmptyState'
+import { PageContainer } from '@/components/ui/page-container'
+import { PageHeader } from '@/components/ui/page-header'
+import { PageFilters, PageFilterTabs } from '@/components/ui/page-filters'
+import { PageLoading } from '@/client/components/PageState'
 import { apiClient } from '@/client/lib/api-client'
 import { cn } from '@/lib/utils'
 import { formatAgentClass } from '@/shared/format/agent'
@@ -84,17 +88,14 @@ export function ApprovalsPage() {
   })
 
   return (
-    <div className="container mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Approvals</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Your AI is asking before sending an email, posting a message,
-          or updating its memory. Approve, reject, or edit before it acts.
-        </p>
-      </div>
+    <PageContainer type="queue">
+      <PageHeader
+        title="Approvals"
+        subtitle="Your AI is asking before sending an email, posting a message, or updating its memory. Approve, reject, or edit before it acts."
+      />
 
-      <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
-        <TabsList>
+      <PageFilters>
+        <PageFilterTabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
           <TabsTrigger value="pending">
             Pending
             {data && filter === 'pending' && data.total > 0 && (
@@ -104,14 +105,10 @@ export function ApprovalsPage() {
             )}
           </TabsTrigger>
           <TabsTrigger value="all">All</TabsTrigger>
-        </TabsList>
-      </Tabs>
+        </PageFilterTabs>
+      </PageFilters>
 
-      {isLoading && (
-        <div className="flex h-32 items-center justify-center">
-          <Loader2 className="size-6 animate-spin text-muted-foreground" />
-        </div>
-      )}
+      {isLoading && <PageLoading variant="list" count={3} />}
 
       {!isLoading && data && data.total === 0 && (
         <EmptyState
@@ -145,7 +142,7 @@ export function ApprovalsPage() {
           ))}
         </div>
       )}
-    </div>
+    </PageContainer>
   )
 }
 

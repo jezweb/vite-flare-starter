@@ -51,6 +51,10 @@ import { GoogleWorkspacePanel } from '../components/GoogleWorkspacePanel'
 import { MicrosoftWorkspacePanel } from '../components/MicrosoftWorkspacePanel'
 import { StubConnectorPanel } from '../components/StubConnectorPanel'
 import { Section } from '@/components/ui/section'
+import { PageContainer } from '@/components/ui/page-container'
+import { PageHeader } from '@/components/ui/page-header'
+import { HelpDisclosure } from '@/components/ui/help-disclosure'
+import { useBuilderMode } from '@/client/lib/builder-mode'
 
 function resolveIcon(name: string): LucideIcon {
   const icons = LucideIcons as unknown as Record<string, LucideIcon>
@@ -60,6 +64,7 @@ function resolveIcon(name: string): LucideIcon {
 export function ConnectorsPage() {
   const { data: connData, isLoading: connectionsLoading } = useConnections()
   const { data: catData } = useCatalog()
+  const { isBuilder } = useBuilderMode()
   const connections = connData?.connections ?? []
   const catalog = catData?.catalog ?? []
 
@@ -98,40 +103,32 @@ export function ConnectorsPage() {
   )
 
   return (
-    <div className="container mx-auto max-w-4xl py-8 px-4 space-y-6">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div className="max-w-xl">
-          <h1 className="text-2xl font-semibold flex items-center gap-2">
-            <Plug className="h-5 w-5" />
-            Connectors
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Connect Gmail, Calendar, Drive, Notion, Slack, and other apps so
-            the AI can read and act on them for you. Most connections take
-            30 seconds — sign in with the provider, click Approve.
-          </p>
-          <details className="text-xs text-muted-foreground mt-2 group">
-            <summary className="cursor-pointer select-none hover:text-foreground transition-colors">
-              Technical details
-            </summary>
-            <p className="mt-1.5 max-w-xl">
+    <PageContainer type="catalog">
+      <PageHeader
+        title="Connections"
+        subtitle="Connect Gmail, Calendar, Drive, Notion, Slack, and other apps so your AI can read and act on them for you. Most take 30 seconds — sign in with the provider, click Approve."
+        help={
+          <HelpDisclosure>
+            <p className="text-muted-foreground max-w-xl">
               Powered by Model Context Protocol (MCP). Paste any MCP server URL —
-              public, community-hosted, or your own Cloudflare Worker. OAuth
-              and bearer tokens both supported; tokens are encrypted at rest.
+              public, community-hosted, or your own Cloudflare Worker. OAuth and
+              bearer tokens both supported; tokens are encrypted at rest.
             </p>
-          </details>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button onClick={() => setBrowseOpen(true)}>
-            <Search className="mr-2 h-4 w-4" />
-            Browse apps
-          </Button>
-          <Button variant="outline" onClick={() => setCustomOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add custom app
-          </Button>
-        </div>
-      </div>
+          </HelpDisclosure>
+        }
+        trailing={
+          <>
+            <Button onClick={() => setBrowseOpen(true)}>
+              <Search className="mr-2 h-4 w-4" />
+              Browse apps
+            </Button>
+            <Button variant="outline" onClick={() => setCustomOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add custom
+            </Button>
+          </>
+        }
+      />
 
       {/* Native integrations — first-class connections that aren't MCP.
           Each panel self-hides if its provider isn't configured. */}
@@ -143,36 +140,43 @@ export function ConnectorsPage() {
         <MicrosoftWorkspacePanel />
       </Section>
 
-      <Section
-        title="Coming soon"
-        description="These integrations aren't wired up yet — let us know if you want them."
-      >
-        <StubConnectorPanel
-          providerId="slack"
-          logo={
-            <svg viewBox="0 0 24 24" aria-hidden className="h-6 w-6" fill="#E01E5A">
-              <path d="M5 15a2 2 0 1 1-2-2h2v2zm1 0a2 2 0 1 1 4 0v5a2 2 0 1 1-4 0v-5zm2-8a2 2 0 1 1-2-2V3a2 2 0 1 1 4 0v2H8zm0 1a2 2 0 1 1 0 4H3a2 2 0 1 1 0-4h5zm11 6a2 2 0 1 1 2 2h-2v-2zm-1 0a2 2 0 1 1-4 0V9a2 2 0 1 1 4 0v5zm-2 8a2 2 0 1 1 2 2v2a2 2 0 1 1-4 0v-2h2zm0-1a2 2 0 1 1 0-4h5a2 2 0 1 1 0 4h-5z" />
-            </svg>
-          }
-        />
-        <StubConnectorPanel
-          providerId="notion"
-          logo={
-            <svg viewBox="0 0 24 24" aria-hidden className="h-6 w-6" fill="currentColor">
-              <path d="M4.5 3.4L14 2.7c1.2-.1 1.5 0 2.3.5l3 2.1c.6.4.8.5.8 1v15.3c0 .8-.3 1.3-1.3 1.4l-11 .7c-.8.1-1.2 0-1.6-.5L3.9 21c-.4-.6-.6-1-.6-1.5V4.7c0-.7.3-1.2 1.2-1.3z" />
-            </svg>
-          }
-        />
-        <StubConnectorPanel
-          providerId="atlassian"
-          logo={
-            <svg viewBox="0 0 24 24" aria-hidden className="h-6 w-6" fill="#2684FF">
-              <path d="M6.5 11.5L2 20h8.5c.2 0 .4-.2.4-.4 0-.1 0-.2-.1-.3L6.8 11.6c-.2-.2-.4-.2-.3-.1z" />
-              <path d="M11.4 4c-.2 0-.4.1-.5.3l-3.6 7.2-.8 1.6 4.6 8.5c.1.2.3.4.6.4H22c.3 0 .5-.2.5-.5 0-.1 0-.2-.1-.3L12 4.3c-.2-.2-.4-.3-.6-.3z" fill="#0052CC" />
-            </svg>
-          }
-        />
-      </Section>
+      {/*
+        * "Coming soon" stubs are reference implementations for fork
+        * authors — visible only in Builder mode so a normal signed-in
+        * user doesn't see fake offerings on a live product page.
+        */}
+      {isBuilder && (
+        <Section
+          title="Coming soon (builder preview)"
+          description="Reference stubs for fork authors. Wire up the providers + scopes you need; remove this section before shipping to users."
+        >
+          <StubConnectorPanel
+            providerId="slack"
+            logo={
+              <svg viewBox="0 0 24 24" aria-hidden className="h-6 w-6" fill="#E01E5A">
+                <path d="M5 15a2 2 0 1 1-2-2h2v2zm1 0a2 2 0 1 1 4 0v5a2 2 0 1 1-4 0v-5zm2-8a2 2 0 1 1-2-2V3a2 2 0 1 1 4 0v2H8zm0 1a2 2 0 1 1 0 4H3a2 2 0 1 1 0-4h5zm11 6a2 2 0 1 1 2 2h-2v-2zm-1 0a2 2 0 1 1-4 0V9a2 2 0 1 1 4 0v5zm-2 8a2 2 0 1 1 2 2v2a2 2 0 1 1-4 0v-2h2zm0-1a2 2 0 1 1 0-4h5a2 2 0 1 1 0 4h-5z" />
+              </svg>
+            }
+          />
+          <StubConnectorPanel
+            providerId="notion"
+            logo={
+              <svg viewBox="0 0 24 24" aria-hidden className="h-6 w-6" fill="currentColor">
+                <path d="M4.5 3.4L14 2.7c1.2-.1 1.5 0 2.3.5l3 2.1c.6.4.8.5.8 1v15.3c0 .8-.3 1.3-1.3 1.4l-11 .7c-.8.1-1.2 0-1.6-.5L3.9 21c-.4-.6-.6-1-.6-1.5V4.7c0-.7.3-1.2 1.2-1.3z" />
+              </svg>
+            }
+          />
+          <StubConnectorPanel
+            providerId="atlassian"
+            logo={
+              <svg viewBox="0 0 24 24" aria-hidden className="h-6 w-6" fill="#2684FF">
+                <path d="M6.5 11.5L2 20h8.5c.2 0 .4-.2.4-.4 0-.1 0-.2-.1-.3L6.8 11.6c-.2-.2-.4-.2-.3-.1z" />
+                <path d="M11.4 4c-.2 0-.4.1-.5.3l-3.6 7.2-.8 1.6 4.6 8.5c.1.2.3.4.6.4H22c.3 0 .5-.2.5-.5 0-.1 0-.2-.1-.3L12 4.3c-.2-.2-.4-.3-.6-.3z" fill="#0052CC" />
+              </svg>
+            }
+          />
+        </Section>
+      )}
 
       <Section
         title="Connected apps"
@@ -227,7 +231,7 @@ export function ConnectorsPage() {
       />
 
       <CustomConnectorDialog open={customOpen} onOpenChange={setCustomOpen} />
-    </div>
+    </PageContainer>
   )
 }
 

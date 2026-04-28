@@ -50,6 +50,9 @@ import { getGreeting } from '@/shared/lib/greeting'
 import { cn } from '@/lib/utils'
 import { formatAgentClass, formatTrigger } from '@/shared/format/agent'
 import { useAgentCatalog } from '@/client/modules/routines/hooks/useAgentCatalog'
+import { PageContainer } from '@/components/ui/page-container'
+import { PageHeader } from '@/components/ui/page-header'
+import { useBuilderMode } from '@/client/lib/builder-mode'
 
 interface Approval {
   id: string
@@ -91,19 +94,15 @@ export function DashboardPage() {
   })
 
   const pendingCount = approvals.data?.total ?? 0
+  const greeting = `${getGreeting()}${session?.user?.name ? `, ${session.user.name.split(' ')[0]}` : ''}`
+  const subtitle =
+    pendingCount > 0
+      ? `${pendingCount} item${pendingCount === 1 ? '' : 's'} waiting for your review.`
+      : "You're up to date. Nothing needs your attention right now."
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {getGreeting()}{session?.user?.name ? `, ${session.user.name.split(' ')[0]}` : ''}
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          {pendingCount > 0
-            ? `${pendingCount} item${pendingCount === 1 ? '' : 's'} waiting for your review.`
-            : "You're up to date. Nothing needs your attention right now."}
-        </p>
-      </div>
+    <PageContainer type="hub">
+      <PageHeader title={greeting} subtitle={subtitle} docTitle="Home" />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <NeedsYouPanel approvals={approvals.data} loading={approvals.isLoading} />
@@ -112,9 +111,18 @@ export function DashboardPage() {
 
       <QuickActions />
 
-      <CapabilityTour />
-    </div>
+      {/* CapabilityTour is fork-author content (what this starter ships
+          with). Visible only in Builder mode so a returning user doesn't
+          see the same overview block on every visit. */}
+      <BuilderOnlyCapabilityTour />
+    </PageContainer>
   )
+}
+
+function BuilderOnlyCapabilityTour() {
+  const { isBuilder } = useBuilderMode()
+  if (!isBuilder) return null
+  return <CapabilityTour />
 }
 
 // Greeting helper imported from shared/lib so chat + dashboard agree on

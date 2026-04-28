@@ -11,9 +11,12 @@ import { useQueryClient } from '@tanstack/react-query'
 import { formatDistanceToNow, format } from 'date-fns'
 import { Bell, Check, CheckCheck, Info, AlertTriangle, AlertCircle, Loader2, Inbox } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { TabsTrigger } from '@/components/ui/tabs'
 import { EmptyState } from '@/client/components/EmptyState'
+import { PageContainer } from '@/components/ui/page-container'
+import { PageHeader } from '@/components/ui/page-header'
+import { PageFilters, PageFilterTabs } from '@/components/ui/page-filters'
+import { PageLoading } from '@/client/components/PageState'
 import {
   ListRow,
   ListRowGroup,
@@ -78,34 +81,31 @@ export function NotificationsPage() {
   const unreadCount = data?.unreadCount ?? 0
 
   return (
-    <div className="container mx-auto max-w-3xl py-8 px-4 space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold">Notifications</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Quick pings from across the app. The bell in the header
-            shows the latest 10; this is the full history.
-          </p>
-        </div>
-        {unreadCount > 0 && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => markAllAsRead.mutate()}
-            disabled={markAllAsRead.isPending}
-          >
-            {markAllAsRead.isPending ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <CheckCheck className="mr-2 h-4 w-4" />
-            )}
-            Mark all read
-          </Button>
-        )}
-      </div>
+    <PageContainer type="queue">
+      <PageHeader
+        title="Notifications"
+        subtitle="Quick pings from across the app. The bell in the header shows the latest 10; this is the full history."
+        trailing={
+          unreadCount > 0 ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => markAllAsRead.mutate()}
+              disabled={markAllAsRead.isPending}
+            >
+              {markAllAsRead.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <CheckCheck className="mr-2 h-4 w-4" />
+              )}
+              Mark all read
+            </Button>
+          ) : undefined
+        }
+      />
 
-      <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
-        <TabsList>
+      <PageFilters>
+        <PageFilterTabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
           {/* `tabular-nums` keeps digit widths uniform; the em-dash
               placeholder is also monospace so the tab width is stable
               from first paint through data resolution. */}
@@ -115,15 +115,11 @@ export function NotificationsPage() {
           <TabsTrigger value="unread">
             Unread <span className="ml-1 font-mono tabular-nums">({data ? unreadCount : '—'})</span>
           </TabsTrigger>
-        </TabsList>
-      </Tabs>
+        </PageFilterTabs>
+      </PageFilters>
 
       {isLoading ? (
-        <Card>
-          <CardContent className="py-12 flex items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </CardContent>
-        </Card>
+        <PageLoading variant="list" count={4} />
       ) : notifications.length === 0 ? (
         <EmptyState
           icon={filter === 'unread' ? Inbox : Bell}
@@ -146,7 +142,7 @@ export function NotificationsPage() {
           ))}
         </ListRowGroup>
       )}
-    </div>
+    </PageContainer>
   )
 }
 

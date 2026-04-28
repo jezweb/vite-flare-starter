@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FolderOpen, Plus, RefreshCw } from 'lucide-react'
+import { Plus, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -20,6 +20,9 @@ import {
 import { useFiles, useFolders, formatFileSize } from '../hooks/useFiles'
 import { FileUploader } from '../components/FileUploader'
 import { FileList } from '../components/FileList'
+import { PageContainer } from '@/components/ui/page-container'
+import { PageHeader } from '@/components/ui/page-header'
+import { StatGrid } from '@/components/ui/stat-grid'
 
 export function FilesPage() {
   const [currentFolder, setCurrentFolder] = useState<string>('all')
@@ -35,70 +38,44 @@ export function FilesPage() {
   const totalSize = files.reduce((acc, f) => acc + f.size, 0)
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Files</h1>
-          <p className="text-muted-foreground">
-            Upload, manage, and share your files
-          </p>
-        </div>
-        <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Upload Files
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Upload Files</DialogTitle>
-              <DialogDescription>
-                Drag and drop files or click to browse. Max 10MB per file.
-              </DialogDescription>
-            </DialogHeader>
-            <FileUploader
-              folder={currentFolder === 'all' ? '/' : currentFolder}
-              onUploadComplete={() => {
-                refetch()
-                setUploadOpen(false)
-              }}
-            />
-          </DialogContent>
-        </Dialog>
-      </div>
+    <PageContainer type="queue">
+      <PageHeader
+        title="Files"
+        subtitle="Drop a file here or in chat — your AI can read PDFs, images, and CSVs and use them in answers."
+        trailing={
+          <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Upload
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Upload files</DialogTitle>
+                <DialogDescription>
+                  Drag and drop files or click to browse. Max 10MB per file.
+                </DialogDescription>
+              </DialogHeader>
+              <FileUploader
+                folder={currentFolder === 'all' ? '/' : currentFolder}
+                onUploadComplete={() => {
+                  refetch()
+                  setUploadOpen(false)
+                }}
+              />
+            </DialogContent>
+          </Dialog>
+        }
+      />
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Files</CardTitle>
-            <FolderOpen className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{files.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Storage Used</CardTitle>
-            <FolderOpen className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatFileSize(totalSize)}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Folders</CardTitle>
-            <FolderOpen className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{folders.length}</div>
-          </CardContent>
-        </Card>
-      </div>
+      <StatGrid
+        items={[
+          { label: 'Files', value: files.length },
+          { label: 'Storage', value: formatFileSize(totalSize) },
+          { label: 'Folders', value: folders.length },
+        ]}
+      />
 
       {/* Filters */}
       <Card>
@@ -137,6 +114,6 @@ export function FilesPage() {
           />
         </CardContent>
       </Card>
-    </div>
+    </PageContainer>
   )
 }

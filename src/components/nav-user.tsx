@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
@@ -17,11 +18,13 @@ import {
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar'
 import { useSession, authClient } from '@/client/lib/auth'
 import { useAdminStatus } from '@/client/modules/admin/hooks/useAdminStatus'
-import { LogOut, MoreVertical, Settings, Shield, Sparkles, Component, Palette } from 'lucide-react'
+import { useBuilderMode } from '@/client/lib/builder-mode'
+import { LogOut, MoreVertical, Settings, Shield, Sparkles, Wrench } from 'lucide-react'
 
 export function NavUser() {
   const { data: session } = useSession()
   const { data: isAdmin } = useAdminStatus()
+  const { isBuilder, toggle: toggleBuilder } = useBuilderMode()
   const { isMobile } = useSidebar()
   const navigate = useNavigate()
 
@@ -86,22 +89,25 @@ export function NavUser() {
                 My artifacts
               </DropdownMenuItem>
             </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            {/*
+              * Builder Mode toggle — reveals developer surfaces
+              * (Components, Style Guide, Activity, raw skill source) in the
+              * sidebar. Per-machine; not synced across devices. Distinct
+              * from the admin role which gates shared-state operations.
+              */}
+            <DropdownMenuCheckboxItem
+              checked={isBuilder}
+              onCheckedChange={() => toggleBuilder()}
+            >
+              <Wrench className="mr-2 h-4 w-4" />
+              Builder mode
+            </DropdownMenuCheckboxItem>
             {isAdmin && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('/dashboard/admin')}>
-                  <Shield className="mr-2 h-4 w-4" />
-                  Admin Panel
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/dashboard/components')}>
-                  <Component className="mr-2 h-4 w-4" />
-                  Components
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/dashboard/style-guide')}>
-                  <Palette className="mr-2 h-4 w-4" />
-                  Style Guide
-                </DropdownMenuItem>
-              </>
+              <DropdownMenuItem onClick={() => navigate('/dashboard/admin')}>
+                <Shield className="mr-2 h-4 w-4" />
+                Admin Panel
+              </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut}>

@@ -19,9 +19,7 @@ import {
   Clock,
   AlertTriangle,
   ChevronRight,
-  Loader2,
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
   ListRow,
@@ -32,8 +30,17 @@ import {
   ListRowMeta,
   ListRowTrailing,
 } from '@/components/ui/list-row'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { TabsTrigger } from '@/components/ui/tabs'
 import { EmptyState } from '@/client/components/EmptyState'
+import { PageContainer } from '@/components/ui/page-container'
+import { PageHeader } from '@/components/ui/page-header'
+import {
+  PageFilters,
+  PageFilterTabs,
+  PageFilterGroup,
+  PageFilterChip,
+} from '@/components/ui/page-filters'
+import { PageLoading } from '@/client/components/PageState'
 import { apiClient } from '@/client/lib/api-client'
 import { cn } from '@/lib/utils'
 import { formatAgentClass, formatImportance } from '@/shared/format/agent'
@@ -99,57 +106,35 @@ export function InboxPage() {
   })
 
   return (
-    <div className="container mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Inbox</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Things your AI noticed, plus anything waiting on a yes / no.
-          Most-important first.
-        </p>
-      </div>
+    <PageContainer type="queue">
+      <PageHeader
+        title="Inbox"
+        subtitle="Things your AI noticed, plus anything waiting on a yes / no. Most-important first."
+      />
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Tabs value={status} onValueChange={(v) => setStatus(v as Status)}>
-          <TabsList>
-            <TabsTrigger value="undecided">Undecided</TabsTrigger>
-            <TabsTrigger value="unread">Unread</TabsTrigger>
-            <TabsTrigger value="all">All</TabsTrigger>
-          </TabsList>
-        </Tabs>
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs text-muted-foreground">Importance:</span>
+      <PageFilters>
+        <PageFilterTabs value={status} onValueChange={(v) => setStatus(v as Status)}>
+          <TabsTrigger value="undecided">Undecided</TabsTrigger>
+          <TabsTrigger value="unread">Unread</TabsTrigger>
+          <TabsTrigger value="all">All</TabsTrigger>
+        </PageFilterTabs>
+        <PageFilterGroup
+          label="Importance:"
+          onClear={importance ? () => setImportance(null) : undefined}
+        >
           {(['high', 'medium', 'low'] as Importance[]).map((imp) => (
-            <button
+            <PageFilterChip
               key={imp}
+              active={importance === imp}
               onClick={() => setImportance(importance === imp ? null : imp)}
-              className={cn(
-                'rounded-full border px-2.5 py-0.5 text-xs capitalize transition-colors',
-                importance === imp
-                  ? 'border-primary bg-primary/10 text-foreground'
-                  : 'border-border text-muted-foreground hover:text-foreground',
-              )}
             >
               {imp}
-            </button>
+            </PageFilterChip>
           ))}
-          {importance && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 px-2 text-xs"
-              onClick={() => setImportance(null)}
-            >
-              clear
-            </Button>
-          )}
-        </div>
-      </div>
+        </PageFilterGroup>
+      </PageFilters>
 
-      {isLoading && (
-        <div className="flex h-32 items-center justify-center">
-          <Loader2 className="size-6 animate-spin text-muted-foreground" />
-        </div>
-      )}
+      {isLoading && <PageLoading variant="list" count={5} />}
 
       {!isLoading && data && data.total === 0 && (
         <EmptyState
@@ -183,7 +168,7 @@ export function InboxPage() {
           ))}
         </ListRowGroup>
       )}
-    </div>
+    </PageContainer>
   )
 }
 

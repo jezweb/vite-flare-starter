@@ -16,6 +16,7 @@ import {
 import { NavMain } from '@/components/nav-main'
 import { NavUser } from '@/components/nav-user'
 import { useSession } from '@/client/lib/auth'
+import { useBuilderMode } from '@/client/lib/builder-mode'
 import { features } from '@/shared/config/features'
 import { OrgSwitcher } from '@/client/modules/organizations/components/OrgSwitcher'
 import { NAV_SECTIONS, type NavItem } from '@/shared/config/nav'
@@ -23,10 +24,12 @@ import { NAV_SECTIONS, type NavItem } from '@/shared/config/nav'
 function filterItems(
   items: NavItem[],
   featureFlags: Record<string, boolean>,
-  userRole?: string,
+  userRole: string | undefined,
+  isBuilder: boolean,
 ): NavItem[] {
   return items.filter((item) => {
     if (item.feature && !featureFlags[item.feature]) return false
+    if (item.builderOnly && !isBuilder) return false
     if (item.minRole) {
       const roleHierarchy: Record<string, number> = { user: 0, manager: 1, admin: 2 }
       const required = roleHierarchy[item.minRole] ?? 0
@@ -39,15 +42,19 @@ function filterItems(
 
 export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
   const { data: session } = useSession()
+  const { isBuilder } = useBuilderMode()
   const userRole = (session?.user as { role?: string } | undefined)?.role ?? 'user'
 
   const visibleSections = React.useMemo(() => {
     const featureFlags = features as unknown as Record<string, boolean>
-    return NAV_SECTIONS.map((section) => ({
-      ...section,
-      items: filterItems(section.items, featureFlags, userRole),
-    })).filter((section) => section.items.length > 0)
-  }, [userRole])
+    return NAV_SECTIONS
+      .filter((section) => !section.builderOnly || isBuilder)
+      .map((section) => ({
+        ...section,
+        items: filterItems(section.items, featureFlags, userRole, isBuilder),
+      }))
+      .filter((section) => section.items.length > 0)
+  }, [userRole, isBuilder])
 
   return (
     <Sidebar collapsible="icon" variant="inset" {...props}>

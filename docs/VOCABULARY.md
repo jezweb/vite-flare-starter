@@ -108,8 +108,35 @@ Adopted on:
 - RoutineDetailPage internal IDs
 - NewRoutinePage Advanced disclosure (auto-derived instance name)
 
+## Page subtitle template
+
+> "[Verb in user voice] [thing] [why or how it helps]."
+
+Audit pass on existing subtitles (2026-04-29 design coherence sweep):
+
+| Page | New subtitle |
+|---|---|
+| Settings | "Your profile, login, AI memory, and the data this app holds about you." |
+| Files | "Drop a file here or in chat — your AI can read PDFs, images, and CSVs and use them in answers." |
+| Admin | "Members, feature flags, API tokens, deliverability, and error inspection. Only admins see this page." |
+| Activity | "Every action your AI has taken on your behalf — created, updated, archived — with timestamps." |
+| Extract | "Pull structured data from any text — names, dates, sentiment, custom schemas." |
+| Organisation | "Identity, branding, and policies for [org name]." |
+
+Always:
+- Lead with a verb in the user's voice ("Pick", "Drop", "Have", "Watch")
+- Say *why* or *how it helps* — not just *what it is*
+- ≤ 2 lines on desktop / ≤ 3 lines on 375px mobile
+
+Never:
+- Refer to internal concepts the user hasn't seen yet ("MCP server", "ToolDefinition", "Output.object()")
+- Say "Manage your X" — it's true but tells the user nothing
+- Use technical jargon as the lead noun ("Audit trail of …" → "Every action …")
+
 ## Where this is enforced
 
+- **`src/components/ui/page-header.tsx`** — renders the H1 + subtitle,
+  sets document.title. The single place to define a page's identity.
 - **`src/shared/format/agent.ts`** — translation helpers for enum
   values. Single source of truth.
 - **`src/shared/agent/metadata.ts`** — every AutonomousAgent declares
@@ -118,6 +145,8 @@ Adopted on:
   — discovery endpoints that pickers consume
 - **`dev-tools:ux-audit` skill** — first-time-user lens checks for
   vocabulary leaks
+- **`docs/PAGE_GRAMMAR.md`** — the page-level contract that requires
+  this voice on every PageHeader subtitle
 - **This file** — canonical reference
 
 If you add a new concept that needs naming, add it here first, then
@@ -125,4 +154,4 @@ write the copy.
 
 ---
 
-**Last updated:** 2026-04-28
+**Last updated:** 2026-04-29

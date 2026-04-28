@@ -190,11 +190,16 @@ export function SignInPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <div className="flex flex-col gap-6 w-full max-w-md">
+          <div className="text-center space-y-1">
+            <Link to="/" className="inline-block text-sm text-muted-foreground hover:text-foreground transition-colors">
+              ← Back to home
+            </Link>
+          </div>
           <Card>
             <CardHeader>
               <CardTitle>Welcome back</CardTitle>
               <CardDescription>
-                Sign in to your account with Google
+                Sign in with Google to access your AI workspace, connections, and saved skills.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -223,6 +228,10 @@ export function SignInPage() {
                   </svg>
                   {loading ? 'Signing in...' : 'Continue with Google'}
                 </Button>
+                <FieldDescription className="text-center text-xs leading-relaxed">
+                  Google sign-in lets the app securely connect to Workspace tools (Gmail, Drive, Calendar)
+                  if you choose to enable them later. We never see your password.
+                </FieldDescription>
               </FieldGroup>
             </CardContent>
           </Card>

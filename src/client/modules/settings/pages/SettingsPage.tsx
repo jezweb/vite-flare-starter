@@ -1,4 +1,3 @@
-import { Settings } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ProfileSection } from '../components/ProfileSection'
@@ -10,6 +9,8 @@ import { ApiTokensSection } from '../components/ApiTokensSection'
 import { OrganizationSection } from '@/client/modules/organization/components/OrganizationSection'
 import { MemorySection } from '../components/MemorySection'
 import { features } from '@/shared/config/features'
+import { PageContainer } from '@/components/ui/page-container'
+import { PageHeader } from '@/components/ui/page-header'
 
 export function SettingsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -33,16 +34,11 @@ export function SettingsPage() {
         : 'grid-cols-3 sm:grid-cols-6'
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <div>
-        <div className="flex items-center gap-2 mb-1">
-          <Settings className="size-5 text-primary" />
-          <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Manage your account settings and preferences
-        </p>
-      </div>
+    <PageContainer type="form">
+      <PageHeader
+        title="Settings"
+        subtitle="Your profile, login, AI memory, and the data this app holds about you."
+      />
 
       {/* Tabs — horizontally scrollable on narrow viewports so the tab
           labels never truncate unreadably on small phones. Wider screens
@@ -105,6 +101,6 @@ export function SettingsPage() {
           <PreferencesSection />
         </TabsContent>
       </Tabs>
-    </div>
+    </PageContainer>
   )
 }

@@ -55,7 +55,6 @@ import { hasUiMarker } from '../components/chat-ui/ChatUiElement'
 import { VoiceDictationButton } from '@/client/modules/chat/components/VoiceDictationButton'
 import { usePasteUpload } from '@/client/hooks/usePasteUpload'
 import { useSession } from '@/client/lib/auth'
-import { getGreeting } from '@/shared/lib/greeting'
 import { cn } from '@/lib/utils'
 import { SkillsSlashMenu, parseSlashQuery } from '../components/SkillsSlashMenu'
 import { useSkillSummary, type SkillSummary } from '@/client/modules/skills/hooks/useSkills'
@@ -86,14 +85,6 @@ const ACCEPT_ALL = [
   'application/rtf',
   'application/epub+zip',
 ].join(',')
-
-// Greeting helper now lives in `src/shared/lib/greeting.ts` so dashboard
-// and chat surface the same string at the same time-of-day. Was a finding
-// in the slice 1+2 UX audit.
-function greetingForTime(name: string | undefined): string {
-  const who = name ? `, ${name}` : ''
-  return `${getGreeting()}${who}`
-}
 
 export function ChatPage() {
   const { conversationId: urlConversationId } = useParams<{ conversationId?: string }>()
@@ -971,7 +962,6 @@ export function ChatPage() {
               <div className="max-w-2xl w-full text-center space-y-6">
                 <EmptyStateBody
                   userName={session?.user?.name?.split(' ')[0]}
-                  userEmail={session?.user?.email}
                   onPresetPick={handlePresetPick}
                   onPresetPreview={handlePresetPreview}
                   modelMissingKey={selectedModelMissingKey}
@@ -1155,14 +1145,12 @@ export function ChatPage() {
  */
 function EmptyStateBody({
   userName,
-  userEmail,
   onPresetPick,
   onPresetPreview,
   modelMissingKey,
   modelName,
 }: {
   userName?: string
-  userEmail?: string
   onPresetPick: (text: string) => void
   onPresetPreview: (text: string | null) => void
   modelMissingKey?: boolean
@@ -1170,16 +1158,11 @@ function EmptyStateBody({
 }) {
   return (
     <>
-      {(userName || userEmail) && (
-        <div className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card/50 px-3 py-1 text-xs text-muted-foreground">
-          {userEmail || userName}
-        </div>
-      )}
       <h2 className="text-3xl font-semibold tracking-tight">
-        {greetingForTime(userName)}
+        What can I help with{userName ? `, ${userName.split(' ')[0]}` : ''}?
       </h2>
       <p className="text-sm text-muted-foreground/60 -mt-3">
-        Ask anything, drop a file, or pick a starter below.
+        Ask anything, drop a file, dictate with the mic, or pick a starter below.
       </p>
       {modelMissingKey && (
         <div className="mx-auto max-w-xl rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-left text-xs text-amber-900 dark:text-amber-200">

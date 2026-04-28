@@ -17,11 +17,20 @@ import {
   Trash2,
   Plus,
   ArrowLeft,
+  MoreHorizontal,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { EmptyState } from '@/client/components/EmptyState'
 import { Zap } from 'lucide-react'
+import { PageContainer } from '@/components/ui/page-container'
+import { PageHeader } from '@/components/ui/page-header'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
   Dialog,
   DialogContent,
@@ -103,48 +112,39 @@ export function SkillsPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Skills</h1>
-          <p className="mt-1 max-w-prose text-sm text-muted-foreground">
-            Teach your AI to do specific jobs — write a morning brief,
-            review a contract, draft an email. Type{' '}
-            <code className="rounded bg-muted px-1 whitespace-nowrap">
-              /skill-name
-            </code>{' '}
-            in chat to use one. Compatible with the{' '}
-            <a
-              href="https://agentskills.io/specification"
-              target="_blank"
-              rel="noreferrer"
-              className="underline"
-            >
-              agentskills.io spec
-            </a>
-            .
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            onClick={() => sync.mutate()}
-            disabled={sync.isPending}
-            title="Re-imports the example skills bundled with the app. Safe to run any time."
-          >
-            <RefreshCw
-              className={`mr-2 size-4 ${sync.isPending ? 'animate-spin' : ''}`}
-            />
-            Refresh starter skills
-          </Button>
-          <Button variant="outline" onClick={() => setInstallOpen(true)}>
-            <GithubIcon className="mr-2 size-4" /> Install from GitHub
-          </Button>
-          <Button onClick={() => setUploadOpen(true)}>
-            <Upload className="mr-2 size-4" /> Add skill
-          </Button>
-        </div>
-      </div>
+    <PageContainer type="catalog">
+      <PageHeader
+        title="Skills"
+        subtitle="Teach your AI to do specific jobs — write a morning brief, review a contract, draft an email. Type /skill-name in chat to use one."
+        trailing={
+          <>
+            <Button onClick={() => setUploadOpen(true)}>
+              <Upload className="mr-2 size-4" /> Add skill
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" aria-label="More skill actions">
+                  <MoreHorizontal className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setInstallOpen(true)}>
+                  <GithubIcon className="mr-2 size-4" /> Install from GitHub
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => sync.mutate()}
+                  disabled={sync.isPending}
+                >
+                  <RefreshCw
+                    className={`mr-2 size-4 ${sync.isPending ? 'animate-spin' : ''}`}
+                  />
+                  Refresh starter skills
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
+        }
+      />
 
       {isLoading ? (
         <div className="space-y-2">
@@ -457,7 +457,7 @@ export function SkillsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </PageContainer>
   )
 }
 

@@ -24,6 +24,9 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { EmptyState } from '@/client/components/EmptyState'
+import { PageContainer } from '@/components/ui/page-container'
+import { PageHeader } from '@/components/ui/page-header'
+import { PageLoading } from '@/client/components/PageState'
 import {
   ListRow,
   ListRowGroup,
@@ -55,29 +58,21 @@ export function RoutinesPage() {
   })
 
   return (
-    <div className="container mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Routines</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Have your AI do something on a schedule — a daily morning brief,
-            a weekly digest, a check on stuck leads. Each routine drops its
-            findings into your Inbox.
-          </p>
-        </div>
-        <Button asChild className="gap-1.5">
-          <Link to="/dashboard/routines/new">
-            <Plus className="size-4" />
-            New routine
-          </Link>
-        </Button>
-      </div>
+    <PageContainer type="queue">
+      <PageHeader
+        title="Routines"
+        subtitle="Have your AI do something on a schedule — a daily morning brief, a weekly digest, a check on stuck leads. Each routine drops its findings into your Inbox."
+        trailing={
+          <Button asChild className="gap-1.5">
+            <Link to="/dashboard/routines/new">
+              <Plus className="size-4" />
+              New routine
+            </Link>
+          </Button>
+        }
+      />
 
-      {isLoading && (
-        <div className="flex h-32 items-center justify-center">
-          <Loader2 className="size-6 animate-spin text-muted-foreground" />
-        </div>
-      )}
+      {isLoading && <PageLoading variant="list" count={3} />}
 
       {!isLoading && data && data.total === 0 && (
         <div className="space-y-4">
@@ -123,7 +118,7 @@ export function RoutinesPage() {
           ))}
         </ListRowGroup>
       )}
-    </div>
+    </PageContainer>
   )
 }
 

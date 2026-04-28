@@ -16,10 +16,15 @@ import { Loader2, UserPlus, LogOut } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { TabsTrigger } from '@/components/ui/tabs'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { EmptyState } from '@/client/components/EmptyState'
 import { Building2 } from 'lucide-react'
+import { PageContainer } from '@/components/ui/page-container'
+import { PageHeader } from '@/components/ui/page-header'
+import { PageFilters, PageFilterTabs } from '@/components/ui/page-filters'
+import { HelpDisclosure } from '@/components/ui/help-disclosure'
+import { KeyValueRow, KeyValueList } from '@/components/ui/key-value-row'
 import { MembersList } from '../components/MembersList'
 import { InvitationsList } from '../components/InvitationsList'
 import { InviteMemberDialog } from '../components/InviteMemberDialog'
@@ -81,28 +86,40 @@ export function OrganizationPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{active.organizationName}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Slug <span className="font-mono">{active.organizationSlug}</span> · Your role <span className="capitalize">{active.role}</span>
-        </p>
-      </div>
+    <PageContainer type="form">
+      <PageHeader
+        title={tab === 'members' ? 'Members' : 'Organisation settings'}
+        subtitle={
+          tab === 'members'
+            ? `Invite teammates and manage their roles in ${active.organizationName}.`
+            : `Identity, branding, and policies for ${active.organizationName}.`
+        }
+        docTitle="Organisation"
+        help={
+          <HelpDisclosure>
+            <KeyValueList>
+              <KeyValueRow label="Org name" value={active.organizationName} />
+              <KeyValueRow label="Slug" value={active.organizationSlug} mono />
+              <KeyValueRow label="Your role" value={<span className="capitalize">{active.role}</span>} />
+            </KeyValueList>
+          </HelpDisclosure>
+        }
+        trailing={
+          tab === 'members' ? (
+            <Button size="sm" className="gap-1.5" onClick={() => setInviteOpen(true)}>
+              <UserPlus className="size-3.5" />
+              Invite member
+            </Button>
+          ) : undefined
+        }
+      />
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
-          <TabsList>
-            <TabsTrigger value="members">Members</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-          </TabsList>
-        </Tabs>
-        {tab === 'members' && (
-          <Button size="sm" className="gap-1.5" onClick={() => setInviteOpen(true)}>
-            <UserPlus className="size-3.5" />
-            Invite member
-          </Button>
-        )}
-      </div>
+      <PageFilters>
+        <PageFilterTabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
+          <TabsTrigger value="members">Members</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
+        </PageFilterTabs>
+      </PageFilters>
 
       {tab === 'members' && (
         <div className="space-y-4">
@@ -169,7 +186,7 @@ export function OrganizationPage() {
         variant="destructive"
         onConfirm={handleLeave}
       />
-    </div>
+    </PageContainer>
   )
 }
 

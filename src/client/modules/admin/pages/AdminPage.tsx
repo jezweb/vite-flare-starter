@@ -10,6 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { PageContainer } from '@/components/ui/page-container'
+import { PageHeader } from '@/components/ui/page-header'
 import { useAdminStatus } from '../hooks/useAdminStatus'
 import { AdminStats } from '../components/AdminStats'
 import { UsersTabContent } from '../components/UsersTabContent'
@@ -112,19 +114,12 @@ export function AdminPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-          <Shield className="h-5 w-5" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Admin</h1>
-          <p className="text-sm text-muted-foreground">Manage people, features, tokens, email logs, and tool errors.</p>
-        </div>
-      </div>
+    <PageContainer type="form" maxWidth="6xl">
+      <PageHeader
+        title="Admin"
+        subtitle="Members, feature flags, API tokens, deliverability, and error inspection. Only admins see this page."
+      />
 
-      {/* Stats */}
       <AdminStats />
 
       {/* Tabs */}
@@ -182,6 +177,6 @@ export function AdminPage() {
           <ToolErrorsTabContent />
         </TabsContent>
       </Tabs>
-    </div>
+    </PageContainer>
   )
 }

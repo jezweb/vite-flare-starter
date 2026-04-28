@@ -7,6 +7,7 @@ import { createErrorHandler } from './lib/error-reporting'
 import { ProtectedRoute } from './components/shared/ProtectedRoute'
 import { PublicOnlyRoute } from './components/shared/PublicOnlyRoute'
 import { ThemeURLHandler } from './components/ThemeURLHandler'
+import { BuilderModeProvider } from './lib/builder-mode'
 import { Loader2, Mic, Camera } from 'lucide-react'
 import { features } from '@/shared/config/features'
 import { EmptyState } from './components/EmptyState'
@@ -96,6 +97,7 @@ function FeatureGatedPage({
 function App() {
   return (
     <ErrorBoundary onError={createErrorHandler()}>
+      <BuilderModeProvider>
       <TooltipProvider delayDuration={200}>
       <BrowserRouter>
         <ScrollToTop />
@@ -248,6 +250,7 @@ function App() {
         </Suspense>
       </BrowserRouter>
       </TooltipProvider>
+      </BuilderModeProvider>
     </ErrorBoundary>
   )
 }

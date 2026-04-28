@@ -6,9 +6,7 @@
 
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import {
   Select,
@@ -19,6 +17,11 @@ import {
 } from '@/components/ui/select'
 import { useActivities, useActivityStats, type Activity } from '../hooks/useActivity'
 import { EmptyState } from '@/client/components/EmptyState'
+import { PageContainer } from '@/components/ui/page-container'
+import { PageHeader } from '@/components/ui/page-header'
+import { PageFilters, PageFilterGroup } from '@/components/ui/page-filters'
+import { StatGrid } from '@/components/ui/stat-grid'
+import { PageLoading } from '@/client/components/PageState'
 import {
   ListRow,
   ListRowGroup,
@@ -169,23 +172,6 @@ function ActivityItem({ activity }: { activity: Activity }) {
   return <ListRow variant="plain">{inner}</ListRow>
 }
 
-function StatsCard({ title, value, loading }: { title: string; value: number; loading: boolean }) {
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardDescription>{title}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <Skeleton className="h-8 w-16" />
-        ) : (
-          <p className="text-2xl font-bold">{value}</p>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
-
 export function ActivityPage() {
   const [page, setPage] = useState(1)
   const [actionFilter, setActionFilter] = useState<string>('all')
@@ -201,112 +187,96 @@ export function ActivityPage() {
   const hasMore = activitiesData?.hasMore ?? false
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-          <ActivityIcon className="h-5 w-5" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Activity</h1>
-          <p className="text-sm text-muted-foreground">Audit trail of changes you've made — created, updated, archived.</p>
-        </div>
-      </div>
+    <PageContainer type="queue">
+      <PageHeader
+        title="Activity"
+        subtitle="Every action your AI has taken on your behalf — created, updated, archived — with timestamps."
+      />
 
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <StatsCard title="Total Activities" value={stats?.total ?? 0} loading={statsLoading} />
-        <StatsCard title="Today" value={stats?.today ?? 0} loading={statsLoading} />
-        <StatsCard title="This Week" value={stats?.thisWeek ?? 0} loading={statsLoading} />
-      </div>
+      <StatGrid
+        items={[
+          { label: 'Total', value: statsLoading ? '—' : stats?.total ?? 0 },
+          { label: 'Today', value: statsLoading ? '—' : stats?.today ?? 0 },
+          { label: 'This week', value: statsLoading ? '—' : stats?.thisWeek ?? 0 },
+        ]}
+      />
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Activity Log</CardTitle>
-              <CardDescription>A record of your actions</CardDescription>
-            </div>
-            <Select value={actionFilter} onValueChange={setActionFilter}>
-              <SelectTrigger className="w-[170px]">
-                <SelectValue placeholder="Filter by action" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All actions</SelectItem>
-                <SelectItem value="create">Created</SelectItem>
-                <SelectItem value="update">Updated</SelectItem>
-                <SelectItem value="delete">Deleted</SelectItem>
-                <SelectItem value="archive">Archived</SelectItem>
-                <SelectItem value="restore">Restored</SelectItem>
-                <SelectItem value="import">Imported</SelectItem>
-                <SelectItem value="export">Exported</SelectItem>
-                <SelectItem value="assign">Assigned</SelectItem>
-                <SelectItem value="unassign">Unassigned</SelectItem>
-                <SelectItem value="view">Viewed</SelectItem>
-                <SelectItem value="convert">Converted</SelectItem>
-              </SelectContent>
-            </Select>
+      <PageFilters>
+        <span />
+        <PageFilterGroup>
+          <Select value={actionFilter} onValueChange={setActionFilter}>
+            <SelectTrigger className="h-8 w-[170px]">
+              <SelectValue placeholder="Filter by action" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All actions</SelectItem>
+              <SelectItem value="create">Created</SelectItem>
+              <SelectItem value="update">Updated</SelectItem>
+              <SelectItem value="delete">Deleted</SelectItem>
+              <SelectItem value="archive">Archived</SelectItem>
+              <SelectItem value="restore">Restored</SelectItem>
+              <SelectItem value="import">Imported</SelectItem>
+              <SelectItem value="export">Exported</SelectItem>
+              <SelectItem value="assign">Assigned</SelectItem>
+              <SelectItem value="unassign">Unassigned</SelectItem>
+              <SelectItem value="view">Viewed</SelectItem>
+              <SelectItem value="convert">Converted</SelectItem>
+            </SelectContent>
+          </Select>
+        </PageFilterGroup>
+      </PageFilters>
+
+      {activitiesLoading ? (
+        <PageLoading variant="list" count={6} />
+      ) : activities.length === 0 ? (
+        <EmptyState
+          icon={ActivityIcon}
+          title={actionFilter !== 'all' ? `No ${actionFilter} actions yet` : 'No activity yet'}
+          description={
+            actionFilter !== 'all'
+              ? 'Try a different filter, or come back after using the app.'
+              : 'Creating, editing, or deleting anything in the app will show up here as an audit trail.'
+          }
+        />
+      ) : (
+        <ListRowGroup>
+          {activities.map((activity) => (
+            <li key={activity.id}>
+              <ActivityItem activity={activity} />
+            </li>
+          ))}
+        </ListRowGroup>
+      )}
+
+      {/* Pagination — hidden while loading so the "Page 1" label
+          doesn't flash over skeleton rows on first mount. */}
+      {!activitiesLoading && activities.length > 0 && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            Page {page}
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+            >
+              <ChevronLeft className="mr-1 h-4 w-4" />
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => p + 1)}
+              disabled={!hasMore}
+            >
+              Next
+              <ChevronRight className="ml-1 h-4 w-4" />
+            </Button>
           </div>
-        </CardHeader>
-        <CardContent>
-          {activitiesLoading ? (
-            <div className="space-y-4">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-20 w-full" />
-              ))}
-            </div>
-          ) : activities.length === 0 ? (
-            <EmptyState
-              icon={ActivityIcon}
-              title={actionFilter !== 'all' ? `No ${actionFilter} actions yet` : 'No activity yet'}
-              description={
-                actionFilter !== 'all'
-                  ? 'Try a different filter, or come back after using the app.'
-                  : 'Creating, editing, or deleting anything in the app will show up here as an audit trail.'
-              }
-            />
-          ) : (
-            <ListRowGroup>
-              {activities.map((activity) => (
-                <li key={activity.id}>
-                  <ActivityItem activity={activity} />
-                </li>
-              ))}
-            </ListRowGroup>
-          )}
-
-          {/* Pagination — hidden while loading so the "Page 1" label
-              doesn't flash over skeleton rows on first mount. */}
-          {!activitiesLoading && activities.length > 0 && (
-            <div className="mt-6 flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                Page {page}
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                >
-                  <ChevronLeft className="mr-1 h-4 w-4" />
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => p + 1)}
-                  disabled={!hasMore}
-                >
-                  Next
-                  <ChevronRight className="ml-1 h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      )}
+    </PageContainer>
   )
 }
