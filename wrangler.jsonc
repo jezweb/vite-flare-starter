@@ -145,17 +145,32 @@
   },
 
   // Email Sending
-  // Two paths wrapped by src/server/modules/email/service.ts:
-  //  - Cloudflare Email Service binding (EMAIL) — transactional, any recipient,
-  //    requires Email Sending domain onboarding. Uncomment when ready.
-  //  - Cloudflare Email Routing SendEmail binding (SEND_EMAIL) — dev / internal,
-  //    verified destinations only. Uncomment and set destination_address.
-  //  - Resend HTTP fallback — uses EMAIL_API_KEY secret, works anywhere.
-  // The service picks the first available in that order and falls back
-  // to console.log in development when none is configured.
+  // ------------
+  // Wrapped by src/server/modules/email/service.ts. Provider priority
+  // (first available wins, falls back to console.log in dev):
+  //
+  //   1. env.EMAIL          — Cloudflare Email Service (currently in beta,
+  //                           Workers Paid plan). Transactional, any verified
+  //                           sender. Requires onboarding the sending domain
+  //                           in dashboard → Compute & AI → Email Service
+  //                           (adds SPF + DKIM DNS records).
+  //   2. env.SEND_EMAIL     — Cloudflare Email Routing (older path, restricted
+  //                           to verified destination_address). Needs
+  //                           `mimetext` package — `pnpm add mimetext`.
+  //   3. EMAIL_API_KEY      — Resend HTTP API. Works without Cloudflare email
+  //                           setup. Set `EMAIL_API_KEY` + `EMAIL_FROM` as
+  //                           wrangler secrets.
+  //
+  // Uncomment the block below + onboard your domain to use Cloudflare's
+  // Email Service. The unrestricted form sends from any domain you've
+  // verified in your Cloudflare account; the restricted form gates the
+  // sender address explicitly (defence-in-depth in case a bug constructs
+  // a `from` you didn't intend).
+  //
   // "send_email": [
-  //   { "name": "EMAIL", "type": "service" },
-  //   { "name": "SEND_EMAIL", "destination_address": "you@example.com" }
+  //   { "name": "EMAIL" }
+  //   // OR restrict the sender:
+  //   // { "name": "EMAIL", "allowed_sender_addresses": ["noreply@yourdomain.com"] }
   // ],
 
   // Durable Objects — stateful, SQLite-backed classes that live longer than

@@ -32,7 +32,7 @@ interface CloudflareEmailServiceBinding {
     html?: string
     text?: string
     replyTo?: string
-  }) => Promise<{ id?: string } | void>
+  }) => Promise<{ messageId?: string; id?: string } | void>
 }
 
 interface SendEmailBinding {
@@ -150,7 +150,10 @@ export async function sendEmail<K extends TemplateKey | undefined = undefined>(
         text,
         replyTo: input.replyTo,
       })
-      messageId = (res as { id?: string } | undefined)?.id
+      // Cloudflare Email Service returns `{ messageId }`; older builds
+      // returned `{ id }`. Accept either to stay forward + back compatible.
+      const r = res as { messageId?: string; id?: string } | undefined
+      messageId = r?.messageId ?? r?.id
       status = 'sent'
     } else if (provider === 'email-routing-send' && env.SEND_EMAIL) {
       // Email Routing's SendEmail binding needs a RFC 5322 mime message.
