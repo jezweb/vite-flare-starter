@@ -1,5 +1,11 @@
 /**
- * CommentsList — renders threaded comments for any entity
+ * CommentsList — renders threaded comments for any entity.
+ *
+ * Each comment row uses the canonical IdentityRow primitive so the
+ * avatar + name + initials follow the same logic as Members and
+ * Invitations. Author info comes joined with the comment payload —
+ * the GET endpoint LEFT JOINs the user table so we render the
+ * author's name + image without a second round-trip per comment.
  *
  * @example
  * <CommentsList entityType="issue" entityId="abc-123" />
@@ -7,11 +13,11 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/client/lib/api-client'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { IdentityRow } from '@/components/ui/identity-row'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { Time } from '@/components/ui/time'
 import { MessageSquare, Reply, Trash2, Pencil } from 'lucide-react'
-import { formatDistanceToNow } from 'date-fns'
 
 interface Comment {
   id: string
@@ -22,6 +28,8 @@ interface Comment {
   parentId: string | null
   createdAt: string
   updatedAt: string
+  userName: string | null
+  userImage: string | null
 }
 
 interface Props {
@@ -72,70 +80,89 @@ export function CommentsList({ entityType, entityId, currentUserId }: Props) {
   const topLevel = allComments.filter((c) => !c.parentId)
   const replies = (parentId: string) => allComments.filter((c) => c.parentId === parentId)
 
-  const renderComment = (comment: Comment, depth: number = 0) => (
-    <div key={comment.id} className={depth > 0 ? 'ml-8 border-l-2 border-muted pl-4' : ''}>
-      <div className="flex gap-3 py-3">
-        <Avatar className="size-7 shrink-0">
-          <AvatarFallback className="text-xs">
-            {comment.userId.slice(0, 2).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">{comment.userId.slice(0, 8)}</span>
-            <span>{formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}</span>
-            {comment.updatedAt !== comment.createdAt && <span>(edited)</span>}
-          </div>
-          {editingId === comment.id ? (
-            <div className="mt-1 space-y-2">
-              <Textarea value={editBody} onChange={(e) => setEditBody(e.target.value)} rows={2} />
-              <div className="flex gap-2">
-                <Button size="sm" onClick={() => updateComment.mutate({ id: comment.id, body: editBody })}>Save</Button>
-                <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>Cancel</Button>
+  const renderComment = (comment: Comment, depth: number = 0) => {
+    const isAuthor = currentUserId === comment.userId
+    const edited = comment.updatedAt !== comment.createdAt
+    return (
+      <div key={comment.id} className={depth > 0 ? 'ml-8 border-l-2 border-muted pl-4' : ''}>
+        <div className="py-3">
+          {/* IdentityRow handles avatar + initials + display name. The
+              row's secondary slot holds the timestamp + edited marker
+              so we don't have to roll a custom layout. */}
+          <IdentityRow
+            size="sm"
+            name={comment.userName}
+            imageUrl={comment.userImage}
+            isYou={isAuthor}
+            secondary={
+              <span className="inline-flex items-center gap-1.5">
+                <Time value={comment.createdAt} display="relative" />
+                {edited && <span className="text-[10px] text-muted-foreground/70">(edited)</span>}
+              </span>
+            }
+          />
+          <div className="mt-2 ml-10 min-w-0">
+            {editingId === comment.id ? (
+              <div className="space-y-2">
+                <Textarea value={editBody} onChange={(e) => setEditBody(e.target.value)} rows={2} />
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={() => updateComment.mutate({ id: comment.id, body: editBody })}>Save</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>Cancel</Button>
+                </div>
               </div>
+            ) : (
+              <p className="text-sm whitespace-pre-wrap">{comment.body}</p>
+            )}
+            <div className="mt-1 flex gap-1">
+              <Button variant="ghost" size="xs" className="gap-1" onClick={() => setReplyTo(comment.id)}>
+                <Reply className="size-3" /> Reply
+              </Button>
+              {isAuthor && (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    className="gap-1"
+                    onClick={() => { setEditingId(comment.id); setEditBody(comment.body) }}
+                  >
+                    <Pencil className="size-3" /> Edit
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    className="gap-1 text-destructive"
+                    onClick={() => deleteComment.mutate(comment.id)}
+                  >
+                    <Trash2 className="size-3" /> Delete
+                  </Button>
+                </>
+              )}
             </div>
-          ) : (
-            <p className="mt-1 text-sm whitespace-pre-wrap">{comment.body}</p>
-          )}
-          <div className="mt-1 flex gap-2">
-            <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={() => setReplyTo(comment.id)}>
-              <Reply className="size-3" /> Reply
-            </Button>
-            {currentUserId === comment.userId && (
-              <>
-                <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={() => { setEditingId(comment.id); setEditBody(comment.body) }}>
-                  <Pencil className="size-3" /> Edit
-                </Button>
-                <Button variant="ghost" size="sm" className="h-6 px-2 text-xs gap-1 text-destructive" onClick={() => deleteComment.mutate(comment.id)}>
-                  <Trash2 className="size-3" /> Delete
-                </Button>
-              </>
+            {/* Reply input */}
+            {replyTo === comment.id && (
+              <div className="mt-2 space-y-2">
+                <Textarea
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="Write a reply..."
+                  rows={2}
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={() => createComment.mutate({ body: newComment, parentId: comment.id })} disabled={!newComment.trim()}>
+                    Reply
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => { setReplyTo(null); setNewComment('') }}>Cancel</Button>
+                </div>
+              </div>
             )}
           </div>
-          {/* Reply input */}
-          {replyTo === comment.id && (
-            <div className="mt-2 space-y-2">
-              <Textarea
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Write a reply..."
-                rows={2}
-                autoFocus
-              />
-              <div className="flex gap-2">
-                <Button size="sm" onClick={() => createComment.mutate({ body: newComment, parentId: comment.id })} disabled={!newComment.trim()}>
-                  Reply
-                </Button>
-                <Button size="sm" variant="ghost" onClick={() => { setReplyTo(null); setNewComment('') }}>Cancel</Button>
-              </div>
-            </div>
-          )}
         </div>
+        {/* Nested replies */}
+        {replies(comment.id).map((reply) => renderComment(reply, depth + 1))}
       </div>
-      {/* Nested replies */}
-      {replies(comment.id).map((reply) => renderComment(reply, depth + 1))}
-    </div>
-  )
+    )
+  }
 
   return (
     <div className="space-y-2">

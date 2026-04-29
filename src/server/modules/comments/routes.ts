@@ -11,12 +11,20 @@ import { drizzle } from 'drizzle-orm/d1'
 import { eq, and } from 'drizzle-orm'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import { comments } from './db/schema'
+import { user } from '@/server/modules/auth/db/schema'
 import { whereNotDeleted, softDeleteValues } from '@/server/lib/soft-delete'
 
 const app = new Hono<AuthContext>()
 app.use('*', authMiddleware)
 
-/** GET /api/comments?entityType=x&entityId=y — list comments for an entity */
+/**
+ * GET /api/comments?entityType=x&entityId=y — list comments for an entity.
+ *
+ * LEFT JOIN with user so the client can render the author's name +
+ * avatar without a second round-trip per comment. Avatars upstream
+ * stay nullable (Google sometimes blocks the `image` URL) so the
+ * client falls back to initials via IdentityRow.
+ */
 app.get('/', async (c) => {
   const entityType = c.req.query('entityType')
   const entityId = c.req.query('entityId')
@@ -24,8 +32,20 @@ app.get('/', async (c) => {
 
   const db = drizzle(c.env.DB)
   const rows = await db
-    .select()
+    .select({
+      id: comments.id,
+      entityType: comments.entityType,
+      entityId: comments.entityId,
+      userId: comments.userId,
+      body: comments.body,
+      parentId: comments.parentId,
+      createdAt: comments.createdAt,
+      updatedAt: comments.updatedAt,
+      userName: user.name,
+      userImage: user.image,
+    })
     .from(comments)
+    .leftJoin(user, eq(comments.userId, user.id))
     .where(and(eq(comments.entityType, entityType), eq(comments.entityId, entityId), whereNotDeleted(comments)))
     .orderBy(comments.createdAt)
 
