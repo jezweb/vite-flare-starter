@@ -359,6 +359,55 @@ Agent. Tracked in issue #40.
 
 ---
 
+## better-auth plugin survey (2026-04-29)
+
+The starter ships these better-auth plugins:
+
+| Plugin | Why |
+|---|---|
+| `organization()` | Multi-tenant orgs (Phase I) |
+| `lastLoginMethod()` | "Last used" badge on SignInPage — UX nicety |
+| `testUtils()` | Conditional on `TEST_AUTH_TOKEN` — powers `/api/test-auth/*` |
+
+The full plugin catalogue was reviewed for fit. Findings below — when
+you reach for one of these, either pull it from this list or update
+the list with the verdict.
+
+### Considered, not adopted
+
+| Plugin | Why we skipped |
+|---|---|
+| `bearer()` | We have our own API tokens module with finer-grained scopes |
+| `admin()` | Org plugin's owner/admin/member roles cover team auth; impersonation isn't needed since `testUtils()` mints sessions directly |
+| `magicLink()` | OAuth-only by default; `testUtils()` is the test-mode equivalent |
+| `multiSession()` | Org switcher already covers "switch workspace"; per-account multi-session adds UX complexity for marginal gain |
+| `anonymous()` | Niche — every product so far needs a real account |
+| `deviceAuthorization()` | Niche — TV / IoT-specific, not a fit for SaaS |
+| `oidcProvider()` | Be-your-own-OIDC is rare; revisit if a fork needs SSO into other apps |
+| `twoFactor()` / `phoneNumber()` / `emailOTP()` | High-value but ship-when-needed (Google OAuth handles MFA upstream for now) |
+| `captcha()` | OAuth-only signup means abuse risk is bounded by Google's verification; revisit if email/password is enabled at scale |
+| `jwt()` / `mcp()` | App-to-app auth; not yet a fork need |
+
+### Community plugins worth knowing about
+
+| Plugin | When you'd reach for it |
+|---|---|
+| [better-auth-cloudflare](https://github.com/zpg6/better-auth-cloudflare) (zpg6) | New project on Cloudflare from scratch — adds geolocation enrichment, KV rate-limiting helpers, R2 file tracking, CLI scaffolding. Don't migrate this starter, but note for forks starting fresh. |
+| [better-auth-harmony](https://github.com/GeKorm/better-auth-harmony) | Production-grade signup hardening — email normalization + 55k disposable-domain blocklist. Ship when a fork enables email/password signups at scale. |
+| [better-auth-devtools](https://github.com/C-W-D-Harshit/better-auth-devtools) | Dev panel for test users / session inspection / role editing. Complements our `/api/test-auth` endpoint — could ship as `/dashboard/dev/auth` in dev mode. Not a fit for production. |
+| [better-auth-audit-logs](https://github.com/ejirocodes/better-auth-audit-logs) | Auto-captures auth events with PII redaction. We already log via `databaseHooks.user.create.after` and `session.create.after` — would duplicate. Note as alternative if those hooks become unwieldy. |
+| [better-invite](https://github.com/Sandy/better-invite) | Standalone invitation flow. Org plugin already covers our needs — this is for products without org structure. |
+
+### How to use this section
+
+When a fork (or future session) considers adding a better-auth plugin:
+
+1. Check the table here first — verdict may already exist
+2. If new, evaluate against the matrix: official > community > custom
+3. Update this section with the new verdict + one-line rationale
+
+---
+
 ## How to use this document
 
 When making an architectural decision:
