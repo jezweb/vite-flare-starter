@@ -1,10 +1,12 @@
 /**
- * CreateSpaceModal — three options: Blank (custom), Templates, Solo.
+ * CreateSpaceModal — three options: Templates (default), Custom, Solo.
  *
- * Phase 1 ships ALL three. Templates are config-driven (see
- * `src/shared/config/space-templates.ts`), Blank lets the user pick
- * agents via checkboxes + per-agent reply mode, Solo is a one-click
- * shortcut (you + every default agent in mention mode).
+ * Templates-first: most users want a curated agent bundle, not a blank
+ * form. Templates lead. "Custom" lets you pick agents + reply modes by
+ * hand. "Solo" is the one-click shortcut (you + every default agent in
+ * @-mention mode).
+ *
+ * Templates are config-driven — see `src/shared/config/space-templates.ts`.
  */
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -45,7 +47,7 @@ interface AgentSelection {
 export function CreateSpaceModal({ open, onClose }: Props) {
   const navigate = useNavigate()
   const create = useCreateSpace()
-  const [tab, setTab] = useState<'blank' | 'template' | 'solo'>('blank')
+  const [tab, setTab] = useState<'blank' | 'template' | 'solo'>('template')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [defaultReplyMode, setDefaultReplyMode] = useState<ReplyMode>('mention')
@@ -61,7 +63,7 @@ export function CreateSpaceModal({ open, onClose }: Props) {
       setTitle('')
       setDescription('')
       setDefaultReplyMode('mention')
-      setTab('blank')
+      setTab('template')
       setAgentSel(
         Object.fromEntries(
           AGENT_CATALOGUE.map((a) => [a.agentName, { enabled: true, replyMode: 'mention' }]),
@@ -142,13 +144,13 @@ export function CreateSpaceModal({ open, onClose }: Props) {
         </DialogHeader>
         <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="blank">
-              <Hash className="mr-1.5 size-3.5" />
-              Custom
-            </TabsTrigger>
             <TabsTrigger value="template">
               <FolderKanban className="mr-1.5 size-3.5" />
               Templates
+            </TabsTrigger>
+            <TabsTrigger value="blank">
+              <Hash className="mr-1.5 size-3.5" />
+              Custom
             </TabsTrigger>
             <TabsTrigger value="solo">
               <Sparkles className="mr-1.5 size-3.5" />

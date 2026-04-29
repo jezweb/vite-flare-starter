@@ -1,0 +1,116 @@
+/**
+ * Routine templates — curated starting points the user can fork.
+ *
+ * These power both:
+ *   - The Templates section on NewRoutinePage (pre-fills the form,
+ *     user reviews + saves)
+ *   - The legacy `POST /api/routines/seed-examples` bulk-create
+ *     endpoint (one click → all templates land disabled)
+ *
+ * A template is everything you'd type into NewRoutinePage. The agent
+ * name slug is derived per-user; we expose `agentNameSlug` instead of
+ * a literal `agentName` so the server can stamp the user id onto it.
+ *
+ * Add new templates here — both surfaces pick them up automatically.
+ */
+
+export interface RoutineTemplate {
+  /** Stable id for the template (used as the React key). */
+  id: string
+  /** Card-level emoji/icon for glanceability. */
+  emoji: string
+  /** Display name shown on the picker card AND used as the routine name. */
+  name: string
+  /** Short tagline for the picker card (one line). */
+  tagline: string
+  /** Long-form description seeded into the routine's `description` field. */
+  description: string
+  /** AutonomousAgent class to drive this routine. */
+  agentClass: string
+  /**
+   * Stable slug for the agent's DO name. The server appends the first
+   * 8 chars of the user id so two users can run the same template
+   * without colliding (`routine-health-${userId.slice(0, 8)}`).
+   */
+  agentNameSlug: string
+  /** Schedule cadence in seconds. */
+  baseInterval: number
+  /** Adjust mode — see ADJUST_MODES in NewRoutinePage. */
+  adjustMode: 'suggested' | 'direct' | 'fixed'
+  /** Whether the routine starts running immediately on create. */
+  defaultEnabled: boolean
+  /** Instructions injected each fire (the agent's input prompt). */
+  inputText: string
+  /** Skills the agent loads on each fire. */
+  skillsLoaded: string[]
+  /** Tools the agent is allowed to call (empty = all). */
+  toolsAllowed: string[]
+  /** Optional skill to run at SessionEnd to summarise the run. */
+  sessionEndSkill: string | null
+}
+
+export const ROUTINE_TEMPLATES: RoutineTemplate[] = [
+  {
+    id: 'routine-health',
+    emoji: '🩺',
+    name: 'Routine health (meta)',
+    tagline: 'Daily watcher that scans every other routine for issues.',
+    description:
+      "Daily watcher that scans every other routine for error rates, drift, and runaway cost. Surfaces issues into your Inbox so you don't have to remember to check.",
+    agentClass: 'AssistantAgent',
+    agentNameSlug: 'routine-health',
+    baseInterval: 24 * 60 * 60,
+    adjustMode: 'fixed',
+    defaultEnabled: false,
+    inputText:
+      'Run a routine health check. Look at the recent runs of all my routines and emit inbox_add findings for any that need attention. Skip if everything is healthy.',
+    skillsLoaded: ['routine-health-check', 'score-importance'],
+    toolsAllowed: ['inbox_add', 'find_tools'],
+    sessionEndSkill: 'route-finding',
+  },
+  {
+    id: 'youtube-digest',
+    emoji: '📺',
+    name: 'YouTube digest (example)',
+    tagline: 'Watches a Chat space for YouTube links + summarises them.',
+    description:
+      'Watches a Google Chat space for YouTube links, fetches transcripts, summarises, and posts back. Wire your own Google Chat connector + space id to use it.',
+    agentClass: 'AssistantAgent',
+    agentNameSlug: 'youtube-digest',
+    baseInterval: 6 * 60 * 60,
+    adjustMode: 'suggested',
+    defaultEnabled: false,
+    inputText:
+      'Look at the last 24h of messages in my designated Google Chat space. For any YouTube links, fetch the transcript, write a 3-bullet summary, post it back to the space, and emit an inbox_add finding for me with the summary.',
+    skillsLoaded: ['summarise-url', 'route-finding'],
+    toolsAllowed: [],
+    sessionEndSkill: 'route-finding',
+  },
+  {
+    id: 'morning-brief',
+    emoji: '☀️',
+    name: 'Morning brief',
+    tagline: 'Pulls inbox + calendar each morning into a focused brief.',
+    description:
+      "Each weekday morning, surveys your inbox + calendar and produces a three-paragraph daily focus brief. Runs the morning-brief skill which knows how to weigh urgency vs noise.",
+    agentClass: 'AssistantAgent',
+    agentNameSlug: 'morning-brief',
+    baseInterval: 24 * 60 * 60,
+    adjustMode: 'fixed',
+    defaultEnabled: false,
+    inputText:
+      "It's morning. Run the morning-brief skill against my inbox and calendar for today. Emit one inbox_add finding with the brief.",
+    skillsLoaded: ['morning-brief'],
+    toolsAllowed: ['inbox_add', 'gmail_search', 'calendar_events'],
+    sessionEndSkill: null,
+  },
+]
+
+/**
+ * Resolve a template into the literal `agentName` for a given user.
+ * Server endpoints + the NewRoutinePage form both go through this so
+ * the slug+suffix scheme is centralised.
+ */
+export function resolveAgentName(template: RoutineTemplate, userId: string): string {
+  return `${template.agentNameSlug}-${userId.slice(0, 8)}`
+}

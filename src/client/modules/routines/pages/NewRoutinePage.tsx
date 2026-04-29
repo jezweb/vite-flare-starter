@@ -15,7 +15,7 @@
  */
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, ChevronDown, ChevronRight } from 'lucide-react'
+import { ArrowLeft, ChevronDown, ChevronRight, Sparkles } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -34,6 +34,11 @@ import { useCreateRoutine } from '../hooks/useRoutines'
 import { AgentPicker, SkillsPicker, SingleSkillPicker, ToolsPicker } from '../components/RoutinePickers'
 import { useSession } from '@/client/lib/auth'
 import { deriveInstanceName } from '@/shared/format/agent'
+import {
+  ROUTINE_TEMPLATES,
+  resolveAgentName,
+  type RoutineTemplate,
+} from '@/shared/config/routine-templates'
 
 const ADJUST_MODES = ['suggested', 'direct', 'fixed'] as const
 
@@ -63,6 +68,49 @@ export function NewRoutinePage() {
   const [sessionEndSkill, setSessionEndSkill] = useState('')
   const [enabled, setEnabled] = useState(true)
   const [advancedOpen, setAdvancedOpen] = useState(false)
+  // Track which template (if any) seeded the form. Lets us highlight
+  // the picked card and show a "starting from {template}" hint.
+  const [pickedTemplate, setPickedTemplate] = useState<string | null>(null)
+
+  /**
+   * Pre-fill the form from a template. The user can still edit
+   * everything before saving — this is "templates as starting points",
+   * not "templates as auto-creation". We touch instanceName so the
+   * derive-from-name effect doesn't overwrite the slug back to the
+   * generic one, and we mark `pickedTemplate` so the card highlights.
+   */
+  const applyTemplate = (tpl: RoutineTemplate) => {
+    setName(tpl.name)
+    setDescription(tpl.description)
+    setAgentClass(tpl.agentClass)
+    setIntervalSeconds(tpl.baseInterval)
+    setAdjustMode(tpl.adjustMode)
+    setInputText(tpl.inputText)
+    setSkills(tpl.skillsLoaded)
+    setTools(tpl.toolsAllowed)
+    setSessionEndSkill(tpl.sessionEndSkill ?? '')
+    setEnabled(tpl.defaultEnabled)
+    if (userId) {
+      setInstanceName(resolveAgentName(tpl, userId))
+      setInstanceTouched(true)
+    }
+    setPickedTemplate(tpl.id)
+  }
+
+  const startFromBlank = () => {
+    setName('')
+    setDescription('')
+    setAgentClass('AssistantAgent')
+    setIntervalSeconds(60 * 60)
+    setAdjustMode('suggested')
+    setInputText('')
+    setSkills([])
+    setTools([])
+    setSessionEndSkill('')
+    setEnabled(true)
+    setInstanceTouched(false)
+    setPickedTemplate(null)
+  }
 
   // Auto-derive instance name from the routine name unless the user
   // has manually edited it. Stops the "what's a slug?" question.
@@ -109,6 +157,56 @@ export function NewRoutinePage() {
           and instructions you set. Findings land in your Inbox.
         </p>
       </div>
+
+      {/* 0. Templates — quick-start cards above the form. Picking one
+          pre-fills every field below; the user reviews and saves. */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Sparkles className="size-4 text-primary" />
+            Start from a template
+          </CardTitle>
+          <CardDescription>
+            Or scroll down to fill the form yourself. Templates pre-fill
+            every section — you can edit anything before creating.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {ROUTINE_TEMPLATES.map((tpl) => (
+              <button
+                key={tpl.id}
+                type="button"
+                onClick={() => applyTemplate(tpl)}
+                className={`text-left rounded-md border p-3 transition-colors ${
+                  pickedTemplate === tpl.id
+                    ? 'border-primary/60 bg-primary/5'
+                    : 'border-border hover:border-foreground/30 hover:bg-muted/40'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-base leading-none">{tpl.emoji}</span>
+                  <span className="text-sm font-medium">{tpl.name}</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground">{tpl.tagline}</p>
+              </button>
+            ))}
+          </div>
+          {pickedTemplate && (
+            <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1">
+              <span>Form pre-filled from template — edit anything below.</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="xs"
+                onClick={startFromBlank}
+              >
+                Clear
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* 1. Identity */}

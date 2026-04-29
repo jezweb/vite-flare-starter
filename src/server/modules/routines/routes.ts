@@ -28,6 +28,7 @@ import {
   adjustRoutineCadence,
 } from './storage'
 import { fireRoutine } from './scheduler'
+import { ROUTINE_TEMPLATES, resolveAgentName } from '@/shared/config/routine-templates'
 import { routineRuns } from './db/schema'
 
 const TriggerKindSchema = z.enum(['schedule', 'webhook', 'event', 'manual'])
@@ -149,52 +150,28 @@ app.get('/:id/runs', async (c) => {
 
 app.post('/seed-examples', async (c) => {
   const userId = c.get('userId')
-  const examples = [
-    {
-      name: 'Routine health (meta)',
-      description:
-        "Daily watcher that scans every other routine for error rates, drift, and runaway cost. Surfaces issues into your Inbox so you don't have to remember to check.",
-      agentClass: 'AssistantAgent',
-      agentName: `routine-health-${userId.slice(0, 8)}`,
-      triggerKind: 'schedule' as const,
-      baseInterval: 24 * 60 * 60, // daily
-      adjustMode: 'fixed' as const,
-      enabled: false,
-      inputTemplate: {
-        input:
-          'Run a routine health check. Look at the recent runs of all my routines and emit inbox_add findings for any that need attention. Skip if everything is healthy.',
-      },
-      skillsLoaded: ['routine-health-check', 'score-importance'],
-      toolsAllowed: ['inbox_add', 'find_tools'],
-      hooks: { SessionEnd: 'route-finding' },
-    },
-    {
-      name: 'YouTube digest (example)',
-      description:
-        "Watches a Google Chat space for YouTube links, fetches transcripts, summarises, and posts back. Wire your own Google Chat connector + space id to use it.",
-      agentClass: 'AssistantAgent',
-      agentName: `youtube-digest-${userId.slice(0, 8)}`,
-      triggerKind: 'schedule' as const,
-      baseInterval: 6 * 60 * 60, // every 6h
-      adjustMode: 'suggested' as const,
-      enabled: false, // disabled by default — needs user to wire connectors
-      inputTemplate: {
-        input:
-          'Look at the last 24h of messages in my designated Google Chat space. For any YouTube links, fetch the transcript, write a 3-bullet summary, post it back to the space, and emit an inbox_add finding for me with the summary.',
-      },
-      skillsLoaded: ['summarise-url', 'route-finding'],
-      hooks: { SessionEnd: 'route-finding' },
-    },
-  ]
-
   const results = []
-  for (const ex of examples) {
+  for (const tpl of ROUTINE_TEMPLATES) {
     try {
-      const created = await createRoutine(c.env, { userId, ...ex })
-      results.push({ name: ex.name, id: created.id, status: 'created' })
+      const created = await createRoutine(c.env, {
+        userId,
+        name: tpl.name,
+        description: tpl.description,
+        agentClass: tpl.agentClass,
+        agentName: resolveAgentName(tpl, userId),
+        triggerKind: 'schedule' as const,
+        baseInterval: tpl.baseInterval,
+        adjustMode: tpl.adjustMode,
+        enabled: tpl.defaultEnabled,
+        inputTemplate: { input: tpl.inputText },
+        skillsLoaded: tpl.skillsLoaded,
+        toolsAllowed: tpl.toolsAllowed,
+        ...(tpl.sessionEndSkill ? { hooks: { SessionEnd: tpl.sessionEndSkill } } : {}),
+      })
+      results.push({ name: tpl.name, id: created.id, status: 'created' })
     } catch (err) {
       results.push({
-        name: ex.name,
+        name: tpl.name,
         status: 'failed',
         error: err instanceof Error ? err.message : String(err),
       })

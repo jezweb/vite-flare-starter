@@ -2,12 +2,12 @@
  * CreateProjectModal — three-tab create flow.
  *
  * Tabs:
- *   1. Blank          — manual name + description
+ *   1. From template  — pick a bundled template (default)
  *   2. AI-assisted    — describe what you want, AI scaffolds a draft
- *   3. From template  — pick a bundled template
+ *   3. Blank          — manual name + description
  *
- * Default tab: Blank (the simplest path). AI-assisted is the recommended
- * middle path; templates are the structured option.
+ * Templates-first: most users want a curated starting point. Power
+ * users who want a blank canvas can still flip to the third tab.
  */
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -36,12 +36,12 @@ interface Props {
 }
 
 export function CreateProjectModal({ open, onOpenChange }: Props) {
-  const [tab, setTab] = useState('blank')
+  const [tab, setTab] = useState('template')
   const navigate = useNavigate()
 
   const close = () => {
     onOpenChange(false)
-    setTab('blank')
+    setTab('template')
   }
 
   return (
@@ -56,24 +56,24 @@ export function CreateProjectModal({ open, onOpenChange }: Props) {
 
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="blank">Blank</TabsTrigger>
+            <TabsTrigger value="template">From template</TabsTrigger>
             <TabsTrigger value="ai">
               <Sparkles className="size-3.5 mr-1.5" />
               AI-assisted
             </TabsTrigger>
-            <TabsTrigger value="template">From template</TabsTrigger>
+            <TabsTrigger value="blank">Blank</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="blank" className="mt-4">
-            <BlankTab onCreated={close} navigate={navigate} />
+          <TabsContent value="template" className="mt-4">
+            <TemplateTab onCreated={close} navigate={navigate} />
           </TabsContent>
 
           <TabsContent value="ai" className="mt-4">
             <AiTab onCreated={close} navigate={navigate} />
           </TabsContent>
 
-          <TabsContent value="template" className="mt-4">
-            <TemplateTab onCreated={close} navigate={navigate} />
+          <TabsContent value="blank" className="mt-4">
+            <BlankTab onCreated={close} navigate={navigate} />
           </TabsContent>
         </Tabs>
       </DialogContent>
