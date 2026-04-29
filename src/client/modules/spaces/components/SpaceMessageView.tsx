@@ -55,7 +55,7 @@ export function SpaceMessageView({ message, users, allMessages, onOpenThread, on
   const parts = Array.isArray(message.parts) ? (message.parts as PartLike[]) : []
 
   return (
-    <div className="group flex gap-3 rounded-md px-3 py-2 hover:bg-accent/30">
+    <div className="group relative flex gap-3 rounded-md px-3 py-2 hover:bg-accent/30">
       <div
         className={cn(
           'mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full',
@@ -123,8 +123,10 @@ export function SpaceMessageView({ message, users, allMessages, onOpenThread, on
           </button>
         )}
       </div>
-      {/* Hover action bar — quick emojis + thread shortcut + more menu. */}
-      <div className="ml-auto flex shrink-0 items-start opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+      {/* Hover action bar — absolute-positioned overlay so it never
+          consumes row-flex space (was causing the content `min-w-0`
+          flex child to compute width=0 at narrow viewports). */}
+      <div className="absolute right-2 top-1 flex items-start opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
         <div className="flex items-center gap-0.5 rounded-md border border-border bg-background p-0.5 shadow-sm">
           <MessageReactions messageId={message.id} reactions={message.reactions} currentUserId={currentUserId} quickBar />
           {onOpenThread && (

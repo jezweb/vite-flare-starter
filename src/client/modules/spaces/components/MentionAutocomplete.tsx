@@ -124,6 +124,9 @@ export function MentionAutocomplete({ members, users, query, onPick, onCancel }:
             i === active ? 'bg-accent' : 'hover:bg-accent/60',
           )}
           onMouseEnter={() => setActive(i)}
+          // Prevent the textarea from blurring before our click handler
+          // runs — keeps cursor + selectionStart intact across the pick.
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => onPick(item)}
         >
           <User className="size-3.5 text-muted-foreground" />
@@ -146,6 +149,7 @@ export function MentionAutocomplete({ members, users, query, onPick, onCancel }:
               i === active ? 'bg-accent' : 'hover:bg-accent/60',
             )}
             onMouseEnter={() => setActive(i)}
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => onPick(item)}
           >
             <Bot className="size-3.5 text-emerald-600" />

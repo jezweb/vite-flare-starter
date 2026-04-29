@@ -74,7 +74,12 @@ export function MessageInput({ members, users, placeholder, busy, onSend, thread
       return
     }
     const before = value.slice(0, acAnchor)
-    const after = value.slice(ta.selectionStart ?? value.length)
+    // Compute `after` deterministically from acAnchor + the query length
+    // rather than ta.selectionStart. Mouse-clicking an autocomplete
+    // button blurs the textarea and selectionStart can drift to 0,
+    // which previously made `after` equal the whole value — causing the
+    // typed-in text to scramble (Finding 5, 2026-04-29 audit).
+    const after = value.slice(acAnchor + 1 + acQuery.length)
     const insertText = pick.kind === 'agent' ? `@${pick.agentName}` : pick.label
     const next = `${before}${insertText} ${after}`
     setValue(next)
@@ -92,18 +97,34 @@ export function MessageInput({ members, users, placeholder, busy, onSend, thread
   async function send() {
     const text = value.trim()
     if (!text || busy) return
-    // Build parts: walk the text, splicing each token into a `mention`
-    // part and the surrounding text into `text` parts.
+    // Build parts: walk the text and emit one `mention` part per
+    // ACTUAL occurrence of a token's handle-text in `value`. We can't
+    // trust the tokens array length — autocomplete picks can land
+    // duplicate token entries under various race conditions, and the
+    // old `indexOf(text, 0)` always returned 0, so duplicates were
+    // emitting double mention parts (Finding 1, 2026-04-29 audit).
     const parts: unknown[] = []
     let cursor = 0
-    // Stable order: tokens by appearance in the text.
-    const ordered = [...visibleTokens]
-      .map((t) => ({ ...t, index: value.indexOf(t.text, 0) }))
-      .filter((t) => t.index >= 0)
-      .sort((a, b) => a.index - b.index)
-    for (const tok of ordered) {
-      if (tok.index > cursor) {
-        parts.push({ type: 'text', text: value.slice(cursor, tok.index) })
+    const tokensByText = new Map<string, MentionToken>()
+    for (const t of visibleTokens) {
+      if (!tokensByText.has(t.text)) tokensByText.set(t.text, t)
+    }
+    type Occurrence = { tok: MentionToken; index: number }
+    const occurrences: Occurrence[] = []
+    for (const tok of tokensByText.values()) {
+      let from = 0
+      while (true) {
+        const i = value.indexOf(tok.text, from)
+        if (i < 0) break
+        occurrences.push({ tok, index: i })
+        from = i + tok.text.length
+      }
+    }
+    occurrences.sort((a, b) => a.index - b.index)
+    for (const { tok, index } of occurrences) {
+      if (index < cursor) continue // overlapping mention, skip
+      if (index > cursor) {
+        parts.push({ type: 'text', text: value.slice(cursor, index) })
       }
       const data: Record<string, unknown> = { handle: tok.pick.handle }
       if (tok.pick.kind === 'agent') {
@@ -113,7 +134,7 @@ export function MessageInput({ members, users, placeholder, busy, onSend, thread
         data['userId'] = tok.pick.userId
       }
       parts.push({ type: 'mention', text: tok.text, data })
-      cursor = tok.index + tok.text.length
+      cursor = index + tok.text.length
     }
     if (cursor < value.length) parts.push({ type: 'text', text: value.slice(cursor) })
     if (parts.length === 0) parts.push({ type: 'text', text })
@@ -123,10 +144,14 @@ export function MessageInput({ members, users, placeholder, busy, onSend, thread
       parts.push({ type: att.type, data: att.data })
     }
 
-    await onSend(parts)
+    // Clear synchronously so the input feels instant — the mutation
+    // can keep running in the background (matches Slack / Discord /
+    // AI Chat behaviour). If onSend rejects, the parent mutation hook
+    // surfaces a toast; user re-types.
     setValue('')
     setTokens([])
     setAttachments([])
+    await onSend(parts)
   }
 
   useEffect(() => {

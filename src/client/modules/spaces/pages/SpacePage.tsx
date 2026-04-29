@@ -99,7 +99,10 @@ export function SpacePage() {
   const pinnedCount = pinnedQuery.data?.pinned.length ?? 0
 
   return (
-    <div className="flex h-[calc(100vh-3.75rem)] flex-col">
+    // -m-4 md:-m-6 cancels the DashboardLayout wrapper padding so the
+    // chat surface owns the full viewport rect. 100svh handles mobile
+    // chrome correctly. SiteHeader is h-14 (3.5rem). Matches ChatPage.
+    <div className="-m-4 md:-m-6 flex h-[calc(100svh-3.5rem)] flex-col">
       {/* Header */}
       <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-background/80 px-4 py-2.5 backdrop-blur">
         <div className="flex min-w-0 items-center gap-3">
@@ -197,12 +200,11 @@ export function SpacePage() {
         </aside>
 
         {/* Center — main timeline.
-            min-w-[260px] guards against the catastrophic squeeze that
-            happens at lg viewports (1024-1280px) when all three panes
-            are open: app sidebar (256) + members aside (256) + thread
-            aside (384) leaves ~128px for the timeline, and `break-words`
-            then breaks individual characters one per line. The minimum
-            forces the parent to allow horizontal scroll instead. */}
+            min-w-[260px] enforces a horizontal-scroll fallback when
+            app sidebar (256) + members aside (256) + thread aside (384)
+            leaves under ~260px at lg viewports. The actual per-message
+            wrap fix lives in SpaceMessageView (action bar absolute
+            positioned so it doesn't claim flex space). */}
         <main className="flex min-w-[260px] flex-1 flex-col">
           <div ref={messageScrollRef} className="flex-1 overflow-y-auto px-4 py-3">
             {messages.length === 0 ? (
