@@ -208,10 +208,10 @@ function ApprovalCard({ approval, highlight }: { approval: Approval; highlight: 
                 <Badge
                   variant="outline"
                   className="gap-1 text-[10px] px-1.5 py-0 border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                  title="Pending for more than 24 hours"
+                  title="Pending for more than 24 hours — context may have moved on"
                 >
                   <Clock className="size-2.5" />
-                  Stale
+                  Older than a day
                 </Badge>
               )}
             </div>

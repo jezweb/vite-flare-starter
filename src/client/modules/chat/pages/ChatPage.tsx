@@ -1117,10 +1117,16 @@ export function ChatPage() {
                               <PromptInputActionAddScreenCapture />
                             </PromptInputActionMenuContent>
                           </PromptInputActionMenu>
-                          <VoiceDictationButton
-                            textareaRef={textareaRef}
-                            userId={session?.user?.id}
-                          />
+                          {/* Only mount when the voice agent DO is wired —
+                              otherwise the underlying useVoiceInput hook
+                              connects to a non-existent DO and logs
+                              "Protocol version mismatch: server=undefined". */}
+                          {features.voiceAgent && (
+                            <VoiceDictationButton
+                              textareaRef={textareaRef}
+                              userId={session?.user?.id}
+                            />
+                          )}
                           <ModelSelector value={model} onChange={setModel} disabled={isLoading} />
                           <ConversationSizeIndicator
                             messages={messages as unknown as { role: string; metadata?: { inputTokens?: number } }[]}

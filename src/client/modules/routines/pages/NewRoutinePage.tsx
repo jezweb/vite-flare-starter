@@ -173,24 +173,36 @@ export function NewRoutinePage() {
         </CardHeader>
         <CardContent className="space-y-2">
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {ROUTINE_TEMPLATES.map((tpl) => (
-              <button
-                key={tpl.id}
-                type="button"
-                onClick={() => applyTemplate(tpl)}
-                className={`text-left rounded-md border p-3 transition-colors ${
-                  pickedTemplate === tpl.id
-                    ? 'border-primary/60 bg-primary/5'
-                    : 'border-border hover:border-foreground/30 hover:bg-muted/40'
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-base leading-none">{tpl.emoji}</span>
-                  <span className="text-sm font-medium">{tpl.name}</span>
-                </div>
-                <p className="text-[11px] text-muted-foreground">{tpl.tagline}</p>
-              </button>
-            ))}
+            {ROUTINE_TEMPLATES.map((tpl) => {
+              const picked = pickedTemplate === tpl.id
+              return (
+                <button
+                  key={tpl.id}
+                  type="button"
+                  onClick={() => applyTemplate(tpl)}
+                  className={`group relative text-left rounded-md border p-3 transition-all ${
+                    picked
+                      ? 'border-primary bg-primary/5 ring-1 ring-primary/40'
+                      : 'border-border hover:border-foreground/30 hover:bg-muted/40 hover:shadow-sm'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-base leading-none">{tpl.emoji}</span>
+                    <span className="text-sm font-medium">{tpl.name}</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">{tpl.tagline}</p>
+                  {/* Affordance — shows on hover or when selected so the
+                      card reads as a button, not a static example. */}
+                  <span className={`absolute right-2 top-2 text-[10px] font-medium transition-opacity ${
+                    picked
+                      ? 'text-primary opacity-100'
+                      : 'text-muted-foreground opacity-0 group-hover:opacity-100'
+                  }`}>
+                    {picked ? '✓ Selected' : 'Use this →'}
+                  </span>
+                </button>
+              )
+            })}
           </div>
           {pickedTemplate && (
             <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1">

@@ -19,7 +19,7 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from '@/components/ui/command'
-import { Moon, Sun, LogOut, Settings, MessagesSquare, FolderKanban } from 'lucide-react'
+import { Moon, Sun, LogOut, Settings, MessagesSquare, FolderKanban, Plus, MessageSquare, Repeat, Plug, CheckSquare, Inbox, Hash } from 'lucide-react'
 import { useTheme } from '@/client/components/theme-provider'
 import { authClient } from '@/client/lib/auth'
 import { apiClient } from '@/client/lib/api-client'
@@ -105,6 +105,61 @@ export function CommandPalette() {
       />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
+
+        {/* Create / setup actions — surface high-value verbs above
+            navigation so the palette behaves like an action layer, not
+            just a navigator. Each Create item lands the user on the
+            destination ready to start; Setup items deep-link into
+            settings flows. */}
+        <CommandGroup heading="Create">
+          <CommandItem
+            onSelect={() => runCommand(() => navigate('/dashboard/chat?new=1'))}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            New chat
+            <CommandShortcut>⌘ ⇧ N</CommandShortcut>
+          </CommandItem>
+          <CommandItem onSelect={() => runCommand(() => navigate('/dashboard/projects?new=1'))}>
+            <FolderKanban className="mr-2 h-4 w-4" />
+            New project
+          </CommandItem>
+          <CommandItem onSelect={() => runCommand(() => navigate('/dashboard/spaces?new=1'))}>
+            <Hash className="mr-2 h-4 w-4" />
+            New space
+          </CommandItem>
+          <CommandItem onSelect={() => runCommand(() => navigate('/dashboard/routines/new'))}>
+            <Repeat className="mr-2 h-4 w-4" />
+            New routine
+          </CommandItem>
+        </CommandGroup>
+
+        <CommandSeparator />
+
+        <CommandGroup heading="Review">
+          <CommandItem onSelect={() => runCommand(() => navigate('/dashboard/inbox'))}>
+            <Inbox className="mr-2 h-4 w-4" />
+            Open inbox
+          </CommandItem>
+          <CommandItem onSelect={() => runCommand(() => navigate('/dashboard/approvals'))}>
+            <CheckSquare className="mr-2 h-4 w-4" />
+            Pending approvals
+          </CommandItem>
+        </CommandGroup>
+
+        <CommandSeparator />
+
+        <CommandGroup heading="Setup">
+          <CommandItem onSelect={() => runCommand(() => navigate('/dashboard/connections'))}>
+            <Plug className="mr-2 h-4 w-4" />
+            Connect an app
+          </CommandItem>
+          <CommandItem onSelect={() => runCommand(() => navigate('/dashboard/skills'))}>
+            <MessageSquare className="mr-2 h-4 w-4" />
+            Browse skills
+          </CommandItem>
+        </CommandGroup>
+
+        <CommandSeparator />
 
         {/* Project hits (only when the user has typed a real query) */}
         {deferredQuery.length >= 2 && projectHits.length > 0 && (

@@ -5,8 +5,8 @@
  * top; everything else sorts by recent activity. "+ New space"
  * launches the create modal.
  */
-import { useState, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useState, useMemo } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Plus, Pin, Users, Bot, Hash, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useSpacesList, type SpaceSummary } from '../hooks/useSpaces'
@@ -61,6 +61,19 @@ function SpaceCard({ s }: { s: SpaceSummary }) {
 export function SpacesIndexPage() {
   const [search, setSearch] = useState('')
   const [createOpen, setCreateOpen] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  // ?new=1 from the command palette opens the create modal on mount.
+  useEffect(() => {
+    if (searchParams.get('new') === '1') {
+      setCreateOpen(true)
+      const next = new URLSearchParams(searchParams)
+      next.delete('new')
+      setSearchParams(next, { replace: true })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const { data, isLoading } = useSpacesList()
   const spaces = data?.spaces ?? []
 

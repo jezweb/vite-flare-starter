@@ -9,8 +9,8 @@
  * Phase 1 ships single-pane "Your projects" only — the tab structure
  * is reserved by rendering a single visible tab so the layout is stable.
  */
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Plus, Star, FolderOpen, Archive } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
@@ -42,6 +42,20 @@ export function ProjectsIndexPage() {
   const [sort, setSort] = useState<SortKey>('activity')
   const [showArchived, setShowArchived] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  // ?new=1 from the command palette / Cmd+K opens the create modal on
+  // mount. Strip the param after triggering so a refresh doesn't
+  // re-open it endlessly.
+  useEffect(() => {
+    if (searchParams.get('new') === '1') {
+      setCreateOpen(true)
+      const next = new URLSearchParams(searchParams)
+      next.delete('new')
+      setSearchParams(next, { replace: true })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const { data, isLoading } = useProjectList({ search, sort, includeArchived: showArchived })
   const starProject = useStarProject()

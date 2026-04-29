@@ -265,13 +265,16 @@ export function CreateSpaceModal({ open, onClose }: Props) {
                   key={tpl.id}
                   type="button"
                   className={cn(
-                    'group flex flex-col items-start gap-1 rounded-md border border-border bg-background p-3 text-left transition-colors',
-                    'hover:border-foreground/30 hover:bg-accent/40',
+                    'group relative flex flex-col items-start gap-1 rounded-md border border-border bg-background p-3 text-left transition-all',
+                    'hover:border-foreground/30 hover:bg-accent/40 hover:shadow-sm',
                     'disabled:cursor-not-allowed disabled:opacity-50',
                   )}
                   onClick={() => submitTemplate(tpl)}
                   disabled={create.isPending}
                 >
+                  <span className="absolute right-2 top-2 text-[10px] font-medium text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                    Use this →
+                  </span>
                   <div className="flex items-center gap-2">
                     <span className="text-lg leading-none">{tpl.emoji}</span>
                     <span className="text-sm font-medium">{tpl.name}</span>

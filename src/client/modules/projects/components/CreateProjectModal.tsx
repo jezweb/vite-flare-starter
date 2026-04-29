@@ -351,8 +351,11 @@ function TemplateTab({ onCreated, navigate }: { onCreated: () => void; navigate:
             type="button"
             onClick={() => pick(t.slug)}
             disabled={creating !== null}
-            className="text-left rounded-lg border border-border p-4 hover:border-primary/50 hover:bg-muted/30 transition-colors disabled:opacity-60 disabled:cursor-progress"
+            className="group relative text-left rounded-lg border border-border p-4 hover:border-primary/50 hover:bg-muted/30 hover:shadow-sm transition-all disabled:opacity-60 disabled:cursor-progress"
           >
+            <span className="absolute right-3 top-3 text-[10px] font-medium text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+              Use this →
+            </span>
             <div className="flex items-start justify-between mb-1">
               <h3 className="font-semibold text-sm flex items-center gap-2">
                 {t.emoji && <span className="text-base">{t.emoji}</span>}
