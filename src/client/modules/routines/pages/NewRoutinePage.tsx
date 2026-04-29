@@ -191,12 +191,12 @@ export function NewRoutinePage() {
                     <span className="text-sm font-medium">{tpl.name}</span>
                   </div>
                   <p className="text-[11px] text-muted-foreground">{tpl.tagline}</p>
-                  {/* Affordance — shows on hover or when selected so the
-                      card reads as a button, not a static example. */}
+                  {/* Affordance — touch-visible at low opacity so the card
+                      reads as a button on every device, brightens on hover. */}
                   <span className={`absolute right-2 top-2 text-[10px] font-medium transition-opacity ${
                     picked
                       ? 'text-primary opacity-100'
-                      : 'text-muted-foreground opacity-0 group-hover:opacity-100'
+                      : 'text-muted-foreground opacity-40 group-hover:opacity-100'
                   }`}>
                     {picked ? '✓ Selected' : 'Use this →'}
                   </span>

@@ -353,7 +353,7 @@ function TemplateTab({ onCreated, navigate }: { onCreated: () => void; navigate:
             disabled={creating !== null}
             className="group relative text-left rounded-lg border border-border p-4 hover:border-primary/50 hover:bg-muted/30 hover:shadow-sm transition-all disabled:opacity-60 disabled:cursor-progress"
           >
-            <span className="absolute right-3 top-3 text-[10px] font-medium text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+            <span className="absolute right-3 top-3 text-[10px] font-medium text-muted-foreground opacity-40 group-hover:opacity-100 transition-opacity">
               Use this →
             </span>
             <div className="flex items-start justify-between mb-1">

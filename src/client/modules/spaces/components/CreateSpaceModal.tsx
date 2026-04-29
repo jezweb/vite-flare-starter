@@ -272,7 +272,7 @@ export function CreateSpaceModal({ open, onClose }: Props) {
                   onClick={() => submitTemplate(tpl)}
                   disabled={create.isPending}
                 >
-                  <span className="absolute right-2 top-2 text-[10px] font-medium text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span className="absolute right-2 top-2 text-[10px] font-medium text-muted-foreground opacity-40 group-hover:opacity-100 transition-opacity">
                     Use this →
                   </span>
                   <div className="flex items-center gap-2">

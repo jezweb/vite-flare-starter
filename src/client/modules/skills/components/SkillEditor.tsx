@@ -24,12 +24,13 @@ import { toast } from 'sonner'
 const MarkdownCodeEditor = lazy(() =>
   import('./MarkdownCodeEditor').then((m) => ({ default: m.MarkdownCodeEditor })),
 )
+import { Link } from 'react-router-dom'
 import {
   Check,
   Code2,
   Eye,
-  FileText,
   History,
+  MessageSquare,
   Save,
   Sparkles,
 } from 'lucide-react'
@@ -114,7 +115,9 @@ export function SkillEditor({ name }: SkillEditorProps) {
   }, [skill])
 
   const [draft, setDraft] = useState('')
-  const [tab, setTab] = useState('source')
+  // Default tab is Overview — what the skill does + how to use it.
+  // Source is second tab for builders editing the SKILL.md body.
+  const [tab, setTab] = useState('overview')
   const [pendingProposal, setPendingProposal] = useState<ConfigDiffProposal | null>(null)
   const [sparkleOpen, setSparkleOpen] = useState(false)
   const [sparkleInstruction, setSparkleInstruction] = useState('')
@@ -309,13 +312,13 @@ export function SkillEditor({ name }: SkillEditorProps) {
 
       <Tabs value={tab} onValueChange={setTab} className="p-4">
         <TabsList>
+          <TabsTrigger value="overview">
+            <Eye className="mr-1 h-3.5 w-3.5" />
+            Overview
+          </TabsTrigger>
           <TabsTrigger value="source">
             <Code2 className="mr-1 h-3.5 w-3.5" />
             Source
-          </TabsTrigger>
-          <TabsTrigger value="preview">
-            <Eye className="mr-1 h-3.5 w-3.5" />
-            Preview
           </TabsTrigger>
           <TabsTrigger value="history">
             <History className="mr-1 h-3.5 w-3.5" />
@@ -327,6 +330,54 @@ export function SkillEditor({ name }: SkillEditorProps) {
             ) : null}
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="overview" className="mt-4 space-y-4">
+          {/* What the skill does — full description, not the truncated
+              header version. Plain language for non-builders. */}
+          <div>
+            <h3 className="mb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              What this skill does
+            </h3>
+            <p className="text-sm">{skill.description || 'No description provided.'}</p>
+          </div>
+
+          {/* How to invoke — claude.ai / Claude Code convention is
+              `/skill-name`. The chat agent's system prompt includes
+              skill metadata so the LLM knows when to load + apply. */}
+          <div className="rounded-md border bg-muted/20 p-3">
+            <h3 className="mb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              How to use it
+            </h3>
+            <p className="text-sm">
+              Type{' '}
+              <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+                /{skill.name}
+              </code>{' '}
+              in chat to invoke this skill. The AI will load the procedure
+              below and follow it for that turn.
+            </p>
+            <div className="mt-3">
+              <Button asChild size="sm">
+                <Link to="/dashboard/chat?new=1">
+                  <MessageSquare className="mr-1 h-3.5 w-3.5" />
+                  Open chat
+                </Link>
+              </Button>
+            </div>
+          </div>
+
+          {/* The skill procedure rendered as readable markdown — what the
+              AI actually loads when invoked. Not the source editor; this
+              is the "what does this do" view. */}
+          <div>
+            <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Procedure
+            </h3>
+            <div className="prose prose-sm dark:prose-invert max-w-none">
+              <ReactMarkdown>{split.body}</ReactMarkdown>
+            </div>
+          </div>
+        </TabsContent>
 
         <TabsContent value="source" className="mt-4">
           <Suspense
@@ -354,26 +405,6 @@ export function SkillEditor({ name }: SkillEditorProps) {
                 Up to date
               </span>
             )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="preview" className="mt-4">
-          <div className="mb-4 rounded-md border bg-muted/20 p-3">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <FileText className="h-4 w-4" />
-              Frontmatter
-            </div>
-            <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-[auto_1fr]">
-              {Object.entries(split.frontmatter).map(([key, value]) => (
-                <div key={key} className="contents">
-                  <dt className="font-mono text-muted-foreground">{key}</dt>
-                  <dd className="break-words">{value}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-          <div className="prose prose-sm dark:prose-invert max-w-none">
-            <ReactMarkdown>{split.body}</ReactMarkdown>
           </div>
         </TabsContent>
 

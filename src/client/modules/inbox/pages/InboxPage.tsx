@@ -341,9 +341,8 @@ export function InboxPage() {
               : 'Nothing waiting on a decision right now. Check the Unread or All tabs to see older items.'
           }
           tips={[
-            'Findings come from Routines and ad-hoc agent runs (inbox_add tool).',
-            'Approvals come from agents proposing destructive actions (approval_queue / requestApproval).',
-            'Power tip: press j/k to move, x to select, m to mark read, a / r to approve / reject in bulk.',
+            'Findings appear when a routine notices something while running on a schedule.',
+            'Approvals appear when an AI agent wants to send a message, save a memory, or take another action you should sign off on.',
           ]}
           action={
             status === 'undecided'

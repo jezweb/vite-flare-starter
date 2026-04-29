@@ -88,11 +88,16 @@ export function CommandPalette() {
     command()
   }, [])
 
-  // Filter nav items by feature flags (same logic as sidebar)
+  // Filter nav items by feature flags (same logic as sidebar).
+  // Drop /dashboard/inbox + /dashboard/approvals because they're already
+  // surfaced verb-led in the Review group above — duplicating them in
+  // Navigation just dilutes the filter (typing "inbox" hit two rows).
+  const NAV_DEDUP_BLOCKLIST = new Set(['/dashboard/inbox', '/dashboard/approvals'])
   const featureFlags = features as unknown as Record<string, boolean>
   const navItems = NAV_SECTIONS.flatMap((section) =>
     section.items
       .filter((item) => !item.feature || featureFlags[item.feature])
+      .filter((item) => !NAV_DEDUP_BLOCKLIST.has(item.to))
       .map((item) => ({ ...item, section: section.label }))
   )
 
@@ -113,21 +118,31 @@ export function CommandPalette() {
             settings flows. */}
         <CommandGroup heading="Create">
           <CommandItem
+            value="new chat new conversation create chat ai start"
             onSelect={() => runCommand(() => navigate('/dashboard/chat?new=1'))}
           >
             <Plus className="mr-2 h-4 w-4" />
             New chat
             <CommandShortcut>⌘ ⇧ N</CommandShortcut>
           </CommandItem>
-          <CommandItem onSelect={() => runCommand(() => navigate('/dashboard/projects?new=1'))}>
+          <CommandItem
+            value="new project new folder create project workspace"
+            onSelect={() => runCommand(() => navigate('/dashboard/projects?new=1'))}
+          >
             <FolderKanban className="mr-2 h-4 w-4" />
             New project
           </CommandItem>
-          <CommandItem onSelect={() => runCommand(() => navigate('/dashboard/spaces?new=1'))}>
+          <CommandItem
+            value="new space new room channel create space"
+            onSelect={() => runCommand(() => navigate('/dashboard/spaces?new=1'))}
+          >
             <Hash className="mr-2 h-4 w-4" />
             New space
           </CommandItem>
-          <CommandItem onSelect={() => runCommand(() => navigate('/dashboard/routines/new'))}>
+          <CommandItem
+            value="new routine new automation schedule create routine agent"
+            onSelect={() => runCommand(() => navigate('/dashboard/routines/new'))}
+          >
             <Repeat className="mr-2 h-4 w-4" />
             New routine
           </CommandItem>
@@ -136,11 +151,17 @@ export function CommandPalette() {
         <CommandSeparator />
 
         <CommandGroup heading="Review">
-          <CommandItem onSelect={() => runCommand(() => navigate('/dashboard/inbox'))}>
+          <CommandItem
+            value="open inbox findings undecided review triage"
+            onSelect={() => runCommand(() => navigate('/dashboard/inbox'))}
+          >
             <Inbox className="mr-2 h-4 w-4" />
             Open inbox
           </CommandItem>
-          <CommandItem onSelect={() => runCommand(() => navigate('/dashboard/approvals'))}>
+          <CommandItem
+            value="pending approvals queue review approve reject"
+            onSelect={() => runCommand(() => navigate('/dashboard/approvals'))}
+          >
             <CheckSquare className="mr-2 h-4 w-4" />
             Pending approvals
           </CommandItem>
@@ -149,11 +170,17 @@ export function CommandPalette() {
         <CommandSeparator />
 
         <CommandGroup heading="Setup">
-          <CommandItem onSelect={() => runCommand(() => navigate('/dashboard/connections'))}>
+          <CommandItem
+            value="connect an app integration mcp gmail drive notion slack"
+            onSelect={() => runCommand(() => navigate('/dashboard/connections'))}
+          >
             <Plug className="mr-2 h-4 w-4" />
             Connect an app
           </CommandItem>
-          <CommandItem onSelect={() => runCommand(() => navigate('/dashboard/skills'))}>
+          <CommandItem
+            value="browse skills library agent procedures markdown"
+            onSelect={() => runCommand(() => navigate('/dashboard/skills'))}
+          >
             <MessageSquare className="mr-2 h-4 w-4" />
             Browse skills
           </CommandItem>

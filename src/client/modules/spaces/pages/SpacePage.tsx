@@ -194,8 +194,18 @@ export function SpacePage() {
 
       {/* Body */}
       <div className="flex flex-1 min-h-0">
-        {/* Left rail — members */}
-        <aside className="hidden w-64 shrink-0 overflow-y-auto border-r border-border bg-background/60 p-3 md:block">
+        {/* Left rail — members.
+            When the thread aside is open, the members rail hides until xl
+            (1280px) — at lg (1024) showing all three panes at once pushes
+            the thread's Reply button offscreen. The mobile <Sheet> drawer
+            above always remains as a fallback to view members. */}
+        <aside
+          className={
+            threadParentId
+              ? 'hidden w-64 shrink-0 overflow-y-auto border-r border-border bg-background/60 p-3 xl:block'
+              : 'hidden w-64 shrink-0 overflow-y-auto border-r border-border bg-background/60 p-3 md:block'
+          }
+        >
           <MemberList members={members} users={users} online={online} />
         </aside>
 

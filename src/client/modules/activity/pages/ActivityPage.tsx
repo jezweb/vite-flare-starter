@@ -196,7 +196,7 @@ export function ActivityPage() {
     <PageContainer type="queue">
       <PageHeader
         title="Activity"
-        subtitle="Every action your AI has taken on your behalf — created, updated, archived — with timestamps."
+        subtitle="Every action on your account — sign-ins, items created, updated, archived — with timestamps."
       />
 
       <StatGrid

@@ -55,5 +55,6 @@ SESSION.md
 # (UX extract screenshots are kept — they're part of curated references)
 .jez/screenshots/
 .jez/screenshots-audit/
+.jez/audit-evidence/
 .jez/**/*.{mov,mp4,webm}
 worker-configuration.d.ts

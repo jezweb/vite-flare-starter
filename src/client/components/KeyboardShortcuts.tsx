@@ -61,6 +61,16 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
       { keys: 'Escape', description: 'Close dialog / cancel' },
     ],
   },
+  {
+    label: 'Inbox (when focused)',
+    shortcuts: [
+      { keys: 'J / K', description: 'Move focus down / up' },
+      { keys: 'X', description: 'Toggle row selection' },
+      { keys: 'Enter', description: 'Open focused row' },
+      { keys: 'M', description: 'Mark selected as read' },
+      { keys: 'A / R', description: 'Approve / reject selected' },
+    ],
+  },
 ]
 
 const GO_TO_TARGETS: Record<string, string> = {
