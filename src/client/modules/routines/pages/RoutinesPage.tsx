@@ -21,12 +21,12 @@ import {
   Zap,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { EmptyState } from '@/client/components/EmptyState'
 import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
 import { PageLoading } from '@/client/components/PageState'
+import { StatusPill } from '@/components/ui/status-pill'
 import {
   ListRow,
   ListRowGroup,
@@ -150,9 +150,7 @@ function RoutineRow({
           <div className="flex items-center gap-2 min-w-0">
             <ListRowTitle unread>{routine.name}</ListRowTitle>
             <span className="text-[11px] text-muted-foreground shrink-0">{agentLabel}</span>
-            {!routine.enabled && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 leading-3">Disabled</Badge>
-            )}
+            {!routine.enabled && <StatusPill kind="neutral" label="Disabled" />}
           </div>
           {routine.description && (
             <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1">

@@ -13,7 +13,6 @@ import * as LucideIcons from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { STATUS_SOFT_BG } from '@/client/lib/status-colors'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
@@ -54,6 +53,7 @@ import { Section } from '@/components/ui/section'
 import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
 import { HelpDisclosure } from '@/components/ui/help-disclosure'
+import { StatusPill } from '@/components/ui/status-pill'
 import { useBuilderMode } from '@/client/lib/builder-mode'
 
 function resolveIcon(name: string): LucideIcon {
@@ -324,12 +324,10 @@ function ConnectionCard({
 }
 
 function StatusBadge({ status }: { status: McpConnection['status'] }) {
-  if (status === 'active') {
-    return <Badge variant="secondary" className={`text-[10px] ${STATUS_SOFT_BG.success}`}>Connected</Badge>
-  }
-  if (status === 'pending') return <Badge variant="outline" className="text-[10px]">Pending</Badge>
-  if (status === 'error') return <Badge variant="destructive" className="text-[10px]">Error</Badge>
-  return <Badge variant="outline" className="text-[10px]">{status}</Badge>
+  if (status === 'active') return <StatusPill kind="success" label="Connected" />
+  if (status === 'pending') return <StatusPill kind="warning" label="Pending" />
+  if (status === 'error') return <StatusPill kind="danger" label="Error" />
+  return <StatusPill kind="neutral" label={status} />
 }
 
 function BrowseDialog({

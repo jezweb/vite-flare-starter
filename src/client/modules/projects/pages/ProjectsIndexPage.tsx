@@ -11,9 +11,8 @@
  */
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Search, Star, FolderOpen, Loader2, Archive } from 'lucide-react'
+import { Plus, Star, FolderOpen, Archive } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { useProjectList, useStarProject, type Project } from '../hooks/useProjects'
@@ -23,6 +22,8 @@ import { cn } from '@/lib/utils'
 import { EmptyState as SharedEmptyState } from '@/client/components/EmptyState'
 import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
+import { SearchInput } from '@/components/ui/search-input'
+import { Spinner } from '@/components/ui/spinner'
 
 type SortKey = 'activity' | 'name' | 'created'
 
@@ -62,15 +63,13 @@ export function ProjectsIndexPage() {
 
       {/* Search + sort row */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search projects…"
-            className="pl-9"
-          />
-        </div>
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder="Search projects…"
+          showClearButton
+          className="flex-1"
+        />
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <Label htmlFor="show-archived" className="text-xs text-muted-foreground cursor-pointer">
@@ -112,7 +111,7 @@ export function ProjectsIndexPage() {
       {/* Loading / empty / cards */}
       {isLoading ? (
         <div className="flex items-center justify-center h-64 text-muted-foreground">
-          <Loader2 className="size-5 animate-spin mr-2" />
+          <Spinner size="lg" className="mr-2" />
           Loading projects…
         </div>
       ) : projects.length === 0 ? (

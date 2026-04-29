@@ -10,8 +10,7 @@
  * self via the kebab menu.
  */
 import { useState } from 'react'
-import { formatDistanceToNow } from 'date-fns'
-import { Loader2, MoreVertical, Trash2, UserCog } from 'lucide-react'
+import { MoreVertical, Trash2, UserCog } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -24,6 +23,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { IdentityRow } from '@/components/ui/identity-row'
+import { Time } from '@/components/ui/time'
+import { Spinner } from '@/components/ui/spinner'
 import { useSession } from '@/client/lib/auth'
 import {
   useOrgMembers,
@@ -32,7 +34,6 @@ import {
   type OrgMember,
   type OrgRole,
 } from '../hooks/useOrganizations'
-import { cn } from '@/lib/utils'
 import { formatRole } from '@/shared/format/agent'
 
 interface Props {
@@ -51,7 +52,7 @@ export function MembersList({ organizationId, myRole }: Props) {
   if (isLoading) {
     return (
       <div className="flex h-32 items-center justify-center">
-        <Loader2 className="size-5 animate-spin text-muted-foreground" />
+        <Spinner size="lg" className="text-muted-foreground" />
       </div>
     )
   }
@@ -100,25 +101,19 @@ export function MembersList({ organizationId, myRole }: Props) {
           const canChangeRole = myRole === 'owner' && !isLastOwner
           return (
             <li key={m.id} className="flex items-center gap-3 px-3 py-2.5">
-              <Avatar member={m} />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-medium truncate">
-                    {m.user.name ?? m.user.email}
-                  </span>
-                  {isMe && (
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                      you
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-[11px] text-muted-foreground truncate">{m.user.email}</p>
-              </div>
+              <IdentityRow
+                name={m.user.name}
+                secondary={m.user.email}
+                imageUrl={m.user.image}
+                isYou={isMe}
+                size="md"
+                className="flex-1 min-w-0"
+              />
               <Badge variant="outline" className="text-xs px-2 py-0.5">
                 {formatRole(m.role)}
               </Badge>
               <span className="hidden sm:inline text-[11px] text-muted-foreground tabular-nums">
-                joined {formatDistanceToNow(parseDate(m.createdAt), { addSuffix: true })}
+                joined <Time value={m.createdAt} display="relative" />
               </span>
               {(canChangeRole || canRemoveThisMember) ? (
                 <DropdownMenu>
@@ -183,31 +178,3 @@ export function MembersList({ organizationId, myRole }: Props) {
   )
 }
 
-/**
- * Better-auth's adapter returns createdAt as either a Unix integer
- * (when the row was inserted by raw SQL — e.g. our backfill migration)
- * OR an ISO 8601 string (when inserted via the plugin's adapter).
- * Normalise to Date.
- */
-function parseDate(raw: number | string): Date {
-  if (typeof raw === 'number') return new Date(raw * 1000)
-  return new Date(raw)
-}
-
-function Avatar({ member }: { member: OrgMember }) {
-  const letter = (member.user.name ?? member.user.email).trim()[0]?.toUpperCase() ?? '?'
-  if (member.user.image) {
-    return (
-      <img
-        src={member.user.image}
-        alt=""
-        className={cn('size-8 shrink-0 rounded-full object-cover')}
-      />
-    )
-  }
-  return (
-    <div className="size-8 shrink-0 rounded-full bg-muted text-foreground flex items-center justify-center text-xs font-semibold">
-      {letter}
-    </div>
-  )
-}
