@@ -19,7 +19,8 @@
  */
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Building2, Check, ChevronsUpDown, Loader2, Plus, Settings, UserPlus } from 'lucide-react'
+import { Building2, Check, ChevronsUpDown, Plus, Settings, UserPlus } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -178,7 +179,7 @@ export function OrgSwitcher() {
       </SidebarMenu>
       {setActive.isPending && (
         <div className="px-3 py-1 text-[11px] text-muted-foreground inline-flex items-center gap-1">
-          <Loader2 className="size-3 animate-spin" />
+          <Spinner size="xs" />
           Switching…
         </div>
       )}

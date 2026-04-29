@@ -7,15 +7,16 @@
  */
 import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Search, Pin, Users, Bot, Loader2, Hash, Sparkles } from 'lucide-react'
+import { Plus, Pin, Users, Bot, Hash, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { useSpacesList, type SpaceSummary } from '../hooks/useSpaces'
 import { CreateSpaceModal } from '../components/CreateSpaceModal'
 import { EmptyState as SharedEmptyState } from '@/client/components/EmptyState'
 import { cn } from '@/lib/utils'
 import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
+import { SearchInput } from '@/components/ui/search-input'
+import { Spinner } from '@/components/ui/spinner'
 
 function relTime(iso: string): string {
   const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
@@ -86,19 +87,17 @@ export function SpacesIndexPage() {
         }
       />
 
-      <div className="relative max-w-md">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Filter spaces…"
-          className="pl-9"
-        />
-      </div>
+      <SearchInput
+        value={search}
+        onChange={setSearch}
+        placeholder="Filter spaces…"
+        showClearButton
+        className="max-w-md"
+      />
 
       {isLoading ? (
         <div className="flex h-40 items-center justify-center">
-          <Loader2 className="size-5 animate-spin text-muted-foreground" />
+          <Spinner size="lg" className="text-muted-foreground" />
         </div>
       ) : spaces.length === 0 ? (
         <SharedEmptyState

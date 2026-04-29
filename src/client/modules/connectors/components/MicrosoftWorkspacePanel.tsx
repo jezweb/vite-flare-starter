@@ -29,6 +29,7 @@ import {
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { StatusPill } from '@/components/ui/status-pill'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -145,16 +146,10 @@ export function MicrosoftWorkspacePanel() {
             <div className="flex items-center gap-2 flex-wrap">
               <p className="font-semibold">Microsoft 365</p>
               {connected && !isError && (
-                <Badge variant="secondary" className="text-[10px] bg-green-500/10 text-green-700 dark:text-green-400 gap-1">
-                  <CheckCircle2 className="h-3 w-3" />
-                  Connected
-                </Badge>
+                <StatusPill kind="success" label="Connected" icon={<CheckCircle2 />} />
               )}
               {isError && (
-                <Badge variant="destructive" className="text-[10px] gap-1">
-                  <AlertCircle className="h-3 w-3" />
-                  Reconnect needed
-                </Badge>
+                <StatusPill kind="danger" label="Reconnect needed" icon={<AlertCircle />} />
               )}
             </div>
             {connected ? (

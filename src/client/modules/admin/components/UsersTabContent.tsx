@@ -7,7 +7,7 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
+import { SearchInput } from '@/components/ui/search-input'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -19,7 +19,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { useUsers } from '../hooks/useAdmin'
 import { UserList } from './UserList'
-import { Search, ChevronLeft, ChevronRight, Users } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Users } from 'lucide-react'
 import { useDebounce } from '@/client/hooks/useDebounce'
 import { EmptyState } from '@/client/components/EmptyState'
 
@@ -106,15 +106,13 @@ export function UsersTabContent() {
       <CardContent className="space-y-4">
         {/* Search and Sort Controls */}
         <div className="flex flex-col gap-4 sm:flex-row">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search by name or email..."
-              value={searchInput}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-9"
-            />
-          </div>
+          <SearchInput
+            value={searchInput}
+            onChange={handleSearchChange}
+            placeholder="Search by name or email…"
+            showClearButton
+            className="flex-1"
+          />
           <Select value={sortParam} onValueChange={handleSortChange}>
             <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="Sort by..." />

@@ -11,6 +11,7 @@ import { MemorySection } from '../components/MemorySection'
 import { features } from '@/shared/config/features'
 import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
+import { NativeSelect } from '@/components/ui/native-select'
 
 export function SettingsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -20,18 +21,29 @@ export function SettingsPage() {
     setSearchParams({ tab: value })
   }
 
-  // Calculate grid columns based on visible tabs. Chat AI tab is shown when
-  // the chat feature is enabled (gates chat preferences together with the
-  // chat module itself).
+  // 8 visible tabs is too many for narrow viewports. On `< sm` we render
+  // a NativeSelect that drives the same `?tab=` param; tabs only render
+  // on tablet+. Pattern matches Linear / GitHub / Vercel mobile settings.
   const showChatTab = !!features.chat
   // Tab count: profile + organization + security + sessions + (api-tokens) + (ai) + memory + preferences
   const tabCount = (features.apiTokens ? 7 : 6) + (showChatTab ? 1 : 0)
   const gridCols =
     tabCount >= 8
-      ? 'grid-cols-3 sm:grid-cols-8'
+      ? 'sm:grid-cols-8'
       : tabCount === 7
-        ? 'grid-cols-3 sm:grid-cols-7'
-        : 'grid-cols-3 sm:grid-cols-6'
+        ? 'sm:grid-cols-7'
+        : 'sm:grid-cols-6'
+
+  const tabOptions: { value: string; label: string }[] = [
+    { value: 'profile', label: 'Profile' },
+    { value: 'organization', label: 'Organization' },
+    { value: 'security', label: 'Security' },
+    { value: 'sessions', label: 'Sessions' },
+    ...(features.apiTokens ? [{ value: 'api-tokens', label: 'API Tokens' }] : []),
+    ...(showChatTab ? [{ value: 'ai', label: 'AI' }] : []),
+    { value: 'memory', label: 'Memory' },
+    { value: 'preferences', label: 'Preferences' },
+  ]
 
   return (
     <PageContainer type="form">
@@ -40,29 +52,25 @@ export function SettingsPage() {
         subtitle="Your profile, login, AI memory, and the data this app holds about you."
       />
 
-      {/* Tabs — horizontally scrollable on narrow viewports so the tab
-          labels never truncate unreadably on small phones. Wider screens
-          use the pre-computed gridCols for even spacing. */}
-      <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
-        <TabsList
-          className={`
-            mb-8 flex w-full overflow-x-auto
-            sm:grid sm:w-full ${gridCols}
-            [&::-webkit-scrollbar]:hidden
-            [-ms-overflow-style:none]
-            [scrollbar-width:none]
-          `}
+      {/* Mobile (< sm): native select picker drives the same ?tab= param.
+          Tablet+: full tabs strip with even-width grid. */}
+      <div className="sm:hidden [&>div]:w-full">
+        <NativeSelect
+          value={tab}
+          onChange={(e) => handleTabChange(e.target.value)}
+          aria-label="Settings section"
         >
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="organization">Organization</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="sessions">Sessions</TabsTrigger>
-          {features.apiTokens && (
-            <TabsTrigger value="api-tokens">API Tokens</TabsTrigger>
-          )}
-          {showChatTab && <TabsTrigger value="ai">AI</TabsTrigger>}
-          <TabsTrigger value="memory">Memory</TabsTrigger>
-          <TabsTrigger value="preferences">Preferences</TabsTrigger>
+          {tabOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </NativeSelect>
+      </div>
+
+      <Tabs value={tab} onValueChange={handleTabChange} className="w-full hidden sm:block">
+        <TabsList className={`mb-8 grid w-full ${gridCols}`}>
+          {tabOptions.map((opt) => (
+            <TabsTrigger key={opt.value} value={opt.value}>{opt.label}</TabsTrigger>
+          ))}
         </TabsList>
 
         <TabsContent value="profile">

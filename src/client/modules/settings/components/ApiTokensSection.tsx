@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
-import { Loader2, Key, Copy, Check, Trash2, Plus, ExternalLink } from 'lucide-react'
+import { Loader2, Key, Trash2, Plus, ExternalLink } from 'lucide-react'
+import { CopyButton } from '@/components/ui/copy-button'
 import { useApiTokens, useCreateApiToken, useDeleteApiToken } from '@/client/modules/api-tokens/hooks/useApiTokens'
 import { createApiTokenSchema } from '@/shared/schemas/api-token.schema'
 import type { CreateApiTokenInput, ApiTokenListItem } from '@/shared/schemas/api-token.schema'
@@ -120,22 +121,13 @@ interface NewTokenDisplayProps {
 }
 
 function NewTokenDisplay({ token, onClose }: NewTokenDisplayProps) {
-  const [copied, setCopied] = useState(false)
-
-  const copyToken = async () => {
-    await navigator.clipboard.writeText(token)
-    setCopied(true)
-    toast.success('Token copied to clipboard')
-    setTimeout(() => setCopied(false), 2000)
-  }
-
   return (
     <Dialog open onOpenChange={() => onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>API Token Created</DialogTitle>
+          <DialogTitle>API token created</DialogTitle>
           <DialogDescription>
-            Copy your new API token now. You won't be able to see it again!
+            Copy your new API token now. You won't be able to see it again.
           </DialogDescription>
         </DialogHeader>
 
@@ -145,13 +137,13 @@ function NewTokenDisplay({ token, onClose }: NewTokenDisplayProps) {
               <code className="flex-1 font-mono text-sm break-all bg-muted p-2 rounded">
                 {token}
               </code>
-              <Button variant="outline" size="sm" onClick={copyToken}>
-                {copied ? (
-                  <Check className="h-4 w-4 text-green-500" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </Button>
+              <CopyButton
+                value={token}
+                variant="outline"
+                size="sm"
+                successMessage="Token copied"
+                aria-label="Copy API token"
+              />
             </div>
           </AlertDescription>
         </Alert>
