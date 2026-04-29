@@ -111,9 +111,10 @@ export function ConnectorsPage() {
         help={
           <HelpDisclosure>
             <p className="text-muted-foreground max-w-xl">
-              Powered by Model Context Protocol (MCP). Paste any MCP server URL —
-              public, community-hosted, or your own Cloudflare Worker. OAuth and
-              bearer tokens both supported; tokens are encrypted at rest.
+              Want a custom integration? Paste a connection URL — public, your
+              own service, or community-hosted. Sign-in via the provider or a
+              token; tokens are encrypted at rest. Built on the Model Context
+              Protocol (MCP) standard, so any MCP server URL works.
             </p>
           </HelpDisclosure>
         }
@@ -181,7 +182,7 @@ export function ConnectorsPage() {
 
       <Section
         title="Connected apps"
-        description="External tools you've connected via MCP. The AI uses these when chatting or running routines."
+        description="The external tools your AI can use when chatting or running routines."
       >
         {connectionsLoading ? (
           <div className="flex items-center justify-center py-12">

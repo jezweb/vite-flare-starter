@@ -100,6 +100,35 @@ app.get('/', zValidator('query', listQuerySchema), async (c) => {
   })
 })
 
+// ─── Static routes BEFORE parameterised — Hono matches top-to-bottom ──
+//
+// `/user-mode` and `/regenerate` must register before `/:id` or the
+// parameterised handler greedily catches them and returns
+// {"error":"Memory not found"}.
+
+const userModeSchema = z.object({
+  memoryUpdateMode: z.enum(['ask', 'auto', 'never']),
+})
+
+app.get('/user-mode', async (c) => {
+  const userId = c.get('userId')
+  const d = drizzle(c.env.DB)
+  const [row] = await d
+    .select({ memoryUpdateMode: user.memoryUpdateMode })
+    .from(user)
+    .where(eq(user.id, userId))
+    .limit(1)
+  return c.json({ memoryUpdateMode: row?.memoryUpdateMode ?? 'auto' })
+})
+
+app.patch('/user-mode', zValidator('json', userModeSchema), async (c) => {
+  const userId = c.get('userId')
+  const { memoryUpdateMode } = c.req.valid('json')
+  const d = drizzle(c.env.DB)
+  await d.update(user).set({ memoryUpdateMode }).where(eq(user.id, userId))
+  return c.json({ success: true, memoryUpdateMode })
+})
+
 /** GET /api/memories/:id — single memory */
 app.get('/:id', async (c) => {
   const userId = c.get('userId')
@@ -225,29 +254,8 @@ app.delete('/:id', async (c) => {
 //
 // User-scope `memoryUpdateMode` lives on the `user` table. Project-scope
 // is on the `projects` table and gets PATCHed via the existing project
-// route. This endpoint is the user-scope twin.
-const userModeSchema = z.object({
-  memoryUpdateMode: z.enum(['ask', 'auto', 'never']),
-})
-
-app.get('/user-mode', async (c) => {
-  const userId = c.get('userId')
-  const d = drizzle(c.env.DB)
-  const [row] = await d
-    .select({ memoryUpdateMode: user.memoryUpdateMode })
-    .from(user)
-    .where(eq(user.id, userId))
-    .limit(1)
-  return c.json({ memoryUpdateMode: row?.memoryUpdateMode ?? 'auto' })
-})
-
-app.patch('/user-mode', zValidator('json', userModeSchema), async (c) => {
-  const userId = c.get('userId')
-  const { memoryUpdateMode } = c.req.valid('json')
-  const d = drizzle(c.env.DB)
-  await d.update(user).set({ memoryUpdateMode }).where(eq(user.id, userId))
-  return c.json({ success: true, memoryUpdateMode })
-})
+// route. The user-mode handlers live above the `/:id` block — see the
+// "Static routes BEFORE parameterised" note up top.
 
 // ─── Manual regenerate (Phase 3 v2) ─────────────────────────────────
 //

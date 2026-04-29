@@ -196,10 +196,16 @@ async function queueOne(
   d: ReturnType<typeof drizzle>,
   { update, userId, projectId, conversationId }: OneInput,
 ): Promise<void> {
-  // Build a one-line summary the queue UI shows. Keep it concrete.
+  // Build a one-line summary the queue UI shows. Title-case the
+  // memory key so "tool-troubleshooting-preference" surfaces as "Tool
+  // troubleshooting preference" in the user-facing inbox / dashboard /
+  // approvals row instead of the raw slug.
   const verb = update.action === 'add' ? 'Add' : update.action === 'update' ? 'Update' : 'Remove'
   const scopeLabel = update.scope === 'user' ? 'user memory' : 'project memory'
-  const summary = `${verb} ${scopeLabel}: ${update.name}`.slice(0, 500)
+  const friendlyKey = update.name
+    ? update.name.replace(/[-_]+/g, ' ').replace(/^./, (c) => c.toUpperCase())
+    : '(unnamed)'
+  const summary = `${verb} ${scopeLabel}: ${friendlyKey}`.slice(0, 500)
 
   // Payload preserves enough context to render a rich card and to apply
   // on approve. The conversationId lets the approval card link back to
