@@ -30,6 +30,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { StatusPill } from '@/components/ui/status-pill'
 import { TabsTrigger } from '@/components/ui/tabs'
 import { EmptyState } from '@/client/components/EmptyState'
 import { PageContainer } from '@/components/ui/page-container'
@@ -453,18 +454,13 @@ function sourceLabel(
 }
 
 function StatusBadge({ status }: { status: Status }) {
-  const config: Record<Status, { label: string; icon: typeof Clock; className: string }> = {
-    pending: { label: 'Pending', icon: Clock, className: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30' },
-    approved: { label: 'Approved', icon: CheckCircle2, className: 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/30' },
-    executed: { label: 'Executed', icon: CheckCircle2, className: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30' },
-    rejected: { label: 'Rejected', icon: XCircle, className: 'bg-muted text-muted-foreground border-muted-foreground/20' },
-    failed: { label: 'Failed', icon: AlertCircle, className: 'bg-destructive/10 text-destructive border-destructive/40' },
+  const config: Record<Status, { label: string; icon: typeof Clock; kind: 'success' | 'info' | 'warning' | 'danger' | 'neutral' }> = {
+    pending: { label: 'Pending', icon: Clock, kind: 'warning' },
+    approved: { label: 'Approved', icon: CheckCircle2, kind: 'info' },
+    executed: { label: 'Done', icon: CheckCircle2, kind: 'success' },
+    rejected: { label: 'Rejected', icon: XCircle, kind: 'neutral' },
+    failed: { label: 'Failed', icon: AlertCircle, kind: 'danger' },
   }
-  const { label, icon: Icon, className } = config[status]
-  return (
-    <Badge variant="outline" className={cn('gap-1 text-[10px] px-1.5 py-0', className)}>
-      <Icon className="size-3" />
-      {label}
-    </Badge>
-  )
+  const { label, icon: Icon, kind } = config[status]
+  return <StatusPill kind={kind} label={label} icon={<Icon />} />
 }

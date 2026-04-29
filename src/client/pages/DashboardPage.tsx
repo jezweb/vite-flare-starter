@@ -16,7 +16,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { formatDistanceToNow } from 'date-fns'
+import { Time } from '@/components/ui/time'
 import {
   Brain,
   Wrench,
@@ -185,7 +185,7 @@ function NeedsYouPanel({ approvals, loading }: { approvals?: ApprovalsList; load
                         {a.summary || prettify(a.action)}
                       </p>
                       <p className="mt-0.5 text-[11px] text-muted-foreground">
-                        {formatDistanceToNow(new Date(a.createdAt * 1000), { addSuffix: true })}
+                        <Time value={a.createdAt} display="relative" />
                       </p>
                     </div>
                   </div>
@@ -266,16 +266,25 @@ function RunRow({ run }: { run: AgentRun }) {
     : run.outcome === 'error' || run.outcome === 'budget_exceeded'
     ? 'text-destructive'
     : 'text-muted-foreground'
+  const triggerLabel = formatTrigger(run.trigger)
+  const showTrigger = triggerLabel !== 'via another agent'
   return (
-    <li className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted/40 transition-colors">
-      <Icon className={cn('size-3.5 shrink-0', colour)} />
-      <span className="text-xs truncate flex-1">{formatAgentClass(run.agentClass, agentRegistry)}</span>
-      <span className="text-[11px] text-muted-foreground hidden xl:inline">
-        {formatTrigger(run.trigger)}
-      </span>
-      <span className="text-[11px] text-muted-foreground tabular-nums">
-        {formatDistanceToNow(new Date(run.startedAt * 1000), { addSuffix: true })}
-      </span>
+    <li>
+      <Link
+        to={`/dashboard/activity?focus=${run.id}`}
+        className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted/40 transition-colors"
+      >
+        <Icon className={cn('size-3.5 shrink-0', colour)} />
+        <span className="text-xs truncate flex-1">{formatAgentClass(run.agentClass, agentRegistry)}</span>
+        {showTrigger && (
+          <span className="text-[11px] text-muted-foreground hidden xl:inline">
+            {triggerLabel}
+          </span>
+        )}
+        <span className="text-[11px] text-muted-foreground tabular-nums">
+          <Time value={run.startedAt} display="relative" />
+        </span>
+      </Link>
     </li>
   )
 }
