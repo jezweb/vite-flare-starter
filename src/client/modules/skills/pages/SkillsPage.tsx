@@ -64,6 +64,7 @@ import {
   useSyncBundled,
 } from '../hooks/useSkills'
 import { SkillEditor } from '../components/SkillEditor'
+import { formatSkillName, formatSkillSlash } from '@/shared/format/skill'
 
 export function SkillsPage() {
   const { data, isLoading } = useSkillsList()
@@ -203,9 +204,12 @@ export function SkillsPage() {
                     )}
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1">
-                        <span className="truncate text-sm font-mono">
-                          /{s.name}
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="truncate text-sm font-medium">
+                          {formatSkillName(s.name)}
+                        </span>
+                        <span className="shrink-0 truncate text-[10px] font-mono text-muted-foreground/70">
+                          {formatSkillSlash(s.name)}
                         </span>
                       </div>
                       <p className="line-clamp-1 text-[11px] text-muted-foreground">

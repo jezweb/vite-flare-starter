@@ -6,6 +6,7 @@
 import { useMemo, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { useSkillSummary, type SkillSummary } from '@/client/modules/skills/hooks/useSkills'
+import { formatSkillName } from '@/shared/format/skill'
 
 interface SkillsSlashMenuProps {
   /** The text currently in the input. Menu shows when this starts with `/`. */
@@ -85,8 +86,11 @@ export function SkillsSlashMenu({
           )}
         >
           <div className="flex items-center gap-2">
-            <span className="font-medium text-sm">/{skill.name}</span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+            <span className="font-medium text-sm">{formatSkillName(skill.name)}</span>
+            <span className="text-[10px] font-mono text-muted-foreground/70">
+              /{skill.name}
+            </span>
+            <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
               {skill.source}
             </span>
           </div>

@@ -18,6 +18,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { useAgentCatalog, useToolsCatalog, type RegisteredAgent, type CatalogTool } from '../hooks/useAgentCatalog'
 import { useSkillSummary, type SkillSummary } from '@/client/modules/skills/hooks/useSkills'
+import { formatSkillName } from '@/shared/format/skill'
 import { cn } from '@/lib/utils'
 
 // ─── Agent picker ─────────────────────────────────────────────────────
@@ -165,7 +166,10 @@ export function SkillsPicker({ value, onChange, placeholder = 'Pick skills…' }
                 >
                   <Check className={cn('mt-0.5 size-4 shrink-0', value.includes(s.name) ? 'text-primary' : 'text-transparent')} />
                   <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-mono">{s.name}</span>
+                    <span className="flex items-baseline gap-1.5">
+                      <span className="text-sm font-medium truncate">{formatSkillName(s.name)}</span>
+                      <span className="text-[10px] font-mono text-muted-foreground/70 shrink-0">/{s.name}</span>
+                    </span>
                     <span className="block text-[11px] text-muted-foreground line-clamp-2">{s.description}</span>
                   </span>
                 </button>
@@ -183,11 +187,11 @@ export function SkillsPicker({ value, onChange, placeholder = 'Pick skills…' }
             <Badge
               key={name}
               variant="outline"
-              className="font-mono text-[11px] cursor-pointer hover:bg-destructive/10 hover:border-destructive/40"
+              className="text-[11px] cursor-pointer hover:bg-destructive/10 hover:border-destructive/40"
               onClick={() => onChange(value.filter((n) => n !== name))}
               title="Click to remove"
             >
-              {name} ×
+              {formatSkillName(name)} ×
             </Badge>
           ))}
         </div>
@@ -214,9 +218,12 @@ export function SingleSkillPicker({ value, onChange }: SingleSkillPickerProps) {
       <PopoverTrigger asChild>
         <Button type="button" variant="outline" className="w-full justify-between font-normal" disabled={isLoading}>
           {selected ? (
-            <span className="font-mono">{selected.name}</span>
+            <span className="flex items-baseline gap-1.5 truncate">
+              <span className="truncate">{formatSkillName(selected.name)}</span>
+              <span className="text-[10px] font-mono text-muted-foreground/70 shrink-0">/{selected.name}</span>
+            </span>
           ) : value ? (
-            <span className="font-mono">{value}</span>
+            <span className="font-mono truncate">{value}</span>
           ) : (
             <span className="text-muted-foreground">None — skip this hook</span>
           )}
@@ -243,7 +250,10 @@ export function SingleSkillPicker({ value, onChange }: SingleSkillPickerProps) {
               >
                 <Check className={cn('mt-0.5 size-4 shrink-0', s.name === value ? 'text-primary' : 'text-transparent')} />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-mono">{s.name}</span>
+                  <span className="flex items-baseline gap-1.5">
+                    <span className="text-sm font-medium truncate">{formatSkillName(s.name)}</span>
+                    <span className="text-[10px] font-mono text-muted-foreground/70 shrink-0">/{s.name}</span>
+                  </span>
                   <span className="block text-[11px] text-muted-foreground line-clamp-1">{s.description}</span>
                 </span>
               </button>
