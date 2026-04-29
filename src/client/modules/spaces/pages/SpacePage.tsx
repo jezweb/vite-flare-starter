@@ -196,8 +196,14 @@ export function SpacePage() {
           <MemberList members={members} users={users} online={online} />
         </aside>
 
-        {/* Center — main timeline */}
-        <main className="flex flex-1 min-w-0 flex-col">
+        {/* Center — main timeline.
+            min-w-[260px] guards against the catastrophic squeeze that
+            happens at lg viewports (1024-1280px) when all three panes
+            are open: app sidebar (256) + members aside (256) + thread
+            aside (384) leaves ~128px for the timeline, and `break-words`
+            then breaks individual characters one per line. The minimum
+            forces the parent to allow horizontal scroll instead. */}
+        <main className="flex min-w-[260px] flex-1 flex-col">
           <div ref={messageScrollRef} className="flex-1 overflow-y-auto px-4 py-3">
             {messages.length === 0 ? (
               <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-sm text-muted-foreground">
