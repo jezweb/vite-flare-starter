@@ -183,6 +183,7 @@ export function InboxPage() {
     const ok = results.filter((r) => r.status === 'fulfilled').length
     const failed = results.length - ok
     queryClient.invalidateQueries({ queryKey: ['inbox'] })
+    queryClient.invalidateQueries({ queryKey: ['notifications'] })
     clearSelection()
     if (failed === 0) toast.success(`Marked ${ok} as read`)
     else toast.error(`Marked ${ok}, ${failed} failed`)
@@ -200,6 +201,7 @@ export function InboxPage() {
     const failed = results.length - ok
     queryClient.invalidateQueries({ queryKey: ['inbox'] })
     queryClient.invalidateQueries({ queryKey: ['approvals'] })
+    queryClient.invalidateQueries({ queryKey: ['notifications'] })
     clearSelection()
     if (failed === 0) toast.success(`Approved ${ok}`)
     else toast.error(`Approved ${ok}, ${failed} failed`)
@@ -219,6 +221,7 @@ export function InboxPage() {
     const failed = results.length - ok
     queryClient.invalidateQueries({ queryKey: ['inbox'] })
     queryClient.invalidateQueries({ queryKey: ['approvals'] })
+    queryClient.invalidateQueries({ queryKey: ['notifications'] })
     clearSelection()
     if (failed === 0) toast.success(`Rejected ${ok}`)
     else toast.error(`Rejected ${ok}, ${failed} failed`)
@@ -231,9 +234,10 @@ export function InboxPage() {
     if (row.source === 'approval') {
       navigate(`/dashboard/approvals?focus=${row.id}`)
     } else if (row.readAt == null) {
-      void apiClient.patch(`/api/inbox/${row.id}`, { read: true }).then(() =>
-        queryClient.invalidateQueries({ queryKey: ['inbox'] }),
-      )
+      void apiClient.patch(`/api/inbox/${row.id}`, { read: true }).then(() => {
+        queryClient.invalidateQueries({ queryKey: ['inbox'] })
+        queryClient.invalidateQueries({ queryKey: ['notifications'] })
+      })
     }
   }
 

@@ -25,7 +25,7 @@ import {
   PromptInputActionAddScreenshotCountdown,
   PromptInputActionAddScreenCapture,
 } from '../components/ScreenCaptureMenuItems'
-import { Plus, MessageSquare, MessagesSquare, Download, ArrowDown, Paperclip, FileText, Folder, X, FileQuestion } from 'lucide-react'
+import { Plus, MessageSquare, MessagesSquare, Download, ArrowDown, Paperclip, FileText, Folder, X, FileQuestion, ChevronLeft } from 'lucide-react'
 import { Link as RouterLink } from 'react-router-dom'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 import {
@@ -213,6 +213,13 @@ export function ChatPage() {
       lastHydratedIdRef.current = conversationId
       navigate(`/dashboard/chat/${conversationId}${projectSuffix}`, { replace: true })
       queryClient.invalidateQueries({ queryKey: ['conversations'] })
+      // Also invalidate the parent project's detail (which embeds the
+      // conversations list). Without this, navigating back to the project
+      // shows the stale empty-state until a hard refresh — even though
+      // the new conversation IS persisted server-side.
+      if (urlProjectId) {
+        queryClient.invalidateQueries({ queryKey: ['projects', urlProjectId] })
+      }
     }
   }, [conversationId, urlConversationId, urlProjectId, messages.length, navigate, queryClient])
 
@@ -783,41 +790,50 @@ export function ChatPage() {
                   the dashboard sidebar toggle in SiteHeader which uses PanelLeft. */}
               <MessagesSquare className="size-4" />
             </Button>
-            <MessageSquare className="size-4 text-muted-foreground ml-1" />
-            <h1 className="text-sm font-medium truncate max-w-[28rem]" title={activeConversation?.title ?? 'AI Chat'}>
-              {activeConversation?.title ?? 'AI Chat'}
-            </h1>
-            {/* In-project pill: click name → project page; × detaches. For
-                new chats launched from a project page we show the pill
-                immediately (optimistic) even before the first message
-                persists. */}
-            {activeProject && (
-              <div className="ml-2 inline-flex items-center gap-1 rounded-full border border-border bg-muted/50 pl-2 pr-1 py-0.5 text-xs">
-                <Folder className="size-3 text-muted-foreground" />
+            {/* In-project breadcrumb: when this chat belongs to a project,
+                lead with a prominent "← {Project name}" back-link so the
+                user always knows (a) they're inside a project context and
+                (b) how to get back. The previous design used a small pill
+                next to the chat title which read as decoration, not
+                wayfinding — users coming back from a chat lost track of
+                the parent project entirely. */}
+            {activeProject ? (
+              <>
                 <RouterLink
                   to={`/dashboard/projects/${activeProject.id}`}
-                  className="font-medium hover:underline underline-offset-2"
-                  title={`Project: ${activeProject.name}`}
+                  className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                  title={`Back to project: ${activeProject.name}`}
                 >
-                  {activeProject.name}
+                  <ChevronLeft className="size-4" />
+                  <Folder className="size-3.5" />
+                  <span className="truncate max-w-[14rem]">{activeProject.name}</span>
                 </RouterLink>
+                <span className="text-muted-foreground/50">/</span>
+                <h1 className="text-sm font-medium truncate max-w-[24rem]" title={activeConversation?.title ?? 'New chat'}>
+                  {activeConversation?.title ?? 'New chat'}
+                </h1>
                 {/* Detach — only for persisted conversations (no server-side
-                    PATCH exists for a not-yet-created chat). If the chat is
-                    only declared via urlProjectId, user can just navigate
-                    away; no "detach" affordance needed yet. */}
+                    PATCH exists for a not-yet-created chat). */}
                 {urlConversationId && storedProjectId && (
                   <Button
                     variant="ghost"
                     size="icon-xs"
-                    className="size-4 rounded-full hover:bg-muted-foreground/10 text-muted-foreground hover:text-foreground"
+                    className="ml-1 size-5 rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
                     onClick={() => moveConversation.mutate({ id: urlConversationId, projectId: null })}
                     title="Remove from project"
                     aria-label="Remove from project"
                   >
-                    <X className="size-2.5" />
+                    <X className="size-3" />
                   </Button>
                 )}
-              </div>
+              </>
+            ) : (
+              <>
+                <MessageSquare className="size-4 text-muted-foreground ml-1" />
+                <h1 className="text-sm font-medium truncate max-w-[28rem]" title={activeConversation?.title ?? 'AI Chat'}>
+                  {activeConversation?.title ?? 'AI Chat'}
+                </h1>
+              </>
             )}
           </div>
           <div className="flex items-center gap-1">

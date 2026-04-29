@@ -156,17 +156,29 @@ function ApprovalCard({ approval, highlight }: { approval: Approval; highlight: 
   )
   const [note, setNote] = useState('')
 
+  // Both ['approvals'] (this page) and ['inbox'] (unified review surface)
+  // surface this row. Invalidate both so approving/rejecting from one view
+  // doesn't leave the other stale on next visit. Same pattern as
+  // chat→project conversation creation invalidating ['projects', id].
   const approve = useMutation({
     mutationFn: (opts?: { alwaysAllow?: boolean }) =>
       apiClient.post(`/api/approvals/${approval.id}/approve`, {
         note: note || undefined,
         ...(opts?.alwaysAllow && { alwaysAllow: true }),
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['approvals'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['approvals'] })
+      queryClient.invalidateQueries({ queryKey: ['inbox'] })
+      queryClient.invalidateQueries({ queryKey: ['notifications'] })
+    },
   })
   const reject = useMutation({
     mutationFn: () => apiClient.post(`/api/approvals/${approval.id}/reject`, { note: note || undefined }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['approvals'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['approvals'] })
+      queryClient.invalidateQueries({ queryKey: ['inbox'] })
+      queryClient.invalidateQueries({ queryKey: ['notifications'] })
+    },
   })
 
   const isPending = approval.status === 'pending'
