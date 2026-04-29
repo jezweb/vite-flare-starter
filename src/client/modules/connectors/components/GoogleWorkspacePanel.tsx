@@ -151,10 +151,10 @@ export function GoogleWorkspacePanel() {
               </>
             ) : (
               <>
-                <p className="text-xs text-muted-foreground">
-                  Give the AI direct access to Gmail, Drive, and Calendar via native Google OAuth — no MCP server needed. The AI can search mail, draft and send messages (with approval), search Drive, and read or create calendar events.
-                </p>
-                <div className="flex flex-wrap gap-1.5 pt-1">
+                {/* Boilerplate description trimmed — the scope chips
+                    below preview exactly what the AI can do, which is
+                    more concrete than a paragraph. */}
+                <div className="flex flex-wrap gap-1.5 pt-0.5">
                   {Object.values(SCOPE_LABELS).map((meta, i) => {
                     const Icon = meta.icon
                     return (

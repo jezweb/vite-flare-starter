@@ -41,7 +41,7 @@ export function FilesPage() {
     <PageContainer type="queue">
       <PageHeader
         title="Files"
-        subtitle="Drop a file here or in chat — your AI can read PDFs, images, and CSVs and use them in answers."
+        subtitle="PDFs, images, docs and more — your AI can read them and use them in answers."
         trailing={
           <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
             <DialogTrigger asChild>

@@ -179,13 +179,9 @@ export function MicrosoftWorkspacePanel() {
               </>
             ) : (
               <>
-                <p className="text-xs text-muted-foreground">
-                  Give the AI direct access to Outlook, OneDrive, and your calendar via native
-                  Microsoft 365 OAuth — no MCP server needed. The AI can search mail, send
-                  messages (with approval), search OneDrive, and read or create calendar events
-                  with optional Teams meeting links.
-                </p>
-                <div className="flex flex-wrap gap-1.5 pt-1">
+                {/* Boilerplate description trimmed — the scope chips
+                    below preview exactly what the AI can do. */}
+                <div className="flex flex-wrap gap-1.5 pt-0.5">
                   {Object.values(SCOPE_LABELS).map((meta, i) => {
                     const Icon = meta.icon
                     return (

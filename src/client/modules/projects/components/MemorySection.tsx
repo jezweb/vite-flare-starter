@@ -189,8 +189,8 @@ export function MemorySection({
             <span className="text-xs">Loading…</span>
           </div>
         ) : memoriesList.length === 0 ? (
-          <p className="text-xs text-muted-foreground italic">
-            {emptyHint ?? 'Project memory will show here after a few chats.'}
+          <p className="text-xs text-muted-foreground">
+            {emptyHint ?? 'Things the AI learns about this project — names, preferences, decisions — show up here. They get pulled into every chat in this project so you don\'t have to repeat yourself.'}
           </p>
         ) : (
           <ul className="space-y-2">

@@ -145,9 +145,15 @@ function ActivityItem({ activity }: { activity: Activity }) {
           <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 leading-3">
             {formatEntityType(activity.entityType)}
           </Badge>
-          <span className="text-sm text-muted-foreground truncate">
-            {activity.entityName || activity.entityId}
-          </span>
+          {/* Show entityName when the row has a real label. Falling
+              through to the raw entityId surfaces meaningless hex
+              ("xvIsfu0FYPuMG…") which adds zero info — the entity-type
+              badge already tells the user what was created. */}
+          {activity.entityName && (
+            <span className="text-sm text-muted-foreground truncate">
+              {activity.entityName}
+            </span>
+          )}
         </div>
         <ListRowMeta>
           <span>{formatTime(activity.createdAt)}</span>

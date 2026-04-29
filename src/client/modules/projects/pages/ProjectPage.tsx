@@ -324,8 +324,10 @@ export function ProjectPage() {
                 {project.systemPrompt}
               </p>
             ) : (
-              <p className="text-xs text-muted-foreground italic">
-                Add instructions to tailor Claude's responses
+              <p className="text-xs text-muted-foreground">
+                Tell the AI how it should behave in this project — tone of
+                voice, what to focus on, things to avoid. Applies to every
+                chat in here.
               </p>
             )}
           </div>
