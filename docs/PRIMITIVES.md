@@ -70,13 +70,41 @@ Is it a list of items the user scans top-to-bottom?
 
 | Anti-pattern | Why it's banned | Use instead |
 |---|---|---|
-| Hand-rolled `document.title = …` | Duplicates PageHeader; breaks if you forget | `<PageHeader title="…" />` |
+| Hand-rolled `document.title = …` | Duplicates PageHeader; breaks if you forget | `<PageHeader title="…" />` (or `<DetailHeader>` for detail pages) |
 | Hand-rolled `<div className="container mx-auto max-w-…"` | Picks an arbitrary width; drift | `<PageContainer type="…" />` |
 | Hand-rolled stat row | Three different shapes today | `<StatGrid items={…} />` |
 | Hand-rolled `<details>` / "Show more" toggles | Style drift | `<HelpDisclosure>` |
 | Bare `<Loader2 className="animate-spin" />` in a body | Doesn't match loaded shape | `<PageLoading variant="list" />` |
+| Hand-rolled detail-page header (back-link + h1 + actions) | Drift across detail pages | `<DetailHeader>` |
+| Hand-rolled form section (h2 + description + field group) on `form`-type pages | Settings tabs drifted before this primitive landed | `<FormSection>` with `density="comfortable"` (Card-wrapped) or `compact` (no Card) |
 | Two `<EmptyState>` impls (`components/ui/empty-state.tsx` + `client/components/EmptyState.tsx`) | Pick one; the client one is canonical (has `tips`) | `<EmptyState>` from `@/client/components/EmptyState` |
 | Per-page `space-y-{5\|7\|8}` | Off-ladder | `space-y-{1,2,3,4,6}` only |
+| `text-3xl` / `text-4xl` for page H1 | Off-scale; shouts louder than the contract | `text-2xl font-semibold tracking-tight` (PageHeader / DetailHeader) |
+| Adding a 7th page type to PageContainer | Categorisation war | `maxWidth` override prop |
+| Building a custom `<details>` with bespoke styling | Drift | `<HelpDisclosure>` |
+| Inline `agentClass` / `kind` / `slug` in user copy | Vocabulary leak | `formatAgentClass` / `formatKind` / `formatTrigger` from `@/shared/format/agent` |
+| `cn('text-sm text-muted-foreground …')` for a section description | Hand-rolled drift | `<Section description="…">` or `<FormSection description="…">` |
+
+## Verification grep recipes
+
+Run these periodically to catch drift before it spreads:
+
+```bash
+# Pages NOT using PageContainer (should be small + each one documented)
+grep -L "PageContainer" src/client/modules/*/pages/*.tsx src/client/pages/*.tsx
+
+# Hand-rolled document.title sets (should be zero outside layout + PageHeader/DetailHeader)
+grep -rn "document.title =" src/client/
+
+# Off-scale spacing
+grep -rn "space-y-[578]\|gap-[579]" src/client/
+
+# Off-scale H1 sizes
+grep -rn "text-3xl\|text-4xl" src/client/modules/
+
+# Raw agent class names in JSX (likely a vocabulary leak)
+grep -rn "memory_extraction\|inter_agent" src/client/modules/ | grep -v "format/agent"
+```
 
 ## Adding a new primitive
 

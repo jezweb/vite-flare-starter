@@ -36,13 +36,68 @@ header, density, or rhythm.
 |---|---|---|---|
 | **queue** | User triages items: Inbox, Notifications-style streams, Approvals, Activity, Routines list, Files list | `max-w-3xl` | `ListRowGroup` (no Card chrome around rows) |
 | **index** | Dwell surfaces: Projects, Spaces, Skills | `max-w-5xl` | Card grid 2–3 wide |
-| **detail** | Single-record dwell: project page, routine detail, conversation | `max-w-5xl` to `max-w-7xl` | Section blocks |
-| **form** | Create/edit: New Routine, Settings tabs, Admin tabs | `max-w-3xl` | Field groups inside Section blocks |
+| **detail** | Single-record dwell: project page, routine detail, conversation | `max-w-5xl` to `max-w-7xl` | DetailHeader + body (4 sub-patterns — see below) |
+| **form** | Create/edit: New Routine, Settings tabs, Admin tabs | `max-w-3xl` | `FormSection` blocks with field groups inside |
 | **catalog** | Marketplace: Apps, Skills browse, model picker | `max-w-5xl` | Card grid + filter sidebar |
 | **hub** | Dashboard Home only — owns the "stateful greeting + setup + recent" pattern | `max-w-5xl` | Mixed; Card panels are OK here |
 
 Pages declare their type at the top via `<PageContainer type="queue">`.
 The container picks the right max-width and outer padding.
+
+## Decision tree: which type is this page?
+
+When adding a new page, walk this tree top-to-bottom — first match wins:
+
+```
+Is the page about ONE record (project, routine, conversation, member)?
+├── Yes — single-record dwell
+│   └── type="detail"      Use DetailHeader; pick a body sub-pattern below
+│
+├── No — multiple records or no records
+    │
+    ├── Is it primarily for CREATING or EDITING data (form fields)?
+    │   ├── Yes — type="form"      max-w-3xl. FormSection + FieldGroup.
+    │   │
+    │   └── No — read-mostly
+    │       │
+    │       ├── Is it a list users SCAN top-to-bottom (one-liners, decisions, log entries)?
+    │       │   └── type="queue"     max-w-3xl. ListRowGroup. No Card chrome.
+    │       │
+    │       ├── Is it a marketplace (browse + filter + install/connect)?
+    │       │   └── type="catalog"   max-w-5xl. Card grid + filter row.
+    │       │
+    │       ├── Is it a grid of "things you'll dwell inside" (projects, workspaces, skills you'll edit)?
+    │       │   └── type="index"     max-w-5xl. Card grid 2–3 wide.
+    │       │
+    │       └── Is it Dashboard Home (mixed greeting + queue + recent + actions)?
+    │           └── type="hub"       max-w-5xl. Mixed, Card panels OK here.
+```
+
+Need a wider canvas than the type's default? Use the `maxWidth` override
+(see Admin / Components / Style Guide for examples — all `form`-type
+pages bumped to `6xl` because their content is tabular/showcase-heavy).
+**Don't add a 7th type** — `maxWidth` is the escape valve. Categorisation
+wars are how design systems get out of control.
+
+Need a fundamentally different shell (full-height chat scroller, marketing
+landing)? **Opt out** — render bespoke layout without `<PageContainer>`,
+and document why in a comment so future-you doesn't think it's drift.
+
+## Detail-page sub-patterns
+
+Every detail page uses `<DetailHeader>` (back-link + record name + status +
+actions) at the top. The body underneath has four legitimate shapes — pick
+the one that matches the user's task on this page:
+
+| Sub-pattern | When | Example |
+|---|---|---|
+| **Single column** | One thing to read, no parallel context | RoutineDetailPage (config + run history stacked) |
+| **Two-column split** | Primary content + reference panel beside it | ProjectPage (chats left, memory/instructions/files right) |
+| **Three-pane** | Realtime work surface with members/timeline/thread | SpacePage (members · messages · thread) |
+| **Tabs** | Same record viewed through different lenses | Profile detail with Activity / Comments / Files tabs |
+
+Don't mix sub-patterns inside one page (e.g. don't put tabs *inside* a
+two-column split — the mental model collapses). Pick one and commit.
 
 ---
 

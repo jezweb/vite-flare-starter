@@ -10,10 +10,9 @@
  * That's annoying but keeps slice 6 small; the form is already in
  * NewRoutinePage so a "duplicate to edit" workflow is one nav away.
  */
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { formatDistanceToNow } from 'date-fns'
 import {
-  ArrowLeft,
   Loader2,
   Play,
   Trash2,
@@ -28,6 +27,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { PageContainer } from '@/components/ui/page-container'
+import { DetailHeader } from '@/components/ui/detail-header'
 import { useState } from 'react'
 import {
   useRoutine,
@@ -86,54 +87,52 @@ export function RoutineDetailPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
-      <Button variant="ghost" size="sm" asChild className="-ml-2 text-muted-foreground">
-        <Link to="/dashboard/routines">
-          <ArrowLeft className="size-3.5" />
-          Routines
-        </Link>
-      </Button>
-
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-2xl font-semibold tracking-tight truncate">{routine.name}</h1>
+    <PageContainer type="detail" maxWidth="4xl">
+      <DetailHeader
+        title={
+          <span className="inline-flex items-center gap-2 flex-wrap">
+            <span className="truncate">{routine.name}</span>
             {!routine.enabled && <Badge variant="outline">Disabled</Badge>}
-          </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Runs the {formatAgentClass(routine.agentClass, agentRegistry)} {cadence.toLowerCase()}.
-          </p>
-          {routine.description && (
-            <p className="mt-2 text-sm text-muted-foreground">{routine.description}</p>
-          )}
-        </div>
-        <div className="shrink-0 flex items-center gap-2">
-          <Switch
-            checked={routine.enabled}
-            onCheckedChange={(next) => update.mutate({ enabled: next })}
-            aria-label={`${routine.enabled ? 'Disable' : 'Enable'} routine`}
-          />
-          <Button
-            size="sm"
-            variant="outline"
-            className="gap-1.5"
-            onClick={() => fire.mutate(routine.id)}
-            disabled={fire.isPending}
-          >
-            {fire.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Play className="size-3.5" />}
-            Fire now
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-            onClick={() => setConfirmDelete(true)}
-            aria-label="Delete routine"
-          >
-            <Trash2 className="size-3.5" />
-          </Button>
-        </div>
-      </div>
+          </span>
+        }
+        docTitle={routine.name}
+        backTo="/dashboard/routines"
+        backLabel="Routines"
+        subtitle={
+          <>
+            <span>Runs the {formatAgentClass(routine.agentClass, agentRegistry)} {cadence.toLowerCase()}.</span>
+            {routine.description && <span className="text-muted-foreground/80">· {routine.description}</span>}
+          </>
+        }
+        trailing={
+          <>
+            <Switch
+              checked={routine.enabled}
+              onCheckedChange={(next) => update.mutate({ enabled: next })}
+              aria-label={`${routine.enabled ? 'Disable' : 'Enable'} routine`}
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5"
+              onClick={() => fire.mutate(routine.id)}
+              disabled={fire.isPending}
+            >
+              {fire.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Play className="size-3.5" />}
+              Run now
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={() => setConfirmDelete(true)}
+              aria-label="Delete routine"
+            >
+              <Trash2 className="size-3.5" />
+            </Button>
+          </>
+        }
+      />
 
       <ConfirmDialog
         open={confirmDelete}
@@ -235,7 +234,7 @@ export function RoutineDetailPage() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </PageContainer>
   )
 }
 
