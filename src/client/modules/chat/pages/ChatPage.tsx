@@ -46,6 +46,7 @@ import { ConversationSizeIndicator } from '../components/ConversationSizeIndicat
 import { AttachmentTiles } from '../components/AttachmentTiles'
 import { DropOverlay } from '../components/DropOverlay'
 import { ActionChips } from '../components/ActionChips'
+import { ChatCapabilityRow } from '../components/ChatCapabilityRow'
 import { CHAT_EXAMPLES } from '@/shared/config/chat-chips'
 import { DEFAULT_MODEL_ID } from '@/shared/config/models'
 import { features } from '@/shared/config/features'
@@ -1164,6 +1165,7 @@ function EmptyStateBody({
       <p className="text-sm text-muted-foreground/60 -mt-3">
         Ask anything, drop a file, dictate with the mic, or pick a starter below.
       </p>
+      <ChatCapabilityRow />
       {modelMissingKey && (
         <div className="mx-auto max-w-xl rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-left text-xs text-amber-900 dark:text-amber-200">
           <div className="font-medium">
