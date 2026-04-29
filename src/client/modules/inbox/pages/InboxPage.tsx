@@ -522,8 +522,11 @@ function InboxRow({
   const isUnread = row.source === 'inbox' && row.readAt == null
   const isUrgent = row.importance === 'high' || (row.dueAt != null && row.dueAt * 1000 < Date.now())
 
-  const markRead = useMutation({
-    mutationFn: () => apiClient.patch(`/api/inbox/${row.id}`, { read: true }),
+  // Toggle the read state both ways — clicking a read row marks it
+  // unread again. That gives findings real interactivity (the row was
+  // looking clickable but doing nothing on the second click before).
+  const toggleRead = useMutation({
+    mutationFn: () => apiClient.patch(`/api/inbox/${row.id}`, { read: !!isUnread }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['inbox'] }),
   })
 
@@ -534,8 +537,10 @@ function InboxRow({
     }
     if (isApproval) {
       navigate(`/dashboard/approvals?focus=${row.id}`)
-    } else if (isUnread) {
-      markRead.mutate()
+      return
+    }
+    if (row.source === 'inbox') {
+      toggleRead.mutate()
     }
   }
 
@@ -632,6 +637,8 @@ function InboxRow({
       </ListRowBody>
       <ListRowTrailing>
         {isApproval ? (
+          // Approval rows navigate to /approvals — the chevron + "Review"
+          // is honest about that.
           <Link
             to={`/dashboard/approvals?focus=${row.id}`}
             className="inline-flex items-center gap-1 text-xs text-muted-foreground group-hover/list-row:text-foreground transition-colors"
@@ -641,7 +648,13 @@ function InboxRow({
             <ChevronRight className="size-3" />
           </Link>
         ) : (
-          <ChevronRight className="size-3.5 text-muted-foreground/50 group-hover/list-row:text-foreground transition-colors" />
+          // Findings don't navigate anywhere — clicking them toggles the
+          // read state. We surface that as a hover hint instead of a
+          // chevron so users don't expect a detail page that doesn't
+          // exist yet.
+          <span className="text-[10px] text-muted-foreground/0 group-hover/list-row:text-muted-foreground transition-colors">
+            {isUnread ? 'Mark read' : 'Mark unread'}
+          </span>
         )}
       </ListRowTrailing>
     </ListRow>

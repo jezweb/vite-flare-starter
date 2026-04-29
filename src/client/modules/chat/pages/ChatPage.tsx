@@ -103,6 +103,11 @@ export function ChatPage() {
 
   // Share Target: when shared from mobile, params arrive as ?title=&text=&url=
   const sharedText = searchParams.get('text') || searchParams.get('title') || searchParams.get('url')
+  // Project quick-chat: ProjectPage navigates here with `?q=<text>` after the
+  // user types in "How can I help you today?" and clicks Start chat. We
+  // auto-send so they land mid-stream rather than facing a fresh empty
+  // input — without this their typed text would silently vanish.
+  const queryText = searchParams.get('q')
   // projectId stays in the URL until the first message is sent; on creation
   // the server stamps the new conversation with the project and the row
   // becomes source-of-truth. Any further ?projectId= is ignored for existing
@@ -291,6 +296,19 @@ export function ChatPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sharedText])
+
+  // Project quick-chat: same pattern. Strip `q` from the URL after firing
+  // so a refresh doesn't double-send. Keep `projectId` so the new
+  // conversation stays attached to the project.
+  useEffect(() => {
+    if (queryText && messages.length === 0 && !isLoading) {
+      sendMessage({ text: queryText })
+      const next = new URLSearchParams(searchParams)
+      next.delete('q')
+      setSearchParams(next, { replace: true })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryText])
 
   // Regenerate: uses AI SDK's built-in regenerate (removes last assistant + re-sends)
   const handleRegenerate = useCallback(() => {

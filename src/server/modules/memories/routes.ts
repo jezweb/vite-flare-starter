@@ -238,7 +238,7 @@ app.get('/user-mode', async (c) => {
     .from(user)
     .where(eq(user.id, userId))
     .limit(1)
-  return c.json({ memoryUpdateMode: row?.memoryUpdateMode ?? 'ask' })
+  return c.json({ memoryUpdateMode: row?.memoryUpdateMode ?? 'auto' })
 })
 
 app.patch('/user-mode', zValidator('json', userModeSchema), async (c) => {

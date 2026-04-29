@@ -221,29 +221,6 @@ function ApprovalCard({ approval, highlight }: { approval: Approval; highlight: 
       <CardContent className="space-y-3 pt-0">
         {isMemory && <MemoryProposalPreview payload={approval.payload} />}
 
-        <details className="group">
-          <summary className="inline-flex cursor-pointer items-center gap-1 text-xs text-muted-foreground select-none hover:text-foreground">
-            <ChevronRight className="size-3 transition-transform group-open:rotate-90" />
-            Technical details
-          </summary>
-          <div className="mt-2 space-y-2 rounded-md border bg-muted/20 p-3">
-            <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[11px]">
-              <dt className="text-muted-foreground">Agent class</dt>
-              <dd className="font-mono break-all">{approval.agentClass}</dd>
-              <dt className="text-muted-foreground">Instance</dt>
-              <dd className="font-mono break-all">{approval.agentName}</dd>
-              <dt className="text-muted-foreground">Action ID</dt>
-              <dd className="font-mono">{approval.action}</dd>
-            </dl>
-            <div>
-              <p className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Raw payload</p>
-              <pre className="rounded border bg-background p-2 text-[11px] leading-relaxed font-mono whitespace-pre-wrap break-all max-h-56 overflow-auto">
-                {JSON.stringify(approval.payload, null, 2)}
-              </pre>
-            </div>
-          </div>
-        </details>
-
         {approval.error && (
           <div className="rounded-md border border-destructive/40 bg-destructive/5 p-2 text-xs text-destructive">
             <strong>Error:</strong> {approval.error}
@@ -255,15 +232,12 @@ function ApprovalCard({ approval, highlight }: { approval: Approval; highlight: 
           </div>
         )}
 
+        {/* Action buttons live RIGHT after the proposal preview so the
+            user can decide without scrolling past technical details and
+            an audit-log input. The technical details + note are still
+            available below for power users who want them. */}
         {isPending && (
-          <div className="space-y-2 pt-2 border-t">
-            <input
-              type="text"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="Optional note for the audit log"
-              className="w-full text-xs border rounded px-2 py-1 bg-background"
-            />
+          <div className="space-y-2 pt-1">
             <div className="flex flex-wrap items-center gap-2">
               <Button
                 size="sm"
@@ -312,8 +286,54 @@ function ApprovalCard({ approval, highlight }: { approval: Approval; highlight: 
                 {(approve.error as Error)?.message ?? 'Approval failed'}
               </div>
             )}
+
+            {/* Optional note — collapsed by default. Most users won't
+                add one; power users / compliance can expand. The text
+                is sent to the approve/reject endpoint and stored on
+                the approval row. */}
+            <details className="group pt-1">
+              <summary className="inline-flex cursor-pointer items-center gap-1 text-[11px] text-muted-foreground select-none hover:text-foreground">
+                <ChevronRight className="size-3 transition-transform group-open:rotate-90" />
+                Add a note (optional)
+              </summary>
+              <div className="mt-1.5">
+                <input
+                  type="text"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="Why? Stored with this decision so future-you knows."
+                  className="w-full text-xs border rounded px-2 py-1.5 bg-background"
+                />
+              </div>
+            </details>
           </div>
         )}
+
+        {/* Technical details — pushed below action buttons since most
+            users never open this. Useful for debugging which agent
+            asked + what payload it proposed. */}
+        <details className="group">
+          <summary className="inline-flex cursor-pointer items-center gap-1 text-xs text-muted-foreground select-none hover:text-foreground">
+            <ChevronRight className="size-3 transition-transform group-open:rotate-90" />
+            Technical details
+          </summary>
+          <div className="mt-2 space-y-2 rounded-md border bg-muted/20 p-3">
+            <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[11px]">
+              <dt className="text-muted-foreground">Agent class</dt>
+              <dd className="font-mono break-all">{approval.agentClass}</dd>
+              <dt className="text-muted-foreground">Instance</dt>
+              <dd className="font-mono break-all">{approval.agentName}</dd>
+              <dt className="text-muted-foreground">Action ID</dt>
+              <dd className="font-mono">{approval.action}</dd>
+            </dl>
+            <div>
+              <p className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Raw payload</p>
+              <pre className="rounded border bg-background p-2 text-[11px] leading-relaxed font-mono whitespace-pre-wrap break-all max-h-56 overflow-auto">
+                {JSON.stringify(approval.payload, null, 2)}
+              </pre>
+            </div>
+          </div>
+        </details>
       </CardContent>
     </Card>
   )

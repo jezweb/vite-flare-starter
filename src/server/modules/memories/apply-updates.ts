@@ -232,7 +232,7 @@ async function loadUserMode(
     .from(user)
     .where(eq(user.id, userId))
     .limit(1)
-  return (row?.memoryUpdateMode as 'ask' | 'auto' | 'never') ?? 'ask'
+  return (row?.memoryUpdateMode as 'ask' | 'auto' | 'never') ?? 'auto'
 }
 
 async function loadProjectMode(
@@ -244,7 +244,7 @@ async function loadProjectMode(
     .from(projects)
     .where(eq(projects.id, projectId))
     .limit(1)
-  return (row?.memoryUpdateMode as 'ask' | 'auto' | 'never') ?? 'ask'
+  return (row?.memoryUpdateMode as 'ask' | 'auto' | 'never') ?? 'auto'
 }
 
 // ─── Approval-time handler ────────────────────────────────────────────

@@ -49,11 +49,11 @@ export const projects = sqliteTable('projects', {
   archivedAt: integer('archived_at', { mode: 'timestamp' }),
   /**
    * Memory update trust mode (Phase 3 / Extension E).
-   * 'ask'    → updates queue to approvals module before applying (default for new projects)
-   * 'auto'   → updates apply immediately, no approval needed
+   * 'ask'    → updates queue to approvals module before applying
+   * 'auto'   → updates apply immediately, no approval needed (default — best UX for new users)
    * 'never'  → auto-job is skipped entirely (manual regen still works)
    */
-  memoryUpdateMode: text('memory_update_mode', { enum: ['ask', 'auto', 'never'] }).notNull().default('ask'),
+  memoryUpdateMode: text('memory_update_mode', { enum: ['ask', 'auto', 'never'] }).notNull().default('auto'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 }, (table) => [

@@ -28,10 +28,11 @@ export const user = sqliteTable('user', {
     .$defaultFn(() => ({ theme: 'default', mode: 'system' })),
   /**
    * Memory update trust mode for user-scope memories (Phase 3 / Extension E).
-   * Default 'ask' — first-time users see the diff approval flow before auto-mode.
+   * Default 'auto' — the AI's memory updates apply automatically. Users
+   * who want diff-review can flip to 'ask' from Settings → Memory.
    * Stored on the user table (better-auth requires camelCase column names).
    */
-  memoryUpdateMode: text('memoryUpdateMode', { enum: ['ask', 'auto', 'never'] }).notNull().default('ask'),
+  memoryUpdateMode: text('memoryUpdateMode', { enum: ['ask', 'auto', 'never'] }).notNull().default('auto'),
   createdAt: isoTimestamp('createdAt').notNull().$defaultFn(() => new Date()),
   updatedAt: isoTimestamp('updatedAt').notNull().$defaultFn(() => new Date()),
 })
