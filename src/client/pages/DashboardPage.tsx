@@ -295,7 +295,7 @@ function QuickActions() {
   const items: { to: string; label: string; icon: LucideIcon }[] = [
     { to: '/dashboard/chat', label: 'AI Chat', icon: MessageSquare },
     { to: '/dashboard/skills', label: 'Skills', icon: Zap },
-    { to: '/dashboard/connectors', label: 'Connections', icon: Plug },
+    { to: '/dashboard/connections', label: 'Connections', icon: Plug },
     { to: '/dashboard/projects', label: 'Projects', icon: FileText },
   ]
   return (

@@ -13,7 +13,7 @@
  * chip composes internal layout (dot + icon + label spans) which
  * violates Slot's single-child contract.
  *
- *   <Link to="/dashboard/connectors" className="rounded-full">
+ *   <Link to="/dashboard/connections" className="rounded-full">
  *     <CapabilityChip icon={Mail} label="Gmail" />
  *   </Link>
  */

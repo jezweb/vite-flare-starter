@@ -94,7 +94,7 @@ export function ChatCapabilityRow() {
   if (totalActive === 0 && skillCount === 0) {
     return (
       <CapabilityRow className="justify-center pt-1">
-        <Link to="/dashboard/connectors" className="rounded-full hover:opacity-80 transition-opacity">
+        <Link to="/dashboard/connections" className="rounded-full hover:opacity-80 transition-opacity">
           <CapabilityChip state="inactive" icon={Plug} label="Connect apps to extend chat" />
         </Link>
       </CapabilityRow>
@@ -106,7 +106,7 @@ export function ChatCapabilityRow() {
       {googleProducts.map((p) => (
         <Link
           key={`g-${p.label}`}
-          to="/dashboard/connectors"
+          to="/dashboard/connections"
           className="rounded-full hover:opacity-80 transition-opacity"
         >
           <CapabilityChip icon={p.icon} label={p.label} />
@@ -115,7 +115,7 @@ export function ChatCapabilityRow() {
       {microsoftProducts.map((p) => (
         <Link
           key={`m-${p.label}`}
-          to="/dashboard/connectors"
+          to="/dashboard/connections"
           className="rounded-full hover:opacity-80 transition-opacity"
         >
           <CapabilityChip icon={p.icon} label={p.label} />
@@ -124,7 +124,7 @@ export function ChatCapabilityRow() {
       {activeConnections.map((c) => (
         <Link
           key={c.id}
-          to="/dashboard/connectors"
+          to="/dashboard/connections"
           className="rounded-full hover:opacity-80 transition-opacity"
         >
           <CapabilityChip icon={Plug} label={c.displayName} />

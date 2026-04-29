@@ -69,7 +69,7 @@ const GO_TO_TARGETS: Record<string, string> = {
   c: '/dashboard/chat',
   p: '/dashboard/projects',
   x: '/dashboard/spaces',
-  a: '/dashboard/connectors',
+  a: '/dashboard/connections',
   s: '/dashboard/skills',
   r: '/dashboard/routines',
 }

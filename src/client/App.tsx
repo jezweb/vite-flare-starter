@@ -191,8 +191,17 @@ function App() {
             <Route path="routines/:routineId" element={<RoutineDetailPage />} />
             <Route path="organization" element={<OrganizationPage />} />
 
-            {/* MCP Connectors — per-user OAuth + bearer connections */}
-            <Route path="connectors" element={<ConnectorsPage />} />
+            {/* Per-user OAuth + bearer connections. URL canonical at
+                `/connections` so it matches the sidebar label. Internal
+                code still uses `connector` as the noun (one connector =
+                one provider; one connection = one user's instance of
+                that provider). The visible URL just sticks with the
+                user-facing word. */}
+            <Route path="connections" element={<ConnectorsPage />} />
+            {/* Legacy alias — `/connectors` was the old canonical path.
+                Redirect for any in-flight bookmarks. Safe to remove once
+                we're confident no traffic still lands there. */}
+            <Route path="connectors" element={<Navigate to="/dashboard/connections" replace />} />
 
             {/* Voice agent reference — @cloudflare/voice + agents SDK.
                 Gated behind `voiceAgent` feature flag (default OFF). When

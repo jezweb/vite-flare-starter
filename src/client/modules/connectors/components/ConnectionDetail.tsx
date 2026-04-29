@@ -341,7 +341,7 @@ function ResumeOAuthPanel({ connectionId }: { connectionId: string }) {
     authorize.mutate(connectionId, {
       onSuccess: (data) => {
         // Top-level navigation — popup-safe. The callback closes this tab's
-        // OAuth page and returns the user to /dashboard/connectors.
+        // OAuth page and returns the user to /dashboard/connections.
         window.location.href = data.authorizationUrl
       },
       onError: (err) => {

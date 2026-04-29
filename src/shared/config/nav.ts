@@ -94,7 +94,7 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     label: 'Setup',
     items: [
-      { to: '/dashboard/connectors', label: 'Connections', icon: Plug, feature: 'connectors' },
+      { to: '/dashboard/connections', label: 'Connections', icon: Plug, feature: 'connectors' },
       { to: '/dashboard/skills', label: 'Skills', icon: Zap, feature: 'skills' },
       { to: '/dashboard/routines', label: 'Routines', icon: Repeat },
     ],

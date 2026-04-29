@@ -208,7 +208,7 @@ function callbackPage(args: { status: 'success' | 'error'; message?: string }): 
 ${body}
 <script>
   try { window.opener && window.opener.postMessage({ type: 'google-workspace', status: ${JSON.stringify(args.status)} }, '*'); } catch (_) {}
-  setTimeout(() => { window.location.href = '/dashboard/connectors' }, 1500);
+  setTimeout(() => { window.location.href = '/dashboard/connections' }, 1500);
 </script>
 </body></html>`
 }
