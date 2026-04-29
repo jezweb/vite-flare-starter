@@ -404,6 +404,45 @@ Fork, modify, add your own.
 - Google OAuth with optional domain restriction via Google Cloud Console.
 - Session management: 7-day expiry, revoke on password change.
 - Admin role via `ADMIN_EMAILS` env var.
+- **last-login-method** — better-auth plugin drops a
+  `better-auth.last_used_login_method` cookie after each successful
+  sign-in. The login page reads it client-side and surfaces a "Last
+  used" badge so returning users skip straight to their preferred
+  provider. Pure UX nicety — cookie-only, no DB migration.
+
+### Test-auth (headless agent login)
+
+When `TEST_AUTH_TOKEN` is set as a wrangler secret, better-auth's
+`testUtils()` plugin loads and `/api/test-auth/*` exposes a thin HTTP
+wrapper for headless agents. Without the env var, the plugin isn't
+loaded and every endpoint returns 404.
+
+```bash
+# Mint cookies for a test user (creates if needed)
+curl -X POST $URL/api/test-auth/cookies \
+  -H "X-Test-Auth: $TEST_AUTH_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{ "email": "alice@test.vite-flare.local", "name": "Alice" }'
+# → { user, cookies: [{ name, value, domain, path, httpOnly, ... }] }
+#   cookies are Playwright/Puppeteer-compatible
+
+# Tear down — delete every test-domain user
+curl -X POST $URL/api/test-auth/cleanup -H "X-Test-Auth: $TEST_AUTH_TOKEN"
+```
+
+Test agents can mint different sessions per call (different email =
+different user). The email pattern is locked to `*@test.<anything>.local`
+so the endpoint can never accidentally take over a real account. The
+secret is constant-time compared.
+
+To enable in your fork:
+
+```bash
+printf "$(openssl rand -hex 32)" | npx wrangler secret put TEST_AUTH_TOKEN
+```
+
+Lower-level details: `src/server/modules/test-auth/routes.ts` (module
+docstring covers the security model).
 
 ---
 

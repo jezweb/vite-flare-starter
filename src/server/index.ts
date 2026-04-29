@@ -47,6 +47,7 @@ import approvalsRoutes from './modules/approvals/routes'
 import routinesRoutes from './modules/routines/routes'
 import inboxRoutes from './modules/inbox/routes'
 import agentsRoutes from './lib/agents/routes'
+import testAuthRoutes from './modules/test-auth/routes'
 import webhookAgentsRoutes from './modules/webhook-agents/routes'
 import agentObservabilityRoutes from './modules/agent-observability/routes'
 import entitiesRoutes from './modules/entities/routes'
@@ -312,6 +313,9 @@ app.route('/api/conversations', conversationsRoutes)
 app.route('/api/spaces', spacesRoutes)
 app.route('/api/messages', messagesRoutes)
 app.route('/api/search', globalSearchRoutes)
+// Test-auth lives behind a TEST_AUTH_TOKEN env gate; if the secret
+// isn't set, every endpoint here returns 404. See module docstring.
+app.route('/api/test-auth', testAuthRoutes)
 app.route('/api/projects', projectsRoutes)
 app.route('/api/memories', memoriesRoutes)
 app.route('/api/comments', commentsRoutes)

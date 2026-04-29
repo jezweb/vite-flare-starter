@@ -1,4 +1,5 @@
 import { createAuthClient } from 'better-auth/react'
+import { lastLoginMethodClient } from 'better-auth/client/plugins'
 
 /**
  * Better-auth client for React
@@ -33,7 +34,27 @@ type AuthClientOptions = Parameters<typeof createAuthClient>[0] & {
 export const authClient = createAuthClient({
   baseURL: import.meta.env['VITE_API_URL'] || window.location.origin,
   sessionOptions: { refetchOnWindowFocus: false },
+  plugins: [lastLoginMethodClient()],
 } satisfies AuthClientOptions as AuthClientOptions)
 
 // Export commonly used hooks for convenience
 export const { useSession, signIn, signUp, signOut } = authClient
+
+/**
+ * Read the `better-auth.last_used_login_method` cookie set by the
+ * lastLoginMethod() server plugin after a successful sign-in. Returns
+ * 'google' / 'email' / 'magic-link' / etc., or null on first visit.
+ *
+ * Used by SignInPage to surface a "Last used: Google" hint and let
+ * returning users skip straight to their preferred provider.
+ *
+ * The action is registered via `lastLoginMethodClient()` in plugins
+ * above. Cast through `unknown` because the AuthClientOptions cast in
+ * the createAuthClient call swallows plugin-action type inference.
+ */
+export function getLastUsedLoginMethod(): string | null {
+  const client = authClient as unknown as {
+    getLastUsedLoginMethod?: () => string | null
+  }
+  return client.getLastUsedLoginMethod?.() ?? null
+}

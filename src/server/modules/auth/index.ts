@@ -1,5 +1,6 @@
 import { betterAuth } from 'better-auth'
 import { organization } from 'better-auth/plugins/organization'
+import { testUtils, lastLoginMethod } from 'better-auth/plugins'
 import type { D1Database } from '@cloudflare/workers-types'
 import { SESSION } from '@/shared/config/constants'
 import { logActivity } from '@/server/modules/activity/log'
@@ -56,6 +57,7 @@ export function createAuthFromEnv(d1: D1Database, env: Record<string, unknown>) 
     ENABLE_EMAIL_LOGIN: env['ENABLE_EMAIL_LOGIN'] as string | undefined,
     ENABLE_EMAIL_SIGNUP: env['ENABLE_EMAIL_SIGNUP'] as string | undefined,
     TRUSTED_ORIGINS: env['TRUSTED_ORIGINS'] as string | undefined,
+    TEST_AUTH_TOKEN: env['TEST_AUTH_TOKEN'] as string | undefined,
     EMAIL: env['EMAIL'],
     SEND_EMAIL: env['SEND_EMAIL'],
   })
@@ -75,6 +77,13 @@ export function createAuth(
     ENABLE_EMAIL_LOGIN?: string // Set to 'true' to enable email/password (default: disabled)
     ENABLE_EMAIL_SIGNUP?: string // Set to 'true' to allow signups (requires ENABLE_EMAIL_LOGIN)
     TRUSTED_ORIGINS?: string
+    /**
+     * When set, loads better-auth's testUtils plugin so headless agents
+     * (Playwright, audit sub-agents) can mint real session cookies via
+     * the /api/test-auth endpoints. Production-safe: leaving this unset
+     * means the plugin isn't loaded and the endpoints return 404.
+     */
+    TEST_AUTH_TOKEN?: string
     // Optional Cloudflare email bindings — the service wrapper uses whichever is present.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     EMAIL?: any
@@ -357,7 +366,19 @@ export function createAuth(
     //
     // Migration 0030_organization_plugin.sql provides the tables.
     // Plugin auto-detects them and exposes /api/auth/organization/*.
+    //
+    // testUtils() is loaded ONLY when TEST_AUTH_TOKEN is set so headless
+    // agents can mint real session cookies via /api/test-auth/*. Without
+    // the env var, the plugin isn't loaded and the test-auth endpoints
+    // return 404 — production-safe by default.
+    //
+    // lastLoginMethod() drops a `better-auth.last_used_login_method`
+    // cookie after successful auth so the login page can pre-highlight
+    // the user's preferred provider on return ("Continue with Google"
+    // vs email). Pure UX nicety — cookie-only, no DB migration.
     plugins: [
+      lastLoginMethod(),
+      ...(env.TEST_AUTH_TOKEN ? [testUtils()] : []),
       organization({
         // Default roles: owner, admin, member. Forks needing custom
         // roles configure `ac` here per the AC docs.

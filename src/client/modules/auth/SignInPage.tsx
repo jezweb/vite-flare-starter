@@ -13,7 +13,7 @@
  */
 import { useState, useEffect, useMemo, FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { authClient } from '@/client/lib/auth'
+import { authClient, getLastUsedLoginMethod } from '@/client/lib/auth'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -70,6 +70,11 @@ export function SignInPage() {
   // Auth config state
   const [authConfig, setAuthConfig] = useState<AuthConfig | null>(null)
   const [configLoading, setConfigLoading] = useState(true)
+
+  // Last login method — read from cookie set by lastLoginMethod() server
+  // plugin after successful sign-in. Drives the "Last used" hint that
+  // helps returning users skip straight to their preferred provider.
+  const lastMethod = useMemo(() => getLastUsedLoginMethod(), [])
 
   // Fetch auth config on mount — with a 5s timeout so a slow/stuck server
   // doesn't leave the page on skeletons forever. Falls back to "show all"
@@ -227,6 +232,11 @@ export function SignInPage() {
                     <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                   </svg>
                   {loading ? 'Signing in...' : 'Continue with Google'}
+                  {lastMethod === 'google' && (
+                    <span className="ml-2 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
+                      Last used
+                    </span>
+                  )}
                 </Button>
                 <FieldDescription className="text-center text-xs leading-relaxed">
                   Google sign-in lets the app securely connect to Workspace tools (Gmail, Drive, Calendar)
@@ -293,6 +303,11 @@ export function SignInPage() {
                 <Field>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? 'Signing in...' : 'Login'}
+                    {lastMethod === 'email' && (
+                      <span className="ml-2 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
+                        Last used
+                      </span>
+                    )}
                   </Button>
                   {authConfig?.googleEnabled && (
                     <Button
@@ -313,6 +328,11 @@ export function SignInPage() {
                         <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                       </svg>
                       Login with Google
+                      {lastMethod === 'google' && (
+                        <span className="ml-2 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
+                          Last used
+                        </span>
+                      )}
                     </Button>
                   )}
                   {authConfig?.emailSignupEnabled && (
