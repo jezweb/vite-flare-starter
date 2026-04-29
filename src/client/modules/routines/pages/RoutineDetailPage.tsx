@@ -92,7 +92,7 @@ export function RoutineDetailPage() {
         title={
           <span className="inline-flex items-center gap-2 flex-wrap">
             <span className="truncate">{routine.name}</span>
-            {!routine.enabled && <Badge variant="outline">Disabled</Badge>}
+            {!routine.enabled && <Badge variant="outline">Paused</Badge>}
           </span>
         }
         docTitle={routine.name}

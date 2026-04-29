@@ -40,7 +40,7 @@ export function SettingsPage() {
     { value: 'security', label: 'Security' },
     { value: 'sessions', label: 'Sessions' },
     ...(features.apiTokens ? [{ value: 'api-tokens', label: 'API Tokens' }] : []),
-    ...(showChatTab ? [{ value: 'ai', label: 'AI' }] : []),
+    ...(showChatTab ? [{ value: 'ai', label: 'Chat' }] : []),
     { value: 'memory', label: 'Memory' },
     { value: 'preferences', label: 'Preferences' },
   ]

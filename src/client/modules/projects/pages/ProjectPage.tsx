@@ -234,8 +234,12 @@ export function ProjectPage() {
               disabled={isArchived}
             />
             <div className="flex items-center justify-between">
+              {/* Show the project's model override if set; otherwise stay
+                  silent so a defaulted project doesn't read "Default model"
+                  (which sounds like a placeholder). The chat page always
+                  shows the actual model selector. */}
               <span className="text-xs text-muted-foreground">
-                {project.defaultModel ?? 'Default model'}
+                {project.defaultModel ?? ''}
               </span>
               <Button type="submit" size="sm" disabled={!chatInput.trim() || isArchived}>
                 <Plus className="size-3.5 mr-1.5" />

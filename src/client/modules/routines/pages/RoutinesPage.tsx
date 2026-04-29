@@ -103,8 +103,8 @@ export function RoutinesPage() {
               {seed.isPending ? 'Seeding…' : 'Or seed two example routines'}
             </Button>
             <p className="mt-1 text-[11px] text-muted-foreground">
-              Seeds <span className="font-mono">routine-health</span> + <span className="font-mono">youtube-digest</span> as disabled
-              examples you can edit and enable.
+              Seeds <span className="font-mono">routine-health</span> + <span className="font-mono">youtube-digest</span> as paused
+              examples you can edit and turn on.
             </p>
           </div>
         </div>
@@ -151,7 +151,7 @@ function RoutineRow({
           <div className="flex items-center gap-2 min-w-0">
             <ListRowTitle unread>{routine.name}</ListRowTitle>
             <span className="text-[11px] text-muted-foreground shrink-0">{agentLabel}</span>
-            {!routine.enabled && <StatusPill kind="neutral" label="Disabled" />}
+            {!routine.enabled && <StatusPill kind="neutral" label="Paused" />}
           </div>
           {routine.description && (
             <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1">
