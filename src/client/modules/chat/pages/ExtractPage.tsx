@@ -4,10 +4,11 @@
  * Demonstrates AI SDK structured output via generateText + Output.object().
  * Sends text to POST /api/chat/extract with a schema selector.
  */
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { Sparkles, Copy, Check, Eraser, Wand2 } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
+import { useCopy } from '@/client/lib/use-copy'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -62,7 +63,8 @@ interface ExtractResponse {
 export function ExtractPage() {
   const [text, setText] = useState('')
   const [schema, setSchema] = useState<SchemaName>('summary')
-  const [copied, setCopied] = useState(false)
+  // Silent on error — extract output is already visible, no need for toast spam.
+  const { copy, copied } = useCopy({ toastOnError: false, resetMs: 1500 })
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
 
   const extract = useMutation({
@@ -108,23 +110,10 @@ export function ExtractPage() {
     }
   }
 
-  const handleCopy = useCallback(async () => {
+  const handleCopy = useCallback(() => {
     if (!extract.data) return
-    try {
-      await navigator.clipboard.writeText(JSON.stringify(extract.data.data, null, 2))
-      setCopied(true)
-    } catch {
-      // Clipboard blocked — silent no-op rather than error toast spam
-    }
-  }, [extract.data])
-
-  // Revert the "Copied!" button label after 1.5s so the Copy affordance
-  // recovers without keeping stale feedback around.
-  useEffect(() => {
-    if (!copied) return
-    const t = setTimeout(() => setCopied(false), 1500)
-    return () => clearTimeout(t)
-  }, [copied])
+    void copy(JSON.stringify(extract.data.data, null, 2))
+  }, [extract.data, copy])
 
   const charCount = text.length
   const isEmpty = !text.trim()

@@ -27,6 +27,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { RotateCcw, Pencil, Copy, Check, ThumbsUp, ThumbsDown, Sparkles, FileText, FileSpreadsheet, FileAudio, FileVideo, FileCode, FileArchive, File as FileIcon } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
+import { useCopy } from '@/client/lib/use-copy'
 import { cn } from '@/lib/utils'
 
 interface Props {
@@ -55,7 +56,7 @@ export const MessageRenderer = memo(function MessageRenderer({
   const isUser = message.role === 'user'
   const metadata = (message as unknown as { metadata?: MessageMetadata }).metadata
   const [editing, setEditing] = useState(false)
-  const [copied, setCopied] = useState(false)
+  const { copy, copied } = useCopy()
   const [feedback, setFeedback] = useState<'up' | 'down' | null>(null)
   const [editText, setEditText] = useState('')
 
@@ -81,12 +82,8 @@ export const MessageRenderer = memo(function MessageRenderer({
       .filter((p): p is { type: 'text'; text: string } => (p as { type: string }).type === 'text')
       .map((p) => p.text)
       .join('\n')
-    if (text) {
-      navigator.clipboard.writeText(text)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    }
-  }, [message.parts])
+    if (text) void copy(text)
+  }, [message.parts, copy])
 
   const startEdit = useCallback(() => {
     const text = (message.parts ?? [])

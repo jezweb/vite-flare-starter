@@ -36,6 +36,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { useCopy } from '@/client/lib/use-copy'
 import { useSession } from '@/client/lib/auth'
 import {
   useUpdateSpaceMembership,
@@ -74,13 +75,11 @@ export function SpaceHeaderMenu({ space }: Props) {
   const isPinned = !!meMember && meMember.pinnedToSidebar
   const notificationLevel = meMember?.notificationLevel ?? 'all'
 
-  const copyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(`${window.location.origin}/dashboard/spaces/${space.id}`)
-    } catch {
-      // Clipboard write can fail in some contexts (HTTP, no permission).
-      // Silent — the user can still copy from the URL bar.
-    }
+  // Silent on success/failure: dropdown closes immediately; user can still
+  // copy from the URL bar if clipboard permission is denied.
+  const { copy } = useCopy({ toastOnSuccess: false, toastOnError: false })
+  const copyLink = () => {
+    void copy(`${window.location.origin}/dashboard/spaces/${space.id}`)
   }
 
   return (

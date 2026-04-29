@@ -16,6 +16,7 @@ import {
   Link2,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useCopy } from '@/client/lib/use-copy'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -156,6 +157,9 @@ const THEME_GENERATORS = [
 export function PreferencesSection() {
   const { data: preferences, isLoading } = usePreferences()
   const updatePreferences = useUpdatePreferences()
+  // Suppress error toast — we fall back to window.prompt so the user can
+  // still grab the link manually on browsers that block programmatic copy.
+  const { copy } = useCopy({ toastOnError: false })
 
   // Use current preferences or defaults
   const currentPrefs = preferences || defaultPreferences
@@ -302,19 +306,16 @@ export function PreferencesSection() {
     toast.success('Theme exported to ' + THEME_EXPORT_FILENAME)
   }
 
-  // Copy a shareable URL (?theme=<base64>) to the clipboard
+  // Copy a shareable URL (?theme=<base64>) to the clipboard. If clipboard
+  // permission is denied (Safari over HTTP, embedded iframes), fall back to
+  // a window.prompt so the user can copy from the picker.
   const handleCopyShareLink = async () => {
     if (!currentPrefs.customTheme) return
     const envelope = buildThemeExport(currentPrefs.customTheme)
     const encoded = encodeThemeToURL(envelope)
     const url = `${window.location.origin}${window.location.pathname}?theme=${encoded}`
-    try {
-      await navigator.clipboard.writeText(url)
-      toast.success('Shareable link copied to clipboard')
-    } catch {
-      // Fallback: show in a prompt so the user can copy manually
-      window.prompt('Copy this link to share your theme:', url)
-    }
+    const ok = await copy(url, { successMessage: 'Shareable link copied' })
+    if (!ok) window.prompt('Copy this link to share your theme:', url)
   }
 
   // Trigger the hidden file input

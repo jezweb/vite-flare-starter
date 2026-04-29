@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { useCopy } from '@/client/lib/use-copy'
 import { EmptyState } from '@/client/components/EmptyState'
 import {
   DropdownMenu,
@@ -79,6 +80,7 @@ export function FileList({ files, isLoading, folder, onUploadClick }: FileListPr
 
   const deleteFile = useDeleteFile()
   const updateFile = useUpdateFile()
+  const { copy } = useCopy()
 
   const handleDownload = (file: FileItem) => {
     // Create a temporary link and trigger download
@@ -128,8 +130,7 @@ export function FileList({ files, isLoading, folder, onUploadClick }: FileListPr
 
   const handleCopyLink = (file: FileItem) => {
     const url = `${window.location.origin}/api/files/${file.id}/download`
-    navigator.clipboard.writeText(url)
-    toast.success('Download link copied to clipboard')
+    void copy(url, { successMessage: 'Download link copied' })
   }
 
   if (isLoading) {

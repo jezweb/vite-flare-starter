@@ -7,8 +7,8 @@
  * inviter can share it manually until the email path goes live.
  */
 import { useEffect, useState } from 'react'
-import { Copy, Check } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
+import { CopyButton } from '@/components/ui/copy-button'
 import { toast } from 'sonner'
 import {
   Dialog,
@@ -41,7 +41,6 @@ export function InviteMemberDialog({ open, onOpenChange, organizationId }: Props
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<OrgRole>('member')
   const [issuedLink, setIssuedLink] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
 
   // Reset state every time the dialog re-opens.
   useEffect(() => {
@@ -49,7 +48,6 @@ export function InviteMemberDialog({ open, onOpenChange, organizationId }: Props
       setEmail('')
       setRole('member')
       setIssuedLink(null)
-      setCopied(false)
     }
   }, [open])
 
@@ -70,18 +68,6 @@ export function InviteMemberDialog({ open, onOpenChange, organizationId }: Props
       toast.success('Invitation issued')
     } catch (err) {
       toast.error((err as Error)?.message ?? 'Invite failed')
-    }
-  }
-
-  const copyLink = async () => {
-    if (!issuedLink) return
-    try {
-      await navigator.clipboard.writeText(issuedLink)
-      setCopied(true)
-      toast.success('Link copied')
-      setTimeout(() => setCopied(false), 2000)
-    } catch {
-      toast.error('Could not copy — long-press the link to copy manually')
     }
   }
 
@@ -160,10 +146,13 @@ export function InviteMemberDialog({ open, onOpenChange, organizationId }: Props
               <div className="rounded-md border bg-muted/30 p-2 break-all text-xs font-mono">
                 {issuedLink}
               </div>
-              <Button onClick={copyLink} variant="outline" className="gap-2 w-full">
-                {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-                {copied ? 'Copied' : 'Copy invitation link'}
-              </Button>
+              <CopyButton
+                value={issuedLink ?? ''}
+                label="Copy invitation link"
+                successMessage="Link copied"
+                variant="outline"
+                className="gap-2 w-full"
+              />
             </div>
             <DialogFooter>
               <Button onClick={() => onOpenChange(false)}>Done</Button>

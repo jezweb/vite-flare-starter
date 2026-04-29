@@ -29,6 +29,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useSession } from '@/client/lib/auth'
+import { useCopy } from '@/client/lib/use-copy'
 import { usePinMessage, useStarMessage } from '../hooks/useSpaces'
 import { ForwardMessageDialog } from './ForwardMessageDialog'
 import type { SpaceMessage } from '../hooks/useSpaces'
@@ -59,13 +60,11 @@ export function MessageMoreMenu({ message, onQuote, canPin }: Props) {
   const isStarred = sessionUserId ? stars.includes(sessionUserId) : false
   const isPinned = !!message.pinnedAt
 
-  const copyLink = async () => {
-    try {
-      const url = `${window.location.origin}/dashboard/spaces/${message.conversationId}#m-${message.id}`
-      await navigator.clipboard.writeText(url)
-    } catch {
-      /* clipboard refused — ignore silently */
-    }
+  // Silent copy: dropdown closes immediately, no toast either way.
+  const { copy } = useCopy({ toastOnSuccess: false, toastOnError: false })
+  const copyLink = () => {
+    const url = `${window.location.origin}/dashboard/spaces/${message.conversationId}#m-${message.id}`
+    void copy(url)
   }
 
   const onDelete = async () => {

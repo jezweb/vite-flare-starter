@@ -16,6 +16,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { useCopy } from '@/client/lib/use-copy'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,6 +58,7 @@ export function UserList({ users }: UserListProps) {
 
   const deleteUserMutation = useDeleteUser()
   const revokeSessionsMutation = useRevokeUserSessions()
+  const { copy } = useCopy()
 
   const handleDelete = async () => {
     if (!deleteUser) return
@@ -153,14 +155,7 @@ export function UserList({ users }: UserListProps) {
                           Edit User
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={async () => {
-                            try {
-                              await navigator.clipboard.writeText(user.email)
-                              toast.success('Email copied')
-                            } catch {
-                              toast.error('Clipboard blocked')
-                            }
-                          }}
+                          onClick={() => void copy(user.email, { successMessage: 'Email copied' })}
                         >
                           <Copy className="mr-2 h-4 w-4" />
                           Copy Email

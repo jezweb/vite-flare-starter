@@ -12,6 +12,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Code2, Eye, Copy, Check, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { useCopy } from '@/client/lib/use-copy'
 import { useTheme } from '@/client/components/theme-provider'
 
 /**
@@ -57,7 +58,7 @@ interface Props {
 
 export function ArtifactViewer({ artifact }: Props) {
   const [showCode, setShowCode] = useState(false)
-  const [copied, setCopied] = useState(false)
+  const { copy, copied } = useCopy()
   const [autoHeight, setAutoHeight] = useState<number | null>(null)
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const isDark = useResolvedDarkMode()
@@ -76,9 +77,7 @@ export function ArtifactViewer({ artifact }: Props) {
   }, [])
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(artifact.code)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    void copy(artifact.code, { successMessage: 'Code copied' })
   }
 
   const iframeSrc = buildIframeSrc(artifact, isDark)
