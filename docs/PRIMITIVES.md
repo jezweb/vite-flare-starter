@@ -108,6 +108,7 @@ Is it a list of items the user scans top-to-bottom?
 | Building a custom `<details>` with bespoke styling | Drift | `<HelpDisclosure>` |
 | Inline `agentClass` / `kind` / `slug` in user copy | Vocabulary leak | `formatAgentClass` / `formatKind` / `formatTrigger` from `@/shared/format/agent` |
 | `cn('text-sm text-muted-foreground …')` for a section description | Hand-rolled drift | `<Section description="…">` or `<FormSection description="…">` |
+| `<CapabilityChip asChild><Link …/></CapabilityChip>` (or any chip with internal layout + asChild) | Radix Slot expects a single child element; the chip's dot+icon+label spans break it. Throws "React.Children.only expected to receive a single React element child." | Wrap from outside: `<Link><CapabilityChip … /></Link>`. Same applies to other primitives that compose internal layout. |
 
 ## Verification grep recipes
 

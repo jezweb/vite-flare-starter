@@ -5,11 +5,19 @@
  *
  * Three states:
  *   - active     → coloured ring + dot, "Connected"
- *   - inactive   → muted, "Connect Gmail" (link variant)
+ *   - inactive   → muted, "Connect Gmail"
  *   - count      → just a number + label ("22 skills")
+ *
+ * The chip is purely visual — to make a chip clickable, wrap it in a
+ * `<Link>` or `<button>`. Don't try to use Radix `asChild` here: the
+ * chip composes internal layout (dot + icon + label spans) which
+ * violates Slot's single-child contract.
+ *
+ *   <Link to="/dashboard/connectors" className="rounded-full">
+ *     <CapabilityChip icon={Mail} label="Gmail" />
+ *   </Link>
  */
 import * as React from 'react'
-import { Slot } from 'radix-ui'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -17,20 +25,17 @@ interface CapabilityChipProps extends React.HTMLAttributes<HTMLElement> {
   icon?: LucideIcon
   label: React.ReactNode
   state?: 'active' | 'inactive' | 'count'
-  asChild?: boolean
 }
 
 export function CapabilityChip({
   icon: Icon,
   label,
   state = 'active',
-  asChild,
   className,
   ...rest
 }: CapabilityChipProps) {
-  const Comp = asChild ? Slot.Slot : 'span'
   return (
-    <Comp
+    <span
       data-slot="capability-chip"
       data-state={state}
       className={cn(
@@ -38,7 +43,6 @@ export function CapabilityChip({
         state === 'active' && 'border-emerald-500/40 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400',
         state === 'inactive' && 'border-dashed border-border text-muted-foreground hover:text-foreground hover:border-border',
         state === 'count' && 'border-border bg-muted/50 text-muted-foreground',
-        asChild && 'cursor-pointer',
         className,
       )}
       {...rest}
@@ -51,7 +55,7 @@ export function CapabilityChip({
       )}
       {Icon && <Icon className="size-3" />}
       <span>{label}</span>
-    </Comp>
+    </span>
   )
 }
 
