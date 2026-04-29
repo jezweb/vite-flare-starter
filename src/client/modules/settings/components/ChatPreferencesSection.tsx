@@ -14,7 +14,8 @@
  */
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Sparkles, Loader2, Check, ShieldCheck } from 'lucide-react'
+import { Sparkles, Check, ShieldCheck } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -200,7 +201,7 @@ Works well with markdown — bullet lists, headings, anything you'd put in a pro
               </span>
             )}
             <Button type="submit" disabled={save.isPending || isLoading}>
-              {save.isPending && <Loader2 className="size-3.5 mr-1.5 animate-spin" />}
+              {save.isPending && <Spinner size="sm" className="mr-1.5" />}
               Save preferences
             </Button>
           </div>

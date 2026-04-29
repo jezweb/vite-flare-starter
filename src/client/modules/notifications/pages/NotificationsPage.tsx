@@ -9,7 +9,8 @@ import { useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { formatDistanceToNow, format } from 'date-fns'
-import { Bell, Check, CheckCheck, Info, AlertTriangle, AlertCircle, Loader2, Inbox } from 'lucide-react'
+import { Bell, Check, CheckCheck, Info, AlertTriangle, AlertCircle, Inbox } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { TabsTrigger } from '@/components/ui/tabs'
 import { EmptyState } from '@/client/components/EmptyState'
@@ -94,7 +95,7 @@ export function NotificationsPage() {
               disabled={markAllAsRead.isPending}
             >
               {markAllAsRead.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Spinner size="md" className="mr-2" />
               ) : (
                 <CheckCheck className="mr-2 h-4 w-4" />
               )}

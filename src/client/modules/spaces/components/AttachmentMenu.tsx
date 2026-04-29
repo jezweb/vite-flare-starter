@@ -12,7 +12,8 @@
  * context (Phase 2: agent-side tool to dereference them).
  */
 import { useState } from 'react'
-import { Plus, Paperclip, FolderKanban, Plug, Loader2 } from 'lucide-react'
+import { Plus, Paperclip, FolderKanban, Plug } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/client/lib/api-client'
@@ -155,7 +156,7 @@ export function AttachmentMenu({ onAttach }: Props) {
             </button>
             {projectsQuery.isLoading ? (
               <div className="flex items-center justify-center py-3">
-                <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                <Spinner size="md" className="text-muted-foreground" />
               </div>
             ) : (
               <ul className="max-h-60 space-y-0.5 overflow-y-auto">
@@ -198,7 +199,7 @@ export function AttachmentMenu({ onAttach }: Props) {
             {!selectedConn ? (
               mcpQuery.isLoading ? (
                 <div className="flex items-center justify-center py-3">
-                  <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                  <Spinner size="md" className="text-muted-foreground" />
                 </div>
               ) : (
                 <ul className="max-h-60 space-y-0.5 overflow-y-auto">
@@ -225,7 +226,7 @@ export function AttachmentMenu({ onAttach }: Props) {
               )
             ) : resourcesQuery.isLoading ? (
               <div className="flex items-center justify-center py-3">
-                <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                <Spinner size="md" className="text-muted-foreground" />
               </div>
             ) : (
               <ul className="max-h-60 space-y-0.5 overflow-y-auto">

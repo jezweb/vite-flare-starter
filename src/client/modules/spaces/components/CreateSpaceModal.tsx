@@ -8,7 +8,8 @@
  */
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Loader2, Hash, Sparkles, FolderKanban } from 'lucide-react'
+import { Hash, Sparkles, FolderKanban } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import {
   Dialog,
   DialogContent,
@@ -246,7 +247,7 @@ export function CreateSpaceModal({ open, onClose }: Props) {
                 Cancel
               </Button>
               <Button onClick={submitBlank} disabled={!title.trim() || create.isPending}>
-                {create.isPending ? <Loader2 className="size-4 animate-spin" /> : 'Create'}
+                {create.isPending ? <Spinner size="md" /> : 'Create'}
               </Button>
             </div>
           </TabsContent>
@@ -315,7 +316,7 @@ export function CreateSpaceModal({ open, onClose }: Props) {
                 Cancel
               </Button>
               <Button onClick={submitSolo} disabled={!title.trim() || create.isPending}>
-                {create.isPending ? <Loader2 className="size-4 animate-spin" /> : 'Create solo workshop'}
+                {create.isPending ? <Spinner size="md" /> : 'Create solo workshop'}
               </Button>
             </div>
           </TabsContent>

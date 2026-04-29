@@ -14,7 +14,8 @@
  */
 import { useMemo, useState } from 'react'
 import { useVoiceInput } from '@cloudflare/voice/react'
-import { Mic, Square, Loader2 } from 'lucide-react'
+import { Mic, Square } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -146,7 +147,7 @@ export function VoiceInputExamplePage() {
             <p className="text-sm text-muted-foreground">
               {isActive ? (
                 <span className="inline-flex items-center gap-2">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <Spinner size="sm" />
                   Waiting for your voice…
                 </span>
               ) : (

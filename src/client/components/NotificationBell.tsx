@@ -21,7 +21,8 @@ import {
   useMarkAsRead,
   useMarkAllAsRead,
 } from '@/client/hooks/useNotifications'
-import { Bell, Check, CheckCheck, Info, AlertTriangle, AlertCircle, Loader2 } from 'lucide-react'
+import { Bell, Check, CheckCheck, Info, AlertTriangle, AlertCircle } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
 
@@ -96,7 +97,7 @@ export function NotificationBell() {
               disabled={markAllAsRead.isPending}
             >
               {markAllAsRead.isPending ? (
-                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                <Spinner size="xs" className="mr-1" />
               ) : (
                 <CheckCheck className="mr-1 h-3 w-3" />
               )}
@@ -108,7 +109,7 @@ export function NotificationBell() {
 
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <Spinner size="lg" className="text-muted-foreground" />
           </div>
         ) : notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">

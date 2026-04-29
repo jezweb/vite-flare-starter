@@ -7,7 +7,8 @@
  */
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Loader2, UserPlus, Bot, Trash2, LogOut, Ban } from 'lucide-react'
+import { UserPlus, Bot, Trash2, LogOut, Ban } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import {
   Dialog,
   DialogContent,
@@ -143,7 +144,7 @@ export function SpaceSettingsModal({ spaceId, open, initialTab, onClose }: Props
             </div>
             <div className="flex justify-end">
               <Button onClick={handleSaveGeneral} disabled={!isOwner || updateSettings.isPending}>
-                {updateSettings.isPending ? <Loader2 className="size-4 animate-spin" /> : 'Save'}
+                {updateSettings.isPending ? <Spinner size="md" /> : 'Save'}
               </Button>
             </div>
           </TabsContent>

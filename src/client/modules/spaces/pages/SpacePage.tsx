@@ -9,7 +9,8 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Loader2, ChevronLeft, X, Hash, MessageSquare, Search, Pin, Quote as QuoteIcon, Users, Bell, BellOff } from 'lucide-react'
+import { ChevronLeft, X, Hash, MessageSquare, Search, Pin, Quote as QuoteIcon, Users, Bell, BellOff } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { useSession } from '@/client/lib/auth'
 import {
@@ -76,7 +77,7 @@ export function SpacePage() {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <Loader2 className="size-5 animate-spin text-muted-foreground" />
+        <Spinner size="lg" className="text-muted-foreground" />
       </div>
     )
   }

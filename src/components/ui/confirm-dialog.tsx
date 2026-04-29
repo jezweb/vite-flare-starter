@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { Loader2 } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 
 interface ConfirmDialogProps {
   open: boolean
@@ -65,7 +65,7 @@ export function ConfirmDialog({
           >
             {isLoading ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Spinner size="md" className="mr-2" />
                 Please wait...
               </>
             ) : (

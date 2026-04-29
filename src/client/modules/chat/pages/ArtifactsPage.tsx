@@ -13,7 +13,8 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Sparkles, Search, MessageSquare, Code2, Image as ImageIcon, GitBranch, Loader2 } from 'lucide-react'
+import { Sparkles, Search, MessageSquare, Code2, Image as ImageIcon, GitBranch } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { Input } from '@/components/ui/input'
 import { apiClient } from '@/client/lib/api-client'
 import { cn } from '@/lib/utils'
@@ -105,7 +106,7 @@ export function ArtifactsPage() {
 
       {isLoading ? (
         <div className="flex items-center justify-center h-64 text-muted-foreground">
-          <Loader2 className="size-5 animate-spin mr-2" />
+          <Spinner size="lg" className="mr-2" />
           Loading artifacts…
         </div>
       ) : artifacts.length === 0 ? (

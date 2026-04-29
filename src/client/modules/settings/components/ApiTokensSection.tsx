@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
-import { Loader2, Key, Trash2, Plus, ExternalLink } from 'lucide-react'
+import { Key, Trash2, Plus, ExternalLink } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { CopyButton } from '@/components/ui/copy-button'
 import { useApiTokens, useCreateApiToken, useDeleteApiToken } from '@/client/modules/api-tokens/hooks/useApiTokens'
 import { createApiTokenSchema } from '@/shared/schemas/api-token.schema'
@@ -105,7 +106,7 @@ function TokenRow({ token, onDeleteClick, isDeleting, anyPending }: TokenRowProp
           className="text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors"
         >
           {isDeleting ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Spinner size="md" />
           ) : (
             <Trash2 className="h-4 w-4" />
           )}
@@ -336,7 +337,7 @@ export function ApiTokensSection() {
                     <Button type="submit" disabled={createToken.isPending}>
                       {createToken.isPending ? (
                         <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          <Spinner size="md" className="mr-2" />
                           Creating...
                         </>
                       ) : (
@@ -355,7 +356,7 @@ export function ApiTokensSection() {
         <CardContent>
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <Spinner size="lg" className="text-muted-foreground" />
             </div>
           ) : error ? (
             <Alert variant="destructive">

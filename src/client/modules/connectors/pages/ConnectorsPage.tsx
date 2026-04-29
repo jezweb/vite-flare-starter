@@ -8,7 +8,8 @@
  */
 import { useState, useEffect, useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { Plug, Plus, Search, Trash2, Loader2, ExternalLink, AlertCircle } from 'lucide-react'
+import { Plug, Plus, Search, Trash2, ExternalLink, AlertCircle } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import * as LucideIcons from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
@@ -184,7 +185,7 @@ export function ConnectorsPage() {
       >
         {connectionsLoading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            <Spinner size="lg" className="text-muted-foreground" />
           </div>
         ) : connections.length === 0 ? (
           <EmptyState
@@ -588,11 +589,11 @@ function CustomConnectorDialog({
             disabled={!url || probe.isPending}
             title="Check that the URL responds and find out how to sign in"
           >
-            {probe.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Test connection'}
+            {probe.isPending ? <Spinner size="md" /> : 'Test connection'}
           </Button>
           <Button onClick={handleConnect} disabled={!url || connect.isPending}>
             {connect.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Spinner size="md" />
             ) : (
               <>
                 <ExternalLink className="mr-2 h-4 w-4" />

@@ -8,7 +8,7 @@
  * `~/.claude/rules/better-auth-cloudflare.md`).
  */
 import { useState } from 'react'
-import { Loader2 } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import {
   Dialog,
   DialogContent,
@@ -127,7 +127,7 @@ export function CreateOrganizationDialog({ open, onOpenChange }: Props) {
             >
               {create.isPending || setActive.isPending ? (
                 <>
-                  <Loader2 className="size-3.5 animate-spin" />
+                  <Spinner size="sm" />
                   Creating…
                 </>
               ) : (

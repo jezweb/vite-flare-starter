@@ -13,9 +13,10 @@
  * but lock in the visual language: skeleton matches body shape, error
  * has retry, empty has clear next action.
  */
-import { Loader2, AlertTriangle, type LucideIcon } from 'lucide-react'
+import { AlertTriangle, type LucideIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Spinner } from '@/components/ui/spinner'
 import { EmptyState } from '@/client/components/EmptyState'
 import { cn } from '@/lib/utils'
 
@@ -33,7 +34,7 @@ export function PageLoading({ variant = 'list', count, className }: PageLoadingP
   if (variant === 'spinner') {
     return (
       <div className={cn('flex h-32 items-center justify-center', className)}>
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+        <Spinner size="lg" className="text-muted-foreground" />
       </div>
     )
   }

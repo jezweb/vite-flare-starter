@@ -9,7 +9,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import {
   Plus,
-  Loader2,
   Lock,
   Brain,
   ChevronDown,
@@ -18,6 +17,7 @@ import {
   PencilLine,
   ArrowUpRight,
 } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -185,7 +185,7 @@ export function MemorySection({
 
         {isLoading ? (
           <div className="flex items-center justify-center py-4 text-muted-foreground">
-            <Loader2 className="size-4 animate-spin mr-2" />
+            <Spinner size="md" className="mr-2" />
             <span className="text-xs">Loading…</span>
           </div>
         ) : memoriesList.length === 0 ? (
@@ -448,7 +448,7 @@ function MemoryEditorModal({
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button type="submit" disabled={!name.trim() || !description.trim() || !content.trim() || isPending}>
-              {isPending ? <Loader2 className="size-3.5 animate-spin mr-1.5" /> : <Brain className="size-3.5 mr-1.5" />}
+              {isPending ? <Spinner size="sm" className="mr-1.5" /> : <Brain className="size-3.5 mr-1.5" />}
               Save memory
             </Button>
           </div>

@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { authClient, useSession } from '@/client/lib/auth'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Mail, Loader2, X, CheckCircle } from 'lucide-react'
+import { Mail, X, CheckCircle } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 
 export function EmailVerificationBanner() {
   const { data: session } = useSession()
@@ -70,7 +71,7 @@ export function EmailVerificationBanner() {
           >
             {resending ? (
               <>
-                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                <Spinner size="xs" className="mr-1" />
                 Sending...
               </>
             ) : (

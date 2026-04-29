@@ -11,7 +11,8 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Field, FieldLabel, FieldGroup } from '@/components/ui/field'
-import { CheckCircle, XCircle, Mail, Loader2 } from 'lucide-react'
+import { CheckCircle, XCircle, Mail } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 
 type VerificationState = 'verifying' | 'success' | 'error' | 'resend'
 
@@ -84,7 +85,7 @@ export function VerifyEmailPage() {
           <Card>
             <CardContent className="pt-6">
               <div className="flex flex-col items-center gap-4">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <Spinner className="size-12 text-primary" />
                 <p className="text-lg font-medium">Verifying your email...</p>
               </div>
             </CardContent>
@@ -182,7 +183,7 @@ export function VerifyEmailPage() {
                   <Button type="submit" className="w-full" disabled={resending}>
                     {resending ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Spinner size="md" className="mr-2" />
                         Sending...
                       </>
                     ) : (

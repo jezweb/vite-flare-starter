@@ -8,7 +8,8 @@
  */
 import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Loader2, Trash2, FileText, FileImage, File as FileIcon } from 'lucide-react'
+import { Plus, Trash2, FileText, FileImage, File as FileIcon } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { apiClient } from '@/client/lib/api-client'
 import { toast } from 'sonner'
@@ -112,7 +113,7 @@ export function ProjectFilesSection({ projectId }: { projectId: string }) {
           aria-label="Upload file"
           title="Upload file"
         >
-          {uploading ? <Loader2 className="size-3.5 animate-spin" /> : <Plus className="size-3.5" />}
+          {uploading ? <Spinner size="sm" /> : <Plus className="size-3.5" />}
         </Button>
         <input
           ref={fileInputRef}
@@ -144,7 +145,7 @@ export function ProjectFilesSection({ projectId }: { projectId: string }) {
 
       {isLoading ? (
         <div className="flex items-center justify-center py-6 text-muted-foreground">
-          <Loader2 className="size-4 animate-spin mr-2" />
+          <Spinner size="md" className="mr-2" />
           <span className="text-xs">Loading…</span>
         </div>
       ) : files.length === 0 ? (

@@ -7,7 +7,8 @@
  */
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Loader2, UserPlus, X, Trash2 } from 'lucide-react'
+import { UserPlus, X, Trash2 } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import {
   Dialog,
   DialogContent,
@@ -82,7 +83,7 @@ export function ShareProjectDialog({ projectId, open, onClose }: Props) {
             </Label>
             {isLoading ? (
               <div className="flex h-12 items-center justify-center">
-                <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                <Spinner size="md" className="text-muted-foreground" />
               </div>
             ) : (
               <ul className="mt-2 divide-y divide-border rounded-md border border-border">
@@ -165,7 +166,7 @@ export function ShareProjectDialog({ projectId, open, onClose }: Props) {
                 disabled={!inviteUserId.trim() || invite.isPending}
                 onClick={() => invite.mutate({ userId: inviteUserId.trim(), role })}
               >
-                {invite.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <UserPlus className="size-3.5" />}
+                {invite.isPending ? <Spinner size="sm" /> : <UserPlus className="size-3.5" />}
                 Invite
               </Button>
             </div>

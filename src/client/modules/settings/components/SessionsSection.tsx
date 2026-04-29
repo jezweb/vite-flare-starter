@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { formatDistanceToNow } from 'date-fns'
-import { Monitor, Smartphone, Tablet, Globe, Shield, Loader2, LogOut, CheckCircle } from 'lucide-react'
+import { Monitor, Smartphone, Tablet, Globe, Shield, LogOut, CheckCircle } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { toast } from 'sonner'
 import { useSessions, useRevokeSession, useRevokeAllSessions } from '../hooks/useSessions'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -164,7 +165,7 @@ export function SessionsSection() {
                 className="text-destructive hover:text-destructive hover:bg-destructive/10"
               >
                 {revokingId === session.id ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Spinner size="md" />
                 ) : (
                   <>
                     <LogOut className="h-4 w-4 mr-1" />
@@ -217,7 +218,7 @@ export function SessionsSection() {
                   >
                     {revokeAll.isPending ? (
                       <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        <Spinner size="md" className="mr-2" />
                         Logging out...
                       </>
                     ) : (

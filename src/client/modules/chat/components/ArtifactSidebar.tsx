@@ -9,7 +9,8 @@
  * file with the right extension (.html / .svg / .mmd / original filename).
  */
 import { useMemo, useCallback, useState } from 'react'
-import { FileText, FileCode, FileImage, FileAudio, FileVideo, FileSpreadsheet, FileArchive, File as FileIcon, Download, X, Maximize2, FolderPlus, Check, Loader2 } from 'lucide-react'
+import { FileText, FileCode, FileImage, FileAudio, FileVideo, FileSpreadsheet, FileArchive, File as FileIcon, Download, X, Maximize2, FolderPlus, Check } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
@@ -373,7 +374,7 @@ export function ArtifactSidebar({ messages, onClose, scrollRoot: _scrollRoot }: 
                         {saveState[f.id] === 'saved' ? (
                           <Check className="size-3.5" />
                         ) : saveState[f.id] === 'saving' ? (
-                          <Loader2 className="size-3.5 animate-spin" />
+                          <Spinner size="sm" />
                         ) : (
                           <FolderPlus className="size-3.5" />
                         )}

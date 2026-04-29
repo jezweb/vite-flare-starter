@@ -6,7 +6,8 @@
  */
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Search, X, Loader2 } from 'lucide-react'
+import { Search, X } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { apiClient } from '@/client/lib/api-client'
 import { Input } from '@/components/ui/input'
 import { SpaceMessageView } from './SpaceMessageView'
@@ -58,7 +59,7 @@ export function SearchInSpacePane({ spaceId, users, open, onClose }: Props) {
           <p className="px-3 py-3 text-xs text-muted-foreground">Type at least 2 characters.</p>
         ) : isLoading ? (
           <div className="flex items-center gap-2 px-3 py-3 text-xs text-muted-foreground">
-            <Loader2 className="size-3.5 animate-spin" />
+            <Spinner size="sm" />
             Searching…
           </div>
         ) : !data || data.results.length === 0 ? (

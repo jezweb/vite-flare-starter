@@ -6,7 +6,8 @@
  * type a class name / skill id / tool id from memory.
  */
 import { useMemo, useState } from 'react'
-import { Check, ChevronsUpDown, Search, Loader2 } from 'lucide-react'
+import { Check, ChevronsUpDown, Search } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -45,7 +46,7 @@ export function AgentPicker({ value, onChange }: AgentPickerProps) {
         >
           {isLoading ? (
             <span className="text-muted-foreground inline-flex items-center gap-2">
-              <Loader2 className="size-3.5 animate-spin" /> Loading…
+              <Spinner size="sm" /> Loading…
             </span>
           ) : selected ? (
             <span className="flex flex-col items-start text-left min-w-0">

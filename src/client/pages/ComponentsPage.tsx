@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { Spinner } from '@/components/ui/spinner'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -97,7 +98,6 @@ import {
   AlertCircle,
   Check,
   Info,
-  Loader2,
   MoreHorizontal,
   Terminal,
   Inbox,
@@ -194,7 +194,7 @@ export function ComponentsPage() {
             <CardContent className="flex flex-wrap gap-4">
               <Button disabled>Disabled</Button>
               <Button disabled>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Spinner size="md" className="mr-2" />
                 Loading
               </Button>
             </CardContent>

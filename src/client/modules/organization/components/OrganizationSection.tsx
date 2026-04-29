@@ -16,8 +16,8 @@ import {
   Clock,
   FileText,
   Save,
-  Loader2,
 } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -406,7 +406,7 @@ export function OrganizationSection() {
         >
           {updateOrganization.isPending ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Spinner size="md" className="mr-2" />
               Saving...
             </>
           ) : (

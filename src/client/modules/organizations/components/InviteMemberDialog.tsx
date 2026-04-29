@@ -7,7 +7,8 @@
  * inviter can share it manually until the email path goes live.
  */
 import { useEffect, useState } from 'react'
-import { Loader2, Copy, Check } from 'lucide-react'
+import { Copy, Check } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { toast } from 'sonner'
 import {
   Dialog,
@@ -137,7 +138,7 @@ export function InviteMemberDialog({ open, onOpenChange, organizationId }: Props
               <Button type="submit" disabled={!email.trim() || invite.isPending}>
                 {invite.isPending ? (
                   <>
-                    <Loader2 className="size-3.5 animate-spin" />
+                    <Spinner size="sm" />
                     Inviting…
                   </>
                 ) : (

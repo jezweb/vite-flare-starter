@@ -8,7 +8,8 @@ import { useSession } from '@/client/lib/auth'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { MemorySection as ProjectMemorySection } from '@/client/modules/projects/components/MemorySection'
 import { apiClient } from '@/client/lib/api-client'
-import { Brain, Loader2 } from 'lucide-react'
+import { Brain } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { toast } from 'sonner'
 
 export function MemorySection() {
@@ -37,7 +38,7 @@ export function MemorySection() {
   if (isPending) {
     return (
       <div className="flex items-center justify-center py-12 text-muted-foreground">
-        <Loader2 className="size-5 animate-spin mr-2" />
+        <Spinner size="lg" className="mr-2" />
         Loading…
       </div>
     )

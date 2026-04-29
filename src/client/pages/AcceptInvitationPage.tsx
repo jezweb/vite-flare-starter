@@ -19,7 +19,8 @@
  */
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Loader2, CheckCircle2, AlertTriangle, Mail } from 'lucide-react'
+import { CheckCircle2, AlertTriangle, Mail } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useSession } from '@/client/lib/auth'
@@ -139,7 +140,7 @@ export function AcceptInvitationPage() {
         <CardContent className="space-y-3">
           {state.status === 'loading' && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="size-4 animate-spin" />
+              <Spinner size="md" />
               Verifying invitation…
             </div>
           )}

@@ -24,7 +24,8 @@ import { ToolCard, findRenderer, type ToolState } from './tool-renderers'
 import { SourcesFooter } from './SourcesFooter'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Textarea } from '@/components/ui/textarea'
-import { Loader2, RotateCcw, Pencil, Copy, Check, ThumbsUp, ThumbsDown, Sparkles, FileText, FileSpreadsheet, FileAudio, FileVideo, FileCode, FileArchive, File as FileIcon } from 'lucide-react'
+import { RotateCcw, Pencil, Copy, Check, ThumbsUp, ThumbsDown, Sparkles, FileText, FileSpreadsheet, FileAudio, FileVideo, FileCode, FileArchive, File as FileIcon } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -527,7 +528,7 @@ function MessageBody({
                 key={i}
                 className="my-1 flex items-center gap-1.5 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-primary"
               >
-                <Loader2 className="size-3 animate-spin" />
+                <Spinner size="xs" />
                 Waiting for your response below...
               </div>
             )

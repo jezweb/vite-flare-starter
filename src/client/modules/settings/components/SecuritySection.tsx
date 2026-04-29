@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
-import { Loader2, Shield, AlertTriangle, ExternalLink } from 'lucide-react'
+import { Shield, AlertTriangle, ExternalLink } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { useNavigate } from 'react-router-dom'
 import { useChangePassword, useDeleteAccount } from '../hooks/useSettings'
 import { useAuthProviders } from '../hooks/useAuthProviders'
@@ -176,7 +177,7 @@ export function SecuritySection() {
             <Button type="submit" disabled={changePassword.isPending}>
               {changePassword.isPending ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Spinner size="md" className="mr-2" />
                   Changing Password...
                 </>
               ) : (
@@ -302,7 +303,7 @@ export function SecuritySection() {
                   >
                     {deleteAccount.isPending ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Spinner size="md" className="mr-2" />
                         Deleting...
                       </>
                     ) : (

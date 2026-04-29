@@ -3,7 +3,8 @@ import { useSession, authClient } from '@/client/lib/auth'
 import { validateAndResize } from '@/client/lib/image-resize'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
-import { Upload, X, Loader2 } from 'lucide-react'
+import { Upload, X } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 
 type AvatarUploadProps = {
   /** Optional callback when avatar changes */
@@ -143,7 +144,7 @@ export function AvatarUpload({ onAvatarChange }: AvatarUploadProps) {
             >
               {uploading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Spinner size="md" className="mr-2" />
                   Uploading...
                 </>
               ) : (
@@ -165,7 +166,7 @@ export function AvatarUpload({ onAvatarChange }: AvatarUploadProps) {
               >
                 {deleting ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Spinner size="md" className="mr-2" />
                     Deleting...
                   </>
                 ) : (

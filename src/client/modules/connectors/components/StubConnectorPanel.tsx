@@ -11,7 +11,6 @@
 import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  Loader2,
   Plug,
   CheckCircle2,
   AlertCircle,
@@ -19,6 +18,7 @@ import {
   ExternalLink,
   SlidersHorizontal,
 } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { StatusPill } from '@/components/ui/status-pill'
@@ -184,7 +184,7 @@ export function StubConnectorPanel({ providerId, logo }: StubConnectorPanelProps
                   >
                     {connect.isPending ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Spinner size="md" className="mr-2" />
                         Reconnecting…
                       </>
                     ) : (
@@ -223,7 +223,7 @@ export function StubConnectorPanel({ providerId, logo }: StubConnectorPanelProps
               >
                 {connect.isPending ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Spinner size="md" className="mr-2" />
                     Connecting…
                   </>
                 ) : (

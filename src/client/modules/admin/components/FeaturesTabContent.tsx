@@ -12,7 +12,8 @@ import { Badge } from '@/components/ui/badge'
 import { useAdminFeatures, useToggleFeature, useSyncFeatures } from '@/client/hooks/useFeatures'
 import type { FeatureFlag } from '@/client/hooks/useFeatures'
 import { toast } from 'sonner'
-import { Flag, RefreshCw, Loader2, Lock, Check, X } from 'lucide-react'
+import { Flag, RefreshCw, Lock, Check, X } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import * as LucideIcons from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { features as buildTimeFeatures } from '@/shared/config/features'
@@ -171,7 +172,7 @@ export function FeaturesTabContent() {
               disabled={syncFeatures.isPending}
             >
               {syncFeatures.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Spinner size="md" className="mr-2" />
               ) : (
                 <RefreshCw className="mr-2 h-4 w-4" />
               )}
@@ -263,7 +264,7 @@ export function FeaturesTabContent() {
               disabled={syncFeatures.isPending}
             >
               {syncFeatures.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Spinner size="md" className="mr-2" />
               ) : (
                 <RefreshCw className="mr-2 h-4 w-4" />
               )}

@@ -23,9 +23,9 @@ import {
   Trash2,
   Edit3,
   MessageSquare,
-  Loader2,
   PencilLine,
 } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -117,7 +117,7 @@ export function ProjectPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64 text-muted-foreground">
-        <Loader2 className="size-5 animate-spin mr-2" />
+        <Spinner size="lg" className="mr-2" />
         Loading project…
       </div>
     )
@@ -452,7 +452,7 @@ function SetInstructionsModal({
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={() => onSave(value)} disabled={isPending}>
-            {isPending ? <Loader2 className="size-3.5 animate-spin mr-1.5" /> : null}
+            {isPending ? <Spinner size="sm" className="mr-1.5" /> : null}
             Save instructions
           </Button>
         </div>
@@ -524,7 +524,7 @@ function EditProjectModal({
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button type="submit" disabled={!name.trim() || isPending}>
-              {isPending ? <Loader2 className="size-3.5 animate-spin mr-1.5" /> : null}
+              {isPending ? <Spinner size="sm" className="mr-1.5" /> : null}
               Save
             </Button>
           </div>

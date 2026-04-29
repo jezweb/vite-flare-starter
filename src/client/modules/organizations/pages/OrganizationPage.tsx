@@ -12,7 +12,8 @@
  */
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Loader2, UserPlus, LogOut } from 'lucide-react'
+import { UserPlus, LogOut } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -55,7 +56,7 @@ export function OrganizationPage() {
   if (isLoading) {
     return (
       <div className="flex h-32 items-center justify-center">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+        <Spinner size="lg" className="text-muted-foreground" />
       </div>
     )
   }

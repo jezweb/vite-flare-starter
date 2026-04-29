@@ -28,7 +28,8 @@ import {
   DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { Mail, Check, X, Clock, Loader2, SendHorizonal } from 'lucide-react'
+import { Mail, Check, X, Clock, SendHorizonal } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { formatDistanceToNow, format } from 'date-fns'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -142,7 +143,7 @@ export function EmailLogsTabContent() {
 
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              <Spinner size="lg" className="text-muted-foreground" />
             </div>
           ) : !data || data.rows.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
@@ -158,7 +159,7 @@ export function EmailLogsTabContent() {
           )}
           {isFetching && (
             <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-              <Loader2 className="h-3 w-3 animate-spin" /> Refreshing…
+              <Spinner size="xs" /> Refreshing…
             </p>
           )}
         </CardContent>
@@ -303,7 +304,7 @@ function TestSendDialog({ onSent }: { onSent: () => void }) {
           >
             {mutation.isPending ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Spinner size="md" className="mr-2" />
                 Sending…
               </>
             ) : (

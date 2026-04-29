@@ -6,7 +6,8 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { Sparkles, Loader2, Copy, Check, Eraser, Wand2 } from 'lucide-react'
+import { Sparkles, Copy, Check, Eraser, Wand2 } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -198,7 +199,7 @@ export function ExtractPage() {
           <Button type="submit" disabled={isEmpty || extract.isPending}>
             {extract.isPending ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Extracting…
+                <Spinner size="md" className="mr-2" /> Extracting…
               </>
             ) : (
               <>

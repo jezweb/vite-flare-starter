@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
-import { Loader2, Download } from 'lucide-react'
+import { Download } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import {
   useSession,
   useUpdateProfile,
@@ -123,7 +124,7 @@ export function ProfileSection() {
                 >
                   {updateProfile.isPending ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Spinner size="md" className="mr-2" />
                       Saving...
                     </>
                   ) : (
@@ -181,7 +182,7 @@ export function ProfileSection() {
                 <Button type="submit" disabled={changeEmail.isPending}>
                   {changeEmail.isPending ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Spinner size="md" className="mr-2" />
                       Sending...
                     </>
                   ) : (
@@ -221,7 +222,7 @@ export function ProfileSection() {
           >
             {exportData.isPending ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Spinner size="md" className="mr-2" />
                 Exporting...
               </>
             ) : (

@@ -24,7 +24,8 @@
 import { useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { AlertTriangle, Sparkles, Loader2 } from 'lucide-react'
+import { AlertTriangle, Sparkles } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { apiClient } from '@/client/lib/api-client'
@@ -161,7 +162,7 @@ export function ConversationSizeIndicator({ messages, model, conversationId }: P
         >
           {isCompacting ? (
             <>
-              <Loader2 className="size-2.5 animate-spin" />
+              <Spinner className="size-2.5" />
               Compacting…
             </>
           ) : (

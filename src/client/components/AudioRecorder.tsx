@@ -32,8 +32,9 @@
  * />
  */
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { Mic, Square, Loader2 } from 'lucide-react'
+import { Mic, Square } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Spinner } from '@/components/ui/spinner'
 import { cn } from '@/lib/utils'
 
 interface AudioRecorderProps {
@@ -240,7 +241,7 @@ export function AudioRecorder({
         aria-label={isRecording ? 'Stop recording' : 'Record audio'}
       >
         {state === 'requesting' ? (
-          <Loader2 className="size-4 animate-spin" />
+          <Spinner size="md" />
         ) : isRecording ? (
           <Square className="size-3" />
         ) : (
@@ -261,7 +262,7 @@ export function AudioRecorder({
         className="gap-2"
       >
         {state === 'requesting' ? (
-          <Loader2 className="size-4 animate-spin" />
+          <Spinner size="md" />
         ) : isRecording ? (
           <Square className="size-3" />
         ) : (

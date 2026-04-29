@@ -8,7 +8,8 @@ import { ProtectedRoute } from './components/shared/ProtectedRoute'
 import { PublicOnlyRoute } from './components/shared/PublicOnlyRoute'
 import { ThemeURLHandler } from './components/ThemeURLHandler'
 import { BuilderModeProvider } from './lib/builder-mode'
-import { Loader2, Mic, Camera } from 'lucide-react'
+import { Mic, Camera } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { features } from '@/shared/config/features'
 import { EmptyState } from './components/EmptyState'
 
@@ -56,7 +57,7 @@ const StyleGuidePage = lazy(() => import('./pages/StyleGuidePage').then(m => ({ 
 function PageSpinner() {
   return (
     <div className="flex h-64 items-center justify-center">
-      <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      <Spinner size="lg" className="text-muted-foreground" />
     </div>
   )
 }

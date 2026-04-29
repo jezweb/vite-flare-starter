@@ -37,7 +37,8 @@ import { useUpdateUser } from '../hooks/useAdmin'
 import type { UserResponse } from '@/shared/schemas/admin.schema'
 import { ROLES } from '@/shared/schemas/admin.schema'
 import { toast } from 'sonner'
-import { Loader2, Shield, UserCog, User } from 'lucide-react'
+import { Shield, UserCog, User } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 
 const ROLE_OPTIONS = [
   { value: 'user', label: 'User', icon: User, description: 'Standard user access' },
@@ -181,7 +182,7 @@ export function UserEditDialog({ user, open, onOpenChange }: UserEditDialogProps
                 Cancel
               </Button>
               <Button type="submit" disabled={updateUser.isPending}>
-                {updateUser.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {updateUser.isPending && <Spinner size="md" className="mr-2" />}
                 Save Changes
               </Button>
             </DialogFooter>

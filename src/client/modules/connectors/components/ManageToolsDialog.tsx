@@ -13,7 +13,8 @@
  * open/close state.
  */
 import { useMemo, useState } from 'react'
-import { Loader2, RotateCcw, Search, ShieldAlert } from 'lucide-react'
+import { RotateCcw, Search, ShieldAlert } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import {
   Dialog,
   DialogContent,
@@ -111,7 +112,7 @@ export function ManageToolsDialog({
 
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            <Spinner size="lg" className="text-muted-foreground" />
           </div>
         ) : (
           <div className="space-y-4">

@@ -11,7 +11,8 @@
  */
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Sparkles, Loader2, ArrowLeft } from 'lucide-react'
+import { Sparkles, ArrowLeft } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
@@ -131,7 +132,7 @@ function BlankTab({ onCreated, navigate }: { onCreated: () => void; navigate: (t
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="ghost" onClick={onCreated}>Cancel</Button>
         <Button type="submit" disabled={!name.trim() || create.isPending}>
-          {create.isPending ? <Loader2 className="size-3.5 animate-spin mr-1.5" /> : null}
+          {create.isPending ? <Spinner size="sm" className="mr-1.5" /> : null}
           Create project
         </Button>
       </div>
@@ -210,7 +211,7 @@ function AiTab({ onCreated, navigate }: { onCreated: () => void; navigate: (to: 
           <Button onClick={generate} disabled={!prompt.trim() || scaffold.isPending}>
             {scaffold.isPending ? (
               <>
-                <Loader2 className="size-3.5 animate-spin mr-1.5" />
+                <Spinner size="sm" className="mr-1.5" />
                 Generating draft…
               </>
             ) : (
@@ -299,7 +300,7 @@ function AiTab({ onCreated, navigate }: { onCreated: () => void; navigate: (to: 
         <div className="flex gap-2">
           <Button type="button" variant="ghost" onClick={onCreated}>Cancel</Button>
           <Button onClick={create} disabled={createFromScaffold.isPending || !editName.trim()}>
-            {createFromScaffold.isPending ? <Loader2 className="size-3.5 animate-spin mr-1.5" /> : null}
+            {createFromScaffold.isPending ? <Spinner size="sm" className="mr-1.5" /> : null}
             Create project
           </Button>
         </div>
@@ -332,7 +333,7 @@ function TemplateTab({ onCreated, navigate }: { onCreated: () => void; navigate:
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-32 text-muted-foreground">
-        <Loader2 className="size-5 animate-spin mr-2" />
+        <Spinner size="lg" className="mr-2" />
         Loading templates…
       </div>
     )
@@ -357,7 +358,7 @@ function TemplateTab({ onCreated, navigate }: { onCreated: () => void; navigate:
                 {t.emoji && <span className="text-base">{t.emoji}</span>}
                 {t.name}
               </h3>
-              {creating === t.slug && <Loader2 className="size-3.5 animate-spin text-muted-foreground" />}
+              {creating === t.slug && <Spinner size="sm" className="text-muted-foreground" />}
             </div>
             <p className="text-xs text-muted-foreground mb-2">{t.description}</p>
             <div className="flex flex-wrap gap-1">

@@ -13,7 +13,6 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import { formatDistanceToNow } from 'date-fns'
 import {
-  Loader2,
   Play,
   Trash2,
   CheckCircle2,
@@ -22,6 +21,7 @@ import {
   Clock,
   Activity,
 } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -59,7 +59,7 @@ export function RoutineDetailPage() {
   if (isLoading) {
     return (
       <div className="flex h-32 items-center justify-center">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+        <Spinner size="lg" className="text-muted-foreground" />
       </div>
     )
   }
@@ -118,7 +118,7 @@ export function RoutineDetailPage() {
               onClick={() => fire.mutate(routine.id)}
               disabled={fire.isPending}
             >
-              {fire.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Play className="size-3.5" />}
+              {fire.isPending ? <Spinner size="sm" /> : <Play className="size-3.5" />}
               Run now
             </Button>
             <Button
@@ -222,7 +222,7 @@ export function RoutineDetailPage() {
         </CardHeader>
         <CardContent>
           {!runsData ? (
-            <Loader2 className="size-4 animate-spin text-muted-foreground" />
+            <Spinner size="md" className="text-muted-foreground" />
           ) : runsData.total === 0 ? (
             <p className="text-xs text-muted-foreground">
               No runs yet. The cron sweep fires every 15 min, or click "Fire now" above.

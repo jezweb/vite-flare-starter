@@ -20,13 +20,13 @@ import {
   XCircle,
   AlertCircle,
   Clock,
-  Loader2,
   Inbox,
   ChevronRight,
   Brain,
   ArrowUpRight,
   Lock,
 } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -280,7 +280,7 @@ function ApprovalCard({ approval, highlight }: { approval: Approval; highlight: 
               >
                 {approve.isPending && !approve.variables?.alwaysAllow ? (
                   <>
-                    <Loader2 className="size-3 animate-spin" />
+                    <Spinner size="xs" />
                     Approving…
                   </>
                 ) : (
@@ -298,7 +298,7 @@ function ApprovalCard({ approval, highlight }: { approval: Approval; highlight: 
                 >
                   {approve.isPending && approve.variables?.alwaysAllow ? (
                     <>
-                      <Loader2 className="size-3 animate-spin" />
+                      <Spinner size="xs" />
                       Approving…
                     </>
                   ) : (

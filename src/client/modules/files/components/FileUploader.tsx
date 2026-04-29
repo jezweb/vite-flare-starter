@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { Upload, Loader2, X, CheckCircle, AlertCircle } from 'lucide-react'
+import { Upload, X, CheckCircle, AlertCircle } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { cn } from '@/lib/utils'
 import { useUploadFile } from '../hooks/useFiles'
 import { Button } from '@/components/ui/button'
@@ -167,7 +168,7 @@ export function FileUploader({
                 <div className="flex items-center gap-2 mt-1">
                   {item.status === 'uploading' && (
                     <>
-                      <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                      <Spinner size="xs" className="text-primary" />
                       <span className="text-xs text-muted-foreground">Uploading...</span>
                     </>
                   )}

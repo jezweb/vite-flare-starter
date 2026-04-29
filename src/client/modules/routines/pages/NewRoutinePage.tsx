@@ -15,7 +15,8 @@
  */
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, ChevronDown, ChevronRight, Loader2 } from 'lucide-react'
+import { ArrowLeft, ChevronDown, ChevronRight } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -308,7 +309,7 @@ export function NewRoutinePage() {
           <Button type="submit" disabled={!canSubmit || create.isPending}>
             {create.isPending ? (
               <>
-                <Loader2 className="size-3 animate-spin" />
+                <Spinner size="xs" />
                 Creating…
               </>
             ) : (

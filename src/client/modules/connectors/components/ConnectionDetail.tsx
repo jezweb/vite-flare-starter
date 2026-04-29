@@ -6,7 +6,8 @@
  * (heuristic: tool name contains create/update/delete/send/post → write).
  */
 import { useMemo, useState, useEffect } from 'react'
-import { Loader2, Shield, Trash2, KeyRound, ExternalLink } from 'lucide-react'
+import { Shield, Trash2, KeyRound, ExternalLink } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -143,7 +144,7 @@ export function ConnectionDetail({
 
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            <Spinner size="lg" className="text-muted-foreground" />
           </div>
         ) : tools.length === 0 ? (
           <div className="text-sm text-muted-foreground py-8 text-center">
@@ -215,7 +216,7 @@ export function ConnectionDetail({
               disabled={!pending || update.isPending}
               onClick={save}
             >
-              {update.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : `Save ${pending ? `(${Object.keys(dirty).length})` : ''}`}
+              {update.isPending ? <Spinner size="md" /> : `Save ${pending ? `(${Object.keys(dirty).length})` : ''}`}
             </Button>
           </div>
         </div>
@@ -327,7 +328,7 @@ function BearerTokenPanel({ connectionId }: { connectionId: string }) {
           )
         }
       >
-        {save.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save token'}
+        {save.isPending ? <Spinner size="md" /> : 'Save token'}
       </Button>
     </div>
   )
@@ -362,7 +363,7 @@ function ResumeOAuthPanel({ connectionId }: { connectionId: string }) {
       </p>
       <Button size="sm" onClick={onResume} disabled={authorize.isPending}>
         {authorize.isPending ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Spinner size="md" />
         ) : (
           <>
             <ExternalLink className="mr-2 h-4 w-4" />
@@ -460,7 +461,7 @@ function ProfilePanel({ connection }: { connection: McpConnection }) {
       </div>
       <div className="flex items-center justify-end">
         <Button size="sm" disabled={!dirty || update.isPending} onClick={save}>
-          {update.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Save profile'}
+          {update.isPending ? <Spinner size="sm" /> : 'Save profile'}
         </Button>
       </div>
     </div>

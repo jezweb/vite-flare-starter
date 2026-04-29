@@ -21,6 +21,7 @@ import {
   Zap,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Spinner } from '@/components/ui/spinner'
 import { Switch } from '@/components/ui/switch'
 import { EmptyState } from '@/client/components/EmptyState'
 import { PageContainer } from '@/components/ui/page-container'
@@ -98,7 +99,7 @@ export function RoutinesPage() {
               onClick={() => seed.mutate()}
               disabled={seed.isPending}
             >
-              {seed.isPending ? <Loader2 className="size-3 animate-spin" /> : null}
+              {seed.isPending ? <Spinner size="xs" /> : null}
               {seed.isPending ? 'Seeding…' : 'Or seed two example routines'}
             </Button>
             <p className="mt-1 text-[11px] text-muted-foreground">

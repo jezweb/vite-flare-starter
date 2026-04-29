@@ -9,7 +9,8 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Bot, User, Brain, Wrench, Loader2, RotateCcw } from 'lucide-react'
+import { Bot, User, Brain, Wrench, RotateCcw } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import type { Message, MessageMetadata } from '../hooks/useChat'
 import { extractUIResources, ToolUIResource } from './ToolUIResource'
@@ -103,7 +104,7 @@ export const ChatMessage = memo(function ChatMessage({ message, isLast, onRegene
                             {isComplete ? (
                               <Wrench className="size-3" />
                             ) : (
-                              <Loader2 className="size-3 animate-spin" />
+                              <Spinner size="xs" />
                             )}
                             <span className="font-medium">{toolName}</span>
                           </div>
@@ -127,7 +128,7 @@ export const ChatMessage = memo(function ChatMessage({ message, isLast, onRegene
                       {/* Takeover hint — shows "Waiting for your input" in the message */}
                       {isTakeover && isLast && (
                         <div className="my-1 rounded border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-primary flex items-center gap-1.5">
-                          <Loader2 className="size-3 animate-spin" />
+                          <Spinner size="xs" />
                           Waiting for your response below...
                         </div>
                       )}

@@ -17,7 +17,8 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAgent } from 'agents/react'
-import { Camera, Square, Loader2 } from 'lucide-react'
+import { Camera, Square } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -231,7 +232,7 @@ export function VideoInputExamplePage() {
             <p className="text-sm text-muted-foreground">
               {isActive ? (
                 <span className="inline-flex items-center gap-2">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <Spinner size="sm" />
                   Waiting for the first frame…
                 </span>
               ) : (

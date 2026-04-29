@@ -3,7 +3,8 @@
  * note, fire forward.
  */
 import { useState } from 'react'
-import { Loader2, Forward } from 'lucide-react'
+import { Forward } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import {
   Dialog,
   DialogContent,
@@ -80,7 +81,7 @@ export function ForwardMessageDialog({ message, open, onClose }: Props) {
             Cancel
           </Button>
           <Button onClick={submit} disabled={!target || forward.isPending}>
-            {forward.isPending ? <Loader2 className="size-4 animate-spin" /> : <Forward className="size-4 mr-1" />}
+            {forward.isPending ? <Spinner size="md" /> : <Forward className="size-4 mr-1" />}
             Forward
           </Button>
         </div>
