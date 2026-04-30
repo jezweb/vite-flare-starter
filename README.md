@@ -132,7 +132,8 @@ Per-agent reply modes (`mention` / `proactive` / `ambient` / `always` / `off`), 
 - MCP Connectors — per-user OAuth to external MCP servers, PKCE + DCR flow, tokens AES-GCM encrypted at rest, per-tool always/ask/never policies
 - Google Workspace — per-user OAuth with automatic token refresh, granular scope tracking, 26 tools across 6 Google services
 - Config-driven sidebar — add nav items in `nav.ts`, feature-flag modules in `features.ts`
-- UI — Tailwind v4 + shadcn/ui, 8+ themes, dark/light/system
+- UI — Tailwind v4 + shadcn/ui (~80 primitives), 8+ themes, dark/light/system
+- Layout primitives — three list-page shapes (queue / cards / table) with copy-paste scaffolds in `_template/`, themed `Chart` wrapper for trends. Picker rule in CLAUDE.md.
 - Command palette — Cmd+K, keyboard shortcuts
 - Files — R2 upload/download with D1 metadata
 - Activity — audit log with pagination and entity history

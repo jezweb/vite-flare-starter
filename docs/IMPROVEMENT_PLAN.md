@@ -1,8 +1,16 @@
 # Vite Flare Starter - Improvement Plan
 
 **Created:** 2025-12-30
-**Status:** Planning
-**Estimated Phases:** 8
+**Status:** Historical — all 8 phases shipped between Dec 2025 and Apr 2026
+**Estimated Phases:** 8 (all complete)
+
+> **This is an archived roadmap.** Path references in this file
+> (e.g. `src/components/ui/empty-state.tsx`) reflect the planning state
+> at creation time — not current paths. The canonical empty-state
+> primitive is `src/client/components/EmptyState.tsx`; the orphan in
+> `components/ui/` was removed 2026-04-30. See `CHANGELOG.md` for the
+> ship trail and `docs/PRIMITIVES.md` for the current primitive
+> catalogue.
 
 ---
 

@@ -141,12 +141,32 @@ rather than waiting for the user to populate.
 
 Every dashboard page needs a deliberate empty state, NOT just "no
 data." See `src/client/components/EmptyState.tsx` — it accepts an
-icon, title, description, and CTA. Use it.
+icon, title, description, tips, and dual CTAs. Use it.
 
 The empty state should:
 - Explain what would be HERE if the user had data
 - Suggest the next action (with a button, not just text)
 - Optionally link to a relevant docs page
+
+### Picking a layout for a new list page
+
+Walk this decision tree before writing JSX (full table in `CLAUDE.md` /
+`docs/PRIMITIVES.md`):
+
+- text-dominant queue, scan top-to-bottom → `ListRowGroup` —
+  scaffold `_template/IndexPage.tsx`
+- find-and-act, 5–30 visual/logo-y items → `Item` grid —
+  scaffold `_template/CatalogPage.tsx`
+- structured uniform rows, sort/filter/pagination, 50+ → `DataTable` —
+  scaffold `_template/TablePage.tsx`
+
+Need a view toggle on the same page (cards ⇄ list)? Use
+`useViewPreference('<surface>', '<default>')` from
+`@/client/lib/use-view-preference`. SkillsPage is the worked example.
+
+Trends / dashboards / charts? `ChartContainer` from
+`@/components/ui/chart` (Recharts under the hood, themed). Don't
+import Recharts directly. AgentObservabilityPage is the worked example.
 
 ### What to skip until later
 
@@ -205,6 +225,9 @@ For agent toolkit + connector setup: `docs/AGENT_TOOLKIT.md`.
 | Better-auth Organization | Phase I v1 — orgs + members + active-org tracking |
 | Tool Search | Phase K — `find_tools(query)` + lazy activation in chat module |
 | BYOK credentials | Phase L — `service_credentials` + `getServiceKey` resolution chain |
+| Generic data table with sort + pagination | `DataTable` from `@/components/ui/data-table` (TanStack Table integration) |
+| Per-surface view-toggle persistence | `useViewPreference` from `@/client/lib/use-view-preference` |
+| Themed chart wrappers | `ChartContainer` / `ChartTooltip` from `@/components/ui/chart` (don't import Recharts directly) |
 
 ### Pattern conventions
 

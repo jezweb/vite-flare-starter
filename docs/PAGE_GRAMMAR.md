@@ -35,11 +35,20 @@ header, density, or rhythm.
 | Type | Use when | Container | Body shape |
 |---|---|---|---|
 | **queue** | User triages items: Inbox, Notifications-style streams, Approvals, Activity, Routines list, Files list | `max-w-3xl` | `ListRowGroup` (no Card chrome around rows) |
-| **index** | Dwell surfaces: Projects, Spaces, Skills | `max-w-5xl` | Card grid 2–3 wide |
+| **index** | Dwell surfaces: Projects, Spaces, Skills | `max-w-5xl` | `Item` grid 2–3 wide (or `DataTable` for 50+ rows) |
 | **detail** | Single-record dwell: project page, routine detail, conversation | `max-w-5xl` to `max-w-7xl` | DetailHeader + body (4 sub-patterns — see below) |
 | **form** | Create/edit: New Routine, Settings tabs, Admin tabs | `max-w-3xl` | `FormSection` blocks with field groups inside |
-| **catalog** | Marketplace: Apps, Skills browse, model picker | `max-w-5xl` | Card grid + filter sidebar |
+| **catalog** | Marketplace: Apps, Skills browse, model picker | `max-w-5xl` | `Item` grid (cards) with optional list/table toggle via `useViewPreference` |
 | **hub** | Dashboard Home only — owns the "stateful greeting + setup + recent" pattern | `max-w-5xl` | Mixed; Card panels are OK here |
+
+**Picking the body shape inside `index` / `catalog`** depends on the
+*size and uniformity* of the data, not the page type:
+
+- 5–30 visual/logo-y items → `Item` grid (`_template/CatalogPage.tsx`)
+- structured uniform rows, sort/filter, 50+ → `DataTable` (`_template/TablePage.tsx`)
+- mixed shape per row, text-dominant → `ListRowGroup` (`_template/IndexPage.tsx`)
+
+See the layout decision table in `CLAUDE.md` for the full picker.
 
 Pages declare their type at the top via `<PageContainer type="queue">`.
 The container picks the right max-width and outer padding.

@@ -10,12 +10,15 @@ top-level pattern starts with adding a primitive here.
 Is it a list of items the user scans top-to-bottom?
 ├── Yes — a queue of decisions, findings, runs, files, etc.
 │   └── Use ListRowGroup + ListRow                      ← Inbox / Activity / Notifications / Routines
+│       Scaffold: _template/IndexPage.tsx
 │
-├── Yes — a marketplace/dwell surface (cards, multi-line, multi-CTA)
-│   └── Use a Card grid                                  ← Projects / Spaces / Skills / Connections
+├── Yes — find-and-act, 5–30 visual/logo-y items
+│   └── Use Item + Tailwind grid                         ← Projects / Spaces / Skills / Connections
+│       Scaffold: _template/CatalogPage.tsx
 │
-├── Yes — tabular data (sortable, paginated, multi-column)
-│   └── Use Table                                        ← Admin Users / Files (advanced)
+├── Yes — structured uniform rows, sort/filter/pagination, 50+
+│   └── Use DataTable (shadcn + TanStack Table)          ← Admin Users / Contacts / Policies
+│       Scaffold: _template/TablePage.tsx
 │
 ├── Yes — a key/value pair display (technical detail)
 │   └── Use KeyValueRow + KeyValueList inside HelpDisclosure
@@ -23,6 +26,16 @@ Is it a list of items the user scans top-to-bottom?
 └── No — it's a single-record dwell view (one project, one routine)
     └── Use Section blocks                                ← Project detail / Routine detail / Conversation
 ```
+
+**Need a view toggle on the same surface** (cards ⇄ list, table ⇄ cards)?
+Use `useViewPreference('<surface-key>', '<default>')` from
+`@/client/lib/use-view-preference`. Persists per-user via localStorage
+scoped to `appConfig.id` so forks don't collide. See `SkillsPage` for a
+worked example.
+
+**For trends / dashboards / charts**: shadcn `Chart` (Recharts under the
+hood, themed via `--chart-1..5` CSS vars). See `AgentObservabilityPage`
+for a worked example with bar + area charts side-by-side.
 
 ## Page-level primitives (mandatory)
 
@@ -39,9 +52,11 @@ Is it a list of items the user scans top-to-bottom?
 | Primitive | File | Use |
 |---|---|---|
 | **ListRow + ListRowGroup** | `components/ui/list-row.tsx` | Queue rows. Supports unread/urgent/disabled states. |
+| **Item + ItemMedia/Content/Title/Description/Actions** | `components/ui/item.tsx` | Card-grid rows with icon + body + actions. Use inside a Tailwind grid (`grid gap-3 sm:grid-cols-2 xl:grid-cols-3`). |
 | **Section** | `components/ui/section.tsx` | Grouped block with uppercase or headline title. |
 | **Card** | `components/ui/card.tsx` | Dwell surfaces with multi-line content. NOT for queue rows. |
-| **Table** | `components/ui/table.tsx` | Tabular data only. |
+| **Table** | `components/ui/table.tsx` | Low-level tabular markup. Wrap in `DataTable` for sort/pagination. |
+| **DataTable** | `components/ui/data-table.tsx` | Generic shadcn + TanStack Table integration. Sort, pagination, empty state, optional row click. Pass `columns: ColumnDef<T>[]` + `data: T[]`. |
 
 ## Detail / disclosure primitives
 
@@ -62,8 +77,21 @@ Is it a list of items the user scans top-to-bottom?
 | **SearchInput** | `components/ui/search-input.tsx` | Icon-in-input search with optional clear button. Replaces 9 hand-rolled `<Search className="absolute left-3 …">` recipes with drift in icon size + padding. |
 | **Time** | `components/ui/time.tsx` | `<time>` element with relative/short/absolute display + tooltip. Pairs with `shared/format/datetime.ts` helpers. |
 | **Spinner** | `components/ui/spinner.tsx` | Loading indicator. Sizes: xs (size-3) / sm (size-3.5, default) / md (size-4) / lg (size-5). Replaces hand-rolled `<Loader2 className="animate-spin" />`. |
-| **EmptyState** | `client/components/EmptyState.tsx` | Wired by PageEmpty/PageError. |
+| **EmptyState** | `client/components/EmptyState.tsx` | Wired by PageEmpty/PageError. Has `tips` + dual-action API. |
 | **ConfigDiffCard** | `client/components/ConfigDiffCard.tsx` | Approval card with line diff. |
+| **ToggleGroup + ToggleGroupItem** | `components/ui/toggle-group.tsx` | Single/multi-select pill row. Use for view toggles (cards ⇄ list), date-range pickers (7d/14d/30d), filter sets. |
+| **Chart + ChartContainer + ChartTooltip + ChartTooltipContent + ChartLegend** | `components/ui/chart.tsx` | Wraps Recharts with theme-token resolution (`--chart-1..5`). Don't import Recharts directly. |
+| **Empty + EmptyHeader + EmptyMedia + EmptyTitle + EmptyDescription + EmptyContent** | `components/ui/empty.tsx` | Low-level shadcn empty-state composables. Use `EmptyState` (canonical, has `tips` + actions) for normal cases; reach for these only when you need finer control. |
+| **Resizable** | `components/ui/resizable.tsx` | Drag-handle split panes. Use for sequential-reading surfaces (Inbox, Approvals). |
+| **HoverCard** | `components/ui/hover-card.tsx` | Hover-triggered popover for richer-than-Tooltip preview content. |
+| **Combobox** | `components/ui/combobox.tsx` | Searchable single-select. Built on Command + Popover. |
+| **Pagination** | `components/ui/pagination.tsx` | Numbered page links + prev/next chevrons. Already used inside `DataTable`. |
+| **Progress** | `components/ui/progress.tsx` | Linear progress bar. |
+| **Breadcrumb** | `components/ui/breadcrumb.tsx` | Multi-level navigation trail (project → conversation → message). |
+| **Accordion** | `components/ui/accordion.tsx` | Vertically-stacked collapsible sections. Multiple-open or single-open via `type`. |
+| **Collapsible** | `components/ui/collapsible.tsx` | Atomic single-item fold (lighter than Accordion). |
+| **ScrollArea** | `components/ui/scroll-area.tsx` | Custom-styled scrollbars for sidebars / TOCs. |
+| **NavigationMenu** | `components/ui/navigation-menu.tsx` | Top-level mega-menu surface (forks with a public marketing landing). |
 
 ## Helper modules (non-component)
 
@@ -71,6 +99,7 @@ Is it a list of items the user scans top-to-bottom?
 |---|---|---|
 | **datetime helpers** | `shared/format/datetime.ts` | `formatRelative` / `formatShort` / `formatAbsolute` / `formatDuration` / `parseTimestamp`. Single source of truth for date/time formatting. |
 | **useCopy hook** | `client/lib/use-copy.ts` | Hook for clipboard copy with standardised success/error toasts. |
+| **useViewPreference hook** | `client/lib/use-view-preference.ts` | Persist a per-surface layout view (`'cards' \| 'list'` etc.) in localStorage scoped to `appConfig.id + surfaceKey`. SSR-safe; tolerates quota / private-browsing failures. |
 | **toast helpers** | `client/lib/toast-helpers.ts` | `toastSavedX` / `toastDeletedX` / `toastCreatedX` / `toastFailedTo` for verb-tense-consistent toast messages. |
 | **status colour tokens** | `client/lib/status-colors.ts` | `STATUS_SOFT_BG` / `STATUS_TEXT` / `STATUS_SOLID` for traffic-light hues. Use via `StatusPill` first; raw tokens only for one-offs that don't fit the badge shape. |
 
@@ -101,7 +130,10 @@ Is it a list of items the user scans top-to-bottom?
 | `toast.success('X saved.')` / `toast.error('Failed to save X. Please try again.')` | Verb-tense + period drift across 30+ sites | `toastSavedX('X')` / `toastFailedTo('save X', err)` from `toast-helpers.ts` |
 | Hand-rolled detail-page header (back-link + h1 + actions) | Drift across detail pages | `<DetailHeader>` |
 | Hand-rolled form section (h2 + description + field group) on `form`-type pages | Settings tabs drifted before this primitive landed | `<FormSection>` with `density="comfortable"` (Card-wrapped) or `compact` (no Card) |
-| Two `<EmptyState>` impls (`components/ui/empty-state.tsx` + `client/components/EmptyState.tsx`) | Pick one; the client one is canonical (has `tips`) | `<EmptyState>` from `@/client/components/EmptyState` |
+| Importing `recharts` directly | Skips theme-token resolution; charts won't follow `--chart-1..5` and won't rebrand cleanly | Wrap in `<ChartContainer config={…}>` from `@/components/ui/chart` |
+| Hand-rolled `<button>` + Switch nested in a single clickable card | nested-interactive a11y violation; breaks keyboard focus order | Use `Item` with the title-button as a flex child and Switch in `ItemActions` (sibling) — two clean focus stops. See `SkillsPage` worked example. |
+| Hand-rolled `localStorage.getItem('view-…')` for view toggles | Drift on storage-key prefix; not SSR-safe; collides across forks | `useViewPreference('<surface>', '<default>')` from `@/client/lib/use-view-preference` |
+| `<EntityListPage<T> config={…} />` mega-component | Premature framework — extracts the same bug across 3 pages | Compose the primitive matching the shape (Item / ListRow / DataTable) per page; only extract a generic when 3+ surfaces prove it |
 | Per-page `space-y-{5\|7\|8}` | Off-ladder | `space-y-{1,2,3,4,6}` only |
 | `text-3xl` / `text-4xl` for page H1 | Off-scale; shouts louder than the contract | `text-2xl font-semibold tracking-tight` (PageHeader / DetailHeader) |
 | Adding a 7th page type to PageContainer | Categorisation war | `maxWidth` override prop |
@@ -163,6 +195,18 @@ When a new pattern shows up in 3+ pages:
    "Anti-primitives" above and grep for the old pattern.
 
 ## Last updated
+
+2026-04-30 — Layout-primitives ship (gh #59):
+- 14 shadcn primitives installed (chart, data-table, item, toggle-group,
+  empty, resizable, hover-card, combobox, pagination, progress,
+  breadcrumb, accordion, scroll-area, navigation-menu, collapsible).
+- New `DataTable` integration over TanStack Table.
+- New `useViewPreference` hook for per-surface layout view persistence.
+- Decision tree updated to point at the matching `_template/` scaffold
+  per shape (queue → IndexPage, cards → CatalogPage, table → TablePage).
+- Orphan `components/ui/empty-state.tsx` removed; canonical empty-state
+  is `client/components/EmptyState.tsx` (the shadcn `Empty` family stays
+  as low-level composables for special cases).
 
 2026-04-29 — Phase 0 of design-coherence work added PageHeader,
 PageContainer, StatGrid, PageFilters, KeyValueRow + KeyValueList,

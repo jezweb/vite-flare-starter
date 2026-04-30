@@ -2,6 +2,65 @@
 
 All notable changes to `vite-flare-starter`.
 
+## 2026-04-30
+
+### Added — Layout primitives (gh #59)
+
+Cleared the "split-pane entity list pages" issue by shipping focused
+primitives + scaffolds + a decision rule, NOT the proposed
+`<EntityListPage<T>>` mega-component (premature framework by the
+3+-instances rule).
+
+- **15 shadcn primitives** confirmed installed (chart, item,
+  toggle-group, empty, resizable, hover-card, combobox, pagination,
+  progress, breadcrumb, accordion, scroll-area, navigation-menu,
+  collapsible) — 14 from prior runs + new `data-table`.
+- **`DataTable`** (`src/components/ui/data-table.tsx`) — generic shadcn
+  + TanStack Table integration with column sort, client-side
+  pagination, empty state, optional row click.
+- **`useViewPreference`** (`src/client/lib/use-view-preference.ts`) —
+  hook for per-surface layout view persistence in localStorage scoped
+  to `appConfig.id + surfaceKey` so forks don't collide. SSR-safe;
+  tolerates quota / private-browsing failures.
+- **Skills retrofit** — replaced 320px split-pane with card-grid
+  default + list-view toggle (via shadcn Item + ToggleGroup). Selected
+  skill's editor renders below the grid (claude.ai pattern), no
+  separate route. Two clean focus stops per row.
+- **Two new `_template` scaffolds** — `CatalogPage.tsx` (cards-default
+  with optional list toggle) and `TablePage.tsx` (DataTable). Sit
+  alongside existing `IndexPage.tsx` (queue). README has a decision
+  table mapping each scaffold to its intended use case.
+- **Agent observability dashboard** — new `/dashboard/agent-observability`
+  page with bar (runs/agent) + area (cost/day) charts via shadcn
+  `Chart` wrapper over Recharts. New `GET /api/agent-observability/stats?range=7d|14d|30d|90d`
+  endpoint with gap-filled date buckets. Range toggle via ToggleGroup.
+- **CLAUDE.md decision rule** — three-shape picker (cards / list /
+  table) pointing at the matching scaffold, plus when-to-add-a-new-primitive
+  guidance citing `~/.claude/rules/trust-skills-not-elaborate-code.md`.
+
+### Removed
+
+- Orphan `src/components/ui/empty-state.tsx` (zero references).
+  Canonical empty-state is `src/client/components/EmptyState.tsx`
+  (used in 18 places — has tips + dual-action API). The shadcn
+  `Empty` family stays as low-level composables for special cases.
+
+### Docs
+
+- `docs/PRIMITIVES.md` — added Item, DataTable, Chart, ToggleGroup,
+  Empty, Resizable, HoverCard, Combobox, Pagination, Progress,
+  Breadcrumb, Accordion, Collapsible, ScrollArea, NavigationMenu,
+  useViewPreference. Decision tree updated to point at scaffolds.
+  New anti-patterns: hand-rolled Recharts imports, hand-rolled
+  view-toggle localStorage, EntityListPage mega-component.
+- `docs/PAGE_GRAMMAR.md` — index/catalog body shape updated to point
+  at Item / DataTable / ListRowGroup with scaffold pointers.
+- `docs/ONBOARDING.md` — "Picking a layout for a new list page"
+  walkthrough; "What's already done" extended with DataTable,
+  useViewPreference, ChartContainer.
+- `README.md` — layout-primitives line in features.
+- `SESSION.md` — refreshed to 2026-04-30.
+
 ## 2026-04-23
 
 ### Added — Google Workspace connector (Phases 1-3 + NLP)
