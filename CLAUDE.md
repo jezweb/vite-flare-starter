@@ -194,6 +194,43 @@ only for confirmations and quick decisions. Reference:
 | **Paste Upload** | `client/hooks/usePasteUpload.ts` | Cmd+V file/image handler |
 | **ConfigDiffCard** | `client/components/ConfigDiffCard.tsx` | Shared approval card with line diff (used by skills editor + propose_patch chat tool) |
 
+### Choosing a layout for a list page
+
+Pick the shape that matches what the user is doing on the page, not what
+the data looks like. The `_template/` directory has a copy-paste scaffold
+for each shape.
+
+| Pattern | When | Primitive | Scaffold |
+|---|---|---|---|
+| **Card grid** | find-and-act, 5–30 visual/logo-y items | shadcn `Item` + Tailwind grid | `_template/CatalogPage.tsx` |
+| **List row** | find-and-act/edit, text-dominant queue | `ListRowGroup` (custom) | `_template/IndexPage.tsx` |
+| **Table** | structured uniform rows, sort/filter, 50+ items | shadcn `Data Table` | `_template/TablePage.tsx` |
+| **Split-pane** | sequential reading (Inbox, Approvals) | `Resizable` + `ListRow` | none yet — use Inbox as ref |
+| **Kanban** (v2) | workflow stages | not yet — extract when 1st use case lands | — |
+| **Calendar** (v2) | date-anchored entities | not yet — base on shadcn `Calendar` + custom event renderer | — |
+
+**View toggles** (cards ⇄ list on the same surface): use
+`useViewPreference('<surface-key>', '<default>')` — persists per-user
+via localStorage scoped to `appConfig.id`. See `SkillsPage` for a
+worked example.
+
+**For aggregates / trends / dashboards**: shadcn `Chart` (Recharts under
+the hood, themed via `chart-1..5` CSS vars). Don't import Recharts
+directly — go through the shadcn wrapper for consistent theming. See
+`AgentObservabilityPage` for a worked example with bar + area charts.
+
+**When to add a new layout primitive** (Kanban, Tree, Gallery, …):
+
+- 3+ surfaces in this codebase OR a strong "we're about to build several
+  of these" — only then.
+- New primitive should be small + focused (one job) following the
+  existing primitives' shape, NOT a config-blob component.
+- Document the use case + when-to-use in this table when it lands.
+
+This rule comes from `~/.claude/rules/trust-skills-not-elaborate-code.md`
+applied to layouts: ship focused primitives, let pages compose them, only
+extract a generic component when 3+ pages prove the same shape.
+
 ---
 
 ## Cloudflare platform features
