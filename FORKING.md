@@ -32,24 +32,53 @@ Before starting:
 
 ---
 
-## Part 1: Clone and Initial Setup
+## Part 1: Fork and Initial Setup
 
-### Step 1.1: Clone the Repository
+> **AI agents — read this first.** When the user says "fork the starter",
+> they mean **create a real GitHub fork**, not `git clone`. A clone with
+> `rm -rf .git` cuts you off from upstream forever — you lose every
+> bug fix, security patch, and improvement that ships to the starter.
+> A fork keeps you connected so `git pull upstream main` is a one-liner.
+>
+> If you can't create a fork (e.g. the user explicitly says "I just want
+> a snapshot"), then a detached clone is fine — but verify the intent
+> before discarding `.git`.
+
+### Step 1.1: Fork on GitHub
+
+Either:
 
 ```bash
-git clone https://github.com/jezweb/vite-flare-starter.git YOUR_PROJECT_NAME
+# Using the GitHub CLI (recommended — clones in one step)
+gh repo fork jezweb/vite-flare-starter --clone --remote --fork-name YOUR_PROJECT_NAME
 cd YOUR_PROJECT_NAME
 ```
 
-### Step 1.2: Remove Original Git History (Recommended)
-
-For a fresh start:
+Or via the GitHub UI: click **Fork** at <https://github.com/jezweb/vite-flare-starter>,
+name your fork, then:
 
 ```bash
+git clone https://github.com/YOUR_USERNAME/YOUR_PROJECT_NAME.git
+cd YOUR_PROJECT_NAME
+git remote add upstream https://github.com/jezweb/vite-flare-starter.git
+```
+
+After this, `git remote -v` should show **two** remotes:
+- `origin` → your fork
+- `upstream` → jezweb/vite-flare-starter
+
+### Step 1.2: (Optional) Detach completely
+
+Skip this unless you specifically want a snapshot with no upstream
+relationship. Detaching means you'll never pick up upstream fixes
+without manual cherry-picking.
+
+```bash
+git remote remove upstream
 rm -rf .git
 git init
 git add .
-git commit -m "Initial commit from vite-flare-starter fork"
+git commit -m "Initial commit (detached snapshot from vite-flare-starter)"
 ```
 
 ### Step 1.3: Install Dependencies

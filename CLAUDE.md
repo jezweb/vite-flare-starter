@@ -66,6 +66,12 @@ VITE_FEATURE_ACTIVITY=false
 
 See [FORKING.md](./FORKING.md) for the full guide.
 
+**Fork, don't clone.** When the user says "fork the starter", create a
+real GitHub fork (`gh repo fork ...` or the GitHub UI) so `upstream`
+stays wired and `git pull upstream main` keeps you on bug fixes and
+security patches. A `git clone` + `rm -rf .git` cuts you off forever —
+only do that if the user explicitly asks for a detached snapshot.
+
 **Quick start after forking:**
 
 1. Edit `src/shared/config/nav.ts` — add your product's nav items
