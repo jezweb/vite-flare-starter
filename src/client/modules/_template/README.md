@@ -16,9 +16,20 @@ Then:
 4. Write your hook(s) in `hooks/use<ThingName>.ts` calling your API endpoints
 5. Replace the empty-state copy with something matching your domain
 
-The included files demonstrate the **most common module shape** — a
-queue page (`pages/IndexPage.tsx`) and a detail page (`pages/DetailPage.tsx`).
-Drop the one you don't need; keep the patterns for the one you do.
+The included files demonstrate three list-page variants plus a detail
+page. Pick the one that fits your domain and drop the others:
+
+| File | When to copy |
+|---|---|
+| `pages/IndexPage.tsx` | "Queue" — text-dominant, scan top-to-bottom (Inbox-style) |
+| `pages/CatalogPage.tsx` | "Find-and-act" — 5–30 visual/logo-y items, cards default with list toggle |
+| `pages/TablePage.tsx` | "Structured rows" — sort + filter + pagination, 50+ items |
+| `pages/DetailPage.tsx` | The detail view paired with any of the above |
+
+If you need more than one list shape (e.g. a CRM with a Contacts table
+AND a Tags catalog), copy each scaffold separately into its own module.
+
+See the layout decision table in `CLAUDE.md` for the full picker.
 
 ## What's enforced by the template
 
