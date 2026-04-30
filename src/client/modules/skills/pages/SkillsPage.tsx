@@ -1,23 +1,30 @@
 /**
  * SkillsPage — browse, install, preview, edit, enable/disable, delete skills.
  *
- * Layout:
- *   Desktop  — list on the left (320px), editor on the right (fluid).
- *   Mobile   — list full-width; selecting a skill replaces it with the editor.
+ * Layout (post 2026-04-30 retrofit, gh #59):
+ *   - Card-grid by default (Item primitive). 5–30 visual entries with
+ *     icon + name + slash form + description + source badge + on/off.
+ *   - Toggle to list view via shadcn ToggleGroup. Persisted per-user
+ *     via `useViewPreference('skills', 'cards')`.
+ *   - Selected skill's editor renders BELOW the grid/list (claude.ai
+ *     pattern) and the page scrolls it into view. No separate route,
+ *     no split-pane that squeezes both halves.
  *
  * Edit flow uses the shared ConfigDiffProposal primitive (/api/config-diff).
  * Bundled skills that the user edits are transparently overridden by an R2
  * copy — the skills table flips `source: 'r2'`, and the R2 version wins.
  */
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Upload,
   Code2 as GithubIcon,
   RefreshCw,
   Trash2,
-  Plus,
   ArrowLeft,
   MoreHorizontal,
+  LayoutGrid,
+  List as ListIcon,
+  Sparkles,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/client/components/EmptyState'
@@ -53,7 +60,20 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+  ItemTitle,
+} from '@/components/ui/item'
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from '@/components/ui/toggle-group'
 import { cn } from '@/lib/utils'
+import { useViewPreference } from '@/client/lib/use-view-preference'
 import {
   useSkillsList,
   useInstallGitHubSkill,
@@ -65,6 +85,8 @@ import {
 } from '../hooks/useSkills'
 import { SkillEditor } from '../components/SkillEditor'
 import { formatSkillName, formatSkillSlash } from '@/shared/format/skill'
+
+type Skill = NonNullable<ReturnType<typeof useSkillsList>['data']>['skills'][number]
 
 export function SkillsPage() {
   const { data, isLoading } = useSkillsList()
@@ -82,15 +104,26 @@ export function SkillsPage() {
   const [githubUrl, setGithubUrl] = useState('')
   const [inlineContent, setInlineContent] = useState('')
 
+  const [view, setView] = useViewPreference<'cards' | 'list'>('skills', 'cards')
+
+  const detailRef = useRef<HTMLDivElement | null>(null)
+
   const skills = data?.skills ?? []
 
-  // Auto-select first skill once the list loads, only on desktop widths.
-  // We don't force it on mobile because that hides the list behind the
-  // detail pane and the user hasn't asked for an editor yet.
+  // Auto-select the first skill once the list loads on desktop only —
+  // on narrower widths users haven't asked for an editor yet.
   const effectiveSelected =
     selectedName ?? (typeof window !== 'undefined' && window.innerWidth >= 1024
       ? skills[0]?.name ?? null
       : null)
+
+  // Scroll the detail pane into view when a skill is picked from
+  // the grid/list. Skip on the auto-select fallback so the page
+  // doesn't jump on initial load.
+  useEffect(() => {
+    if (!selectedName) return
+    detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [selectedName])
 
   const handleInstall = async () => {
     if (!githubUrl.trim()) return
@@ -151,7 +184,7 @@ export function SkillsPage() {
           {[0, 1, 2].map((i) => (
             <div
               key={i}
-              className="h-16 animate-pulse rounded-md bg-muted"
+              className="h-20 animate-pulse rounded-md bg-muted"
             />
           ))}
         </div>
@@ -171,133 +204,88 @@ export function SkillsPage() {
           }}
         />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
-          {/* List column — hidden on mobile when a skill is selected so
-              the editor has room. */}
-          <div
-            className={cn(
-              'space-y-1 rounded-lg border bg-card p-2',
-              effectiveSelected && 'hidden lg:block',
-            )}
-          >
-            <div className="flex items-center justify-between px-2 py-1 text-xs font-medium text-muted-foreground">
-              <span>{skills.length} skills</span>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setUploadOpen(true)}
-                className="h-6 w-6 p-0"
-                aria-label="Add skill"
-              >
-                <Plus className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-            <ul className="max-h-[70vh] space-y-0.5 overflow-y-auto">
-              {skills.map((s) => (
-                <li key={s.id}>
-                  {/* a11y: the row used to be a single `<button>` containing a
-                      Switch — that's nested-interactive and breaks keyboard
-                      focus order. Now: container is a non-interactive div,
-                      with two clean focus stops — title button (open) +
-                      Switch (toggle enabled). */}
-                  <div
-                    className={cn(
-                      'group flex items-start gap-2 rounded-md px-2 py-1.5 hover:bg-muted/60',
-                      effectiveSelected === s.name && 'bg-muted',
-                      !s.enabled && 'opacity-60',
-                    )}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setSelectedName(s.name)}
-                      className="min-w-0 flex-1 rounded-md text-left focus:outline-none focus:ring-1 focus:ring-primary/40"
-                      aria-current={effectiveSelected === s.name ? 'true' : undefined}
-                    >
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="truncate text-sm font-medium">
-                          {formatSkillName(s.name)}
-                        </span>
-                        <span className="shrink-0 truncate text-[10px] font-mono text-muted-foreground">
-                          {formatSkillSlash(s.name)}
-                        </span>
-                      </div>
-                      <p className="line-clamp-1 text-[11px] text-muted-foreground">
-                        {s.description}
-                      </p>
-                    </button>
-                    <div className="flex shrink-0 flex-col items-end gap-1">
-                      <Badge
-                        variant={s.source === 'bundled' ? 'secondary' : 'outline'}
-                        className="text-[9px] leading-none"
-                      >
-                        {s.source}
-                      </Badge>
-                      <Switch
-                        checked={s.enabled}
-                        onCheckedChange={(checked) => {
-                          toggle.mutate({ name: s.name, enabled: checked })
-                        }}
-                        className="scale-75"
-                        aria-label={
-                          s.enabled ? 'Disable skill' : 'Enable skill'
-                        }
-                      />
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
+        <>
+          {/* Toolbar — count + view toggle */}
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              {skills.length} {skills.length === 1 ? 'skill' : 'skills'}
+            </p>
+            <ToggleGroup
+              type="single"
+              variant="outline"
+              size="sm"
+              value={view}
+              onValueChange={(v) => v && setView(v as 'cards' | 'list')}
+              aria-label="Layout view"
+            >
+              <ToggleGroupItem value="cards" aria-label="Card view">
+                <LayoutGrid className="size-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="list" aria-label="List view">
+                <ListIcon className="size-4" />
+              </ToggleGroupItem>
+            </ToggleGroup>
           </div>
 
-          {/* Detail / editor column */}
-          <div className="min-w-0">
-            {effectiveSelected ? (
-              <>
-                {/* Mobile back button */}
-                <div className="mb-2 flex items-center justify-between lg:hidden">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSelectedName(null)}
-                  >
-                    <ArrowLeft className="mr-1 h-4 w-4" />
-                    Back to list
-                  </Button>
-                  {skills.find((s) => s.name === effectiveSelected)?.isPersonal && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setDeleteTarget(effectiveSelected)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  )}
-                </div>
-                <SkillEditor key={effectiveSelected} name={effectiveSelected} />
-                {/* Desktop "Revert to bundled" button — only shown when the
-                    caller owns a personal override. Deleting the override
-                    restores the bundled version. Bundled rows are shared,
-                    so the delete action isn't offered for them. */}
+          {view === 'cards' ? (
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {skills.map((s) => (
+                <SkillCard
+                  key={s.id}
+                  skill={s}
+                  selected={effectiveSelected === s.name}
+                  onSelect={() => setSelectedName(s.name)}
+                  onToggle={(checked) =>
+                    toggle.mutate({ name: s.name, enabled: checked })
+                  }
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-lg border bg-card">
+              <ul className="divide-y divide-border">
+                {skills.map((s) => (
+                  <SkillListRow
+                    key={s.id}
+                    skill={s}
+                    selected={effectiveSelected === s.name}
+                    onSelect={() => setSelectedName(s.name)}
+                    onToggle={(checked) =>
+                      toggle.mutate({ name: s.name, enabled: checked })
+                    }
+                  />
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Detail / editor — renders below the grid/list */}
+          {effectiveSelected && (
+            <div ref={detailRef} className="mt-2 scroll-mt-6">
+              <div className="mb-3 flex items-center justify-between border-t pt-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedName(null)}
+                >
+                  <ArrowLeft className="mr-1 h-4 w-4" />
+                  Back to {view === 'cards' ? 'cards' : 'list'}
+                </Button>
                 {skills.find((s) => s.name === effectiveSelected)?.isPersonal && (
-                  <div className="mt-3 hidden justify-end lg:flex">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setDeleteTarget(effectiveSelected)}
-                    >
-                      <Trash2 className="mr-1 h-3.5 w-3.5 text-destructive" />
-                      Revert to bundled
-                    </Button>
-                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setDeleteTarget(effectiveSelected)}
+                  >
+                    <Trash2 className="mr-1 h-3.5 w-3.5 text-destructive" />
+                    Revert to bundled
+                  </Button>
                 )}
-              </>
-            ) : (
-              <div className="flex h-full min-h-[300px] items-center justify-center rounded-lg border bg-muted/20 p-6 text-sm text-muted-foreground">
-                Select a skill to view or edit.
               </div>
-            )}
-          </div>
-        </div>
+              <SkillEditor key={effectiveSelected} name={effectiveSelected} />
+            </div>
+          )}
+        </>
       )}
 
       {/* Install-from-GitHub dialog */}
@@ -465,6 +453,121 @@ export function SkillsPage() {
         </AlertDialogContent>
       </AlertDialog>
     </PageContainer>
+  )
+}
+
+interface SkillRowProps {
+  skill: Skill
+  selected: boolean
+  onSelect: () => void
+  onToggle: (checked: boolean) => void
+}
+
+/**
+ * Card variant of a skill row — sits in a 1-3 column grid.
+ *
+ * Two focus stops: the title button (selects + scrolls to editor) and
+ * the Switch (toggles enabled). No nested-interactive — Switch sits
+ * outside the button via the Item primitive's flex layout.
+ */
+function SkillCard({ skill: s, selected, onSelect, onToggle }: SkillRowProps) {
+  return (
+    <Item
+      variant={selected ? 'outline' : 'default'}
+      className={cn(
+        'border bg-card transition-colors hover:bg-muted/30',
+        selected && 'border-primary bg-primary/5 hover:bg-primary/5',
+        !s.enabled && 'opacity-60',
+      )}
+    >
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-current={selected ? 'true' : undefined}
+        className="flex min-w-0 flex-1 items-start gap-3 rounded-md text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
+      >
+        <ItemMedia variant="icon">
+          <Sparkles className="size-4" />
+        </ItemMedia>
+        <ItemContent>
+          <ItemTitle className="flex-wrap">
+            <span className="truncate">{formatSkillName(s.name)}</span>
+            <span className="font-mono text-[10px] text-muted-foreground">
+              {formatSkillSlash(s.name)}
+            </span>
+          </ItemTitle>
+          <ItemDescription className="line-clamp-2">
+            {s.description}
+          </ItemDescription>
+        </ItemContent>
+      </button>
+      <ItemActions className="shrink-0 flex-col items-end gap-2 self-start">
+        <Badge
+          variant={s.source === 'bundled' ? 'secondary' : 'outline'}
+          className="text-[10px]"
+        >
+          {s.source}
+        </Badge>
+        <Switch
+          checked={s.enabled}
+          onCheckedChange={onToggle}
+          className="scale-90"
+          aria-label={s.enabled ? 'Disable skill' : 'Enable skill'}
+        />
+      </ItemActions>
+    </Item>
+  )
+}
+
+/**
+ * List variant of a skill row — denser, text-dominant. Same two
+ * focus stops as the card variant.
+ */
+function SkillListRow({ skill: s, selected, onSelect, onToggle }: SkillRowProps) {
+  return (
+    <li
+      className={cn(
+        'group flex items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/40',
+        selected && 'bg-primary/5',
+        !s.enabled && 'opacity-60',
+      )}
+    >
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-current={selected ? 'true' : undefined}
+        className="flex min-w-0 flex-1 items-start gap-3 rounded-md text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
+      >
+        <Sparkles className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline gap-1.5">
+            <span className="truncate text-sm font-medium">
+              {formatSkillName(s.name)}
+            </span>
+            <span className="shrink-0 truncate font-mono text-[10px] text-muted-foreground">
+              {formatSkillSlash(s.name)}
+            </span>
+          </div>
+          <p className="line-clamp-1 text-xs text-muted-foreground">
+            {s.description}
+          </p>
+        </div>
+      </button>
+      <div className="flex shrink-0 items-center gap-2">
+        <Badge
+          variant={s.source === 'bundled' ? 'secondary' : 'outline'}
+          className="text-[10px]"
+        >
+          {s.source}
+        </Badge>
+        <Switch
+          checked={s.enabled}
+          onCheckedChange={onToggle}
+          className="scale-90"
+          aria-label={s.enabled ? 'Disable skill' : 'Enable skill'}
+        />
+      </div>
+    </li>
   )
 }
 
