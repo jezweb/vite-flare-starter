@@ -36,6 +36,7 @@ import {
   Repeat,
   Component,
   Palette,
+  BarChart3,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -105,6 +106,7 @@ export const NAV_SECTIONS: NavSection[] = [
     builderOnly: true,
     items: [
       { to: '/dashboard/approvals', label: 'Approvals queue', icon: CheckSquare },
+      { to: '/dashboard/agent-observability', label: 'Agent observability', icon: BarChart3 },
       { to: '/dashboard/activity', label: 'Activity', icon: Activity, feature: 'activity' },
       { to: '/dashboard/extract', label: 'Extract', icon: Sparkles, feature: 'chat' },
       { to: '/dashboard/files', label: 'Files', icon: FolderOpen, feature: 'files' },

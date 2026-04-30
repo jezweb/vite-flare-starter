@@ -68,6 +68,78 @@ app.get('/runs/:id', async (c) => {
   return c.json(row)
 })
 
+/**
+ * Chart-friendly aggregates. Two series:
+ *   - runsByAgent: bar chart "how many runs per agent class"
+ *   - costByDay:   area chart "cost trend day by day"
+ *
+ * Range capped at 90 days so the date-bucket loop on the client stays
+ * cheap and queries stay index-only on `agent_runs_started_at_idx`.
+ */
+const StatsSchema = z.object({
+  range: z
+    .enum(['7d', '14d', '30d', '90d'])
+    .optional()
+    .default('7d'),
+})
+
+app.get('/stats', zValidator('query', StatsSchema), async (c) => {
+  const userId = c.get('userId')
+  const { range } = c.req.valid('query')
+  const db = drizzle(c.env.DB)
+
+  const days = { '7d': 7, '14d': 14, '30d': 30, '90d': 90 }[range]
+  const since = Math.floor(Date.now() / 1000) - days * 24 * 60 * 60
+
+  const [runsByAgent, costRows] = await Promise.all([
+    db
+      .select({
+        agentClass: agentRuns.agentClass,
+        count: sql<number>`COUNT(*)`,
+      })
+      .from(agentRuns)
+      .where(and(eq(agentRuns.userId, userId), gte(agentRuns.startedAt, since)))
+      .groupBy(agentRuns.agentClass)
+      .orderBy(desc(sql`COUNT(*)`)),
+    db
+      .select({
+        // SQLite epoch-second → ISO date string. Aggregating with strftime
+        // is index-friendly when started_at has its dedicated index.
+        date: sql<string>`strftime('%Y-%m-%d', ${agentRuns.startedAt}, 'unixepoch')`,
+        cost: sql<number | null>`SUM(${agentRuns.costUsd})`,
+        runs: sql<number>`COUNT(*)`,
+      })
+      .from(agentRuns)
+      .where(and(eq(agentRuns.userId, userId), gte(agentRuns.startedAt, since)))
+      .groupBy(sql`strftime('%Y-%m-%d', ${agentRuns.startedAt}, 'unixepoch')`)
+      .orderBy(sql`strftime('%Y-%m-%d', ${agentRuns.startedAt}, 'unixepoch')`),
+  ])
+
+  // Fill date gaps so the area chart doesn't compress non-contiguous
+  // days. Client charts look weird when the X axis skips empty days.
+  const costByDay: Array<{ date: string; cost: number; runs: number }> = []
+  const costMap = new Map(costRows.map((r) => [r.date, r]))
+  const now = new Date()
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(now)
+    d.setUTCDate(d.getUTCDate() - i)
+    const iso = d.toISOString().slice(0, 10)
+    const found = costMap.get(iso)
+    costByDay.push({
+      date: iso,
+      cost: found?.cost ?? 0,
+      runs: found?.runs ?? 0,
+    })
+  }
+
+  return c.json({
+    range,
+    sinceSeconds: since,
+    runsByAgent,
+    costByDay,
+  })
+})
+
 app.get('/summary', async (c) => {
   const userId = c.get('userId')
   const db = drizzle(c.env.DB)
