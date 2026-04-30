@@ -99,6 +99,29 @@ export const themeExportEnvelopeSchema = z.object({
 export type ThemeExportEnvelope = z.infer<typeof themeExportEnvelopeSchema>
 
 /**
+ * Onboarding state — see gh #44
+ *
+ * `version` lets us re-show the checklist after a meaningful catalogue
+ * change (e.g. a new must-do step). Bump it in code; existing dismissed
+ * users will see the shelf again.
+ */
+export const onboardingStateSchema = z
+  .object({
+    version: z.number().int().nonnegative().default(1),
+    dismissed: z.boolean().optional(),
+  })
+  .optional()
+
+/**
+ * One-time-tour state — see gh #46. Map of tour-id → 'seen'.
+ */
+export const toursStateSchema = z
+  .object({
+    chat: z.literal('seen').optional(),
+  })
+  .optional()
+
+/**
  * User preferences schema
  * Includes appearance settings, timezone, and date/time formatting preferences
  */
@@ -119,6 +142,10 @@ export const userPreferencesSchema = z.object({
   // Date/time formatting
   dateFormat: z.enum(dateFormats).optional(),
   timeFormat: z.enum(timeFormats).optional(),
+  // Onboarding (gh #44)
+  onboarding: onboardingStateSchema,
+  // First-run tours (gh #46)
+  tours: toursStateSchema,
 })
 
 /**

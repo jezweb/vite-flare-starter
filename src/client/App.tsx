@@ -53,6 +53,7 @@ const VoiceInputExamplePage = lazy(() => import('./modules/voice/pages/VoiceInpu
 const VideoInputExamplePage = lazy(() => import('./modules/video/pages/VideoInputExamplePage').then(m => ({ default: m.VideoInputExamplePage })))
 const ComponentsPage = lazy(() => import('./pages/ComponentsPage').then(m => ({ default: m.ComponentsPage })))
 const StyleGuidePage = lazy(() => import('./pages/StyleGuidePage').then(m => ({ default: m.StyleGuidePage })))
+const HelpPage = lazy(() => import('./modules/help/pages/HelpPage').then(m => ({ default: m.HelpPage })))
 
 function PageSpinner() {
   return (
@@ -241,6 +242,9 @@ function App() {
 
             {/* Profile redirects to Settings (Profile tab is default) */}
             <Route path="profile" element={<Navigate to="/dashboard/settings" replace />} />
+
+            {/* In-app glossary — gh #47 */}
+            <Route path="help" element={<HelpPage />} />
 
             {/* Component showcase for development reference */}
             <Route path="components" element={<ComponentsPage />} />

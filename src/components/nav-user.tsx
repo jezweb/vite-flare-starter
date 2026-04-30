@@ -19,7 +19,7 @@ import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/c
 import { useSession, authClient } from '@/client/lib/auth'
 import { useAdminStatus } from '@/client/modules/admin/hooks/useAdminStatus'
 import { useBuilderMode } from '@/client/lib/builder-mode'
-import { LogOut, MoreVertical, Settings, Shield, Sparkles, Wrench } from 'lucide-react'
+import { CircleHelp, LogOut, MoreVertical, Settings, Shield, Sparkles, Wrench } from 'lucide-react'
 
 export function NavUser() {
   const { data: session } = useSession()
@@ -87,6 +87,10 @@ export function NavUser() {
               <DropdownMenuItem onClick={() => navigate('/dashboard/artifacts')}>
                 <Sparkles className="mr-2 h-4 w-4" />
                 My artifacts
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/dashboard/help')}>
+                <CircleHelp className="mr-2 h-4 w-4" />
+                Help
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

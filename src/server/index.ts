@@ -6,6 +6,7 @@ import { z } from 'zod'
 import type { D1Database } from '@cloudflare/workers-types'
 import { createAuth } from './modules/auth'
 import settingsRoutes from './modules/settings/routes'
+import onboardingRoutes from './modules/onboarding/routes'
 import sessionsRoutes from './modules/settings/sessions'
 import exportRoutes from './modules/settings/export'
 import apiTokensRoutes from './modules/api-tokens/routes'
@@ -281,6 +282,7 @@ app.get('/api/avatar/:userId', async (c) => {
 // API routes
 app.route('/api/settings', settingsRoutes)
 app.route('/api/settings/sessions', sessionsRoutes)
+app.route('/api/onboarding', onboardingRoutes)
 app.route('/api/settings/export', exportRoutes)
 app.route('/api/api-tokens', apiTokensRoutes)
 app.route('/api/organization', organizationRoutes)

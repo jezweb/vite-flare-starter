@@ -10,7 +10,9 @@
  * is reserved by rendering a single visible tab so the layout is stable.
  */
 import { useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { Plus, Star, FolderOpen, Archive } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
@@ -19,6 +21,7 @@ import { useProjectList, useStarProject, type Project } from '../hooks/useProjec
 import { CreateProjectModal } from '../components/CreateProjectModal'
 import { PROJECT_COLOR_CLASSES, isProjectColor } from '../colors'
 import { cn } from '@/lib/utils'
+import { apiClient } from '@/client/lib/api-client'
 import { EmptyState as SharedEmptyState } from '@/client/components/EmptyState'
 import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
@@ -141,6 +144,10 @@ export function ProjectsIndexPage() {
 }
 
 function EmptyState({ search, showArchived, onCreate }: { search: string; showArchived: boolean; onCreate: () => void }) {
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const [loadingSample, setLoadingSample] = useState(false)
+
   if (search) {
     return (
       <div className="rounded-lg border border-dashed border-border px-6 py-12 text-center">
@@ -157,12 +164,40 @@ function EmptyState({ search, showArchived, onCreate }: { search: string; showAr
       </div>
     )
   }
+
+  // gh #45 — "Try a sample project" lets first-time users see populated
+  // state without committing their own data. Reuses the existing
+  // /from-template endpoint with the Quoting template — its starter
+  // memories + suggested prompts give a feel for what a real project
+  // looks like. Project name carries "(Sample)" so the user knows it's
+  // example data and can delete it freely.
+  async function loadSample() {
+    setLoadingSample(true)
+    try {
+      const resp = await apiClient.post<{ id: string }>('/api/projects/from-template', {
+        templateSlug: 'quoting',
+        name: 'Quoting (Sample)',
+      })
+      await queryClient.invalidateQueries({ queryKey: ['projects'] })
+      toast.success('Sample project loaded — feel free to explore or delete')
+      navigate(`/dashboard/projects/${resp.id}`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not load sample')
+    } finally {
+      setLoadingSample(false)
+    }
+  }
+
   return (
     <SharedEmptyState
       icon={FolderOpen}
       title="No projects yet"
       description="Projects bundle a set of chats with shared memory, instructions, and files — handy for ongoing work like a side product, a customer, or a research thread."
       action={{ label: 'New project', onClick: onCreate }}
+      secondaryAction={{
+        label: loadingSample ? 'Loading…' : 'Or try a sample',
+        onClick: () => void loadSample(),
+      }}
     />
   )
 }

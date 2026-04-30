@@ -47,6 +47,7 @@ import { AttachmentTiles } from '../components/AttachmentTiles'
 import { DropOverlay } from '../components/DropOverlay'
 import { ActionChips } from '../components/ActionChips'
 import { ChatCapabilityRow } from '../components/ChatCapabilityRow'
+import { ChatFirstRunTour } from '../components/ChatFirstRunTour'
 import { CHAT_EXAMPLES } from '@/shared/config/chat-chips'
 import { DEFAULT_MODEL_ID } from '@/shared/config/models'
 import { features } from '@/shared/config/features'
@@ -1112,6 +1113,7 @@ export function ChatPage() {
                       <AttachmentTiles />
                       <PromptInputTextarea
                         ref={textareaRef}
+                        data-tour="chat-input"
                         placeholder={hasMessages ? 'Reply to the AI...' : 'Ask anything, or drop a file…'}
                         onKeyDown={handleTextareaKeyDown}
                       />
@@ -1122,6 +1124,7 @@ export function ChatPage() {
                               aria-label="Attach a file or take a screenshot"
                               tooltip="Attach"
                               size="sm"
+                              data-tour="chat-attach"
                               className="bg-muted hover:bg-muted-foreground/10"
                             >
                               <Paperclip className="size-4" />
@@ -1143,7 +1146,9 @@ export function ChatPage() {
                               userId={session?.user?.id}
                             />
                           )}
-                          <ModelSelector value={model} onChange={setModel} disabled={isLoading} />
+                          <span data-tour="chat-model-picker" className="contents">
+                            <ModelSelector value={model} onChange={setModel} disabled={isLoading} />
+                          </span>
                           <ConversationSizeIndicator
                             messages={messages as unknown as { role: string; metadata?: { inputTokens?: number } }[]}
                             model={model}
@@ -1175,6 +1180,11 @@ export function ChatPage() {
           </SheetContent>
         </Sheet>
       )}
+
+      {/* First-run tour — only on plain /dashboard/chat (deep-linked
+          conversation = past first-run by definition). Component checks
+          tours.chat preference and dismisses persistently. See gh #46. */}
+      {!urlConversationId && <ChatFirstRunTour />}
     </div>
   )
 }

@@ -104,6 +104,8 @@ export function DashboardPage() {
     <PageContainer type="hub">
       <PageHeader title={greeting} subtitle={subtitle} docTitle="Home" />
 
+      <OnboardingChecklist />
+
       <div className="grid gap-4 lg:grid-cols-2">
         <NeedsYouPanel approvals={approvals.data} loading={approvals.isLoading} />
         <RecentRunsPanel runs={runs.data} loading={runs.isLoading} />
@@ -318,6 +320,121 @@ function QuickActions() {
         </Button>
       ))}
     </div>
+  )
+}
+
+// ─── Getting Started checklist (gh #44) ───────────────────────────────
+
+interface OnboardingState {
+  version: number
+  dismissed: boolean
+  steps: {
+    connect: boolean
+    project: boolean
+    memory: boolean
+    chat: boolean
+    skill: boolean
+  }
+}
+
+interface ChecklistItem {
+  id: keyof OnboardingState['steps']
+  label: string
+  icon: LucideIcon
+  to: string
+}
+
+const CHECKLIST_ITEMS: ChecklistItem[] = [
+  { id: 'connect', label: 'Connect a workspace (Google or Microsoft)', icon: Plug, to: '/dashboard/connections' },
+  { id: 'project', label: 'Create your first project', icon: FileText, to: '/dashboard/projects' },
+  { id: 'memory', label: 'Save a memory the AI should remember', icon: Brain, to: '/dashboard/settings?tab=memory' },
+  { id: 'chat', label: 'Send a message in chat', icon: MessageSquare, to: '/dashboard/chat' },
+  { id: 'skill', label: 'Try a skill (type /skill-name in chat)', icon: Sparkles, to: '/dashboard/skills' },
+]
+
+function OnboardingChecklist() {
+  const session = useSession()
+  const enabled = !!session.data?.user
+  const state = useQuery({
+    queryKey: ['onboarding', 'state'],
+    queryFn: () => apiClient.get<OnboardingState>('/api/onboarding/state'),
+    enabled,
+    staleTime: 60_000,
+  })
+  const [hidingLocally, setHidingLocally] = useState(false)
+
+  if (!enabled || !state.data || hidingLocally) return null
+  if (state.data.dismissed) return null
+
+  const completed = Object.values(state.data.steps).filter(Boolean).length
+  const total = CHECKLIST_ITEMS.length
+  if (completed >= total) return null
+
+  async function dismiss() {
+    setHidingLocally(true)
+    // Best-effort persistence — fire-and-forget. If it fails, the shelf
+    // hides locally for this session and reappears on next load (which
+    // is fine — better than blocking the UI on a network round-trip).
+    try {
+      const prefsResp = await apiClient.get<{ preferences: Record<string, unknown> }>('/api/settings/preferences')
+      await apiClient.patch('/api/settings/preferences', {
+        ...prefsResp.preferences,
+        onboarding: { version: state.data?.version ?? 1, dismissed: true },
+      })
+    } catch {
+      // ignore — local-hide is acceptable fallback
+    }
+  }
+
+  return (
+    <section className="rounded-lg border border-border/60 bg-card p-4 shadow-sm">
+      <header className="mb-3 flex items-center justify-between">
+        <div>
+          <h2 className="text-sm font-semibold tracking-tight">Getting started</h2>
+          <p className="text-xs text-muted-foreground">
+            {completed} of {total} done — tick off as you explore.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => void dismiss()}
+          className="rounded-md p-1 text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
+          aria-label="Dismiss Getting Started checklist"
+          title="Dismiss"
+        >
+          <XCircle className="size-4" />
+        </button>
+      </header>
+      <ul className="space-y-1.5">
+        {CHECKLIST_ITEMS.map((item) => {
+          const done = state.data.steps[item.id]
+          return (
+            <li key={item.id}>
+              <Link
+                to={item.to}
+                className={cn(
+                  'group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted/40',
+                  done && 'text-muted-foreground',
+                )}
+              >
+                {done ? (
+                  <CheckCircle2 className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                ) : (
+                  <span className="inline-block size-4 shrink-0 rounded-full border border-border" />
+                )}
+                <item.icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                <span className={cn('flex-1', done && 'line-through decoration-muted-foreground/50')}>
+                  {item.label}
+                </span>
+                {!done && (
+                  <ArrowRight className="size-3.5 shrink-0 text-muted-foreground/50 transition-colors group-hover:text-foreground" aria-hidden />
+                )}
+              </Link>
+            </li>
+          )
+        })}
+      </ul>
+    </section>
   )
 }
 
