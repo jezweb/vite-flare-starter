@@ -187,6 +187,7 @@ export function SkillsPage() {
                 variant="ghost"
                 onClick={() => setUploadOpen(true)}
                 className="h-6 w-6 p-0"
+                aria-label="Add skill"
               >
                 <Plus className="h-3.5 w-3.5" />
               </Button>
@@ -194,28 +195,36 @@ export function SkillsPage() {
             <ul className="max-h-[70vh] space-y-0.5 overflow-y-auto">
               {skills.map((s) => (
                 <li key={s.id}>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedName(s.name)}
+                  {/* a11y: the row used to be a single `<button>` containing a
+                      Switch — that's nested-interactive and breaks keyboard
+                      focus order. Now: container is a non-interactive div,
+                      with two clean focus stops — title button (open) +
+                      Switch (toggle enabled). */}
+                  <div
                     className={cn(
-                      'group flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-left hover:bg-muted/60 focus:outline-none focus:ring-1 focus:ring-primary/40',
+                      'group flex items-start gap-2 rounded-md px-2 py-1.5 hover:bg-muted/60',
                       effectiveSelected === s.name && 'bg-muted',
                       !s.enabled && 'opacity-60',
                     )}
                   >
-                    <div className="min-w-0 flex-1">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedName(s.name)}
+                      className="min-w-0 flex-1 rounded-md text-left focus:outline-none focus:ring-1 focus:ring-primary/40"
+                      aria-current={effectiveSelected === s.name ? 'true' : undefined}
+                    >
                       <div className="flex items-baseline gap-1.5">
                         <span className="truncate text-sm font-medium">
                           {formatSkillName(s.name)}
                         </span>
-                        <span className="shrink-0 truncate text-[10px] font-mono text-muted-foreground/70">
+                        <span className="shrink-0 truncate text-[10px] font-mono text-muted-foreground">
                           {formatSkillSlash(s.name)}
                         </span>
                       </div>
                       <p className="line-clamp-1 text-[11px] text-muted-foreground">
                         {s.description}
                       </p>
-                    </div>
+                    </button>
                     <div className="flex shrink-0 flex-col items-end gap-1">
                       <Badge
                         variant={s.source === 'bundled' ? 'secondary' : 'outline'}
@@ -228,14 +237,13 @@ export function SkillsPage() {
                         onCheckedChange={(checked) => {
                           toggle.mutate({ name: s.name, enabled: checked })
                         }}
-                        onClick={(e) => e.stopPropagation()}
                         className="scale-75"
                         aria-label={
                           s.enabled ? 'Disable skill' : 'Enable skill'
                         }
                       />
                     </div>
-                  </button>
+                  </div>
                 </li>
               ))}
             </ul>

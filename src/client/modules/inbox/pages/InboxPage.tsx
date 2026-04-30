@@ -559,19 +559,13 @@ function InboxRow({
         isFocused && 'ring-2 ring-ring/50 ring-inset',
       )}
       onClick={handleClick}
-      onFocus={onFocusChange}
       onMouseEnter={onFocusChange}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault()
-          handleClick()
-        }
-      }}
-      role="button"
-      tabIndex={0}
     >
-      {/* Checkbox sits in front of the icon column. Keeps the click target
-          obvious in selection mode without redesigning the row layout. */}
+      {/* a11y: the row used to have role="button" + tabIndex={0} alongside a
+          focusable Review Link inside, which axe flags as nested-interactive.
+          The row stays clickable via pointer (handleClick still fires); for
+          keyboard users, the Review Link IS the focus stop for approval rows,
+          and selection happens via Checkbox or the j/k/x bulk shortcuts. */}
       <div
         className="shrink-0"
         onClick={(e) => {
@@ -584,7 +578,6 @@ function InboxRow({
           onCheckedChange={() => onToggleSelect()}
           onClick={(e) => e.stopPropagation()}
           aria-label={isSelected ? 'Deselect row' : 'Select row'}
-          tabIndex={-1}
         />
       </div>
       <ListRowIcon>

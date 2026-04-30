@@ -1,0 +1,37 @@
+# UX Audit Allowlist Configuration
+#
+# Format: see ~/Documents/claude-skills/plugins/dev-tools/skills/ux-audit/references/audit-config.md
+#
+# This file is read by the `ux-audit` skill before Phase 3. Entries here
+# are noted in the Interaction Manifest (transparency) but suppressed from
+# the findings count.
+#
+# Re-audit this file quarterly. Allowlists rot — a "known noise" entry
+# becomes a real finding once the underlying behaviour changes.
+
+allowlist:
+  console:
+    - level: info
+      pattern: "\\[Sentry\\] DSN not configured"
+      reason: |
+        Sentry intentionally disabled in dev/preview deployments. The
+        starter probes for SENTRY_DSN at startup; no DSN → INFO-level
+        log saying error tracking is off. Not a warning, not a regression.
+        Production deployments that DO configure Sentry won't see this.
+
+  axe:
+    # The Radix Tabs primitive (used by shadcn `<Tabs />`) generates IDs in
+    # the format `radix-_r_<n>_-...` via React 19 `useId`. axe rule
+    # `aria-valid-attr-value` flags this format, but Radix wires the
+    # underlying aria-controls / aria-labelledby relationships correctly.
+    # Re-evaluate when:
+    #   - Radix releases a fix for the ID format
+    #   - axe-core updates its validator to accept underscore IDs
+    #   - You change the audit-config to surface this as a real finding
+    - rule: aria-valid-attr-value
+      selector: '[id*="radix-"]'
+      reason: |
+        Radix-generated IDs use a leading-underscore pattern that some
+        axe rules flag. Aria wiring is correct under the hood; the
+        attribute references are valid HTML5 IDs. Tracked upstream:
+        https://github.com/radix-ui/primitives/issues/2964

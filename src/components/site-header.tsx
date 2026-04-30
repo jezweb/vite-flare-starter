@@ -97,7 +97,7 @@ function CommandPaletteHint() {
       >
         <Search className="h-3.5 w-3.5" />
         <span>Search</span>
-        <kbd className="rounded border bg-background px-1 font-mono text-[10px] font-medium text-muted-foreground/80">
+        <kbd className="rounded border bg-background px-1 font-mono text-[10px] font-medium text-muted-foreground">
           {isMac ? '⌘' : 'Ctrl'} K
         </kbd>
       </button>

@@ -231,7 +231,7 @@ export function SkillEditor({ name }: SkillEditorProps) {
                 Personal override
               </Badge>
             ) : (
-              <Badge variant="outline" className="text-[10px] text-amber-600 dark:text-amber-400">
+              <Badge variant="outline" className="text-[10px] text-amber-700 dark:text-amber-400">
                 Bundled — edits create a personal override
               </Badge>
             )}
@@ -398,7 +398,7 @@ export function SkillEditor({ name }: SkillEditorProps) {
               lines
             </span>
             {isDirty ? (
-              <span className="text-amber-600 dark:text-amber-400">Unsaved changes</span>
+              <span className="text-amber-700 dark:text-amber-400">Unsaved changes</span>
             ) : (
               <span className="inline-flex items-center gap-1">
                 <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
