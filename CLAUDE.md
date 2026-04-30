@@ -72,6 +72,13 @@ stays wired and `git pull upstream main` keeps you on bug fixes and
 security patches. A `git clone` + `rm -rf .git` cuts you off forever —
 only do that if the user explicitly asks for a detached snapshot.
 
+**Issues + upstream contributions are welcome.** If your fork hits
+friction the starter hasn't solved yet, [`CONTRIBUTING.md`](./CONTRIBUTING.md)
+shows the shape of a useful issue (diagnosis + repro + severity + fix
+suggestion) and welcomes PRs back. The
+[recent fork-build issues](https://github.com/jezweb/vite-flare-starter/issues?q=is%3Aclosed+author%3Aapp%2Fclaude)
+are good templates — copy that shape and triage stays under a minute.
+
 **Quick start after forking:**
 
 1. Edit `src/shared/config/nav.ts` — add your product's nav items

@@ -9,6 +9,12 @@
 
 This guide ensures your fork creates **completely separate Cloudflare resources** and removes all framework fingerprints. After following this guide, your fork will be a standalone project with no connection to vite-flare-starter.
 
+> **Found something rough during the fork build?** Open an issue —
+> see [CONTRIBUTING.md](./CONTRIBUTING.md) for the shape that works
+> well. Fork-builder reports are how the starter improves; recent
+> ones shipped within an hour of being filed because they were
+> diagnostic. PRs back from your fork are also welcome.
+
 **Who is this for?**
 - AI coding agents (Claude Code, Cursor, etc.) setting up a forked project
 - Human developers forking for a new client/project

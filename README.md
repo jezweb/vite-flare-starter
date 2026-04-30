@@ -308,7 +308,18 @@ Don't delete modules you don't need. Disable them via `src/shared/config/feature
 
 - **[CLAUDE.md](./CLAUDE.md)** — Developer context: architecture, patterns, how to build features
 - **[FORKING.md](./FORKING.md)** — Step-by-step guide for starting a new product from this base
+- **[CONTRIBUTING.md](./CONTRIBUTING.md)** — How to file useful issues + send fixes back upstream
 - **[CHANGELOG.md](./CHANGELOG.md)** — Release notes and what changed when
+
+---
+
+## Contributing back
+
+Forks of the starter often spot bugs and rough edges the maintainer
+missed. PRs back are welcome — see
+[CONTRIBUTING.md](./CONTRIBUTING.md) for what makes a useful issue
+(diagnosis + repro + severity) and the kinds of upstream contributions
+that fit the "pattern library" shape of the starter.
 
 ---
 
