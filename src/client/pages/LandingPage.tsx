@@ -1,3 +1,16 @@
+/**
+ * LandingPage — unauthenticated homepage.
+ *
+ * ⚠️ This route is wrapped in <PublicLayout /> (App.tsx ~line 109) which
+ * provides the header (logo + Sign In / Sign Up nav) and footer. Do NOT
+ * add a `<header>` element here when forking — you'll get two stacked
+ * headers. Customise hero / features / CTA sections only. Same for footer.
+ *
+ * If you need to change the public chrome itself (header / footer
+ * markup), edit `src/client/layouts/PublicLayout.tsx`.
+ *
+ * See gh #53.
+ */
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'

@@ -103,8 +103,8 @@ export function RoutinesPage() {
               {seed.isPending ? 'Seeding…' : 'Or seed two example routines'}
             </Button>
             <p className="mt-1 text-[11px] text-muted-foreground">
-              Seeds <span className="font-mono">routine-health</span> + <span className="font-mono">youtube-digest</span> as paused
-              examples you can edit and turn on.
+              Seeds the bundled example routines as paused — you can edit
+              and turn them on.
             </p>
           </div>
         </div>

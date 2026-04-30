@@ -68,9 +68,29 @@ pnpm install
 
 ```bash
 npx wrangler login
+npx wrangler whoami   # confirm the right account
 ```
 
 This opens a browser to authenticate. Ensure you're logged into YOUR Cloudflare account.
+
+> **⚠️ Custom-domain users — read this before creating resources.**
+>
+> Cloudflare bindings (D1, R2, Worker, etc.) and the DNS zone for your
+> custom domain MUST be on the **same Cloudflare account**. If your
+> domain `example.com` is on account A but you create D1 on account B,
+> the worker will deploy fine but `wrangler deploy` won't be able to
+> attach the custom domain — you'll see a route conflict or the domain
+> will silently never serve traffic.
+>
+> Run `wrangler whoami` after every `wrangler login` and verify the
+> account email matches the account that owns your domain (check the
+> Cloudflare dashboard → Websites → click your domain → top-right shows
+> the account name).
+>
+> If you discover after the fact that resources are on the wrong account,
+> the cleanest fix is to delete D1 + R2 + Worker on the wrong account and
+> recreate them on the account where the zone lives. ~10 minutes plus a
+> re-migrate. (See gh #57.)
 
 ### Step 2.2: Create Your D1 Database
 
@@ -210,6 +230,28 @@ Edit `index.html`:
 ### Step 4.3: Replace Favicon
 
 Replace `public/favicon.svg` with your own favicon.
+
+### Step 4.4: Customise Chat starters and Routine templates
+
+These ship with sensible-but-generic content for the demo. Leaving them
+unchanged is the equivalent of shipping with placeholder hero copy — the
+chat surface looks like a starter that wasn't customised. (See gh #56.)
+
+| File | What to change |
+|---|---|
+| `src/shared/config/chat-chips.ts` | Replace the `CHAT_CHIPS` (Write / Research / Code / Plan / Local) and `CHAT_EXAMPLES` ("Find good coffee shops near Newcastle NSW", etc.) with prompts that match your product's verbs and domain. First impression of the chat surface — make these specific. |
+| `src/shared/config/routine-templates.ts` | Replace the bundled examples (`routine-health` + `youtube-digest`) with templates relevant to your users. The seed button and RoutinesPage UI iterate this list automatically. |
+
+Both files are well-typed and well-located — the only change needed is editing the contents. No other code touches these arrays.
+
+### Step 4.5: Replace LandingPage (if you want a custom homepage)
+
+`src/client/pages/LandingPage.tsx` is the unauthenticated homepage. The
+route is wrapped in `<PublicLayout />` which **already provides a header
++ footer**. Don't add your own `<header>` or you'll get two stacked
+headers. (See gh #53.) The layout component is at
+`src/client/layouts/PublicLayout.tsx` if you want to customise the wrapping
+chrome itself.
 
 ---
 
@@ -400,6 +442,26 @@ After deployment, you'll get your Worker URL. Update the secret:
 ```bash
 echo "https://YOUR_ACTUAL_WORKER_URL.workers.dev" | npx wrangler secret put BETTER_AUTH_URL
 ```
+
+### Step 8.5: Verify your custom domain serves on both A and AAAA
+
+If you added a custom domain via `wrangler.jsonc` `routes` (not just the
+`workers.dev` URL), verify both A (IPv4) and AAAA (IPv6) records are
+present on the zone after the first deploy. Cloudflare provisioning
+sometimes adds only AAAA — IPv4-only clients can't reach the site
+until A appears too. (See gh #54.)
+
+```bash
+dig +short A example.com
+dig +short AAAA example.com
+```
+
+If only AAAA returns: try `wrangler deploy` again, or add the A record
+manually via the Cloudflare dashboard (Websites → your zone → DNS →
+Records → Add → A → name=`@` content=`192.0.2.1` proxied=on; the actual
+IP is irrelevant when proxied — Workers serves traffic regardless of the
+target). The `workers.dev` URL works as a clean IPv4 fallback while the
+custom domain settles.
 
 ---
 

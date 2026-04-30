@@ -138,7 +138,13 @@ export async function resolveModelForUser(
  */
 function tryDirectFromPrefix(env: ProviderEnv, modelId: string) {
   if (modelId.startsWith('anthropic/') && env.ANTHROPIC_API_KEY) {
-    return createAnthropic({ apiKey: env.ANTHROPIC_API_KEY })(modelId.slice('anthropic/'.length))
+    // Catalogue IDs use OpenRouter's dot format (`claude-sonnet-4.6`).
+    // Anthropic's direct API rejects dots — it wants dashes (`claude-sonnet-4-6`).
+    // Translate on the direct path; OpenRouter route still receives the
+    // dotted form unchanged. See gh #58.
+    const sub = modelId.slice('anthropic/'.length)
+    const normalised = sub.replace(/(claude-(?:sonnet|opus|haiku)-\d+)\.(\d+)/, '$1-$2')
+    return createAnthropic({ apiKey: env.ANTHROPIC_API_KEY })(normalised)
   }
   if (modelId.startsWith('openai/') && env.OPENAI_API_KEY) {
     return createOpenAI({ apiKey: env.OPENAI_API_KEY })(modelId.slice('openai/'.length))
@@ -191,7 +197,9 @@ export function resolveModel(env: ProviderEnv, modelId: string) {
   // 5. Bare model ids — direct provider SDKs only.
   if (modelId.startsWith('claude-')) {
     if (!env.ANTHROPIC_API_KEY) throw new Error(`ANTHROPIC_API_KEY required for model: ${modelId}`)
-    return createAnthropic({ apiKey: env.ANTHROPIC_API_KEY })(modelId)
+    // Same dot→dash translation as the prefixed path. See gh #58.
+    const normalised = modelId.replace(/(claude-(?:sonnet|opus|haiku)-\d+)\.(\d+)/, '$1-$2')
+    return createAnthropic({ apiKey: env.ANTHROPIC_API_KEY })(normalised)
   }
   if (modelId.startsWith('gpt-') || modelId.startsWith('o1-') || modelId.startsWith('o3-') || modelId.startsWith('o4-')) {
     if (!env.OPENAI_API_KEY) throw new Error(`OPENAI_API_KEY required for model: ${modelId}`)
