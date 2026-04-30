@@ -24,18 +24,11 @@ import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
 import { SearchInput } from '@/components/ui/search-input'
 import { Spinner } from '@/components/ui/spinner'
+import { formatRelative } from '@/client/lib/format-time'
 
 type SortKey = 'activity' | 'name' | 'created'
 
-function timeAgo(dateStr: string | null): string {
-  if (!dateStr) return 'just now'
-  const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
-  if (seconds < 60) return 'just now'
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
-  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`
-  return new Date(dateStr).toLocaleDateString()
-}
+const timeAgo = (dateStr: string | null) => formatRelative(dateStr)
 
 export function ProjectsIndexPage() {
   const [search, setSearch] = useState('')

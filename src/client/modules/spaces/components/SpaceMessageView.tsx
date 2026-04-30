@@ -13,6 +13,7 @@ import { MessageReactions } from './MessageReactions'
 import { MessageMoreMenu } from './MessageMoreMenu'
 import { useSession } from '@/client/lib/auth'
 import { cn } from '@/lib/utils'
+import { formatRelative as formatRelativeShared } from '@/client/lib/format-time'
 import type { SpaceMessage, SpaceUserInfo } from '../hooks/useSpaces'
 
 interface PartLike {
@@ -207,9 +208,5 @@ function renderParts(parts: PartLike[]) {
 }
 
 function relTime(iso: string): string {
-  const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
-  if (seconds < 60) return 'just now'
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
-  return new Date(iso).toLocaleString()
+  return formatRelativeShared(iso)
 }

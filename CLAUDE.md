@@ -441,8 +441,18 @@ To enable in your fork:
 printf "$(openssl rand -hex 32)" | npx wrangler secret put TEST_AUTH_TOKEN
 ```
 
+⚠️ **Cascade-delete trap — never reassign real data to a test user.**
+Every user-scoped table cascades on `user.id` delete. If you `UPDATE
+entities SET user_id = '<test_user_id>'` so a test session can see
+real rows, the next `/api/test-auth/cleanup` call wipes them. Use one
+of: (a) verify with direct D1 queries instead of reassigning, (b)
+clone rows (`INSERT … SELECT … FROM … WHERE user_id = '<real_user>'`)
+and test against the clones, or (c) put your real email in
+`ALLOWED_AUTH_EMAILS` and OAuth-sign-in. Full incident + safe-pattern
+details in the `test-auth/routes.ts` module docstring.
+
 Lower-level details: `src/server/modules/test-auth/routes.ts` (module
-docstring covers the security model).
+docstring covers the security model + cascade trap).
 
 ---
 

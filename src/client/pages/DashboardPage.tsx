@@ -292,15 +292,24 @@ function RunRow({ run }: { run: AgentRun }) {
 // ─── Quick actions ─────────────────────────────────────────────────────
 
 function QuickActions() {
-  const items: { to: string; label: string; icon: LucideIcon }[] = [
-    { to: '/dashboard/chat', label: 'AI Chat', icon: MessageSquare },
+  // Primary CTA = most-likely next action ("Open AI Chat" — the surface
+  // every other surface ultimately funnels to). Secondaries are outline
+  // so the eye lands on the primary first.
+  const primary = { to: '/dashboard/chat', label: 'Open AI Chat', icon: MessageSquare }
+  const secondary: { to: string; label: string; icon: LucideIcon }[] = [
     { to: '/dashboard/skills', label: 'Skills', icon: Zap },
     { to: '/dashboard/connections', label: 'Connections', icon: Plug },
     { to: '/dashboard/projects', label: 'Projects', icon: FileText },
   ]
   return (
-    <div className="flex flex-wrap gap-2">
-      {items.map((item) => (
+    <div className="flex flex-wrap items-center gap-2">
+      <Button asChild size="sm" className="gap-1.5">
+        <Link to={primary.to}>
+          <primary.icon className="size-3.5" />
+          {primary.label}
+        </Link>
+      </Button>
+      {secondary.map((item) => (
         <Button key={item.to} asChild size="sm" variant="outline" className="gap-1.5">
           <Link to={item.to}>
             <item.icon className="size-3.5" />

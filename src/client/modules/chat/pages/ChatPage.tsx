@@ -25,7 +25,7 @@ import {
   PromptInputActionAddScreenshotCountdown,
   PromptInputActionAddScreenCapture,
 } from '../components/ScreenCaptureMenuItems'
-import { Plus, MessageSquare, MessagesSquare, Download, ArrowDown, Paperclip, FileText, Folder, X, FileQuestion, ChevronLeft } from 'lucide-react'
+import { Plus, MessageSquare, MessagesSquare, Download, ArrowDown, Paperclip, FileText, Folder, X, FileQuestion, ChevronLeft, ArrowUpRight } from 'lucide-react'
 import { Link as RouterLink } from 'react-router-dom'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 import {
@@ -1223,23 +1223,25 @@ function EmptyStateBody({
 }
 
 /**
- * ExampleQuestions — click-to-insert flat starter prompts shown beneath the
- * chip row. Matches t3.chat's pattern: gives users who know what they want
- * a single-click cold start (chips handle the "I want to explore" path).
+ * ExampleQuestions — click-to-insert starter prompts beneath the action-chip
+ * row. Renders as bordered card-chips (matching the action-affordance language
+ * of the rest of the empty state) rather than plain text lines, so users
+ * recognise these as clickable suggestions, not static copy.
  * Config lives in src/shared/config/chat-chips.ts → CHAT_EXAMPLES.
  */
 function ExampleQuestions({ onPick }: { onPick: (text: string) => void }) {
   if (CHAT_EXAMPLES.length === 0) return null
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-1.5 pt-2">
+    <div className="mx-auto grid w-full max-w-3xl gap-2 pt-2 sm:grid-cols-2">
       {CHAT_EXAMPLES.map((q) => (
         <button
           key={q}
           type="button"
           onClick={() => onPick(q)}
-          className="block w-full text-left rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
+          className="group/chip flex items-start gap-2 rounded-lg border border-border/60 bg-background px-3 py-2.5 text-left text-sm text-muted-foreground transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
         >
-          {q}
+          <span className="line-clamp-2 flex-1">{q}</span>
+          <ArrowUpRight className="mt-0.5 size-3.5 shrink-0 text-muted-foreground/50 transition-colors group-hover/chip:text-foreground" aria-hidden />
         </button>
       ))}
     </div>

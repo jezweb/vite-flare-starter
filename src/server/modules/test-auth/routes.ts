@@ -29,6 +29,45 @@
  *     -d '{ "email": "alice@test.vite-flare.local", "name": "Alice" }'
  *   # → { user, cookies: [{ name, value, domain, path, ... }] }
  *   #   cookies are Playwright/Puppeteer-compatible.
+ *
+ * ⚠️  CASCADE-DELETE TRAP — read before reassigning real data.
+ *
+ * Every user-scoped table in the starter (and most fork schemas)
+ * declares `references user.id, onDelete: cascade`. That's correct
+ * schema design — when a user is deleted, their data goes with them.
+ *
+ * The trap: when working with real data through a test session, it is
+ * tempting to reassign ownership so the test session "sees" real rows:
+ *
+ *     -- DON'T DO THIS
+ *     UPDATE entities SET user_id = '<test_user_id>' WHERE ...;
+ *
+ * The next /api/test-auth/cleanup call (which deletes every user with
+ * email matching *@test.*.local) will cascade-delete every row you
+ * reassigned. Real data, gone. No undo.
+ *
+ * This actually happened on a fork: 759 contacts + 20 policies + 64
+ * file metadata rows lost when cleanup ran. Recovered only because
+ * the migration SQL was idempotent (INSERT OR IGNORE) — fork-users
+ * with live, hand-entered data don't have that escape.
+ *
+ * Safe patterns instead:
+ *
+ *   1. Don't reassign — verify data with direct D1 queries
+ *      (`wrangler d1 execute ... --command "SELECT ..."`) and trust
+ *      the API will return the right rows when the real user signs in.
+ *
+ *   2. Clone, don't move:
+ *        INSERT INTO entities (id, user_id, ...)
+ *        SELECT lower(hex(randomblob(16))), '<test_user_id>', ...
+ *        FROM entities WHERE user_id = '<real_user>';
+ *      Test against the clones, then drop the test user (the clones
+ *      cascade-delete; the real rows stay).
+ *
+ *   3. Add the test email to ALLOWED_AUTH_EMAILS and OAuth-sign-in
+ *      as the real account. Slower per run, completely safe.
+ *
+ * Discovered: 2026-04-30 on the RightCover fork.
  */
 import { Hono } from 'hono'
 import { z } from 'zod'
