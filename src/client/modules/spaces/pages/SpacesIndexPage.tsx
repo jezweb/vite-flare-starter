@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils'
 import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
 import { SearchInput } from '@/components/ui/search-input'
-import { Spinner } from '@/components/ui/spinner'
+import { PageLoading } from '@/client/components/PageState'
 
 function relTime(iso: string): string {
   const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
@@ -109,9 +109,7 @@ export function SpacesIndexPage() {
       />
 
       {isLoading ? (
-        <div className="flex h-40 items-center justify-center">
-          <Spinner size="lg" className="text-muted-foreground" />
-        </div>
+        <PageLoading variant="list" count={4} />
       ) : spaces.length === 0 ? (
         <SharedEmptyState
           icon={Sparkles}

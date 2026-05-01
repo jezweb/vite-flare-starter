@@ -25,8 +25,8 @@ import { apiClient } from '@/client/lib/api-client'
 import { EmptyState as SharedEmptyState } from '@/client/components/EmptyState'
 import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
+import { PageLoading } from '@/client/components/PageState'
 import { SearchInput } from '@/components/ui/search-input'
-import { Spinner } from '@/components/ui/spinner'
 import { formatRelative } from '@/client/lib/format-time'
 
 type SortKey = 'activity' | 'name' | 'created'
@@ -120,10 +120,7 @@ export function ProjectsIndexPage() {
 
       {/* Loading / empty / cards */}
       {isLoading ? (
-        <div className="flex items-center justify-center h-64 text-muted-foreground">
-          <Spinner size="lg" className="mr-2" />
-          Loading projects…
-        </div>
+        <PageLoading variant="grid" count={4} />
       ) : projects.length === 0 ? (
         <EmptyState search={search} showArchived={showArchived} onCreate={() => setCreateOpen(true)} />
       ) : (

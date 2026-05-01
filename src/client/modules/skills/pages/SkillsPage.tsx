@@ -28,6 +28,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/client/components/EmptyState'
+import { PageLoading } from '@/client/components/PageState'
 import { Zap } from 'lucide-react'
 import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
@@ -180,14 +181,7 @@ export function SkillsPage() {
       />
 
       {isLoading ? (
-        <div className="space-y-2">
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              className="h-20 animate-pulse rounded-md bg-muted"
-            />
-          ))}
-        </div>
+        <PageLoading variant="grid" count={6} />
       ) : skills.length === 0 ? (
         <EmptyState
           icon={Zap}
