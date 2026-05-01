@@ -40,6 +40,7 @@ const ArtifactsPage = lazy(() => import('./modules/chat/pages/ArtifactsPage').th
 const ActivityPage = lazy(() => import('./modules/activity/pages/ActivityPage').then(m => ({ default: m.ActivityPage })))
 const FilesPage = lazy(() => import('./modules/files/pages/FilesPage').then(m => ({ default: m.FilesPage })))
 const SkillsPage = lazy(() => import('./modules/skills/pages/SkillsPage').then(m => ({ default: m.SkillsPage })))
+const SkillDetailPage = lazy(() => import('./modules/skills/pages/SkillDetailPage').then(m => ({ default: m.SkillDetailPage })))
 const NotificationsPage = lazy(() => import('./modules/notifications/pages/NotificationsPage').then(m => ({ default: m.NotificationsPage })))
 const ApprovalsPage = lazy(() => import('./modules/approvals/pages/ApprovalsPage').then(m => ({ default: m.ApprovalsPage })))
 const InboxPage = lazy(() => import('./modules/inbox/pages/InboxPage').then(m => ({ default: m.InboxPage })))
@@ -183,6 +184,7 @@ function App() {
 
             {/* Skills — agentskills.io registry UI */}
             <Route path="skills" element={<SkillsPage />} />
+            <Route path="skills/:slug" element={<SkillDetailPage />} />
 
             {/* Notifications full history (bell dropdown shows top 10) */}
             <Route path="notifications" element={<NotificationsPage />} />
