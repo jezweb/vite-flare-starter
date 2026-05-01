@@ -26,12 +26,16 @@ export interface AgentInstanceSummary {
   agentClass: string
   agentName: string
   displayName: string
+  description: string
   category: string
   runs: number
   totalCostUsd: number | null
   lastRunAt: number
   state: AgentInstanceState | null
   stateError?: string
+  /** True for registered classes with no active instance yet. Click to
+   *  wake — the edit sheet's save calls setOwner which creates the DO. */
+  dormant: boolean
 }
 
 interface ListResponse {

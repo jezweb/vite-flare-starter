@@ -30,7 +30,7 @@ import { eq, sql } from 'drizzle-orm'
 
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import { agentRuns } from '@/server/modules/agent-observability/db/schema'
-import { getAgentMetadata } from '@/server/lib/agents/registry'
+import { getAgentMetadata, listRegisteredAgents } from '@/server/lib/agents/registry'
 import type { AssistantAgent } from '@/server/modules/autonomous-agents/assistant-agent'
 import type { ResearcherAgent } from '@/server/modules/autonomous-agents/researcher-agent'
 import type { WriterAgent } from '@/server/modules/autonomous-agents/writer-agent'
@@ -91,14 +91,29 @@ app.use('*', authMiddleware)
 
 // ─── List ───────────────────────────────────────────────────────────
 
+/**
+ * Default slug per registered class for dormant placeholders. The
+ * convention is lowercase-class-name minus the `Agent` suffix:
+ *
+ *   AssistantAgent → assistant   (matches existing `${userId}:assistant`)
+ *   ResearcherAgent → researcher
+ *   WriterAgent → writer         (matches researcher delegate slug)
+ *   SweeperAgent → sweeper
+ *   AdminAgent → admin           (matches /api/admin-agent/ensure-space)
+ */
+function defaultSlugForClass(className: string): string {
+  return className.replace(/Agent$/, '').toLowerCase()
+}
+
 app.get('/', async (c) => {
   const userId = c.get('userId')
   const env = c.env as unknown as AgentInstancesEnv
   const db = drizzle(env.DB)
 
-  // Distinct (agentClass, agentName) for this user, plus run/cost summary.
-  // Joined with last-run timestamp so the UI can sort by recency.
-  const rows = await db
+  // Distinct (agentClass, agentName) for this user — these are
+  // ACTIVE instances (have run at least once). Run/cost/last-run summary
+  // joined so the UI can sort by recency.
+  const activeRows = await db
     .select({
       agentClass: agentRuns.agentClass,
       agentName: agentRuns.agentName,
@@ -114,18 +129,20 @@ app.get('/', async (c) => {
   // Augment each row with current DO state via RPC. Best-effort —
   // a stale row whose namespace binding was removed returns the row
   // sans state rather than failing the whole list.
-  const instances = await Promise.all(
-    rows.map(async (r) => {
+  const activeInstances = await Promise.all(
+    activeRows.map(async (r) => {
       const ns = getNamespace(env, r.agentClass)
       const meta = getAgentMetadata(r.agentClass)
       const base = {
         agentClass: r.agentClass,
         agentName: r.agentName,
         displayName: meta?.displayName ?? r.agentClass,
+        description: meta?.description ?? '',
         category: meta?.category ?? 'general',
         runs: r.runs,
         totalCostUsd: r.totalCostUsd,
         lastRunAt: r.lastRunAt,
+        dormant: false as const,
       }
       if (!ns) return { ...base, state: null }
       try {
@@ -142,7 +159,30 @@ app.get('/', async (c) => {
     }),
   )
 
-  return c.json({ total: instances.length, instances })
+  // Dormant: registered classes with NO active instance for this user.
+  // Surfaced so the UI can show one unified card grid (active + dormant)
+  // instead of separate "My agents" / "All classes" tabs. Saving on a
+  // dormant card from the edit sheet creates the DO via setOwner.
+  const activeClasses = new Set(activeInstances.map((i) => i.agentClass))
+  const dormantInstances = listRegisteredAgents()
+    .filter((cls) => !activeClasses.has(cls.className))
+    .map((cls) => ({
+      agentClass: cls.className,
+      agentName: defaultSlugForClass(cls.className),
+      displayName: cls.displayName,
+      description: cls.description,
+      category: cls.category,
+      runs: 0,
+      totalCostUsd: null as number | null,
+      lastRunAt: 0,
+      state: null,
+      dormant: true as const,
+    }))
+
+  return c.json({
+    total: activeInstances.length + dormantInstances.length,
+    instances: [...activeInstances, ...dormantInstances],
+  })
 })
 
 // ─── Read one ───────────────────────────────────────────────────────
