@@ -83,8 +83,13 @@ for a worked example with bar + area charts side-by-side.
 | **Chart + ChartContainer + ChartTooltip + ChartTooltipContent + ChartLegend** | `components/ui/chart.tsx` | Wraps Recharts with theme-token resolution (`--chart-1..5`). Don't import Recharts directly. |
 | **Empty + EmptyHeader + EmptyMedia + EmptyTitle + EmptyDescription + EmptyContent** | `components/ui/empty.tsx` | Low-level shadcn empty-state composables. Use `EmptyState` (canonical, has `tips` + actions) for normal cases; reach for these only when you need finer control. |
 | **Resizable** | `components/ui/resizable.tsx` | Drag-handle split panes. Use for sequential-reading surfaces (Inbox, Approvals). |
-| **HoverCard** | `components/ui/hover-card.tsx` | Hover-triggered popover for richer-than-Tooltip preview content. |
+| **HoverCard** | `components/ui/hover-card.tsx` | Hover-triggered popover for richer-than-Tooltip preview content. **Worked example**: `ProjectHoverCard` in chat sidebar's project bucket headers. |
+| **ContextMenu** | `components/ui/context-menu.tsx` | Right-click menu for power-user shortcuts on rows. Additive — use alongside an existing kebab/click target, never replace it. **Worked example**: InboxRow with Mark read / Archive / Copy ID / Open in approvals. |
 | **Combobox** | `components/ui/combobox.tsx` | Searchable single-select. Built on Command + Popover. |
+| **InputOTP** | `components/ui/input-otp.tsx` | 4–6 digit verification code field (segmented). Reach for this on 2FA setup, magic-link verify, sensitive action confirmation. *Currently no consumer — installed for future 2FA / API-token-rotation flows.* |
+| **AspectRatio** | `components/ui/aspect-ratio.tsx` | Fixed-ratio container (16/9, 1/1, 4/3) — use for image/video thumbnails where you need a known canvas size before media loads. *Currently no consumer — reach for this on entity cover images, video thumbs, embedded maps.* |
+| **Carousel** | `components/ui/carousel.tsx` | Swipeable / paged horizontal content. Reach for this on image galleries, multi-photo entity views, onboarding tour cards. *Currently no consumer — first product needing image-rich entities will surface this.* |
+| **Slider** | `components/ui/slider.tsx` | Continuous range input. Reach for this on settings (temperature, max-tokens, theme adjust), filters (price, date range). *Currently no consumer — keep installed for forks; a number input is fine for one-off cases.* |
 | **Pagination** | `components/ui/pagination.tsx` | Numbered page links + prev/next chevrons. Already used inside `DataTable`. |
 | **Progress** | `components/ui/progress.tsx` | Linear progress bar. |
 | **Breadcrumb** | `components/ui/breadcrumb.tsx` | Multi-level navigation trail (project → conversation → message). |
