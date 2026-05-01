@@ -45,6 +45,7 @@ import {
   type Project,
 } from '@/client/modules/projects/hooks/useProjects'
 import { getProjectFillClass } from '@/client/modules/projects/colors'
+import { ProjectHoverCard } from '@/client/modules/projects/components/ProjectHoverCard'
 
 interface Props {
   activeConversationId?: string
@@ -762,16 +763,18 @@ function ProjectsSection({
                       />
                     </div>
                   ) : (
-                    <Link
-                      to={`/dashboard/projects/${project.id}`}
-                      className="flex flex-1 items-center gap-1.5 min-w-0 hover:underline underline-offset-2"
-                    >
-                      <Folder className={cn('size-3.5 shrink-0', getProjectFillClass(project.color) ?? 'text-muted-foreground')} />
-                      <span className="truncate font-medium" title={project.name}>{project.name}</span>
-                      <span className="ml-auto shrink-0 text-muted-foreground/60 tabular-nums">
-                        {convs.length}
-                      </span>
-                    </Link>
+                    <ProjectHoverCard projectId={project.id}>
+                      <Link
+                        to={`/dashboard/projects/${project.id}`}
+                        className="flex flex-1 items-center gap-1.5 min-w-0 hover:underline underline-offset-2"
+                      >
+                        <Folder className={cn('size-3.5 shrink-0', getProjectFillClass(project.color) ?? 'text-muted-foreground')} />
+                        <span className="truncate font-medium" title={project.name}>{project.name}</span>
+                        <span className="ml-auto shrink-0 text-muted-foreground/60 tabular-nums">
+                          {convs.length}
+                        </span>
+                      </Link>
+                    </ProjectHoverCard>
                   )}
                   {!isRenaming && (
                     <DropdownMenu
