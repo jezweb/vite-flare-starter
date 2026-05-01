@@ -85,13 +85,13 @@ export function NewAgentDialog({ open, onOpenChange, onCreate }: Props) {
         <DialogHeader>
           <DialogTitle>New agent</DialogTitle>
           <DialogDescription>
-            Pick a class and name. Click Continue to set persona / model / budget — saving creates the Durable Object.
+            Pick a type and a name. On the next screen you'll set persona, model, and budget.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           <Field>
-            <FieldLabel htmlFor="new-agent-class">Class</FieldLabel>
+            <FieldLabel htmlFor="new-agent-class">Type</FieldLabel>
             <NativeSelect
               id="new-agent-class"
               value={agentClass}
@@ -100,18 +100,23 @@ export function NewAgentDialog({ open, onOpenChange, onCreate }: Props) {
             >
               {classes.map((c) => (
                 <NativeSelectOption key={c.className} value={c.className}>
-                  {c.displayName} ({c.className})
+                  {c.displayName}
                 </NativeSelectOption>
               ))}
             </NativeSelect>
-            <FieldDescription>
-              Pick the agent type. Each class is TypeScript code in{' '}
-              <code className="font-mono">src/server/modules/autonomous-agents/</code>.
-            </FieldDescription>
+            {agentClass ? (
+              <FieldDescription>
+                {classes.find((c) => c.className === agentClass)?.description}
+              </FieldDescription>
+            ) : (
+              <FieldDescription>
+                Unsure? Pick <strong>AI assistant</strong> — it's the most general type.
+              </FieldDescription>
+            )}
           </Field>
 
           <Field>
-            <FieldLabel htmlFor="new-agent-slug">Name (slug)</FieldLabel>
+            <FieldLabel htmlFor="new-agent-slug">Name</FieldLabel>
             <Input
               id="new-agent-slug"
               value={slug}
@@ -119,16 +124,16 @@ export function NewAgentDialog({ open, onOpenChange, onCreate }: Props) {
                 setSlug(e.target.value)
                 setSlugTouched(true)
               }}
-              placeholder="e.g. researcher-cf-workers"
+              placeholder="e.g. research-cf-workers"
               className="font-mono text-sm"
               maxLength={60}
             />
             <FieldDescription>
-              Lowercase letters, numbers, hyphens, underscores. Used as the DO partition (<code className="font-mono">{'${userId}:'}{slug || 'name'}</code>). Cannot be renamed once the DO exists.
+              A short identifier for this specific agent. Useful when you have several of the same type (e.g. one researcher for "cf-workers" and another for "startups"). Lowercase letters, numbers, hyphens, underscores. Cannot be renamed later.
             </FieldDescription>
             {slug && !slugValid && (
               <p className="text-xs text-destructive">
-                Slug must be 1–60 chars: lowercase letters, numbers, hyphens, underscores.
+                Name must be 1–60 chars: lowercase letters, numbers, hyphens, underscores.
               </p>
             )}
           </Field>

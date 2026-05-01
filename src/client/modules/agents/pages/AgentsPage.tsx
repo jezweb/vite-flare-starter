@@ -42,7 +42,7 @@ export function AgentsPage() {
     <PageContainer type="catalog">
       <PageHeader
         title="Agents"
-        subtitle="Per-user agent instances — persona, model, daily budget. Click any card to edit. Dormant agents wake up when you save."
+        subtitle="Your AI agents — the per-user assistants you chat with, hand off work to, or schedule. Each has its own persona, memory, and budget. Click a card to edit it."
         trailing={
           <>
             <Button onClick={() => setNewAgentOpen(true)}>
@@ -61,15 +61,23 @@ export function AgentsPage() {
 
       <details className="rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
         <summary className="cursor-pointer font-medium text-foreground">
-          How are these agents defined?
+          What's a "type"? What kinds of agent exist?
         </summary>
         <div className="mt-2 space-y-2 leading-relaxed">
           <p>
-            Each agent CLASS is TypeScript code (in{' '}
-            <code className="font-mono">src/server/modules/autonomous-agents/</code>) backed by a Cloudflare Durable Object. To add a new class, fork the starter and write a class file. The 5 shipped here are worked examples for forks to copy.
+            A <strong className="text-foreground">type</strong> is a pattern shipped with the starter — like a template. The 5 here cover the main AI-agent shapes:
           </p>
+          <ul className="ml-4 list-disc space-y-1">
+            <li><strong className="text-foreground">AI assistant</strong> — general purpose. Chat with it, give it tools. Default for most cases.</li>
+            <li><strong className="text-foreground">Researcher → Writer</strong> — specialist handoff. Researcher gathers info, Writer turns it into prose.</li>
+            <li><strong className="text-foreground">Sweeper</strong> — runs on a schedule, scans for things needing action.</li>
+            <li><strong className="text-foreground">Platform Admin</strong> — configures the platform on your behalf via chat.</li>
+          </ul>
           <p>
-            Each agent INSTANCE is per-user runtime state in DO storage. Dormant cards (empty state) become active when you save edits or when something fires the agent (a routine, the Researcher → Writer handoff, etc.).
+            Each one you create here gets its own <strong className="text-foreground">persona</strong> (system prompt), <strong className="text-foreground">model</strong>, and <strong className="text-foreground">budget cap</strong>. Saving creates a per-user instance you can chat with or schedule.
+          </p>
+          <p className="text-[11px]">
+            Other agent patterns (voice, video, MCP, simple cron) live as worked examples elsewhere in the dashboard — those are different shapes that don't have a "persona to edit" surface.
           </p>
         </div>
       </details>
