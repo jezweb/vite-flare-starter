@@ -21,18 +21,13 @@ export function SettingsPage() {
     setSearchParams({ tab: value })
   }
 
-  // 8 visible tabs is too many for narrow viewports. On `< sm` we render
-  // a NativeSelect that drives the same `?tab=` param; tabs only render
-  // on tablet+. Pattern matches Linear / GitHub / Vercel mobile settings.
+  // 8 visible tabs is too many for a horizontal strip. Three responsive
+  // modes:
+  //   < sm  — NativeSelect drops to the right of the title (mobile)
+  //   sm-md — horizontal tabs strip across the top (tablet)
+  //   lg+   — vertical tabs sidebar with content next to it (Linear /
+  //           GitHub / Vercel / Notion settings convention)
   const showChatTab = !!features.chat
-  // Tab count: profile + organization + security + sessions + (api-tokens) + (ai) + memory + preferences
-  const tabCount = (features.apiTokens ? 7 : 6) + (showChatTab ? 1 : 0)
-  const gridCols =
-    tabCount >= 8
-      ? 'sm:grid-cols-8'
-      : tabCount === 7
-        ? 'sm:grid-cols-7'
-        : 'sm:grid-cols-6'
 
   const tabOptions: { value: string; label: string }[] = [
     { value: 'profile', label: 'Profile' },
@@ -46,14 +41,13 @@ export function SettingsPage() {
   ]
 
   return (
-    <PageContainer type="form">
+    <PageContainer type="form" maxWidth="5xl">
       <PageHeader
         title="Settings"
         subtitle="Your profile, login, AI memory, and the data this app holds about you."
       />
 
-      {/* Mobile (< sm): native select picker drives the same ?tab= param.
-          Tablet+: full tabs strip with even-width grid. */}
+      {/* Mobile (< sm): native select picker drives the same ?tab= param. */}
       <div className="sm:hidden [&>div]:w-full">
         <NativeSelect
           value={tab}
@@ -66,48 +60,59 @@ export function SettingsPage() {
         </NativeSelect>
       </div>
 
-      <Tabs value={tab} onValueChange={handleTabChange} className="w-full hidden sm:block">
-        <TabsList className={`mb-8 grid w-full ${gridCols}`}>
-          {tabOptions.map((opt) => (
-            <TabsTrigger key={opt.value} value={opt.value}>{opt.label}</TabsTrigger>
-          ))}
-        </TabsList>
+      <Tabs value={tab} onValueChange={handleTabChange} className="hidden w-full sm:block">
+        {/* lg+: vertical sidebar nav next to content. md: horizontal tabs at top. */}
+        <div className="flex flex-col gap-6 lg:flex-row">
+          <TabsList className="h-auto w-full flex-wrap justify-start gap-1 bg-transparent p-0 lg:w-48 lg:flex-col lg:items-stretch lg:gap-0.5 lg:bg-muted/30 lg:p-1">
+            {tabOptions.map((opt) => (
+              <TabsTrigger
+                key={opt.value}
+                value={opt.value}
+                className="lg:justify-start lg:px-3 lg:py-2"
+              >
+                {opt.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
-        <TabsContent value="profile">
-          <ProfileSection />
-        </TabsContent>
+          <div className="flex-1 min-w-0">
+            <TabsContent value="profile" className="mt-0">
+              <ProfileSection />
+            </TabsContent>
 
-        <TabsContent value="organization">
-          <OrganizationSection />
-        </TabsContent>
+            <TabsContent value="organization" className="mt-0">
+              <OrganizationSection />
+            </TabsContent>
 
-        <TabsContent value="security">
-          <SecuritySection />
-        </TabsContent>
+            <TabsContent value="security" className="mt-0">
+              <SecuritySection />
+            </TabsContent>
 
-        <TabsContent value="sessions">
-          <SessionsSection />
-        </TabsContent>
+            <TabsContent value="sessions" className="mt-0">
+              <SessionsSection />
+            </TabsContent>
 
-        {features.apiTokens && (
-          <TabsContent value="api-tokens">
-            <ApiTokensSection />
-          </TabsContent>
-        )}
+            {features.apiTokens && (
+              <TabsContent value="api-tokens" className="mt-0">
+                <ApiTokensSection />
+              </TabsContent>
+            )}
 
-        {showChatTab && (
-          <TabsContent value="ai">
-            <ChatPreferencesSection />
-          </TabsContent>
-        )}
+            {showChatTab && (
+              <TabsContent value="ai" className="mt-0">
+                <ChatPreferencesSection />
+              </TabsContent>
+            )}
 
-        <TabsContent value="memory">
-          <MemorySection />
-        </TabsContent>
+            <TabsContent value="memory" className="mt-0">
+              <MemorySection />
+            </TabsContent>
 
-        <TabsContent value="preferences">
-          <PreferencesSection />
-        </TabsContent>
+            <TabsContent value="preferences" className="mt-0">
+              <PreferencesSection />
+            </TabsContent>
+          </div>
+        </div>
       </Tabs>
     </PageContainer>
   )
