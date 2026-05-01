@@ -10,12 +10,12 @@ import { useNavigate } from 'react-router-dom'
 import { UserPlus, Bot, Trash2, LogOut, Ban } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog'
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -90,14 +90,15 @@ export function SpaceSettingsModal({ spaceId, open, initialTab, onClose }: Props
   }
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Space settings</DialogTitle>
-          <DialogDescription className="sr-only">
+    <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
+      <SheetContent side="right" className="flex w-full flex-col gap-0 overflow-y-auto p-0 sm:max-w-xl">
+        <SheetHeader className="border-b">
+          <SheetTitle>Space settings</SheetTitle>
+          <SheetDescription className="sr-only">
             Manage members, agents, notifications, and the space lifecycle.
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
+        <div className="flex-1 p-4">
         <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="general">General</TabsTrigger>
@@ -303,7 +304,8 @@ export function SpaceSettingsModal({ spaceId, open, initialTab, onClose }: Props
             )}
           </TabsContent>
         </Tabs>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </SheetContent>
+    </Sheet>
   )
 }

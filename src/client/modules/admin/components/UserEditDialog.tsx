@@ -9,13 +9,13 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 import {
   Form,
   FormControl,
@@ -103,17 +103,17 @@ export function UserEditDialog({ user, open, onOpenChange }: UserEditDialogProps
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Edit User</DialogTitle>
-          <DialogDescription>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="flex flex-col gap-0 p-0 sm:max-w-md">
+        <SheetHeader className="border-b">
+          <SheetTitle>Edit User</SheetTitle>
+          <SheetDescription>
             Update user information and role.
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
             <FormField
               control={form.control}
               name="name"
@@ -173,7 +173,7 @@ export function UserEditDialog({ user, open, onOpenChange }: UserEditDialogProps
               )}
             />
 
-            <DialogFooter className="gap-2 sm:gap-0">
+            <SheetFooter className="mt-auto flex-row gap-2 border-t">
               <Button
                 type="button"
                 variant="outline"
@@ -185,10 +185,10 @@ export function UserEditDialog({ user, open, onOpenChange }: UserEditDialogProps
                 {updateUser.isPending && <Spinner size="md" className="mr-2" />}
                 Save Changes
               </Button>
-            </DialogFooter>
+            </SheetFooter>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }

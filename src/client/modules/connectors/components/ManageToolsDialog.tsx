@@ -16,13 +16,13 @@ import { useMemo, useState } from 'react'
 import { RotateCcw, Search, ShieldAlert } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog'
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetFooter,
+} from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
@@ -99,23 +99,23 @@ export function ManageToolsDialog({
   const showSearch = provider.toolNames.length > 15
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl sm:max-w-xl">
-        <DialogHeader>
-          <DialogTitle>Manage {provider.label} tools</DialogTitle>
-          <DialogDescription>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="flex flex-col gap-0 p-0 sm:max-w-lg">
+        <SheetHeader className="border-b">
+          <SheetTitle>Manage {provider.label} tools</SheetTitle>
+          <SheetDescription>
             Choose which tools the AI can use. Changes apply to the next
             message. Destructive tools still require explicit approval
             when called.
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
+          <div className="flex flex-1 items-center justify-center py-12">
             <Spinner size="lg" className="text-muted-foreground" />
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
             {/* Master switch */}
             <div className="flex items-center justify-between rounded-md border bg-muted/30 px-4 py-3">
               <div>
@@ -164,7 +164,7 @@ export function ManageToolsDialog({
 
             {/* Tool groups */}
             <div
-              className={`max-h-[50vh] overflow-y-auto space-y-4 pr-1 ${
+              className={`flex-1 space-y-4 pr-1 ${
                 !data?.enabled ? 'opacity-50 pointer-events-none' : ''
               }`}
               aria-disabled={!data?.enabled}
@@ -226,12 +226,12 @@ export function ManageToolsDialog({
           </div>
         )}
 
-        <DialogFooter>
+        <SheetFooter className="border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Close
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   )
 }

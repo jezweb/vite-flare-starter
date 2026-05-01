@@ -10,12 +10,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { UserPlus, X, Trash2 } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog'
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
@@ -68,16 +69,16 @@ export function ShareProjectDialog({ projectId, open, onClose }: Props) {
   })
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Share project</DialogTitle>
-          <DialogDescription>
+    <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
+      <SheetContent side="right" className="flex flex-col gap-0 p-0 sm:max-w-md">
+        <SheetHeader className="border-b">
+          <SheetTitle>Share project</SheetTitle>
+          <SheetDescription>
             Invite teammates to collaborate. Editors can do everything; viewers can only read.
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
 
-        <div className="space-y-3">
+        <div className="flex-1 space-y-3 overflow-y-auto p-4">
           <div>
             <Label className="text-xs uppercase tracking-wider text-muted-foreground">
               Members
@@ -179,13 +180,13 @@ export function ShareProjectDialog({ projectId, open, onClose }: Props) {
           </div>
         </div>
 
-        <div className="flex justify-end">
+        <SheetFooter className="border-t">
           <Button variant="ghost" onClick={onClose}>
             <X className="size-4 mr-1" />
             Done
           </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   )
 }
