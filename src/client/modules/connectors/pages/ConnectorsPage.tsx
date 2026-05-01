@@ -230,6 +230,7 @@ export function ConnectorsPage() {
           setBrowseOpen(false)
           setDetailId(id)
         }}
+        onOpenCustom={() => setCustomOpen(true)}
       />
 
       <CustomConnectorDialog open={customOpen} onOpenChange={setCustomOpen} />
@@ -339,6 +340,7 @@ function BrowseDialog({
   connectedIds,
   pendingByConnector,
   onOpenConnection,
+  onOpenCustom,
 }: {
   open: boolean
   onOpenChange: (v: boolean) => void
@@ -346,6 +348,7 @@ function BrowseDialog({
   connectedIds: Set<string>
   pendingByConnector: Map<string, McpConnection>
   onOpenConnection: (id: string) => void
+  onOpenCustom: () => void
 }) {
   const [query, setQuery] = useState('')
   const connect = useConnect()
@@ -360,6 +363,10 @@ function BrowseDialog({
           e.category.toLowerCase().includes(query.toLowerCase()),
       )
     : sorted
+  // Hide search when the catalogue is small — search through 1-3 items
+  // is dead weight. Threshold mirrors the rule of thumb used elsewhere
+  // (5+ for sort/filter, scoped sweep complete).
+  const showSearch = catalog.length >= 6
 
   const handleConnect = useCallback(
     (entry: CatalogEntry) => {
@@ -407,15 +414,17 @@ function BrowseDialog({
         <DialogHeader>
           <DialogTitle>Connector examples</DialogTitle>
           <DialogDescription>
-            A short list of public MCP servers to demonstrate the connector flow. For more, paste any MCP server URL via Add connector — Smithery, Anthropic reference servers, and self-hosted Workers all work.
+            A short list of public MCP servers to demonstrate the connector flow. For more, paste any MCP server URL via the "Add custom MCP server" button below — Smithery, Anthropic reference servers, and self-hosted Workers all work.
           </DialogDescription>
         </DialogHeader>
-        <Input
-          placeholder="Search…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          autoFocus
-        />
+        {showSearch && (
+          <Input
+            placeholder="Search…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            autoFocus
+          />
+        )}
         <div className="overflow-y-auto flex-1 -mx-1 px-1 space-y-2">
           {filtered.map((entry) => (
             <div
@@ -467,6 +476,21 @@ function BrowseDialog({
             </p>
           )}
         </div>
+        <DialogFooter className="border-t pt-3">
+          <p className="mr-auto text-xs text-muted-foreground">
+            Have a different MCP server in mind?
+          </p>
+          <Button
+            variant="outline"
+            onClick={() => {
+              onOpenChange(false)
+              onOpenCustom()
+            }}
+          >
+            <Plus className="mr-1.5 size-4" />
+            Add custom MCP server
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

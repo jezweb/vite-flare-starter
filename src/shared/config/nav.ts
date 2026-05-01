@@ -105,15 +105,26 @@ export const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
+    // Insights — first-class user features for "what did my agents do?
+    // what's queued for me?" surfaces. Visible to all users by default.
+    label: 'Insights',
+    items: [
+      { to: '/dashboard/approvals', label: 'Approvals', icon: CheckSquare },
+      { to: '/dashboard/agent-observability', label: 'Observability', icon: BarChart3 },
+      { to: '/dashboard/activity', label: 'Activity', icon: Activity, feature: 'activity' },
+      { to: '/dashboard/files', label: 'Files', icon: FolderOpen, feature: 'files' },
+    ],
+  },
+  {
+    // Builder — genuinely developer-facing surfaces. Hidden by default;
+    // toggle Builder mode in the user menu to reveal. Forks shipping a
+    // polished product can leave this off; fork-authors and starter
+    // contributors flip it on.
     label: 'Builder',
     defaultCollapsed: true,
     builderOnly: true,
     items: [
-      { to: '/dashboard/approvals', label: 'Approvals queue', icon: CheckSquare },
-      { to: '/dashboard/agent-observability', label: 'Agent observability', icon: BarChart3 },
-      { to: '/dashboard/activity', label: 'Activity', icon: Activity, feature: 'activity' },
       { to: '/dashboard/extract', label: 'Extract', icon: Sparkles, feature: 'chat' },
-      { to: '/dashboard/files', label: 'Files', icon: FolderOpen, feature: 'files' },
       { to: '/dashboard/components', label: 'Components', icon: Component },
       { to: '/dashboard/style-guide', label: 'Style guide', icon: Palette },
       { to: '/dashboard/voice-example', label: 'Voice example', icon: Mic, feature: 'voiceAgent' },
