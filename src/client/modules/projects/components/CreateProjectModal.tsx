@@ -18,7 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@/components/ui/label'
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Card } from '@/components/ui/card'
 import { toast } from 'sonner'
 import {
@@ -106,29 +106,31 @@ function BlankTab({ onCreated, navigate }: { onCreated: () => void; navigate: (t
 
   return (
     <form onSubmit={submit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="blank-name">What are you working on?</Label>
-        <Input
-          id="blank-name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Name your project"
-          maxLength={100}
-          autoFocus
-          required
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="blank-description">What are you trying to achieve?</Label>
-        <Textarea
-          id="blank-description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Describe your project, goals, subject, etc..."
-          rows={3}
-          maxLength={500}
-        />
-      </div>
+      <FieldGroup>
+        <Field>
+          <FieldLabel htmlFor="blank-name">What are you working on?</FieldLabel>
+          <Input
+            id="blank-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Name your project"
+            maxLength={100}
+            autoFocus
+            required
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="blank-description">What are you trying to achieve?</FieldLabel>
+          <Textarea
+            id="blank-description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Describe your project, goals, subject, etc..."
+            rows={3}
+            maxLength={500}
+          />
+        </Field>
+      </FieldGroup>
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="ghost" onClick={onCreated}>Cancel</Button>
         <Button type="submit" disabled={!name.trim() || create.isPending}>
@@ -191,8 +193,8 @@ function AiTab({ onCreated, navigate }: { onCreated: () => void; navigate: (to: 
   if (!draft) {
     return (
       <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="ai-prompt">Describe what you want this project to help you with</Label>
+        <Field>
+          <FieldLabel htmlFor="ai-prompt">Describe what you want this project to help you with</FieldLabel>
           <Textarea
             id="ai-prompt"
             value={prompt}
@@ -202,10 +204,10 @@ function AiTab({ onCreated, navigate }: { onCreated: () => void; navigate: (to: 
             maxLength={2000}
             autoFocus
           />
-          <p className="text-xs text-muted-foreground">
+          <FieldDescription>
             Examples: <em>"help me plan and review fortnightly newsletters"</em>, <em>"researching new suppliers for a B2B parts business"</em>
-          </p>
-        </div>
+          </FieldDescription>
+        </Field>
         <div className="flex justify-end gap-2 pt-2">
           <Button type="button" variant="ghost" onClick={onCreated}>Cancel</Button>
           <Button onClick={generate} disabled={!prompt.trim() || scaffold.isPending}>
@@ -229,38 +231,40 @@ function AiTab({ onCreated, navigate }: { onCreated: () => void; navigate: (to: 
   // Preview + edit
   return (
     <div className="space-y-4 max-h-[60vh] overflow-y-auto">
-      <Card className="p-4 space-y-3 bg-muted/30">
-        <div className="space-y-1">
-          <Label htmlFor="ai-name" className="text-xs uppercase tracking-wider text-muted-foreground">Project name</Label>
-          <Input
-            id="ai-name"
-            value={editName}
-            onChange={(e) => setEditName(e.target.value)}
-            maxLength={100}
-            className="font-semibold"
-          />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="ai-description" className="text-xs uppercase tracking-wider text-muted-foreground">Description</Label>
-          <Textarea
-            id="ai-description"
-            value={editDescription}
-            onChange={(e) => setEditDescription(e.target.value)}
-            rows={2}
-            maxLength={500}
-          />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="ai-systemprompt" className="text-xs uppercase tracking-wider text-muted-foreground">Instructions (system prompt)</Label>
-          <Textarea
-            id="ai-systemprompt"
-            value={editSystemPrompt}
-            onChange={(e) => setEditSystemPrompt(e.target.value)}
-            rows={6}
-            maxLength={8000}
-            className="font-mono text-xs md:text-xs"
-          />
-        </div>
+      <Card className="p-4 bg-muted/30">
+        <FieldGroup className="gap-3">
+          <Field>
+            <FieldLabel htmlFor="ai-name" className="text-xs uppercase tracking-wider text-muted-foreground">Project name</FieldLabel>
+            <Input
+              id="ai-name"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              maxLength={100}
+              className="font-semibold"
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="ai-description" className="text-xs uppercase tracking-wider text-muted-foreground">Description</FieldLabel>
+            <Textarea
+              id="ai-description"
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              rows={2}
+              maxLength={500}
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="ai-systemprompt" className="text-xs uppercase tracking-wider text-muted-foreground">Instructions (system prompt)</FieldLabel>
+            <Textarea
+              id="ai-systemprompt"
+              value={editSystemPrompt}
+              onChange={(e) => setEditSystemPrompt(e.target.value)}
+              rows={6}
+              maxLength={8000}
+              className="font-mono text-xs md:text-xs"
+            />
+          </Field>
+        </FieldGroup>
       </Card>
 
       {draft.starterMemories.length > 0 && (

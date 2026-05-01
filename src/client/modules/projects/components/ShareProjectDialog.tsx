@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { Label } from '@/components/ui/label'
 import { apiClient } from '@/client/lib/api-client'
 
@@ -139,12 +140,14 @@ export function ShareProjectDialog({ projectId, open, onClose }: Props) {
           </div>
 
           <div className="rounded-md border border-border p-3">
-            <Label htmlFor="invite-userid" className="text-xs uppercase tracking-wider text-muted-foreground">
-              Invite a user
-            </Label>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Paste their userId. Email-based invites land in Phase 6.
-            </p>
+            <Field>
+              <FieldLabel htmlFor="invite-userid" className="text-xs uppercase tracking-wider text-muted-foreground">
+                Invite a user
+              </FieldLabel>
+              <FieldDescription className="text-xs">
+                Paste their userId. Email-based invites land in Phase 6.
+              </FieldDescription>
+            </Field>
             <div className="mt-2 flex gap-2">
               <Input
                 id="invite-userid"

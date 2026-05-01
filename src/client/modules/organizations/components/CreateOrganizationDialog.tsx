@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { useCreateOrg, useSetActiveOrg } from '../hooks/useOrganizations'
 
 interface Props {
@@ -81,8 +81,8 @@ export function CreateOrganizationDialog({ open, onOpenChange }: Props) {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-3">
-            <div className="space-y-1">
-              <Label htmlFor="org-name">Name</Label>
+            <Field>
+              <FieldLabel htmlFor="org-name">Name</FieldLabel>
               <Input
                 id="org-name"
                 value={name}
@@ -91,9 +91,9 @@ export function CreateOrganizationDialog({ open, onOpenChange }: Props) {
                 autoFocus
                 maxLength={100}
               />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="org-slug">Slug</Label>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="org-slug">Slug</FieldLabel>
               <Input
                 id="org-slug"
                 value={slug}
@@ -105,11 +105,11 @@ export function CreateOrganizationDialog({ open, onOpenChange }: Props) {
                 className="font-mono text-sm"
                 maxLength={48}
               />
-              <p className="text-[11px] text-muted-foreground">
+              <FieldDescription className="text-[11px]">
                 URL-safe, used in invitation links. Choose carefully — changing
                 it later invalidates pending invitations.
-              </p>
-            </div>
+              </FieldDescription>
+            </Field>
             {error && <p className="text-xs text-destructive">{error}</p>}
           </div>
           <DialogFooter>

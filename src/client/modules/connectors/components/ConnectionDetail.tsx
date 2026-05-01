@@ -11,6 +11,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Field, FieldLabel } from '@/components/ui/field'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -433,8 +434,8 @@ function ProfilePanel({ connection }: { connection: McpConnection }) {
         "personal Gmail" vs "work Gmail").
       </p>
       <div className="space-y-2">
-        <div className="space-y-1">
-          <Label htmlFor="profile-label" className="text-xs">Label</Label>
+        <Field>
+          <FieldLabel htmlFor="profile-label" className="text-xs">Label</FieldLabel>
           <Input
             id="profile-label"
             value={label}
@@ -443,7 +444,7 @@ function ProfilePanel({ connection }: { connection: McpConnection }) {
             maxLength={60}
             className="text-sm"
           />
-        </div>
+        </Field>
         <div className="space-y-1">
           <Label className="text-xs">Restrict to</Label>
           <RestrictAgentPicker

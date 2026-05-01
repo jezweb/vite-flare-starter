@@ -42,6 +42,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { type FileItem, useDeleteFile, useUpdateFile, formatFileSize, getFileIcon } from '../hooks/useFiles'
@@ -319,14 +320,14 @@ export function FileList({ files, isLoading, folder, onUploadClick }: FileListPr
             <DialogDescription>Update file name and visibility settings.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">File Name</Label>
+            <Field>
+              <FieldLabel htmlFor="name">File Name</FieldLabel>
               <Input id="name" value={editName} onChange={(e) => setEditName(e.target.value)} />
-            </div>
+            </Field>
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label htmlFor="public">Public Access</Label>
-                <p className="text-sm text-muted-foreground">Anyone with the link can download</p>
+                <FieldDescription>Anyone with the link can download</FieldDescription>
               </div>
               <Switch id="public" checked={editIsPublic} onCheckedChange={setEditIsPublic} />
             </div>

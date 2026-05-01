@@ -19,7 +19,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Field, FieldLabel } from '@/components/ui/field'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { useSession } from '@/client/lib/auth'
@@ -107,17 +107,17 @@ export function SpaceSettingsModal({ spaceId, open, initialTab, onClose }: Props
           </TabsList>
 
           <TabsContent value="general" className="space-y-3 pt-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="settings-title">Name</Label>
+            <Field>
+              <FieldLabel htmlFor="settings-title">Name</FieldLabel>
               <Input
                 id="settings-title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 disabled={!isOwner}
               />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="settings-summary">Description</Label>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="settings-summary">Description</FieldLabel>
               <Textarea
                 id="settings-summary"
                 value={summary}
@@ -125,7 +125,7 @@ export function SpaceSettingsModal({ spaceId, open, initialTab, onClose }: Props
                 rows={3}
                 disabled={!isOwner}
               />
-            </div>
+            </Field>
             <div className="flex items-center justify-between gap-3 rounded-md border border-border p-3">
               <div>
                 <div className="text-sm font-medium">Keep history</div>

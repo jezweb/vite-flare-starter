@@ -21,6 +21,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
@@ -381,8 +382,8 @@ function MemoryEditorModal({
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <div className="grid grid-cols-3 gap-3">
-            <div className="col-span-2 space-y-2">
-              <Label htmlFor="memory-name">Name (slug)</Label>
+            <Field className="col-span-2">
+              <FieldLabel htmlFor="memory-name">Name (slug)</FieldLabel>
               <Input
                 id="memory-name"
                 value={name}
@@ -391,9 +392,9 @@ function MemoryEditorModal({
                 maxLength={80}
                 required
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="memory-type">Type</Label>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="memory-type">Type</FieldLabel>
               <select
                 id="memory-type"
                 value={type}
@@ -404,10 +405,10 @@ function MemoryEditorModal({
                   <option key={t} value={t}>{t}</option>
                 ))}
               </select>
-            </div>
+            </Field>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="memory-description">One-line description</Label>
+          <Field>
+            <FieldLabel htmlFor="memory-description">One-line description</FieldLabel>
             <Input
               id="memory-description"
               value={description}
@@ -416,9 +417,9 @@ function MemoryEditorModal({
               maxLength={200}
               required
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="memory-content">Content</Label>
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="memory-content">Content</FieldLabel>
             <Textarea
               id="memory-content"
               value={content}
@@ -432,15 +433,15 @@ function MemoryEditorModal({
             <div className="text-[10px] text-muted-foreground text-right tabular-nums">
               {content.length}/8000
             </div>
-          </div>
+          </Field>
           <div className="flex items-center justify-between rounded-md border bg-muted/20 px-3 py-2">
             <div className="flex items-start gap-2">
               <Lock className={cn('size-4 mt-0.5', isPrivate ? 'text-amber-600' : 'text-muted-foreground')} />
               <div>
                 <Label htmlFor="memory-private" className="cursor-pointer">Private</Label>
-                <p className="text-xs text-muted-foreground">
+                <FieldDescription className="text-xs">
                   Never auto-injected. Available only via explicit load_memory tool.
-                </p>
+                </FieldDescription>
               </div>
             </div>
             <Switch id="memory-private" checked={isPrivate} onCheckedChange={setIsPrivate} />

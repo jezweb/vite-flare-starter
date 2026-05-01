@@ -29,7 +29,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@/components/ui/label'
+import { Field, FieldLabel } from '@/components/ui/field'
 import {
   Dialog,
   DialogContent,
@@ -506,8 +506,8 @@ function EditProjectModal({
           <DialogDescription className="sr-only">Update the project name and description.</DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="edit-name">Name</Label>
+          <Field>
+            <FieldLabel htmlFor="edit-name">Name</FieldLabel>
             <Input
               id="edit-name"
               value={name}
@@ -516,9 +516,9 @@ function EditProjectModal({
               required
               autoFocus
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="edit-description">Description</Label>
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="edit-description">Description</FieldLabel>
             <Textarea
               id="edit-description"
               value={description}
@@ -526,7 +526,7 @@ function EditProjectModal({
               rows={3}
               maxLength={500}
             />
-          </div>
+          </Field>
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button type="submit" disabled={!name.trim() || isPending}>

@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Field, FieldLabel } from '@/components/ui/field'
 import {
   Select,
   SelectContent,
@@ -85,8 +85,8 @@ export function InviteMemberDialog({ open, onOpenChange, organizationId }: Props
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3 py-3">
-              <div className="space-y-1">
-                <Label htmlFor="invite-email">Email</Label>
+              <Field>
+                <FieldLabel htmlFor="invite-email">Email</FieldLabel>
                 <Input
                   id="invite-email"
                   type="email"
@@ -97,9 +97,9 @@ export function InviteMemberDialog({ open, onOpenChange, organizationId }: Props
                   autoComplete="off"
                   required
                 />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="invite-role">Role</Label>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="invite-role">Role</FieldLabel>
                 <Select value={role} onValueChange={(v) => setRole(v as OrgRole)}>
                   <SelectTrigger id="invite-role">
                     <SelectValue />
@@ -110,7 +110,7 @@ export function InviteMemberDialog({ open, onOpenChange, organizationId }: Props
                     <SelectItem value="owner">Owner — full control</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
+              </Field>
             </div>
             <DialogFooter>
               <Button

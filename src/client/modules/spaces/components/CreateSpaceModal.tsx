@@ -22,6 +22,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Field, FieldLabel } from '@/components/ui/field'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -160,8 +161,8 @@ export function CreateSpaceModal({ open, onClose }: Props) {
 
           {/* Custom — pick agents + reply modes */}
           <TabsContent value="blank" className="space-y-4 pt-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="space-title">Name</Label>
+            <Field>
+              <FieldLabel htmlFor="space-title">Name</FieldLabel>
               <Input
                 id="space-title"
                 value={title}
@@ -169,9 +170,9 @@ export function CreateSpaceModal({ open, onClose }: Props) {
                 placeholder="e.g. marketing-pod"
                 autoFocus
               />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="space-desc">Description (optional)</Label>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="space-desc">Description (optional)</FieldLabel>
               <Textarea
                 id="space-desc"
                 value={description}
@@ -179,7 +180,7 @@ export function CreateSpaceModal({ open, onClose }: Props) {
                 placeholder="What is this space for?"
                 rows={2}
               />
-            </div>
+            </Field>
             <div className="space-y-2">
               <Label>Agents</Label>
               <p className="text-xs text-muted-foreground">
@@ -304,15 +305,15 @@ export function CreateSpaceModal({ open, onClose }: Props) {
             <p className="text-sm text-muted-foreground">
               Just you + every default agent (@assistant, @research, @writer) in @-mention mode.
             </p>
-            <div className="space-y-1.5">
-              <Label htmlFor="solo-title">Name</Label>
+            <Field>
+              <FieldLabel htmlFor="solo-title">Name</FieldLabel>
               <Input
                 id="solo-title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g. weekly-research"
               />
-            </div>
+            </Field>
             {create.error ? (
               <div className="text-xs text-destructive">{(create.error as Error).message}</div>
             ) : null}

@@ -13,7 +13,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
+import { Field, FieldLabel } from '@/components/ui/field'
 import { Textarea } from '@/components/ui/textarea'
 import { useSpacesList, useForwardMessage } from '../hooks/useSpaces'
 import type { SpaceMessage } from '../hooks/useSpaces'
@@ -49,8 +49,8 @@ export function ForwardMessageDialog({ message, open, onClose }: Props) {
           <DialogDescription>Drop this message into another space you&apos;re a member of.</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="forward-target">Destination</Label>
+          <Field>
+            <FieldLabel htmlFor="forward-target">Destination</FieldLabel>
             <select
               id="forward-target"
               value={target}
@@ -64,9 +64,9 @@ export function ForwardMessageDialog({ message, open, onClose }: Props) {
                 </option>
               ))}
             </select>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="forward-note">Note (optional)</Label>
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="forward-note">Note (optional)</FieldLabel>
             <Textarea
               id="forward-note"
               value={note}
@@ -74,7 +74,7 @@ export function ForwardMessageDialog({ message, open, onClose }: Props) {
               placeholder="Add a note for the receiving space…"
               rows={2}
             />
-          </div>
+          </Field>
         </div>
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose} disabled={forward.isPending}>

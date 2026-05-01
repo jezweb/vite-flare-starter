@@ -119,6 +119,61 @@ reference lives in `docs/`, loaded only when you need it.
 
 ---
 
+## Project Knowledge — `.jez/`
+
+Two knowledge layers in this project, different lifecycles:
+
+| Layer | Path | Lifecycle |
+|---|---|---|
+| **Stable docs** (curated, every fork reads) | `docs/` | Long-lived, referenced from this file |
+| **Working knowledge** (in-flight or recently shipped) | `.jez/` | Dated, evolving |
+
+When a `.jez/` artefact stabilises into something every fork should read, promote it to `docs/` and link it from "Where to find things" above.
+
+### Subfolder map
+
+| Subfolder | Holds | Wiki conventions? |
+|---|---|---|
+| `artifacts/` | Dated audits, plans, design reviews, sweeps (~60 md files) | **Yes** — frontmatter + `_index.md` warranted |
+| `plans/` | In-flight execution plans | Yes when >5 files |
+| `ideas/` | Unrealised concepts | Light — frontmatter optional |
+| `issues/` | Problems / questions to solve | Light |
+| `handoff/` | Cross-session context for the next agent | Yes — README.md is the index |
+| `audit-evidence/` | Generated audit data (subfolders by date) | No — artifact storage |
+| `screenshots/`, `screenshots-audit/` | Binary captures | No |
+| `fixtures/`, `scripts/` | Test fixtures, utility scripts | No |
+
+### Naming for dated artefacts
+
+`<topic>-<YYYY-MM-DD>.md` so chronology is grep-able. Same date in frontmatter for redundancy.
+
+- ✅ `design-review-2026-04-29-final.md`
+- ✅ `chat-improvements-plan-2026-04-17.md`
+- ❌ `notes.md`
+
+### Recommended frontmatter
+
+```yaml
+---
+date: 2026-04-22
+status: draft | active | complete | superseded
+supersedes: design-review-2026-04-29-post-gpt55.md  # if applicable
+owner: jez+claude | jez | claude
+---
+```
+
+The four `design-review-*` files in `artifacts/` are the canonical chain pattern — the latest is `active`, earlier ones are `superseded` with the new file's name in `supersedes:`. The chain stays for audit.
+
+### Shared conventions
+
+Page shapes (frontmatter, Gotchas section, `_index.md` threshold, when-to-subfolder rule) follow the global wiki conventions: see `~/Documents/.jez/CONVENTIONS.md`. This section only documents what's local to this project.
+
+### Pending
+
+`artifacts/_index.md` is past due — 60+ files crossed the threshold. Whoever next does an audit cycle should seed it (Librarian's `~/Documents/.jez/clients/_index.md` is the model: table + cross-cutting flags + last-updated stamp).
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |

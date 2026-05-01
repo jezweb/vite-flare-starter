@@ -36,7 +36,7 @@ import {
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
+import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -263,10 +263,10 @@ export function SkillEditor({ name }: SkillEditorProps) {
             </PopoverTrigger>
             <PopoverContent className="w-80" align="end">
               <div className="space-y-3">
-                <div>
-                  <Label htmlFor="sparkle-instruction" className="text-xs font-medium">
+                <Field>
+                  <FieldLabel htmlFor="sparkle-instruction" className="text-xs font-medium">
                     What should the AI change?
-                  </Label>
+                  </FieldLabel>
                   <Textarea
                     id="sparkle-instruction"
                     value={sparkleInstruction}
@@ -274,12 +274,10 @@ export function SkillEditor({ name }: SkillEditorProps) {
                     placeholder="e.g. Make it shorter. Add an Australian context note. Rewrite for a senior engineer audience."
                     rows={4}
                     maxLength={2000}
-                    className="mt-1 text-sm"
+                    className="text-sm"
                   />
-                  {sparkleError ? (
-                    <p className="mt-1 text-xs text-destructive">{sparkleError}</p>
-                  ) : null}
-                </div>
+                  {sparkleError ? <FieldError>{sparkleError}</FieldError> : null}
+                </Field>
                 <div className="flex justify-end gap-2">
                   <Button
                     variant="ghost"
