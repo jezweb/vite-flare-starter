@@ -117,6 +117,27 @@ export const appConfig = {
   defaultThemeMode:
     (import.meta.env['VITE_DEFAULT_THEME_MODE'] as 'light' | 'dark' | 'system' | undefined) ||
     'system',
+
+  /**
+   * Brand colours that override the 'default' palette's --primary and
+   * --accent. Use any CSS colour value (`hsl(220 90% 56%)`,
+   * `oklch(0.55 0.15 240)`, `#ff6600`, `rgb(255 102 0)`).
+   *
+   * Wired in `src/lib/themes.ts` — applied AFTER the preset palette so
+   * forks rebrand cleanly without users needing to pick a custom theme.
+   * Users who pick a different scheme from the theme picker (e.g. "Blue",
+   * "Green") still see that scheme; only the 'default' scheme picks up
+   * these brand overrides.
+   *
+   * Leave both empty for the unbranded slate-grey starter look.
+   *
+   * @env VITE_APP_PRIMARY_COLOR — overrides --primary on default scheme
+   * @env VITE_APP_ACCENT_COLOR  — overrides --accent on default scheme
+   */
+  brand: {
+    primaryColor: import.meta.env['VITE_APP_PRIMARY_COLOR'] || '',
+    accentColor: import.meta.env['VITE_APP_ACCENT_COLOR'] || '',
+  },
 } as const
 
 /**

@@ -5,6 +5,7 @@ import {
   type CustomThemeColors,
   type ThemeExportEnvelope,
 } from '@/shared/schemas/preferences.schema'
+import { appConfig } from '@/shared/config/app'
 
 /**
  * shadcn/ui Theme Definitions
@@ -527,6 +528,22 @@ export function applyTheme(
   Object.entries(colors).forEach(([key, value]) => {
     root.style.setProperty(`--${key}`, `hsl(${value})`)
   })
+
+  // Fork-author brand overrides — applied after the preset palette so
+  // forks rebrand cleanly without users picking a custom scheme. Only
+  // active on the 'default' scheme; if the user has picked Blue/Green/
+  // etc. they see that scheme as-is.
+  //
+  // Accepts any CSS colour value (hsl/oklch/hex/rgb) — passed through
+  // verbatim, so the consumer is responsible for valid syntax.
+  if (scheme === 'default') {
+    if (appConfig.brand.primaryColor) {
+      root.style.setProperty('--primary', appConfig.brand.primaryColor)
+    }
+    if (appConfig.brand.accentColor) {
+      root.style.setProperty('--accent', appConfig.brand.accentColor)
+    }
+  }
 }
 
 /**
