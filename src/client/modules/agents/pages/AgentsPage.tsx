@@ -46,7 +46,7 @@ export function AgentsPage() {
     <PageContainer type="catalog">
       <PageHeader
         title="Agents"
-        subtitle="Per-user agent instances — persona, model, daily budget. Each instance has its own state in DO storage. To create new ones, head to Routines or Admin chat."
+        subtitle="Edit your per-user agent instances — persona, model, daily budget. Each instance has its own state in DO storage."
         trailing={
           <Button asChild variant="outline">
             <Link to="/dashboard/admin-chat">
@@ -56,6 +56,27 @@ export function AgentsPage() {
           </Button>
         }
       />
+
+      <details className="rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+        <summary className="cursor-pointer font-medium text-foreground">
+          How are these agents defined?
+        </summary>
+        <div className="mt-2 space-y-2 leading-relaxed">
+          <p>
+            Two layers: <strong className="text-foreground">classes</strong> (code) and{' '}
+            <strong className="text-foreground">instances</strong> (runtime).
+          </p>
+          <p>
+            <strong className="text-foreground">Classes</strong> live in{' '}
+            <code className="font-mono">src/server/modules/autonomous-agents/</code> — each is a TypeScript class extending{' '}
+            <code className="font-mono">AutonomousAgent</code>, paired with a Durable Object binding in <code className="font-mono">wrangler.jsonc</code>. Adding a new class means writing code + bumping a migration. The 5 classes shipped are <em>worked examples</em> for forks to copy. Visible in the "All classes" tab.
+          </p>
+          <p>
+            <strong className="text-foreground">Instances</strong> are per-user runtime objects partitioned by{' '}
+            <code className="font-mono">{'${userId}:${slug}'}</code> — created on first use. Their persona / model / daily budget persist in DO storage and are editable on this page or via Admin chat. Visible in the "My agents" tab.
+          </p>
+        </div>
+      </details>
 
       <Tabs defaultValue="mine">
         <TabsList>

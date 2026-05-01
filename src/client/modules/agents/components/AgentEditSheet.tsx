@@ -21,10 +21,16 @@ import {
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+  NativeSelect,
+  NativeSelectOption,
+  NativeSelectOptGroup,
+} from '@/components/ui/native-select'
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { Textarea } from '@/components/ui/textarea'
 import { Spinner } from '@/components/ui/spinner'
 import { formatRelative } from '@/client/lib/format-time'
+import { WORKERS_AI_MODELS, OPENROUTER_MODELS } from '@/shared/config/models'
 import {
   useAgentInstance,
   useUpdateAgentInstance,
@@ -110,7 +116,7 @@ export function AgentEditSheet({ agentClass, agentName, open, onClose }: Props) 
           ) : (
             <>
               {data?.state && (
-                <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
                   <div className="rounded border bg-muted/30 px-3 py-2">
                     <p className="text-muted-foreground">Invocations</p>
                     <p className="font-mono tabular-nums">{data.state.invocations}</p>
@@ -135,16 +141,43 @@ export function AgentEditSheet({ agentClass, agentName, open, onClose }: Props) 
               )}
 
               <Field>
-                <FieldLabel htmlFor="agent-model">Model ID</FieldLabel>
-                <Input
+                <FieldLabel htmlFor="agent-model">Model</FieldLabel>
+                <NativeSelect
                   id="agent-model"
                   value={modelId}
                   onChange={(e) => setModelId(e.target.value)}
-                  className="font-mono text-sm"
-                  placeholder="anthropic/claude-sonnet-4-6"
-                />
+                  className="font-mono text-xs w-full"
+                >
+                  {/* Allow the current value even if it's not in our enabled
+                      list — covers older agents whose modelId predates a
+                      catalogue trim, and custom models users have set via
+                      the API. We render it as the first option so the
+                      select reflects the live state. */}
+                  {modelId &&
+                    !(
+                      [...WORKERS_AI_MODELS, ...OPENROUTER_MODELS] as readonly string[]
+                    ).includes(modelId) && (
+                      <NativeSelectOption value={modelId}>
+                        {modelId} (custom)
+                      </NativeSelectOption>
+                    )}
+                  <NativeSelectOptGroup label="Workers AI (free)">
+                    {WORKERS_AI_MODELS.map((m) => (
+                      <NativeSelectOption key={m} value={m}>
+                        {m}
+                      </NativeSelectOption>
+                    ))}
+                  </NativeSelectOptGroup>
+                  <NativeSelectOptGroup label="OpenRouter">
+                    {OPENROUTER_MODELS.map((m) => (
+                      <NativeSelectOption key={m} value={m}>
+                        {m}
+                      </NativeSelectOption>
+                    ))}
+                  </NativeSelectOptGroup>
+                </NativeSelect>
                 <FieldDescription>
-                  Full model id (provider/model) — see <a href="https://models.flared.au" target="_blank" rel="noopener noreferrer">models.flared.au</a>.
+                  Pick from the curated list, or paste a custom id via the API. See <a href="https://models.flared.au" target="_blank" rel="noopener noreferrer">models.flared.au</a> for the catalogue.
                 </FieldDescription>
               </Field>
 
