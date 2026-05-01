@@ -77,8 +77,27 @@ export interface NavSection {
 /**
  * Sidebar navigation sections.
  *
- * Sections are rendered in order. Items within each section are filtered
- * by feature flags, user role, and Builder Mode before rendering.
+ * Three tiers, each answering a different user-intent question:
+ *
+ *   - Work (always visible) — daily actions. "What kind of work am I
+ *     doing right now?" One-off chats, ongoing projects, team spaces,
+ *     scheduled routines, queued items needing attention.
+ *
+ *   - Setup (collapsed) — configuration. "How does the AI behave?"
+ *     Connections, skills, agents, chat-driven config. Most users
+ *     touch this on day 2-3 (plug Gmail in), then rarely.
+ *
+ *   - Insights (collapsed) — observability. "What has the AI done?"
+ *     Approvals queue, agent runs/cost charts, audit log, files
+ *     produced, structured extraction.
+ *
+ *   - Builder (collapsed, builder-mode gated) — fork-author surfaces.
+ *     Component showcase, style guide, voice/video worked examples.
+ *
+ * Restructure 2026-05-02: Routines moved Work-side (it's a daily
+ * intent, not a setup step). Connections / Skills / Agents / Admin chat
+ * collapsed into Setup (configuration concerns). Insights collapsed by
+ * default (status reading, not daily action).
  *
  * Settings / Admin Panel live in the user-menu dropdown to keep the
  * sidebar focused on primary destinations.
@@ -92,22 +111,26 @@ export const NAV_SECTIONS: NavSection[] = [
       { to: '/dashboard/inbox', label: 'Inbox', icon: Inbox },
       { to: '/dashboard/projects', label: 'Projects', icon: FolderKanban },
       { to: '/dashboard/spaces', label: 'Spaces', icon: Users, feature: 'spaces' },
+      { to: '/dashboard/routines', label: 'Routines', icon: Repeat },
     ],
   },
   {
+    // Setup — configuration. Collapsed by default; users touch it on
+    // day 2-3 (plug Gmail in), then rarely.
     label: 'Setup',
+    defaultCollapsed: true,
     items: [
       { to: '/dashboard/connections', label: 'Connections', icon: Plug, feature: 'connectors' },
       { to: '/dashboard/skills', label: 'Skills', icon: Zap, feature: 'skills' },
-      { to: '/dashboard/routines', label: 'Routines', icon: Repeat },
       { to: '/dashboard/agents', label: 'Agents', icon: Bot },
       { to: '/dashboard/admin-chat', label: 'Admin chat', icon: ShieldCheck },
     ],
   },
   {
-    // Insights — first-class user features for "what did my agents do?
-    // what's queued for me?" surfaces. Visible to all users by default.
+    // Insights — observability + status. Collapsed by default; opened
+    // when the user wants to see what's queued, what's run, what cost.
     label: 'Insights',
+    defaultCollapsed: true,
     items: [
       { to: '/dashboard/approvals', label: 'Approvals', icon: CheckSquare },
       { to: '/dashboard/agent-observability', label: 'Observability', icon: BarChart3 },

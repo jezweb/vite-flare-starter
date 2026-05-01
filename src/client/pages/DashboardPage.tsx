@@ -34,11 +34,13 @@ import {
   Activity as ActivityIcon,
   MessageSquare,
   Plug,
-  Zap,
   CheckCircle2,
   XCircle,
   Clock,
   AlertTriangle,
+  FolderKanban,
+  Users,
+  Repeat,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
@@ -293,32 +295,86 @@ function RunRow({ run }: { run: AgentRun }) {
 
 // ─── Quick actions ─────────────────────────────────────────────────────
 
+interface QuickActionCard {
+  to: string
+  label: string
+  description: string
+  icon: LucideIcon
+  /** Hide if matching feature flag is off — set the key from features.ts. */
+  feature?: 'chat' | 'spaces'
+}
+
+/**
+ * Four cards covering the four ways to "start something":
+ *   - Chat — quick 1:1 question
+ *   - Project — long-running personal workspace
+ *   - Space — team room with AI
+ *   - Routine — recurring scheduled work
+ *
+ * Each card has more detail than the sidebar entry — a one-line
+ * description lifts the "what does this do?" answer out of memory.
+ * Helps newcomers pick the right entry point without first learning
+ * the vocabulary.
+ */
+const QUICK_ACTIONS: QuickActionCard[] = [
+  {
+    to: '/dashboard/chat',
+    label: 'Start a chat',
+    description: 'Quick question or one-off task. Pick a model, paste an image, get an answer.',
+    icon: MessageSquare,
+    feature: 'chat',
+  },
+  {
+    to: '/dashboard/projects',
+    label: 'New project',
+    description: 'A long-running workspace for ongoing work — chats, files, memory, instructions all in one place.',
+    icon: FolderKanban,
+  },
+  {
+    to: '/dashboard/spaces',
+    label: 'New space',
+    description: 'Multi-participant room — you + teammates + AI agents. Use @mentions to direct work.',
+    icon: Users,
+    feature: 'spaces',
+  },
+  {
+    to: '/dashboard/routines',
+    label: 'Schedule a routine',
+    description: 'Recurring AI work — fire on a cadence to scan, summarise, or react. Findings land in your Inbox.',
+    icon: Repeat,
+  },
+]
+
 function QuickActions() {
-  // Primary CTA = most-likely next action ("Open AI Chat" — the surface
-  // every other surface ultimately funnels to). Secondaries are outline
-  // so the eye lands on the primary first.
-  const primary = { to: '/dashboard/chat', label: 'Open AI Chat', icon: MessageSquare }
-  const secondary: { to: string; label: string; icon: LucideIcon }[] = [
-    { to: '/dashboard/skills', label: 'Skills', icon: Zap },
-    { to: '/dashboard/connections', label: 'Connections', icon: Plug },
-    { to: '/dashboard/projects', label: 'Projects', icon: FileText },
-  ]
+  // Filter cards by feature flag — same shape as the sidebar nav
+  // pattern. No need to re-import the flags object here; just
+  // hard-coded skips are fine since we only have two gates.
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <Button asChild size="sm" className="gap-1.5">
-        <Link to={primary.to}>
-          <primary.icon className="size-3.5" />
-          {primary.label}
-        </Link>
-      </Button>
-      {secondary.map((item) => (
-        <Button key={item.to} asChild size="sm" variant="outline" className="gap-1.5">
-          <Link to={item.to}>
-            <item.icon className="size-3.5" />
-            {item.label}
-          </Link>
-        </Button>
-      ))}
+    <div>
+      <h2 className="mb-3 text-sm font-medium">Start something new</h2>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {QUICK_ACTIONS.map((action) => {
+          const Icon = action.icon
+          return (
+            <Link
+              key={action.to}
+              to={action.to}
+              className="group flex flex-col gap-2 rounded-lg border bg-card p-4 transition-all hover:border-primary/40 hover:bg-muted/30 focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
+            >
+              <div className="flex size-9 items-center justify-center rounded-md bg-primary/10 text-primary">
+                <Icon className="size-4" />
+              </div>
+              <div className="flex items-center gap-1 font-medium">
+                {action.label}
+                <ArrowRight className="size-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
+              </div>
+              <p className="text-xs text-muted-foreground line-clamp-3">
+                {action.description}
+              </p>
+            </Link>
+          )
+        })}
+      </div>
     </div>
   )
 }
