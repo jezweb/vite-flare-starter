@@ -78,11 +78,60 @@ export const appConfig = {
    *   VITE_APP_LOGO_URL=/logo.png             (drop the file in public/)
    *   VITE_APP_LOGO_URL=https://cdn.../logo.svg
    *
-   * Leave empty to fall back to the initial-letter badge.
+   * Leave empty to fall back to the initial-letter badge. Acts as the
+   * fallback when `logos.sidebar` / `logos.signIn` are not set.
    * @env VITE_APP_LOGO_URL
    */
   logoUrl: import.meta.env['VITE_APP_LOGO_URL'] || '',
+
+  /**
+   * Per-surface logo set. Different surfaces want different aspect
+   * ratios — a single `logoUrl` can't drive all of them well. Set the
+   * ones you have; consumers fall back to `logoUrl` then to the
+   * auto-generated initial-letter badge.
+   *
+   *   sidebar — small / icon, ~32px (square crops well)
+   *   signIn  — wordmark for sign-in / landing hero (wide-format)
+   *   favicon — browser tab icon (set in index.html, surfaced here for docs)
+   *   og      — 1200×630 social sharing preview
+   *
+   * @env VITE_APP_LOGO_SIDEBAR
+   * @env VITE_APP_LOGO_SIGNIN
+   * @env VITE_APP_LOGO_FAVICON
+   * @env VITE_APP_LOGO_OG
+   */
+  logos: {
+    sidebar: import.meta.env['VITE_APP_LOGO_SIDEBAR'] || '',
+    signIn: import.meta.env['VITE_APP_LOGO_SIGNIN'] || '',
+    favicon: import.meta.env['VITE_APP_LOGO_FAVICON'] || '',
+    og: import.meta.env['VITE_APP_LOGO_OG'] || '',
+  },
+
+  /**
+   * Default theme mode for first-time visitors (before they pick a
+   * preference). One of `'light'`, `'dark'`, `'system'`. Stored choice
+   * in localStorage takes precedence — this only fires on first paint.
+   *
+   * @env VITE_DEFAULT_THEME_MODE — one of light | dark | system. Default 'system'.
+   */
+  defaultThemeMode:
+    (import.meta.env['VITE_DEFAULT_THEME_MODE'] as 'light' | 'dark' | 'system' | undefined) ||
+    'system',
 } as const
+
+/**
+ * Resolve the logo URL for a given surface, falling back through:
+ *
+ *   1. The surface-specific override (e.g. logos.sidebar)
+ *   2. The legacy `logoUrl` (kept for backward compatibility)
+ *   3. Empty string — consumer should render an initial-letter badge or
+ *      product name as wordmark.
+ *
+ * Returns '' when nothing is set, so consumers can use a truthy check.
+ */
+export function getLogoUrl(surface: 'sidebar' | 'signIn' | 'favicon' | 'og'): string {
+  return appConfig.logos[surface] || appConfig.logoUrl || ''
+}
 
 /**
  * Get the theme storage key for localStorage

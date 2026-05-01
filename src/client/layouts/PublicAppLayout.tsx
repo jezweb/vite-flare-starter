@@ -13,7 +13,7 @@
 import { Outlet, Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/client/components/theme-toggle'
-import { appConfig } from '@/shared/config/app'
+import { appConfig, getLogoUrl } from '@/shared/config/app'
 
 interface Props {
   /** Show "Sign in for more features" banner */
@@ -28,8 +28,16 @@ export function PublicAppLayout({ showAuthBanner = true, isAuthenticated = false
       {/* Minimal header */}
       <header className="border-b border-border bg-background">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-          <Link to="/" className="text-lg font-semibold">
-            {appConfig.name}
+          <Link to="/" className="flex items-center gap-2 text-lg font-semibold">
+            {getLogoUrl('signIn') ? (
+              <img
+                src={getLogoUrl('signIn')}
+                alt={appConfig.name}
+                className="h-6 w-auto"
+              />
+            ) : (
+              <span>{appConfig.name}</span>
+            )}
           </Link>
           <div className="flex items-center gap-2">
             <ThemeToggle />
