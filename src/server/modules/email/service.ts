@@ -74,7 +74,16 @@ export async function sendEmail<K extends TemplateKey | undefined = undefined>(
   env: EmailEnv,
   input: SendEmailInput<K>,
 ): Promise<SendResult> {
-  const from = input.from ?? env.EMAIL_FROM ?? 'onboarding@example.com'
+  const fromAddress = input.from ?? env.EMAIL_FROM ?? 'onboarding@example.com'
+  // RFC 5322 From with optional display name. EMAIL_FROM_NAME wins; APP_NAME
+  // is the secondary fallback so a fork that sets only APP_NAME still gets a
+  // branded From line. If the caller passed `input.from` already containing
+  // a display name (`Display <addr>`), we don't double-wrap it.
+  const fromName = env.EMAIL_FROM_NAME || env.APP_NAME
+  const from =
+    fromName && !fromAddress.includes('<')
+      ? `${fromName} <${fromAddress}>`
+      : fromAddress
   const recipients = Array.isArray(input.to) ? input.to : [input.to]
 
   // Resolve template → subject + html + text
@@ -191,7 +200,17 @@ export async function sendEmail<K extends TemplateKey | undefined = undefined>(
 function injectDefaults(env: EmailEnv, data: unknown): Record<string, unknown> {
   const appName = env.APP_NAME || 'Vite Flare Starter'
   const appUrl = env.APP_URL || env.BETTER_AUTH_URL || 'https://example.com'
-  return { appName, appUrl, ...(data as Record<string, unknown>) }
+  // Optional brand fields — templates that want them reference {{signature}}
+  // or {{headerImageUrl}}. Templates that don't reference them are unchanged.
+  const signature = env.EMAIL_SIGNATURE || ''
+  const headerImageUrl = env.EMAIL_HEADER_IMAGE_URL || ''
+  return {
+    appName,
+    appUrl,
+    signature,
+    headerImageUrl,
+    ...(data as Record<string, unknown>),
+  }
 }
 
 async function finaliseLog(

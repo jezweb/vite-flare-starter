@@ -64,6 +64,29 @@ export interface EmailEnv {
   MAILGUN_REGION?: string
 
   EMAIL_FROM?: string
+  /**
+   * Optional display name prepended to the From address — produces
+   * `Display Name <user@example.com>` per RFC 5322. Falls back to
+   * `APP_NAME` when set, otherwise the bare email address.
+   *
+   * Example: `EMAIL_FROM_NAME='RightCover Insurance'`
+   */
+  EMAIL_FROM_NAME?: string
+  /**
+   * Optional plain-text signature line(s) appended to template-rendered
+   * emails. Use a single string with `\n` for line breaks. Templates
+   * include it via `{{signature}}` slot when they want it.
+   *
+   * Example: `EMAIL_SIGNATURE='Michael Luc · Lake Macquarie Insurance\n0411 056 876'`
+   */
+  EMAIL_SIGNATURE?: string
+  /**
+   * Optional header image URL embedded at the top of HTML email bodies.
+   * Recommended size: 600×100 (transactional standard).
+   *
+   * Example: `EMAIL_HEADER_IMAGE_URL='https://cdn.rightcover.com.au/email-banner.png'`
+   */
+  EMAIL_HEADER_IMAGE_URL?: string
   APP_NAME?: string
   APP_URL?: string
   BETTER_AUTH_URL?: string
