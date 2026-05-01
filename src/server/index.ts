@@ -55,6 +55,7 @@ import entitiesRoutes from './modules/entities/routes'
 import organizationsRoutes from './modules/organizations/routes'
 import credentialsRoutes from './modules/credentials/routes'
 import spacesRoutes from './modules/spaces/routes'
+import adminAgentRoutes from './modules/admin-tools/routes'
 import messagesRoutes from './modules/spaces/messages-routes'
 import globalSearchRoutes from './modules/spaces/global-search'
 import { routeAgentRequest } from 'agents'
@@ -314,6 +315,7 @@ app.route('/api/skills', skillsRoutes)
 app.route('/api/config-diff', configDiffRoutes)
 app.route('/api/conversations', conversationsRoutes)
 app.route('/api/spaces', spacesRoutes)
+app.route('/api/admin-agent', adminAgentRoutes)
 app.route('/api/messages', messagesRoutes)
 app.route('/api/search', globalSearchRoutes)
 // Test-auth lives behind a TEST_AUTH_TOKEN env gate; if the secret

@@ -60,7 +60,12 @@ interface SpacesEnv {
  * keeps the dispatcher honest and surfaces typos before they
  * become "agent member exists but never replies" mysteries.
  */
-const ALLOWED_AGENT_CLASSES = new Set(['AssistantAgent', 'ResearcherAgent', 'WriterAgent'])
+const ALLOWED_AGENT_CLASSES = new Set([
+  'AssistantAgent',
+  'ResearcherAgent',
+  'WriterAgent',
+  'AdminAgent',
+])
 
 const app = new Hono<AuthContext>()
 app.use('*', authMiddleware)

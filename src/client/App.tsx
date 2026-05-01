@@ -52,6 +52,7 @@ const ConnectorsPage = lazy(() => import('./modules/connectors/pages/ConnectorsP
 const VoiceInputExamplePage = lazy(() => import('./modules/voice/pages/VoiceInputExamplePage').then(m => ({ default: m.VoiceInputExamplePage })))
 const VideoInputExamplePage = lazy(() => import('./modules/video/pages/VideoInputExamplePage').then(m => ({ default: m.VideoInputExamplePage })))
 const AgentObservabilityPage = lazy(() => import('./modules/agent-observability/pages/AgentObservabilityPage').then(m => ({ default: m.AgentObservabilityPage })))
+const AdminAgentPage = lazy(() => import('./modules/admin-agent/pages/AdminAgentPage').then(m => ({ default: m.AdminAgentPage })))
 const ComponentsPage = lazy(() => import('./pages/ComponentsPage').then(m => ({ default: m.ComponentsPage })))
 const StyleGuidePage = lazy(() => import('./pages/StyleGuidePage').then(m => ({ default: m.StyleGuidePage })))
 const HelpPage = lazy(() => import('./modules/help/pages/HelpPage').then(m => ({ default: m.HelpPage })))
@@ -188,6 +189,7 @@ function App() {
             {/* Approval queue — autonomous-agent action review */}
             <Route path="approvals" element={<ApprovalsPage />} />
             <Route path="agent-observability" element={<AgentObservabilityPage />} />
+            <Route path="admin" element={<AdminAgentPage />} />
             <Route path="inbox" element={<InboxPage />} />
             <Route path="routines" element={<RoutinesPage />} />
             <Route path="routines/new" element={<NewRoutinePage />} />
