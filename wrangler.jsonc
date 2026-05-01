@@ -251,6 +251,14 @@
         // See src/server/modules/spaces/space-agent.ts.
         "name": "SpaceAgent",
         "class_name": "SpaceAgent"
+      },
+      {
+        // AdminAgent — Claude-Code-style platform management (gh #49).
+        // Per-user. Lives in #admin Space. Calls admin tools (routines,
+        // awareness) all gated by `requestApproval` for write paths.
+        // See src/server/modules/autonomous-agents/admin-agent.ts.
+        "name": "AdminAgent",
+        "class_name": "AdminAgent"
       }
     ]
   },
@@ -292,6 +300,10 @@
     {
       "tag": "v8",
       "new_sqlite_classes": ["SpaceAgent"]
+    },
+    {
+      "tag": "v9",
+      "new_sqlite_classes": ["AdminAgent"]
     }
   ],
 

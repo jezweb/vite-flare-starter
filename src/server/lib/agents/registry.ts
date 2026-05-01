@@ -27,8 +27,15 @@ import { AssistantAgent } from '@/server/modules/autonomous-agents/assistant-age
 import { ResearcherAgent } from '@/server/modules/autonomous-agents/researcher-agent'
 import { WriterAgent } from '@/server/modules/autonomous-agents/writer-agent'
 import { SweeperAgent } from '@/server/modules/autonomous-agents/sweeper-agent'
+import { AdminAgent } from '@/server/modules/autonomous-agents/admin-agent'
 
-const AGENT_CLASSES = [AssistantAgent, ResearcherAgent, WriterAgent, SweeperAgent] as const
+const AGENT_CLASSES = [
+  AssistantAgent,
+  ResearcherAgent,
+  WriterAgent,
+  SweeperAgent,
+  AdminAgent,
+] as const
 
 export interface RegisteredAgent {
   className: string

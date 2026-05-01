@@ -70,6 +70,7 @@ export { AssistantAgent } from './modules/autonomous-agents/assistant-agent'
 export { ResearcherAgent } from './modules/autonomous-agents/researcher-agent'
 export { WriterAgent } from './modules/autonomous-agents/writer-agent'
 export { SweeperAgent } from './modules/autonomous-agents/sweeper-agent'
+export { AdminAgent } from './modules/autonomous-agents/admin-agent'
 export { ScratchpadMcpAgent }
 export { SpaceAgent } from './modules/spaces/space-agent'
 import { securityHeaders } from './middleware/security'
