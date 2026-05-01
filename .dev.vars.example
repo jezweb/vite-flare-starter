@@ -83,6 +83,13 @@ NODE_ENV=development
 # MCP Connectors — per-user OAuth/bearer connections to external MCP servers
 # VITE_FEATURE_CONNECTORS=true
 
+# Builder mode default — controls whether the developer-facing sidebar
+# section (Components / Style guide / Voice / Video) is revealed on
+# first visit. Default ON (starter audience is builders). Forks shipping
+# a polished product to non-builder end users set this to "false" so
+# their customers don't see the dev surfaces.
+# VITE_DEFAULT_BUILDER_MODE=false
+
 # ============================================
 # PRODUCTION SECRETS
 # ============================================

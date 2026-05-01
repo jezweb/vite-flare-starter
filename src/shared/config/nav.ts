@@ -113,18 +113,18 @@ export const NAV_SECTIONS: NavSection[] = [
       { to: '/dashboard/agent-observability', label: 'Observability', icon: BarChart3 },
       { to: '/dashboard/activity', label: 'Activity', icon: Activity, feature: 'activity' },
       { to: '/dashboard/files', label: 'Files', icon: FolderOpen, feature: 'files' },
+      { to: '/dashboard/extract', label: 'Extract', icon: Sparkles, feature: 'chat' },
     ],
   },
   {
-    // Builder — genuinely developer-facing surfaces. Hidden by default;
-    // toggle Builder mode in the user menu to reveal. Forks shipping a
-    // polished product can leave this off; fork-authors and starter
-    // contributors flip it on.
+    // Builder — genuinely developer-facing surfaces only. Default ON
+    // for the starter (its audience IS builders); forks shipping a
+    // polished product set VITE_DEFAULT_BUILDER_MODE=false to hide it
+    // from end users. See src/client/lib/builder-mode.tsx for details.
     label: 'Builder',
     defaultCollapsed: true,
     builderOnly: true,
     items: [
-      { to: '/dashboard/extract', label: 'Extract', icon: Sparkles, feature: 'chat' },
       { to: '/dashboard/components', label: 'Components', icon: Component },
       { to: '/dashboard/style-guide', label: 'Style guide', icon: Palette },
       { to: '/dashboard/voice-example', label: 'Voice example', icon: Mic, feature: 'voiceAgent' },
