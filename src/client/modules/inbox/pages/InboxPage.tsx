@@ -41,6 +41,13 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu'
+import {
   ListRow,
   ListRowGroup,
   ListRowIcon,
@@ -533,6 +540,20 @@ function InboxRow({
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['inbox'] }),
   })
 
+  const archive = useMutation({
+    mutationFn: () => apiClient.delete(`/api/inbox/${row.id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inbox'] })
+      toast.success('Archived')
+    },
+  })
+
+  const copyId = () => {
+    void navigator.clipboard.writeText(row.id).then(() => {
+      toast.success('Row ID copied')
+    })
+  }
+
   const handleClick = () => {
     if (selectionMode) {
       onToggleSelect()
@@ -550,6 +571,8 @@ function InboxRow({
   const ageStr = formatDistanceToNow(new Date(row.createdAt * 1000), { addSuffix: true })
 
   return (
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
     <ListRow
       ref={rowRef}
       state={isUnread ? 'unread' : isUrgent ? 'urgent' : 'default'}
@@ -654,6 +677,33 @@ function InboxRow({
         )}
       </ListRowTrailing>
     </ListRow>
+      </ContextMenuTrigger>
+      <ContextMenuContent>
+        <ContextMenuItem onSelect={() => toggleRead.mutate()}>
+          {isUnread ? 'Mark read' : 'Mark unread'}
+        </ContextMenuItem>
+        <ContextMenuItem onSelect={() => onToggleSelect()}>
+          {isSelected ? 'Deselect' : 'Select'}
+        </ContextMenuItem>
+        {isApproval && (
+          <ContextMenuItem onSelect={() => navigate(`/dashboard/approvals?focus=${row.id}`)}>
+            Open in approvals
+          </ContextMenuItem>
+        )}
+        <ContextMenuSeparator />
+        <ContextMenuItem onSelect={copyId}>
+          Copy row ID
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem
+          variant="destructive"
+          onSelect={() => archive.mutate()}
+          disabled={archive.isPending}
+        >
+          Archive
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   )
 }
 
