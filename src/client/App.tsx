@@ -189,7 +189,7 @@ function App() {
             {/* Approval queue — autonomous-agent action review */}
             <Route path="approvals" element={<ApprovalsPage />} />
             <Route path="agent-observability" element={<AgentObservabilityPage />} />
-            <Route path="admin" element={<AdminAgentPage />} />
+            <Route path="admin-chat" element={<AdminAgentPage />} />
             <Route path="inbox" element={<InboxPage />} />
             <Route path="routines" element={<RoutinesPage />} />
             <Route path="routines/new" element={<NewRoutinePage />} />
