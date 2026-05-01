@@ -31,10 +31,12 @@ import { cn } from '@/lib/utils'
 import { formatRelative } from '@/client/lib/format-time'
 import { useAgentInstances } from '../hooks/useAgentInstances'
 import { AgentEditSheet } from '../components/AgentEditSheet'
+import { NewAgentDialog } from '../components/NewAgentDialog'
 
 export function AgentsPage() {
   const instances = useAgentInstances()
   const [editTarget, setEditTarget] = useState<{ class: string; name: string } | null>(null)
+  const [newAgentOpen, setNewAgentOpen] = useState(false)
 
   return (
     <PageContainer type="catalog">
@@ -42,12 +44,18 @@ export function AgentsPage() {
         title="Agents"
         subtitle="Per-user agent instances — persona, model, daily budget. Click any card to edit. Dormant agents wake up when you save."
         trailing={
-          <Button asChild variant="outline">
-            <Link to="/dashboard/admin-chat">
-              <Sparkles className="mr-1.5 size-4" />
-              Admin chat
-            </Link>
-          </Button>
+          <>
+            <Button onClick={() => setNewAgentOpen(true)}>
+              <Plus className="mr-1.5 size-4" />
+              New agent
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/dashboard/admin-chat">
+                <Sparkles className="mr-1.5 size-4" />
+                Admin chat
+              </Link>
+            </Button>
+          </>
         }
       />
 
@@ -148,6 +156,15 @@ export function AgentsPage() {
         agentName={editTarget?.name ?? null}
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
+      />
+
+      <NewAgentDialog
+        open={newAgentOpen}
+        onOpenChange={setNewAgentOpen}
+        onCreate={(agentClass, agentName) => {
+          setNewAgentOpen(false)
+          setEditTarget({ class: agentClass, name: agentName })
+        }}
       />
     </PageContainer>
   )
