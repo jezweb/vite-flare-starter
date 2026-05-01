@@ -53,6 +53,7 @@ const VoiceInputExamplePage = lazy(() => import('./modules/voice/pages/VoiceInpu
 const VideoInputExamplePage = lazy(() => import('./modules/video/pages/VideoInputExamplePage').then(m => ({ default: m.VideoInputExamplePage })))
 const AgentObservabilityPage = lazy(() => import('./modules/agent-observability/pages/AgentObservabilityPage').then(m => ({ default: m.AgentObservabilityPage })))
 const AdminAgentPage = lazy(() => import('./modules/admin-agent/pages/AdminAgentPage').then(m => ({ default: m.AdminAgentPage })))
+const AgentsPage = lazy(() => import('./modules/agents/pages/AgentsPage').then(m => ({ default: m.AgentsPage })))
 const ComponentsPage = lazy(() => import('./pages/ComponentsPage').then(m => ({ default: m.ComponentsPage })))
 const StyleGuidePage = lazy(() => import('./pages/StyleGuidePage').then(m => ({ default: m.StyleGuidePage })))
 const HelpPage = lazy(() => import('./modules/help/pages/HelpPage').then(m => ({ default: m.HelpPage })))
@@ -190,6 +191,7 @@ function App() {
             <Route path="approvals" element={<ApprovalsPage />} />
             <Route path="agent-observability" element={<AgentObservabilityPage />} />
             <Route path="admin-chat" element={<AdminAgentPage />} />
+            <Route path="agents" element={<AgentsPage />} />
             <Route path="inbox" element={<InboxPage />} />
             <Route path="routines" element={<RoutinesPage />} />
             <Route path="routines/new" element={<NewRoutinePage />} />

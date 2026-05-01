@@ -25,6 +25,7 @@
  * Partition: `${userId}:admin` (existing AutonomousAgent convention).
  * Each user gets their own AdminAgent DO instance with isolated state.
  */
+import { getAgentByName } from 'agents'
 import {
   AutonomousAgent,
   type AutonomousAgentEnv,
@@ -39,6 +40,7 @@ import {
   getRoutine,
 } from '@/server/modules/routines/storage'
 import { fireRoutine } from '@/server/modules/routines/scheduler'
+import type { AssistantAgent } from './assistant-agent'
 
 // AdminAgent doesn't need any extra bindings beyond the base.
 type Env = AutonomousAgentEnv
@@ -153,8 +155,61 @@ export class AdminAgent extends AutonomousAgent<Env, AutonomousAgentState> {
         return { deleted: true, id, name: r.name }
       }
 
+      case 'admin_set_agent_persona': {
+        const { agentClass, agentName, persona } = payload as {
+          agentClass: string
+          agentName: string
+          persona: string
+        }
+        const stub = await this.resolveAgentStub(agentClass, agentName, userId)
+        await stub.setOwner(userId, agentName)
+        await stub.setPersona(persona)
+        return { agentClass, agentName, updated: 'persona' }
+      }
+
+      case 'admin_set_agent_model': {
+        const { agentClass, agentName, modelId } = payload as {
+          agentClass: string
+          agentName: string
+          modelId: string
+        }
+        const stub = await this.resolveAgentStub(agentClass, agentName, userId)
+        await stub.setOwner(userId, agentName)
+        await stub.setModel(modelId)
+        return { agentClass, agentName, modelId, updated: 'model' }
+      }
+
+      case 'admin_set_agent_budget': {
+        const { agentClass, agentName, dailyBudgetUsd } = payload as {
+          agentClass: string
+          agentName: string
+          dailyBudgetUsd: number | null
+        }
+        const stub = await this.resolveAgentStub(agentClass, agentName, userId)
+        await stub.setOwner(userId, agentName)
+        await stub.setDailyBudget(dailyBudgetUsd)
+        return { agentClass, agentName, dailyBudgetUsd, updated: 'budget' }
+      }
+
       default:
         return super.executeApproved(action, payload) // throws — unknown action
     }
+  }
+
+  /**
+   * Resolve an arbitrary AutonomousAgent stub by class name. Mirrors
+   * the dispatch in `src/server/modules/agent-instances/routes.ts` so
+   * GUI-driven and chat-driven edits go through the same RPC path.
+   */
+  private async resolveAgentStub(agentClass: string, agentName: string, userId: string) {
+    const env = this.env as unknown as {
+      AssistantAgent?: DurableObjectNamespace<AssistantAgent>
+      [k: string]: unknown
+    }
+    const ns = (env as Record<string, unknown>)[agentClass] as
+      | DurableObjectNamespace<AssistantAgent>
+      | undefined
+    if (!ns) throw new Error(`No DurableObject binding for class ${agentClass}`)
+    return getAgentByName(ns, `${userId}:${agentName}`)
   }
 }

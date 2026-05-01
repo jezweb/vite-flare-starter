@@ -8,6 +8,7 @@
 import type { ToolDefinition } from '@/shared/agent'
 import { buildRoutineAdminTools } from './routines'
 import { buildAwarenessTools } from './awareness'
+import { buildAgentManagementTools } from './agents'
 import type { AdminToolFactoryArgs } from './types'
 
 export type { AdminToolFactoryArgs } from './types'
@@ -18,5 +19,6 @@ export function buildAdminTools(
   return [
     ...buildRoutineAdminTools(args),
     ...buildAwarenessTools(args),
+    ...buildAgentManagementTools(args),
   ]
 }

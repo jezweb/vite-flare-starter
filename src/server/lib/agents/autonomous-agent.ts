@@ -498,6 +498,7 @@ export abstract class AutonomousAgent<
     persona: string
     userId: string | null
     modelId: string
+    dailyBudgetUsd: number | null
     blockCount: number
     blockNames: string[]
     historyCount: number
@@ -510,6 +511,7 @@ export abstract class AutonomousAgent<
       persona: this.state.persona,
       userId: this.state.userId,
       modelId: this.state.modelId,
+      dailyBudgetUsd: this.state.dailyBudgetUsd ?? null,
       blockCount: Object.keys(this.state.blocks).length,
       blockNames: Object.keys(this.state.blocks),
       historyCount: this.state.recentMessages.length,

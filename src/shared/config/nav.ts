@@ -38,6 +38,7 @@ import {
   Palette,
   BarChart3,
   ShieldCheck,
+  Bot,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -99,6 +100,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { to: '/dashboard/connections', label: 'Connections', icon: Plug, feature: 'connectors' },
       { to: '/dashboard/skills', label: 'Skills', icon: Zap, feature: 'skills' },
       { to: '/dashboard/routines', label: 'Routines', icon: Repeat },
+      { to: '/dashboard/agents', label: 'Agents', icon: Bot },
       { to: '/dashboard/admin-chat', label: 'Admin chat', icon: ShieldCheck },
     ],
   },
