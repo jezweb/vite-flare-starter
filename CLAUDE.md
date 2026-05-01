@@ -48,6 +48,7 @@ VITE_FEATURE_ACTIVITY=false
 | **agent-memory** | Vectorize-backed semantic recall (opt-in via `AGENT_MEMORY` binding) | `server/lib/agents/agent-memory.ts` |
 | **approvals UI** | React tab at /dashboard/approvals — review + approve/reject queued agent actions, deep-link from notifications | `client/modules/approvals/pages/ApprovalsPage.tsx` |
 | **sweeper-agent** | Cron-driven entity processing — recurring agent that scans entities for stale items + queues followup approvals | `server/modules/autonomous-agents/sweeper-agent.ts` |
+| **admin-agent** | **Claude-Code-style platform admin** — chats with the user in `#admin` Space, proposes routines / agents / connections via 14 admin tools (8 routine, 6 awareness). All write actions gated through `requestApproval`. English-to-routine workflow. | `server/modules/autonomous-agents/admin-agent.ts`, `server/modules/admin-tools/`, `client/modules/admin-agent/pages/AdminAgentPage.tsx` |
 | **organizations** | **Multi-tenant orgs** — better-auth plugin + auto-personal-org on signup + OrgSwitcher in sidebar + `/dashboard/organization` (members + invites + roles) + `/accept-invitation/:token` public flow. Slack/Linear/Notion convention: sidebar shows tenant context, product brand stays on public surfaces. | `server/modules/organizations/`, `client/modules/organizations/`, `docs/orgs-ui-plan-2026-04-28.md` |
 | **agent MCP integration** | AutonomousAgent inherits tools from owner's connected MCP servers automatically | `server/lib/agents/autonomous-agent.ts` (buildToolset) |
 | **tool-search** | Progressive tool disclosure — agent gets `find_tools(query)` + ~10 core tools, the rest load on demand. ~10K tokens/turn saved | `server/lib/ai/tool-search.ts`, wired in chat agent.ts |
@@ -322,6 +323,7 @@ SDK. **Don't extend raw `DurableObject` — use the SDK base.**
 | Scheduled non-AI work | `Agent` directly + `this.schedule()` | `ReminderAgent` |
 | Stateful AI agent (persona + memory + tools) | `AutonomousAgent` | `AssistantAgent` |
 | Multi-agent handoff (specialist → specialist) | `AutonomousAgent` + inline `delegate_to_X` tool | `ResearcherAgent` → `WriterAgent` |
+| Platform-management chat (configure routines / agents / connections via natural language) | `AutonomousAgent` + admin tool catalogue, all writes through `requestApproval` | `AdminAgent` |
 | Expose agent's data over MCP | `McpAgent` from `agents/mcp` + `McpServer` from `@modelcontextprotocol/sdk` | `ScratchpadMcpAgent` at `/mcp/scratchpad/<id>` |
 | Multi-session AI chat surface | `AIChatAgent` from `agents/chat` | _SDK class — chat module not yet adopted_ |
 
