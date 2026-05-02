@@ -29,7 +29,6 @@ import {
   Plug,
   Mic,
   Camera,
-  CheckSquare,
   FolderKanban,
   Users,
   Inbox,
@@ -129,10 +128,14 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     // Insights — observability + status. Collapsed by default; opened
     // when the user wants to see what's queued, what's run, what cost.
+    //
+    // Note: Approvals removed as a sidebar entry — they live inside
+    // Inbox now (decisions are first-class inbox rows). The route
+    // `/dashboard/approvals` still exists for deep links from notifications;
+    // it'll fold into a Sheet detail inside Inbox in a follow-up.
     label: 'Insights',
     defaultCollapsed: true,
     items: [
-      { to: '/dashboard/approvals', label: 'Approvals', icon: CheckSquare },
       { to: '/dashboard/agent-observability', label: 'Observability', icon: BarChart3 },
       { to: '/dashboard/activity', label: 'Activity', icon: Activity, feature: 'activity' },
       { to: '/dashboard/files', label: 'Files', icon: FolderOpen, feature: 'files' },
