@@ -28,22 +28,22 @@ const STEPS: TourStep[] = [
   {
     id: 'model-picker',
     selector: '[data-tour="chat-model-picker"]',
-    title: 'Pick a model',
-    body: 'Free Workers AI options have no key requirement. Premium options (Anthropic / OpenAI / Google) need an API key set on the Worker.',
+    title: 'Pick the AI you want',
+    body: 'Different models suit different tasks. The free options work out of the box. Premium models (Claude, GPT, Gemini) need an API key — your admin sets that up.',
     side: 'top',
   },
   {
     id: 'slash',
     selector: '[data-tour="chat-input"]',
-    title: 'Type / for skills',
-    body: 'Type a `/` to bring up the skills menu. Try /morning-brief or /research — they’re reusable prompts you can edit on the Skills page.',
+    title: 'Type / for shortcuts',
+    body: 'Type a slash to bring up reusable prompts (we call them skills). Try /morning-brief or /research. You can edit any of them or add your own.',
     side: 'top',
   },
   {
     id: 'attach',
     selector: '[data-tour="chat-attach"]',
-    title: 'Drop in files + screenshots',
-    body: 'Attach files, paste images directly, or take a screenshot via the menu. Anything you attach becomes context for the next reply.',
+    title: 'Add files, images, or screenshots',
+    body: 'Click the paperclip, paste an image, or grab a screenshot from the menu. Anything you attach becomes context for the next reply.',
     side: 'top',
   },
 ]

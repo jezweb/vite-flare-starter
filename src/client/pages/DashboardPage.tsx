@@ -325,20 +325,25 @@ const QUICK_ACTIONS: QuickActionCard[] = [
     feature: 'chat',
   },
   {
-    to: '/dashboard/projects',
+    // Verb-prefix labels promise an action — link straight into the
+    // creation flow rather than dumping the user on a list page where
+    // they'd have to find the "+ New project" button. Both Projects and
+    // Spaces index pages auto-open their create modal when arriving
+    // with `?new=1`. Routines has a dedicated /new route.
+    to: '/dashboard/projects?new=1',
     label: 'New project',
     description: 'A long-running workspace for ongoing work — chats, files, memory, instructions all in one place.',
     icon: FolderKanban,
   },
   {
-    to: '/dashboard/spaces',
+    to: '/dashboard/spaces?new=1',
     label: 'New space',
     description: 'Multi-participant room — you + teammates + AI agents. Use @mentions to direct work.',
     icon: Users,
     feature: 'spaces',
   },
   {
-    to: '/dashboard/routines',
+    to: '/dashboard/routines/new',
     label: 'Schedule a routine',
     description: 'Recurring AI work — fire on a cadence to scan, summarise, or react. Findings land in your Inbox.',
     icon: Repeat,

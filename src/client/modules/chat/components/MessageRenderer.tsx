@@ -27,6 +27,17 @@ import { Textarea } from '@/components/ui/textarea'
 import { RotateCcw, Pencil, Copy, Check, ThumbsUp, ThumbsDown, Sparkles, FileText, FileSpreadsheet, FileAudio, FileVideo, FileCode, FileArchive, File as FileIcon } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
+import { useBuilderMode } from '@/client/lib/builder-mode'
+
+/**
+ * Strip provider prefix + path so `@cf/moonshotai/kimi-k2.6` becomes
+ * `kimi-k2.6`. The full id is implementation detail; the friendly tail
+ * matches what the model picker shows.
+ */
+function formatModelId(id: string): string {
+  const tail = id.split('/').pop() ?? id
+  return tail
+}
 import { useCopy } from '@/client/lib/use-copy'
 import { cn } from '@/lib/utils'
 
@@ -55,6 +66,7 @@ export const MessageRenderer = memo(function MessageRenderer({
   const isAssistant = message.role === 'assistant'
   const isUser = message.role === 'user'
   const metadata = (message as unknown as { metadata?: MessageMetadata }).metadata
+  const { isBuilder } = useBuilderMode()
   const [editing, setEditing] = useState(false)
   const { copy, copied } = useCopy()
   const [feedback, setFeedback] = useState<'up' | 'down' | null>(null)
@@ -244,11 +256,17 @@ export const MessageRenderer = memo(function MessageRenderer({
             <ThumbsDown className="size-3.5" />
           </Button>
           {metadata?.model && (
-            <span className="ml-auto text-[11px]">
-              {metadata.model}
-              {typeof metadata.inputTokens === 'number' && typeof metadata.outputTokens === 'number' && (
-                <> · {(metadata.inputTokens + metadata.outputTokens).toLocaleString()} tokens</>
-              )}
+            <span className="ml-auto text-[11px]" title={metadata.model}>
+              {formatModelId(metadata.model)}
+              {/* Token count is implementation detail — useful for builders
+                  debugging cost / context, noise for end users. Hidden
+                  outside Builder Mode. Duration stays for everyone — it's
+                  universally readable feedback. */}
+              {isBuilder &&
+                typeof metadata.inputTokens === 'number' &&
+                typeof metadata.outputTokens === 'number' && (
+                  <> · {(metadata.inputTokens + metadata.outputTokens).toLocaleString()} tokens</>
+                )}
               {typeof metadata.durationMs === 'number' && (
                 <> · {(metadata.durationMs / 1000).toFixed(1)}s</>
               )}

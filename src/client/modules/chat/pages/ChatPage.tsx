@@ -191,6 +191,15 @@ export function ChatPage() {
     conversationId: urlConversationId,
     projectId: urlProjectId,
     initialMessages: existingConversation?.messages as Message[] | undefined,
+    // Belt-and-braces invalidation: the conversationId-watch effect
+    // below also invalidates ['conversations'] when the URL gains its
+    // first ID, but in practice the sidebar still showed stale data
+    // after navigating away + back during the 2026-05-02 audit. Firing
+    // again on stream-finish covers any timing edge case where the
+    // first invalidate raced the URL change.
+    onFinish: () => {
+      queryClient.invalidateQueries({ queryKey: ['conversations'] })
+    },
   })
 
   // Track the last conversation we hydrated from the server. Declared
@@ -1146,7 +1155,13 @@ export function ChatPage() {
                               userId={session?.user?.id}
                             />
                           )}
-                          <span data-tour="chat-model-picker" className="contents">
+                          {/* `display: contents` strips the box, so Radix's
+                              Popover anchor (used by ChatFirstRunTour) falls
+                              back to (0,0) and the popover lands upper-left
+                              instead of pointing at the model picker.
+                              `inline-flex` keeps the original layout but
+                              gives the span a real bounding rect. */}
+                          <span data-tour="chat-model-picker" className="inline-flex">
                             <ModelSelector value={model} onChange={setModel} disabled={isLoading} />
                           </span>
                           <ConversationSizeIndicator

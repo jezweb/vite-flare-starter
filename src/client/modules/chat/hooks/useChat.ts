@@ -32,10 +32,19 @@ interface ChatOptions {
   /** Client-side tool handlers — execute tools in the browser without server round-trip */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onToolCall?: (params: { toolCall: any }) => void | Promise<void>
+  /**
+   * Called once the assistant's response has finished streaming. Used by
+   * `ChatPage` to invalidate the conversations list query so the sidebar
+   * picks up newly-created conversations without waiting for the next
+   * mount or a hard refresh. Belt-and-braces alongside the
+   * conversationId-watch effect — that effect fires when the URL gets
+   * its first ID, this fires when the stream actually completes.
+   */
+  onFinish?: () => void
 }
 
 export function useChat(options: ChatOptions = {}) {
-  const { model, systemPrompt, conversationId, projectId, initialMessages, onToolCall } = options
+  const { model, systemPrompt, conversationId, projectId, initialMessages, onToolCall, onFinish } = options
 
   // Refs keep prepareSendMessagesRequest reading the LATEST fields.
   // useAIChat memoises the transport internally, so a closure captured at mount would
@@ -81,6 +90,9 @@ export function useChat(options: ChatOptions = {}) {
   // flight.
   const seedRef = useRef(initialMessages)
 
+  const onFinishRef = useRef(onFinish)
+  useEffect(() => { onFinishRef.current = onFinish }, [onFinish])
+
   const chat = useAIChat({
     messages: seedRef.current,
     messageMetadataSchema,
@@ -92,6 +104,7 @@ export function useChat(options: ChatOptions = {}) {
     // pending approval requests have responses. Fixes the "Approve
     // button does nothing" bug in the Workspace connector flow.
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
+    onFinish: () => onFinishRef.current?.(),
     onError: (error: Error) => {
       console.error('Chat error:', error)
     },

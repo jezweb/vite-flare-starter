@@ -36,6 +36,31 @@ import type { InboxImportance, UnifiedRow } from '@/shared/schemas/inbox.schema'
 import type { RowRendererProps } from '../../row-shapes'
 
 /**
+ * Items older than this register as "stale" — the age string renders
+ * in an amber tint so the user notices items that have been sitting
+ * unactioned. Tunable per-fork; 3 days is a reasonable default for
+ * weekly-cadence work.
+ */
+const STALE_THRESHOLD_DAYS = 3
+const DAY_MS = 24 * 60 * 60 * 1000
+
+/**
+ * Returns true when the row was created more than STALE_THRESHOLD_DAYS
+ * ago and is still pending/unread (i.e. it has aged without action).
+ * Renderers can use this for additional visual cues beyond the meta
+ * line tint StandardMeta applies.
+ */
+export function isStale(row: UnifiedRow): boolean {
+  const ageMs = Date.now() - row.createdAt * 1000
+  if (ageMs < STALE_THRESHOLD_DAYS * DAY_MS) return false
+  // Decided approvals + read findings aren't "waiting on you" anymore,
+  // so they don't need the urgency cue even if old.
+  if (row.source === 'approval' && row.status && row.status !== 'pending') return false
+  if (row.source === 'inbox' && row.readAt != null) return false
+  return true
+}
+
+/**
  * `kind` is a free-form string the agent set when it called `inbox_add`
  * (e.g. "stale_lead", "stuck_ticket"). Convert snake_case → Title case
  * for display, with friendlier names for well-known internal kinds.
@@ -78,6 +103,7 @@ export function StandardMeta({
   prefix?: ReactNode
 }) {
   const ageStr = formatDistanceToNow(new Date(row.createdAt * 1000), { addSuffix: true })
+  const stale = isStale(row)
   return (
     <ListRowMeta>
       {prefix}
@@ -86,7 +112,15 @@ export function StandardMeta({
         {row.agentClass && <> from {formatAgentClass(row.agentClass, agentRegistry)}</>}
       </span>
       <span>·</span>
-      <span className="shrink-0">{ageStr}</span>
+      <span
+        className={cn(
+          'shrink-0',
+          stale && 'text-amber-700 dark:text-amber-400 font-medium',
+        )}
+        title={stale ? "This has been waiting for action — consider reviewing it soon" : undefined}
+      >
+        {ageStr}
+      </span>
       {row.dueAt && (
         <>
           <span>·</span>

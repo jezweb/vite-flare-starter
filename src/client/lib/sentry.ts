@@ -22,10 +22,23 @@ export const isSentryEnabled = !!SENTRY_DSN
 /**
  * Initialize Sentry for client-side error tracking
  * Should be called once at app startup
+ *
+ * Idempotent — safe to call multiple times (HMR, multiple bundles, etc.).
+ * Subsequent calls return immediately without logging.
  */
+let initialized = false
+
 export function initSentry(): void {
+  if (initialized) return
+  initialized = true
+
   if (!SENTRY_DSN) {
-    console.info('[Sentry] DSN not configured, error tracking disabled')
+    // Stay silent in production console — Sentry being off is a config
+    // choice, not a runtime event the user should see. Builders who want
+    // to verify can flip VITE_SENTRY_DEBUG.
+    if (import.meta.env['VITE_SENTRY_DEBUG'] === 'true') {
+      console.info('[Sentry] DSN not configured, error tracking disabled')
+    }
     return
   }
 
