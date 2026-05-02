@@ -2,6 +2,58 @@
 
 All notable changes to `vite-flare-starter`.
 
+## 2026-05-02
+
+### Added — AdminAgent v1 (gh #49)
+
+Claude-Code-style platform management agent. Lives in `#admin-chat` Space, proposes routine / agent / connection changes via natural language. Every write action queues for approval. 14 admin tools across routines + situational awareness + agent management. ~50 lines of forking code adds a new agent class.
+
+### Added — Agent management UI
+
+`/dashboard/agents` — one unified card grid for all AI agent instances (per-user) and dormant classes. Click any card → edit sheet for persona / model / daily budget. "+ New agent" dialog picks type + name. Dormant cards activate on save. AdminAgent agent-management tools (`set_agent_persona` / `_model` / `_budget`) call the same endpoints.
+
+### Added — `/dashboard/admin-chat`
+
+Find-or-create the user's `#admin` Space, lands them in a chat with AdminAgent. Sidebar entry under Setup.
+
+### Added — Branding primitives (gh #60)
+
+`appConfig.brand.{primaryColor,accentColor}` (CSS colour overrides on default scheme) · `appConfig.logos.{sidebar,signIn,favicon,og}` (per-surface logo set) · `appConfig.defaultThemeMode` · email branding env vars (`EMAIL_FROM_NAME`, `EMAIL_SIGNATURE`, `EMAIL_HEADER_IMAGE_URL`).
+
+### Added — Skills detail route (gh #61)
+
+`/dashboard/skills/:slug` — full-width editor on its own route. Card click navigates instead of selecting. Removes scroll-up-click-scroll-down loop on 14+ skills.
+
+### Changed — Sidebar restructure (UX dogfood)
+
+Three intent tiers: **Work** (Home / Chat / Inbox / Projects / Spaces / Routines, visible) · **Setup** (Connections / Skills / Agents / Admin chat, collapsed) · **Insights** (Observability / Activity / Files / Extract, collapsed). Approvals removed from sidebar — folded into Inbox. Day-1 visible items: 6, down from 12+.
+
+### Changed — Builder mode default ON
+
+`VITE_DEFAULT_BUILDER_MODE` env var. Starter default ON (audience IS builders); forks set `false` for polished products. Extract moved out of Builder into Insights (it's a user feature). `Components`, `Style guide`, `Voice/Video example` remain dev-only.
+
+### Changed — Inbox: approval detail in Sheet (Slice A + A-prime)
+
+Click an approval row in Inbox → opens `ApprovalSheet` inline. No more route bounce to `/dashboard/approvals?focus=`. `ApprovalCard` + helpers extracted from `ApprovalsPage` into `src/client/modules/approvals/components/ApprovalCard.tsx` — single source of truth. ApprovalsPage simplified to ~110 lines (was ~500), preserved for notification deep links.
+
+### Changed — Dashboard "Start something new" cards
+
+Replaces the one-line button row with a 4-card grid (Chat / Project / Space / Routine). Each card has icon + label + one-line description. Helps newcomers pick the right entry point without learning vocabulary first.
+
+### Changed — Plain-English agent UI
+
+"Class" → "Type" in the New agent dialog. Dropped code-path leaks (`src/server/modules/autonomous-agents/`) from user-facing copy. New disclosure on `/dashboard/agents` explains class-vs-instance in non-jargon language. Stats row reflowed to 1×4 on `sm:+`.
+
+### Plans saved (cross-session)
+
+- `.jez/plans/2026-05-01-admin-agent-v1.md`
+- `.jez/plans/2026-05-01-shadcn-coherence-plan.md`
+- `.jez/plans/2026-05-02-inbox-consolidation.md` — covers Slice B (pluggable row-shape registry) + C (snooze/pin/filter triage polish), both deferred.
+
+### Issues closed
+
+#44 / #45 / #46 / #47 (onboarding cluster, were stale-open after ship) · #48 (Spaces audit follow-ups, 3 of 5 done, rest deferred to #43 Phase 2) · #49 (AdminAgent v1) · #51 (KV vs D1 design Q answered) · #59 (closed previously) · #60 (branding primitives) · #61 (skills detail route).
+
 ## 2026-04-30
 
 ### Added — Layout primitives (gh #59)
