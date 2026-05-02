@@ -1,7 +1,7 @@
 # Inbox consolidation — plan
 
 **Date**: 2026-05-02
-**Status**: Slice A partially shipped; A-prime + B pending
+**Status**: Slices A + A-prime + B shipped; Slice C (triage polish) pending
 **Linked**: dogfood feedback "talk to me about the inbox"
 
 ## Vision
@@ -34,10 +34,32 @@ one place to triage attention items.
   contents as a single-row page (deep-link compat)
 - Drop the `ApprovalsPage` list view (the list lives in Inbox now)
 
-### Slice B — Pluggable row shapes
+### Slice B — Pluggable row shapes ✅ SHIPPED 2026-05-02
 
 **Goal**: rows render with shape-appropriate visual treatment instead
 of the generic ListRow template.
+
+**Files**:
+- `src/client/modules/inbox/row-shapes.tsx` — registry, shared
+  scaffolding (`RowShell`), three built-in renderers, helpers
+  (`StandardMeta`, `ImportancePill`, `formatKind`)
+- `src/client/modules/inbox/pages/InboxPage.tsx` — refactored to
+  dispatch through `resolveRenderer(row).render`. Inline `InboxRow`
+  removed (~190 lines), unused imports dropped, page now ~430 lines
+  (was ~750)
+
+**Three built-in renderers shipped:**
+
+1. **DecisionRow** — fires for `source === 'approval'`. Inline Approve
+   / Reject buttons for `status === 'pending'`; collapses to a status
+   badge for already-decided approvals so the All tab doesn't invite a
+   re-vote. Tap row body to open Sheet for full preview.
+2. **DigestRow** — fires for `source === 'inbox' && /[_-]digest$/.test(kind)`.
+   Currently visual differentiation only; click toggles read until a
+   `/dashboard/digests/:id` route exists. Won't fire on production data
+   yet (no digest kinds being emitted).
+3. **FindingRow** — fallback (`match: () => true`). Behaviour-equivalent
+   to the previous default inbox row.
 
 **Architecture: renderer registry**
 
@@ -98,12 +120,12 @@ new shapes by appending to the array.
 
 ## Estimated total effort
 
-| Slice | Effort |
-|---|---|
-| A (sidebar nav) | ~5 min — done |
-| A-prime (ApprovalCard extract + Sheet) | ~1 hour |
-| B (renderer registry + 3 shapes) | ~2 hours |
-| C (triage polish) | ~1.5 hours |
+| Slice | Effort | Status |
+|---|---|---|
+| A (sidebar nav) | ~5 min | done |
+| A-prime (ApprovalCard extract + Sheet) | ~1 hour | done |
+| B (renderer registry + 3 shapes) | ~2 hours | done |
+| C (triage polish) | ~1.5 hours | pending |
 
 ## Resume instructions
 

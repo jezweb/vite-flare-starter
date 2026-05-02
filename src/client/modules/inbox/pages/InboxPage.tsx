@@ -5,6 +5,12 @@
  * filter; we render both shapes uniformly. Sort defaults to importance
  * descending, then dueAt ascending, then createdAt descending.
  *
+ * Slice B (2026-05-02): rows render through a pluggable row-shape
+ * registry (`row-shapes.tsx`). Three built-in shapes ship — decision,
+ * digest, finding — and forks add new shapes (mention, action_item,
+ * …) by editing `ROW_RENDERERS`. The page itself only owns selection,
+ * focus, keyboard navigation, bulk mutations, and the ApprovalSheet.
+ *
  * URL params:
  *   ?status=unread|undecided|all       (default undecided)
  *   ?importance=high|medium|low        (filter pill)
@@ -23,39 +29,12 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { formatDistanceToNow } from 'date-fns'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import {
-  Inbox,
-  CheckSquare,
-  Clock,
-  AlertTriangle,
-  ChevronRight,
-  X,
-  Check,
-  XCircle,
-  Eye,
-} from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
+import { Inbox, X, Check, XCircle, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuTrigger,
-} from '@/components/ui/context-menu'
-import {
-  ListRow,
-  ListRowGroup,
-  ListRowIcon,
-  ListRowBody,
-  ListRowTitle,
-  ListRowMeta,
-  ListRowTrailing,
-} from '@/components/ui/list-row'
+import { ListRowGroup } from '@/components/ui/list-row'
 import { TabsTrigger } from '@/components/ui/tabs'
 import { EmptyState } from '@/client/components/EmptyState'
 import { PageContainer } from '@/components/ui/page-container'
@@ -68,27 +47,14 @@ import {
 } from '@/components/ui/page-filters'
 import { PageLoading } from '@/client/components/PageState'
 import { apiClient } from '@/client/lib/api-client'
-import { cn } from '@/lib/utils'
-import { formatAgentClass, formatImportance } from '@/shared/format/agent'
-import { useAgentCatalog } from '@/client/modules/routines/hooks/useAgentCatalog'
 import { ApprovalSheet } from '../components/ApprovalSheet'
+import {
+  resolveRenderer,
+  type Importance,
+  type UnifiedRow,
+} from '../row-shapes'
 
-type Importance = 'high' | 'medium' | 'low'
 type Status = 'unread' | 'undecided' | 'all'
-
-interface UnifiedRow {
-  id: string
-  source: 'inbox' | 'approval'
-  kind: string
-  summary: string
-  importance: Importance | null
-  agentClass: string | null
-  createdAt: number
-  dueAt: number | null
-  decidedAt: number | null
-  readAt: number | null
-  status?: string
-}
 
 interface ListResponse {
   total: number
@@ -236,6 +202,9 @@ export function InboxPage() {
     else toast.error(`Rejected ${ok}, ${failed} failed`)
   }
 
+  // Enter on the focused row. Approval rows open the Sheet; inbox rows
+  // fall through to a read-toggle. Decision-shape inline buttons are
+  // exposed via `a`/`r` keyboard shortcuts on the bulk path.
   const openFocused = () => {
     if (!focusedKey) return
     const row = items.find((r) => rowKey(r) === focusedKey)
@@ -382,9 +351,10 @@ export function InboxPage() {
           <ListRowGroup>
             {items.map((row) => {
               const k = rowKey(row)
+              const Renderer = resolveRenderer(row).render
               return (
                 <li key={k}>
-                  <InboxRow
+                  <Renderer
                     row={row}
                     isSelected={selected.has(k)}
                     isFocused={focusedKey === k}
@@ -509,245 +479,6 @@ function InboxToolbar({
       </span>
     </div>
   )
-}
-
-interface InboxRowProps {
-  row: UnifiedRow
-  isSelected: boolean
-  isFocused: boolean
-  selectionMode: boolean
-  onToggleSelect: () => void
-  onFocusChange: () => void
-  onOpenApproval: (id: string) => void
-  rowRef: (el: HTMLDivElement | null) => void
-}
-
-function InboxRow({
-  row,
-  isSelected,
-  isFocused,
-  selectionMode,
-  onToggleSelect,
-  onFocusChange,
-  onOpenApproval,
-  rowRef,
-}: InboxRowProps) {
-  const queryClient = useQueryClient()
-  const { data: agentCatalog } = useAgentCatalog()
-  const agentRegistry = useMemo(
-    () => new Map((agentCatalog?.agents ?? []).map((a) => [a.className, a])),
-    [agentCatalog],
-  )
-  const isApproval = row.source === 'approval'
-  const isUnread = row.source === 'inbox' && row.readAt == null
-  const isUrgent = row.importance === 'high' || (row.dueAt != null && row.dueAt * 1000 < Date.now())
-
-  // Toggle the read state both ways — clicking a read row marks it
-  // unread again. That gives findings real interactivity (the row was
-  // looking clickable but doing nothing on the second click before).
-  const toggleRead = useMutation({
-    mutationFn: () => apiClient.patch(`/api/inbox/${row.id}`, { read: !!isUnread }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['inbox'] }),
-  })
-
-  const archive = useMutation({
-    mutationFn: () => apiClient.delete(`/api/inbox/${row.id}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['inbox'] })
-      toast.success('Archived')
-    },
-  })
-
-  const copyId = () => {
-    void navigator.clipboard.writeText(row.id).then(() => {
-      toast.success('Row ID copied')
-    })
-  }
-
-  const handleClick = () => {
-    if (selectionMode) {
-      onToggleSelect()
-      return
-    }
-    if (isApproval) {
-      onOpenApproval(row.id)
-      return
-    }
-    if (row.source === 'inbox') {
-      toggleRead.mutate()
-    }
-  }
-
-  const ageStr = formatDistanceToNow(new Date(row.createdAt * 1000), { addSuffix: true })
-
-  return (
-    <ContextMenu>
-      <ContextMenuTrigger asChild>
-    <ListRow
-      ref={rowRef}
-      state={isUnread ? 'unread' : isUrgent ? 'urgent' : 'default'}
-      interactive
-      className={cn(
-        isSelected && 'bg-primary/10 hover:bg-primary/15',
-        isFocused && 'ring-2 ring-ring/50 ring-inset',
-      )}
-      onClick={handleClick}
-      onMouseEnter={onFocusChange}
-    >
-      {/* a11y: the row used to have role="button" + tabIndex={0} alongside a
-          focusable Review Link inside, which axe flags as nested-interactive.
-          The row stays clickable via pointer (handleClick still fires); for
-          keyboard users, the Review Link IS the focus stop for approval rows,
-          and selection happens via Checkbox or the j/k/x bulk shortcuts. */}
-      <div
-        className="shrink-0"
-        onClick={(e) => {
-          e.stopPropagation()
-          onToggleSelect()
-        }}
-      >
-        <Checkbox
-          checked={isSelected}
-          onCheckedChange={() => onToggleSelect()}
-          onClick={(e) => e.stopPropagation()}
-          aria-label={isSelected ? 'Deselect row' : 'Select row'}
-        />
-      </div>
-      <ListRowIcon>
-        {isApproval ? (
-          <CheckSquare className="text-amber-500" />
-        ) : (
-          <Inbox className={cn(isUnread ? 'text-primary' : 'text-muted-foreground')} />
-        )}
-      </ListRowIcon>
-      <ListRowBody>
-        <div className="flex items-center gap-2 min-w-0">
-          <ListRowTitle unread={isUnread}>{row.summary}</ListRowTitle>
-          {row.importance === 'high' && <ImportancePill importance="high" />}
-        </div>
-        <ListRowMeta>
-          {isApproval && (
-            <>
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 leading-3">
-                Needs approval
-              </Badge>
-              <span>·</span>
-            </>
-          )}
-          <span>
-            {formatKind(row.kind)}
-            {row.agentClass && (
-              <> from {formatAgentClass(row.agentClass, agentRegistry)}</>
-            )}
-          </span>
-          <span>·</span>
-          <span className="shrink-0">{ageStr}</span>
-          {row.dueAt && (
-            <>
-              <span>·</span>
-              <span className="inline-flex items-center gap-1 shrink-0">
-                {row.dueAt * 1000 < Date.now() && (
-                  <AlertTriangle className="size-3 text-amber-500" />
-                )}
-                <Clock className="size-3" />
-                due {formatDistanceToNow(new Date(row.dueAt * 1000), { addSuffix: true })}
-              </span>
-            </>
-          )}
-          {row.status && row.status !== 'pending' && (
-            <>
-              <span>·</span>
-              <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 leading-3 capitalize">
-                {row.status}
-              </Badge>
-            </>
-          )}
-        </ListRowMeta>
-      </ListRowBody>
-      <ListRowTrailing>
-        {isApproval ? (
-          // Approval rows open a Sheet inline — no route change. The
-          // span styling matches the Link before it; click bubbles up
-          // to the row's onClick which calls onOpenApproval.
-          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors group-hover/list-row:text-foreground">
-            Review
-            <ChevronRight className="size-3" />
-          </span>
-        ) : (
-          // Findings don't navigate anywhere — clicking them toggles the
-          // read state. We surface that as a hover hint instead of a
-          // chevron so users don't expect a detail page that doesn't
-          // exist yet.
-          <span className="text-[10px] text-muted-foreground/0 group-hover/list-row:text-muted-foreground transition-colors">
-            {isUnread ? 'Mark read' : 'Mark unread'}
-          </span>
-        )}
-      </ListRowTrailing>
-    </ListRow>
-      </ContextMenuTrigger>
-      <ContextMenuContent>
-        <ContextMenuItem onSelect={() => toggleRead.mutate()}>
-          {isUnread ? 'Mark read' : 'Mark unread'}
-        </ContextMenuItem>
-        <ContextMenuItem onSelect={() => onToggleSelect()}>
-          {isSelected ? 'Deselect' : 'Select'}
-        </ContextMenuItem>
-        {isApproval && (
-          <ContextMenuItem onSelect={() => onOpenApproval(row.id)}>
-            Review approval
-          </ContextMenuItem>
-        )}
-        <ContextMenuSeparator />
-        <ContextMenuItem onSelect={copyId}>
-          Copy row ID
-        </ContextMenuItem>
-        <ContextMenuSeparator />
-        <ContextMenuItem
-          variant="destructive"
-          onSelect={() => archive.mutate()}
-          disabled={archive.isPending}
-        >
-          Archive
-        </ContextMenuItem>
-      </ContextMenuContent>
-    </ContextMenu>
-  )
-}
-
-function ImportancePill({ importance }: { importance: Importance }) {
-  const map = {
-    high: 'bg-destructive/10 text-destructive border-destructive/40',
-    medium: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/40',
-    low: 'bg-muted text-muted-foreground border-muted-foreground/30',
-  } as const
-  return (
-    <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', map[importance])}>
-      {formatImportance(importance)}
-    </Badge>
-  )
-}
-
-/**
- * `kind` is a free-form string set by the agent when it called
- * `inbox_add` (e.g. "stale_lead", "stuck_ticket", "schema_drift").
- * Convert snake_case → Title case for display, with friendlier names
- * for the well-known internal kinds so the UI doesn't read like a
- * database enum.
- */
-function formatKind(kind: string): string {
-  if (!kind) return ''
-  // Special cases for internal events the agent emits directly. Keep
-  // the user-facing label aligned with the same surface elsewhere
-  // (Approvals page collapses memory_extraction the same way).
-  switch (kind) {
-    case 'memory_extraction':
-      return 'AI memory'
-    case 'memory':
-      return 'AI memory'
-  }
-  return kind
-    .replace(/[_-]+/g, ' ')
-    .replace(/\b\w/g, (m) => m.toUpperCase())
 }
 
 export default InboxPage
