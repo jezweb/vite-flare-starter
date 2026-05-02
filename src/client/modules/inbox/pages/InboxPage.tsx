@@ -22,7 +22,7 @@
  * this is fine at typical inbox sizes (<50).
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { formatDistanceToNow } from 'date-fns'
 import { toast } from 'sonner'
@@ -71,6 +71,7 @@ import { apiClient } from '@/client/lib/api-client'
 import { cn } from '@/lib/utils'
 import { formatAgentClass, formatImportance } from '@/shared/format/agent'
 import { useAgentCatalog } from '@/client/modules/routines/hooks/useAgentCatalog'
+import { ApprovalSheet } from '../components/ApprovalSheet'
 
 type Importance = 'high' | 'medium' | 'low'
 type Status = 'unread' | 'undecided' | 'all'
@@ -138,6 +139,7 @@ export function InboxPage() {
   const keys = useMemo(() => items.map(rowKey), [items])
 
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [approvalSheetId, setApprovalSheetId] = useState<string | null>(null)
   const [focusedKey, setFocusedKey] = useState<string | null>(null)
   const rowRefs = useRef(new Map<string, HTMLDivElement>())
 
@@ -239,7 +241,7 @@ export function InboxPage() {
     const row = items.find((r) => rowKey(r) === focusedKey)
     if (!row) return
     if (row.source === 'approval') {
-      navigate(`/dashboard/approvals?focus=${row.id}`)
+      setApprovalSheetId(row.id)
     } else if (row.readAt == null) {
       void apiClient.patch(`/api/inbox/${row.id}`, { read: true }).then(() => {
         queryClient.invalidateQueries({ queryKey: ['inbox'] })
@@ -389,6 +391,7 @@ export function InboxPage() {
                     selectionMode={selected.size > 0}
                     onToggleSelect={() => toggleSelect(k)}
                     onFocusChange={() => focusRow(k)}
+                    onOpenApproval={(id) => setApprovalSheetId(id)}
                     rowRef={(el) => {
                       if (el) rowRefs.current.set(k, el)
                       else rowRefs.current.delete(k)
@@ -400,6 +403,12 @@ export function InboxPage() {
           </ListRowGroup>
         </>
       )}
+
+      <ApprovalSheet
+        approvalId={approvalSheetId}
+        open={approvalSheetId !== null}
+        onClose={() => setApprovalSheetId(null)}
+      />
     </PageContainer>
   )
 }
@@ -509,6 +518,7 @@ interface InboxRowProps {
   selectionMode: boolean
   onToggleSelect: () => void
   onFocusChange: () => void
+  onOpenApproval: (id: string) => void
   rowRef: (el: HTMLDivElement | null) => void
 }
 
@@ -519,10 +529,10 @@ function InboxRow({
   selectionMode,
   onToggleSelect,
   onFocusChange,
+  onOpenApproval,
   rowRef,
 }: InboxRowProps) {
   const queryClient = useQueryClient()
-  const navigate = useNavigate()
   const { data: agentCatalog } = useAgentCatalog()
   const agentRegistry = useMemo(
     () => new Map((agentCatalog?.agents ?? []).map((a) => [a.className, a])),
@@ -560,7 +570,7 @@ function InboxRow({
       return
     }
     if (isApproval) {
-      navigate(`/dashboard/approvals?focus=${row.id}`)
+      onOpenApproval(row.id)
       return
     }
     if (row.source === 'inbox') {
@@ -656,16 +666,13 @@ function InboxRow({
       </ListRowBody>
       <ListRowTrailing>
         {isApproval ? (
-          // Approval rows navigate to /approvals — the chevron + "Review"
-          // is honest about that.
-          <Link
-            to={`/dashboard/approvals?focus=${row.id}`}
-            className="inline-flex items-center gap-1 text-xs text-muted-foreground group-hover/list-row:text-foreground transition-colors"
-            onClick={(e) => e.stopPropagation()}
-          >
+          // Approval rows open a Sheet inline — no route change. The
+          // span styling matches the Link before it; click bubbles up
+          // to the row's onClick which calls onOpenApproval.
+          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors group-hover/list-row:text-foreground">
             Review
             <ChevronRight className="size-3" />
-          </Link>
+          </span>
         ) : (
           // Findings don't navigate anywhere — clicking them toggles the
           // read state. We surface that as a hover hint instead of a
@@ -686,8 +693,8 @@ function InboxRow({
           {isSelected ? 'Deselect' : 'Select'}
         </ContextMenuItem>
         {isApproval && (
-          <ContextMenuItem onSelect={() => navigate(`/dashboard/approvals?focus=${row.id}`)}>
-            Open in approvals
+          <ContextMenuItem onSelect={() => onOpenApproval(row.id)}>
+            Review approval
           </ContextMenuItem>
         )}
         <ContextMenuSeparator />
