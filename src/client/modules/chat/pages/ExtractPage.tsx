@@ -3,6 +3,11 @@
  *
  * Demonstrates AI SDK structured output via generateText + Output.object().
  * Sends text to POST /api/chat/extract with a schema selector.
+ *
+ * For progressive streaming output, see the dormant
+ * `useStreamExtract` hook + POST /api/chat/stream-extract route — same
+ * shape, different transport. Drop the hook into this page if a fork
+ * wants the field-by-field fill UX.
  */
 import { useCallback, useRef, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'

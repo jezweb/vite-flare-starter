@@ -50,7 +50,7 @@ import { apiClient } from '@/client/lib/api-client'
 import { ApprovalSheet } from '../components/ApprovalSheet'
 import {
   resolveRenderer,
-  type Importance,
+  type InboxImportance,
   type UnifiedRow,
 } from '../row-shapes'
 
@@ -71,7 +71,7 @@ export function InboxPage() {
     const s = searchParams.get('status')
     return s === 'unread' || s === 'all' || s === 'undecided' ? s : 'undecided'
   })()
-  const importance = (searchParams.get('importance') as Importance | null) ?? null
+  const importance = (searchParams.get('importance') as InboxImportance | null) ?? null
 
   const setStatus = (next: Status) => {
     const p = new URLSearchParams(searchParams)
@@ -80,7 +80,7 @@ export function InboxPage() {
     setSearchParams(p, { replace: true })
   }
 
-  const setImportance = (next: Importance | null) => {
+  const setImportance = (next: InboxImportance | null) => {
     const p = new URLSearchParams(searchParams)
     if (next) p.set('importance', next)
     else p.delete('importance')
@@ -297,7 +297,7 @@ export function InboxPage() {
           label="Importance:"
           onClear={importance ? () => setImportance(null) : undefined}
         >
-          {(['high', 'medium', 'low'] as Importance[]).map((imp) => (
+          {(['high', 'medium', 'low'] as InboxImportance[]).map((imp) => (
             <PageFilterChip
               key={imp}
               active={importance === imp}

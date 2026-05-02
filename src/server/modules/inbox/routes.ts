@@ -19,8 +19,9 @@ import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
 import { and, desc, eq, isNull, or } from 'drizzle-orm'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
-import { inboxItems, type InboxImportance } from './db/schema'
+import { inboxItems } from './db/schema'
 import { pendingApprovals } from '@/server/modules/approvals/db/schema'
+import type { InboxImportance, UnifiedRow } from '@/shared/schemas/inbox.schema'
 
 const ListSchema = z.object({
   status: z.enum(['unread', 'undecided', 'all']).optional().default('undecided'),
@@ -33,21 +34,6 @@ const PatchSchema = z.object({
   decided: z.boolean().optional(),
   decisionText: z.string().max(500).optional(),
 })
-
-interface UnifiedRow {
-  id: string
-  source: 'inbox' | 'approval'
-  kind: string
-  summary: string
-  importance: InboxImportance | null
-  agentClass: string | null
-  createdAt: number
-  dueAt: number | null
-  decidedAt: number | null
-  readAt: number | null
-  /** For approvals only — pending|approved|rejected|... */
-  status?: string
-}
 
 const app = new Hono<AuthContext>()
 app.use('*', authMiddleware)

@@ -1,5 +1,16 @@
 /**
- * useStreamExtract — streams structured data extraction via AI SDK useObject
+ * useStreamExtract — streams structured data extraction via AI SDK useObject.
+ *
+ * **Reference implementation, not currently consumed.** `ExtractPage` uses
+ * the non-streaming POST `/api/chat/extract` because the response is small
+ * enough that streaming doesn't pay off in UX. This hook + the server
+ * `/api/chat/stream-extract` route stay as a worked example for forks
+ * that want progressive object streaming (`streamObject` server-side,
+ * `useObject` client-side).
+ *
+ * To wire it up, drop this into a page and watch `object` fill as the
+ * model emits keys — each partial object is type-safe via the inferred
+ * Zod schema.
  *
  * @example
  * const { object, submit, isLoading } = useStreamExtract('summary')

@@ -29,8 +29,9 @@
  */
 import { sqliteTable, text, integer, real, index } from 'drizzle-orm/sqlite-core'
 import { user } from '@/server/modules/auth/db/schema'
+import type { InboxImportance } from '@/shared/schemas/inbox.schema'
 
-export type InboxImportance = 'high' | 'medium' | 'low'
+export type { InboxImportance }
 
 export const inboxItems = sqliteTable(
   'inbox_items',
