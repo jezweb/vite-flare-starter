@@ -107,9 +107,16 @@ export function AgentsPage() {
                 <ItemContent>
                   <ItemTitle>
                     <span className="truncate">{inst.displayName}</span>
-                    <span className="font-mono text-[10px] text-muted-foreground">
-                      /{inst.agentName}
-                    </span>
+                    {/* Only show the slug when it's a real user-chosen one
+                        (lowercase + hyphens). Seed agents default the slug
+                        to the class name (e.g. `AutonomousAgent`); showing
+                        that next to the friendly name leaks implementation
+                        detail with no user value. */}
+                    {/^[a-z][a-z0-9-]*$/.test(inst.agentName) && (
+                      <span className="font-mono text-[10px] text-muted-foreground">
+                        /{inst.agentName}
+                      </span>
+                    )}
                   </ItemTitle>
                   <ItemDescription className="line-clamp-2">
                     {inst.dormant
@@ -118,9 +125,12 @@ export function AgentsPage() {
                   </ItemDescription>
                   <div className="mt-2 flex flex-wrap gap-2 text-[10px] text-muted-foreground">
                     {inst.dormant ? (
-                      <span className="inline-flex items-center gap-1">
+                      <span
+                        className="inline-flex items-center gap-1"
+                        title="Activating creates the agent instance for your account. It only runs when you message it or schedule a routine. No charges until it actually does work."
+                      >
                         <Plus className="size-3" />
-                        Dormant — click to activate
+                        Activate (no work runs until you ask)
                       </span>
                     ) : (
                       <>

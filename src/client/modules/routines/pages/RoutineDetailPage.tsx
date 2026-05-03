@@ -41,7 +41,7 @@ import {
 import { useAgentCatalog } from '../hooks/useAgentCatalog'
 import { formatCadence } from './RoutinesPage'
 import { cn } from '@/lib/utils'
-import { formatAgentClass, formatOutcome, formatTrigger } from '@/shared/format/agent'
+import { formatAgentClass, formatOutcome, formatTrigger, formatAdjustMode } from '@/shared/format/agent'
 
 export function RoutineDetailPage() {
   const { routineId } = useParams<{ routineId: string }>()
@@ -163,16 +163,16 @@ export function RoutineDetailPage() {
             <CardTitle className="text-sm">Behaviour</CardTitle>
           </CardHeader>
           <CardContent className="space-y-1.5 text-xs">
-            <KV k="Skills" v={skills.length ? skills.join(', ') : '(none)'} mono />
-            <KV k="Tools allowed" v={tools.length ? tools.join(', ') : 'all available'} mono />
+            <KV k="Skills" v={skills.length ? skills.join(', ') : 'No starter skills'} mono={skills.length > 0} />
+            <KV k="Tools allowed" v={tools.length ? tools.join(', ') : 'All tools available'} mono={tools.length > 0} />
             <KV
-              k="Hooks"
+              k="After each run"
               v={
                 Object.keys(hooks).length
                   ? Object.entries(hooks).map(([k, v]) => `${k}→${v}`).join(', ')
-                  : '(none)'
+                  : 'Nothing extra'
               }
-              mono
+              mono={Object.keys(hooks).length > 0}
             />
           </CardContent>
         </Card>
@@ -225,7 +225,7 @@ export function RoutineDetailPage() {
             <Spinner size="md" className="text-muted-foreground" />
           ) : runsData.total === 0 ? (
             <p className="text-xs text-muted-foreground">
-              No runs yet. The cron sweep fires every 15 min, or click "Fire now" above.
+              No runs yet. The cron sweep fires every 15 min, or click "Run now" above.
             </p>
           ) : (
             <ul className="space-y-1.5">
@@ -278,19 +278,33 @@ function RunRow({ run }: { run: RoutineRun }) {
         <span className="ml-auto font-mono text-[10px] text-muted-foreground">#{run.runNumber}</span>
       </div>
       {run.outputSummary && (
-        <p className="mt-1 text-xs leading-snug">{run.outputSummary}</p>
+        <p className="mt-1 text-xs leading-snug whitespace-pre-wrap">
+          {renderRunSummary(run.outputSummary)}
+        </p>
       )}
     </li>
   )
 }
 
-function formatAdjustMode(mode: string | null | undefined): string {
-  switch (mode) {
-    case 'auto': return 'Auto-tune (slower when nothing happens)'
-    case 'locked': return 'Locked at base interval'
-    case 'manual': return 'Manual'
-    default: return mode ?? '—'
-  }
+/**
+ * Lightweight markdown for run summaries — only handles `**bold**` and
+ * `*italic*`/`_italic_` because that's what models emit in 2-3 sentence
+ * summaries. Pulling in the full chat markdown pipeline (Streamdown +
+ * KaTeX + code-block themes) is overkill for a one-line status. If a
+ * fork wants richer rendering, swap this for the chat MessageRenderer.
+ */
+function renderRunSummary(text: string): import('react').ReactNode[] {
+  // Split on **bold** + _italic_ + *italic* in one pass.
+  const parts = text.split(/(\*\*[^*]+\*\*|_[^_\n]+_|\*[^*\n]+\*)/g)
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i}>{part.slice(2, -2)}</strong>
+    }
+    if ((part.startsWith('_') && part.endsWith('_')) || (part.startsWith('*') && part.endsWith('*'))) {
+      return <em key={i}>{part.slice(1, -1)}</em>
+    }
+    return <span key={i}>{part}</span>
+  })
 }
 
 function KV({ k, v, mono }: { k: string; v: string; mono?: boolean }) {

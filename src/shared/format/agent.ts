@@ -84,17 +84,48 @@ export function formatImportance(importance: string | null | undefined): string 
 }
 
 /**
- * Cadence label — same content as the routines RoutinesPage helper but
- * available everywhere the formatters are imported.
+ * Cadence label — used wherever the schedule cadence is rendered to
+ * end users. The 1-day case spells out "Once a day" because "every 1d"
+ * reads as raw config to non-technical users.
  */
 export function formatCadenceInterval(intervalSeconds: number | null | undefined): string {
   if (intervalSeconds == null || intervalSeconds <= 0) return 'on demand'
   const m = intervalSeconds / 60
   if (m < 1) return `every ${intervalSeconds}s`
-  if (m < 60) return `every ${Math.round(m)}m`
+  if (m < 60) return m === 1 ? 'every minute' : `every ${Math.round(m)} minutes`
   const h = m / 60
-  if (h < 24) return `every ${formatNum(h)}h`
-  return `every ${formatNum(h / 24)}d`
+  if (h === 1) return 'Hourly'
+  if (h < 24) return `Every ${formatNum(h)} hours`
+  const d = h / 24
+  if (d === 1) return 'Once a day'
+  if (d === 7) return 'Once a week'
+  return `Every ${formatNum(d)} days`
+}
+
+/**
+ * "Adjust mode" describes whether the agent can propose its own
+ * cadence changes. The raw enum values (`fixed | suggested | auto`)
+ * read as opaque to end users — these labels make the behaviour
+ * explicit.
+ */
+export function formatAdjustMode(mode: string | null | undefined): string {
+  switch (mode) {
+    case 'fixed': return 'Locked to your schedule'
+    case 'suggested': return 'AI proposes changes, you review'
+    case 'direct': return 'AI tunes itself automatically'
+    default: return mode ?? '—'
+  }
+}
+
+/**
+ * Hooks fire after a routine run completes (e.g. summarise, post to a
+ * Space). Most routines have none — surface that as plain English
+ * rather than the raw `(none)` placeholder.
+ */
+export function formatHooks(hooks: string[] | null | undefined): string {
+  if (!hooks || hooks.length === 0) return 'Nothing extra after each run'
+  if (hooks.length === 1) return `Runs "${hooks[0]}" after each run`
+  return `Runs ${hooks.length} skills after each run`
 }
 
 function formatNum(n: number): string {

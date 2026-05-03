@@ -119,7 +119,7 @@ export async function fireRoutine(env: SchedulerEnv, routine: typeof routines.$i
   // expansion ({{recent_runs}}, {{now}}, {{user.name}}). For slice 3
   // we just append the tail to whatever the user's template says.
   const inputTemplate = parseTemplate(routine.inputTemplateJson)
-  const composedInput = composeInput(inputTemplate, tailText)
+  const composedInput = composeInput(inputTemplate, tailText, routine.name, routine.description)
 
   // Start the run row before invoking the agent so we can mark
   // outcome=error if the invoke throws.
@@ -212,8 +212,30 @@ function parseTemplate(json: string | null): InputTemplate {
   }
 }
 
-function composeInput(template: InputTemplate, tail: string): string {
-  const base = template.input?.trim() || 'Run the routine and emit a 1-line summary at the end.'
+function composeInput(
+  template: InputTemplate,
+  tail: string,
+  routineName: string,
+  routineDescription: string | null,
+): string {
+  // Fallback hierarchy when the user hasn't written explicit instructions:
+  //   1. Use the routine's name + description — that's what they typed
+  //      to describe what they want. "Daily summary of my emails" tells
+  //      the agent more than "Run the routine and emit a 1-line summary".
+  //   2. Last resort: the generic prompt (kept for routines created
+  //      before names were treated as semantic instructions).
+  const userInput = template.input?.trim()
+  let base: string
+  if (userInput) {
+    base = userInput
+  } else if (routineName) {
+    const desc = routineDescription?.trim()
+    base = desc
+      ? `This routine is called "${routineName}". ${desc}\n\nDo what the name + description ask. If you need a tool or connection that isn't available, surface what's missing — don't guess.`
+      : `This routine is called "${routineName}". Do what the name asks. If you need a tool or connection that isn't available, surface what's missing — don't guess.`
+  } else {
+    base = 'Run the routine and emit a 1-line summary at the end.'
+  }
   // Slice 3 keeps composition trivial: prepend the tail as a system-style
   // context block. Slice 6+ adds richer template expansion.
   return `## Recent run history\n\n${tail}\n\n## This run\n\n${base}`

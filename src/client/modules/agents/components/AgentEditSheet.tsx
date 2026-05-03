@@ -35,6 +35,9 @@ import {
   useAgentInstance,
   useUpdateAgentInstance,
 } from '../hooks/useAgentInstances'
+import { useAgentCatalog } from '@/client/modules/routines/hooks/useAgentCatalog'
+import { formatAgentClass } from '@/shared/format/agent'
+import { useMemo } from 'react'
 
 interface Props {
   agentClass: string | null
@@ -46,6 +49,17 @@ interface Props {
 export function AgentEditSheet({ agentClass, agentName, open, onClose }: Props) {
   const { data, isLoading, error } = useAgentInstance(agentClass, agentName)
   const update = useUpdateAgentInstance(agentClass ?? '', agentName ?? '')
+  const { data: catalog } = useAgentCatalog()
+  const agentRegistry = useMemo(
+    () => new Map((catalog?.agents ?? []).map((a) => [a.className, a])),
+    [catalog],
+  )
+  const friendlyClass = agentClass ? formatAgentClass(agentClass, agentRegistry) : ''
+  // Hide the slug when it equals the class name — that means it's the
+  // default seed instance (e.g. agentName === 'AutonomousAgent') rather
+  // than a user-chosen slug. Also hide non-slug-shaped values; only show
+  // when the user gave us a real slug.
+  const showSlug = agentName ? /^[a-z][a-z0-9-]*$/.test(agentName) : false
 
   const [persona, setPersona] = useState('')
   const [modelId, setModelId] = useState('')
@@ -96,7 +110,10 @@ export function AgentEditSheet({ agentClass, agentName, open, onClose }: Props) 
         <SheetHeader className="border-b">
           <SheetTitle className="flex items-center gap-2">
             <Bot className="size-4 text-primary" />
-            {agentClass} <span className="font-mono text-sm text-muted-foreground">/{agentName}</span>
+            <span title={`${agentClass} · ${agentName}`}>{friendlyClass}</span>
+            {showSlug && (
+              <span className="font-mono text-sm text-muted-foreground">/{agentName}</span>
+            )}
           </SheetTitle>
           <SheetDescription>
             {data?.metadata?.description ?? 'Edit this agent\'s persona, model, and daily budget.'}
