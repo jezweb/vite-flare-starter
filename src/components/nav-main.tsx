@@ -8,7 +8,7 @@
  * a Collapsible with the section label as the trigger — used for the
  * "More" cluster so the sidebar leads with the ~6 primary destinations.
  */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { ChevronDown } from 'lucide-react'
 import {
@@ -76,22 +76,58 @@ export function NavMain({ label, items, defaultCollapsed = false }: Props) {
   }
 
   return (
-    <CollapsibleSection label={label} forceOpen={hasActiveItem}>
+    <CollapsibleSection label={label} forceOpen={hasActiveItem} defaultCollapsed={defaultCollapsed}>
       {list}
     </CollapsibleSection>
   )
 }
 
+/**
+ * Per-section collapse state persists in localStorage so the user's
+ * choice survives page reloads. Onboarding-relevant sections (Setup)
+ * default open for first-time users — see `firstTimeOpenSections`.
+ */
+const firstTimeOpenSections = new Set(['Setup'])
+
+function storageKey(label: string): string {
+  return `nav.section.${label.toLowerCase().replace(/\s+/g, '-')}.open`
+}
+
 function CollapsibleSection({
   label,
   forceOpen,
+  defaultCollapsed,
   children,
 }: {
   label: string
   forceOpen: boolean
+  defaultCollapsed: boolean
   children: React.ReactNode
 }) {
-  const [open, setOpen] = useState(forceOpen)
+  // Hydrate from localStorage. First-time users see onboarding-relevant
+  // sections (Setup) expanded by default — discoverability beats
+  // sidebar minimalism on day 1. Returning users see whatever they
+  // last set.
+  const initialOpen = (() => {
+    if (typeof window === 'undefined') return false
+    const stored = window.localStorage.getItem(storageKey(label))
+    if (stored === 'true') return true
+    if (stored === 'false') return false
+    // No stored value → first visit. Override defaultCollapsed for
+    // sections in firstTimeOpenSections so the user can find them.
+    return firstTimeOpenSections.has(label) ? true : !defaultCollapsed
+  })()
+
+  const [open, setOpen] = useState(initialOpen)
+
+  // Persist the user's explicit toggles. Don't write on initial mount
+  // (no value yet → leave the absence as the signal); only write when
+  // open actually changes from a user click.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem(storageKey(label), open ? 'true' : 'false')
+  }, [label, open])
+
   // Keep open state synced with forceOpen — if the user navigates to a
   // child route, expand the section automatically.
   const effectiveOpen = forceOpen || open

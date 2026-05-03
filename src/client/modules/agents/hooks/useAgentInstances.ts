@@ -27,6 +27,13 @@ export interface AgentInstanceSummary {
   agentName: string
   displayName: string
   description: string
+  /**
+   * One-line "use this when…" written for the user. Falls back to
+   * `description` server-side when the agent's metadata doesn't define
+   * it. Surface this on dormant cards + in the type picker so a non-
+   * technical user can decide which agent fits their need.
+   */
+  userPurpose?: string
   category: string
   runs: number
   totalCostUsd: number | null

@@ -76,6 +76,7 @@ export class AdminAgent extends AutonomousAgent<Env, AutonomousAgentState> {
     displayName: 'Platform Admin',
     description:
       'Configures + operates the platform on the user\'s behalf. Lives in #admin space. Every write action queues for approval.',
+    userPurpose: 'Use to configure routines, agents, and connections by chatting in plain English. Every change goes through your approval.',
     category: 'meta' as const,
   }
 

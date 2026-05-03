@@ -118,10 +118,10 @@ export function AgentsPage() {
                       </span>
                     )}
                   </ItemTitle>
-                  <ItemDescription className="line-clamp-2">
+                  <ItemDescription className="line-clamp-3">
                     {inst.dormant
-                      ? inst.description
-                      : (inst.state?.persona.slice(0, 200) ?? inst.description)}
+                      ? (inst.userPurpose ?? inst.description)
+                      : (inst.state?.persona.slice(0, 200) ?? inst.userPurpose ?? inst.description)}
                   </ItemDescription>
                   <div className="mt-2 flex flex-wrap gap-2 text-[10px] text-muted-foreground">
                     {inst.dormant ? (

@@ -57,6 +57,7 @@ export class ResearcherAgent extends AutonomousAgent<Env, AutonomousAgentState> 
     displayName: 'Researcher',
     description:
       'Searches the web, gathers information on a topic, then hands off a brief to the Writer. Use for: market research, competitor scans, "what\'s happening with X" digests.',
+    userPurpose: 'Use to gather context on a topic — searches the web and saves sources to memory before handing off to a writer.',
     category: 'researcher' as const,
   }
 

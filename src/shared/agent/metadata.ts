@@ -36,6 +36,18 @@ export interface AgentMetadata {
   displayName: string
   /** One-line "what does this agent do?" surfaced in pickers + cards. */
   description: string
+  /**
+   * One-line "use this when…" written for the user, not the AI.
+   * Surfaces on dormant agent cards + the type picker so a non-technical
+   * user can decide which agent fits their need without parsing the
+   * persona description.
+   *
+   * Optional — falls back to `description` when missing, but every
+   * shipped agent should set it. Examples:
+   *   - "Use for one-off chats, drafting, and quick lookups."
+   *   - "Use to scan a list of items (tickets, leads) for anything stuck."
+   */
+  userPurpose?: string
   /** Grouping for the picker UI. Pickers may render category sections. */
   category: AgentCategory
   /** Optional Lucide icon name (resolved client-side) — defaults vary

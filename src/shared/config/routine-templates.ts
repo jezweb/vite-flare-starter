@@ -49,24 +49,31 @@ export interface RoutineTemplate {
   sessionEndSkill: string | null
 }
 
+/**
+ * Order matters — first-time users see this list when creating their
+ * first routine. Lead with templates that produce immediate user value
+ * (Morning brief), then concrete examples (YouTube digest), and place
+ * platform-meta tools (Routine health) last so they don't dominate the
+ * first impression for someone who has nothing to monitor yet.
+ */
 export const ROUTINE_TEMPLATES: RoutineTemplate[] = [
   {
-    id: 'routine-health',
-    emoji: '🩺',
-    name: 'Routine health (meta)',
-    tagline: 'Daily watcher that scans every other routine for issues.',
+    id: 'morning-brief',
+    emoji: '☀️',
+    name: 'Morning brief',
+    tagline: 'Pulls inbox + calendar each morning into a focused brief.',
     description:
-      "Daily watcher that scans every other routine for error rates, drift, and runaway cost. Surfaces issues into your Inbox so you don't have to remember to check.",
+      "Each weekday morning, surveys your inbox + calendar and produces a three-paragraph daily focus brief. Runs the morning-brief skill which knows how to weigh urgency vs noise.",
     agentClass: 'AssistantAgent',
-    agentNameSlug: 'routine-health',
+    agentNameSlug: 'morning-brief',
     baseInterval: 24 * 60 * 60,
     adjustMode: 'fixed',
     defaultEnabled: false,
     inputText:
-      'Run a routine health check. Look at the recent runs of all my routines and emit inbox_add findings for any that need attention. Skip if everything is healthy.',
-    skillsLoaded: ['routine-health-check', 'score-importance'],
-    toolsAllowed: ['inbox_add', 'find_tools'],
-    sessionEndSkill: 'route-finding',
+      "It's morning. Run the morning-brief skill against my inbox and calendar for today. Emit one inbox_add finding with the brief.",
+    skillsLoaded: ['morning-brief'],
+    toolsAllowed: ['inbox_add', 'gmail_search', 'calendar_events'],
+    sessionEndSkill: null,
   },
   {
     id: 'youtube-digest',
@@ -87,22 +94,22 @@ export const ROUTINE_TEMPLATES: RoutineTemplate[] = [
     sessionEndSkill: 'route-finding',
   },
   {
-    id: 'morning-brief',
-    emoji: '☀️',
-    name: 'Morning brief',
-    tagline: 'Pulls inbox + calendar each morning into a focused brief.',
+    id: 'routine-health',
+    emoji: '🩺',
+    name: 'Routine health (meta)',
+    tagline: 'Daily watcher that scans every other routine for issues.',
     description:
-      "Each weekday morning, surveys your inbox + calendar and produces a three-paragraph daily focus brief. Runs the morning-brief skill which knows how to weigh urgency vs noise.",
+      "Daily watcher that scans every other routine for error rates, drift, and runaway cost. Surfaces issues into your Inbox so you don't have to remember to check.",
     agentClass: 'AssistantAgent',
-    agentNameSlug: 'morning-brief',
+    agentNameSlug: 'routine-health',
     baseInterval: 24 * 60 * 60,
     adjustMode: 'fixed',
     defaultEnabled: false,
     inputText:
-      "It's morning. Run the morning-brief skill against my inbox and calendar for today. Emit one inbox_add finding with the brief.",
-    skillsLoaded: ['morning-brief'],
-    toolsAllowed: ['inbox_add', 'gmail_search', 'calendar_events'],
-    sessionEndSkill: null,
+      'Run a routine health check. Look at the recent runs of all my routines and emit inbox_add findings for any that need attention. Skip if everything is healthy.',
+    skillsLoaded: ['routine-health-check', 'score-importance'],
+    toolsAllowed: ['inbox_add', 'find_tools'],
+    sessionEndSkill: 'route-finding',
   },
 ]
 

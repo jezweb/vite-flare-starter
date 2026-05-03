@@ -41,6 +41,8 @@ export interface RegisteredAgent {
   className: string
   displayName: string
   description: string
+  /** User-facing "use this when…" — see AgentMetadata.userPurpose. */
+  userPurpose?: string
   category: string
   icon?: string
 }
@@ -61,6 +63,7 @@ export function listRegisteredAgents(): RegisteredAgent[] {
       className,
       displayName: meta.displayName,
       description: meta.description,
+      ...(meta.userPurpose ? { userPurpose: meta.userPurpose } : {}),
       category: meta.category,
       ...(meta.icon ? { icon: meta.icon } : {}),
     })

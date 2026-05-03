@@ -56,6 +56,7 @@ export class AssistantAgent extends AutonomousAgent<Env, AutonomousAgentState> {
     displayName: 'AI assistant',
     description:
       'A general-purpose chat agent with persistent memory + a curated tool catalog. Good default for most routines.',
+    userPurpose: 'Use for one-off chats, drafting, and quick lookups. The default for most routines.',
     category: 'general' as const,
   }
 

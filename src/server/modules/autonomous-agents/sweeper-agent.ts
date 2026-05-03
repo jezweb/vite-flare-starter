@@ -83,6 +83,7 @@ export class SweeperAgent extends AutonomousAgent<Env, SweeperState> {
     displayName: 'Sweeper',
     description:
       'Periodically scans entities (tickets, leads, etc.) for stale items and proposes followup actions. Use for: stuck-ticket sweeps, lead-followup queues, anything "remind me to act on stale X".',
+    userPurpose: 'Use to scan a list of items (tickets, leads, projects) on a schedule and surface anything stuck or overdue.',
     category: 'sweeper' as const,
   }
 

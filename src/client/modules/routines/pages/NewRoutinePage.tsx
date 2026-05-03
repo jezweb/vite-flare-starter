@@ -285,17 +285,29 @@ export function NewRoutinePage() {
                   {p.label}
                 </Button>
               ))}
-              <Input
-                type="number"
-                min={60}
-                max={86400 * 7}
-                value={intervalSeconds}
-                onChange={(e) => setIntervalSeconds(Math.max(60, Number(e.target.value) || 60))}
-                className="w-32 font-mono"
-                aria-label="Custom interval (seconds)"
-              />
-              <span className="text-xs text-muted-foreground">seconds</span>
             </div>
+            {/* Custom seconds is a power-user escape hatch (e.g. "every 7
+                minutes" for a stress test). Hidden behind a disclosure
+                so the simple pill picker is the primary affordance — the
+                seconds input is the same control as the pills, which
+                read as confusing if both compete for attention. */}
+            <details className="group">
+              <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground select-none">
+                Custom interval (seconds)
+              </summary>
+              <div className="mt-2 flex items-center gap-2">
+                <Input
+                  type="number"
+                  min={60}
+                  max={86400 * 7}
+                  value={intervalSeconds}
+                  onChange={(e) => setIntervalSeconds(Math.max(60, Number(e.target.value) || 60))}
+                  className="w-32 font-mono"
+                  aria-label="Custom interval (seconds)"
+                />
+                <span className="text-xs text-muted-foreground">seconds</span>
+              </div>
+            </details>
             <Field id="adjustMode" label="Can the agent change its own cadence?">
               <Select value={adjustMode} onValueChange={(v) => setAdjustMode(v as typeof ADJUST_MODES[number])}>
                 <SelectTrigger id="adjustMode" className="w-full">
@@ -329,7 +341,7 @@ export function NewRoutinePage() {
         {/* 4. Behaviour */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">What should the agent do each fire?</CardTitle>
+            <CardTitle className="text-base">What should the agent do each time it runs?</CardTitle>
             <CardDescription>
               Instructions, skills (markdown procedures), and tools the agent
               can call. All optional — leave blank for sensible defaults.
@@ -341,7 +353,7 @@ export function NewRoutinePage() {
                 id="inputText"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                placeholder='What to tell the agent each fire. e.g. "Look at the entities table for stuck items and emit findings via inbox_add."'
+                placeholder='Tell the agent what you want each time it runs. e.g. "Each morning, summarise unread emails from the past 24 hours into 5 bullet points."'
                 rows={3}
               />
             </Field>

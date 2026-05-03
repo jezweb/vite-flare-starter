@@ -28,16 +28,7 @@ import { RotateCcw, Pencil, Copy, Check, ThumbsUp, ThumbsDown, Sparkles, FileTex
 import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { useBuilderMode } from '@/client/lib/builder-mode'
-
-/**
- * Strip provider prefix + path so `@cf/moonshotai/kimi-k2.6` becomes
- * `kimi-k2.6`. The full id is implementation detail; the friendly tail
- * matches what the model picker shows.
- */
-function formatModelId(id: string): string {
-  const tail = id.split('/').pop() ?? id
-  return tail
-}
+import { formatModelId } from '@/shared/format/agent'
 import { useCopy } from '@/client/lib/use-copy'
 import { cn } from '@/lib/utils'
 

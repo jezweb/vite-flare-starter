@@ -12,6 +12,7 @@
  * (e.g. `researcher-cf-workers` alongside the default `researcher`).
  */
 import { useEffect, useState } from 'react'
+import { AlertTriangle } from 'lucide-react'
 
 import {
   Dialog,
@@ -129,8 +130,17 @@ export function NewAgentDialog({ open, onOpenChange, onCreate }: Props) {
               maxLength={60}
             />
             <FieldDescription>
-              A short identifier for this specific agent. Useful when you have several of the same type (e.g. one researcher for "cf-workers" and another for "startups"). Lowercase letters, numbers, hyphens, underscores. Cannot be renamed later.
+              A short identifier for this specific agent. Useful when you have several of the same type (e.g. one researcher for "cf-workers" and another for "startups"). Lowercase letters, numbers, hyphens, underscores.
             </FieldDescription>
+            {/* Rename is genuinely impossible — the slug is baked into
+                the Durable Object id. Promote that warning out of the
+                paragraph above so it can't be skimmed past. */}
+            <p className="mt-1 inline-flex items-start gap-1.5 text-xs text-amber-700 dark:text-amber-400">
+              <AlertTriangle className="size-3.5 shrink-0 mt-px" />
+              <span>
+                <strong>Pick carefully — this name is permanent.</strong> It identifies your agent across sessions and can't be changed later.
+              </span>
+            </p>
             {slug && !slugValid && (
               <p className="text-xs text-destructive">
                 Name must be 1–60 chars: lowercase letters, numbers, hyphens, underscores.

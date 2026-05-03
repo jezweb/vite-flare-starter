@@ -36,8 +36,9 @@ import {
   useUpdateAgentInstance,
 } from '../hooks/useAgentInstances'
 import { useAgentCatalog } from '@/client/modules/routines/hooks/useAgentCatalog'
-import { formatAgentClass } from '@/shared/format/agent'
+import { formatAgentClass, formatModelId } from '@/shared/format/agent'
 import { useMemo } from 'react'
+import { useBuilderMode } from '@/client/lib/builder-mode'
 
 interface Props {
   agentClass: string | null
@@ -60,6 +61,7 @@ export function AgentEditSheet({ agentClass, agentName, open, onClose }: Props) 
   // than a user-chosen slug. Also hide non-slug-shaped values; only show
   // when the user gave us a real slug.
   const showSlug = agentName ? /^[a-z][a-z0-9-]*$/.test(agentName) : false
+  const { isBuilder } = useBuilderMode()
 
   const [persona, setPersona] = useState('')
   const [modelId, setModelId] = useState('')
@@ -135,7 +137,7 @@ export function AgentEditSheet({ agentClass, agentName, open, onClose }: Props) 
               {data?.state && (
                 <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
                   <div className="rounded border bg-muted/30 px-3 py-2">
-                    <p className="text-muted-foreground">Invocations</p>
+                    <p className="text-muted-foreground" title="Invocations">Times run</p>
                     <p className="font-mono tabular-nums">{data.state.invocations}</p>
                   </div>
                   <div className="rounded border bg-muted/30 px-3 py-2">
@@ -147,11 +149,11 @@ export function AgentEditSheet({ agentClass, agentName, open, onClose }: Props) 
                     </p>
                   </div>
                   <div className="rounded border bg-muted/30 px-3 py-2">
-                    <p className="text-muted-foreground">Memory blocks</p>
+                    <p className="text-muted-foreground" title="Memory blocks">Saved memories</p>
                     <p className="font-mono tabular-nums">{data.state.blockCount}</p>
                   </div>
                   <div className="rounded border bg-muted/30 px-3 py-2">
-                    <p className="text-muted-foreground">History rows</p>
+                    <p className="text-muted-foreground" title="History rows">Past messages</p>
                     <p className="font-mono tabular-nums">{data.state.historyCount}</p>
                   </div>
                 </div>
@@ -163,7 +165,8 @@ export function AgentEditSheet({ agentClass, agentName, open, onClose }: Props) 
                   id="agent-model"
                   value={modelId}
                   onChange={(e) => setModelId(e.target.value)}
-                  className="font-mono text-xs w-full"
+                  className="text-xs w-full"
+                  title={modelId}
                 >
                   {/* Allow the current value even if it's not in our enabled
                       list — covers older agents whose modelId predates a
@@ -175,26 +178,36 @@ export function AgentEditSheet({ agentClass, agentName, open, onClose }: Props) 
                       [...WORKERS_AI_MODELS, ...OPENROUTER_MODELS] as readonly string[]
                     ).includes(modelId) && (
                       <NativeSelectOption value={modelId}>
-                        {modelId} (custom)
+                        {formatModelId(modelId)} (custom)
                       </NativeSelectOption>
                     )}
                   <NativeSelectOptGroup label="Workers AI (free)">
                     {WORKERS_AI_MODELS.map((m) => (
                       <NativeSelectOption key={m} value={m}>
-                        {m}
+                        {formatModelId(m)}
                       </NativeSelectOption>
                     ))}
                   </NativeSelectOptGroup>
                   <NativeSelectOptGroup label="OpenRouter">
                     {OPENROUTER_MODELS.map((m) => (
                       <NativeSelectOption key={m} value={m}>
-                        {m}
+                        {formatModelId(m)}
                       </NativeSelectOption>
                     ))}
                   </NativeSelectOptGroup>
                 </NativeSelect>
                 <FieldDescription>
-                  Pick from the curated list, or paste a custom id via the API. See <a href="https://models.flared.au" target="_blank" rel="noopener noreferrer">models.flared.au</a> for the catalogue.
+                  {isBuilder ? (
+                    <>
+                      Pick from the curated list, or paste a custom id via the API. See{' '}
+                      <a href="https://models.flared.au" target="_blank" rel="noopener noreferrer">
+                        models.flared.au
+                      </a>
+                      {' '}for the catalogue.
+                    </>
+                  ) : (
+                    <>Pick the AI model that handles requests. Free options work out of the box.</>
+                  )}
                 </FieldDescription>
               </Field>
 

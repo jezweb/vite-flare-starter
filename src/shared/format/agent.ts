@@ -128,6 +128,16 @@ export function formatHooks(hooks: string[] | null | undefined): string {
   return `Runs ${hooks.length} skills after each run`
 }
 
+/**
+ * Strip provider prefix + path so `@cf/moonshotai/kimi-k2.6` becomes
+ * `kimi-k2.6`. The full id is implementation detail; the friendly tail
+ * matches what the model picker shows. Keep the full id available via
+ * `title=` on the rendering element.
+ */
+export function formatModelId(id: string): string {
+  return id.split('/').pop() ?? id
+}
+
 function formatNum(n: number): string {
   return Math.round(n) === n ? String(n) : n.toFixed(1)
 }
