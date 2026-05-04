@@ -395,6 +395,7 @@ interface OnboardingState {
     memory: boolean
     chat: boolean
     skill: boolean
+    routine: boolean
   }
 }
 
@@ -411,6 +412,7 @@ const CHECKLIST_ITEMS: ChecklistItem[] = [
   { id: 'memory', label: 'Save a memory the AI should remember', icon: Brain, to: '/dashboard/settings?tab=memory' },
   { id: 'chat', label: 'Send a message in chat', icon: MessageSquare, to: '/dashboard/chat' },
   { id: 'skill', label: 'Try a skill (type /skill-name in chat)', icon: Sparkles, to: '/dashboard/skills' },
+  { id: 'routine', label: 'Schedule your first routine', icon: Repeat, to: '/dashboard/routines' },
 ]
 
 function OnboardingChecklist() {
