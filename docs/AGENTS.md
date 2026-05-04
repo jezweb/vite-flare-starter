@@ -83,7 +83,8 @@ interface AutonomousAgentState {
   into the system prompt under their label. Use for compact long-term
   facts the model should always have in context (user profile, current
   goals, ongoing task notes). Every block costs input tokens on every
-  turn — keep them small.
+  turn — keep them small. **See "Persona conventions" below for the
+  reserved block names.**
 - **Episodic** — recent UIMessage history persisted in agent state,
   sliding-window capped at `maxRecentMessages` (default 30). The agent
   picks up where it left off on the next invocation.
@@ -117,6 +118,57 @@ interface AutonomousAgentState {
       .filter(Boolean)
   }
   ```
+
+### Persona conventions
+
+Five conventional `state.blocks` names render in stable order with
+semantic headings, before any user-defined blocks. Adopted from
+[goanna's](https://github.com/jezweb/goanna) file family
+(SOUL.md / IDENTITY.md / USER.md / MEMORY.md / STYLE.md) so an agent
+written for either system maps cleanly onto the other.
+
+| Block | Purpose | Auto-seeded? |
+|---|---|---|
+| `soul` | Personality, values, vibe — system-prompt warm | No (user-owned) |
+| `identity` | Name, role, what-this-agent-is | Yes — from `static metadata` on first `setOwner()` |
+| `user` | Capped distillation of the steering human (5-10 lines) | No |
+| `memory` | Warm cache of curated essentials (soft cap ~2KB) | No |
+| `style` | Voice, tone, formatting preferences | No |
+
+Render order in the system prompt:
+
+```
+state.persona
+## Soul        (if blocks.soul set)
+## Identity    (if blocks.identity set)
+## User        (if blocks.user set)
+## Memory      (if blocks.memory set)
+## Style       (if blocks.style set)
+## Context blocks
+### <other-block-name>      (any non-conventional blocks, alphabetical)
+<buildExtraInstructions output — skills + dynamic context>
+## Relevant memory          (semantic recall snippets, this turn only)
+```
+
+Empty blocks are skipped. Non-conventional block names continue to
+render under `## Context blocks` alphabetically — fork-users with
+custom names keep their existing behaviour.
+
+```typescript
+// Set conventional blocks
+await agent.setBlock('soul', 'Warm, direct, Australian English. No em dashes.')
+await agent.setBlock('user', 'Jez — solo founder building Jezweb. Prefers terse responses.')
+await agent.setBlock('memory', 'Active project: vite-flare-starter v2.4. Goanna interop in flight.')
+```
+
+The `identity` block is auto-seeded from the agent's `static metadata`
+on first `setOwner()` call — `displayName + description + userPurpose`
+become the initial value. Override any time with `setBlock('identity', ...)`.
+
+`soul` is intentionally NOT auto-seeded. Voice + values are user-owned;
+the platform doesn't impose a personality. Goanna's `boss/SOUL.md` is
+the reference shape — short paragraphs about how the agent talks, what
+it cares about, what it refuses.
 
 ### Decision loop
 

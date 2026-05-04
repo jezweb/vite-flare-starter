@@ -73,6 +73,7 @@ import { pendingApprovals } from '@/server/modules/approvals/db/schema'
 import { agentRuns, type AgentRunTrigger } from '@/server/modules/agent-observability/db/schema'
 import { nullTelemetry } from '@/shared/agent'
 import type { ToolDefinition, AgentContext as CanonicalAgentContext, AgentUser } from '@/shared/agent'
+import type { AgentMetadata } from '@/shared/agent/metadata'
 
 export interface AutonomousAgentEnv {
   AI: Ai
@@ -233,6 +234,79 @@ export interface RunOnceResult {
 
 const DEFAULT_MAX_RECENT_MESSAGES = 30
 const DEFAULT_MAX_STEPS = 5
+
+/**
+ * Conventional persona block names — adopted from goanna's file family
+ * (soul.md / identity.md / style.md / user.md / memory.md). When present
+ * in `state.blocks`, these render in stable order with semantic headings
+ * before any user-defined blocks. Non-conventional blocks render under
+ * `## Context blocks` alphabetically (legacy behaviour preserved).
+ *
+ * Mental model:
+ *   - `soul`     — personality, values, vibe (always-on, system-prompt warm)
+ *   - `identity` — name, role, what-this-agent-is (brief, always-on)
+ *   - `user`     — capped distillation of the steering human (5-10 lines)
+ *   - `memory`   — warm cache of curated essentials (soft cap ~2KB)
+ *   - `style`    — voice, tone, formatting preferences
+ *
+ * A fork-user with a goanna-shaped agent can `setBlock('soul', ...)` etc.
+ * and get the right ordering automatically. Empty blocks are skipped.
+ *
+ * See `docs/AGENTS.md` § "Persona conventions" and goanna's SPEC.md for
+ * the broader rationale.
+ */
+export const CONVENTIONAL_BLOCK_ORDER = [
+  'soul',
+  'identity',
+  'user',
+  'memory',
+  'style',
+] as const
+
+export type ConventionalBlockName = (typeof CONVENTIONAL_BLOCK_ORDER)[number]
+
+const CONVENTIONAL_BLOCK_HEADINGS: Record<ConventionalBlockName, string> = {
+  soul: 'Soul',
+  identity: 'Identity',
+  user: 'User',
+  memory: 'Memory',
+  style: 'Style',
+}
+
+const CONVENTIONAL_BLOCK_SET = new Set<string>(CONVENTIONAL_BLOCK_ORDER)
+
+/**
+ * Render `state.blocks` into ordered system-prompt sections.
+ *
+ * - Conventional blocks render first as top-level `## <Heading>` sections
+ *   in goanna-aligned order (soul → identity → user → memory → style).
+ * - Any non-conventional block names render under `## Context blocks`
+ *   alphabetically (legacy behaviour — preserves existing forks).
+ * - Empty values are skipped silently.
+ *
+ * Pure function — exported separately so it can be unit-tested without
+ * subclassing AutonomousAgent.
+ */
+export function renderPersonaBlocks(blocks: Record<string, string>): string[] {
+  const parts: string[] = []
+  for (const name of CONVENTIONAL_BLOCK_ORDER) {
+    const value = blocks[name]
+    if (!value || value.trim() === '') continue
+    parts.push(`## ${CONVENTIONAL_BLOCK_HEADINGS[name]}\n\n${value.trim()}`)
+  }
+  const customNames = Object.keys(blocks)
+    .filter((n) => !CONVENTIONAL_BLOCK_SET.has(n))
+    .filter((n) => {
+      const v = blocks[n]
+      return typeof v === 'string' && v.trim() !== ''
+    })
+    .sort()
+  if (customNames.length > 0) {
+    const sections = customNames.map((n) => `### ${n}\n${blocks[n]}`)
+    parts.push(['## Context blocks', ...sections].join('\n\n'))
+  }
+  return parts
+}
 
 /** Distinct error type for budget-cap rejections. Routes catch this
  *  to return a 429 (or whatever status code your API uses for "limit
@@ -473,16 +547,33 @@ export abstract class AutonomousAgent<
   /** Bind the owning user. Tool-execute context uses this for
    *  user-scoped operations (Gmail, Calendar, etc). Settable once;
    *  subsequent calls with a different userId throw to prevent
-   *  cross-user contamination. */
+   *  cross-user contamination.
+   *
+   *  Side effect: seeds the conventional `identity` block from the
+   *  agent class's `static metadata` if the block is empty. The user
+   *  can `setBlock('identity', ...)` afterwards to override. `soul` is
+   *  NOT auto-seeded — voice + personality are user-owned. */
   async setOwner(userId: string, name?: string): Promise<void> {
     if (this.state.userId && this.state.userId !== userId) {
       throw new Error(
         `AutonomousAgent owner already set to ${this.state.userId}; refusing to reassign to ${userId}`,
       )
     }
+    const blocks = { ...this.state.blocks }
+    const metadata = (this.constructor as typeof AutonomousAgent & { metadata?: AgentMetadata }).metadata
+    const existingIdentity = blocks['identity']
+    if (metadata && (!existingIdentity || existingIdentity.trim() === '')) {
+      const identityLines = [
+        `Name: ${metadata.displayName}`,
+        `Role: ${metadata.description}`,
+      ]
+      if (metadata.userPurpose) identityLines.push(`Purpose: ${metadata.userPurpose}`)
+      blocks['identity'] = identityLines.join('\n')
+    }
     this.setState({
       ...this.state,
       userId,
+      blocks,
       ...(name !== undefined && { name }),
     })
   }
@@ -1040,20 +1131,23 @@ export abstract class AutonomousAgent<
   // ─── Internals ────────────────────────────────────────────────
 
   /**
-   * Compose the system prompt. Persona always first; blocks rendered
-   * under their label; subclass extras appended; semantic recall
-   * snippets last so they're closest to the conversation context.
+   * Compose the system prompt. Order:
+   *
+   *   1. `state.persona` — the agent's main system prompt (always first)
+   *   2. Conventional blocks — `soul`, `identity`, `user`, `memory`, `style`
+   *      rendered as top-level `## <Heading>` sections in stable order
+   *      (goanna-aligned; see `CONVENTIONAL_BLOCK_ORDER`)
+   *   3. Custom blocks — any other `state.blocks` entries rendered under
+   *      `## Context blocks` alphabetically (legacy shape preserved)
+   *   4. Subclass extras (`buildExtraInstructions`) — skills, dynamic
+   *      context like current date, etc.
+   *   5. Semantic recall snippets — last so they're closest to the
+   *      conversation context
    */
   protected async buildSystemPrompt(override?: string, recall: string[] = []): Promise<string> {
     if (override) return override
     const parts: string[] = [this.state.persona]
-    const blockNames = Object.keys(this.state.blocks).sort()
-    if (blockNames.length > 0) {
-      parts.push('## Context blocks')
-      for (const name of blockNames) {
-        parts.push(`### ${name}\n${this.state.blocks[name]}`)
-      }
-    }
+    parts.push(...renderPersonaBlocks(this.state.blocks))
     const extra = await this.buildExtraInstructions()
     if (extra) parts.push(extra)
     if (recall.length > 0) {
