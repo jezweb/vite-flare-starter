@@ -101,6 +101,24 @@ export const ROUTINE_TEMPLATES: RoutineTemplate[] = [
     sessionEndSkill: 'reflect',
   },
   {
+    id: 'librarian-weekly',
+    emoji: '📚',
+    name: 'Librarian — weekly curation',
+    tagline: 'Cross-pollinates learnings across all your agents into a shared knowledge note.',
+    description:
+      "Adapted from goanna's coaching/curation review. Each Sunday evening, your assistant agent acts as the librarian — reads recent learnings across ALL your agents, identifies cross-cutting patterns, and promotes stable ones into shared knowledge entities (notes prefixed [Librarian]). Posts a weekly digest into your Inbox. Pair with the daily reflection routine for the full goanna pipeline.",
+    agentClass: 'AssistantAgent',
+    agentNameSlug: 'librarian-weekly',
+    baseInterval: 7 * 24 * 60 * 60,
+    adjustMode: 'fixed',
+    defaultEnabled: false,
+    inputText:
+      "Run the librarian-curate skill. Survey learnings across all my agents from the last 7 days. Identify cross-cutting patterns and promote stable ones into shared knowledge entities (entityType note, [Librarian] prefix). Post one weekly digest to my Inbox. End with a 2-3 sentence SessionEnd summary.",
+    skillsLoaded: ['librarian-curate'],
+    toolsAllowed: ['entity_list', 'entity_create', 'inbox_add'],
+    sessionEndSkill: null,
+  },
+  {
     id: 'youtube-digest',
     emoji: '📺',
     name: 'YouTube digest (example)',
