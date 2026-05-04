@@ -52,6 +52,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { ConfigDiffCard } from '@/client/components/ConfigDiffCard'
+import { useBeforeUnload } from '@/client/hooks/useBeforeUnload'
 import {
   useAiEditSkill,
   useApproveProposal,
@@ -140,6 +141,11 @@ export function SkillEditor({ name }: SkillEditorProps) {
   const history = useProposalsForResource('skill', name)
 
   const isDirty = draft !== canonical && draft.trim().length > 0
+  // P4-002 — fire the browser leave-prompt while the user has unsaved
+  // CodeMirror edits. In-app sidebar navigation doesn't trigger this
+  // event, but the visible "Unsaved changes" affordance below the
+  // editor + the modal save flow already carry the in-app case.
+  useBeforeUnload(isDirty)
   // `isPersonal` means the caller owns this row (not the shared bundled
   // default). `isBundled` is used for the render of the source badge.
   const isPersonal = skill?.isPersonal === true
