@@ -281,6 +281,13 @@
       "when": 1777333820242,
       "tag": "20260427235020_connection_profiles",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "6",
+      "when": 1777901153119,
+      "tag": "20260504132553_local_fire_hour",
+      "breakpoints": true
     }
   ]
 }

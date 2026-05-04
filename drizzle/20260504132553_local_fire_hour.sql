@@ -1,0 +1,14 @@
+-- Goanna slice 6: local-hour cadence gate on routines.
+--
+-- Add a nullable `local_fire_hour` (0-23) column. The scheduler, after
+-- finding a routine due via the existing interval check, looks up the
+-- owning user's timezone (via user.preferences.timezone) and skips the
+-- fire when current local hour != local_fire_hour. Null = no gate
+-- (existing behaviour preserved for every routine pre-dating this slice).
+--
+-- Drizzle-kit also reported drift on `user` and `projects` tables (default
+-- value changes from manual SQL migrations 20260428* and 20260429*).
+-- Those recreations are intentionally NOT included here — they are an
+-- unrelated drift cleanup that should land in their own commit. This
+-- migration is scoped to the slice 6 contract: one new column on routines.
+ALTER TABLE `routines` ADD `local_fire_hour` integer;

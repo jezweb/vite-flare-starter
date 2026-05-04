@@ -47,6 +47,12 @@ export interface RoutineTemplate {
   toolsAllowed: string[]
   /** Optional skill to run at SessionEnd to summarise the run. */
   sessionEndSkill: string | null
+  /**
+   * Optional local-hour gate (0-23). When set, the scheduler only fires
+   * this routine when the user's local hour (resolved via their stored
+   * timezone) matches this value. Null/undefined = no gate. Goanna slice 6.
+   */
+  localFireHour?: number | null
 }
 
 /**
@@ -74,6 +80,7 @@ export const ROUTINE_TEMPLATES: RoutineTemplate[] = [
     skillsLoaded: ['morning-brief'],
     toolsAllowed: ['inbox_add', 'gmail_search', 'calendar_events'],
     sessionEndSkill: null,
+    localFireHour: 7,
   },
   {
     id: 'reflect-daily',
@@ -99,6 +106,7 @@ export const ROUTINE_TEMPLATES: RoutineTemplate[] = [
       'search_memory',
     ],
     sessionEndSkill: 'reflect',
+    localFireHour: 22,
   },
   {
     id: 'librarian-weekly',
@@ -117,6 +125,7 @@ export const ROUTINE_TEMPLATES: RoutineTemplate[] = [
     skillsLoaded: ['librarian-curate'],
     toolsAllowed: ['entity_list', 'entity_create', 'inbox_add'],
     sessionEndSkill: null,
+    localFireHour: 18,
   },
   {
     id: 'youtube-digest',

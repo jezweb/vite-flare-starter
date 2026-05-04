@@ -44,6 +44,8 @@ export interface CreateRoutineInput {
   adjustMode?: CadenceAdjustMode
   dailyBudgetUsd?: number | null
   enabled?: boolean
+  /** Local-hour gate (0-23) — see schema docstring. */
+  localFireHour?: number | null
 }
 
 export async function createRoutine(env: DbEnv, input: CreateRoutineInput): Promise<RoutineRow> {
@@ -70,6 +72,7 @@ export async function createRoutine(env: DbEnv, input: CreateRoutineInput): Prom
     effectiveInterval: input.baseInterval ?? null,
     adjustMode: input.adjustMode ?? 'suggested',
     dailyBudgetUsd: input.dailyBudgetUsd ?? null,
+    localFireHour: input.localFireHour ?? null,
     createdAt: now,
     updatedAt: now,
     lastRunAt: null,
@@ -124,6 +127,7 @@ export async function updateRoutine(
   if (patch.adjustMode !== undefined) updates['adjustMode'] = patch.adjustMode
   if (patch.dailyBudgetUsd !== undefined) updates['dailyBudgetUsd'] = patch.dailyBudgetUsd
   if (patch.effectiveInterval !== undefined) updates['effectiveInterval'] = patch.effectiveInterval
+  if (patch.localFireHour !== undefined) updates['localFireHour'] = patch.localFireHour
 
   await db.update(routines).set(updates).where(and(eq(routines.id, id), eq(routines.userId, userId)))
   return getRoutine(env, id, userId)

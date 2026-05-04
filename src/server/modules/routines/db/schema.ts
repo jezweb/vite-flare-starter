@@ -116,6 +116,13 @@ export const routines = sqliteTable(
       .notNull()
       .default('suggested'),
 
+    /** Optional gate: if set (0-23), the routine only fires when the
+     *  user's local hour (resolved via user.preferences.timezone) matches
+     *  this value. Pairs with the cron sweeper — a routine can be "due"
+     *  every tick but only fire once per day at the configured hour. Null
+     *  = no gate (existing behaviour). Goanna slice 6. */
+    localFireHour: integer('local_fire_hour'),
+
     /** Per-routine USD cap. Aggregated from agent_runs.cost_usd over the
      *  rolling 24h window. Null = no cap (falls back to AutonomousAgent's
      *  dailyBudgetUsd if set). */

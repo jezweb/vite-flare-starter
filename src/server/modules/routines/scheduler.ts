@@ -31,6 +31,7 @@ import {
   getRecentRunSummaries,
   formatRunSummaryTail,
 } from './storage'
+import { getUserTimezone, localHourFor } from '@/server/lib/users/timezone'
 
 interface SchedulerEnv {
   DB: D1Database
@@ -80,7 +81,38 @@ export async function processDueRoutines(
   let fired = 0
   let errors = 0
 
+  // Per-user tz cache so we don't re-query for every routine in the
+  // batch when a user owns several local-hour-gated routines.
+  const tzCache = new Map<string, string>()
+
   for (const r of due) {
+    // Local-hour gate (goanna slice 6). When `localFireHour` is null
+    // the routine fires whenever the cron sweeper finds it due —
+    // existing behaviour. When set, we skip this fire (keeping
+    // `lastRunAt` unchanged so the row stays due for the next tick)
+    // unless the user's local hour matches.
+    if (r.localFireHour !== null && r.localFireHour !== undefined) {
+      let tz = tzCache.get(r.userId)
+      if (!tz) {
+        tz = await getUserTimezone(env.DB, r.userId)
+        tzCache.set(r.userId, tz)
+      }
+      const currentHour = localHourFor(tz)
+      if (currentHour !== r.localFireHour) {
+        console.log(
+          JSON.stringify({
+            event: 'routine_skipped_local_hour',
+            routineId: r.id,
+            userId: r.userId,
+            timezone: tz,
+            currentHour,
+            wantedHour: r.localFireHour,
+          }),
+        )
+        continue
+      }
+    }
+
     try {
       await fireRoutine(env, r)
       fired++

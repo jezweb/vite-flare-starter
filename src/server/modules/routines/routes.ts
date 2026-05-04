@@ -51,6 +51,7 @@ const CreateSchema = z.object({
   adjustMode: AdjustModeSchema.optional(),
   dailyBudgetUsd: z.number().positive().nullable().optional(),
   enabled: z.boolean().optional(),
+  localFireHour: z.number().int().min(0).max(23).nullable().optional(),
 })
 
 const PatchSchema = CreateSchema.partial()
@@ -90,6 +91,7 @@ app.post('/', zValidator('json', CreateSchema), async (c) => {
     ...(body['adjustMode'] !== undefined ? { adjustMode: body['adjustMode'] } : {}),
     ...(body['dailyBudgetUsd'] !== undefined ? { dailyBudgetUsd: body['dailyBudgetUsd'] } : {}),
     ...(body['enabled'] !== undefined ? { enabled: body['enabled'] } : {}),
+    ...(body['localFireHour'] !== undefined ? { localFireHour: body['localFireHour'] } : {}),
   })
   return c.json(created, 201)
 })
@@ -167,6 +169,9 @@ app.post('/seed-examples', async (c) => {
         skillsLoaded: tpl.skillsLoaded,
         toolsAllowed: tpl.toolsAllowed,
         ...(tpl.sessionEndSkill ? { hooks: { SessionEnd: tpl.sessionEndSkill } } : {}),
+        ...(tpl.localFireHour !== undefined && tpl.localFireHour !== null
+          ? { localFireHour: tpl.localFireHour }
+          : {}),
       })
       results.push({ name: tpl.name, id: created.id, status: 'created' })
     } catch (err) {
