@@ -1245,7 +1245,7 @@ function EmptyStateBody({
       <h2 className="text-3xl font-semibold tracking-tight">
         What can I help with{userName ? `, ${userName.split(' ')[0]}` : ''}?
       </h2>
-      <p className="text-sm text-muted-foreground/60 -mt-3">
+      <p className="text-sm text-muted-foreground -mt-3">
         Ask anything, drop a file, dictate with the mic, or pick a starter below.
       </p>
       <ChatCapabilityRow />
@@ -1284,7 +1284,7 @@ function ExampleQuestions({ onPick }: { onPick: (text: string) => void }) {
           className="group/chip flex items-start gap-2 rounded-lg border border-border/60 bg-background px-3 py-2.5 text-left text-sm text-muted-foreground transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
         >
           <span className="line-clamp-2 flex-1">{q}</span>
-          <ArrowUpRight className="mt-0.5 size-3.5 shrink-0 text-muted-foreground/50 transition-colors group-hover/chip:text-foreground" aria-hidden />
+          <ArrowUpRight className="mt-0.5 size-3.5 shrink-0 text-muted-foreground/80 transition-colors group-hover/chip:text-foreground" aria-hidden />
         </button>
       ))}
     </div>
