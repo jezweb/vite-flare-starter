@@ -29,6 +29,7 @@ import {
   Clock,
   ArrowUpRight,
   Sparkles,
+  RotateCcw,
 } from 'lucide-react'
 import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
@@ -172,6 +173,29 @@ export function FindingsPage() {
     },
     onError: (err: unknown) => {
       const message = err instanceof Error ? err.message : 'Dismiss failed'
+      toast.error(message)
+    },
+  })
+
+  // P4-008 — reopen a dismissed finding back to its prior status
+  // (open or recurred). Reused by P4-007 for the dismiss-undo flow.
+  const reopenMutation = useMutation({
+    mutationFn: ({
+      findingId,
+      status,
+    }: {
+      findingId: string
+      status?: 'open' | 'recurred'
+    }) =>
+      apiClient.post<{ finding: Finding }>(
+        `/api/findings/${findingId}/reopen`,
+        status ? { status } : {},
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['findings'] })
+    },
+    onError: (err: unknown) => {
+      const message = err instanceof Error ? err.message : 'Reopen failed'
       toast.error(message)
     },
   })
@@ -377,6 +401,33 @@ export function FindingsPage() {
                             </Button>
                           </div>
                         )}
+
+                      {/* P4-008 — dismissed rows offer Reopen so a user
+                          who dismisses by accident isn't trapped. Status
+                          on reopen defaults to 'open' (server side); the
+                          row re-appears on the Open filter. */}
+                      {tab === 'findings' && item.status === 'dismissed' && (
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              reopenMutation.mutate(
+                                { findingId: item.id },
+                                {
+                                  onSuccess: () => {
+                                    toast.success('Finding reopened')
+                                  },
+                                },
+                              )
+                            }
+                            disabled={reopenMutation.isPending}
+                          >
+                            <RotateCcw className="size-3.5" />
+                            Reopen
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </CardContent>

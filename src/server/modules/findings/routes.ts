@@ -14,6 +14,7 @@
  *   GET  /api/findings/:id
  *   POST /api/findings/:id/promote      — refinedBody optional in body
  *   POST /api/findings/:id/dismiss      — { reason? } body
+ *   POST /api/findings/:id/reopen       — restore a dismissed finding to open/recurred
  *   GET  /api/learnings?agent=&limit=
  *   GET  /api/learnings/:id
  */
@@ -277,6 +278,61 @@ findingsApp.post('/:id/dismiss', zValidator('json', DismissBody), async (c) => {
         ...fields,
         ...(reason !== undefined && { dismissedReason: reason }),
       }),
+      updatedAt: Math.floor(Date.now() / 1000),
+    })
+    .where(eq(entities.id, findingId))
+
+  const [row] = await db.select().from(entities).where(eq(entities.id, findingId)).limit(1)
+  return c.json({ finding: row ? serialiseFinding(row) : null })
+})
+
+// ─── Reopen ───────────────────────────────────────────────────────
+
+/**
+ * P4-007 / P4-008 — restore a dismissed finding to open. Optional
+ * `status` lets the undo path snap back to whatever the row was before
+ * dismiss (open or recurred); without it, default to 'open'. The
+ * `dismissedReason` field is dropped on reopen so a fresh dismiss
+ * later doesn't carry stale text.
+ */
+const ReopenBody = z.object({
+  status: z.enum(['open', 'recurred']).optional(),
+})
+
+findingsApp.post('/:id/reopen', zValidator('json', ReopenBody), async (c) => {
+  const userId = c.get('userId')
+  const activeOrg = await getActiveOrg(c)
+  const orgId = activeOrg?.organizationId ?? null
+  const findingId = c.req.param('id')
+  const { status: nextStatus = 'open' } = c.req.valid('json')
+  const db = drizzle(c.env.DB)
+  const orgClause = orgScopeWhere(orgId)
+  const conds = [
+    eq(entities.id, findingId),
+    eq(entities.userId, userId),
+    eq(entities.type, 'finding'),
+  ]
+  if (orgClause) conds.push(orgClause)
+  const [finding] = await db
+    .select()
+    .from(entities)
+    .where(and(...conds))
+    .limit(1)
+  if (!finding) return c.json({ error: 'Finding not found' }, 404)
+  if (finding.status === 'promoted') {
+    return c.json({ error: 'Cannot reopen a promoted finding' }, 409)
+  }
+
+  const fields = parseFields(finding.fields)
+  // Drop dismissedReason on reopen — a stale reason from a prior
+  // dismiss shouldn't haunt the row.
+  const { dismissedReason: _drop, ...nextFields } = fields
+  void _drop
+  await db
+    .update(entities)
+    .set({
+      status: nextStatus,
+      fields: JSON.stringify(nextFields),
       updatedAt: Math.floor(Date.now() / 1000),
     })
     .where(eq(entities.id, findingId))
