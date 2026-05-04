@@ -73,11 +73,29 @@ export async function dispatchMentions(params: {
     .filter((m) => m.kind === 'agent' && m.targetAgentClass && m.targetAgentName)
     .slice(0, PARALLEL_CAP)
 
-  // Phase 3: when no @-mention targeted an agent, evaluate every agent
-  // member in proactive/ambient mode. Cap at 2 classifier calls per
-  // top-level message so a busy room doesn't burn budget.
+  // P2-002 — when no @-mention targeted an agent, fan out to:
+  //   (a) every `always`-mode agent (e.g. AdminAgent in /admin space —
+  //       configured to "Replies to every message")
+  //   (b) every `proactive`/`ambient`-mode agent (Phase 3 classifier path)
+  //
+  // Without (a), spaces like /admin (which seed AdminAgent in 'always'
+  // mode) appeared silent: the user posted a message, no agent reply,
+  // no system message, no error. The audit caught this in P2-002.
   if (agentRefs.length === 0) {
-    if (parentMessageId !== null) return { replyMessageIds } // Phase 3 proactive only fires top-level
+    if (parentMessageId !== null) return { replyMessageIds } // Phase 3 + always only fires top-level
+    // (a) Always agents fire first — they're the "this room has a
+    // dedicated agent" pattern (1:1 chat, AdminAgent, etc).
+    await runAlwaysAgents({
+      env,
+      spaceId,
+      senderUserId,
+      triggerMessageId: params.triggerMessageId,
+      parentMessageId,
+      inputText,
+      broadcastNewMessage,
+      replyMessageIds,
+    })
+    // (b) Proactive/ambient classifier path runs alongside.
     await runProactiveAgents({
       env,
       spaceId,
@@ -254,6 +272,147 @@ export async function dispatchMentions(params: {
   }
 
   return { replyMessageIds }
+}
+
+/**
+ * P2-002 — `always` reply-mode dispatch.
+ *
+ * For agents configured as `replyMode: 'always'`, fire on every
+ * top-level message in the space (no @-mention required, no classifier
+ * gate). This is the pattern for 1:1 chat (single user + single
+ * always-replying agent) and special spaces like /admin which seed
+ * AdminAgent in always mode.
+ *
+ * Cap at 2 always-agents per top-level message so a misconfigured room
+ * with 5 always-agents doesn't fan out 5 LLM calls per send.
+ */
+async function runAlwaysAgents(params: {
+  env: DispatchEnv
+  spaceId: string
+  senderUserId: string
+  triggerMessageId: string
+  parentMessageId: string | null
+  inputText: string
+  broadcastNewMessage: (messageId: string) => Promise<void>
+  replyMessageIds: string[]
+}): Promise<void> {
+  const {
+    env,
+    spaceId,
+    senderUserId,
+    triggerMessageId,
+    parentMessageId,
+    inputText,
+    broadcastNewMessage,
+    replyMessageIds,
+  } = params
+  const ALWAYS_CAP = 2
+  const d = drizzle(env.DB)
+  const candidateRows = await d
+    .select({
+      id: conversationMembers.id,
+      agentClass: conversationMembers.agentClass,
+      agentName: conversationMembers.agentName,
+      replyMode: conversationMembers.replyMode,
+    })
+    .from(conversationMembers)
+    .where(
+      and(
+        eq(conversationMembers.conversationId, spaceId),
+        eq(conversationMembers.kind, 'agent'),
+      ),
+    )
+  const candidates = candidateRows
+    .filter((r) => r.replyMode === 'always')
+    .filter((r) => !!r.agentClass && !!r.agentName)
+    .slice(0, ALWAYS_CAP)
+  if (candidates.length === 0) return
+
+  for (const cand of candidates) {
+    const agentClass = cand.agentClass as string
+    const agentName = cand.agentName as string
+    const namespace = env[agentClass] as DurableObjectNamespace | undefined
+    if (!namespace) {
+      console.error(
+        JSON.stringify({
+          event: 'space_always_dispatch_no_binding',
+          spaceId,
+          agentClass,
+          agentName,
+        }),
+      )
+      continue
+    }
+    const ctxMessages = await loadContextMessages(env.DB, spaceId, parentMessageId)
+    const stub = namespace.get(namespace.idFromName(`space:${spaceId}:${agentName}`)) as unknown as {
+      runOnce: (input: {
+        input: string
+        actingUserId: string
+        contextMessages: UIMessage[]
+        parentMessageId?: string
+        trigger: 'inter_agent'
+      }) => Promise<{ text: string }>
+      setOwner: (userId: string) => Promise<void>
+    }
+    try {
+      await stub.setOwner(senderUserId)
+    } catch {
+      /* already set — fine */
+    }
+    let reply: { text: string }
+    try {
+      reply = await stub.runOnce({
+        input: inputText,
+        actingUserId: senderUserId,
+        contextMessages: ctxMessages,
+        parentMessageId: parentMessageId ?? undefined,
+        trigger: 'inter_agent',
+      })
+    } catch (err) {
+      console.error(
+        JSON.stringify({
+          event: 'space_always_dispatch_failed',
+          spaceId,
+          agentName,
+          error: String(err),
+        }),
+      )
+      continue
+    }
+    if (!reply.text || !reply.text.trim()) continue
+    // Same auto-thread heuristic as the @-mention path.
+    const autoThread =
+      parentMessageId === null && reply.text.length > AUTO_THREAD_CHAR_THRESHOLD
+    const finalParentId = parentMessageId ?? (autoThread ? triggerMessageId : null)
+    const replyId = crypto.randomUUID()
+    const partsJson = JSON.stringify([{ type: 'text', text: reply.text }])
+    const metadataJson = JSON.stringify({
+      senderKind: 'agent',
+      senderAgentClass: agentClass,
+      senderAgentName: agentName,
+      actingUserId: senderUserId,
+      replyMode: 'always',
+    })
+    await d.insert(conversationMessages).values({
+      id: replyId,
+      conversationId: spaceId,
+      role: 'assistant',
+      parts: partsJson,
+      metadata: metadataJson,
+      parentMessageId: finalParentId,
+    })
+    if (finalParentId) {
+      await d
+        .update(conversationMessages)
+        .set({
+          threadCount: sql`${conversationMessages.threadCount} + 1`,
+          lastThreadAt: Math.floor(Date.now() / 1000),
+        })
+        .where(eq(conversationMessages.id, finalParentId))
+    }
+    await broadcastNewMessage(replyId)
+    replyMessageIds.push(replyId)
+  }
 }
 
 /**
