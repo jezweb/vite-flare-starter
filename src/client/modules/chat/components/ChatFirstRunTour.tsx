@@ -4,15 +4,39 @@
  *
  * Anchors `<Popover>` to real DOM elements via `data-tour="..."`
  * attributes. Non-modal — user can dismiss any time. State persists
- * via `user.preferences.tours.chat = 'seen'`.
+ * via `user.preferences.tours.chat = 'seen'` AND a localStorage flag
+ * (`chat-tour-seen`) — the local flag wins immediately on dismiss so
+ * the tour cannot reappear in the gap before the server PATCH lands
+ * (audit P1-001).
  *
  * Render conditionally: ONLY on plain `/dashboard/chat` (not
- * `/dashboard/chat/:id`); ONLY when `tours.chat !== 'seen'`.
+ * `/dashboard/chat/:id`); ONLY when neither persistence layer reports
+ * the tour as seen.
  */
 import { useEffect, useMemo, useState } from 'react'
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
 import { usePreferences, useUpdatePreferences } from '@/client/modules/settings/hooks/useSettings'
+
+const LOCAL_TOUR_SEEN_KEY = 'chat-tour-seen'
+
+function readLocalTourSeen(): boolean {
+  if (typeof window === 'undefined') return false
+  try {
+    return window.localStorage.getItem(LOCAL_TOUR_SEEN_KEY) === 'true'
+  } catch {
+    return false
+  }
+}
+
+function writeLocalTourSeen(): void {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(LOCAL_TOUR_SEEN_KEY, 'true')
+  } catch {
+    /* private browsing — server-side persistence is the fallback */
+  }
+}
 
 interface TourStep {
   id: string
@@ -53,8 +77,12 @@ export function ChatFirstRunTour() {
   const update = useUpdatePreferences()
   const [step, setStep] = useState(0)
   const [open, setOpen] = useState(false)
+  // Read once at mount — a re-read after dismiss isn't useful since
+  // we set this synchronously inside `close()` and also bail via
+  // setOpen(false). New mounts pick up the persisted state.
+  const [localSeen, setLocalSeen] = useState<boolean>(() => readLocalTourSeen())
 
-  const seen = prefs?.tours?.chat === 'seen'
+  const seen = localSeen || prefs?.tours?.chat === 'seen'
 
   useEffect(() => {
     if (isLoading) return
@@ -74,8 +102,16 @@ export function ChatFirstRunTour() {
 
   function close(markSeen: boolean) {
     setOpen(false)
-    if (markSeen && prefs) {
-      update.mutate({ ...prefs, tours: { ...prefs.tours, chat: 'seen' } })
+    if (markSeen) {
+      // Persist locally first — synchronous, immune to network races.
+      writeLocalTourSeen()
+      setLocalSeen(true)
+      // Best-effort server persistence so the dismissal travels with
+      // the user across devices. Failure is non-blocking — the local
+      // flag has already prevented re-display on this device.
+      if (prefs) {
+        update.mutate({ ...prefs, tours: { ...prefs.tours, chat: 'seen' } })
+      }
     }
   }
 
