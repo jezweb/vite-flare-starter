@@ -17,6 +17,18 @@ import { KeyboardShortcuts } from '@/client/components/KeyboardShortcuts'
 import { EmailVerificationBanner } from '@/client/components/EmailVerificationBanner'
 import { NAV_SECTIONS } from '@/shared/config/nav'
 import { appConfig } from '@/shared/config/app'
+import { useEnsureTimezone } from '@/client/modules/settings/hooks/useEnsureTimezone'
+
+/**
+ * Invisible mount — fires browser-timezone auto-detection once per app
+ * load for users who haven't set `preferences.timezone` explicitly.
+ * Lives on every dashboard page via the layout, so the next sign-in
+ * after install populates the field without surfacing a UI prompt.
+ */
+function TimezoneAutoDetect() {
+  useEnsureTimezone()
+  return null
+}
 
 // Fallback title resolver. The PageHeader primitive sets document.title
 // on each page mount via useEffect; this layout-level sync is the safety
@@ -83,6 +95,7 @@ export function DashboardLayout() {
         <CommandPalette />
         <KeyboardShortcuts />
         <DocumentTitleSync />
+        <TimezoneAutoDetect />
         <SidebarInset className="flex h-full min-w-0 flex-col">
           <SiteHeader />
           <EmailVerificationBanner />
