@@ -545,11 +545,21 @@ export default {
     //    Bounded at 5 per tick to keep the cron budget. Each fire records
     //    a routine_runs row + invokes the target agent's DO via setToolsAllowed
     //    (slice 2 contract) + runOnce.
+    //
+    //    Also sweeps stuck `started` runs older than the grace window and
+    //    flips them to 'error' (P2-005 watchdog) so the UI never shows
+    //    "Running" forever for a worker-killed run.
     try {
-      const { processDueRoutines } = await import('./modules/routines/scheduler')
+      const { processDueRoutines, sweepStaleRoutineRuns } = await import(
+        './modules/routines/scheduler'
+      )
       const result = await processDueRoutines(env as unknown as { DB: D1Database; [k: string]: unknown })
       if (result.fired > 0) logs['routinesFired'] = result.fired
       if (result.errors > 0) logs['routinesErrors'] = result.errors
+      const sweep = await sweepStaleRoutineRuns(
+        env as unknown as { DB: D1Database; [k: string]: unknown },
+      )
+      if (sweep.swept > 0) logs['routinesStaleSwept'] = sweep.swept
     } catch (err) {
       logs['routinesError'] = err instanceof Error ? err.message : String(err)
     }

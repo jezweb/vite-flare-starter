@@ -23,8 +23,8 @@
  * timers (e.g. inside a single run, schedule a follow-up step).
  */
 import { drizzle } from 'drizzle-orm/d1'
-import { and, asc, eq, isNull, lte, or, sql } from 'drizzle-orm'
-import { routines, type RoutineOutcome } from './db/schema'
+import { and, asc, eq, isNull, lt, lte, or, sql } from 'drizzle-orm'
+import { routines, routineRuns, type RoutineOutcome } from './db/schema'
 import {
   startRoutineRun,
   finishRoutineRun,
@@ -201,13 +201,30 @@ export async function fireRoutine(env: SchedulerEnv, routine: typeof routines.$i
   // Fire. Outcome is rough — the run audit row in agent_runs holds the
   // detailed cost/tokens/steps; here we just record success/error and
   // produce a 1-paragraph summary for the next-fire tail.
+  //
+  // P2-005 — wrap runOnce in a watchdog. Agent runs that exceed the
+  // Workers wall-time limit (or that loop indefinitely) used to leave
+  // the run stuck at outcome='started' because the promise never
+  // resolved before the worker was killed by `waitUntil`. The
+  // Promise.race with a timeout means we always finalise the run row
+  // with outcome 'error' (timeout in the message), so the UI never
+  // spins forever and observability sees the failure.
+  const RUN_TIMEOUT_MS = 120_000 // 2 min — generous; cron tick is 15min
   let outcome: RoutineOutcome = 'ok'
   let outputSummary: string | null = null
   try {
-    const result = await stub.runOnce({
-      input: composedInput,
-      trigger: 'schedule',
-    })
+    const result = await Promise.race([
+      stub.runOnce({
+        input: composedInput,
+        trigger: 'schedule',
+      }),
+      new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new Error(`routine run exceeded ${RUN_TIMEOUT_MS}ms watchdog`)),
+          RUN_TIMEOUT_MS,
+        ),
+      ),
+    ])
     // Prefer the SessionEnd hook output if the routine configured one.
     // Falls back to the trailing 280 chars of the assistant text — the
     // agent can be coached via a SessionEnd skill to produce a clean
@@ -219,11 +236,75 @@ export async function fireRoutine(env: SchedulerEnv, routine: typeof routines.$i
     outputSummary = `error: ${err instanceof Error ? err.message : String(err)}`.slice(0, 280)
   }
 
-  await finishRoutineRun(env, {
-    runId: run.id,
-    outcome,
-    ...(outputSummary !== null ? { outputSummary } : {}),
-  })
+  // Always finish the run row, even if finishRoutineRun itself throws —
+  // we never want a row stuck at 'started'. If the DB write fails we
+  // log loudly but don't propagate; the worker-kill case below is the
+  // primary failure mode this guards.
+  try {
+    await finishRoutineRun(env, {
+      runId: run.id,
+      outcome,
+      ...(outputSummary !== null ? { outputSummary } : {}),
+    })
+  } catch (err) {
+    console.error(
+      JSON.stringify({
+        event: 'routine_finish_failed',
+        runId: run.id,
+        routineId: routine.id,
+        error: err instanceof Error ? err.message : String(err),
+      }),
+    )
+  }
+}
+
+// ─── Stale-run watchdog (P2-005) ───────────────────────────────────
+
+/**
+ * Sweep routine_runs that are stuck at outcome='started' beyond a grace
+ * window and flip them to 'error' with a descriptive summary. Covers
+ * the case where the worker isolate was killed mid-fire (waitUntil cap,
+ * CPU limit) before fireRoutine reached its watchdog timeout. Without
+ * this, the run row stays at 'started' forever and the UI shows
+ * "Running" indefinitely — a power-user trust killer (P2-005).
+ *
+ * Default grace: 5 minutes. fireRoutine has its own 2-minute internal
+ * watchdog, so anything older than 5 minutes at 'started' is genuinely
+ * abandoned.
+ */
+export async function sweepStaleRoutineRuns(
+  env: SchedulerEnv,
+  options: { graceSeconds?: number; maxPerTick?: number } = {},
+): Promise<{ swept: number }> {
+  const grace = options.graceSeconds ?? 300
+  const max = options.maxPerTick ?? 50
+  const db = drizzle(env.DB)
+  const cutoff = Math.floor(Date.now() / 1000) - grace
+  // Find stuck runs.
+  const stuck = await db
+    .select({ id: routineRuns.id, routineId: routineRuns.routineId })
+    .from(routineRuns)
+    .where(and(eq(routineRuns.outcome, 'started'), lt(routineRuns.startedAt, cutoff)))
+    .limit(max)
+  if (stuck.length === 0) return { swept: 0 }
+  const now = Math.floor(Date.now() / 1000)
+  for (const row of stuck) {
+    await db
+      .update(routineRuns)
+      .set({
+        outcome: 'error',
+        finishedAt: now,
+        outputSummary: `error: run abandoned (>${grace}s at outcome='started' — likely worker isolate killed before completion)`.slice(0, 280),
+      })
+      .where(eq(routineRuns.id, row.id))
+    // Mirror on the routine row so list pages show the right last
+    // outcome.
+    await db
+      .update(routines)
+      .set({ lastOutcome: 'error', updatedAt: now })
+      .where(eq(routines.id, row.routineId))
+  }
+  return { swept: stuck.length }
 }
 
 // ─── Template helpers ───────────────────────────────────────────────
