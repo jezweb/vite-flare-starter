@@ -189,7 +189,7 @@ Page shapes (frontmatter, Gotchas section, `_index.md` threshold, when-to-subfol
 | **UI** | Tailwind v4 + shadcn/ui |
 | **Data fetching** | TanStack Query 5 + apiClient |
 | **Forms** | React Hook Form + Zod |
-| **Testing** | Vitest 4 + @cloudflare/vitest-pool-workers |
+| **Testing** | Vitest 4 + @cloudflare/vitest-pool-workers (unit) · Playwright (e2e killer flows in `tests/e2e/`) |
 
 ---
 
@@ -585,10 +585,11 @@ pnpm db:generate:named "x"  # Generate migration
 pnpm db:migrate:local       # Apply migrations locally
 pnpm db:migrate:remote      # Apply migrations to production
 pnpm models:refresh         # Update AI model catalogue from flared.au
-pnpm test                   # Run tests
+pnpm test                   # Run unit tests (Vitest, runs in Workers pool)
+pnpm test:e2e               # Run Playwright killer-flow tests (live deploy by default)
 pnpm type-check             # Type check
 ```
 
 ---
 
-**Created:** 2025-11-29 · **Updated:** 2026-04-28 · **Author:** Jeremy Dawes (Jezweb)
+**Created:** 2025-11-29 · **Updated:** 2026-05-04 · **Author:** Jeremy Dawes (Jezweb)
