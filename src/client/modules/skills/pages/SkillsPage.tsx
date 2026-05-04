@@ -192,7 +192,7 @@ export function SkillsPage() {
           </div>
 
           {view === 'cards' ? (
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {skills.map((s) => (
                 <SkillCard
                   key={s.id}
@@ -392,7 +392,9 @@ function SkillCard({ skill: s, onSelect, onToggle }: SkillRowProps) {
         </ItemMedia>
         <ItemContent>
           <ItemTitle className="flex-wrap">
-            <span className="truncate">{formatSkillName(s.name)}</span>
+            <span className="truncate" title={formatSkillName(s.name)}>
+              {formatSkillName(s.name)}
+            </span>
             <span className="font-mono text-[10px] text-muted-foreground">
               {formatSkillSlash(s.name)}
             </span>
@@ -440,7 +442,10 @@ function SkillListRow({ skill: s, onSelect, onToggle }: SkillRowProps) {
         <Sparkles className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-1.5">
-            <span className="truncate text-sm font-medium">
+            <span
+              className="truncate text-sm font-medium"
+              title={formatSkillName(s.name)}
+            >
               {formatSkillName(s.name)}
             </span>
             <span className="shrink-0 truncate font-mono text-[10px] text-muted-foreground">
