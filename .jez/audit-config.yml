@@ -35,3 +35,41 @@ allowlist:
         axe rules flag. Aria wiring is correct under the hood; the
         attribute references are valid HTML5 IDs. Tracked upstream:
         https://github.com/radix-ui/primitives/issues/2964
+
+  network:
+    # better-auth probes session on every navigation; 401 on unauth pages is expected
+    - method: GET
+      url_substring: /api/auth/get-session
+      status: 401
+      reason: |
+        better-auth probes session on every navigation. Unauth surfaces
+        return 401 by design — not a finding. Auth pages and the
+        landing page are the main triggers.
+
+    # Spaces / Agents WebSocket upgrade returns 101 not 200
+    - method: GET
+      url_substring: /agents/
+      status: 101
+      reason: WebSocket upgrade. Not an error.
+
+# Overnight-2026-05-04 specific: actions that must NOT be triggered during the
+# audit. The auditor reads these and avoids the corresponding interactions.
+off_limits:
+  - tool:gmail_send
+  - tool:gmail_reply
+  - tool:gmail_draft       # would create a real draft
+  - tool:smtp2go_send      # real outbound mail
+  - tool:slack_post        # real outbound chat
+  - "delete real user data"
+  - "test webhook with prod URL"
+
+# Severity escalation rules — apply to findings during the audit
+escalate:
+  - pattern: "raw script tag survived sanitisation"
+    severity: Critical
+  - pattern: "vertical text stack"
+    severity: High
+  - pattern: "axe critical"
+    severity: High
+  - pattern: "PII in URL or query string"
+    severity: Critical

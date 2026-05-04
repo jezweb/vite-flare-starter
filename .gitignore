@@ -56,5 +56,7 @@ SESSION.md
 .jez/screenshots/
 .jez/screenshots-audit/
 .jez/audit-evidence/
+# audit-state contains test-auth cookies — sensitive even for *@test.audit.local users
+.jez/audit-state/
 .jez/**/*.{mov,mp4,webm}
 worker-configuration.d.ts
