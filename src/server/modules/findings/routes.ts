@@ -41,6 +41,12 @@ function orgScopeWhere(orgId: string | null) {
 
 interface FindingFields {
   body?: string
+  /** Seed-data + agent-tool variants store the pattern split across
+   *  `observation` (what was noticed) + `recommendation` (what to do
+   *  about it). Treated as fallbacks for `body` during promote so a
+   *  click never 400s on findings that pre-date the body convention. */
+  observation?: string
+  recommendation?: string
   category?: string
   tags?: string[]
   agentClass?: string
@@ -177,7 +183,16 @@ findingsApp.post('/:id/promote', zValidator('json', PromoteBody), async (c) => {
   }
 
   const findingFields = parseFields(finding.fields)
-  const body = refinedBody ?? findingFields.body ?? ''
+  // P2-003 — fallback chain handles findings created without an explicit
+  // body (seed data, agent tools that wrote a structured shape with
+  // `observation` + `recommendation` fields, etc). Title is the last
+  // resort so a click never 400s.
+  const body =
+    refinedBody ??
+    findingFields.body ??
+    findingFields.observation ??
+    findingFields.recommendation ??
+    finding.title
   if (!body) return c.json({ error: 'Cannot promote empty finding' }, 400)
   const learningId = crypto.randomUUID()
   const now = Math.floor(Date.now() / 1000)
