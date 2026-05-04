@@ -286,7 +286,15 @@ export function FindingsPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-medium text-sm truncate">
+                        {/* P4-005 — `title` attr exposes the full string on
+                            hover and `aria-label` gives screen readers the
+                            untruncated text. The truncate utility cuts the
+                            visible string at the column edge. */}
+                        <p
+                          className="font-medium text-sm truncate"
+                          title={item.title}
+                          aria-label={item.title}
+                        >
                           {item.title}
                         </p>
                         <Badge variant={statusVariant(item.status)} className="text-xs">
