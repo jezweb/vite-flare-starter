@@ -52,6 +52,7 @@ import testAuthRoutes from './modules/test-auth/routes'
 import webhookAgentsRoutes from './modules/webhook-agents/routes'
 import agentObservabilityRoutes from './modules/agent-observability/routes'
 import entitiesRoutes from './modules/entities/routes'
+import findingsRoutes, { learningsApp as learningsRoutes } from './modules/findings/routes'
 import organizationsRoutes from './modules/organizations/routes'
 import credentialsRoutes from './modules/credentials/routes'
 import spacesRoutes from './modules/spaces/routes'
@@ -308,6 +309,8 @@ app.route('/api/agents', agentsRoutes)
 app.route('/api/webhooks', webhookAgentsRoutes)
 app.route('/api/agent-observability', agentObservabilityRoutes)
 app.route('/api/entities', entitiesRoutes)
+app.route('/api/findings', findingsRoutes)
+app.route('/api/learnings', learningsRoutes)
 app.route('/api/organizations', organizationsRoutes)
 app.route('/api/credentials', credentialsRoutes)
 app.route('/api/webhooks', webhookRoutes)

@@ -46,6 +46,7 @@ import { atlassianDefinitions } from './atlassian'
 import { proposePatchDefinitions } from './propose-patch'
 import { dataDefinitions } from './data'
 import { entityDefinitions } from './entities'
+import { findingsDefinitions } from './findings'
 import { firecrawlDefinitions } from './firecrawl'
 import { channelsDefinitions } from './channels'
 import { collectAvailableTools } from '@/server/lib/ai/tool-adapter'
@@ -92,6 +93,7 @@ export async function buildChatTools(ctx: AgentContext, options: { availableSkil
     ...proposePatchDefinitions,
     ...dataDefinitions,
     ...entityDefinitions,
+    ...findingsDefinitions,
     ...firecrawlDefinitions,
     ...channelsDefinitions,
   ]

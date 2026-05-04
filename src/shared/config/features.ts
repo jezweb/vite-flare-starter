@@ -41,6 +41,16 @@ export const features = {
   /** Activity audit log */
   activity: isEnabled('VITE_FEATURE_ACTIVITY'),
 
+  /**
+   * Findings + learnings — the agent's "I noticed something" + graduation
+   * pipeline (goanna-aligned). Daily reflection routine writes findings
+   * via tools; recurring patterns promote to learnings; weekly librarian
+   * routine cross-pollinates across agents into shared knowledge.
+   * Default ON — disable with VITE_FEATURE_FINDINGS=false if you don't
+   * want the surface visible.
+   */
+  findings: isEnabled('VITE_FEATURE_FINDINGS'),
+
   /** In-app notifications bell */
   notifications: isEnabled('VITE_FEATURE_NOTIFICATIONS'),
 
