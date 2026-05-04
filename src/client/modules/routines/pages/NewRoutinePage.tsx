@@ -33,6 +33,7 @@ import { Link } from 'react-router-dom'
 import { useCreateRoutine } from '../hooks/useRoutines'
 import { AgentPicker, SkillsPicker, SingleSkillPicker, ToolsPicker } from '../components/RoutinePickers'
 import { useSession } from '@/client/lib/auth'
+import { useBeforeUnload } from '@/client/hooks/useBeforeUnload'
 import { deriveInstanceName } from '@/shared/format/agent'
 import {
   ROUTINE_TEMPLATES,
@@ -41,6 +42,53 @@ import {
 } from '@/shared/config/routine-templates'
 
 const ADJUST_MODES = ['suggested', 'direct', 'fixed'] as const
+
+/**
+ * P4-001 — Persist new-routine form state to sessionStorage so a
+ * sidebar click + return doesn't blow away half-typed input. Cleared
+ * after a successful create. Restored on mount before the template
+ * effect fires, so a user with both `?template=` AND a stored draft
+ * gets the draft (their in-progress edits) over the template default.
+ */
+const NEW_ROUTINE_DRAFT_KEY = 'vite-flare:new-routine-draft'
+
+interface NewRoutineDraft {
+  name: string
+  description: string
+  agentClass: string
+  instanceName: string
+  instanceTouched: boolean
+  intervalSeconds: number
+  adjustMode: typeof ADJUST_MODES[number]
+  inputText: string
+  skills: string[]
+  tools: string[]
+  sessionEndSkill: string
+  enabled: boolean
+  pickedTemplate: string | null
+}
+
+function loadDraft(): NewRoutineDraft | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = window.sessionStorage.getItem(NEW_ROUTINE_DRAFT_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object') return null
+    return parsed as NewRoutineDraft
+  } catch {
+    return null
+  }
+}
+
+function clearDraft(): void {
+  if (typeof window === 'undefined') return
+  try {
+    window.sessionStorage.removeItem(NEW_ROUTINE_DRAFT_KEY)
+  } catch {
+    /* sessionStorage unavailable — silent no-op */
+  }
+}
 
 const PRESET_INTERVALS: { label: string; seconds: number }[] = [
   { label: 'Every 15 min', seconds: 15 * 60 },
@@ -59,23 +107,34 @@ export function NewRoutinePage() {
   // against re-application on render — once applied, the form is the
   // user's to edit.
   const templateApplied = useRef(false)
+  // P4-001 — restore-from-sessionStorage runs once on mount BEFORE the
+  // template effect; a stored draft means the user is mid-edit, so it
+  // takes precedence over a re-applied template default.
+  const initialDraft = useRef<NewRoutineDraft | null>(loadDraft())
 
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
-  const [agentClass, setAgentClass] = useState('AssistantAgent')
-  const [instanceName, setInstanceName] = useState('')
-  const [instanceTouched, setInstanceTouched] = useState(false)
-  const [intervalSeconds, setIntervalSeconds] = useState<number>(60 * 60)
-  const [adjustMode, setAdjustMode] = useState<typeof ADJUST_MODES[number]>('suggested')
-  const [inputText, setInputText] = useState('')
-  const [skills, setSkills] = useState<string[]>([])
-  const [tools, setTools] = useState<string[]>([])
-  const [sessionEndSkill, setSessionEndSkill] = useState('')
-  const [enabled, setEnabled] = useState(true)
+  const [name, setName] = useState(initialDraft.current?.name ?? '')
+  const [description, setDescription] = useState(initialDraft.current?.description ?? '')
+  const [agentClass, setAgentClass] = useState(initialDraft.current?.agentClass ?? 'AssistantAgent')
+  const [instanceName, setInstanceName] = useState(initialDraft.current?.instanceName ?? '')
+  const [instanceTouched, setInstanceTouched] = useState(initialDraft.current?.instanceTouched ?? false)
+  const [intervalSeconds, setIntervalSeconds] = useState<number>(initialDraft.current?.intervalSeconds ?? 60 * 60)
+  const [adjustMode, setAdjustMode] = useState<typeof ADJUST_MODES[number]>(
+    initialDraft.current?.adjustMode ?? 'suggested',
+  )
+  const [inputText, setInputText] = useState(initialDraft.current?.inputText ?? '')
+  const [skills, setSkills] = useState<string[]>(initialDraft.current?.skills ?? [])
+  const [tools, setTools] = useState<string[]>(initialDraft.current?.tools ?? [])
+  const [sessionEndSkill, setSessionEndSkill] = useState(initialDraft.current?.sessionEndSkill ?? '')
+  const [enabled, setEnabled] = useState(initialDraft.current?.enabled ?? true)
   const [advancedOpen, setAdvancedOpen] = useState(false)
   // Track which template (if any) seeded the form. Lets us highlight
   // the picked card and show a "starting from {template}" hint.
-  const [pickedTemplate, setPickedTemplate] = useState<string | null>(null)
+  const [pickedTemplate, setPickedTemplate] = useState<string | null>(
+    initialDraft.current?.pickedTemplate ?? null,
+  )
+  // If we restored from a draft, the template effect must skip — the
+  // user's in-flight edits win over the URL's template default.
+  const restoredFromDraft = useRef(initialDraft.current !== null)
 
   /**
    * Pre-fill the form from a template. The user can still edit
@@ -107,6 +166,13 @@ export function NewRoutinePage() {
   useEffect(() => {
     if (templateApplied.current) return
     if (!userId) return
+    // P4-001 — if we restored a draft, the user is mid-edit; don't
+    // overwrite their work with template defaults even if the URL
+    // still says `?template=`. Mark as applied so future renders skip.
+    if (restoredFromDraft.current) {
+      templateApplied.current = true
+      return
+    }
     const tplId = searchParams.get('template')
     if (!tplId) return
     const tpl = ROUTINE_TEMPLATES.find((t) => t.id === tplId)
@@ -117,6 +183,70 @@ export function NewRoutinePage() {
     // needed since we explicitly want a one-shot mount-time effect gated on userId.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, searchParams])
+
+  /**
+   * P4-001 — anything-typed-or-pasted check. If true, persist the draft
+   * to sessionStorage on every change, fire `useBeforeUnload`, and warn
+   * before destructive in-app navigation (Cancel / back).
+   */
+  const isDirty =
+    name.trim().length > 0 ||
+    description.trim().length > 0 ||
+    inputText.trim().length > 0 ||
+    skills.length > 0 ||
+    tools.length > 0 ||
+    sessionEndSkill.trim().length > 0 ||
+    pickedTemplate !== null ||
+    instanceTouched
+
+  // Persist on every meaningful change so a sidebar click + return
+  // restores the in-flight form. Debouncing isn't worth the complexity
+  // — sessionStorage writes are sync and small.
+  useEffect(() => {
+    if (!isDirty) {
+      // No edits → clear any stored draft so a fresh visit starts blank.
+      clearDraft()
+      return
+    }
+    const draft: NewRoutineDraft = {
+      name,
+      description,
+      agentClass,
+      instanceName,
+      instanceTouched,
+      intervalSeconds,
+      adjustMode,
+      inputText,
+      skills,
+      tools,
+      sessionEndSkill,
+      enabled,
+      pickedTemplate,
+    }
+    try {
+      window.sessionStorage.setItem(NEW_ROUTINE_DRAFT_KEY, JSON.stringify(draft))
+    } catch {
+      /* sessionStorage unavailable / quota exceeded — silent no-op */
+    }
+  }, [
+    isDirty,
+    name,
+    description,
+    agentClass,
+    instanceName,
+    instanceTouched,
+    intervalSeconds,
+    adjustMode,
+    inputText,
+    skills,
+    tools,
+    sessionEndSkill,
+    enabled,
+    pickedTemplate,
+  ])
+
+  // Warn on close-tab / hard-reload while dirty.
+  useBeforeUnload(isDirty)
 
   const startFromBlank = () => {
     setName('')
@@ -160,7 +290,22 @@ export function NewRoutinePage() {
       ...(sessionEndSkill.trim() ? { hooks: { SessionEnd: sessionEndSkill.trim() } } : {}),
     }
     const result = await create.mutateAsync(payload)
+    // P4-001 — drop the persisted draft once the routine actually exists;
+    // a follow-up "New routine" should start blank.
+    clearDraft()
     navigate(`/dashboard/routines/${result.id}`)
+  }
+
+  // P4-001 — Cancel discards the draft after a confirm prompt; a bare
+  // navigate would leave the persisted draft and silently restore on
+  // the next visit, which is surprising.
+  const handleCancel = () => {
+    if (isDirty) {
+      const ok = window.confirm('Discard this draft routine?')
+      if (!ok) return
+    }
+    clearDraft()
+    navigate('/dashboard/routines')
   }
 
   return (
@@ -446,7 +591,7 @@ export function NewRoutinePage() {
         </Card>
 
         <div className="flex items-center justify-end gap-2">
-          <Button type="button" variant="ghost" onClick={() => navigate('/dashboard/routines')}>
+          <Button type="button" variant="ghost" onClick={handleCancel}>
             Cancel
           </Button>
           <Button type="submit" disabled={!canSubmit || create.isPending}>
