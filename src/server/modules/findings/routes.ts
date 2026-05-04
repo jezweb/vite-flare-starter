@@ -21,9 +21,23 @@ import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
-import { and, desc, eq } from 'drizzle-orm'
+import { and, desc, eq, isNull, or } from 'drizzle-orm'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
+import { getActiveOrg } from '@/server/modules/organizations/helpers'
 import { entities } from '@/server/modules/entities/db/schema'
+
+/**
+ * Org-scoping visibility filter — same shape as entities/routes.ts.
+ * Findings + learnings are stored as `entities` rows, so they inherit
+ * the same multi-tenant model. NULL `organization_id` rows stay
+ * visible (legacy data) until a deliberate backfill.
+ */
+function orgScopeWhere(orgId: string | null) {
+  if (orgId) {
+    return or(eq(entities.organizationId, orgId), isNull(entities.organizationId))
+  }
+  return isNull(entities.organizationId)
+}
 
 interface FindingFields {
   body?: string
@@ -83,9 +97,13 @@ const ListFindingsQuery = z.object({
 
 findingsApp.get('/', zValidator('query', ListFindingsQuery), async (c) => {
   const userId = c.get('userId')
+  const activeOrg = await getActiveOrg(c)
+  const orgId = activeOrg?.organizationId ?? null
   const { status, agent, category, limit = 100 } = c.req.valid('query')
   const db = drizzle(c.env.DB)
+  const orgClause = orgScopeWhere(orgId)
   const conditions = [eq(entities.userId, userId), eq(entities.type, 'finding')]
+  if (orgClause) conditions.push(orgClause)
   if (status) conditions.push(eq(entities.status, status))
 
   const rows = await db
@@ -112,14 +130,17 @@ findingsApp.get('/', zValidator('query', ListFindingsQuery), async (c) => {
 
 findingsApp.get('/:id', async (c) => {
   const userId = c.get('userId')
+  const activeOrg = await getActiveOrg(c)
+  const orgId = activeOrg?.organizationId ?? null
   const id = c.req.param('id')
   const db = drizzle(c.env.DB)
+  const orgClause = orgScopeWhere(orgId)
+  const conds = [eq(entities.id, id), eq(entities.userId, userId), eq(entities.type, 'finding')]
+  if (orgClause) conds.push(orgClause)
   const [row] = await db
     .select()
     .from(entities)
-    .where(
-      and(eq(entities.id, id), eq(entities.userId, userId), eq(entities.type, 'finding')),
-    )
+    .where(and(...conds))
     .limit(1)
   if (!row) return c.json({ error: 'Finding not found' }, 404)
   return c.json({ finding: serialiseFinding(row) })
@@ -133,19 +154,22 @@ const PromoteBody = z.object({
 
 findingsApp.post('/:id/promote', zValidator('json', PromoteBody), async (c) => {
   const userId = c.get('userId')
+  const activeOrg = await getActiveOrg(c)
+  const orgId = activeOrg?.organizationId ?? null
   const findingId = c.req.param('id')
   const { refinedBody } = c.req.valid('json')
   const db = drizzle(c.env.DB)
+  const orgClause = orgScopeWhere(orgId)
+  const findingConds = [
+    eq(entities.id, findingId),
+    eq(entities.userId, userId),
+    eq(entities.type, 'finding'),
+  ]
+  if (orgClause) findingConds.push(orgClause)
   const [finding] = await db
     .select()
     .from(entities)
-    .where(
-      and(
-        eq(entities.id, findingId),
-        eq(entities.userId, userId),
-        eq(entities.type, 'finding'),
-      ),
-    )
+    .where(and(...findingConds))
     .limit(1)
   if (!finding) return c.json({ error: 'Finding not found' }, 404)
   if (finding.status === 'promoted') {
@@ -169,6 +193,7 @@ findingsApp.post('/:id/promote', zValidator('json', PromoteBody), async (c) => {
   await db.insert(entities).values({
     id: learningId,
     userId,
+    organizationId: finding.organizationId ?? null,
     type: 'learning',
     title: learningTitle,
     status: 'active',
@@ -209,19 +234,22 @@ const DismissBody = z.object({
 
 findingsApp.post('/:id/dismiss', zValidator('json', DismissBody), async (c) => {
   const userId = c.get('userId')
+  const activeOrg = await getActiveOrg(c)
+  const orgId = activeOrg?.organizationId ?? null
   const findingId = c.req.param('id')
   const { reason } = c.req.valid('json')
   const db = drizzle(c.env.DB)
+  const orgClause = orgScopeWhere(orgId)
+  const conds = [
+    eq(entities.id, findingId),
+    eq(entities.userId, userId),
+    eq(entities.type, 'finding'),
+  ]
+  if (orgClause) conds.push(orgClause)
   const [finding] = await db
     .select()
     .from(entities)
-    .where(
-      and(
-        eq(entities.id, findingId),
-        eq(entities.userId, userId),
-        eq(entities.type, 'finding'),
-      ),
-    )
+    .where(and(...conds))
     .limit(1)
   if (!finding) return c.json({ error: 'Finding not found' }, 404)
 
@@ -254,12 +282,17 @@ const ListLearningsQuery = z.object({
 
 learningsApp.get('/', zValidator('query', ListLearningsQuery), async (c) => {
   const userId = c.get('userId')
+  const activeOrg = await getActiveOrg(c)
+  const orgId = activeOrg?.organizationId ?? null
   const { agent, limit = 100 } = c.req.valid('query')
   const db = drizzle(c.env.DB)
+  const orgClause = orgScopeWhere(orgId)
+  const conds = [eq(entities.userId, userId), eq(entities.type, 'learning')]
+  if (orgClause) conds.push(orgClause)
   const rows = await db
     .select()
     .from(entities)
-    .where(and(eq(entities.userId, userId), eq(entities.type, 'learning')))
+    .where(and(...conds))
     .orderBy(desc(entities.updatedAt))
     .limit(limit * 2)
   const serialised = rows.map(serialiseFinding)
@@ -275,14 +308,17 @@ learningsApp.get('/', zValidator('query', ListLearningsQuery), async (c) => {
 
 learningsApp.get('/:id', async (c) => {
   const userId = c.get('userId')
+  const activeOrg = await getActiveOrg(c)
+  const orgId = activeOrg?.organizationId ?? null
   const id = c.req.param('id')
   const db = drizzle(c.env.DB)
+  const orgClause = orgScopeWhere(orgId)
+  const conds = [eq(entities.id, id), eq(entities.userId, userId), eq(entities.type, 'learning')]
+  if (orgClause) conds.push(orgClause)
   const [row] = await db
     .select()
     .from(entities)
-    .where(
-      and(eq(entities.id, id), eq(entities.userId, userId), eq(entities.type, 'learning')),
-    )
+    .where(and(...conds))
     .limit(1)
   if (!row) return c.json({ error: 'Learning not found' }, 404)
   return c.json({ learning: serialiseFinding(row) })

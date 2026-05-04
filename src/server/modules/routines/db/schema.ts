@@ -64,6 +64,12 @@ export const routines = sqliteTable(
     userId: text('user_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
+    /** Optional organisation scoping. NULL = personal routine (default —
+     *  preserves visibility for routines created before multi-tenant
+     *  isolation shipped). When set, the routine belongs to an org and
+     *  list/get queries also accept the org context.
+     *  See entities schema docstring — same pattern. */
+    organizationId: text('organization_id'),
 
     /** Friendly identifier shown in UI. e.g. "Stuck-tickets sweeper". */
     name: text('name').notNull(),
@@ -142,6 +148,7 @@ export const routines = sqliteTable(
     index('routines_user_id_idx').on(table.userId),
     index('routines_enabled_idx').on(table.enabled),
     index('routines_trigger_kind_idx').on(table.triggerKind),
+    index('routines_org_idx').on(table.organizationId),
   ],
 )
 

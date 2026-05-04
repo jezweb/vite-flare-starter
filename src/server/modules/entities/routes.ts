@@ -20,9 +20,25 @@ import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
-import { and, desc, eq, like, or, sql } from 'drizzle-orm'
+import { and, desc, eq, isNull, like, or, sql } from 'drizzle-orm'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
+import { getActiveOrg } from '@/server/modules/organizations/helpers'
 import { entities } from './db/schema'
+
+/**
+ * Org-scoping visibility filter. When `orgId` is set, the user sees
+ * entities in that org PLUS legacy entities with no org (so existing
+ * pre-multi-tenant data stays visible to its owner). When `orgId` is
+ * null (no active org), only personal entities (org IS NULL) are
+ * visible. A backfill is a separate decision — keep this filter
+ * additive so it can't accidentally hide rows.
+ */
+function orgScopeWhere(orgId: string | null) {
+  if (orgId) {
+    return or(eq(entities.organizationId, orgId), isNull(entities.organizationId))
+  }
+  return isNull(entities.organizationId)
+}
 
 const app = new Hono<AuthContext>()
 app.use('*', authMiddleware)
@@ -41,9 +57,14 @@ const ListSchema = z.object({
 
 app.get('/', zValidator('query', ListSchema), async (c) => {
   const userId = c.get('userId')
+  const activeOrg = await getActiveOrg(c)
+  const orgId = activeOrg?.organizationId ?? null
   const { type, status, assignee, q, limit = 100 } = c.req.valid('query')
   const db = drizzle(c.env.DB)
-  const conditions = [eq(entities.userId, userId)]
+  const orgClause = orgScopeWhere(orgId)
+  const conditions = orgClause
+    ? [eq(entities.userId, userId), orgClause]
+    : [eq(entities.userId, userId)]
   if (type) conditions.push(eq(entities.type, type))
   if (status) conditions.push(eq(entities.status, status))
   if (assignee) conditions.push(eq(entities.assigneeId, assignee))
@@ -80,12 +101,15 @@ const CreateSchema = z.object({
 
 app.post('/', zValidator('json', CreateSchema), async (c) => {
   const userId = c.get('userId')
+  const activeOrg = await getActiveOrg(c)
+  const orgId = activeOrg?.organizationId ?? null
   const body = c.req.valid('json')
   const id = crypto.randomUUID()
   const db = drizzle(c.env.DB)
   await db.insert(entities).values({
     id,
     userId,
+    organizationId: orgId,
     type: body.type,
     title: body.title,
     ...(body.status !== undefined && { status: body.status }),
@@ -102,7 +126,9 @@ app.post('/', zValidator('json', CreateSchema), async (c) => {
 app.get('/:id', async (c) => {
   const id = c.req.param('id')
   const userId = c.get('userId')
-  const row = await loadOwned(c.env.DB, userId, id)
+  const activeOrg = await getActiveOrg(c)
+  const orgId = activeOrg?.organizationId ?? null
+  const row = await loadOwned(c.env.DB, userId, id, orgId)
   if (!row) return c.json({ error: 'Not found' }, 404)
   return c.json(serialiseEntity(row))
 })
@@ -125,8 +151,10 @@ const UpdateSchema = z.object({
 app.patch('/:id', zValidator('json', UpdateSchema), async (c) => {
   const id = c.req.param('id')
   const userId = c.get('userId')
+  const activeOrg = await getActiveOrg(c)
+  const orgId = activeOrg?.organizationId ?? null
   const body = c.req.valid('json')
-  const existing = await loadOwned(c.env.DB, userId, id)
+  const existing = await loadOwned(c.env.DB, userId, id, orgId)
   if (!existing) return c.json({ error: 'Not found' }, 404)
 
   const db = drizzle(c.env.DB)
@@ -163,10 +191,12 @@ app.patch('/:id', zValidator('json', UpdateSchema), async (c) => {
 app.delete('/:id', async (c) => {
   const id = c.req.param('id')
   const userId = c.get('userId')
+  const activeOrg = await getActiveOrg(c)
+  const orgId = activeOrg?.organizationId ?? null
   const db = drizzle(c.env.DB)
   // SQLite delete with conditions: if no row matches, no error.
   // We pre-check so the response can be a clean 404.
-  const existing = await loadOwned(c.env.DB, userId, id)
+  const existing = await loadOwned(c.env.DB, userId, id, orgId)
   if (!existing) return c.json({ error: 'Not found' }, 404)
   await db.delete(entities).where(and(eq(entities.id, id), eq(entities.userId, userId)))
   return c.json({ success: true, id })
@@ -176,28 +206,43 @@ app.delete('/:id', async (c) => {
 
 app.get('/stats/by-type/:type', async (c) => {
   const userId = c.get('userId')
+  const activeOrg = await getActiveOrg(c)
+  const orgId = activeOrg?.organizationId ?? null
   const type = c.req.param('type')
   if (!NAME_RE.test(type)) return c.json({ error: 'Invalid type' }, 400)
   const db = drizzle(c.env.DB)
+  const orgClause = orgScopeWhere(orgId)
+  const conditions = orgClause
+    ? [eq(entities.userId, userId), eq(entities.type, type), orgClause]
+    : [eq(entities.userId, userId), eq(entities.type, type)]
   const rows = await db
     .select({
       status: entities.status,
       count: sql<number>`COUNT(*)`,
     })
     .from(entities)
-    .where(and(eq(entities.userId, userId), eq(entities.type, type)))
+    .where(and(...conditions))
     .groupBy(entities.status)
   return c.json({ type, byStatus: rows })
 })
 
 // ─── Helpers ──────────────────────────────────────────────────────
 
-async function loadOwned(dbBinding: D1Database, userId: string, id: string) {
+async function loadOwned(
+  dbBinding: D1Database,
+  userId: string,
+  id: string,
+  orgId: string | null = null,
+) {
   const db = drizzle(dbBinding)
+  const orgClause = orgScopeWhere(orgId)
+  const conditions = orgClause
+    ? [eq(entities.id, id), eq(entities.userId, userId), orgClause]
+    : [eq(entities.id, id), eq(entities.userId, userId)]
   const [row] = await db
     .select()
     .from(entities)
-    .where(and(eq(entities.id, id), eq(entities.userId, userId)))
+    .where(and(...conditions))
     .limit(1)
   return row ?? null
 }

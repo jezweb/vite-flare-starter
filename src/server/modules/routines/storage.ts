@@ -7,7 +7,7 @@
  * primitives so it stays unit-testable with a stubbed D1.
  */
 import { drizzle } from 'drizzle-orm/d1'
-import { and, desc, eq } from 'drizzle-orm'
+import { and, desc, eq, isNull, or } from 'drizzle-orm'
 import {
   routines,
   routineRuns,
@@ -28,6 +28,10 @@ interface DbEnv {
 
 export interface CreateRoutineInput {
   userId: string
+  /** Optional org scope at create time. NULL = personal routine.
+   *  When the request happens inside an active organisation context
+   *  the route handler stamps this from `getActiveOrg(c)`. */
+  organizationId?: string | null
   name: string
   description?: string
   agentClass: string
@@ -55,6 +59,7 @@ export async function createRoutine(env: DbEnv, input: CreateRoutineInput): Prom
   const row = {
     id,
     userId: input.userId,
+    organizationId: input.organizationId ?? null,
     name: input.name,
     description: input.description ?? null,
     agentClass: input.agentClass,
@@ -84,22 +89,46 @@ export async function createRoutine(env: DbEnv, input: CreateRoutineInput): Prom
   return inserted
 }
 
-export async function getRoutine(env: DbEnv, id: string, userId: string): Promise<RoutineRow | null> {
+/**
+ * Org-scoping helper. When `orgId` is provided, the visibility filter is:
+ *   organizationId = orgId  OR  organizationId IS NULL
+ * The IS-NULL clause keeps pre-multi-tenant rows visible to their owner
+ * across orgs until a deliberate backfill is performed. When `orgId` is
+ * null (no active org), the filter is `organizationId IS NULL` — the
+ * user only sees their personal routines.
+ */
+function orgScopeWhere(orgId: string | null) {
+  if (orgId) {
+    return or(eq(routines.organizationId, orgId), isNull(routines.organizationId))
+  }
+  return isNull(routines.organizationId)
+}
+
+export async function getRoutine(
+  env: DbEnv,
+  id: string,
+  userId: string,
+  orgId: string | null = null,
+): Promise<RoutineRow | null> {
   const db = drizzle(env.DB)
   const [row] = await db
     .select()
     .from(routines)
-    .where(and(eq(routines.id, id), eq(routines.userId, userId)))
+    .where(and(eq(routines.id, id), eq(routines.userId, userId), orgScopeWhere(orgId)))
     .limit(1)
   return row ?? null
 }
 
-export async function listRoutines(env: DbEnv, userId: string): Promise<RoutineRow[]> {
+export async function listRoutines(
+  env: DbEnv,
+  userId: string,
+  orgId: string | null = null,
+): Promise<RoutineRow[]> {
   const db = drizzle(env.DB)
   return db
     .select()
     .from(routines)
-    .where(eq(routines.userId, userId))
+    .where(and(eq(routines.userId, userId), orgScopeWhere(orgId)))
     .orderBy(desc(routines.updatedAt))
 }
 
@@ -108,6 +137,7 @@ export async function updateRoutine(
   id: string,
   userId: string,
   patch: Partial<CreateRoutineInput> & { effectiveInterval?: number },
+  orgId: string | null = null,
 ): Promise<RoutineRow | null> {
   const db = drizzle(env.DB)
   // Only update fields that are explicitly present in the patch.
@@ -129,15 +159,23 @@ export async function updateRoutine(
   if (patch.effectiveInterval !== undefined) updates['effectiveInterval'] = patch.effectiveInterval
   if (patch.localFireHour !== undefined) updates['localFireHour'] = patch.localFireHour
 
-  await db.update(routines).set(updates).where(and(eq(routines.id, id), eq(routines.userId, userId)))
-  return getRoutine(env, id, userId)
+  await db
+    .update(routines)
+    .set(updates)
+    .where(and(eq(routines.id, id), eq(routines.userId, userId), orgScopeWhere(orgId)))
+  return getRoutine(env, id, userId, orgId)
 }
 
-export async function deleteRoutine(env: DbEnv, id: string, userId: string): Promise<boolean> {
+export async function deleteRoutine(
+  env: DbEnv,
+  id: string,
+  userId: string,
+  orgId: string | null = null,
+): Promise<boolean> {
   const db = drizzle(env.DB)
   const result = await db
     .delete(routines)
-    .where(and(eq(routines.id, id), eq(routines.userId, userId)))
+    .where(and(eq(routines.id, id), eq(routines.userId, userId), orgScopeWhere(orgId)))
   // D1 returns { meta: { changes } } on delete; on miss meta.changes = 0.
   // Drizzle hides this; assume success unless thrown.
   return !!result

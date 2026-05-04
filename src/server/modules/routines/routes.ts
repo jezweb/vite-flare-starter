@@ -19,6 +19,7 @@ import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
 import { and, desc, eq } from 'drizzle-orm'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
+import { getActiveOrg } from '@/server/modules/organizations/helpers'
 import {
   createRoutine,
   getRoutine,
@@ -66,15 +67,20 @@ app.use('*', authMiddleware)
 
 app.get('/', async (c) => {
   const userId = c.get('userId')
-  const rows = await listRoutines(c.env, userId)
+  const activeOrg = await getActiveOrg(c)
+  const orgId = activeOrg?.organizationId ?? null
+  const rows = await listRoutines(c.env, userId, orgId)
   return c.json({ total: rows.length, routines: rows })
 })
 
 app.post('/', zValidator('json', CreateSchema), async (c) => {
   const userId = c.get('userId')
+  const activeOrg = await getActiveOrg(c)
+  const orgId = activeOrg?.organizationId ?? null
   const body = c.req.valid('json')
   const created = await createRoutine(c.env, {
     userId,
+    organizationId: orgId,
     name: body['name'],
     ...(body['description'] !== undefined ? { description: body['description'] } : {}),
     agentClass: body['agentClass'],
@@ -98,32 +104,40 @@ app.post('/', zValidator('json', CreateSchema), async (c) => {
 
 app.get('/:id', async (c) => {
   const userId = c.get('userId')
-  const r = await getRoutine(c.env, c.req.param('id'), userId)
+  const activeOrg = await getActiveOrg(c)
+  const orgId = activeOrg?.organizationId ?? null
+  const r = await getRoutine(c.env, c.req.param('id'), userId, orgId)
   if (!r) return c.json({ error: 'Not found' }, 404)
   return c.json(r)
 })
 
 app.patch('/:id', zValidator('json', PatchSchema), async (c) => {
   const userId = c.get('userId')
+  const activeOrg = await getActiveOrg(c)
+  const orgId = activeOrg?.organizationId ?? null
   const patch = c.req.valid('json')
-  const updated = await updateRoutine(c.env, c.req.param('id'), userId, patch)
+  const updated = await updateRoutine(c.env, c.req.param('id'), userId, patch, orgId)
   if (!updated) return c.json({ error: 'Not found' }, 404)
   return c.json(updated)
 })
 
 app.delete('/:id', async (c) => {
   const userId = c.get('userId')
+  const activeOrg = await getActiveOrg(c)
+  const orgId = activeOrg?.organizationId ?? null
   // Verify ownership before delete (DB rule already enforces, but a
   // 404 is friendlier than silent success on someone else's id).
-  const existing = await getRoutine(c.env, c.req.param('id'), userId)
+  const existing = await getRoutine(c.env, c.req.param('id'), userId, orgId)
   if (!existing) return c.json({ error: 'Not found' }, 404)
-  await deleteRoutine(c.env, c.req.param('id'), userId)
+  await deleteRoutine(c.env, c.req.param('id'), userId, orgId)
   return c.json({ deleted: true })
 })
 
 app.post('/:id/fire', async (c) => {
   const userId = c.get('userId')
-  const r = await getRoutine(c.env, c.req.param('id'), userId)
+  const activeOrg = await getActiveOrg(c)
+  const orgId = activeOrg?.organizationId ?? null
+  const r = await getRoutine(c.env, c.req.param('id'), userId, orgId)
   if (!r) return c.json({ error: 'Not found' }, 404)
   // Fire async — return immediately so the UI can poll runs.
   c.executionCtx.waitUntil(
@@ -136,8 +150,10 @@ app.post('/:id/fire', async (c) => {
 
 app.get('/:id/runs', async (c) => {
   const userId = c.get('userId')
+  const activeOrg = await getActiveOrg(c)
+  const orgId = activeOrg?.organizationId ?? null
   const id = c.req.param('id')
-  const r = await getRoutine(c.env, id, userId)
+  const r = await getRoutine(c.env, id, userId, orgId)
   if (!r) return c.json({ error: 'Not found' }, 404)
   const limit = Math.min(Number(c.req.query('limit') ?? 50), 200)
   const db = drizzle(c.env.DB)
@@ -152,11 +168,14 @@ app.get('/:id/runs', async (c) => {
 
 app.post('/seed-examples', async (c) => {
   const userId = c.get('userId')
+  const activeOrg = await getActiveOrg(c)
+  const orgId = activeOrg?.organizationId ?? null
   const results = []
   for (const tpl of ROUTINE_TEMPLATES) {
     try {
       const created = await createRoutine(c.env, {
         userId,
+        organizationId: orgId,
         name: tpl.name,
         description: tpl.description,
         agentClass: tpl.agentClass,
@@ -187,8 +206,10 @@ app.post('/seed-examples', async (c) => {
 
 app.post('/:id/cadence', zValidator('json', CadenceSchema), async (c) => {
   const userId = c.get('userId')
+  const activeOrg = await getActiveOrg(c)
+  const orgId = activeOrg?.organizationId ?? null
   const id = c.req.param('id')
-  const r = await getRoutine(c.env, id, userId)
+  const r = await getRoutine(c.env, id, userId, orgId)
   if (!r) return c.json({ error: 'Not found' }, 404)
   const { proposedSeconds, reason } = c.req.valid('json')
   const result = await adjustRoutineCadence(c.env, {
