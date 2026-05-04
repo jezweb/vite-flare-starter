@@ -76,6 +76,31 @@ export const ROUTINE_TEMPLATES: RoutineTemplate[] = [
     sessionEndSkill: null,
   },
   {
+    id: 'reflect-daily',
+    emoji: '🪞',
+    name: 'Daily reflection',
+    tagline: 'Each evening, distil the day into findings + a 1-paragraph summary.',
+    description:
+      "Adapted from goanna's reflect cycle. At the end of each day, your assistant agent surveys the day's agent_runs and recent findings, decides which patterns to promote / dismiss / leave open, files anything new it noticed, and writes a one-paragraph summary. Builds a wiki of patterns over time without you having to remember to journal.",
+    agentClass: 'AssistantAgent',
+    agentNameSlug: 'reflect-daily',
+    baseInterval: 24 * 60 * 60,
+    adjustMode: 'fixed',
+    defaultEnabled: false,
+    inputText:
+      "Run the reflect skill. Survey my recent agent_runs (last 24h) and findings (last 7 days), decide what graduates / dismisses / stays open, and file anything new you noticed today. End with a one-paragraph summary as the SessionEnd output.",
+    skillsLoaded: ['reflect'],
+    toolsAllowed: [
+      'record_finding',
+      'promote_finding',
+      'dismiss_finding',
+      'entity_list',
+      'recall',
+      'search_memory',
+    ],
+    sessionEndSkill: 'reflect',
+  },
+  {
     id: 'youtube-digest',
     emoji: '📺',
     name: 'YouTube digest (example)',

@@ -13,8 +13,8 @@
  * name is auto-derived from the routine name; users only edit it from
  * the Advanced disclosure.
  */
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, ChevronDown, ChevronRight, Sparkles } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
@@ -51,9 +51,14 @@ const PRESET_INTERVALS: { label: string; seconds: number }[] = [
 
 export function NewRoutinePage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const create = useCreateRoutine()
   const { data: session } = useSession()
   const userId = session?.user?.id
+  // One-shot pre-fill from `?template=<id>` query param. The ref guards
+  // against re-application on render — once applied, the form is the
+  // user's to edit.
+  const templateApplied = useRef(false)
 
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -96,6 +101,22 @@ export function NewRoutinePage() {
     }
     setPickedTemplate(tpl.id)
   }
+
+  // Apply ?template=<id> on mount — wait for userId so resolveAgentName
+  // gets the suffix right. Effect fires once via the ref guard.
+  useEffect(() => {
+    if (templateApplied.current) return
+    if (!userId) return
+    const tplId = searchParams.get('template')
+    if (!tplId) return
+    const tpl = ROUTINE_TEMPLATES.find((t) => t.id === tplId)
+    if (!tpl) return
+    applyTemplate(tpl)
+    templateApplied.current = true
+    // applyTemplate is referentially stable in the closure; no exhaustive-deps
+    // needed since we explicitly want a one-shot mount-time effect gated on userId.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, searchParams])
 
   const startFromBlank = () => {
     setName('')

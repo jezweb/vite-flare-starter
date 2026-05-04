@@ -238,7 +238,7 @@ export function FindingsPage() {
               ? {
                   label: 'Set up daily reflection',
                   onClick: () => {
-                    window.location.href = '/dashboard/routines/new?skill=reflect'
+                    window.location.href = '/dashboard/routines/new?template=reflect-daily'
                   },
                 }
               : undefined
