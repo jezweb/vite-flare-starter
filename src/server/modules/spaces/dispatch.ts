@@ -62,7 +62,6 @@ export async function dispatchMentions(params: {
   const { env, spaceId, senderUserId, parentMessageId, mentions, inputText, broadcastNewMessage } =
     params
   const replyMessageIds: string[] = []
-  if (mentions.length === 0) return { replyMessageIds }
 
   // Phase 2: cap parallel agent dispatch at 3 mentions per message.
   // Beyond that we silently drop — the spec is "don't fan out a
@@ -72,6 +71,15 @@ export async function dispatchMentions(params: {
   const agentRefs = mentions
     .filter((m) => m.kind === 'agent' && m.targetAgentClass && m.targetAgentName)
     .slice(0, PARALLEL_CAP)
+  console.log(
+    JSON.stringify({
+      event: 'space_dispatch_entry',
+      spaceId,
+      mentionCount: mentions.length,
+      agentMentionCount: agentRefs.length,
+      parentMessageId,
+    }),
+  )
 
   // P2-002 — when no @-mention targeted an agent, fan out to:
   //   (a) every `always`-mode agent (e.g. AdminAgent in /admin space —
@@ -326,19 +334,38 @@ async function runAlwaysAgents(params: {
     .filter((r) => r.replyMode === 'always')
     .filter((r) => !!r.agentClass && !!r.agentName)
     .slice(0, ALWAYS_CAP)
+  console.log(
+    JSON.stringify({
+      event: 'always_dispatch_entry',
+      spaceId,
+      totalAgentMembers: candidateRows.length,
+      alwaysCandidates: candidates.length,
+      replyModes: candidateRows.map((r) => r.replyMode),
+    }),
+  )
   if (candidates.length === 0) return
 
   for (const cand of candidates) {
     const agentClass = cand.agentClass as string
     const agentName = cand.agentName as string
+    console.log(
+      JSON.stringify({
+        event: 'always_dispatch_member',
+        spaceId,
+        agentClass,
+        agentName,
+        replyMode: cand.replyMode,
+      }),
+    )
     const namespace = env[agentClass] as DurableObjectNamespace | undefined
     if (!namespace) {
       console.error(
         JSON.stringify({
-          event: 'space_always_dispatch_no_binding',
+          event: 'always_dispatch_no_binding',
           spaceId,
           agentClass,
           agentName,
+          envKeys: Object.keys(env).filter((k) => /Agent$/.test(k)),
         }),
       )
       continue
@@ -359,6 +386,16 @@ async function runAlwaysAgents(params: {
     } catch {
       /* already set — fine */
     }
+    console.log(
+      JSON.stringify({
+        event: 'always_dispatch_invoke',
+        spaceId,
+        agentClass,
+        agentName,
+        inputLen: inputText.length,
+        ctxMessages: ctxMessages.length,
+      }),
+    )
     let reply: { text: string }
     try {
       reply = await stub.runOnce({
@@ -371,14 +408,25 @@ async function runAlwaysAgents(params: {
     } catch (err) {
       console.error(
         JSON.stringify({
-          event: 'space_always_dispatch_failed',
+          event: 'always_dispatch_failed',
           spaceId,
+          agentClass,
           agentName,
           error: String(err),
+          stack: err instanceof Error ? err.stack?.slice(0, 500) : undefined,
         }),
       )
       continue
     }
+    console.log(
+      JSON.stringify({
+        event: 'always_dispatch_complete',
+        spaceId,
+        agentClass,
+        agentName,
+        replyLen: reply.text?.length ?? 0,
+      }),
+    )
     if (!reply.text || !reply.text.trim()) continue
     // Same auto-thread heuristic as the @-mention path.
     const autoThread =

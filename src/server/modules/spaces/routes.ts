@@ -353,33 +353,53 @@ app.post('/:id/messages', zValidator('json', SendMessageSchema), async (c) => {
   }
   await broadcastNewMessage(messageId)
 
-  // Parse @-mentions and dispatch to agents.
+  // Parse @-mentions and dispatch to agents. Even when there are no
+  // @-mentions, we still call into the dispatcher for top-level
+  // messages — the dispatcher fans out to `always` / `proactive` /
+  // `ambient` agent members. P2-002: without this call, spaces seeded
+  // with always-mode agents (e.g. AdminAgent in /admin) appeared
+  // silent because the route guarded on `mentions.length > 0`.
   const mentions = await parseMentions(c.env.DB, id, body.parts)
+  const isTopLevel = !body.parentMessageId
+  const inputText = body.parts
+    .map((p) => (typeof (p as { text?: string }).text === 'string' ? (p as { text: string }).text : ''))
+    .filter(Boolean)
+    .join('\n')
+    .trim()
   let dispatchResult: { replyMessageIds: string[] } = { replyMessageIds: [] }
-  if (mentions.length > 0) {
-    const inputText = body.parts
-      .map((p) => (typeof (p as { text?: string }).text === 'string' ? (p as { text: string }).text : ''))
-      .filter(Boolean)
-      .join('\n')
-      .trim()
-    if (inputText) {
-      try {
-        dispatchResult = await dispatchMentions({
-          env: env as unknown as Parameters<typeof dispatchMentions>[0]['env'],
-          spaceId: id,
-          senderUserId: userId,
-          triggerMessageId: messageId,
-          parentMessageId: body.parentMessageId ?? null,
-          mentions,
-          inputText,
-          broadcastNewMessage,
-        })
-      } catch (err) {
-        // Don't fail the user's message on dispatch error — they sent
-        // it successfully; the agent just didn't reply. Surface for
-        // dogfood via observability.
-        console.error(JSON.stringify({ event: 'space_dispatch_error', spaceId: id, error: String(err) }))
-      }
+  // Dispatch when (a) there's at least one mention OR (b) it's a
+  // top-level message in a space that may have always/proactive
+  // agents. In-thread messages with no mentions skip dispatch — the
+  // dispatcher's classifier path is top-level only.
+  const shouldDispatch = (mentions.length > 0 || isTopLevel) && !!inputText
+  console.log(
+    JSON.stringify({
+      event: 'space_message_dispatch_decision',
+      spaceId: id,
+      messageId,
+      mentionCount: mentions.length,
+      isTopLevel,
+      hasInputText: !!inputText,
+      shouldDispatch,
+    }),
+  )
+  if (shouldDispatch) {
+    try {
+      dispatchResult = await dispatchMentions({
+        env: env as unknown as Parameters<typeof dispatchMentions>[0]['env'],
+        spaceId: id,
+        senderUserId: userId,
+        triggerMessageId: messageId,
+        parentMessageId: body.parentMessageId ?? null,
+        mentions,
+        inputText,
+        broadcastNewMessage,
+      })
+    } catch (err) {
+      // Don't fail the user's message on dispatch error — they sent
+      // it successfully; the agent just didn't reply. Surface for
+      // dogfood via observability.
+      console.error(JSON.stringify({ event: 'space_dispatch_error', spaceId: id, error: String(err) }))
     }
   }
 
