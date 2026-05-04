@@ -31,7 +31,10 @@
   --muted-foreground: hsl(215.4 16.3% 46.9%);
   --accent: hsl(210 40% 96.1%);
   --accent-foreground: hsl(222.2 47.4% 11.2%);
-  --destructive: hsl(0 84.2% 60.2%);
+  /* P5-002/P5-003: deepened from hsl(0 84.2% 60.2%) to lift contrast above
+     WCAG AA on small text. With white foreground, lifted from 3.76:1 to
+     ~5.4:1. Equivalent to Tailwind red-600 / red-700 midpoint. */
+  --destructive: hsl(0 72% 47%);
   --destructive-foreground: hsl(210 40% 98%);
   --border: hsl(214.3 31.8% 91.4%);
   --input: hsl(214.3 31.8% 91.4%);

@@ -87,6 +87,7 @@ export function ProjectsIndexPage() {
             </Label>
             <Switch
               id="show-archived"
+              aria-label="Show archived projects"
               checked={showArchived}
               onCheckedChange={setShowArchived}
             />
