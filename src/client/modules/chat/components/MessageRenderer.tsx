@@ -248,7 +248,10 @@ export const MessageRenderer = memo(function MessageRenderer({
             <ThumbsDown className="size-3.5" />
           </Button>
           {metadata?.model && (
-            <span className="ml-auto text-[11px]" title={metadata.model}>
+            <span
+              className="ml-auto inline-flex items-center rounded-md bg-muted/60 px-1.5 py-0.5 text-[11px] text-foreground/80"
+              title={metadata.model}
+            >
               {formatModelId(metadata.model)}
               {/* Token count is implementation detail — useful for builders
                   debugging cost / context, noise for end users. Hidden
