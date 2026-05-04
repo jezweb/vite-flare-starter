@@ -39,6 +39,7 @@ import {
   BarChart3,
   ShieldCheck,
   Bot,
+  Kanban,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -157,6 +158,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { to: '/dashboard/style-guide', label: 'Style guide', icon: Palette },
       { to: '/dashboard/voice-example', label: 'Voice example', icon: Mic, feature: 'voiceAgent' },
       { to: '/dashboard/video-example', label: 'Video example', icon: Camera, feature: 'videoAgent' },
+      { to: '/dashboard/kanban-demo', label: 'Kanban demo', icon: Kanban, feature: 'kanbanDemo' },
     ],
   },
 ]

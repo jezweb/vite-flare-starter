@@ -8,7 +8,7 @@ import { ProtectedRoute } from './components/shared/ProtectedRoute'
 import { PublicOnlyRoute } from './components/shared/PublicOnlyRoute'
 import { ThemeURLHandler } from './components/ThemeURLHandler'
 import { BuilderModeProvider } from './lib/builder-mode'
-import { Mic, Camera } from 'lucide-react'
+import { Mic, Camera, Kanban } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
 import { features } from '@/shared/config/features'
 import { EmptyState } from './components/EmptyState'
@@ -53,6 +53,7 @@ const AcceptInvitationPage = lazy(() => import('./pages/AcceptInvitationPage').t
 const ConnectorsPage = lazy(() => import('./modules/connectors/pages/ConnectorsPage').then(m => ({ default: m.ConnectorsPage })))
 const VoiceInputExamplePage = lazy(() => import('./modules/voice/pages/VoiceInputExamplePage').then(m => ({ default: m.VoiceInputExamplePage })))
 const VideoInputExamplePage = lazy(() => import('./modules/video/pages/VideoInputExamplePage').then(m => ({ default: m.VideoInputExamplePage })))
+const KanbanDemoPage = lazy(() => import('./modules/kanban-demo/pages/KanbanDemoPage').then(m => ({ default: m.KanbanDemoPage })))
 const AgentObservabilityPage = lazy(() => import('./modules/agent-observability/pages/AgentObservabilityPage').then(m => ({ default: m.AgentObservabilityPage })))
 const AdminAgentPage = lazy(() => import('./modules/admin-agent/pages/AdminAgentPage').then(m => ({ default: m.AdminAgentPage })))
 const AgentsPage = lazy(() => import('./modules/agents/pages/AgentsPage').then(m => ({ default: m.AgentsPage })))
@@ -246,6 +247,25 @@ function App() {
                   envVar="VITE_FEATURE_VIDEO_AGENT"
                 >
                   <VideoInputExamplePage />
+                </FeatureGatedPage>
+              }
+            />
+
+            {/* Kanban demo — exercises the <KanbanBoard> primitive against
+                the generic entities API. Default OFF (the primitive
+                itself ships always — this flag just controls the demo
+                surface). */}
+            <Route
+              path="kanban-demo"
+              element={
+                <FeatureGatedPage
+                  enabled={features.kanbanDemo}
+                  icon={Kanban}
+                  title="Kanban demo is opt-in"
+                  description="The Kanban demo wires the <KanbanBoard> primitive to the entities API as a working reference. The primitive itself is always available for any module to import; this page is just the demo surface."
+                  envVar="VITE_FEATURE_KANBAN_DEMO"
+                >
+                  <KanbanDemoPage />
                 </FeatureGatedPage>
               }
             />

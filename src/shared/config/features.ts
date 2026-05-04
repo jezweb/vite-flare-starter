@@ -78,6 +78,15 @@ export const features = {
    */
   videoAgent: import.meta.env['VITE_FEATURE_VIDEO_AGENT'] === 'true',
 
+  /**
+   * Kanban demo — exercises the <KanbanBoard> primitive against the
+   * generic entities API. Default OFF — opt-in by setting
+   * VITE_FEATURE_KANBAN_DEMO=true. The primitive itself
+   * (`src/components/ui/kanban.tsx`) is always available; this flag
+   * just controls the demo page + nav entry.
+   */
+  kanbanDemo: import.meta.env['VITE_FEATURE_KANBAN_DEMO'] === 'true',
+
   // ── UI Features ────────────────────────────────────────────────────────
 
   /** Theme/colour picker in preferences */
