@@ -96,6 +96,7 @@ export function ArtifactViewer({ artifact }: Props) {
             onClick={() => setShowCode(!showCode)}
             className={cn('text-muted-foreground hover:text-foreground', showCode && 'bg-muted text-foreground')}
             title={showCode ? 'Show preview' : 'Show code'}
+            aria-label={showCode ? 'Show preview' : 'Show code'}
           >
             {showCode ? <Eye className="size-3.5" /> : <Code2 className="size-3.5" />}
           </Button>
@@ -105,6 +106,7 @@ export function ArtifactViewer({ artifact }: Props) {
             onClick={handleCopy}
             className="text-muted-foreground hover:text-foreground transition-colors"
             title="Copy code"
+            aria-label={copied ? 'Copied' : 'Copy code'}
           >
             {copied ? <Check className="size-3.5 text-green-600 dark:text-green-400" /> : <Copy className="size-3.5" />}
           </Button>
@@ -118,6 +120,7 @@ export function ArtifactViewer({ artifact }: Props) {
               }}
               className="text-muted-foreground hover:text-foreground transition-colors"
               title="Open in new tab"
+              aria-label="Open in new tab"
             >
               <ExternalLink className="size-3.5" />
             </Button>

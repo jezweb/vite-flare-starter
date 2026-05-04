@@ -91,7 +91,7 @@ function TakeoverHeader({
             <ChevronRight className="inline h-3 w-3 -mt-px" />
           </span>
         )}
-        <Button variant="ghost" size="icon-sm" onClick={onDismiss} className="text-muted-foreground hover:text-foreground">
+        <Button variant="ghost" size="icon-sm" onClick={onDismiss} className="text-muted-foreground hover:text-foreground" aria-label="Dismiss">
           <X className="h-4 w-4" />
         </Button>
       </div>
@@ -332,7 +332,7 @@ function ChoiceTakeover({ element, onSubmit, onDismiss }: Props) {
     <div className="border-t border-border bg-card rounded-b-2xl">
       <div className="flex items-center justify-between px-4 pt-3 pb-1">
         <span className="text-xs text-muted-foreground">Choose an option</span>
-        <Button variant="ghost" size="icon-sm" onClick={onDismiss} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="icon-sm" onClick={onDismiss} className="text-muted-foreground hover:text-foreground" aria-label="Dismiss"><X className="h-4 w-4" /></Button>
       </div>
       <div className="px-4 pb-3 flex flex-wrap gap-2">
         {items.map((item, i) => {

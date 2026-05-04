@@ -232,6 +232,7 @@ export function ChatInput({
             disabled={disabled || isLoading}
             className="shrink-0 size-[44px] text-muted-foreground"
             title="Attach file (image or PDF)"
+            aria-label="Attach file (image or PDF)"
           >
             <Paperclip className="size-4" />
           </Button>

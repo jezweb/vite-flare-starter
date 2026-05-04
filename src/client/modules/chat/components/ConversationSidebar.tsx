@@ -391,6 +391,7 @@ export function ConversationSidebar({ activeConversationId }: Props) {
             navigate(dest)
           }}
           title={newChatProjectId ? 'New chat in this project' : 'New conversation'}
+          aria-label={newChatProjectId ? 'New chat in this project' : 'New conversation'}
         >
           <Plus className="size-4" />
         </Button>

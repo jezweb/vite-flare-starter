@@ -194,6 +194,7 @@ export const ChatMessage = memo(function ChatMessage({ message, isLast, onRegene
                 className="size-5 text-muted-foreground/60 hover:text-foreground"
                 onClick={onRegenerate}
                 title="Regenerate response"
+                aria-label="Regenerate response"
               >
                 <RotateCcw className="size-3" />
               </Button>

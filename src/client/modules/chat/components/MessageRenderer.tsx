@@ -172,6 +172,7 @@ export const MessageRenderer = memo(function MessageRenderer({
               className="absolute -left-8 top-1 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground"
               onClick={startEdit}
               title="Edit message"
+              aria-label="Edit message"
             >
               <Pencil className="size-3" />
             </Button>
