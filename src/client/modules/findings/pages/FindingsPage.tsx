@@ -161,14 +161,35 @@ export function FindingsPage() {
     },
   })
 
+  // P4-007 — dismiss is wired with a captured-prior-status closure so
+  // the toast's Undo action can call /reopen with the right target
+  // (open vs recurred). The mutation receives the whole row instead of
+  // just the id so onSuccess has access to the previous status.
   const dismissMutation = useMutation({
-    mutationFn: (findingId: string) =>
-      apiClient.post<{ finding: Finding }>(
-        `/api/findings/${findingId}/dismiss`,
-        {},
-      ),
-    onSuccess: () => {
-      toast.success('Finding dismissed')
+    mutationFn: (finding: Finding) =>
+      apiClient
+        .post<{ finding: Finding }>(`/api/findings/${finding.id}/dismiss`, {})
+        .then((res) => ({ res, prior: finding.status })),
+    onSuccess: ({ prior }, finding) => {
+      const restoreStatus: 'open' | 'recurred' =
+        prior === 'recurred' ? 'recurred' : 'open'
+      // Sonner action callback fires when the user clicks Undo. The
+      // toast auto-dismisses after the default duration (~10s) so the
+      // window closes itself if no action is taken.
+      toast.success('Finding dismissed', {
+        action: {
+          label: 'Undo',
+          onClick: () =>
+            reopenMutation.mutate(
+              { findingId: finding.id, status: restoreStatus },
+              {
+                onSuccess: () => {
+                  toast.success('Dismiss reverted')
+                },
+              },
+            ),
+        },
+      })
       queryClient.invalidateQueries({ queryKey: ['findings'] })
     },
     onError: (err: unknown) => {
@@ -393,7 +414,7 @@ export function FindingsPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => dismissMutation.mutate(item.id)}
+                              onClick={() => dismissMutation.mutate(item)}
                               disabled={dismissMutation.isPending}
                             >
                               <Trash2 className="size-3.5" />
