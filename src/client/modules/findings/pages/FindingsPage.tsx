@@ -17,7 +17,7 @@
  * cross-agent; filter chips narrow by agent name.
  */
 import { useState, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import {
@@ -106,7 +106,22 @@ function statusVariant(
 
 export function FindingsPage() {
   const [tab, setTab] = useState<'findings' | 'learnings'>('findings')
-  const [statusFilter, setStatusFilter] = useState<FindingStatus>('all')
+  const [searchParams, setSearchParams] = useSearchParams()
+  // P2-004 — status filter persisted in querystring so a filtered view
+  // is reload-safe, bookmarkable, and shareable. Validates against the
+  // known set; unknown values fall back to 'all'.
+  const rawStatus = searchParams.get('status') ?? 'all'
+  const statusFilter: FindingStatus = (
+    ['all', 'open', 'recurred', 'promoted', 'dismissed'] as FindingStatus[]
+  ).includes(rawStatus as FindingStatus)
+    ? (rawStatus as FindingStatus)
+    : 'all'
+  const setStatusFilter = (next: FindingStatus) => {
+    const updated = new URLSearchParams(searchParams)
+    if (next === 'all') updated.delete('status')
+    else updated.set('status', next)
+    setSearchParams(updated, { replace: true })
+  }
   const [expanded, setExpanded] = useState<string | null>(null)
   const queryClient = useQueryClient()
 
