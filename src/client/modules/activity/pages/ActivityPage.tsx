@@ -24,12 +24,12 @@ import { StatGrid } from '@/components/ui/stat-grid'
 import { PageLoading } from '@/client/components/PageState'
 import {
   ListRow,
-  ListRowGroup,
   ListRowIcon,
   ListRowBody,
   ListRowMeta,
   ListRowTrailing,
 } from '@/components/ui/list-row'
+import { VirtualActivityList } from '../components/VirtualActivityList'
 import {
   Activity as ActivityIcon,
   Plus,
@@ -48,7 +48,9 @@ import {
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
-const PAGE_SIZE = 20
+// Server caps `limit` at 100; 100 + virtualization is smoother than
+// previous 20-row pages because the user pages less often.
+const PAGE_SIZE = 100
 
 const ACTION_ICONS: Record<Activity['action'], React.ElementType> = {
   create: Plus,
@@ -245,13 +247,10 @@ export function ActivityPage() {
           }
         />
       ) : (
-        <ListRowGroup>
-          {activities.map((activity) => (
-            <li key={activity.id}>
-              <ActivityItem activity={activity} />
-            </li>
-          ))}
-        </ListRowGroup>
+        <VirtualActivityList
+          activities={activities}
+          renderRow={(activity) => <ActivityItem activity={activity} />}
+        />
       )}
 
       {/* Pagination — hidden while loading so the "Page 1" label

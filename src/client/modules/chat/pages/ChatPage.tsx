@@ -41,6 +41,7 @@ import { useProjectList, useMoveConversation } from '@/client/modules/projects/h
 import { ConversationSidebar } from '../components/ConversationSidebar'
 import { ArtifactSidebar, countArtifactsAndFiles } from '../components/ArtifactSidebar'
 import { MessageRenderer } from '../components/MessageRenderer'
+import { VirtualMessageList } from '../components/VirtualMessageList'
 import { ModelSelector } from '../components'
 import { ConversationSizeIndicator } from '../components/ConversationSizeIndicator'
 import { AttachmentTiles } from '../components/AttachmentTiles'
@@ -352,6 +353,28 @@ export function ChatPage() {
     const idx = [...messages].reverse().findIndex((m) => m.role === 'assistant')
     return idx === -1 ? -1 : messages.length - 1 - idx
   }, [messages])
+
+  // Filter out duplicate user messages left by regenerate before
+  // handing the list to the virtualizer — the virtualizer reserves
+  // a row slot per item it counts, so filtering here avoids ghost
+  // gaps in the rendered transcript. `visibleLastAssistantIdx` is
+  // recomputed against the filtered array so the renderer's "this is
+  // the last assistant turn" affordances still target the right row.
+  const visibleMessages = useMemo(
+    () =>
+      messages.filter((message, idx) => {
+        if (message.role === 'user' && idx > 0) {
+          const prev = messages[idx - 1]
+          if (prev?.role === 'user') return false
+        }
+        return true
+      }),
+    [messages],
+  )
+  const visibleLastAssistantIdx = useMemo(() => {
+    const idx = [...visibleMessages].reverse().findIndex((m) => m.role === 'assistant')
+    return idx === -1 ? -1 : visibleMessages.length - 1 - idx
+  }, [visibleMessages])
 
   // ─── Input Takeover Detection ─────────────────────────────────
   const [activeTakeover, setActiveTakeover] = useState<{ _ui: string; [key: string]: unknown } | null>(null)
@@ -935,32 +958,27 @@ export function ChatPage() {
           className="flex flex-col flex-1 min-h-0 overflow-y-auto overflow-x-hidden relative"
         >
           {hasMessages ? (
-            <div className="max-w-3xl mx-auto w-full px-4 py-6 flex flex-col gap-8">
-              {messages.map((message, idx) => {
-                // Hide duplicate user messages left by regenerate
-                if (message.role === 'user' && idx > 0) {
-                  const prev = messages[idx - 1]
-                  if (prev?.role === 'user') return null
-                }
-                return (
-                  <MessageRenderer
-                    key={message.id}
-                    message={message}
-                    isLast={idx === lastAssistantIdx && !isLoading}
-                    isLoading={isLoading && idx === messages.length - 1}
-                    onRegenerate={handleRegenerate}
-                    onEdit={handleEdit}
-                    onSendMessage={(text) => sendMessage({ text })}
-                    onToolApproval={handleToolApproval}
-                    userImage={session?.user?.image}
-                  />
-                )
-              })}
-              {/* Bottom spacer — leaves room for the sticky input so the last
-                  message isn't permanently hidden behind it when scrolled to
-                  the bottom. Matches claude.ai's h-12 spacer pattern. */}
-              <div aria-hidden className="h-48 shrink-0" />
-            </div>
+            <VirtualMessageList
+              scrollRef={scrollRef}
+              // Filter out duplicate user messages left by regenerate
+              // BEFORE the virtualizer sees them — the virtualizer
+              // reserves a row slot per item it counts, so filtering
+              // here keeps the visible list clean instead of leaving a
+              // ghost ~80px gap where the dropped row used to be.
+              messages={visibleMessages}
+              renderMessage={(message, idx) => (
+                <MessageRenderer
+                  message={message}
+                  isLast={idx === visibleLastAssistantIdx && !isLoading}
+                  isLoading={isLoading && idx === visibleMessages.length - 1}
+                  onRegenerate={handleRegenerate}
+                  onEdit={handleEdit}
+                  onSendMessage={(text) => sendMessage({ text })}
+                  onToolApproval={handleToolApproval}
+                  userImage={session?.user?.image}
+                />
+              )}
+            />
           ) : conversationNotFound ? (
             <div className="flex-1 flex items-center justify-center px-4 py-6">
               <div className="max-w-md w-full text-center space-y-4">
