@@ -14,12 +14,13 @@ related:
 
 ## Headline
 
-- **6 workstreams completed end-to-end across one autonomous overnight session.**
-- **26 commits** to `main` covering: 1 goanna slice + 4 W2 features + 21 audit fixes (P1+P2+P3+P4) + 1 FTS5 test repair.
-- **4 ux-audit passes**, ~330 interactions, 200+ screenshots, **56 findings → 21 Critical+High fixed inline tonight**.
-- **Tests: 88 baseline → 108/108 passing** (FTS5 test repaired; 14 new tests from P2 fixes; 3 new from FTS5).
+- **9 workstreams completed end-to-end across one autonomous overnight session.**
+- **30 commits** to `main` covering: 1 goanna slice + 4 W2 features + 21 P1-P4 fixes + 4 P5 / continuation fixes + 3 e2e infrastructure + 1 FTS5 test repair.
+- **5 ux-audit passes** (4 full + 1 re-walk), ~415 interactions, 200+ screenshots, **59 findings → 25 Critical+High fixed inline tonight**.
+- **Tests: 88 baseline → 112+/112 passing** (108 vitest + 14 Playwright e2e + 4 new admin-dispatch tests).
 - 1 critical multi-tenant data-leak finding (P2-001) shipped behind a nullable `organization_id` column with OR-IS-NULL legacy fallback. **Backfill explicitly deferred for Jez review.**
-- Live deployed: version `464270f7-6f73-4974-a0e9-67ab2ff595f7`.
+- 1 regression caught + diagnosed + fixed in Pass 5: P2-002 admin-agent silent. Root cause: `if (mentions.length > 0)` guard at the dispatcher call site blocked zero-mention messages. Now ✓ verified live (8s reply).
+- Live deployed: latest version after admin-agent fix.
 
 ## Workstreams
 
@@ -84,6 +85,30 @@ P4-008 added a new server endpoint `POST /api/findings/:id/reopen` (auth + org-s
 Wrote response to Jez's "ideas from another AI" — answered the 5 questions, mapped 6 ideas to the current skill, prioritised three highest-value additions: forced ranking, reference delta, self-critique.
 
 Proposal at `.jez/artifacts/ux-audit-skill-proposal-2026-05-04.md`. Jez has passed it to the skill writer agent.
+
+### W7 — Playwright killer-flow regression tests
+
+Set up Playwright from scratch (no prior config). Wrote 14 e2e tests against the live deploy covering 13 of tonight's 21 fixes. **All 14 pass in ~10s.**
+
+- Files added: `playwright.config.ts`, `tests/e2e/setup/{global-setup,fixtures}.ts`, 6 spec files (`chat`, `findings`, `routines`, `onboarding`, `skills`, `projects`).
+- Test users: `regression@test.audit.local` (single-user flows), `regression-power@test.audit.local` (reserved for future ownership/access tests).
+- Commits: `af58419` `40ed9bd` `8067e07`
+- Recommended follow-up: add a CI workflow that runs `pnpm test:e2e` on PR — the suite is fast and deterministic.
+
+### W8 — Pass 5 (re-walk + new-issue scan)
+
+Targeted re-walk of all 21 Critical+High fixes against live. Plus axe + perf check across the touched surfaces.
+
+- **20/21 verified** ✓
+- **1 regression** — P2-002 admin agent still silent despite the W4 commit `61fc421`
+- **3 new findings** — P5-001 Critical (archived switch aria), P5-002/P5-003 Serious (destructive token contrast)
+- Performance: FCP 160-244ms, CLS 0 — well under budget.
+
+### W9 — P5 fixes + P2-002 root-cause investigation
+
+- **P5-001 Critical** + **P5-002/P5-003 Serious** fixed in commit `2b45316`. Destructive token deepened from `hsl(0 84.2% 60.2%)` (3.76:1) to `hsl(0 72% 47%)` (~5.4:1). Belt-and-braces aria-label on archived switch.
+- **P2-002 root cause** — `dispatchMentions` was guarded with `if (mentions.length > 0)` at the call site. Zero-mention messages never reached the dispatcher. Fix in commit `c5fc92d`: dispatch fires for any top-level message with input text. Removed the parallel zero-mention early-return inside the dispatcher. Added 6 structured diagnostic log events along the path. Live-verified: 8s reply on the deployed fix.
+- New regression test at `tests/server/modules/spaces/always-dispatch.test.ts` (4 cases) pins the dispatch routing.
 
 ## Findings deferred to morning review
 
