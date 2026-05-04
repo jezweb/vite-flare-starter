@@ -159,12 +159,16 @@ describe('entities_fts — full-text search over entities', () => {
       body: 'Thylacines were declared extinct in 1936.',
     })
 
-    const before = await search('thylacine')
+    // FTS5 default tokenizer is exact-token, no stemming. The body says
+    // "Thylacines" (plural) so we search for the exact form, OR use
+    // a prefix query (`thylacine*`) to match. Use the prefix form here
+    // — that's what production search would do for partial typing.
+    const before = await search('thylacine*')
     expect(before.results.map((r) => r.id)).toContain('e3')
 
     await runSql(`DELETE FROM entities WHERE id = ?`, ['e3'])
 
-    const after = await search('thylacine')
+    const after = await search('thylacine*')
     expect(after.results.map((r) => r.id)).not.toContain('e3')
   })
 })
