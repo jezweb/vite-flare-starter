@@ -7,7 +7,7 @@
  * - components/nav-user.tsx    → account menu in footer
  * - components/site-header.tsx → top bar
  */
-import { useEffect, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/app-sidebar'
@@ -70,10 +70,58 @@ function DocumentTitleSync() {
   return null
 }
 
+/**
+ * Auto-collapse the sidebar to icon-only mode below the tablet
+ * breakpoint (1024px). Above 1024px the sidebar starts expanded.
+ *
+ * Why a controlled `open` prop (vs. the cookie-driven default):
+ *   - The shadcn primitive's `useIsMobile` boundary is 768px, so
+ *     between 768-1024 the sidebar stays expanded and crowds the
+ *     content area (P3-006). We want icon-mode on tablets without
+ *     bumping the global mobile breakpoint (which also drives chart
+ *     tick density).
+ *   - Below 768 the primitive already swaps in a Sheet (offcanvas),
+ *     so this hook only matters at 768-1023.
+ *
+ * User override: once they toggle the sidebar, we stop reacting to
+ * viewport changes for the rest of the session — the explicit choice
+ * wins. New tab/load picks the responsive default again.
+ */
+function useResponsiveSidebarOpen(): {
+  open: boolean
+  onOpenChange: (next: boolean) => void
+} {
+  const computeDefault = () =>
+    typeof window === 'undefined' ? true : window.innerWidth >= 1024
+  const [open, setOpen] = useState<boolean>(computeDefault)
+  const userOverrideRef = useRef(false)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const mql = window.matchMedia('(min-width: 1024px)')
+    const sync = () => {
+      if (userOverrideRef.current) return
+      setOpen(mql.matches)
+    }
+    mql.addEventListener('change', sync)
+    return () => mql.removeEventListener('change', sync)
+  }, [])
+
+  const onOpenChange = (next: boolean) => {
+    userOverrideRef.current = true
+    setOpen(next)
+  }
+
+  return { open, onOpenChange }
+}
+
 export function DashboardLayout() {
+  const { open, onOpenChange } = useResponsiveSidebarOpen()
   return (
     <div className="h-svh overflow-hidden">
       <SidebarProvider
+        open={open}
+        onOpenChange={onOpenChange}
         className="h-full"
         style={
           {
