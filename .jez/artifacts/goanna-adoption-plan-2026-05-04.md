@@ -1,6 +1,6 @@
 ---
 date: 2026-05-04
-status: draft
+status: active
 owner: jez+claude
 related:
   - ~/Documents/goanna/SPEC.md
@@ -8,6 +8,13 @@ related:
   - ~/Documents/goanna/SKILLS.md
   - docs/ROUTINES.md
   - docs/AGENTS.md
+slice_status:
+  slice_0_timezone: shipped (commit bbe5f34)
+  slice_1_persona_blocks: shipped (commit 26e92cb)
+  slice_2_findings_learnings: shipped (commit 0e8853d)
+  slice_3_reflect_skill: shipped (commit 86d8de7)
+  slice_4_librarian_skill: shipped (commit 719b121)
+  slice_5_convention_docs: shipped (commit pending)
 ---
 
 # Goanna adoption plan — vite-flare-starter

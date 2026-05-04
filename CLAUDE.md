@@ -114,6 +114,7 @@ reference lives in `docs/`, loaded only when you need it.
 | Enable KV / Queues / Vectorize / Hyperdrive / Stream | [`docs/PLATFORM_SERVICES.md`](./docs/PLATFORM_SERVICES.md) |
 | Add analytics / payments / email / real-time / background jobs | `docs/ADDING_*.md` |
 | Track fork divergence from upstream (forks only) | [`PATCHES.md`](./PATCHES.md) + [`docs/PATCHES-guide.md`](./docs/PATCHES-guide.md) |
+| Interop with [goanna](https://github.com/jezweb/goanna) — filesystem-markdown agent framework | [`docs/GOANNA_INTEROP.md`](./docs/GOANNA_INTEROP.md) |
 | Deploy checklist | [`docs/DEPLOYMENT_CHECKLIST.md`](./docs/DEPLOYMENT_CHECKLIST.md) |
 | MCP connectors setup | [`docs/mcp-connectors.md`](./docs/mcp-connectors.md) |
 | Project-local rules (auto-loaded by convention) | `.claude/rules/*.md` |
