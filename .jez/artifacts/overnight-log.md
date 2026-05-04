@@ -60,6 +60,9 @@ Pick the next AVAILABLE task in ID order. Mark it in-progress in your iteration 
 
 *(Append entries here. Newest at top.)*
 
+### Bail — 2026-05-04T10:11Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED). Note: orphan chain (51 disconnected commits since 2026-05-02T09:01Z) pushed to `orphan-backup-2026-05-04` branch on origin for Jez to review.
+
 ### Bail — 2026-05-02T06:15Z
 Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
 
