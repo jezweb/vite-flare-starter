@@ -165,7 +165,7 @@ export function ModelSelector({ value, onChange, disabled }: ModelSelectorProps)
   if (error || !data) {
     return (
       <Select disabled>
-        <SelectTrigger className="w-[160px]">
+        <SelectTrigger aria-label="Select AI model" className="w-[160px]">
           <SelectValue placeholder="Failed to load models" />
         </SelectTrigger>
       </Select>
@@ -177,7 +177,11 @@ export function ModelSelector({ value, onChange, disabled }: ModelSelectorProps)
   if (data.models.length === 0) {
     return (
       <Select disabled>
-        <SelectTrigger className="w-[160px]" title="Enable at least one model in src/shared/config/models.ts">
+        <SelectTrigger
+          aria-label="Select AI model"
+          className="w-[160px]"
+          title="Enable at least one model in src/shared/config/models.ts"
+        >
           <SelectValue placeholder="No models available" />
         </SelectTrigger>
       </Select>
@@ -219,7 +223,10 @@ export function ModelSelector({ value, onChange, disabled }: ModelSelectorProps)
       onValueChange={onChange}
       disabled={disabled}
     >
-      <SelectTrigger className="w-[160px] max-w-[160px]">
+      <SelectTrigger
+        aria-label={`Select AI model${selectedModel?.name ? ` (current: ${selectedModel.name})` : ''}`}
+        className="w-[160px] max-w-[160px]"
+      >
         <SelectValue>
           <span className="inline-flex items-center gap-1.5 min-w-0">
             <span className="truncate">{selectedModel?.name || 'Select model'}</span>
