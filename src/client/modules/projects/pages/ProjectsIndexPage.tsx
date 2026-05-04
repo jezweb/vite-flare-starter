@@ -92,10 +92,15 @@ export function ProjectsIndexPage() {
             />
           </div>
           <div className="flex items-center gap-1">
-            <span className="text-xs text-muted-foreground">Sort by</span>
+            <span className="text-xs text-muted-foreground" id="projects-sort-label">Sort by</span>
+            {/* P4-020 — bare <select> needs an accessible name. The
+                visible "Sort by" label sits beside it but isn't a
+                <label htmlFor=>; aria-label gives screen readers the
+                programmatic name without changing visible markup. */}
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value as SortKey)}
+              aria-label="Sort projects"
               className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
             >
               <option value="activity">Activity</option>
