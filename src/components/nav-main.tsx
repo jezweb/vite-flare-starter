@@ -145,7 +145,7 @@ function CollapsibleSection({
           <button
             type="button"
             aria-expanded={effectiveOpen}
-            className="flex h-8 w-full shrink-0 items-center rounded-md px-2 text-xs font-medium text-sidebar-foreground/80 ring-sidebar-ring outline-hidden transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring [&>svg]:size-4 [&>svg]:shrink-0"
+            className="flex h-8 w-full shrink-0 items-center rounded-md px-2 text-xs font-medium text-sidebar-foreground/80 ring-sidebar-ring outline-hidden transition-[margin,opacity,colors] duration-200 ease-linear hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0 [&>svg]:size-4 [&>svg]:shrink-0"
           >
             <span>{label}</span>
             <ChevronDown
