@@ -55,7 +55,7 @@ import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
 import { HelpDisclosure } from '@/components/ui/help-disclosure'
 import { StatusPill } from '@/components/ui/status-pill'
-import { useBuilderMode } from '@/client/lib/builder-mode'
+import { features } from '@/shared/config/features'
 
 function resolveIcon(name: string): LucideIcon {
   const icons = LucideIcons as unknown as Record<string, LucideIcon>
@@ -65,7 +65,6 @@ function resolveIcon(name: string): LucideIcon {
 export function ConnectorsPage() {
   const { data: connData, isLoading: connectionsLoading } = useConnections()
   const { data: catData } = useCatalog()
-  const { isBuilder } = useBuilderMode()
   const connections = connData?.connections ?? []
   const catalog = catData?.catalog ?? []
 
@@ -144,10 +143,15 @@ export function ConnectorsPage() {
 
       {/*
         * "Coming soon" stubs are reference implementations for fork
-        * authors — visible only in Builder mode so a normal signed-in
-        * user doesn't see fake offerings on a live product page.
+        * authors. Hidden behind the `devTools` feature flag so a
+        * normal signed-in user never sees fake offerings on a live
+        * product page (audit P1-007). The flag is true in dev mode
+        * by default and explicitly gateable in production via
+        * VITE_FEATURE_DEV_TOOLS=true. `isBuilder` is intentionally
+        * not used here — Builder Mode defaults to ON for the starter,
+        * which would still leak this section to non-builder users.
         */}
-      {isBuilder && (
+      {features.devTools && (
         <Section
           title="Coming soon (builder preview)"
           description="Reference stubs for fork authors. Wire up the providers + scopes you need; remove this section before shipping to users."
