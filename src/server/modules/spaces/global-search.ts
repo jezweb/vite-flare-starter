@@ -6,6 +6,10 @@
  * + space name. Phase 1 in-space search uses LIKE; this one does too
  * for parity but adds an explicit space-name join so the result UI
  * can show "in #marketing-pod".
+ *
+ * Also hosts /api/search/entities — FTS5 search across the user's
+ * entities (title + JSON_EXTRACT(fields, '$.body')). See migration
+ * 20260504140000_entities_fts.sql for the trigger-driven sync.
  */
 import { Hono } from 'hono'
 import { drizzle } from 'drizzle-orm/d1'
@@ -136,5 +140,79 @@ function safeJson(v: unknown): unknown {
     return v
   }
 }
+
+/**
+ * GET /api/search/entities — FTS5 search across the user's entities.
+ *
+ * Indexes title + fields.body (extracted via JSON_EXTRACT in triggers).
+ * Returns up to `limit` (default 20) hits scoped to the requesting
+ * user's rows.
+ *
+ * Response shape: { results: [{ id, type, title, snippet, rank }] }.
+ *   - snippet is the first ~160 chars of fields.body (may be empty
+ *     for entities that don't carry a body).
+ *   - rank is the BM25 score (lower = better).
+ */
+app.get('/entities', async (c) => {
+  const userId = c.get('userId')
+  const q = (c.req.query('q') ?? '').trim()
+  if (q.length < 2) return c.json({ results: [] })
+  const limitRaw = Number(c.req.query('limit') ?? '20')
+  const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(1, Math.floor(limitRaw)), 50) : 20
+
+  try {
+    const { searchFTS } = await import('@/server/lib/search')
+    const { results } = await searchFTS<{
+      id: string
+      type: string
+      title: string
+      body: string | null
+    }>(c.env.DB, {
+      ftsTable: 'entities_fts',
+      sourceTable: 'entities',
+      query: q,
+      limit,
+      // Pull the body out of the JSON column at query time so we can
+      // build a snippet without a separate round trip. Scope to the
+      // requesting user's rows only.
+      select:
+        '"entities".id, "entities".type, "entities".title, JSON_EXTRACT("entities".fields, \'$.body\') AS body',
+      where: '"entities".user_id = ?',
+      whereParams: [userId],
+    })
+
+    const hits = results.map((r) => ({
+      id: r.id,
+      type: r.type,
+      title: r.title,
+      snippet: typeof r.body === 'string' ? r.body.slice(0, 160) : '',
+      rank: (r as unknown as { rank: number }).rank,
+    }))
+    return c.json({ results: hits })
+  } catch (err) {
+    // FTS table missing (fork hasn't applied the migration) — fall
+    // back to LIKE on title so the surface still works rather than
+    // returning a 500. Body match is sacrificed in this branch.
+    console.warn(JSON.stringify({ event: 'entities_fts_fallback', error: String(err) }))
+    const escaped = q.replace(/[\\_%]/g, (m) => `\\${m}`)
+    const { results } = await c.env.DB.prepare(
+      `SELECT id, type, title, JSON_EXTRACT(fields, '$.body') AS body
+       FROM entities
+       WHERE user_id = ? AND title LIKE ? ESCAPE '\\'
+       ORDER BY updated_at DESC
+       LIMIT ?`,
+    )
+      .bind(userId, `%${escaped}%`, limit)
+      .all<{ id: string; type: string; title: string; body: string | null }>()
+    const hits = (results ?? []).map((r) => ({
+      id: r.id,
+      type: r.type,
+      title: r.title,
+      snippet: typeof r.body === 'string' ? r.body.slice(0, 160) : '',
+      rank: 0,
+    }))
+    return c.json({ results: hits })
+  }
+})
 
 export default app

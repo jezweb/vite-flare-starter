@@ -288,6 +288,13 @@
       "when": 1777901153119,
       "tag": "20260504132553_local_fire_hour",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "6",
+      "when": 1777910400000,
+      "tag": "20260504140000_entities_fts",
+      "breakpoints": true
     }
   ]
 }

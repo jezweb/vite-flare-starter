@@ -19,7 +19,7 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from '@/components/ui/command'
-import { Moon, Sun, LogOut, Settings, MessagesSquare, FolderKanban, Plus, MessageSquare, Repeat, Plug, CheckSquare, Inbox, Hash } from 'lucide-react'
+import { Moon, Sun, LogOut, Settings, MessagesSquare, FolderKanban, Plus, MessageSquare, Repeat, Plug, CheckSquare, Inbox, Hash, FileSearch } from 'lucide-react'
 import { useTheme } from '@/client/components/theme-provider'
 import { authClient } from '@/client/lib/auth'
 import { apiClient } from '@/client/lib/api-client'
@@ -58,6 +58,30 @@ export function CommandPalette() {
     staleTime: 5_000,
   })
   const projectHits = projectsData?.projects ?? []
+
+  // Entity (content) search — FTS5 across the user's entities table.
+  // Indexes title + fields.body, so findings/learnings/notes/etc all
+  // become searchable. Backed by /api/search/entities and migration
+  // 20260504140000_entities_fts.sql.
+  const { data: entitiesData } = useQuery({
+    queryKey: ['cmd-palette', 'entities', deferredQuery],
+    queryFn: () =>
+      apiClient.get<{
+        results: { id: string; type: string; title: string; snippet: string; rank: number }[]
+      }>(`/api/search/entities?q=${encodeURIComponent(deferredQuery)}`),
+    enabled: open && deferredQuery.length >= 2,
+    staleTime: 5_000,
+    placeholderData: (prev) => prev,
+  })
+  const entityHits = entitiesData?.results ?? []
+
+  // Where to send the user when they pick an entity hit. Findings +
+  // learnings have a dedicated page; everything else falls back to
+  // the inbox where the row will surface alongside other items.
+  const entityHref = useCallback((type: string) => {
+    if (type === 'finding' || type === 'learning') return '/dashboard/findings'
+    return '/dashboard/inbox'
+  }, [])
 
   // Reset query when the palette closes so the next open starts fresh.
   useEffect(() => {
@@ -104,7 +128,7 @@ export function CommandPalette() {
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
       <CommandInput
-        placeholder="Search conversations or run a command..."
+        placeholder="Search content, conversations, or run a command..."
         value={query}
         onValueChange={setQuery}
       />
@@ -187,6 +211,34 @@ export function CommandPalette() {
         </CommandGroup>
 
         <CommandSeparator />
+
+        {/* Content hits — FTS5 across user's entities (findings,
+            learnings, notes, anything stored in the entities table).
+            Lands the user on the closest existing surface for each
+            type. */}
+        {deferredQuery.length >= 2 && entityHits.length > 0 && (
+          <>
+            <CommandGroup heading="Content">
+              {entityHits.slice(0, 8).map((hit) => (
+                <CommandItem
+                  key={`entity-${hit.id}`}
+                  value={`entity-${hit.id}-${hit.title}-${hit.snippet}`}
+                  onSelect={() => runCommand(() => navigate(entityHref(hit.type)))}
+                >
+                  <FileSearch className="mr-2 h-4 w-4" />
+                  <div className="flex-1 min-w-0">
+                    <div className="truncate font-medium">{hit.title}</div>
+                    {hit.snippet && (
+                      <div className="truncate text-xs text-muted-foreground">{hit.snippet}</div>
+                    )}
+                  </div>
+                  <CommandShortcut>{hit.type}</CommandShortcut>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            <CommandSeparator />
+          </>
+        )}
 
         {/* Project hits (only when the user has typed a real query) */}
         {deferredQuery.length >= 2 && projectHits.length > 0 && (
