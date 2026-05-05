@@ -167,17 +167,15 @@ export function ChatPage() {
   const [unreadCount, setUnreadCount] = useState(0)
   const lastSeenCountRef = useRef(0)
 
-  const { data: existingConversation, error: conversationError, isError: conversationIsError } =
-    useConversationMessages(urlConversationId)
+  const { data: existingConversation } = useConversationMessages(urlConversationId)
 
-  // 404 on a URL-supplied conversation means it's been deleted, is on another
-  // account, or never existed. Show a clear not-found state instead of the
-  // empty welcome screen, which makes the situation look like a fresh chat and
-  // confuses users who followed a stale bookmark.
-  const conversationNotFound =
-    !!urlConversationId &&
-    conversationIsError &&
-    (conversationError as { status?: number } | null)?.status === 404
+  // Phase 1C: 404 fallback removed. The DO is authoritative for messages,
+  // and conversations are created lazily by ChatAgent.onChatMessage on the
+  // first turn. Hitting /chat/{newUuid} from the redirect = empty conversation
+  // = empty chat UI. Hitting an old/deleted conversation = whatever the DO
+  // still holds in its SQLite (effectively recoverable). The previous 404
+  // path mistook fresh UUIDs for deleted conversations, blocking new chats.
+  const conversationNotFound = false
 
   const {
     messages,
