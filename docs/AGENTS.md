@@ -170,6 +170,66 @@ the platform doesn't impose a personality. Goanna's `boss/SOUL.md` is
 the reference shape — short paragraphs about how the agent talks, what
 it cares about, what it refuses.
 
+### Domain-scoped system prompts
+
+`buildChatAgent({ env, userId, systemPrompt })` already accepts a
+caller-supplied system prompt — use it. Don't inline the prompt at the
+chat-route level; author it in the domain module that owns the
+behaviour and import.
+
+```typescript
+// src/server/modules/<domain>/lib/system-prompt.ts
+export const DOMAIN_SYSTEM_PROMPT = `You are <product> — <one-line role>.
+
+## Formatting Constraints (MANDATORY)
+
+These rules apply to every response, including chat replies, tool
+outputs, and email drafts. They are not negotiable.
+
+1. No em dashes anywhere. Use commas, full stops, or line breaks.
+2. Dates as "Day Month" (e.g. "12 May"). Australian English.
+3. Sign off every email with "<owner full name>". Never "the team".
+4. No marketing fluff: no "I hope this finds you well".
+
+## Domain context
+...
+`
+```
+
+Pass it at the route level:
+
+```typescript
+import { DOMAIN_SYSTEM_PROMPT } from '@/server/modules/<domain>/lib/system-prompt'
+
+const { agent } = await buildChatAgent({
+  env: c.env,
+  userId,
+  systemPrompt: DOMAIN_SYSTEM_PROMPT,
+})
+```
+
+**Why a module instead of inline strings:** mandatory client-specific
+rules (formatting, sign-offs, AU English) survive skill changes when
+they live in the system prompt's "MANDATORY" section, not scattered
+across skills. Skills are too soft to reliably override default LLM
+habits — em dashes are the canonical example. See
+`~/.claude/rules/llm-prompting-worked-examples.md` for the lesson.
+
+**Multi-tenant adaptation:** export `getSystemPrompt(tenantId)`
+instead of a constant. Resolve tenant-scoped guardrails, then pass
+the result the same way:
+
+```typescript
+const systemPrompt = await getSystemPrompt(tenantId)
+const { agent } = await buildChatAgent({ env, userId, systemPrompt })
+```
+
+Worked example: rightcover's
+`src/server/modules/insurance/lib/system-prompt.ts` (private repo,
+Jezweb-internal) ships an 80-line module with identity, mandatory
+formatting rules, domain context, and guardrails. Skills like
+`renewal-review-home` add per-task detail on top.
+
 ### Decision loop
 
 ```typescript
