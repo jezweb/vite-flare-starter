@@ -26,7 +26,7 @@ VITE_FEATURE_ACTIVITY=false
 
 | Module | Teaches | Key files |
 |---|---|---|
-| **chat** | ToolLoopAgent, tool calling, reasoning, structured output, usage logging, vision, subagents | `server/lib/ai/agent.ts`, `server/modules/chat/routes.ts` |
+| **chat** | `ChatAgent extends AIChatAgent` — DO-backed chat per (user, conv) pair. WebSocket transport, SQLite persistence, MCP, Tool Search, skills, memory, projects, telemetry, D1 projection for cross-module reads | `server/modules/chat/chat-agent.ts`, `server/modules/chat/routes.ts` (utility endpoints only) |
 | **conversations** | Conversation persistence, ChatStorage interface (D1-backed, DO-ready) | `server/modules/conversations/storage.ts` |
 | **files** | R2 upload/download, multipart form handling, metadata in D1 | `server/modules/files/routes.ts` |
 | **activity** | Audit logging with pagination, entity history, stats aggregation | `server/modules/activity/routes.ts` |
@@ -51,7 +51,7 @@ VITE_FEATURE_ACTIVITY=false
 | **admin-agent** | **Claude-Code-style platform admin** — chats with the user in `#admin` Space, proposes routines / agents / connections via 14 admin tools (8 routine, 6 awareness). All write actions gated through `requestApproval`. English-to-routine workflow. | `server/modules/autonomous-agents/admin-agent.ts`, `server/modules/admin-tools/`, `client/modules/admin-agent/pages/AdminAgentPage.tsx` |
 | **organizations** | **Multi-tenant orgs** — better-auth plugin + auto-personal-org on signup + OrgSwitcher in sidebar + `/dashboard/organization` (members + invites + roles) + `/accept-invitation/:token` public flow. Slack/Linear/Notion convention: sidebar shows tenant context, product brand stays on public surfaces. | `server/modules/organizations/`, `client/modules/organizations/`, `docs/orgs-ui-plan-2026-04-28.md` |
 | **agent MCP integration** | AutonomousAgent inherits tools from owner's connected MCP servers automatically | `server/lib/agents/autonomous-agent.ts` (buildToolset) |
-| **tool-search** | Progressive tool disclosure — agent gets `find_tools(query)` + ~10 core tools, the rest load on demand. ~10K tokens/turn saved | `server/lib/ai/tool-search.ts`, wired in chat agent.ts |
+| **tool-search** | Progressive tool disclosure — agent gets `find_tools(query)` + ~10 core tools, the rest load on demand. ~10K tokens/turn saved | `server/lib/ai/tool-search.ts`, wired in `chat-agent.ts` |
 | **routines** | **Canonical recurring agent pattern** — declarative config (agent + schedule + skills + tools allow-list + hooks). Channels-as-tools (notify / approval_queue / inbox_add / space_send / webhook_post). Run-summary tail keeps cost flat over hundreds of fires. | `server/modules/routines/`, `client/modules/routines/`, `docs/ROUTINES.md` |
 | **inbox** | **Single attention surface for AI-emitted items** — findings + approvals merged. Approval rows open inline `ApprovalSheet` (no route bounce). Approvals removed as separate sidebar entry; route preserved at `/dashboard/approvals` for notification deep links. Sort by importance → due → created. Findings emitted by routines via `inbox_add` channel tool. | `server/modules/inbox/`, `client/modules/inbox/pages/InboxPage.tsx`, `client/modules/inbox/components/ApprovalSheet.tsx`, `client/modules/approvals/components/ApprovalCard.tsx` (shared) |
 | **channels** | Internal MCP-equivalent tools the agent dispatches findings to. Routines opt in via `toolsAllowed`. | `server/modules/chat/tools/channels.ts` |
@@ -327,7 +327,7 @@ SDK. **Don't extend raw `DurableObject` — use the SDK base.**
 | Multi-agent handoff (specialist → specialist) | `AutonomousAgent` + inline `delegate_to_X` tool | `ResearcherAgent` → `WriterAgent` |
 | Platform-management chat (configure routines / agents / connections via natural language) | `AutonomousAgent` + admin tool catalogue, all writes through `requestApproval` | `AdminAgent` |
 | Expose agent's data over MCP | `McpAgent` from `agents/mcp` + `McpServer` from `@modelcontextprotocol/sdk` | `ScratchpadMcpAgent` at `/mcp/scratchpad/<id>` |
-| Multi-session AI chat surface | `AIChatAgent` from `agents/chat` | _SDK class — chat module not yet adopted_ |
+| Multi-session AI chat surface | `ChatAgent extends AIChatAgent` from `@cloudflare/ai-chat` | `server/modules/chat/chat-agent.ts` |
 
 Full architecture, decision matrix, naming conventions, and migration
 notes: [`docs/AGENTS.md`](./docs/AGENTS.md).
