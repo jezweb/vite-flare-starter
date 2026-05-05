@@ -571,7 +571,7 @@ docstring covers the security model + cascade trap).
 printf "secret" | npx wrangler secret put BETTER_AUTH_SECRET
 printf "https://your-app.workers.dev" | npx wrangler secret put BETTER_AUTH_URL
 printf "http://localhost:5173,https://your-app.workers.dev" | npx wrangler secret put TRUSTED_ORIGINS
-pnpm deploy
+pnpm run deploy
 ```
 
 ---
@@ -581,7 +581,7 @@ pnpm deploy
 ```bash
 pnpm dev                    # Dev server
 pnpm build                  # Production build
-pnpm deploy                 # Build + deploy to Cloudflare (do NOT use `npx wrangler deploy` alone — skips the build, ships stale dist)
+pnpm run deploy             # Build + deploy to Cloudflare. Use `pnpm run deploy`, NOT bare `pnpm deploy` (that's a pnpm workspace built-in). Direct `npx wrangler deploy` skips the build and ships stale dist.
 pnpm db:generate:named "x"  # Generate migration
 pnpm db:migrate:local       # Apply migrations locally
 pnpm db:migrate:remote      # Apply migrations to production
