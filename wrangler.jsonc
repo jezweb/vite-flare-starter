@@ -259,6 +259,15 @@
         // See src/server/modules/autonomous-agents/admin-agent.ts.
         "name": "AdminAgent",
         "class_name": "AdminAgent"
+      },
+      {
+        // ChatAgent — SDK-aligned chat DO via @cloudflare/ai-chat's
+        // AIChatAgent. One DO per (user, conversation) pair, named
+        // `user-{userId}-conv-{conversationId}`. Routed via
+        // routeAgentRequest at /agents/chat-agent/{instance-name}.
+        // See src/server/modules/chat/chat-agent.ts.
+        "name": "ChatAgent",
+        "class_name": "ChatAgent"
       }
     ]
   },
@@ -304,6 +313,10 @@
     {
       "tag": "v9",
       "new_sqlite_classes": ["AdminAgent"]
+    },
+    {
+      "tag": "v10",
+      "new_sqlite_classes": ["ChatAgent"]
     }
   ],
 

@@ -76,6 +76,10 @@ export { SweeperAgent } from './modules/autonomous-agents/sweeper-agent'
 export { AdminAgent } from './modules/autonomous-agents/admin-agent'
 export { ScratchpadMcpAgent }
 export { SpaceAgent } from './modules/spaces/space-agent'
+// SDK-aligned chat DO. Routed via `routeAgentRequest` at
+// /agents/chat-agent/user-{userId}-conv-{conversationId}.
+// See src/server/modules/chat/chat-agent.ts.
+export { ChatAgent } from './modules/chat/chat-agent'
 import { securityHeaders } from './middleware/security'
 import { rateLimiter } from './middleware/rate-limit'
 import { authMiddleware, requireScopes } from './middleware/auth'
