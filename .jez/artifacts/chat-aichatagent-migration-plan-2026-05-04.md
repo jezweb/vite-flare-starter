@@ -1,15 +1,27 @@
 ---
 date: 2026-05-04
-status: revised after Jez feedback (SDK-first, no compat baggage)
+status: v2.1 — corrected after Phase 1 dispatch + Option E recon
 owner: jez+claude
 related:
   - GitHub issue #34
+  - chat-migration-recon-2026-05-04.md (Q1-Q7 SDK basics)
+  - option-e-full-embrace-recon-2026-05-04.md (full architecture review)
   - https://github.com/cloudflare/agents-starter/blob/main/src/server.ts
   - https://www.npmjs.com/package/@cloudflare/ai-chat
 supersedes_v1: 2026-05-04 (the v1 was dual-path / feature-flag / adapter — too defensive given test-only data across forks)
 ---
 
-# Chat module → AIChatAgent migration plan (v2)
+# Chat module → AIChatAgent migration plan (v2.1)
+
+## Corrections in v2.1
+
+Two issues caught after v2 was committed:
+
+1. **Spaces shares the conversation tables.** The Phase 1 agent caught this before any code changes — `conversations`, `conversation_messages`, `conversation_members` are NOT chat-only. Spaces, Projects, Memories, Admin-Tools all read these tables. v2's "drop the conversations tables" step would have catastrophically broken Spaces. **Fix:** keep the tables. Chat's legacy `routes.ts` + `D1ChatStorage` get deleted, but the underlying `conversations` schema stays as the cross-module shared primitive that ALL chat-shaped DOs (chat, spaces) project to via `onChatResponse`.
+
+2. **The "Option E full-embrace" framing was wrong.** The Option E recon (`option-e-full-embrace-recon-2026-05-04.md`) confirmed the codebase is already SDK-aligned. Specialists (AssistantAgent, ResearcherAgent, WriterAgent, AdminAgent, SweeperAgent) extend `AutonomousAgent extends Agent` — correct SDK primitive for stateful RPC agents. SpaceAgent extends Agent — correct for WebSocket coordinators. Voice/Video extend Agent + streaming mixin — correct. **Only the chat module needs migration.** Specialists, Spaces, Voice/Video stay as-is.
+
+These corrections leave the chat-only migration scope unchanged but make the doc honest about what's NOT in scope.
 
 ## Headline
 
@@ -71,9 +83,9 @@ The custom code is **smaller** than today (the message storage layer disappears)
 
 These are now mostly clear from Jez's guidance. Listing for the audit trail.
 
-1. **DO is the storage. D1 holds an index, not a copy.** ← simplified from v1's hybrid. `chat_sessions` table has no messages, just the conversation metadata + projectId. Optional: a `messages_index` table populated via `onChatResponse` hook for FTS5 search across conversations.
+1. **DO is authoritative for live state. D1 `conversation_messages` is the cross-module projection.** ← corrected in v2.1. Because Spaces/Projects/Memories/Admin-Tools read `conversation_messages` directly, ChatAgent's `onChatResponse` hook writes through to that existing table after each turn. `chat_sessions` is a NEW additive table that just maps `{userId, conversationId, doInstanceName}` so the sidebar can list conversations + look up the right DO instance. No new `messages_index` — the existing `conversation_messages_fts` already does FTS5 search across both chat and spaces.
 2. **Exact version pinning** — `@cloudflare/ai-chat@0.6.2`, `agents@0.12.3`. Re-evaluate at every bump.
-3. **Test data dropped** — drop the existing `conversations` and `messages` D1 tables. New `chat_sessions` table replaces them (smaller, only metadata).
+3. **Conversation tables kept (shared with Spaces)** — `conversations`, `conversation_messages`, `conversation_members` STAY. They're cross-module primitives owned by the conversations module, used by chat AND spaces AND projects AND admin-tools. The new ChatAgent writes through to these tables via `onChatResponse` for cross-conversation search + admin views. Test data orphans get cleaned up via a one-shot DELETE (rows where `kind='chat'` from before the migration). New `chat_sessions` is additive — just maps `{userId, conversationId, doInstanceName, projectId}` for sidebar lookups.
 4. **AutonomousAgent specialists keep their current shape** — different primitive, different need. Chat agent uses SDK `agentTool()` for new sub-agent surfaces; existing inline `delegate_to_X` tools either stay (if they work) or become AIChatAgent subclasses if we want streaming sub-agents.
 5. **Mount SDK router** — `routeAgentRequest` for agent traffic. Hono keeps `/api/chat-sessions/*` for the read-only sidebar list + search endpoints (those don't need to be agent-routed).
 6. **`messageConcurrency = "queue"`** — SDK default. Revisit per-surface if we see usage patterns that benefit from another strategy.
@@ -82,7 +94,7 @@ These are now mostly clear from Jez's guidance. Listing for the audit trail.
 
 ### Phase 1 — Replace the chat module (~1 session, 4-6 hrs)
 
-Goal: chat module is gone. New `ChatAgent extends AIChatAgent` is the only chat path. Old conversations + messages tables dropped. Sidebar reads from new `chat_sessions` table.
+Goal: legacy chat code is gone. New `ChatAgent extends AIChatAgent` is the only chat path. **Conversation tables KEPT (shared with Spaces).** Sidebar reads from new `chat_sessions` index table. Old `kind='chat'` rows in `conversations` are deletable as test-data cleanup.
 
 **SDK installs**:
 - `agents` 0.11.5 → 0.12.3
@@ -91,10 +103,11 @@ Goal: chat module is gone. New `ChatAgent extends AIChatAgent` is the only chat 
 - Add `@cloudflare/ai-chat@0.6.2` (exact)
 
 **Schema changes**:
-- New table: `chat_sessions { id, userId, organizationId, title, projectId, createdAt, updatedAt, doInstanceName }`
-- Drop tables: `conversations`, `messages` (test data only — confirmed with Jez)
-- Drop FTS5: `messages_fts` (and any related triggers)
-- Drizzle migration: one file, drops + creates
+- New table: `chat_sessions { id, userId, organizationId, conversationId, doInstanceName, archived, createdAt, updatedAt }` — additive sidebar index. `conversationId` foreign-keys to existing `conversations` table.
+- **KEEP**: `conversations`, `conversation_messages`, `conversation_members` tables (shared with Spaces — confirmed by Phase 1 recon). They're owned by the conversations module, not the chat module.
+- **KEEP**: `conversation_messages_fts` (used by spaces global search and chat search alike)
+- Drizzle migration: additive only — one CREATE TABLE for `chat_sessions` + indexes.
+- Test-data cleanup (one-shot): `DELETE FROM conversations WHERE kind='chat'` and let cascades clean up `conversation_messages` + `conversation_members` rows. Run separately, AFTER the new path is verified working.
 
 **Wrangler config**:
 - New DO binding: `{ "name": "ChatAgent", "class_name": "ChatAgent" }`
