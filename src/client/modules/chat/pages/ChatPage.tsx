@@ -90,7 +90,11 @@ const ACCEPT_ALL = [
 ].join(',')
 
 export function ChatPage() {
-  const { conversationId: urlConversationId } = useParams<{ conversationId?: string }>()
+  // conversationId is always present — the route is `chat/:conversationId`
+  // and `/dashboard/chat` redirects via NewChatRedirect which mints a UUID
+  // upfront. Keeping the id in router state stops the useAgentChat
+  // suspense-loop bug.
+  const { conversationId: urlConversationId = '' } = useParams<{ conversationId: string }>()
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -204,24 +208,10 @@ export function ChatPage() {
     },
   })
 
-  // Navigate to conversation URL when a new conversation is created.
-  // Preserve ?projectId= across the navigate so the in-project pill doesn't
-  // briefly vanish while the conversations list refetches. The pill falls
-  // back to urlProjectId until storedProjectId resolves from the list cache.
-  useEffect(() => {
-    if (conversationId && !urlConversationId && messages.length > 0) {
-      const projectSuffix = urlProjectId ? `?projectId=${urlProjectId}` : ''
-      navigate(`/dashboard/chat/${conversationId}${projectSuffix}`, { replace: true })
-      queryClient.invalidateQueries({ queryKey: ['conversations'] })
-      // Also invalidate the parent project's detail (which embeds the
-      // conversations list). Without this, navigating back to the project
-      // shows the stale empty-state until a hard refresh — even though
-      // the new conversation IS persisted server-side.
-      if (urlProjectId) {
-        queryClient.invalidateQueries({ queryKey: ['projects', urlProjectId] })
-      }
-    }
-  }, [conversationId, urlConversationId, urlProjectId, messages.length, navigate, queryClient])
+  // Phase 1C: navigate-on-create removed — `NewChatRedirect` mints the
+  // conversationId upfront and the URL already matches before the first
+  // message lands. Sidebar invalidation happens via `onFinish` on the
+  // useChat hook below (fired once per turn complete).
 
   // After the first assistant response completes, ask the server to generate
   // a proper title + summary for the sidebar. Fires at most once per

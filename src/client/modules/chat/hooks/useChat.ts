@@ -27,7 +27,7 @@ import {
   lastAssistantMessageIsCompleteWithApprovalResponses,
   type UIMessage,
 } from 'ai'
-import { useMemo, useRef, useEffect } from 'react'
+import { useRef, useEffect } from 'react'
 import { type MessageMetadata } from '@/shared/schemas/chat.schema'
 
 export type Message = UIMessage
@@ -43,11 +43,14 @@ interface ChatOptions {
   /** Default model; can be changed per send via the model picker. */
   model?: string
   /**
-   * Conversation id. When omitted, the hook generates a fresh UUID so the
-   * DO is addressable immediately. The caller reads back `conversationId`
-   * from the return (always present once the hook is mounted).
+   * Conversation id — REQUIRED. ChatPage now mounts only at
+   * `/dashboard/chat/:conversationId`; the bare `/dashboard/chat` redirects
+   * via `NewChatRedirect` which mints a UUID upfront. Keeping the id in
+   * router state (URL) instead of React state stops `useAgentChat`'s
+   * `use(initialMessagesPromise)` from looping when ChatPage remounts on
+   * suspense resolve.
    */
-  conversationId?: string
+  conversationId: string
   /**
    * Stamps a new conversation with a project on first send. The server
    * (ChatAgent.onChatMessage) only honours this for the FIRST turn — once
@@ -80,29 +83,10 @@ function buildInstanceName(userId: string, conversationId: string): string {
   return `user-${userId}-conv-${conversationId}`
 }
 
-export function useChat(options: ChatOptions = {}) {
-  const { userId, model, conversationId: providedConversationId, projectId, initialMessages, onToolCall, onFinish } = options
+export function useChat(options: ChatOptions) {
+  const { userId, model, conversationId, projectId, initialMessages, onToolCall, onFinish } = options
 
-  // Allocate a conversation id if the caller didn't provide one. The
-  // useMemo + ref pair keeps the id stable across renders without
-  // creating one until both userId is present and we need a session.
-  // This way, components that mount before auth resolves don't burn
-  // through random UUIDs.
-  const allocatedIdRef = useRef<string | null>(null)
-  const conversationId = useMemo(() => {
-    if (providedConversationId) {
-      // Switching conversations — reset our auto-allocated id so a later
-      // unmount-back-to-new doesn't reuse the old one.
-      allocatedIdRef.current = null
-      return providedConversationId
-    }
-    if (!allocatedIdRef.current) {
-      allocatedIdRef.current = crypto.randomUUID()
-    }
-    return allocatedIdRef.current
-  }, [providedConversationId])
-
-  // Static names used by useAgent. The agent SDK normalises class names
+  // Static name used by useAgent. The agent SDK normalises class names
   // to kebab-case for routing — `ChatAgent` → `/agents/chat-agent/...`.
   // Pass the PascalCase form here; the hook handles the conversion.
   const instanceName = userId ? buildInstanceName(userId, conversationId) : ''

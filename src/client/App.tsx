@@ -1,5 +1,5 @@
-import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { lazy, Suspense, useEffect } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { ScrollToTop } from './components/shared/ScrollToTop'
 import { ErrorBoundary } from './components/shared/ErrorBoundary'
@@ -102,6 +102,27 @@ function FeatureGatedPage({
   )
 }
 
+/**
+ * Mints a fresh conversationId UUID and redirects to /dashboard/chat/{id}.
+ * Lives at /dashboard/chat. Keeps the conversationId in router state instead
+ * of React state — without this, useAgentChat's `use(initialMessagesPromise)`
+ * suspends ChatPage, which remounts on resolve and re-allocates a new id,
+ * suspending again in an infinite loop (see chat migration plan v2.1, 1C
+ * commit). Preserves `?projectId=` so a "New chat in this project" link
+ * stamps the right project on the first turn.
+ */
+function NewChatRedirect() {
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  useEffect(() => {
+    const id = crypto.randomUUID()
+    const projectId = searchParams.get('projectId')
+    const suffix = projectId ? `?projectId=${projectId}` : ''
+    navigate(`/dashboard/chat/${id}${suffix}`, { replace: true })
+  }, [navigate, searchParams])
+  return <PageSpinner />
+}
+
 function App() {
   return (
     <ErrorBoundary onError={createErrorHandler()}>
@@ -161,12 +182,17 @@ function App() {
             {/* Admin panel - users, features, tokens */}
             <Route path="admin" element={<AdminPage />} />
 
-            {/* AI Chat — single route with optional conversationId so
-                transitioning from /chat to /chat/:id (post-first-send)
-                doesn't remount ChatPage and wipe in-flight streaming
-                state. Two separate routes was the C1 regression cause:
-                navigate(replace:true) between Route entries unmounts. */}
-            <Route path="chat/:conversationId?" element={<ChatPage />} />
+            {/* AI Chat — split into a redirect at /chat and the real page
+                at /chat/:conversationId. The redirect mints a UUID upfront
+                so the DO instance name is in the URL (router state) rather
+                than React state. Without this, useAgentChat's `use(initialMessagesPromise)`
+                suspends ChatPage, which remounts on resolve, generating a
+                NEW UUID, suspending again — infinite loop.
+                Streaming state lives in the DO now, so the route swap from
+                /chat → /chat/:id is safe (the SDK reconnects to the same
+                DO instance addressed by URL). */}
+            <Route path="chat" element={<NewChatRedirect />} />
+            <Route path="chat/:conversationId" element={<ChatPage />} />
             <Route path="projects" element={<ProjectsIndexPage />} />
             <Route path="projects/:id" element={<ProjectPage />} />
             {features.spaces && (
