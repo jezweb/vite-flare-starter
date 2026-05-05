@@ -21,9 +21,6 @@ export { resolveModel, getAvailableProviders, buildRegistry, routeFor } from './
 // Model middleware (reasoning extraction, etc.)
 export { buildModel } from './middleware'
 
-// Chat agent factory (ToolLoopAgent-based)
-export { buildChatAgent } from './agent'
-
 // Context builder (system prompt assembly)
 export { buildSystemPrompt } from './context'
 
