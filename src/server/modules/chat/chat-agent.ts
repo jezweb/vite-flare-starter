@@ -468,6 +468,13 @@ export class ChatAgent extends AIChatAgent<Env> {
   }
 
   override async onChatMessage(
+    ...args: Parameters<AIChatAgent<Env>['onChatMessage']>
+  ): Promise<Response | undefined> {
+    console.log(JSON.stringify({ event: 'chat_agent_onchatmessage_enter', name: this.name, msgCount: this.messages.length, hasBody: !!args[1]?.body }))
+    return this._impl(...args)
+  }
+
+  private async _impl(
     _onFinish: StreamTextOnFinishCallback<ToolSet>,
     options?: OnChatMessageOptions,
   ): Promise<Response | undefined> {

@@ -118,16 +118,11 @@ export function useChat(options: ChatOptions) {
     ? async () => initialMessages!
     : undefined
 
-  // useAgentChat extends AI SDK's useChat. The body field flows to the
-  // server via options.body in onChatMessage. Server reads model + projectId
-  // from there; the rest of the request body (messages, clientTools) is
-  // SDK-managed.
+  // useAgentChat extends AI SDK's useChat. Bare-minimum form first —
+  // matches the agents-starter ai-chat example. model + projectId can
+  // ride via static `body` once basic send is verified.
   const chat = useAgentChat({
     agent,
-    body: () => ({
-      model: modelRef.current,
-      projectId: projectIdRef.current,
-    }),
     getInitialMessages,
     onToolCall,
     // CRITICAL: without this, addToolApprovalResponse() only stores the
