@@ -118,11 +118,17 @@ export function useChat(options: ChatOptions) {
     ? async () => initialMessages!
     : undefined
 
-  // useAgentChat extends AI SDK's useChat. Bare-minimum form first —
-  // matches the agents-starter ai-chat example. model + projectId can
-  // ride via static `body` once basic send is verified.
+  // useAgentChat extends AI SDK's useChat. The function-form `body` is
+  // evaluated per send via `bodyOptionRef.current` in the SDK's
+  // `prepareBody`, so the latest `modelRef.current` / `projectIdRef.current`
+  // always travel with each chat-request frame and arrive in
+  // `options.body` on `ChatAgent.onChatMessage`.
   const chat = useAgentChat({
     agent,
+    body: () => ({
+      model: modelRef.current,
+      projectId: projectIdRef.current,
+    }),
     getInitialMessages,
     onToolCall,
     // CRITICAL: without this, addToolApprovalResponse() only stores the

@@ -10,6 +10,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
+import { Spinner } from '@/components/ui/spinner'
 import {
   PromptInput,
   PromptInputTextarea,
@@ -89,7 +90,34 @@ const ACCEPT_ALL = [
   'application/epub+zip',
 ].join(',')
 
+/**
+ * Thin gate that holds back the chat body until session is fully loaded.
+ *
+ * Why: `useChat` calls `useAgent({ name: instanceName })` from the SDK,
+ * and instanceName depends on `session?.user?.id`. If `userId` flips from
+ * undefined → real value during initial render, the SDK opens TWO
+ * WebSockets — first to a `default` DO, then to the real one. The first
+ * connection's close races the chat-request frame and the message never
+ * reaches `onChatMessage`. (GPT-5.5 brainstrust + observed double `connect`
+ * diagnostic in tail confirm this.)
+ *
+ * Fix: don't mount `ChatPageInner` until `session.user.id` exists. Once
+ * mounted, `instanceName` is stable for the component's whole lifetime.
+ */
 export function ChatPage() {
+  const { data: session, isPending } = useSession()
+  const userId = session?.user?.id
+  if (isPending || !userId) {
+    return (
+      <div className="flex h-full min-h-[60vh] items-center justify-center">
+        <Spinner />
+      </div>
+    )
+  }
+  return <ChatPageInner userId={userId} />
+}
+
+function ChatPageInner({ userId }: { userId: string }) {
   // conversationId is always present — the route is `chat/:conversationId`
   // and `/dashboard/chat` redirects via NewChatRedirect which mints a UUID
   // upfront. Keeping the id in router state stops the useAgentChat
@@ -98,6 +126,9 @@ export function ChatPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  // Inner: session is guaranteed by the gate. Re-fetch for ergonomics
+  // (other places still read `session.user.email` etc.) without ever
+  // hitting the userId-undefined window.
   const { data: session } = useSession()
   const [model, setModel] = useState<string>(DEFAULT_MODEL_ID)
   const [showSidebar, setShowSidebar] = useState(false)
@@ -190,7 +221,7 @@ export function ChatPage() {
     setMessages,
     addToolApprovalResponse,
   } = useChat({
-    userId: session?.user?.id,
+    userId, // guaranteed by the outer gate — stable for the whole inner lifecycle
     model,
     conversationId: urlConversationId,
     projectId: urlProjectId,
