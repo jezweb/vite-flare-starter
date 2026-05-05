@@ -14,7 +14,7 @@
  * copy — the skills table flips `source: 'r2'`, and the R2 version wins.
  */
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import {
   Upload,
   Code2 as GithubIcon,
@@ -76,7 +76,6 @@ import { formatSkillName, formatSkillSlash } from '@/shared/format/skill'
 type Skill = NonNullable<ReturnType<typeof useSkillsList>['data']>['skills'][number]
 
 export function SkillsPage() {
-  const navigate = useNavigate()
   const { data, isLoading } = useSkillsList()
   const sync = useSyncBundled()
   const install = useInstallGitHubSkill()
@@ -92,9 +91,6 @@ export function SkillsPage() {
   const [view, setView] = useViewPreference<'cards' | 'list'>('skills', 'cards')
 
   const skills = data?.skills ?? []
-
-  const openSkill = (name: string) =>
-    navigate(`/dashboard/skills/${encodeURIComponent(name)}`)
 
   const handleInstall = async () => {
     if (!githubUrl.trim()) return
@@ -197,7 +193,7 @@ export function SkillsPage() {
                 <SkillCard
                   key={s.id}
                   skill={s}
-                  onSelect={() => openSkill(s.name)}
+                  to={`/dashboard/skills/${encodeURIComponent(s.name)}`}
                   onToggle={(checked) =>
                     toggle.mutate({ name: s.name, enabled: checked })
                   }
@@ -211,7 +207,7 @@ export function SkillsPage() {
                   <SkillListRow
                     key={s.id}
                     skill={s}
-                    onSelect={() => openSkill(s.name)}
+                    to={`/dashboard/skills/${encodeURIComponent(s.name)}`}
                     onToggle={(checked) =>
                       toggle.mutate({ name: s.name, enabled: checked })
                     }
@@ -363,7 +359,8 @@ export function SkillsPage() {
 
 interface SkillRowProps {
   skill: Skill
-  onSelect: () => void
+  /** Detail page URL — `<Link to>` so Cmd+click opens in a new tab. */
+  to: string
   onToggle: (checked: boolean) => void
 }
 
@@ -374,7 +371,7 @@ interface SkillRowProps {
  * Switch (toggles enabled). No nested-interactive — Switch sits
  * outside the button via the Item primitive's flex layout.
  */
-function SkillCard({ skill: s, onSelect, onToggle }: SkillRowProps) {
+function SkillCard({ skill: s, to, onToggle }: SkillRowProps) {
   return (
     <Item
       className={cn(
@@ -382,9 +379,8 @@ function SkillCard({ skill: s, onSelect, onToggle }: SkillRowProps) {
         !s.enabled && 'opacity-60',
       )}
     >
-      <button
-        type="button"
-        onClick={onSelect}
+      <Link
+        to={to}
         className="flex min-w-0 flex-1 items-start gap-3 rounded-md text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
       >
         <ItemMedia variant="icon">
@@ -403,7 +399,7 @@ function SkillCard({ skill: s, onSelect, onToggle }: SkillRowProps) {
             {s.description}
           </ItemDescription>
         </ItemContent>
-      </button>
+      </Link>
       <ItemActions className="shrink-0 flex-col items-end gap-2 self-start">
         <Badge
           variant={s.source === 'bundled' ? 'secondary' : 'outline'}
@@ -426,7 +422,7 @@ function SkillCard({ skill: s, onSelect, onToggle }: SkillRowProps) {
  * List variant of a skill row — denser, text-dominant. Same two
  * focus stops as the card variant.
  */
-function SkillListRow({ skill: s, onSelect, onToggle }: SkillRowProps) {
+function SkillListRow({ skill: s, to, onToggle }: SkillRowProps) {
   return (
     <li
       className={cn(
@@ -434,9 +430,8 @@ function SkillListRow({ skill: s, onSelect, onToggle }: SkillRowProps) {
         !s.enabled && 'opacity-60',
       )}
     >
-      <button
-        type="button"
-        onClick={onSelect}
+      <Link
+        to={to}
         className="flex min-w-0 flex-1 items-start gap-3 rounded-md text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
       >
         <Sparkles className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
@@ -456,7 +451,7 @@ function SkillListRow({ skill: s, onSelect, onToggle }: SkillRowProps) {
             {s.description}
           </p>
         </div>
-      </button>
+      </Link>
       <div className="flex shrink-0 items-center gap-2">
         <Badge
           variant={s.source === 'bundled' ? 'secondary' : 'outline'}

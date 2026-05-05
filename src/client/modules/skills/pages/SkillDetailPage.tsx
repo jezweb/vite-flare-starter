@@ -106,7 +106,6 @@ export function SkillDetailPage() {
 
       <PageHeader
         title={formatSkillName(skill.name)}
-        subtitle={skill.description}
         docTitle={formatSkillName(skill.name)}
         trailing={
           <code className="rounded bg-muted px-2 py-1 text-xs font-mono text-muted-foreground">

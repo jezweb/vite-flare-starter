@@ -68,6 +68,19 @@ interface SkillEditorProps {
 }
 
 /**
+ * Strip a leading `# Title` line from the markdown body so the rendered
+ * Overview doesn't duplicate the page header. Most SKILL.md files start
+ * with the skill name as h1; the page already shows it in the
+ * `<PageHeader>` so re-rendering it inside the procedure card is noise.
+ *
+ * Only strips ONE leading h1. Subsequent h1s (rare in skills, but
+ * possible in long procedures) survive intact.
+ */
+function stripLeadingH1(body: string): string {
+  return body.replace(/^\s*#[^#].*\n+/, '')
+}
+
+/**
  * Rebuild the canonical SKILL.md text from the parsed frontmatter + body —
  * matches the server's `loadCurrentContent` for skill kind, so the
  * `before` captured at proposal creation time is byte-identical to what
@@ -372,13 +385,14 @@ export function SkillEditor({ name }: SkillEditorProps) {
 
           {/* The skill procedure rendered as readable markdown — what the
               AI actually loads when invoked. Not the source editor; this
-              is the "what does this do" view. */}
+              is the "what does this do" view. Strip a leading `# Title`
+              line so it doesn't duplicate the page header. */}
           <div>
             <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Procedure
             </h3>
             <div className="prose prose-sm dark:prose-invert max-w-none">
-              <ReactMarkdown>{split.body}</ReactMarkdown>
+              <ReactMarkdown>{stripLeadingH1(split.body)}</ReactMarkdown>
             </div>
           </div>
         </TabsContent>
