@@ -10,7 +10,7 @@
     "dev": "vite dev",
     "build": "tsc && vite build",
     "preview": "wrangler dev",
-    "deploy": "wrangler deploy",
+    "deploy": "pnpm build && wrangler deploy",
     "cf:login": "wrangler login",
     "db:generate": "drizzle-kit generate",
     "db:generate:named": "drizzle-kit generate --name",

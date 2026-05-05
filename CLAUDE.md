@@ -113,6 +113,7 @@ reference lives in `docs/`, loaded only when you need it.
 | Vision + image edit + image gen patterns | [`docs/VISION_AND_IMAGE_EDITING.md`](./docs/VISION_AND_IMAGE_EDITING.md) |
 | Enable KV / Queues / Vectorize / Hyperdrive / Stream | [`docs/PLATFORM_SERVICES.md`](./docs/PLATFORM_SERVICES.md) |
 | Add analytics / payments / email / real-time / background jobs | `docs/ADDING_*.md` |
+| Email inbound (Cloudflare Email Routing) | [`docs/ADDING_EMAIL_INBOUND.md`](./docs/ADDING_EMAIL_INBOUND.md) |
 | Track fork divergence from upstream (forks only) | [`PATCHES.md`](./PATCHES.md) + [`docs/PATCHES-guide.md`](./docs/PATCHES-guide.md) |
 | Interop with [goanna](https://github.com/jezweb/goanna) — filesystem-markdown agent framework | [`docs/GOANNA_INTEROP.md`](./docs/GOANNA_INTEROP.md) |
 | Deploy checklist | [`docs/DEPLOYMENT_CHECKLIST.md`](./docs/DEPLOYMENT_CHECKLIST.md) |
@@ -570,7 +571,7 @@ docstring covers the security model + cascade trap).
 printf "secret" | npx wrangler secret put BETTER_AUTH_SECRET
 printf "https://your-app.workers.dev" | npx wrangler secret put BETTER_AUTH_URL
 printf "http://localhost:5173,https://your-app.workers.dev" | npx wrangler secret put TRUSTED_ORIGINS
-npx wrangler deploy
+pnpm deploy
 ```
 
 ---
@@ -580,7 +581,7 @@ npx wrangler deploy
 ```bash
 pnpm dev                    # Dev server
 pnpm build                  # Production build
-npx wrangler deploy         # Deploy to Cloudflare
+pnpm deploy                 # Build + deploy to Cloudflare (do NOT use `npx wrangler deploy` alone — skips the build, ships stale dist)
 pnpm db:generate:named "x"  # Generate migration
 pnpm db:migrate:local       # Apply migrations locally
 pnpm db:migrate:remote      # Apply migrations to production
