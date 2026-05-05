@@ -14,9 +14,37 @@ import CodeMirror from '@uiw/react-codemirror'
 import { markdown } from '@codemirror/lang-markdown'
 import { oneDark } from '@codemirror/theme-one-dark'
 import { EditorView } from '@codemirror/view'
-import { foldGutter } from '@codemirror/language'
+import { foldGutter, HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import { highlightSelectionMatches, search } from '@codemirror/search'
 import { linter, lintGutter, type Diagnostic } from '@codemirror/lint'
+import { tags as t } from '@lezer/highlight'
+
+/**
+ * Light-mode markdown highlight style.
+ *
+ * The default `light` highlightStyle CodeMirror ships uses
+ * `text-decoration: underline` for heading tokens — renders ugly
+ * underlines on every `# Heading` line. This override uses bold +
+ * accent colour instead. Dark mode uses oneDark (already styles
+ * headings well, no override needed).
+ */
+const lightMarkdownHighlight = HighlightStyle.define([
+  { tag: t.heading1, fontWeight: '700', color: '#0c4a6e' },
+  { tag: t.heading2, fontWeight: '700', color: '#0c4a6e' },
+  { tag: t.heading3, fontWeight: '600', color: '#0c4a6e' },
+  { tag: t.heading4, fontWeight: '600', color: '#0c4a6e' },
+  { tag: t.heading5, fontWeight: '600', color: '#0c4a6e' },
+  { tag: t.heading6, fontWeight: '600', color: '#0c4a6e' },
+  { tag: t.strong, fontWeight: '700' },
+  { tag: t.emphasis, fontStyle: 'italic' },
+  { tag: t.link, color: '#1d4ed8' },
+  { tag: t.url, color: '#1d4ed8' },
+  { tag: t.monospace, color: '#7c2d12' },
+  { tag: t.quote, color: '#52525b', fontStyle: 'italic' },
+  { tag: t.list, color: '#0c4a6e' },
+  { tag: t.meta, color: '#6b7280' },
+  { tag: t.comment, color: '#9ca3af', fontStyle: 'italic' },
+])
 
 export interface MarkdownCodeEditorProps {
   value: string
@@ -202,12 +230,18 @@ export function MarkdownCodeEditor({
       search({ top: true }),
       highlightSelectionMatches(),
     ]
+    // Light-mode override: replace the default highlightStyle that
+    // underlines headings with one that uses bold + accent colour.
+    // Dark mode (oneDark) ships its own heading style; skip the override.
+    if (!dark) {
+      exts.push(syntaxHighlighting(lightMarkdownHighlight))
+    }
     if (lintSkillFrontmatter) {
       exts.push(lintGutter())
       exts.push(skillFrontmatterLinter())
     }
     return exts
-  }, [fontTheme, lintSkillFrontmatter])
+  }, [fontTheme, lintSkillFrontmatter, dark])
 
   return (
     <CodeMirror

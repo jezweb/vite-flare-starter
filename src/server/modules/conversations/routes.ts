@@ -81,14 +81,24 @@ app.get('/search', async (c) => {
   }
 })
 
-/** GET /api/conversations/:id — load a conversation's messages */
+/** GET /api/conversations/:id — load a conversation's messages
+ *
+ * Returns `{ messages: [] }` when the conversation row doesn't exist OR
+ * belongs to another user. Both cases are indistinguishable to the caller,
+ * which is the same security guarantee as 404 — but avoids spurious 404s
+ * in the network panel during the chat lazy-creation flow (ChatPage's
+ * `useConversationMessages` query fires on URL transition before
+ * `ChatAgent.onChatMessage` lazily creates the row on the first turn).
+ *
+ * UX-audit M1 (2026-05-06).
+ */
 app.get('/:id', async (c) => {
   const conversationId = c.req.param('id')
   const userId = c.get('userId')
   const storage = createD1ChatStorage(c.env.DB)
 
   if (!(await storage.isOwner(conversationId, userId))) {
-    return c.json({ error: 'Not found' }, 404)
+    return c.json({ messages: [] })
   }
 
   const messages = await storage.loadChat(conversationId)
