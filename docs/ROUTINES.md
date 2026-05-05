@@ -136,6 +136,80 @@ await apiClient.post('/api/routines', {
 
 Both seeded by `POST /api/routines/seed-examples`.
 
+## Worked example — Daily scanner with grouping
+
+Pattern: scan a data table for rows matching a condition (e.g. expiring records), **group by a shared key**, and emit ONE finding per group instead of N. Surface a clear next-action label so the user can act from the Inbox.
+
+```ts
+{
+  id: 'expiring-records-scanner',
+  name: 'Expiring records scanner',
+  agentClass: 'AssistantAgent',
+  agentNameSlug: 'expiring-records-scanner',
+  baseInterval: 24 * 60 * 60,        // daily
+  adjustMode: 'fixed',                // user-set cadence wins
+  defaultEnabled: true,
+  inputText:
+    'Scan for upcoming records due for action. Call list_expiring_records ' +
+    'with daysAhead=14. For each row returned, emit one inbox_add finding ' +
+    'with the entity name, type, days until expiry, and a clear next-action ' +
+    'label like "Draft review email". Skip entities that already have an ' +
+    'in-flight draft. Group multiple-record clients (same renewal_batch_id) ' +
+    'into a single combined finding. If nothing is due, do not emit anything.',
+  skillsLoaded: ['expiry-scan'],
+  toolsAllowed: ['list_expiring_records', 'inbox_add', 'find_tools'],
+  sessionEndSkill: null,
+  // Optional: clamp first fire to 8am AEST so users see findings on arrival
+  // localFireHour: 8,
+}
+```
+
+Three details earn their place:
+
+1. **`inputText` reads like a spec, not a chat prompt.** Detailed paragraph spelling out what to call, when to skip, when to group, when to emit nothing. The agent doesn't need creativity here — it needs precise instructions.
+2. **`adjustMode: 'fixed'`** confirms the schedule is intentional. The agent can't slow itself down even if it sees no findings for a week.
+3. **Group key in the prompt.** "Same renewal_batch_id → one combined finding" is the rule that turns 5 noisy findings into 1 actionable one.
+
+Worked production example: rightcover's `renewal-scanner` template (`src/shared/config/routine-templates.ts`) — daily at 8am AEST, scans `policies` for renewals due in 14 days, groups multi-policy clients, emits one Inbox row per client with "Draft review email" as the next action.
+
+## Worked example — Email triage routine
+
+Pattern: a routine wakes on interval, picks up rows from an inbound table where `status=pending`, runs slow extraction work, emits findings, marks the row complete. Decoupled from the email handler so neither is fragile.
+
+```ts
+{
+  id: 'inbound-triage',
+  name: 'Inbound email triage',
+  agentClass: 'AssistantAgent',
+  agentNameSlug: 'inbound-triage',
+  baseInterval: 30 * 60,             // every 30 minutes
+  adjustMode: 'fixed',
+  defaultEnabled: false,             // off until the upstream handler is wired
+  inputText:
+    'Check for inbound emails with status=pending. For each one with PDF ' +
+    'attachments, identify the contact, run analyse_document on each ' +
+    'attachment, then emit an inbox_add finding summarising what was found. ' +
+    'Mark the inbound_email row as complete on success, or status=error ' +
+    'with the error message on failure.',
+  skillsLoaded: ['document-analyser'],
+  toolsAllowed: ['analyse_document', 'inbox_add', 'find_tools'],
+  sessionEndSkill: null,
+}
+```
+
+Two timing tiers, by design:
+
+| Step | Latency budget | Where |
+|---|---|---|
+| Email handler — parse + persist | < 1s | `Worker.email()` export |
+| Triage routine — analyse + emit | seconds–minutes | This routine |
+
+The handler stays fast and reliable (no LLM in the request path). The routine does the slow extraction work where retries, observability, and budget gating apply naturally. They're decoupled by the `status` field on the inbound row.
+
+Upstream pairing: see [`docs/ADDING_EMAIL_INBOUND.md`](./ADDING_EMAIL_INBOUND.md) for the email handler that produces the `inbound_emails` rows this routine consumes.
+
+Worked production example: rightcover's `inbound-triage` template — every 30 min, processes `inbound_emails` forwarded to `inbox@rightcover.au`, runs `analyse_policy` on each PDF, surfaces extraction results to the Inbox.
+
 ## Per-routine budget
 
 `dailyBudgetUsd` field caps cost over a rolling 24h window. Combines with `AutonomousAgent.dailyBudgetUsd` — whichever is tighter wins. Budget exhaustion produces a `routine_runs` row with `outcome='budget_exceeded'`; the routine-health watcher surfaces these as findings.
