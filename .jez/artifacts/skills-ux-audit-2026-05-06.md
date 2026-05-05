@@ -1,6 +1,6 @@
 ---
 date: 2026-05-06
-status: complete
+status: complete — ALL 6 findings shipped (F1 + M1 + M2 + M3 + L1 + L2)
 owner: jez+claude
 scope: /dashboard/skills + skill detail editor
 viewports: desktop (1440x900)
@@ -21,23 +21,27 @@ Listing page is well-designed in both themes. Skill detail page works but has re
 |---|---|---|---|
 | F1 | Bug — visual | Light-mode CodeMirror underlined every markdown heading (`# H1`, `## H2`, etc.) | Added `HighlightStyle` for light mode using bold + accent colour instead of underline. Verified: 18 underlined spans → 0 |
 
-## Findings — UX nits (not yet fixed, queued for follow-up)
+## Findings — ALL FIXED in this session
 
-### M1 — Listing cards are `<button>`, not `<a href>`
+Status legend: ✓ shipped to live deploy
+
+## Findings — UX nits
+
+### ✓ M1 — Listing cards are `<button>`, not `<a href>` (FIXED)
 - **Where**: `/dashboard/skills` skill cards
 - **What**: Cards use onClick to navigate. Cmd+click, middle-click, right-click "Open in new tab" all fail.
 - **Why it matters**: power users expect deep links to be openable in new tabs, especially when comparing multiple skills.
 - **Fix**: change the SkillCard to a `<Link to={`/dashboard/skills/${name}`}>` from React Router, drop the imperative navigate.
 - **Effort**: 5-10 min
 
-### M2 — Description shown 3× on skill detail page
+### ✓ M2 — Description shown 3× on skill detail page (FIXED)
 - **Where**: `/dashboard/skills/:name`
 - **What**: The skill description appears as: (1) page subtitle under the h1, (2) inside the editor card under `/code-review` badge, (3) at the top of the markdown source as the frontmatter `description:` field.
 - **Why it matters**: Burns vertical space, makes the page feel cluttered, doesn't help understanding.
 - **Fix**: drop the page-subtitle copy. The card already shows it; the source is canonical. OR replace the page subtitle with something more useful (e.g. "last edited 5d ago · 800 estimated tokens").
 - **Effort**: 5 min
 
-### M3 — Save button visible even when no changes
+### ✓ M3 — Save button visible even when no changes (FIXED)
 - **Where**: skill editor card
 - **What**: Save button is always present, just looks slightly disabled when there are no edits.
 - **Why it matters**: minor visual noise; better feedback when state is dirty.
@@ -47,14 +51,14 @@ Listing page is well-designed in both themes. Skill detail page works but has re
   - (c) Leave as-is, dim more aggressively when not dirty
 - **Effort**: 5 min for any option
 
-### L1 — History tab shows full file in each diff card
+### ✓ L1 — History tab shows full file in each diff card (FIXED)
 - **Where**: skill detail → History tab
 - **What**: Every prior proposal renders the full SKILL.md content in its diff section. Even a 1-line change shows the whole file.
 - **Why it matters**: hard to spot what actually changed; cards become tall and scroll-heavy.
 - **Fix**: collapse identical context lines so only the changed lines + 3 lines of surrounding context show. Or render `+/-` line markers more visibly.
 - **Effort**: 30 min — `ConfigDiffCard` would need a unified-diff renderer not a full-file dump
 
-### L2 — Procedure heading hierarchy is doubled
+### ✓ L2 — Procedure heading hierarchy is doubled (FIXED)
 - **Where**: skill detail → Overview tab
 - **What**: Page shows `PROCEDURE` (small caps label) immediately followed by an h1 `Code Review` rendered from the markdown content. The `Code Review` h1 inside the markdown duplicates the page's own h1 above.
 - **Why it matters**: visual redundancy — same name three times in close proximity (page h1 / procedure card h1 / markdown h1).
