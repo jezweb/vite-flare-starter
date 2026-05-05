@@ -60,6 +60,9 @@ Pick the next AVAILABLE task in ID order. Mark it in-progress in your iteration 
 
 *(Append entries here. Newest at top.)*
 
+### Bail — 2026-05-05T01:06Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED). Note: local repo has orphan detached-HEAD chain (51 commits, no common ancestor with origin/main) — Jez should review and merge or discard the orphan chain.
+
 ### Bail — 2026-05-02T06:15Z
 Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
 
