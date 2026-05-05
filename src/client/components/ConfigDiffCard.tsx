@@ -37,16 +37,83 @@ export interface ConfigDiffCardProps {
 }
 
 interface DiffRow {
-  type: 'context' | 'added' | 'removed'
+  type: 'context' | 'added' | 'removed' | 'collapsed'
   lines: string[]
+  /** For 'collapsed' rows: how many context lines were hidden. */
+  hidden?: number
 }
 
+/** Keep this many lines of context on each side of any change. */
+const CONTEXT_LINES = 3
+
+/**
+ * Collapse long unchanged-context runs to keep the diff readable.
+ *
+ * Standard unified-diff behaviour: show the lines that changed plus
+ * `CONTEXT_LINES` of unchanged context above and below each change. Any
+ * unchanged run between two changes longer than 2*CONTEXT_LINES gets
+ * its middle replaced with a "… N lines unchanged …" marker.
+ *
+ * Pure context blocks at the very top/bottom of the file (before any
+ * change / after the last change) get the same treatment — keep the
+ * adjacent few lines, collapse the rest.
+ */
 function buildDiffRows(before: string, after: string): DiffRow[] {
   const parts = diffLines(before, after)
-  return parts.map((p) => ({
+  const raw: DiffRow[] = parts.map((p) => ({
     type: p.added ? 'added' : p.removed ? 'removed' : 'context',
     lines: p.value.replace(/\n$/, '').split('\n'),
   }))
+
+  // Find indices of the first and last changed parts.
+  const firstChange = raw.findIndex((r) => r.type !== 'context')
+  const lastChange = raw.length - 1 - [...raw].reverse().findIndex((r) => r.type !== 'context')
+  if (firstChange === -1) {
+    // No changes at all — return a single collapsed marker.
+    const total = raw.reduce((sum, r) => sum + r.lines.length, 0)
+    return total > 0 ? [{ type: 'collapsed', lines: [], hidden: total }] : []
+  }
+
+  const out: DiffRow[] = []
+  raw.forEach((row, idx) => {
+    if (row.type !== 'context') {
+      out.push(row)
+      return
+    }
+    const isLeading = idx < firstChange
+    const isTrailing = idx > lastChange
+    const isInterior = !isLeading && !isTrailing
+
+    if (isLeading) {
+      // Pre-first-change: keep last N lines, collapse the rest above.
+      if (row.lines.length <= CONTEXT_LINES) {
+        out.push(row)
+      } else {
+        const hidden = row.lines.length - CONTEXT_LINES
+        out.push({ type: 'collapsed', lines: [], hidden })
+        out.push({ type: 'context', lines: row.lines.slice(-CONTEXT_LINES) })
+      }
+    } else if (isTrailing) {
+      // Post-last-change: keep first N lines, collapse the rest below.
+      if (row.lines.length <= CONTEXT_LINES) {
+        out.push(row)
+      } else {
+        out.push({ type: 'context', lines: row.lines.slice(0, CONTEXT_LINES) })
+        out.push({ type: 'collapsed', lines: [], hidden: row.lines.length - CONTEXT_LINES })
+      }
+    } else if (isInterior) {
+      // Between two changes: keep N lines on each side; collapse middle if >2N.
+      const total = row.lines.length
+      if (total <= CONTEXT_LINES * 2) {
+        out.push(row)
+      } else {
+        out.push({ type: 'context', lines: row.lines.slice(0, CONTEXT_LINES) })
+        out.push({ type: 'collapsed', lines: [], hidden: total - CONTEXT_LINES * 2 })
+        out.push({ type: 'context', lines: row.lines.slice(-CONTEXT_LINES) })
+      }
+    }
+  })
+  return out
 }
 
 function kindLabel(kind: ConfigDiffProposal['resource']['kind']): string {
@@ -198,8 +265,21 @@ export function ConfigDiffCard({
         </button>
         {expanded ? (
           <div className="max-h-96 overflow-auto bg-muted/20 font-mono text-[11px] leading-relaxed">
-            {rows.map((row, rIdx) =>
-              row.lines.map((line, lIdx) => (
+            {rows.map((row, rIdx) => {
+              if (row.type === 'collapsed') {
+                return (
+                  <div
+                    key={`${rIdx}-collapsed`}
+                    className="flex items-center gap-2 whitespace-pre-wrap break-words border-y border-dashed border-muted-foreground/20 bg-muted/10 px-3 py-1.5 text-muted-foreground"
+                  >
+                    <span className="w-3 select-none">…</span>
+                    <span className="flex-1 italic">
+                      {row.hidden} unchanged line{row.hidden === 1 ? '' : 's'} hidden
+                    </span>
+                  </div>
+                )
+              }
+              return row.lines.map((line, lIdx) => (
                 <div
                   key={`${rIdx}-${lIdx}`}
                   className={cn(
@@ -224,10 +304,10 @@ export function ConfigDiffCard({
                         ? '−'
                         : ' '}
                   </span>
-                  <span className="flex-1">{line === '' ? ' ' : line}</span>
+                  <span className="flex-1">{line === '' ? ' ' : line}</span>
                 </div>
-              )),
-            )}
+              ))
+            })}
           </div>
         ) : null}
       </div>

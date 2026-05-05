@@ -316,14 +316,21 @@ export function SkillEditor({ name }: SkillEditorProps) {
               </div>
             </PopoverContent>
           </Popover>
-          <Button
-            size="sm"
-            onClick={submitSave}
-            disabled={!isDirty || createProposal.isPending}
-          >
-            <Save className="mr-1 h-3.5 w-3.5" />
-            {createProposal.isPending ? 'Preparing…' : 'Save'}
-          </Button>
+          {isDirty ? (
+            <Button
+              size="sm"
+              onClick={submitSave}
+              disabled={createProposal.isPending}
+            >
+              <Save className="mr-1 h-3.5 w-3.5" />
+              {createProposal.isPending ? 'Preparing…' : 'Save changes'}
+            </Button>
+          ) : (
+            <Button size="sm" variant="ghost" disabled className="cursor-default opacity-100">
+              <Check className="mr-1 h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+              Saved
+            </Button>
+          )}
         </div>
       </div>
 
