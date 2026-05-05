@@ -1,373 +1,278 @@
 ---
 date: 2026-05-04
-status: draft (awaiting Jez sign-off on the locked decisions)
+status: revised after Jez feedback (SDK-first, no compat baggage)
 owner: jez+claude
 related:
   - GitHub issue #34
-  - .jez/artifacts/overnight-execution-report-2026-05-04.md
   - https://github.com/cloudflare/agents-starter/blob/main/src/server.ts
   - https://www.npmjs.com/package/@cloudflare/ai-chat
+supersedes_v1: 2026-05-04 (the v1 was dual-path / feature-flag / adapter — too defensive given test-only data across forks)
 ---
 
-# Chat module → AIChatAgent migration plan
+# Chat module → AIChatAgent migration plan (v2)
 
 ## Headline
 
-Migrate the chat module from `buildChatAgent` (custom AI SDK harness) onto Cloudflare's `@cloudflare/ai-chat` SDK in **6 phases over 3-4 focused sessions**, with a feature flag enabling parallel-path operation throughout.
+**Replace** the current chat module with the SDK pattern. No dual-path. No feature flag. No adapter. Existing conversations are test data — they get cleaned up.
 
-The SDK gives us **3 capabilities we currently can't ship without re-implementing**: resumable streaming, multi-device live sync, retained streaming sub-agents (`agentTool()`). Plus standardised replacements for things we already have (DO storage, tool approval, overlapping-message strategies, MCP integration).
+Three sessions of work. Each session ends with the chat module in a working SDK-aligned state. Pure SDK conventions everywhere except where the SDK genuinely doesn't address a need (cross-conversation sidebar list + search — minimum-viable D1 index).
 
-D1 conversations stays as a **write-through audit + search projection** so FTS5 search, admin tooling, and cross-conversation analytics keep working without rebuild.
+## Why v2
 
-The migration is high-stakes — chat is the daily driver. Risk mitigated by: feature flag throughout all phases, no required cutover (old path can stay as fallback), no destruction of existing data, every phase independently shippable.
+v1 of this plan (earlier today) assumed we needed to preserve historic conversations and de-risk against an in-production daily driver. Jez's feedback: *"i don't think we should be too concerned of backward compatible or existing conversations, right now, i have only a few meaningful forks and they only have test data in them anyway, i really would like us to work to the standards of docs/sdk so that we are not diverging if we don't need to"*.
 
-## Why this is worth getting right
+That changes the plan shape:
 
-The chat module is by far the most complex surface in the starter — touching files, skills, projects, MCP, tool approval, vision, search, export, regenerate, edit, branching, history pruning, sources, conversation persistence, sidebar, title summarisation, and audit trail. Any one of those breaking in production looks like "the AI is broken" to users.
+| v1 assumed | v2 takes |
+|---|---|
+| Preserve old conversations | Drop them (test data) |
+| Feature flag for safe parallel rollout | Replace wholesale |
+| Adapter so AutonomousAgent specialists stay | Specialists already use SDK base (`Agent`); chat agents use AIChatAgent. Both SDK-aligned, separate primitives, no need to unify. |
+| 6 phases over 4-5 sessions | 3 phases over 3 sessions |
 
-**Why now** (not 6 months ago, not 6 months later):
-- `agentTool()` for streaming sub-agents shipped 2026-04-30 — 4 days ago.
-- `@cloudflare/ai-chat` is 11 days old as a separate package.
-- Active stabilisation cadence (9 versions in 11 days) means production bugs are being caught and fixed by Cloudflare in real-time.
-- Our `agents@0.11.5` chat path is on the **deprecated** import (`agents/chat` re-exports with deprecation warning).
-- Postponing means each new chat feature we ship deepens the divergence and makes migration harder.
+## What stays separate (and SDK-aligned in its own right)
 
-**Why this is the right scope** (not bigger, not smaller):
-- Smaller (just the SDK swap, not architectural change): leaves us still maintaining custom plumbing the SDK has standardised. No payoff.
-- Bigger (rebuild conversation model from scratch): chat works fine functionally; the SDK upgrade is the win, not a rewrite.
+`AutonomousAgent` (our base class for routines / scheduled / autonomous-loop work) **stays**. It already extends `Agent` from the SDK — that's the SDK-blessed pattern for non-chat agent work. AdminAgent, ResearcherAgent, WriterAgent, AssistantAgent, SweeperAgent all keep their current shape. They're not chat agents — they're autonomous task agents.
 
-## Decisions to lock before any code
+`AIChatAgent` is the SDK-blessed pattern for **interactive multi-session chat**. It's a different primitive serving a different need.
 
-**These need your explicit answer. The plan below assumes "yes" to each. If any is "no", the plan changes shape.**
+The two coexist. Routines fire AutonomousAgent instances. Chat fires AIChatAgent instances. Both are SDK-aligned. The chat module's migration doesn't touch routines.
 
-### D1. Hybrid (DO authoritative + D1 projection) confirmed?
+## What we currently do that diverges from SDK (and aligns post-migration)
 
-**Yes** assumes: AIChatAgent owns live state in DO SQLite. After each turn, `onChatResponse` hook writes a projection to D1 (`conversations`, `messages` tables) for FTS5 search, admin views, cross-conversation analytics. DO is the single writer. D1 is read-only from the rest of the app's perspective.
+| Currently | SDK-aligned |
+|---|---|
+| `D1ChatStorage` interface | DO SQLite, automatic |
+| `buildChatAgent` factory wrapping ToolLoopAgent | `class ChatAgent extends AIChatAgent` |
+| Custom SSE plumbing for streaming | `result.toUIMessageStreamResponse()` over WebSocket |
+| Channels-based tool approval (for chat tools) | Per-tool `needsApproval: async (input) => boolean` |
+| Custom MCP integration in chat tools | `this.mcp.getAITools()` |
+| Inline `delegate_to_X` tools | `agentTool(SubAgent, { ... })` |
+| Manual conversation persistence (D1 messages table) | DO-managed |
+| Custom retry / continue / regenerate UX | `useAgentChat` from `@cloudflare/ai-chat/react` |
 
-**Alternative (NO)**: pure migration to DO. Drop D1 conversations table. Re-implement search per-DO or via Vectorize.
+**Migration aligns all of these in one go.**
 
-**My recommendation**: yes, hybrid. The cost of write-through (one extra D1 write per turn, async via `ctx.waitUntil`) is far less than the cost of rebuilding search + admin + analytics. If you ever want to drop the projection, that's a separate decision later.
+## What still needs custom code post-migration (with reason)
 
-### D2. Version pinning strategy?
+| Custom thing | Why SDK doesn't address it |
+|---|---|
+| `chat_sessions` D1 table — just `{ id, userId, title, projectId, createdAt, updatedAt }` | SDK assumes one or a few DO instances per user; doesn't ship a "list all conversations for user X" surface |
+| Conversation search projection (FTS5 over message bodies) | Per-DO search would require N+1 across DOs; cross-conversation search needs an index |
+| Skill activation in `onChatMessage` | Skills are our system, not SDK |
+| Project context layering | Our system |
+| Sidebar UI listing conversations | Reads from `chat_sessions` table |
+| Routine system (untouched) | Separate primitive |
+| Approvals queue (for routine-fired tools) | Separate from chat tool approval |
 
-**Recommended**: pin `@cloudflare/ai-chat` to **exact** version (e.g. `0.6.2`, not `^0.6.2`). Track upstream changelog manually. Bump deliberately.
+The custom code is **smaller** than today (the message storage layer disappears). What remains is genuinely additive over the SDK, not duplicating it.
 
-The 9-versions-in-11-days cadence is a stabilisation signal — patches are landing fast and some are subtle (provider tool-call replay regressions, sub-agent WebSocket fixes on deployed Workers). Not bleeding-edge, but not auto-update territory either.
+## Decisions
 
-`agents` itself: same exact pin recommendation until 1.0 lands.
+These are now mostly clear from Jez's guidance. Listing for the audit trail.
 
-### D3. Existing conversations — leave on legacy forever, or migrate?
-
-Three options:
-
-| Option | What | Effort | Risk |
-|---|---|---|---|
-| **Leave** | Conversations created before cutover stay on `buildChatAgent`. New conversations on AIChatAgent. | None | Two code paths to maintain forever |
-| **Soft migrate** | Read still works on legacy. New messages on existing conversations route to AIChatAgent. | Medium | Edge cases on conversation continuation |
-| **Hard migrate** | One-time export-import script. All conversations rehosted as DOs. | Medium-large | Migration script bugs lose data |
-
-**My recommendation**: **leave** for v1. Old conversations are immutable history. New conversations get the new capabilities. Maintain two read paths but only one write path forever (existing conversations effectively become read-only in the legacy model). Decide later whether a one-time migration earns its keep.
-
-### D4. AutonomousAgent specialists — keep, migrate, or adapt?
-
-Our existing specialist agents (`AssistantAgent`, `ResearcherAgent`, `WriterAgent`, `AdminAgent`, `SweeperAgent`) extend `AutonomousAgent`, not `AIChatAgent`. The new `agentTool()` SDK primitive accepts `AIChatAgent` subclasses (and `Think`).
-
-Three paths:
-
-| Path | What | Trade-off |
-|---|---|---|
-| **Keep** | Specialists stay AutonomousAgent. We don't use `agentTool()`. Lose the new capability for delegation. | No effort, no win |
-| **Migrate** | Each specialist becomes an `AIChatAgent` subclass. agentTool() works directly. | High effort, regression risk on specialists already in production |
-| **Adapter** | Build one `AgentToolAdapter extends AIChatAgent` that wraps an AutonomousAgent. Specialists stay; agentTool() works through the adapter. | Medium effort, single seam |
-
-**My recommendation**: **adapter** for v1. Specialists keep their current shape (multi-tool autonomous loops with their own contracts). The adapter lets the chat agent call them via `agentTool()` for streaming retained delegation. Once the adapter is stable, we can decide if any specific specialist should migrate to AIChatAgent natively.
-
-### D5. Routing — Hono vs SDK router?
-
-Current chat module uses Hono routes at `/api/chat/*`. The SDK provides `routeAgentRequest` for handling agent WebSocket + HTTP at `/agents/{class}/{name}` paths.
-
-**Recommendation**: mount both. SDK handles `/agents/chat/*` for the new path. Hono keeps `/api/chat/*` for legacy + non-chat endpoints (conversations list, search, export, etc. — these are read-only D1 queries, fine to stay in Hono).
-
-The `routeAgentRequest` is added to the existing Worker fetch handler as a fallback before Hono's catchall. No breaking change.
-
-### D6. Concurrent message strategy?
-
-SDK supports: `"queue" | "latest" | "merge" | "drop" | { strategy: "debounce", debounceMs: 750 }`.
-
-Default is `"queue"` (process every message in order — matches our current behaviour).
-
-**Recommendation**: start with `"queue"`. Migrate, dogfood, then revisit per-conversation-type (e.g. admin chat could be `"queue"`, regular chat could be `"latest"`).
+1. **DO is the storage. D1 holds an index, not a copy.** ← simplified from v1's hybrid. `chat_sessions` table has no messages, just the conversation metadata + projectId. Optional: a `messages_index` table populated via `onChatResponse` hook for FTS5 search across conversations.
+2. **Exact version pinning** — `@cloudflare/ai-chat@0.6.2`, `agents@0.12.3`. Re-evaluate at every bump.
+3. **Test data dropped** — drop the existing `conversations` and `messages` D1 tables. New `chat_sessions` table replaces them (smaller, only metadata).
+4. **AutonomousAgent specialists keep their current shape** — different primitive, different need. Chat agent uses SDK `agentTool()` for new sub-agent surfaces; existing inline `delegate_to_X` tools either stay (if they work) or become AIChatAgent subclasses if we want streaming sub-agents.
+5. **Mount SDK router** — `routeAgentRequest` for agent traffic. Hono keeps `/api/chat-sessions/*` for the read-only sidebar list + search endpoints (those don't need to be agent-routed).
+6. **`messageConcurrency = "queue"`** — SDK default. Revisit per-surface if we see usage patterns that benefit from another strategy.
 
 ## Phases
 
-Each phase is independently shippable. After each phase, the app remains functional with the feature flag default to old path. Cutover only happens at Phase 5.
+### Phase 1 — Replace the chat module (~1 session, 4-6 hrs)
 
-### Phase 0 — Preparation (~30 min, no chat code touched)
+Goal: chat module is gone. New `ChatAgent extends AIChatAgent` is the only chat path. Old conversations + messages tables dropped. Sidebar reads from new `chat_sessions` table.
 
-| Task | Notes |
-|---|---|
-| Update `agents` 0.11.5 → 0.12.3 | 8 patch versions; mostly fixes per the changelog. Run full test suite + e2e after. |
-| Update `ai` 6.0.161 → 6.0.175 | minor patches; no breaking |
-| Update `@ai-sdk/react` 3.0.163 → 3.0.177 | minor patches; no breaking |
-| Add `@cloudflare/ai-chat@0.6.2` (exact pin) | new dep, not used yet |
-| Verify type-check + build + tests + e2e all pass | 108 vitest + 14 Playwright |
-| Commit: `chore: bump agents SDK + add @cloudflare/ai-chat 0.6.2` | one commit |
+**SDK installs**:
+- `agents` 0.11.5 → 0.12.3
+- `ai` 6.0.161 → 6.0.175
+- `@ai-sdk/react` 3.0.163 → 3.0.177
+- Add `@cloudflare/ai-chat@0.6.2` (exact)
 
-**Acceptance**: nothing functionally changed. Just newer SDK installed.
+**Schema changes**:
+- New table: `chat_sessions { id, userId, organizationId, title, projectId, createdAt, updatedAt, doInstanceName }`
+- Drop tables: `conversations`, `messages` (test data only — confirmed with Jez)
+- Drop FTS5: `messages_fts` (and any related triggers)
+- Drizzle migration: one file, drops + creates
 
-**Rollback**: trivial — revert the commit.
+**Wrangler config**:
+- New DO binding: `{ "name": "ChatAgent", "class_name": "ChatAgent" }`
+- New SQLite migration tag for `ChatAgent` class
 
-### Phase 1 — Parallel infrastructure (~1 session)
+**Server code** (lots removed, less added):
+- New: `src/server/modules/chat/chat-agent.ts` — `class ChatAgent extends AIChatAgent<Env>` following the canonical `agents-starter/src/server.ts` pattern verbatim
+- New: `src/server/modules/chat-sessions/` — Hono routes for sidebar list, create-session-and-get-DO-name, delete, search
+- Mount `routeAgentRequest` in `src/server/index.ts` Worker fetch handler (before Hono catchall)
+- Delete: `src/server/modules/chat/` everything except the new agent file
+- Delete: `src/server/lib/ai/agent.ts` (`buildChatAgent`)
+- Delete: D1ChatStorage interface
+- Delete: SSE streaming plumbing
+- Delete: custom tool approval channels (chat-side; routine-side stays)
+- Update: `tools/` registry to fit the SDK's `tool()` shape per agents-starter
 
-Goal: new AIChatAgent class lives alongside existing chat module. Feature flag defaults OFF. Both paths work.
+**ChatAgent contents** (`onChatMessage`):
+- System prompt assembly (using A1 pattern)
+- Skills activation: parse user input for slash commands, inject skill body into system or user message
+- Project context: read `projectId` from session metadata, fetch context, inject
+- MCP: `this.mcp.getAITools()`
+- Tools: existing 60+ tools migrated to `tool()` from `ai` with `needsApproval` per the SDK pattern
+- File / image parts: inline data URI workaround copied verbatim from agents-starter
+- `pruneMessages` for token-aware history trim
 
-| Task | Files |
-|---|---|
-| Create `src/server/modules/chat/ai-chat-agent.ts` — `ChatAgent extends AIChatAgent<Env>` skeleton with minimal `onChatMessage` (system prompt only, no tools yet, no skills, no MCP) | new |
-| Add DO binding to `wrangler.jsonc`: `{ "name": "ChatAgent", "class_name": "ChatAgent" }` + new SQLite class migration tag | wrangler.jsonc, drizzle equivalent |
-| Mount `routeAgentRequest` in `src/server/index.ts` Worker fetch handler (before Hono catchall) | server/index.ts |
-| Add feature flag `VITE_FEATURE_AICHAT_AGENT=false` to `src/shared/config/features.ts` | features.ts |
-| Client: when flag is on, ChatPage uses `useAgentChat({ agent: "ChatAgent" })` from `@cloudflare/ai-chat/react`; when off, existing path | ChatPage.tsx |
-| Add WebSocket origin to TRUSTED_ORIGINS if needed | wrangler.jsonc |
+**Client code**:
+- ChatPage uses `useAgentChat({ agent })` from `@cloudflare/ai-chat/react`
+- Sidebar: list conversations from `/api/chat-sessions`, click opens `useAgent({ agent: "ChatAgent", name: session.doInstanceName })`
+- Tool result rendering: same UIMessage parts shape, existing renderers work
+- Tool approval UI: SDK's `addToolApprovalResponse` replaces our channels-based approval card
 
-**Acceptance**:
-- With flag OFF: app behaves identically to before (the new code is dormant).
-- With flag ON: a fresh conversation works end-to-end with the bare-minimum agent (text-only echo for testing). No skills, no tools, no MCP yet.
-- DO storage created on first message.
-- WebSocket connects + persists across reload.
-
-**Rollback**: feature flag → off. New conversations created with flag-on stay accessible (they're in DO storage), just no longer routable through the dormant code path. Trivial recovery: re-enable flag.
-
-**Risks**:
-- DO migration tag is irreversible. If the class definition changes incompatibly later, careful migration needed.
-- WebSocket path collision if any existing route matches `/agents/*`.
-
-### Phase 2 — Feature mapping (~1 session)
-
-Goal: one-by-one, the existing chat module's features start working in the AIChatAgent path. Feature flag still OFF by default; toggle ON to test each feature.
-
-Each feature is its own commit so progress is granular.
-
-| Feature | Strategy | Complexity |
-|---|---|---|
-| **System prompt** | Pass `system` to `streamText`. The A1 pattern (`getSystemPrompt(userId)`) plugs in cleanly. | Low |
-| **Skills (slash commands + activation)** | Parse user input in `onChatMessage`. Inject skill body into system prompt or as a `system`-role message. Skills already have a clean module-export shape. | Medium |
-| **Project context** | Read `projectId` from agent state (set on first message via `@callable()` or initial body). Inject project context into system prompt. | Medium |
-| **MCP integration** | `this.mcp.getAITools()` — built-in. Connection list comes from D1 connections table; `this.mcp.addServer()` per active connection on agent init. | Medium |
-| **Tool approval** | Per-tool `needsApproval: async (input) => boolean`. Replaces our channels-based approval queue for chat-originated tool calls. (Routine-originated approvals stay on the existing channels system.) | Low |
-| **File attachments (text, audio, PDF, images)** | UIMessage parts already support files. Watch for the `inlineDataUrls` workaround if needed (data: URI quirk in AI SDK's downloadAssets step). | Medium |
-| **Vision** | Same UIMessage `image` part shape works. Workers AI vision models need `sessionAffinity: this.sessionAffinity` for routing. | Low |
-| **Sources footer** | Stored as message metadata. Already preserved through UIMessage. | Low |
-| **Tool result rendering** | Same UIMessage parts. Existing client-side renderers should work unchanged. | Low |
-| **Message validation against tool schemas** | The SDK validates via Zod input schemas. Our existing validation is approximately a duplicate. | Low |
-| **Regenerate / branch / edit** | SDK supports regenerate via `useAgentChat`. Edit + branch are derivative — re-call `saveMessages` with edited list. | Medium |
-| **Token usage display** | `streamText` returns usage; surface via UIMessage metadata. | Low |
-| **Title summarisation** | Trigger from `onChatResponse` after first turn. Write title to D1 conversations projection (Phase 3). | Low |
-
-**Out of scope for this phase**:
-- Cross-conversation features (sidebar, search, export) — those continue to read from D1 in legacy mode. Phase 3 wires the projection so they keep working for new conversations.
-- Sub-agent delegation — Phase 4.
-- Compact-and-fork (issue #29), history trim (#31), truncation gate (#30) — these depend on history primitives. AIChatAgent has `pruneMessages`, `maxPersistedMessages`, and `messageConcurrency`. Re-evaluate each issue against the new primitives separately.
-
-**Acceptance per feature**: feature works in flag-ON path. Existing flag-OFF path still works. Both are exercised manually + e2e where Playwright covers it.
-
-**Rollback per feature**: feature flag stays off; conversations in flag-ON state still work because DO storage persists; toggle back is trivial.
-
-**Risks**:
-- File upload + image handling has the most undocumented SDK surface area. Budget extra time.
-- MCP integration may have differences from our current path (we pass `userId` for credential lookup; SDK may need a different shape).
-
-### Phase 3 — D1 write-through projection (~0.5 session)
-
-Goal: every chat turn in the new path writes a projection to D1 so FTS5 search + admin views + cross-conversation analytics keep working without rebuild.
-
-| Task | Files |
-|---|---|
-| Implement `onChatResponse(result)` in `ChatAgent`. Write conversation row + N message rows to D1 via `ctx.waitUntil`. | ai-chat-agent.ts |
-| D1 schema: add `do_conversation_id` column to `conversations` (links the DO instance to the D1 audit row). | drizzle migration |
-| Sidebar list query: union conversations from D1 (legacy) + conversations with `do_conversation_id` (new). Both sources show in the user's history. | sidebar query |
-| FTS5 search: `messages_fts` continues to work — projection writes feed it. | no change |
-| Admin views: read from D1 unchanged. | no change |
-| Conversation deletion: deletes both DO storage AND D1 projection. | new endpoint |
+**Tests**:
+- Replace existing chat e2e tests (Playwright) with SDK-equivalent flows
+- Verify: send message → response, regenerate, edit, file upload, vision, MCP tool call, skill activation, project context, tool approval
 
 **Acceptance**:
-- Send a message in flag-ON conversation. Within 1s the conversation appears in sidebar.
-- Search the message body via existing FTS5 — it hits.
-- Admin view shows the conversation with token usage + model + cost.
+- Chat works end-to-end against `useAgentChat`
+- Sidebar lists conversations from `chat_sessions`
+- All existing chat features verified (system prompt, skills, projects, MCP, tools, files, vision, regenerate, approval)
+- Tests green (108 vitest + Playwright e2e updated)
+- Build + type-check clean
+- Live deploy verified
 
-**Rollback**: D1 schema change is additive (nullable column). Removing the projection writes is a code revert.
+**Rollback**: git revert. Test data was dropped — no data loss. Old chat module reappears, works as before.
 
-**Risks**:
-- Double-write means D1 + DO can drift if writes fail. Mitigation: DO is authoritative; D1 projection is regenerable from DO history if needed.
-- Performance: every turn now does an extra D1 write. Measure latency. Should be <50ms via waitUntil so user-visible latency unchanged.
+### Phase 2 — Cross-conversation search (~0.5 session)
 
-### Phase 4 — Sub-agent delegation via `agentTool()` (~1 session)
+Goal: search across all of a user's conversations.
 
-Goal: prove the new SDK capability with one concrete delegation. Establish the AutonomousAgent → AIChatAgent adapter pattern.
+**Decision point**: do we even need this? The SDK assumes per-conversation context. If we don't strongly need cross-conversation search, skip this phase entirely.
 
-| Task | Approach |
-|---|---|
-| Build `AgentToolAdapter` that wraps an existing `AutonomousAgent` so it's callable as an `agentTool`. The adapter extends `AIChatAgent`, takes the wrapped agent class via Props, and delegates `onChatMessage` to the wrapped agent's `runOnce`. | new file: `src/server/lib/agents/agent-tool-adapter.ts` |
-| Pick one specialist for the proof-of-concept: `ResearcherAgent` (most likely to benefit from streaming chunks back). | reuse existing class via adapter |
-| In `ChatAgent`, expose `tools.research = agentTool(AgentToolAdapter, { ... })`. | ai-chat-agent.ts |
-| Test: chat user asks "research X" → ChatAgent calls `research` tool → adapter spawns ResearcherAgent → streams chunks back to chat UI. | manual + e2e |
-| Document the pattern in `docs/AGENTS.md` "Streaming sub-agents via agentTool" subsection. | docs |
+**If yes** (probably yes — we have it today):
+- Add `chat_messages_index` table — `{ id, sessionId, userId, role, contentSnippet, createdAt }`
+- Add FTS5 virtual table over `contentSnippet`
+- Hook `onChatResponse` in `ChatAgent` to write index rows via `ctx.waitUntil`
+- API: `GET /api/chat-sessions/search?q=` — same shape as today
+- CommandPalette content-search mode keeps working (currently searches entities; can add a "search chat" mode if useful)
 
-**Acceptance**:
-- One delegation works end-to-end. Chunks stream back to the parent chat.
-- Existing `delegate_to_X` inline tools still work for non-research delegation (don't break them).
-- Adapter is generic enough to wrap other specialists later.
+**If no**: skip. Sidebar can list-only by date.
 
-**Rollback**: agentTool is opt-in per chat tool. Remove the tool from the agent's `tools` map → no delegation, but everything else works.
-
-**Risks**:
-- Adapter's `runOnce` → streaming bridge is the most novel code in the migration. May surface edge cases not covered by either AutonomousAgent or AIChatAgent's internal contracts.
-- Headless agent-tool turns (per the README) don't have client tools — confirm our specialists don't need browser-side tools.
-
-### Phase 5 — Cutover (~0.5 session)
-
-Goal: feature flag default flips to ON for new conversations. Old conversations continue on legacy path.
-
-| Task |
-|---|
-| Set `VITE_FEATURE_AICHAT_AGENT=true` as default in `features.ts` |
-| Sidebar UX: indicator (subtle) on legacy conversations explaining "this conversation uses the older chat engine". |
-| Documentation update in CLAUDE.md "Chat module" section. |
-| Re-run full Playwright e2e suite. |
-| Real-flavour data battery on a flag-ON conversation. |
+This is a clear "necessary divergence" — the SDK doesn't address cross-conversation search. We project a minimum-viable index, no message body duplication beyond a 200-char snippet.
 
 **Acceptance**:
-- New conversations land on AIChatAgent.
-- Old conversations still openable, still streamable via legacy.
-- All e2e tests pass.
-- 1-week soak before considering Phase 6.
+- Search a phrase from a previous conversation; sidebar surfaces it.
 
-**Rollback**: flip the default back to false. New conversations created during the cutover window stay in DO storage but get the legacy treatment for any future messages — actually that's broken; we'd want the rollback to mean "new conversations route to legacy", which means existing-DO conversations need a way to continue on AIChatAgent indefinitely. **This means rollback after Phase 5 is partial — DO-rooted conversations can't be moved back to D1ChatStorage easily.** Worth scoping a "legacy fallback for DO conversations" path during Phase 5 or accepting that rollback after Phase 5 means "new messages fall back; old chat-agent conversations are forever AIChatAgent-shaped".
+**Rollback**: drop the table + revert the hook code.
 
-### Phase 6 — Decommission (optional, after 4-8 week soak)
+### Phase 3 — agentTool sub-agents (~1 session)
 
-Goal: remove `buildChatAgent`, `D1ChatStorage` interface, `createAgentUIStreamResponse` SSE plumbing if nothing else uses them.
+Goal: prove the new SDK capability with one concrete delegation. Future delegations follow the pattern.
 
-Only run this when:
-- No new conversations have hit the legacy path in 30 days
-- Old conversations are accessible via legacy or soft-migrated
-- Team is comfortable with the AIChatAgent path
+**Decision: which sub-agent first?**
 
-This phase is optional. The starter pattern philosophy says "disable, don't delete" — so we may keep `buildChatAgent` as a reference implementation forever, even if no chat surface uses it.
+Two options:
+- **Research sub-agent** — `class ResearcherChatAgent extends AIChatAgent` that does web-search-y research. Streaming chunks back to parent makes the UX much nicer than today's `delegate_to_research` tool that returns a blob.
+- **Summariser sub-agent** — exactly the example in the SDK README. Lower domain stakes, easier to land cleanly.
 
-## Risk register
+**Recommendation**: start with summariser per the README. Once the pattern is proven, port research.
+
+```typescript
+class Summariser extends AIChatAgent<Env> {
+  async onChatMessage() {
+    return streamText({
+      model: ...,
+      system: "Summarise the input text concisely.",
+      messages: await convertToModelMessages(this.messages),
+    }).toUIMessageStreamResponse()
+  }
+}
+
+class ChatAgent extends AIChatAgent<Env> {
+  async onChatMessage() {
+    return streamText({
+      model: ...,
+      tools: {
+        summarise: agentTool(Summariser, {
+          description: "Summarise long text in a streaming sub-agent",
+          inputSchema: z.object({ text: z.string() }),
+        }),
+        // existing tools...
+      },
+    }).toUIMessageStreamResponse()
+  }
+}
+```
+
+**Acceptance**:
+- Chat user submits long text → calls summarise tool → sub-agent streams chunks back into the parent message → renders progressively in UI.
+- Pattern documented in `docs/AGENTS.md`.
+
+**Rollback**: remove the tool from chat agent's tools map. Sub-agent class stays; not invoked.
+
+## Risk register (much smaller than v1)
 
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
-| SDK breaking change between 0.6.2 → 0.6.x | Medium | Medium | Exact version pin; manual changelog review before bumps |
-| File / image upload hits SDK quirks | High | Medium | Budget extra time in Phase 2; copy `inlineDataUrls` workaround proactively |
-| MCP integration shape differs from our current | Medium | Low | Read SDK MCP source before Phase 2 starts |
-| Adapter pattern leaks abstraction | Medium | Medium | Keep adapter minimal; document the seam |
-| D1 projection writes fail silently | Low | Medium | Structured logging on every projection write; alert on consecutive failures |
-| Sidebar query union performs poorly at scale | Low | Low | Index `do_conversation_id`; cap rows |
-| Phase 5 cutover surfaces a regression on real Jezweb data | Medium | High | 1-week soak with Jez as the canary user; manual re-walk of every chat surface before flipping default |
-| Chat agent class definition changes incompatibly post-migration tag | Low | High | Standard Cloudflare DO migration discipline; never remove a class, only deprecate; new tag for breaking shape changes |
-| Feature flag complexity (~3 weeks of two paths) | High | Low | Both paths share UIMessage shape — most rendering code unchanged. Tests cover both paths. |
+| SDK breaking change between 0.6.x bumps | Medium | Medium | Exact pin, manual changelog review |
+| File / image upload SDK quirks | High | Low | Copy `inlineDataUrls` workaround from agents-starter verbatim. They've already solved it. |
+| MCP integration shape differs from current | Medium | Low | Read SDK MCP types before Phase 1 starts. Probably 1-day learning, not blocker. |
+| `routeAgentRequest` route collision | Low | Medium | Verify no `/agents/chat/*` routes exist in current Hono. (Likely clean.) |
+| Lose a chat feature in the wholesale replace | Medium | Medium | Inventory all chat features before Phase 1. Migrate each, manually verify. |
+| DO migration tag is one-shot for class shape | Low | Medium | Standard Cloudflare DO migration discipline; we're starting fresh so first tag is safe. |
+| The 60+ chat tools need re-shaping | Medium | Medium | They mostly use `tool()` from `ai` already. Verify each fits the SDK pattern. |
 
-## Testing strategy
+No "Phase 5 partial rollback" risk anymore — there's no Phase 5 cutover. We replace once.
 
-### Vitest
-- New tests for `ChatAgent` (mock DO storage via vitest-pool-workers). Cover: onChatMessage with system prompt, tool approval gate, MCP integration, projection write to D1.
-- Adapter tests: wrap a mock AutonomousAgent, call as agentTool, verify chunk flow.
-- D1 projection tests: assert row appears after onChatResponse, assert FTS5 finds it.
+No "feature flag complexity" anymore.
 
-### Playwright (extending existing 14 tests)
-- Add tests with `VITE_FEATURE_AICHAT_AGENT=true` (set via env in setup).
-- Cover the same killer flows as legacy path so we catch regressions.
-- One test per Phase 2 feature (system prompt, skills, projects, MCP, files, vision, regenerate).
-- One test for resumable streaming (close socket mid-stream, reopen, verify resume).
-- One test for multi-device sync (open 2 contexts, send in one, see in the other).
-- One test for agentTool delegation (Phase 4).
+No "two paths to maintain" anymore.
 
-### Manual
-- Real-flavour data battery (apostrophes, accents, RTL, HTML canary, long content, file uploads) re-run against AIChatAgent path before cutover.
-- Multi-day soak with Jez as the canary user — flag-ON for personal use only — for 7 days before Phase 5 default flip.
+## Open questions to verify before Phase 1 starts
 
-## Rollback plan
+Smaller list than v1 because the architecture is simpler.
 
-| Phase | Rollback | Notes |
-|---|---|---|
-| 0 | git revert | Trivial |
-| 1 | git revert + DO migration tag stays (idempotent) | Class shape stays, just unused |
-| 2 | feature flag off | Both paths stay viable |
-| 3 | git revert projection code | D1 schema additive change stays |
-| 4 | remove agentTool from chat tools map | Adapter code stays for next attempt |
-| 5 | flip flag default off (with caveat — see Phase 5 risk) | **Partial rollback only** |
-| 6 | git revert | If decommissioned code is needed back |
-
-## Open questions / things I don't know yet
-
-These need answering during implementation, not now. Listing so they're not surprises.
-
-1. **MCP `userId` propagation**: our current chat passes the requesting user's ID into MCP credential lookup. AIChatAgent's `this.mcp` may need a different shape for per-user credential isolation in multi-tenant orgs.
-
-2. **`@callable()` for chat-side actions**: which client-side methods should be `@callable()`? Things like "regenerate this message", "edit this message", "branch from here" — could be `@callable()` instead of HTTP. Decide during Phase 2.
-
-3. **History pruning vs compact-and-fork (issue #29)**: AIChatAgent has `pruneMessages` for token-aware trimming. Our compact-and-fork (issue #29) is a user-driven compaction. Does the SDK obsolete part of #29? Decide during Phase 2.
-
-4. **AdminAgent in the new world**: AdminAgent currently extends AutonomousAgent and runs in admin Spaces. Its dispatch flow (which we just fixed for P2-002) doesn't go through chat. Migration of AdminAgent is **out of scope** for this plan. Stays AutonomousAgent.
-
-5. **Cost of WebSocket vs SSE**: WebSocket connections held open per-conversation — DO billing implications? Cloudflare's DO pricing model accommodates this but worth measuring.
-
-6. **Token counting / cost telemetry**: our current `messages.metadata` has token counts per message. Verify this preserves through SDK persistence. If not, write our own counting in `onChatResponse`.
-
-7. **Search on agent-tool sub-agent runs**: when a research delegation happens, the sub-agent's chunks are part of the parent message tree. Does FTS5 need to project sub-agent content separately? Probably no — the sub-agent's output appears in the parent assistant message.
+1. **MCP `userId` propagation**: how does `this.mcp` know the requesting user for credential lookup? Read the SDK MCP source.
+2. **File parts and `inlineDataUrls`**: confirm the workaround pattern works for our existing image/PDF/audio paths.
+3. **`pruneMessages` import path** in `ai@6.0.175`.
+4. **`@callable()` decorator support** — already used in agents-starter; verify TS decorator syntax compiles cleanly under our `tsconfig.json`.
+5. **`routeAgentRequest` mount point** — exact placement in our Worker fetch handler relative to Hono and asset serving.
+6. **WebSocket cost model** — long-lived per-conversation connections. Verify CF DO pricing accommodates Jezweb's expected usage.
+7. **History pruning vs compact-and-fork (issue #29)**: AIChatAgent has `pruneMessages` + `maxPersistedMessages` — does the SDK now obsolete part of #29?
 
 ## Effort + sequencing
 
-| Phase | Estimate | Risk to existing functionality |
+| Phase | Estimate | Dependency |
 |---|---|---|
-| 0 — Preparation | 30 min | Very low |
-| 1 — Parallel infra | 1 session (4-6 hrs) | Low (flag off) |
-| 2 — Feature mapping | 1 session | Low (flag off) |
-| 3 — D1 projection | 0.5 session | Low (additive D1 column) |
-| 4 — agentTool sub-agents | 1 session | Low (opt-in per tool) |
-| 5 — Cutover | 0.5 session + 1-week soak | High (flag default flip) |
-| 6 — Decommission | 0.5 session (optional) | Low |
+| Phase 1 — Replace | 1 session (4-6 hrs) | — |
+| Phase 2 — Cross-conv search | 0.5 session | Phase 1 done |
+| Phase 3 — agentTool sub-agents | 1 session | Phase 1 done; Phase 2 not required |
 
-**Total**: 4-5 sessions of focused work + 1-week soak between Phase 5 and 6.
+**Total: 2.5 sessions of focused work.** Could be done in one long session if we're patient + Phase 2 is skipped.
 
-**Sequence dependencies**:
-- 0 must precede 1 (SDK installed)
-- 1 must precede 2 (skeleton must exist)
-- 2 must precede 3 (need real turns to project)
-- 3 should precede 5 (cutover needs working sidebar)
-- 4 can run parallel with 3 (independent feature)
-- 5 must precede 6
+## What's preserved verbatim from v1
 
-**Recommended grouping**:
-- Session A: Phase 0 + Phase 1 (~1 session — ship the parallel infra)
-- Session B: Phase 2 (most feature work — own session)
-- Session C: Phase 3 + Phase 4 (projection + sub-agents — both fit one session if Phase 2 went smoothly)
-- Soak: 1 week with flag toggleable per-user
-- Session D: Phase 5 cutover
+- Open questions (with the smaller list above)
+- Risk principles (exact pin, copy workarounds, verify before code)
+- The "Read SDK before Phase 1" discipline
 
-## Decisions awaiting your sign-off
+## What's dropped from v1
 
-Six decisions, listed at the top under "Decisions to lock". Please confirm or push back on each before I start. The plan as written assumes:
+- Six decisions list (now four, mostly auto-resolved by Jez's guidance)
+- Feature flag throughout phases
+- Hybrid DO + D1 projection (replaced with minimal D1 index)
+- Adapter pattern for AutonomousAgent specialists
+- Cutover phase (no cutover — wholesale replace)
+- Decommission phase (decommissioning happens during Phase 1's deletes)
+- Dual-path testing (only one path now)
+- 1-week soak (no parallel deploy to soak)
+- Phase 5 partial rollback caveat (no cutover risk)
 
-1. ✅ Hybrid (DO + D1 projection)
-2. ✅ Exact version pinning
-3. ✅ Leave existing conversations on legacy path
-4. ✅ Adapter pattern for AutonomousAgent specialists (not full migration)
-5. ✅ Mount SDK router alongside Hono (not replace)
-6. ✅ Concurrent strategy `"queue"` (default)
+## Ready to start
 
-Push back on any. The plan reshapes accordingly.
+Phase 1 is a single coherent session. Once kicked off, the chat module is in flux until landed — not safe to mix with other work.
 
-## What I'd want to verify before Phase 1 starts
+If you confirm, I'll:
+1. Verify the 7 open questions in a 30-min recon
+2. Write a one-pager session-spec for Phase 1 with the file-by-file diff plan
+3. Run Phase 1 in a single ~5-hour session
+4. Smoke-test live + ship
 
-Before writing any chat code, I'd:
-- Read `@cloudflare/ai-chat`'s `react.d.ts` end-to-end (we've only seen `index.d.ts` so far)
-- Read `agents/chat` types to understand what the SDK considers public API surface
-- Skim `cloudflare/agents-starter` `src/app.tsx` to see canonical client patterns
-- Check whether `sessionAffinity` matters for our model selection (we have many providers)
-- Verify the `pruneMessages` import path in current `ai@6.0.175`
-- Check `routeAgentRequest` behaviour with our existing routes — collision check
-
-If any of those surface a blocker, the plan reshapes before code is written.
+Or sleep on it and decide tomorrow.
