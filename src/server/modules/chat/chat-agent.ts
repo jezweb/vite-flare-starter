@@ -77,7 +77,6 @@ import { user as userTable } from '@/server/modules/auth/db/schema'
 import { conversations } from '@/server/modules/conversations/db/schema'
 import { createD1ChatStorage } from '@/server/modules/conversations/storage'
 import { logActivity } from '@/server/modules/activity/log'
-import { messageMetadataSchema } from '@/shared/schemas/chat.schema'
 
 /**
  * Result of parsing a DO instance name — `user-{userId}-conv-{conversationId}`.
@@ -814,12 +813,6 @@ export class ChatAgent extends AIChatAgent<Env> {
         }),
       )
     }
-
-    // Touch messageMetadataSchema to keep the import live — it's not
-    // wired into toUIMessageStreamResponse's schema slot in v6 (the
-    // metadata builder takes its types via inference from the TS
-    // generic), but we may need it for client-side validation later.
-    void messageMetadataSchema
 
     // ─── 18. streamText — the actual model call ─────────────────────
     const result = streamText({

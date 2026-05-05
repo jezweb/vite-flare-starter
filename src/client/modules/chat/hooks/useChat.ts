@@ -123,10 +123,16 @@ export function useChat(options: ChatOptions = {}) {
   const onFinishRef = useRef(onFinish)
   useEffect(() => { onFinishRef.current = onFinish }, [onFinish])
 
-  // Seed-messages ref — captured at hook mount and used by getInitialMessages
-  // exactly once. Re-renders that change `initialMessages` after first
-  // connect don't re-seed (DO is already populated).
-  const seedRef = useRef(initialMessages)
+  // Seed messages bridge legacy D1 conversations into the DO. The SDK
+  // only calls `getInitialMessages` when the DO's SQLite is empty, so a
+  // freshly-allocated DO seeds from D1 once and the DO becomes the
+  // source of truth thereafter. Capturing the prop in a per-render
+  // closure (not a mount-time ref) means navigating between conversations
+  // picks up the right seed for each.
+  const hasSeed = !!(initialMessages && initialMessages.length > 0)
+  const getInitialMessages = hasSeed
+    ? async () => initialMessages!
+    : undefined
 
   // useAgentChat extends AI SDK's useChat. The body field flows to the
   // server via options.body in onChatMessage. Server reads model + projectId
@@ -138,11 +144,7 @@ export function useChat(options: ChatOptions = {}) {
       model: modelRef.current,
       projectId: projectIdRef.current,
     }),
-    // Bridge legacy D1-stored conversations into the DO. Called only when
-    // the DO's SQLite storage is empty — afterward the DO is authoritative.
-    getInitialMessages: seedRef.current && seedRef.current.length > 0
-      ? async () => seedRef.current!
-      : undefined,
+    getInitialMessages,
     onToolCall,
     // CRITICAL: without this, addToolApprovalResponse() only stores the
     // approval locally — the server never hears about it and the tool
