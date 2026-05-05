@@ -1,108 +1,154 @@
 /**
- * useChat Hook
+ * useChat Hook — SDK-aligned (Phase 1C)
  *
- * Wraps AI SDK's useChat for streaming chat with Workers AI.
- * Features: conversation persistence, bandwidth-optimised transport,
- * client-side tool execution, typed metadata, tool approval flow.
+ * Wraps `@cloudflare/ai-chat/react`'s `useAgentChat` (which extends AI SDK's
+ * `useChat`) on top of `agents/react`'s `useAgent` for the WebSocket
+ * connection. Replaces the legacy HTTP `DefaultChatTransport` → `/api/chat`
+ * pattern.
+ *
+ * Each `useChat` instance opens a WebSocket to a `ChatAgent` Durable Object
+ * named `user-{userId}-conv-{conversationId}`. The DO owns the message
+ * history (SQLite-persisted), the agent loop, and the tool surface. The DO
+ * also writes-through to D1 `conversation_messages` so cross-module readers
+ * (Spaces global search, Projects, AdminTools) keep working.
+ *
+ * For a brand-new chat (no conversationId), the hook generates a fresh UUID
+ * at first call so the DO instance is addressable immediately. The caller
+ * uses `conversationId` from the return for navigation / project-stamping.
+ *
+ * Public surface kept compatible with the legacy hook so ChatPage doesn't
+ * need surgery: `messages`, `sendMessage`, `regenerate`, `stop`,
+ * `setMessages`, `clearMessages`, `addToolApprovalResponse`, `status`,
+ * `error`, `isLoading`, `conversationId`.
  */
-import { useChat as useAIChat } from '@ai-sdk/react'
+import { useAgent } from 'agents/react'
+import { useAgentChat } from '@cloudflare/ai-chat/react'
 import {
-  DefaultChatTransport,
   lastAssistantMessageIsCompleteWithApprovalResponses,
   type UIMessage,
 } from 'ai'
 import { useMemo, useRef, useEffect } from 'react'
-import { messageMetadataSchema, type MessageMetadata } from '@/shared/schemas/chat.schema'
+import { type MessageMetadata } from '@/shared/schemas/chat.schema'
 
 export type Message = UIMessage
 export type { MessageMetadata }
 
 interface ChatOptions {
+  /**
+   * Required — the authenticated user's id. The hook needs this to compute
+   * the DO instance name. Pass `session?.user?.id` from `useSession()`.
+   * The hook does not render meaningful state until this is set.
+   */
+  userId?: string
+  /** Default model; can be changed per send via the model picker. */
   model?: string
-  systemPrompt?: string
+  /**
+   * Conversation id. When omitted, the hook generates a fresh UUID so the
+   * DO is addressable immediately. The caller reads back `conversationId`
+   * from the return (always present once the hook is mounted).
+   */
   conversationId?: string
   /**
-   * When starting a new conversation from a project page ("New chat in
-   * this project"), this stamps the conversation with the project on
-   * first send. Ignored server-side for existing conversations — the
-   * stored row always wins.
+   * Stamps a new conversation with a project on first send. The server
+   * (ChatAgent.onChatMessage) only honours this for the FIRST turn — once
+   * the `conversations` row exists, the stored row wins.
    */
   projectId?: string | null
-  initialMessages?: Message[]
-  /** Client-side tool handlers — execute tools in the browser without server round-trip */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onToolCall?: (params: { toolCall: any }) => void | Promise<void>
   /**
-   * Called once the assistant's response has finished streaming. Used by
-   * `ChatPage` to invalidate the conversations list query so the sidebar
-   * picks up newly-created conversations without waiting for the next
-   * mount or a hard refresh. Belt-and-braces alongside the
-   * conversationId-watch effect — that effect fires when the URL gets
-   * its first ID, this fires when the stream actually completes.
+   * Seed messages used by the SDK's `getInitialMessages` when the DO's
+   * SQLite storage is empty. Bridges legacy conversations (created via
+   * the old HTTP route, persisted in D1 only) into the new DO-authoritative
+   * flow — the DO copies these into its own storage on first connect.
+   */
+  initialMessages?: Message[]
+  /** Client-side tool handlers — execute tools in the browser without server round-trip. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onToolCall?: (params: { toolCall: any; addToolOutput: (output: { toolCallId: string; output: unknown }) => void }) => void | Promise<void>
+  /**
+   * Called after the assistant's response finishes streaming. Fork users
+   * typically use this to invalidate the conversations sidebar query so
+   * newly-created conversations appear without a refresh.
    */
   onFinish?: () => void
 }
 
-export function useChat(options: ChatOptions = {}) {
-  const { model, systemPrompt, conversationId, projectId, initialMessages, onToolCall, onFinish } = options
+/**
+ * Build the `ChatAgent` DO instance name. Must match the server-side
+ * `parseInstanceName` parser in `chat-agent.ts`.
+ */
+function buildInstanceName(userId: string, conversationId: string): string {
+  return `user-${userId}-conv-${conversationId}`
+}
 
-  // Refs keep prepareSendMessagesRequest reading the LATEST fields.
-  // useAIChat memoises the transport internally, so a closure captured at mount would
-  // otherwise pin the request to the initial values.
+export function useChat(options: ChatOptions = {}) {
+  const { userId, model, conversationId: providedConversationId, projectId, initialMessages, onToolCall, onFinish } = options
+
+  // Allocate a conversation id if the caller didn't provide one. The
+  // useMemo + ref pair keeps the id stable across renders without
+  // creating one until both userId is present and we need a session.
+  // This way, components that mount before auth resolves don't burn
+  // through random UUIDs.
+  const allocatedIdRef = useRef<string | null>(null)
+  const conversationId = useMemo(() => {
+    if (providedConversationId) {
+      // Switching conversations — reset our auto-allocated id so a later
+      // unmount-back-to-new doesn't reuse the old one.
+      allocatedIdRef.current = null
+      return providedConversationId
+    }
+    if (!allocatedIdRef.current) {
+      allocatedIdRef.current = crypto.randomUUID()
+    }
+    return allocatedIdRef.current
+  }, [providedConversationId])
+
+  // Static names used by useAgent. The agent SDK normalises class names
+  // to kebab-case for routing — `ChatAgent` → `/agents/chat-agent/...`.
+  // Pass the PascalCase form here; the hook handles the conversion.
+  const instanceName = userId ? buildInstanceName(userId, conversationId) : ''
+
+  const agent = useAgent({
+    agent: 'ChatAgent',
+    name: instanceName,
+  })
+
+  // Refs let the body callback see the latest model / projectId without
+  // forcing useAgentChat to re-bind on every change. The SDK re-evaluates
+  // body() per send, so we always pick up the current values.
   const modelRef = useRef(model)
-  const systemPromptRef = useRef(systemPrompt)
-  const conversationIdRef = useRef(conversationId)
   const projectIdRef = useRef(projectId)
   useEffect(() => { modelRef.current = model }, [model])
-  useEffect(() => { systemPromptRef.current = systemPrompt }, [systemPrompt])
-  useEffect(() => { conversationIdRef.current = conversationId }, [conversationId])
   useEffect(() => { projectIdRef.current = projectId }, [projectId])
-
-  const transport = useMemo(
-    () =>
-      new DefaultChatTransport({
-        api: '/api/chat',
-        credentials: 'include',
-        // Bandwidth optimisation: send only the latest message, server loads history from DB
-        prepareSendMessagesRequest({ messages: msgs, id }) {
-          return {
-            body: {
-              message: msgs[msgs.length - 1],
-              allMessages: msgs,
-              id,
-              model: modelRef.current,
-              systemPrompt: systemPromptRef.current,
-              conversationId: conversationIdRef.current,
-              projectId: projectIdRef.current,
-            },
-          }
-        },
-      }),
-    [],
-  )
-
-  // Seed useAIChat ONCE at mount. Without this, a later prop update to
-  // `initialMessages` (triggered when /chat transitions to /chat/:id and
-  // useConversationMessages refetches) clobbers the in-flight streaming
-  // state, blanking the transcript until reload (C1 in the 2026-04-22
-  // audit). After mount we sync stored messages explicitly with
-  // setMessages only when chat state is empty — never when a stream is in
-  // flight.
-  const seedRef = useRef(initialMessages)
 
   const onFinishRef = useRef(onFinish)
   useEffect(() => { onFinishRef.current = onFinish }, [onFinish])
 
-  const chat = useAIChat({
-    messages: seedRef.current,
-    messageMetadataSchema,
-    transport,
+  // Seed-messages ref — captured at hook mount and used by getInitialMessages
+  // exactly once. Re-renders that change `initialMessages` after first
+  // connect don't re-seed (DO is already populated).
+  const seedRef = useRef(initialMessages)
+
+  // useAgentChat extends AI SDK's useChat. The body field flows to the
+  // server via options.body in onChatMessage. Server reads model + projectId
+  // from there; the rest of the request body (messages, clientTools) is
+  // SDK-managed.
+  const chat = useAgentChat({
+    agent,
+    body: () => ({
+      model: modelRef.current,
+      projectId: projectIdRef.current,
+    }),
+    // Bridge legacy D1-stored conversations into the DO. Called only when
+    // the DO's SQLite storage is empty — afterward the DO is authoritative.
+    getInitialMessages: seedRef.current && seedRef.current.length > 0
+      ? async () => seedRef.current!
+      : undefined,
     onToolCall,
     // CRITICAL: without this, addToolApprovalResponse() only stores the
     // approval locally — the server never hears about it and the tool
     // never runs. This callback tells the SDK to auto-resubmit once all
-    // pending approval requests have responses. Fixes the "Approve
-    // button does nothing" bug in the Workspace connector flow.
+    // pending approval requests have responses. Same pattern as the
+    // legacy HTTP path.
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
     onFinish: () => onFinishRef.current?.(),
     onError: (error: Error) => {
@@ -110,33 +156,16 @@ export function useChat(options: ChatOptions = {}) {
     },
   })
 
-  // Adopt stored messages on later mounts (e.g. navigating from one
-  // conversation to another). Only when chat.messages is empty — so we
-  // never overwrite a live stream or optimistic user message.
-  useEffect(() => {
-    if (!initialMessages || initialMessages.length === 0) return
-    if (chat.messages.length > 0) return
-    chat.setMessages(initialMessages)
-  }, [initialMessages, chat])
-
-  // Extract conversationId from the latest assistant message metadata
-  const latestConversationId = (() => {
-    for (let i = chat.messages.length - 1; i >= 0; i--) {
-      const msg = chat.messages[i]
-      if (msg?.role === 'assistant') {
-        const meta = (msg as unknown as Record<string, unknown>)['metadata'] as MessageMetadata | undefined
-        if (meta?.conversationId) return meta.conversationId
-      }
-    }
-    return conversationId
-  })()
-
   return {
     messages: chat.messages,
     isLoading: chat.status === 'streaming' || chat.status === 'submitted',
     error: chat.error?.message ?? null,
     status: chat.status,
-    conversationId: latestConversationId,
+    /**
+     * Always present — generated upfront if not provided. Caller uses this
+     * to navigate to `/chat/:conversationId` after the first send.
+     */
+    conversationId,
     sendMessage: chat.sendMessage,
     regenerate: chat.regenerate,
     stop: chat.stop,

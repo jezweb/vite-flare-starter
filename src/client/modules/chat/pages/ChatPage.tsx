@@ -188,6 +188,7 @@ export function ChatPage() {
     setMessages,
     addToolApprovalResponse,
   } = useChat({
+    userId: session?.user?.id,
     model,
     conversationId: urlConversationId,
     projectId: urlProjectId,
@@ -203,12 +204,6 @@ export function ChatPage() {
     },
   })
 
-  // Track the last conversation we hydrated from the server. Declared
-  // BEFORE the navigate effect so we can stamp it on creation (prevents
-  // the hydration effect further down from clobbering a live stream when
-  // the conversation's saved messages land).
-  const lastHydratedIdRef = useRef<string | undefined>(undefined)
-
   // Navigate to conversation URL when a new conversation is created.
   // Preserve ?projectId= across the navigate so the in-project pill doesn't
   // briefly vanish while the conversations list refetches. The pill falls
@@ -216,12 +211,6 @@ export function ChatPage() {
   useEffect(() => {
     if (conversationId && !urlConversationId && messages.length > 0) {
       const projectSuffix = urlProjectId ? `?projectId=${urlProjectId}` : ''
-      // Stamp BEFORE navigate so the hydration effect (below) sees this
-      // conversation as "already hydrated" and skips — otherwise the
-      // server-side refetch that follows the URL change would overwrite
-      // the in-flight streaming state with a stale DB snapshot ("flick
-      // back" symptom — see audit 2026-04-22).
-      lastHydratedIdRef.current = conversationId
       navigate(`/dashboard/chat/${conversationId}${projectSuffix}`, { replace: true })
       queryClient.invalidateQueries({ queryKey: ['conversations'] })
       // Also invalidate the parent project's detail (which embeds the
@@ -271,40 +260,12 @@ export function ChatPage() {
     return () => ac.abort()
   }, [conversationId, isLoading, messages, queryClient])
 
-  // Reset + hydrate when the conversation URL changes (navigating sidebar
-  // entries). Tracking the last-hydrated conversationId prevents us from
-  // clobbering mid-stream messages for the current conversation.
-  // (lastHydratedIdRef declared earlier so the navigate effect above can
-  // stamp it on creation — see comment there.)
-  useEffect(() => {
-    // Conversation cleared (user clicked "New chat" with no id) — empty the list.
-    if (!urlConversationId) {
-      if (lastHydratedIdRef.current !== undefined) {
-        setMessages([])
-        lastHydratedIdRef.current = undefined
-      }
-      return
-    }
-    const raw = existingConversation?.messages as Message[] | undefined
-    // Still loading — don't touch messages.
-    if (!raw) return
-    // Already hydrated this conversation and we're not switching — skip.
-    if (lastHydratedIdRef.current === urlConversationId) return
-
-    const hydrated = raw.map((m) => {
-      const msg = m as Message & { createdAt?: unknown }
-      return {
-        ...m,
-        parts: Array.isArray(m.parts) ? m.parts : [],
-        ...(msg.createdAt != null
-          ? { createdAt: msg.createdAt instanceof Date ? msg.createdAt : new Date(msg.createdAt as string) }
-          : {}),
-      }
-    })
-    setMessages(hydrated as Message[])
-    lastHydratedIdRef.current = urlConversationId
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [urlConversationId, existingConversation?.messages])
+  // Phase 1C: hydration removed — the DO is authoritative for live messages.
+  // Switching conversations changes the DO instance name, which reconnects
+  // to a different DO with its own SQLite storage. Legacy D1-stored
+  // conversations bridge in via `getInitialMessages` inside useChat (the
+  // `initialMessages` prop above), so first-connect to a DO whose SQLite
+  // is empty gets seeded from D1.
 
   // Share Target: auto-send shared text on first load, then clear params
   useEffect(() => {
