@@ -68,6 +68,10 @@ import { buildCacheableSystemPrompt } from '@/server/lib/ai/context'
 import { getMCPTools } from '@/server/lib/ai/mcp'
 import { getModel, DEFAULT_MODEL } from '@/server/lib/ai/models'
 import { listSkills, loadAlwaysActiveSkills } from '@/server/lib/ai/skills/registry'
+import {
+  listKnowledgeCatalog,
+  loadAlwaysActiveKnowledge,
+} from '@/server/modules/knowledge/storage'
 import { trimHistoryToTokenBudget } from '@/server/lib/ai/trim-history'
 import { convertToMarkdown } from '@/server/lib/ai/documents'
 import { buildChatTools } from '@/server/modules/chat/tools'
@@ -656,19 +660,58 @@ export class ChatAgent extends AIChatAgent<Env> {
           .join('\n\n---\n\n')
       : null
 
+    // ─── 8c. Knowledge — always-active bodies + on-demand catalog ───
+    // Mirrors 8a/8b for skills. Long-form reference docs marked
+    // injectionMode='always' are baked in full into the system prompt;
+    // injectionMode='on_demand' docs only show their title+summary in
+    // a catalog so the agent can decide whether to call knowledge_search
+    // → load_knowledge for the body.
+    let alwaysKnowledge: Awaited<ReturnType<typeof loadAlwaysActiveKnowledge>> = []
+    let knowledgeCatalog: Awaited<ReturnType<typeof listKnowledgeCatalog>> = []
+    try {
+      alwaysKnowledge = await loadAlwaysActiveKnowledge(
+        this.env.DB,
+        userId,
+        effectiveProjectId ?? null,
+        null, // org scope — Phase 5
+      )
+      knowledgeCatalog = await listKnowledgeCatalog(
+        this.env.DB,
+        userId,
+        effectiveProjectId ?? null,
+        null,
+      )
+    } catch (err) {
+      console.error(
+        JSON.stringify({ event: 'knowledge_load_failed', error: String(err) }),
+      )
+    }
+    const knowledgeBlock = alwaysKnowledge.length > 0
+      ? alwaysKnowledge
+          .map((k) => `### ${k.title}\n\n${k.body.trim()}`)
+          .join('\n\n---\n\n')
+      : null
+    const knowledgeCatalogBlock = knowledgeCatalog.length > 0
+      ? knowledgeCatalog
+          .map((k) => `- **${k.title}** (id: ${k.id}): ${k.summary}`)
+          .join('\n')
+      : null
+
     // ─── 9. Chat preferences (per-user prompt block) ─────────────────
     const chatPrefs = await loadChatPreferences(this.env.DB, userId)
     const prefsBlock = chatPrefs ? formatChatPreferences(chatPrefs) : null
 
     // ─── 10. Assemble system prompt extra sections ───────────────────
     // Order matters for prompt-cache reuse + agent priority:
-    //   1. Active Skills  (baseline always-on knowledge)
-    //   2. Available Skills  (on-demand catalog)
-    //   3. User Preferences
-    //   4. Project instructions
-    //   5. Memory
+    //   1. Active Skills  (baseline always-on procedures)
+    //   2. Active Knowledge  (baseline always-on reference material)
+    //   3. Available Skills  (on-demand procedure catalog)
+    //   4. Available Knowledge  (on-demand reference catalog)
+    //   5. User Preferences
+    //   6. Project instructions
+    //   7. Memory
     //
-    // Active Skills go FIRST so the agent reads its baseline before
+    // Active sections go FIRST so the agent reads its baseline before
     // deciding what else it needs.
     const extraSections: Record<string, string> = {}
     if (baselineBlock) {
@@ -678,6 +721,13 @@ export class ChatAgent extends AIChatAgent<Env> {
         baselineBlock,
       ].join('\n')
     }
+    if (knowledgeBlock) {
+      extraSections['Active Knowledge'] = [
+        'These reference documents are always available. Apply them whenever relevant — you do not need to call load_knowledge for any of them.',
+        '',
+        knowledgeBlock,
+      ].join('\n')
+    }
     if (skillsCatalog) {
       extraSections['Available Skills'] = [
         'Before answering, scan the skills below and load any that match the user\'s task. Specialist work (research, drafting, code review, document analysis, data extraction, comparing options, planning) almost always has a matching skill — call load_skill FIRST rather than improvising. If no skill matches, proceed normally.',
@@ -685,6 +735,13 @@ export class ChatAgent extends AIChatAgent<Env> {
         'load_skill returns a <skill_content> block with full instructions; follow it, and use fs tools to read any listed resources on demand.',
         '',
         skillsCatalog,
+      ].join('\n')
+    }
+    if (knowledgeCatalogBlock) {
+      extraSections['Available Knowledge'] = [
+        "Reference documents available on demand. When the user asks about a topic these cover, call knowledge_search(query) to confirm relevance, then load_knowledge(id) to fetch the body. Prefer this over guessing — the answer is often in the KB already.",
+        '',
+        knowledgeCatalogBlock,
       ].join('\n')
     }
     if (prefsBlock) {

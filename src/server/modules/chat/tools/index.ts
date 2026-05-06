@@ -21,6 +21,7 @@ import { memoriesMultiDefinitions } from './memories-multi'
 import { fileDefinitions } from './files'
 import { uiDefinitions } from './ui'
 import { skillsDefinitions } from './skills'
+import { knowledgeDefinitions } from './knowledge'
 import { codeDefinitions } from './code'
 import { delegateDefinitions } from './delegate'
 import { audioDefinitions } from './audio'
@@ -70,6 +71,7 @@ export async function buildChatTools(ctx: AgentContext, options: { availableSkil
     ...artifactDefinitions,
     ...documentDefinitions,
     ...skillsDefinitions(options.availableSkillNames ?? []),
+    ...knowledgeDefinitions,
     ...codeDefinitions,
     ...delegateDefinitions,
     ...audioDefinitions,

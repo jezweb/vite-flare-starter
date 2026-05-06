@@ -68,6 +68,13 @@ export const features = {
   /** Skills dashboard + slash-command activation in chat */
   skills: isEnabled('VITE_FEATURE_SKILLS'),
 
+  /**
+   * Knowledge dashboard — long-form reference documents per user/project/org
+   * with always-active or on-demand injection into the chat agent.
+   * Sits between memories (small structured facts) and skills (procedures).
+   */
+  knowledge: isEnabled('VITE_FEATURE_KNOWLEDGE'),
+
   /** MCP Connectors — per-user OAuth/bearer connections to external MCP servers */
   connectors: isEnabled('VITE_FEATURE_CONNECTORS'),
 

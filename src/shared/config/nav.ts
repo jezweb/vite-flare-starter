@@ -41,6 +41,7 @@ import {
   Bot,
   Kanban,
   Layers,
+  BookOpen,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -126,6 +127,7 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { to: '/dashboard/connections', label: 'Connections', icon: Plug, feature: 'connectors' },
       { to: '/dashboard/skills', label: 'Skills', icon: Zap, feature: 'skills' },
+      { to: '/dashboard/knowledge', label: 'Knowledge', icon: BookOpen, feature: 'knowledge' },
       { to: '/dashboard/agents', label: 'Agents', icon: Bot },
       { to: '/dashboard/admin-chat', label: 'Admin chat', icon: ShieldCheck },
     ],
