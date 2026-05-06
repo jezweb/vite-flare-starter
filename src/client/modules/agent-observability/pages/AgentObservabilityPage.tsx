@@ -56,6 +56,18 @@ interface StatsResponse {
   costByDay: Array<{ date: string; cost: number; runs: number }>
 }
 
+interface ToolUsageResponse {
+  range: '7d' | '30d' | '90d'
+  sinceSeconds: number
+  tools: Array<{
+    toolName: string
+    count: number
+    errorCount: number
+    lastUsedAt: string | null
+    totalCostUsd: number | null
+  }>
+}
+
 const runsConfig: ChartConfig = {
   count: {
     label: 'Runs',
@@ -77,6 +89,18 @@ export function AgentObservabilityPage() {
     queryKey: ['agent-observability', 'stats', range],
     queryFn: () =>
       apiClient.get<StatsResponse>(`/api/agent-observability/stats?range=${range}`),
+    refetchInterval: 60_000,
+  })
+
+  // Per-tool usage stats — closes the chat-tools audit gap of "we have
+  // no idea which tools actually fire". Same range filter as stats; the
+  // tool-usage endpoint maps 14d → 30d under the hood.
+  const toolRange: '7d' | '30d' | '90d' =
+    range === '7d' ? '7d' : range === '90d' ? '90d' : '30d'
+  const toolUsage = useQuery({
+    queryKey: ['agent-observability', 'tool-usage', toolRange],
+    queryFn: () =>
+      apiClient.get<ToolUsageResponse>(`/api/agent-observability/tool-usage?range=${toolRange}`),
     refetchInterval: 60_000,
   })
 
@@ -239,6 +263,83 @@ export function AgentObservabilityPage() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Per-tool usage — closes the chat-tools audit gap. Surfaces
+              which tools actually fire so we can validate Phase A+B
+              activation rates moved + spot dead tools. */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <BarChart3 className="size-4" />
+                  Tool usage
+                </span>
+                <span className="text-xs font-normal text-muted-foreground">
+                  {toolUsage.data?.tools.length ?? 0} distinct tools fired
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {toolUsage.isLoading ? (
+                <div className="flex h-32 items-center justify-center">
+                  <Spinner />
+                </div>
+              ) : !toolUsage.data?.tools.length ? (
+                <div className="text-center text-sm text-muted-foreground py-8">
+                  No tool calls in this range yet.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b text-left text-xs uppercase tracking-wider text-muted-foreground">
+                        <th className="pb-2 font-medium">Tool</th>
+                        <th className="pb-2 text-right font-medium">Calls</th>
+                        <th className="pb-2 text-right font-medium">Errors</th>
+                        <th className="pb-2 text-right font-medium">Cost (USD)</th>
+                        <th className="pb-2 text-right font-medium">Last used</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {toolUsage.data.tools.map((t) => {
+                        const errorRate = t.count > 0 ? (t.errorCount / t.count) * 100 : 0
+                        const last = t.lastUsedAt ? new Date(t.lastUsedAt) : null
+                        const ageDays = last
+                          ? Math.floor((Date.now() - last.getTime()) / (1000 * 60 * 60 * 24))
+                          : null
+                        return (
+                          <tr key={t.toolName} className="hover:bg-muted/30">
+                            <td className="py-1.5 font-mono text-xs">{t.toolName}</td>
+                            <td className="py-1.5 text-right tabular-nums">{t.count}</td>
+                            <td
+                              className={`py-1.5 text-right tabular-nums ${errorRate > 10 ? 'text-destructive' : 'text-muted-foreground'}`}
+                            >
+                              {t.errorCount}
+                              {errorRate > 0 ? (
+                                <span className="ml-1 text-[10px] opacity-70">
+                                  ({errorRate.toFixed(0)}%)
+                                </span>
+                              ) : null}
+                            </td>
+                            <td className="py-1.5 text-right tabular-nums text-muted-foreground">
+                              {t.totalCostUsd ? `$${t.totalCostUsd.toFixed(4)}` : '—'}
+                            </td>
+                            <td className="py-1.5 text-right text-xs text-muted-foreground">
+                              {ageDays === null
+                                ? '—'
+                                : ageDays === 0
+                                  ? 'today'
+                                  : `${ageDays}d ago`}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </>
       )}
     </PageContainer>

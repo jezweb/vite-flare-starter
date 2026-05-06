@@ -21,6 +21,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { and, desc, eq, gte, sql } from 'drizzle-orm'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import { agentRuns } from './db/schema'
+import { aiToolCalls } from '@/server/modules/chat/db/schema'
 
 const app = new Hono<AuthContext>()
 app.use('*', authMiddleware)
@@ -168,6 +169,49 @@ app.get('/summary', async (c) => {
   return c.json({
     sinceSeconds: thirtyDaysAgo,
     classes: rows,
+  })
+})
+
+/**
+ * GET /tool-usage?range=7d|30d|90d
+ *
+ * Per-tool usage stats from ai_tool_calls. Surfaces:
+ *   - which tools fire most often (validation for the chat-tools audit
+ *     finding that 70+ tools had unverified activation rates)
+ *   - per-tool error counts (catches silently-broken tools)
+ *   - last-used timestamp (catches dead tools that never fire)
+ *
+ * Per-user (no admin gate — users see their own tool usage). Forks
+ * wanting cross-tenant visibility add admin check at route layer.
+ */
+const ToolUsageSchema = z.object({
+  range: z.enum(['7d', '30d', '90d']).optional().default('30d'),
+})
+app.get('/tool-usage', zValidator('query', ToolUsageSchema), async (c) => {
+  const userId = c.get('userId')
+  const { range } = c.req.valid('query')
+  const days = { '7d': 7, '30d': 30, '90d': 90 }[range]
+  const since = Math.floor(Date.now() / 1000) - days * 24 * 60 * 60
+  const sinceDate = new Date(since * 1000)
+  const db = drizzle(c.env.DB)
+
+  const rows = await db
+    .select({
+      toolName: aiToolCalls.toolName,
+      count: sql<number>`COUNT(*)`,
+      errorCount: sql<number>`SUM(CASE WHEN ${aiToolCalls.toolError} IS NOT NULL THEN 1 ELSE 0 END)`,
+      lastUsedAt: sql<string>`MAX(${aiToolCalls.createdAt})`,
+      totalCostUsd: sql<number | null>`SUM(${aiToolCalls.costUsd})`,
+    })
+    .from(aiToolCalls)
+    .where(and(eq(aiToolCalls.userId, userId), gte(aiToolCalls.createdAt, sinceDate)))
+    .groupBy(aiToolCalls.toolName)
+    .orderBy(desc(sql`COUNT(*)`))
+
+  return c.json({
+    range,
+    sinceSeconds: since,
+    tools: rows,
   })
 })
 
