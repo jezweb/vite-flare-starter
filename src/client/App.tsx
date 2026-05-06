@@ -44,6 +44,8 @@ const SkillDetailPage = lazy(() => import('./modules/skills/pages/SkillDetailPag
 const NotificationsPage = lazy(() => import('./modules/notifications/pages/NotificationsPage').then(m => ({ default: m.NotificationsPage })))
 const ApprovalsPage = lazy(() => import('./modules/approvals/pages/ApprovalsPage').then(m => ({ default: m.ApprovalsPage })))
 const InboxPage = lazy(() => import('./modules/inbox/pages/InboxPage').then(m => ({ default: m.InboxPage })))
+const JobsPage = lazy(() => import('./modules/jobs/pages/JobsPage').then(m => ({ default: m.JobsPage })))
+const JobDetailPage = lazy(() => import('./modules/jobs/pages/JobDetailPage').then(m => ({ default: m.JobDetailPage })))
 const FindingsPage = lazy(() => import('./modules/findings/pages/FindingsPage').then(m => ({ default: m.FindingsPage })))
 const RoutinesPage = lazy(() => import('./modules/routines/pages/RoutinesPage').then(m => ({ default: m.RoutinesPage })))
 const NewRoutinePage = lazy(() => import('./modules/routines/pages/NewRoutinePage').then(m => ({ default: m.NewRoutinePage })))
@@ -223,6 +225,8 @@ function App() {
             <Route path="admin-chat" element={<AdminAgentPage />} />
             <Route path="agents" element={<AgentsPage />} />
             <Route path="inbox" element={<InboxPage />} />
+            <Route path="jobs" element={<JobsPage />} />
+            <Route path="jobs/:id" element={<JobDetailPage />} />
             <Route path="findings" element={<FindingsPage />} />
             <Route path="routines" element={<RoutinesPage />} />
             <Route path="routines/new" element={<NewRoutinePage />} />

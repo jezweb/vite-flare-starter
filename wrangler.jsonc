@@ -134,6 +134,18 @@
   //   }
   // ],
 
+  // Workflows — durable, step-based fan-out for "do X for each of N items".
+  // Each step.do() is independently retried + survives Worker restarts.
+  // The starter uses one Workflow class for now; add more as needed.
+  // Required for the batch-tasks module (see src/server/modules/batch-tasks/).
+  "workflows": [
+    {
+      "name": "vite-flare-starter-batch-workflow",
+      "binding": "BATCH_WORKFLOW",
+      "class_name": "ProcessBatchWorkflow"
+    }
+  ],
+
   // Cron Triggers (scheduled tasks)
   // Runs every 15 minutes:
   //  - processes due jobs from scheduled_jobs table (agent reminders)

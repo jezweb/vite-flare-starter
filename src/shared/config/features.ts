@@ -54,6 +54,14 @@ export const features = {
   /** In-app notifications bell */
   notifications: isEnabled('VITE_FEATURE_NOTIFICATIONS'),
 
+  /**
+   * Batch tasks — durable fan-out jobs ("do this for each of these").
+   * Default ON. Disabling hides the /dashboard/jobs page + sidebar entry,
+   * but the chat tool stays registered (unused if BATCH_WORKFLOW
+   * binding is also missing).
+   */
+  batchTasks: isEnabled('VITE_FEATURE_BATCH_TASKS'),
+
   /** API token management in settings */
   apiTokens: isEnabled('VITE_FEATURE_API_TOKENS'),
 

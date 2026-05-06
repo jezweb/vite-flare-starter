@@ -302,6 +302,13 @@
       "when": 1777904242185,
       "tag": "20260504141722_org_id_on_routines_entities",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "6",
+      "when": 1778030289587,
+      "tag": "20260506011809_batch_tasks",
+      "breakpoints": true
     }
   ]
 }

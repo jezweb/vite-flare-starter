@@ -49,6 +49,7 @@ import { entityDefinitions } from './entities'
 import { findingsDefinitions } from './findings'
 import { firecrawlDefinitions } from './firecrawl'
 import { channelsDefinitions } from './channels'
+import { batchTaskDefinitions } from './batch-task'
 import { collectAvailableTools } from '@/server/lib/ai/tool-adapter'
 import {
   getAllowedConnectorTools,
@@ -96,6 +97,7 @@ export async function buildChatTools(ctx: AgentContext, options: { availableSkil
     ...findingsDefinitions,
     ...firecrawlDefinitions,
     ...channelsDefinitions,
+    ...batchTaskDefinitions,
   ]
 
   // Per-user connector filter — keeps connector tools the user has

@@ -60,6 +60,7 @@ import adminAgentRoutes from './modules/admin-tools/routes'
 import agentInstancesRoutes from './modules/agent-instances/routes'
 import messagesRoutes from './modules/spaces/messages-routes'
 import globalSearchRoutes from './modules/spaces/global-search'
+import batchJobsRoutes from './modules/batch-tasks/routes'
 import { routeAgentRequest } from 'agents'
 import { ScratchpadMcpAgent } from './modules/mcp-agents/scratchpad-mcp-agent'
 // Re-export DO class(es) so wrangler migrations can locate them. Every DO
@@ -80,6 +81,9 @@ export { SpaceAgent } from './modules/spaces/space-agent'
 // /agents/chat-agent/user-{userId}-conv-{conversationId}.
 // See src/server/modules/chat/chat-agent.ts.
 export { ChatAgent } from './modules/chat/chat-agent'
+// Cloudflare Workflow class for the batch-tasks module. Bound at
+// `BATCH_WORKFLOW` (see wrangler.jsonc → workflows[]).
+export { ProcessBatchWorkflow } from './modules/batch-tasks/workflows/process-batch'
 import { securityHeaders } from './middleware/security'
 import { rateLimiter } from './middleware/rate-limit'
 import { authMiddleware, requireScopes } from './middleware/auth'
@@ -109,6 +113,11 @@ export interface Env {
   // Cloudflare Media Transformations (video resize, clip, frame/audio extraction)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   MEDIA?: any
+
+  // Cloudflare Workflows — batch-tasks fan-out runner.
+  // See src/server/modules/batch-tasks/workflows/process-batch.ts.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  BATCH_WORKFLOW?: any
 
   // Environment variables
   BETTER_AUTH_SECRET: string
@@ -309,6 +318,7 @@ app.route('/api/autonomous-agents', autonomousAgentsRoutes)
 app.route('/api/approvals', approvalsRoutes)
 app.route('/api/routines', routinesRoutes)
 app.route('/api/inbox', inboxRoutes)
+app.route('/api/jobs', batchJobsRoutes)
 app.route('/api/agents', agentsRoutes)
 app.route('/api/webhooks', webhookAgentsRoutes)
 app.route('/api/agent-observability', agentObservabilityRoutes)

@@ -40,6 +40,7 @@ import {
   ShieldCheck,
   Bot,
   Kanban,
+  Layers,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -110,6 +111,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { to: '/dashboard', label: 'Home', icon: Home },
       { to: '/dashboard/chat', label: 'AI Chat', icon: MessageSquare, feature: 'chat' },
       { to: '/dashboard/inbox', label: 'Inbox', icon: Inbox },
+      { to: '/dashboard/jobs', label: 'Batch jobs', icon: Layers, feature: 'batchTasks' },
       { to: '/dashboard/findings', label: 'Findings', icon: Lightbulb, feature: 'findings' },
       { to: '/dashboard/projects', label: 'Projects', icon: FolderKanban },
       { to: '/dashboard/spaces', label: 'Spaces', icon: Users, feature: 'spaces' },
