@@ -57,6 +57,8 @@ import { apiClient } from '@/client/lib/api-client'
 import { InputTakeover, isTakeoverElement } from '../components/chat-ui/InputTakeover'
 import { hasUiMarker } from '../components/chat-ui/ChatUiElement'
 import { VoiceDictationButton } from '@/client/modules/chat/components/VoiceDictationButton'
+import { VoiceModeButton } from '@/client/modules/chat/components/VoiceModeButton'
+import { useVoiceChat } from '@/client/modules/chat/hooks/useVoiceChat'
 import { usePasteUpload } from '@/client/hooks/usePasteUpload'
 import { useSession } from '@/client/lib/auth'
 import { cn } from '@/lib/utils'
@@ -606,6 +608,64 @@ function ChatPageInner({ userId }: { userId: string }) {
   // an audio FILE for analysis can still attach via the paperclip menu,
   // which routes through convertToMarkdown + transcribe_audio tool.
 
+  // ─── Voice mode (push-to-talk + auto-TTS) ──────────────────────
+  // Distinct from VoiceDictationButton (streaming STT into the input
+  // field). Voice mode adds AUTO-TTS — every assistant reply plays
+  // aloud — and one-shot transcribe via /api/voice endpoints (no DO).
+  // Persisted per-user via localStorage so the mode survives reloads.
+  const voiceModeStorageKey = userId ? `chat:voiceMode:${userId}` : null
+  const [voiceModeEnabled, setVoiceModeEnabled] = useState(false)
+  useEffect(() => {
+    if (!voiceModeStorageKey) return
+    try {
+      setVoiceModeEnabled(localStorage.getItem(voiceModeStorageKey) === '1')
+    } catch {
+      // localStorage may throw in private mode — silently default to off.
+    }
+  }, [voiceModeStorageKey])
+  const handleSetVoiceMode = useCallback(
+    (v: boolean) => {
+      setVoiceModeEnabled(v)
+      if (voiceModeStorageKey) {
+        try {
+          localStorage.setItem(voiceModeStorageKey, v ? '1' : '0')
+        } catch {
+          // ignore
+        }
+      }
+    },
+    [voiceModeStorageKey],
+  )
+
+  // Latest assistant text — only set when streaming has settled, so we
+  // don't TTS half-formed sentences mid-stream.
+  const replyToSpeak = (() => {
+    if (!voiceModeEnabled) return null
+    if (status === 'streaming' || status === 'submitted') return null
+    const last = [...messages].reverse().find((m) => m.role === 'assistant')
+    if (!last) return null
+    const text = (last.parts ?? [])
+      .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+      .map((p) => p.text)
+      .join(' ')
+      .trim()
+    if (!text) return null
+    return { id: last.id, text }
+  })()
+
+  const handleVoiceTranscript = useCallback(
+    (text: string) => {
+      sendMessage({ text })
+    },
+    [sendMessage],
+  )
+
+  const voiceChat = useVoiceChat({
+    enabled: voiceModeEnabled,
+    onTextSubmit: handleVoiceTranscript,
+    replyToSpeak,
+  })
+
   // hasMessages gates the empty "Good evening" screen. We treat "streaming
   // with no messages yet" as "has messages" so the welcome state doesn't
   // briefly flash between send and the first optimistic append, or while a
@@ -1153,6 +1213,18 @@ function ChatPageInner({ userId }: { userId: string }) {
                               userId={session?.user?.id}
                             />
                           )}
+                          <VoiceModeButton
+                            enabled={voiceModeEnabled}
+                            setEnabled={handleSetVoiceMode}
+                            state={voiceChat.state}
+                            isRecording={voiceChat.isRecording}
+                            isSpeaking={voiceChat.isSpeaking}
+                            startRecording={voiceChat.startRecording}
+                            stopRecording={voiceChat.stopRecording}
+                            stopSpeaking={voiceChat.stopSpeaking}
+                            error={voiceChat.error}
+                            disabled={isLoading}
+                          />
                           {/* `display: contents` strips the box, so Radix's
                               Popover anchor (used by ChatFirstRunTour) falls
                               back to (0,0) and the popover lands upper-left

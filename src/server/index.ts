@@ -28,6 +28,7 @@ import conversationsRoutes from './modules/conversations/routes'
 import projectsRoutes from './modules/projects/routes'
 import memoriesRoutes from './modules/memories/routes'
 import knowledgeRoutes from './modules/knowledge/routes'
+import voiceRoutes from './modules/voice/voice-routes'
 import commentsRoutes from './modules/comments/routes'
 import tagsRoutes from './modules/tags/routes'
 import watchersRoutes from './modules/watchers/routes'
@@ -344,6 +345,7 @@ app.route('/api/test-auth', testAuthRoutes)
 app.route('/api/projects', projectsRoutes)
 app.route('/api/memories', memoriesRoutes)
 app.route('/api/knowledge', knowledgeRoutes)
+app.route('/api/voice', voiceRoutes)
 app.route('/api/comments', commentsRoutes)
 app.route('/api/tags', tagsRoutes)
 app.route('/api/watchers', watchersRoutes)
