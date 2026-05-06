@@ -31,6 +31,7 @@ import {
   Eye,
   History,
   MessageSquare,
+  PencilLine,
   Save,
   Sparkles,
 } from 'lucide-react'
@@ -78,6 +79,44 @@ interface SkillEditorProps {
  */
 function stripLeadingH1(body: string): string {
   return body.replace(/^\s*#[^#].*\n+/, '')
+}
+
+/**
+ * Heading wrapper rendered inside the Procedure markdown that exposes a
+ * hover-revealed "Edit" affordance. Clicking it jumps to the Source tab
+ * and scrolls the editor cursor to the matching heading line.
+ *
+ * The text passed to the editor's `scrollToLine` is the plain heading
+ * text (e.g. "When to use") — the editor finds the first source line
+ * that contains it. This works for any markdown heading style (`##`,
+ * `###`, etc.) because we match the inner text, not the markdown syntax.
+ */
+function EditableHeading({
+  level,
+  text,
+  onEdit,
+  children,
+}: {
+  level: 1 | 2 | 3
+  text: string
+  onEdit: (text: string) => void
+  children: React.ReactNode
+}) {
+  const Tag = `h${level}` as 'h1' | 'h2' | 'h3'
+  return (
+    <Tag className="group/heading flex items-center gap-2">
+      <span>{children}</span>
+      <button
+        type="button"
+        onClick={() => onEdit(text)}
+        className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-hover/heading:opacity-100"
+        aria-label={`Edit "${text}"`}
+      >
+        <PencilLine className="h-3 w-3" />
+        Edit
+      </button>
+    </Tag>
+  )
 }
 
 /**
@@ -137,6 +176,15 @@ export function SkillEditor({ name }: SkillEditorProps) {
   const [sparkleInstruction, setSparkleInstruction] = useState('')
   const [sparkleError, setSparkleError] = useState<string | null>(null)
   const lastLoadedName = useRef<string | null>(null)
+  // When the user clicks "Edit" next to a Procedure heading on Overview,
+  // we switch to the Source tab and ask MarkdownCodeEditor to scroll
+  // its cursor to the line containing that heading. The token bumps on
+  // every click so the same heading clicked twice still re-fires.
+  const [scrollTarget, setScrollTarget] = useState<{ content: string; token: number } | null>(null)
+  const editFromHeading = (text: string) => {
+    setTab('source')
+    setScrollTarget({ content: text, token: Date.now() })
+  }
 
   // When the selected skill changes, seed the draft from canonical source.
   useEffect(() => {
@@ -393,13 +441,35 @@ export function SkillEditor({ name }: SkillEditorProps) {
           {/* The skill procedure rendered as readable markdown — what the
               AI actually loads when invoked. Not the source editor; this
               is the "what does this do" view. Strip a leading `# Title`
-              line so it doesn't duplicate the page header. */}
+              line so it doesn't duplicate the page header. Headings get
+              a hover-revealed "Edit" affordance that switches to the
+              Source tab + scrolls the editor to that heading line. */}
           <div>
             <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Procedure
             </h3>
             <div className="prose prose-sm dark:prose-invert max-w-none">
-              <ReactMarkdown>{stripLeadingH1(split.body)}</ReactMarkdown>
+              <ReactMarkdown
+                components={{
+                  h1: ({ children }) => (
+                    <EditableHeading level={1} text={String(children)} onEdit={editFromHeading}>
+                      {children}
+                    </EditableHeading>
+                  ),
+                  h2: ({ children }) => (
+                    <EditableHeading level={2} text={String(children)} onEdit={editFromHeading}>
+                      {children}
+                    </EditableHeading>
+                  ),
+                  h3: ({ children }) => (
+                    <EditableHeading level={3} text={String(children)} onEdit={editFromHeading}>
+                      {children}
+                    </EditableHeading>
+                  ),
+                }}
+              >
+                {stripLeadingH1(split.body)}
+              </ReactMarkdown>
             </div>
           </div>
         </TabsContent>
@@ -415,6 +485,7 @@ export function SkillEditor({ name }: SkillEditorProps) {
               onChange={setDraft}
               minHeight="400px"
               aria-label="Skill SKILL.md source"
+              scrollToLine={scrollTarget}
             />
           </Suspense>
           <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">

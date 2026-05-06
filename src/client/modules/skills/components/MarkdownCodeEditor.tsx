@@ -9,7 +9,7 @@
  * root <html> element's class (same pattern used by the site header theme
  * toggle). Light mode uses CodeMirror's default; dark uses `oneDark`.
  */
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import CodeMirror from '@uiw/react-codemirror'
 import { markdown } from '@codemirror/lang-markdown'
 import { oneDark } from '@codemirror/theme-one-dark'
@@ -59,6 +59,15 @@ export interface MarkdownCodeEditorProps {
    * the frontmatter rules don't apply.
    */
   lintSkillFrontmatter?: boolean
+  /**
+   * When this token changes, scroll the editor to the FIRST line whose
+   * text contains the supplied content + place the cursor there. Useful
+   * for "Edit this section" affordances on a separate read-only view that
+   * deep-link into the source. Pass `{ content: 'When to use', token: N }`
+   * — the token forces the effect to re-run even when content is the
+   * same string (e.g. a user clicks the same heading twice).
+   */
+  scrollToLine?: { content: string; token: number } | null
 }
 
 /**
@@ -182,8 +191,37 @@ export function MarkdownCodeEditor({
   placeholder,
   'aria-label': ariaLabel,
   lintSkillFrontmatter = true,
+  scrollToLine,
 }: MarkdownCodeEditorProps) {
   const dark = useIsDarkMode()
+  const editorViewRef = useRef<EditorView | null>(null)
+
+  // Helper: scroll the editor cursor to the first line containing `content`.
+  // Pure function over the EditorView; used both by the effect (when
+  // `scrollToLine` changes after mount) and by `onCreateEditor` (when
+  // `scrollToLine` was set BEFORE the editor mounted, e.g. tab-switch +
+  // scroll request fire on the same render).
+  const scrollViewTo = (view: EditorView, content: string) => {
+    const doc = view.state.doc
+    for (let i = 1; i <= doc.lines; i++) {
+      const line = doc.line(i)
+      if (line.text.includes(content)) {
+        view.dispatch({
+          selection: { anchor: line.from },
+          effects: EditorView.scrollIntoView(line.from, { y: 'start' }),
+        })
+        view.focus()
+        return
+      }
+    }
+  }
+
+  // When `scrollToLine.token` changes after mount, scroll. Used by the
+  // Skill detail Overview's per-section "Edit" affordances.
+  useEffect(() => {
+    if (!scrollToLine || !editorViewRef.current) return
+    scrollViewTo(editorViewRef.current, scrollToLine.content)
+  }, [scrollToLine])
 
   // Force a consistent 11px font inside the editor + match the app's
   // rounded-md + border-input chrome so it visually aligns with the
@@ -263,6 +301,16 @@ export function MarkdownCodeEditor({
       placeholder={placeholder}
       aria-label={ariaLabel}
       className={className}
+      onCreateEditor={(view) => {
+        editorViewRef.current = view
+        // If a scroll target was set before the editor mounted (typical
+        // for tab-switch-then-scroll flows), apply it now. The effect
+        // above won't re-fire because deps haven't changed.
+        if (scrollToLine) {
+          // Defer one tick so the doc is fully populated.
+          queueMicrotask(() => scrollViewTo(view, scrollToLine.content))
+        }
+      }}
     />
   )
 }
