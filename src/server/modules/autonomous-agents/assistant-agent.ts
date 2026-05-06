@@ -250,7 +250,7 @@ export class AssistantAgent extends AutonomousAgent<Env, AutonomousAgentState> {
    * surface based on relevance.
    */
   private rememberTool(): ToolDefinition<
-    { text: string; tags?: string[]; source?: string },
+    { text: string; tags?: string[]; source?: string; importance?: number },
     { ok: true; id: string } | { ok: false; error: string }
   > {
     const userId = this.state.userId ?? ''
@@ -259,22 +259,30 @@ export class AssistantAgent extends AutonomousAgent<Env, AutonomousAgentState> {
     return {
       name: 'remember',
       description:
-        'Save a fact / preference / context snippet to long-term semantic memory. Returns a memory id. Future turns will surface this snippet when relevant. Prefer this over context blocks for prose / story-shaped memories the user wants persistently retained.',
+        'Save a fact / preference / context snippet to long-term semantic memory. Returns a memory id. Future turns will surface this snippet when relevant. Prefer this over context blocks for prose / story-shaped memories the user wants persistently retained. Pass `importance` (0-100, default 50) when the user flags something as critical — high-importance memories rank above neutral ones at comparable similarity.',
       inputSchema: z.object({
         text: z.string().min(5).max(2000),
         tags: z.array(z.string().max(40)).max(10).optional(),
         source: z.string().max(200).optional().describe('Where this came from (URL, conversation id, etc).'),
+        importance: z
+          .number()
+          .int()
+          .min(0)
+          .max(100)
+          .optional()
+          .describe('0-100. Default 50. Set 70-90 for "remember this is important" facts; <30 for routine background captures.'),
       }),
       outputSchema: z.union([
         z.object({ ok: z.literal(true), id: z.string() }),
         z.object({ ok: z.literal(false), error: z.string() }),
       ]),
-      execute: async ({ text, tags, source }) => {
+      execute: async ({ text, tags, source, importance }) => {
         if (!userId) return { ok: false, error: 'No owner set' }
         try {
-          const opts: { tags?: string[]; source?: string } = {}
+          const opts: { tags?: string[]; source?: string; importance?: number } = {}
           if (tags) opts.tags = tags
           if (source) opts.source = source
+          if (importance !== undefined) opts.importance = importance
           const result = await agentRemember(env, `${userId}:${name}`, text, opts)
           return { ok: true as const, id: result.id }
         } catch (err) {

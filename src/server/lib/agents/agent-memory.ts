@@ -45,6 +45,69 @@ interface MemoryMetadata {
   tags?: string[]
   /** Source identifier (URL, message id, etc) so recall can be traced. */
   source?: string
+  /**
+   * Importance score 0..100. Used by recall's hybrid scoring formula
+   * (see RECALL_WEIGHTS below). Defaults to 50 when not provided.
+   * Higher = sticks better against recency decay + irrelevant matches.
+   * Set explicitly when storing user-flagged "remember this is important"
+   * facts; omit for routine background captures.
+   */
+  importance?: number
+}
+
+/**
+ * Hybrid recall scoring weights — replaces pure cosine similarity. The
+ * intuition: vector similarity alone treats a year-old, low-importance
+ * snippet the same as a fresh, user-flagged one if both happen to embed
+ * close to the query. The hybrid formula prefers fresh + important
+ * memories at comparable similarity.
+ *
+ * Weights match OpenSwarm's defaults (see plan doc
+ * `.jez/artifacts/skills-and-swarm-plan-2026-05-06.md`). Tunable per
+ * fork — change here, not at call sites.
+ *
+ * Frequency (recall count) is reserved at 0.10 for a future Phase E1.5
+ * — Vectorize doesn't natively support per-entry counters without a
+ * re-upsert (which requires the original vector), so we defer that
+ * implementation. The constant frequency=0 means similarity + importance
+ * + recency divide a 0.90 budget today; rebalances when frequency lands.
+ */
+export const RECALL_WEIGHTS = {
+  similarity: 0.55,
+  importance: 0.2,
+  recency: 0.15,
+  frequency: 0.1,
+} as const
+
+/** Recency: 1.0 if just created, 0.0 if 90 days old. Linear decay. */
+function recencyScore(createdAtSeconds: number): number {
+  const ageSeconds = Math.floor(Date.now() / 1000) - createdAtSeconds
+  const ageDays = ageSeconds / (60 * 60 * 24)
+  return Math.max(0, 1 - ageDays / 90)
+}
+
+/** Importance stored as 0-100; normalise to 0-1. Default to 0.5 if absent. */
+function importanceScore(importance?: number): number {
+  if (importance === undefined) return 0.5
+  return Math.max(0, Math.min(1, importance / 100))
+}
+
+/**
+ * Hybrid score = weighted sum of similarity + importance + recency
+ * + frequency. Returns a number in [0, ~1] that sorts higher = more
+ * relevant to surface in this turn.
+ */
+function hybridScore(similarity: number, metadata: MemoryMetadata | undefined): number {
+  const sim = Math.max(0, Math.min(1, similarity))
+  const imp = importanceScore(metadata?.importance)
+  const rec = metadata?.createdAt ? recencyScore(metadata.createdAt) : 0
+  // Frequency reserved at 0 until Vectorize counter support lands.
+  return (
+    RECALL_WEIGHTS.similarity * sim +
+    RECALL_WEIGHTS.importance * imp +
+    RECALL_WEIGHTS.recency * rec +
+    RECALL_WEIGHTS.frequency * 0
+  )
 }
 
 /**
@@ -75,7 +138,7 @@ export async function agentRemember(
   env: AgentMemoryEnv,
   ownerKey: string,
   text: string,
-  opts?: { tags?: string[]; source?: string },
+  opts?: { tags?: string[]; source?: string; importance?: number },
 ): Promise<{ id: string }> {
   if (!env.AGENT_MEMORY) {
     throw new Error('AGENT_MEMORY binding not configured — see agent-memory.ts setup notes')
@@ -89,6 +152,9 @@ export async function agentRemember(
     createdAt: Math.floor(Date.now() / 1000),
     ...(opts?.tags && { tags: opts.tags }),
     ...(opts?.source && { source: opts.source }),
+    ...(opts?.importance !== undefined && {
+      importance: Math.max(0, Math.min(100, Math.round(opts.importance))),
+    }),
   }
   await env.AGENT_MEMORY.upsert([
     {
@@ -106,8 +172,14 @@ export async function agentRemember(
  * snippets (most-relevant first), filtered by `ownerKey` so one
  * agent never sees another agent's memories.
  *
- * `topK` defaults to 5; `minScore` to 0.7 (BGE Base produces scores
- * 0..1 — 0.7 is "topically related"). Tune per use case.
+ * Ranking uses HYBRID scoring (similarity + importance + recency,
+ * frequency reserved): see RECALL_WEIGHTS. The `minScore` filter
+ * applies to the raw vector similarity — keeps off-topic embeddings
+ * out — and hybrid sort then surfaces the most useful within those.
+ *
+ * `topK` defaults to 5; `minScore` to 0.7 (BGE Base 0..1 — 0.7 is
+ * "topically related"). Internally we over-fetch (topK*3) so the
+ * hybrid sort has more candidates to choose from before truncation.
  */
 export async function agentRecall(
   env: AgentMemoryEnv,
@@ -125,18 +197,24 @@ export async function agentRecall(
     // Vectorize uses an `$in` operator for "any of" matches.
     filter.tags = { $in: opts.tags }
   }
+  // Over-fetch so hybrid scoring has headroom — a memory the user
+  // recently flagged as important might rank lower on raw similarity
+  // alone but should still surface ahead of an older, neutral match.
   const result = await env.AGENT_MEMORY.query(vector, {
-    topK,
+    topK: Math.max(topK * 3, 10),
     filter,
     returnMetadata: 'all',
   })
   return result.matches
     .filter((m) => m.score >= minScore)
-    .map((m) => {
-      const md = m.metadata as MemoryMetadata | undefined
-      return md?.text ?? ''
-    })
-    .filter(Boolean)
+    .map((m) => ({
+      score: hybridScore(m.score, m.metadata as MemoryMetadata | undefined),
+      text: (m.metadata as MemoryMetadata | undefined)?.text ?? '',
+    }))
+    .filter((x) => x.text)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, topK)
+    .map((x) => x.text)
 }
 
 /**
