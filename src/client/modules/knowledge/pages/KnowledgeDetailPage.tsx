@@ -104,16 +104,19 @@ export function KnowledgeDetailPage() {
   useEffect(() => {
     if (!detail.data?.knowledge) return
     const k = detail.data.knowledge
+    // The detail endpoint always returns body; the list endpoint omits it
+    // by default. Coalesce to empty string defensively.
+    const detailBody = k.body ?? ''
     setTitle(k.title)
     setSummary(k.summary)
-    setBody(k.body)
+    setBody(detailBody)
     setFormat(k.format)
     setInjectionMode(k.injectionMode)
     setTagInput(k.tags.join(', '))
     setOriginalSnapshot({
       title: k.title,
       summary: k.summary,
-      body: k.body,
+      body: detailBody,
       format: k.format,
       injectionMode: k.injectionMode,
       tags: k.tags.join(', '),

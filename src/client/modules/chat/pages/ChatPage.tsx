@@ -637,11 +637,11 @@ function ChatPageInner({ userId }: { userId: string }) {
     [voiceModeStorageKey],
   )
 
-  // Latest assistant text — only set when streaming has settled, so we
-  // don't TTS half-formed sentences mid-stream.
+  // Latest assistant text — `complete` flips true only when streaming
+  // has settled. The hook ignores partial replies so it never speaks
+  // half-formed sentences.
   const replyToSpeak = (() => {
     if (!voiceModeEnabled) return null
-    if (status === 'streaming' || status === 'submitted') return null
     const last = [...messages].reverse().find((m) => m.role === 'assistant')
     if (!last) return null
     const text = (last.parts ?? [])
@@ -650,7 +650,8 @@ function ChatPageInner({ userId }: { userId: string }) {
       .join(' ')
       .trim()
     if (!text) return null
-    return { id: last.id, text }
+    const complete = status !== 'streaming' && status !== 'submitted'
+    return { id: last.id, text, complete }
   })()
 
   const handleVoiceTranscript = useCallback(
@@ -1223,6 +1224,8 @@ function ChatPageInner({ userId }: { userId: string }) {
                             stopRecording={voiceChat.stopRecording}
                             cancelRecording={voiceChat.cancelRecording}
                             stopSpeaking={voiceChat.stopSpeaking}
+                            unlockAudio={voiceChat.unlockAudio}
+                            recordingUnsupported={voiceChat.recordingUnsupported}
                             error={voiceChat.error}
                             disabled={isLoading}
                           />

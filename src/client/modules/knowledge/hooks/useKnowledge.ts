@@ -14,7 +14,8 @@ export interface KnowledgeRow {
   scopeId: string
   title: string
   summary: string
-  body: string
+  /** Omitted by /api/knowledge list endpoint by default; present on /:id detail. */
+  body?: string
   format: KnowledgeFormat
   injectionMode: InjectionMode
   tags: string[]

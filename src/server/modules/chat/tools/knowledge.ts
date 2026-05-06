@@ -53,8 +53,14 @@ async function userScopes(
     .from(projects)
     .where(eq(projects.userId, userId))
 
-  const projectIds = new Set(ownProjects.map((p) => p.id))
-  if (projectId) projectIds.add(projectId)
+  // ctx.projectId is only added if the user actually owns it. Without
+  // this intersection, a chat created under a project the user has lost
+  // access to would still be able to search that project's knowledge.
+  // Caught by 2026-05-07 brains-trust review.
+  const ownIds = new Set(ownProjects.map((p) => p.id))
+  const projectIds = new Set<string>()
+  for (const id of ownIds) projectIds.add(id)
+  if (projectId && ownIds.has(projectId)) projectIds.add(projectId)
 
   return [
     { scope: 'user' as const, scopeId: userId },

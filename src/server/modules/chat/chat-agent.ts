@@ -666,19 +666,41 @@ export class ChatAgent extends AIChatAgent<Env> {
     // injectionMode='on_demand' docs only show their title+summary in
     // a catalog so the agent can decide whether to call knowledge_search
     // → load_knowledge for the body.
-    let alwaysKnowledge: Awaited<ReturnType<typeof loadAlwaysActiveKnowledge>> = []
+    // Validate `effectiveProjectId` against project ownership before
+    // passing to the knowledge loaders. Otherwise a stale chat created
+    // under a project the user has lost access to could still pull in
+    // that project's docs.
+    let safeProjectId: string | null = null
+    if (effectiveProjectId) {
+      try {
+        const dForProject = drizzle(this.env.DB)
+        const [own] = await dForProject
+          .select({ id: projects.id })
+          .from(projects)
+          .where(and(eq(projects.id, effectiveProjectId), eq(projects.userId, userId)))
+          .limit(1)
+        if (own) safeProjectId = effectiveProjectId
+      } catch {
+        // ignore — leaves safeProjectId null
+      }
+    }
+
+    let alwaysKnowledgeResult: Awaited<ReturnType<typeof loadAlwaysActiveKnowledge>> = {
+      docs: [],
+      truncated: null,
+    }
     let knowledgeCatalog: Awaited<ReturnType<typeof listKnowledgeCatalog>> = []
     try {
-      alwaysKnowledge = await loadAlwaysActiveKnowledge(
+      alwaysKnowledgeResult = await loadAlwaysActiveKnowledge(
         this.env.DB,
         userId,
-        effectiveProjectId ?? null,
+        safeProjectId,
         null, // org scope — Phase 5
       )
       knowledgeCatalog = await listKnowledgeCatalog(
         this.env.DB,
         userId,
-        effectiveProjectId ?? null,
+        safeProjectId,
         null,
       )
     } catch (err) {
@@ -686,6 +708,10 @@ export class ChatAgent extends AIChatAgent<Env> {
         JSON.stringify({ event: 'knowledge_load_failed', error: String(err) }),
       )
     }
+    const alwaysKnowledge = alwaysKnowledgeResult.docs
+    const knowledgeTruncationNotice = alwaysKnowledgeResult.truncated
+      ? `_Note: ${alwaysKnowledgeResult.truncated.count} always-active doc(s) (~${alwaysKnowledgeResult.truncated.tokensSkipped.toLocaleString()} tokens) were omitted to stay under the 50K-token system-prompt cap._`
+      : null
     const knowledgeBlock = alwaysKnowledge.length > 0
       ? alwaysKnowledge
           .map((k) => `### ${k.title}\n\n${k.body.trim()}`)
@@ -726,6 +752,7 @@ export class ChatAgent extends AIChatAgent<Env> {
         'These reference documents are always available. Apply them whenever relevant — you do not need to call load_knowledge for any of them.',
         '',
         knowledgeBlock,
+        ...(knowledgeTruncationNotice ? ['', knowledgeTruncationNotice] : []),
       ].join('\n')
     }
     if (skillsCatalog) {
@@ -760,7 +787,10 @@ export class ChatAgent extends AIChatAgent<Env> {
       const memoryIndex = await loadMemoryIndex({
         db: this.env.DB,
         userId,
-        projectId: effectiveProjectId,
+        // Use the ownership-validated id — same defence-in-depth as
+        // applied to knowledge in section 8c, so a stale chat under a
+        // revoked project can't pull that project's memories either.
+        projectId: safeProjectId,
       })
       const memoryBlock = formatMemoryBlock(memoryIndex)
       if (memoryBlock) {

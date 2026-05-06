@@ -44,9 +44,12 @@ export async function synthesizeSpeech(
   const trimmed = text.trim()
   if (!trimmed) throw new Error('TTS input text is empty')
 
-  const wantElevenLabs =
-    opts.provider === 'elevenlabs' ||
-    (opts.provider === undefined && !!env.ELEVENLABS_API_KEY && opts.speaker === undefined)
+  // Aura 2 is the default unconditionally — switching to ElevenLabs is
+  // explicit per call. Previously we'd auto-flip to ElevenLabs if the
+  // env key was set + caller omitted provider, which became a billing
+  // footgun for any deploy that set the key but didn't realise every
+  // TTS now spent. Reviewers flagged this 2026-05-07.
+  const wantElevenLabs = opts.provider === 'elevenlabs'
 
   if (wantElevenLabs) {
     if (!env.ELEVENLABS_API_KEY) {
@@ -81,7 +84,12 @@ export async function synthesizeSpeech(
   // Note: 2026-05 update — binding now rejects `container` when `encoding=mp3`
   // ("3030: Unsupported audio format: `container` is not applicable when
   // `encoding=mp3`."). Older notes say to pass container='none'; that's stale.
-  const speaker = (opts.speaker ?? DEFAULT_AURA_SPEAKER).replace(/-en$/i, '')
+  const rawSpeaker = (opts.speaker ?? DEFAULT_AURA_SPEAKER).replace(/-en$/i, '').toLowerCase()
+  // Validate against the known Aura 2 list — bad names otherwise produce a
+  // confusing 5xx from the binding rather than a clear "unknown speaker".
+  const speaker = (AURA2_SPEAKERS as readonly string[]).includes(rawSpeaker)
+    ? rawSpeaker
+    : DEFAULT_AURA_SPEAKER
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const result = (await env.AI.run('@cf/deepgram/aura-2-en' as any, {
     text: trimmed,

@@ -65,8 +65,10 @@ async function checkScopeAccess(
       .limit(1)
     return !!project
   }
-  // org — Phase 5 enforcement; allow for now
-  return true
+  // org — Phase 5 enforcement. Until membership checks land, every
+  // org-scoped operation is denied. Allowing-by-default leaked org docs
+  // across users (caught by 2026-05-07 brains-trust review).
+  return false
 }
 
 /**
@@ -95,10 +97,15 @@ const listQuerySchema = z.object({
   tag: z.string().optional(), // single tag filter; comma-separate for multiple
 })
 
-/** GET /api/knowledge?scope=...&scopeId=... — list docs for a scope. */
+/**
+ * GET /api/knowledge?scope=...&scopeId=... — list docs for a scope.
+ * Bodies are omitted by default (a 50-doc list × 100KB body = 5MB
+ * response). Pass `?include=body` to opt back in (e.g., for export).
+ */
 app.get('/', zValidator('query', listQuerySchema), async (c) => {
   const userId = c.get('userId')
   const { scope, scopeId, injectionMode, tag } = c.req.valid('query')
+  const includeBody = c.req.query('include') === 'body'
   const d = drizzle(c.env.DB)
 
   if (!(await checkScopeAccess(d, userId, scope, scopeId))) {
@@ -108,7 +115,7 @@ app.get('/', zValidator('query', listQuerySchema), async (c) => {
   const tags = tag ? tag.split(',').map((t) => t.trim()).filter(Boolean) : undefined
   const rows = await listKnowledge(c.env.DB, scope, scopeId, { injectionMode, tags })
   return c.json({
-    knowledge: rows.map(serializeRow),
+    knowledge: rows.map((r) => serializeRow(r, includeBody)),
     count: rows.length,
   })
 })
@@ -135,31 +142,43 @@ app.get('/search', zValidator('query', searchQuerySchema), async (c) => {
 /**
  * GET /api/knowledge/catalog — on-demand-mode docs the user can load. Used
  * by the chat agent to populate the "Available Knowledge" system-prompt
- * section.
+ * section. projectId/orgId query params are validated against caller's
+ * access before being trusted (otherwise any user could enumerate other
+ * orgs' / projects' doc titles).
  */
 app.get('/catalog', async (c) => {
   const userId = c.get('userId')
-  const projectId = c.req.query('projectId') ?? null
-  const orgId = c.req.query('orgId') ?? null
-  const entries = await listKnowledgeCatalog(c.env.DB, userId, projectId, orgId)
+  const d = drizzle(c.env.DB)
+  const rawProjectId = c.req.query('projectId') ?? null
+  const projectId =
+    rawProjectId && (await checkScopeAccess(d, userId, 'project', rawProjectId))
+      ? rawProjectId
+      : null
+  // org — deferred; ignore the param entirely until Phase 5.
+  const entries = await listKnowledgeCatalog(c.env.DB, userId, projectId, null)
   return c.json({ entries, count: entries.length })
 })
 
 /**
  * GET /api/knowledge/budget — always-active token budget summary. Drives the
- * editor's "you've baked in N tokens of always-active knowledge" warning so
- * users can spot prompt bloat before it hurts.
+ * editor's "you've baked in N tokens of always-active knowledge" warning.
+ * Same auth model as /catalog.
  */
 app.get('/budget', async (c) => {
   const userId = c.get('userId')
-  const projectId = c.req.query('projectId') ?? null
-  const orgId = c.req.query('orgId') ?? null
-  const entries = await loadAlwaysActiveKnowledge(c.env.DB, userId, projectId, orgId)
-  const total = entries.reduce((acc, e) => acc + e.estimatedTokens, 0)
+  const d = drizzle(c.env.DB)
+  const rawProjectId = c.req.query('projectId') ?? null
+  const projectId =
+    rawProjectId && (await checkScopeAccess(d, userId, 'project', rawProjectId))
+      ? rawProjectId
+      : null
+  const result = await loadAlwaysActiveKnowledge(c.env.DB, userId, projectId, null)
+  const total = result.docs.reduce((acc, e) => acc + e.estimatedTokens, 0)
   return c.json({
     total,
-    count: entries.length,
-    entries: entries.map((e) => ({
+    count: result.docs.length,
+    truncated: result.truncated,
+    entries: result.docs.map((e) => ({
       id: e.id,
       title: e.title,
       scope: e.scope,
@@ -250,14 +269,17 @@ app.delete('/:id', async (c) => {
   return c.json({ ok })
 })
 
-function serializeRow(r: typeof knowledgeDocuments.$inferSelect) {
+function serializeRow(
+  r: typeof knowledgeDocuments.$inferSelect,
+  includeBody = true,
+) {
   return {
     id: r.id,
     scope: r.scope,
     scopeId: r.scopeId,
     title: r.title,
     summary: r.summary,
-    body: r.body,
+    ...(includeBody ? { body: r.body } : {}),
     format: r.format,
     injectionMode: r.injectionMode,
     tags: parseTags(r.tags),
