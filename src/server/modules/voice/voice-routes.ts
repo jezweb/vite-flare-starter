@@ -75,32 +75,46 @@ app.post('/transcribe', async (c) => {
     return c.json({ error: 'Audio too large (>20MB)' }, 413)
   }
 
+  // Nova 3 binding wants a multipart-encoded body, NOT a raw ArrayBuffer.
+  // Passing the bytes directly returns `5006: required properties at
+  // '/audio' are 'body,contentType'` even though both fields look populated
+  // — the binding's JSON-schema validator can't introspect ArrayBuffer.
+  // Wrapping in a single-field FormData fixes it. Same trick as
+  // src/server/modules/audio/routes.ts.
+  const upstreamForm = new FormData()
+  upstreamForm.append('audio', new Blob([arrayBuffer], { type: contentType }), 'audio')
+  const formResp = new Response(upstreamForm)
+
   try {
     const ai = (c.env as unknown as { AI: Ai }).AI
-    // Nova 3 binding — webm-opus per workers-ai-gotchas.md. The starter
-    // dictation flow does the same via `WorkersAINova3STT`; we use the
-    // raw binding here for one-shot transcribe (no streaming needed).
-    const result = (await ai.run(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = (await ai.run('@cf/deepgram/nova-3' as any, {
+      audio: {
+        body: formResp.body,
+        contentType: formResp.headers.get('content-type'),
+      },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      '@cf/deepgram/nova-3' as any,
-      {
-        audio: {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          body: arrayBuffer as any,
-          contentType,
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any,
-    )) as unknown
+    } as any)) as unknown
     const text = extractTranscript(result)
     if (!text) {
       return c.json({ error: 'No speech detected', text: '' }, 200)
     }
     return c.json({ text })
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    console.error(JSON.stringify({ event: 'voice_transcribe_error', error: message }))
-    return c.json({ error: `Transcription failed: ${message}` }, 500)
+    const rawMessage = err instanceof Error ? err.message : String(err)
+    const lower = rawMessage.toLowerCase()
+    // Per ~/.claude/rules/workers-ai-gotchas.md: only "no speech" / "silence"
+    // are benign. 3030 corrupt/unsupported is a real format error.
+    const benign =
+      lower.includes('no speech') ||
+      lower.includes('no audio') ||
+      lower.includes('silence') ||
+      lower.includes('too short')
+    console.error(JSON.stringify({ event: 'voice_transcribe_error', error: rawMessage, benign }))
+    if (benign) {
+      return c.json({ error: 'No speech detected', text: '' }, 200)
+    }
+    return c.json({ error: `Transcription failed: ${rawMessage}` }, 500)
   }
 })
 

@@ -78,21 +78,39 @@ export async function synthesizeSpeech(
   }
 
   // Aura 2 — strip `-en` suffix per workers-ai-gotchas binding requirement.
+  // Note: 2026-05 update — binding now rejects `container` when `encoding=mp3`
+  // ("3030: Unsupported audio format: `container` is not applicable when
+  // `encoding=mp3`."). Older notes say to pass container='none'; that's stale.
   const speaker = (opts.speaker ?? DEFAULT_AURA_SPEAKER).replace(/-en$/i, '')
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const result = (await env.AI.run('@cf/deepgram/aura-2-en' as any, {
     text: trimmed,
     speaker,
     encoding: 'mp3',
-    container: 'none',
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } as any)) as { audio?: ArrayBuffer } | ArrayBuffer
+  } as any)) as { audio?: ArrayBuffer } | ArrayBuffer | ReadableStream
 
-  const audio =
-    (result as { audio?: ArrayBuffer }).audio ??
-    (result instanceof ArrayBuffer ? result : null)
+  // The binding's response shape varies — sometimes { audio: ArrayBuffer },
+  // sometimes a raw ArrayBuffer, sometimes a ReadableStream of mp3 bytes.
+  let audio: ArrayBuffer | null = null
+  if (result instanceof ArrayBuffer) {
+    audio = result
+  } else if (typeof ReadableStream !== 'undefined' && result instanceof ReadableStream) {
+    audio = await new Response(result).arrayBuffer()
+  } else if (result && typeof result === 'object' && 'audio' in result) {
+    const a = (result as { audio: unknown }).audio
+    if (a instanceof ArrayBuffer) audio = a
+    else if (typeof ReadableStream !== 'undefined' && a instanceof ReadableStream) {
+      audio = await new Response(a).arrayBuffer()
+    } else if (a instanceof Uint8Array) {
+      // Copy into a fresh ArrayBuffer to avoid SharedArrayBuffer return type.
+      const copy = new Uint8Array(a.byteLength)
+      copy.set(a)
+      audio = copy.buffer
+    }
+  }
 
-  if (!audio) throw new Error('Aura 2 returned no audio bytes')
+  if (!audio || audio.byteLength === 0) throw new Error('Aura 2 returned no audio bytes')
   return { audio, provider: 'aura2', contentType: 'audio/mpeg' }
 }
 
