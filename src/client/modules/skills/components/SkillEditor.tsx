@@ -475,19 +475,36 @@ export function SkillEditor({ name }: SkillEditorProps) {
         </TabsContent>
 
         <TabsContent value="source" className="mt-4">
-          <Suspense
-            fallback={
-              <div className="min-h-[400px] animate-pulse rounded-md border bg-muted/20" />
-            }
-          >
-            <MarkdownCodeEditor
-              value={draft}
-              onChange={setDraft}
-              minHeight="400px"
-              aria-label="Skill SKILL.md source"
-              scrollToLine={scrollTarget}
-            />
-          </Suspense>
+          {/* Side-by-side layout above lg breakpoint: editor left, live
+              preview right. Below lg, single column (preview hidden) so
+              the editor doesn't get cramped on smaller screens. The
+              preview reuses the same ReactMarkdown render as the
+              Overview tab — typing live-updates the preview because
+              `split.body` is derived from `draft`. */}
+          <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
+            <Suspense
+              fallback={
+                <div className="min-h-[400px] animate-pulse rounded-md border bg-muted/20" />
+              }
+            >
+              <MarkdownCodeEditor
+                value={draft}
+                onChange={setDraft}
+                minHeight="400px"
+                aria-label="Skill SKILL.md source"
+                scrollToLine={scrollTarget}
+              />
+            </Suspense>
+            <div className="hidden min-h-[400px] overflow-auto rounded-md border bg-muted/10 p-4 lg:block">
+              <div className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <Eye className="h-3 w-3" />
+                Live preview
+              </div>
+              <div className="prose prose-sm dark:prose-invert max-w-none">
+                <ReactMarkdown>{stripLeadingH1(split.body) || '_Empty — start typing in the editor to preview._'}</ReactMarkdown>
+              </div>
+            </div>
+          </div>
           <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
             <span>
               {draft.length.toLocaleString()} chars · {draft.split('\n').length}{' '}
