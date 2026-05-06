@@ -88,6 +88,18 @@ export function KnowledgeDetailPage() {
   const update = useUpdateKnowledge()
   const remove = useDeleteKnowledge()
 
+  // Snapshot of the loaded server state — used to derive `isDirty` so we
+  // don't enable Save (or fire a redundant PATCH) when the user has made
+  // no changes. Reset whenever fresh server data arrives.
+  const [originalSnapshot, setOriginalSnapshot] = useState<{
+    title: string
+    summary: string
+    body: string
+    format: KnowledgeFormat
+    injectionMode: InjectionMode
+    tags: string
+  } | null>(null)
+
   // Hydrate form from server data once loaded
   useEffect(() => {
     if (!detail.data?.knowledge) return
@@ -98,6 +110,14 @@ export function KnowledgeDetailPage() {
     setFormat(k.format)
     setInjectionMode(k.injectionMode)
     setTagInput(k.tags.join(', '))
+    setOriginalSnapshot({
+      title: k.title,
+      summary: k.summary,
+      body: k.body,
+      format: k.format,
+      injectionMode: k.injectionMode,
+      tags: k.tags.join(', '),
+    })
   }, [detail.data?.knowledge])
 
   const tags = useMemo(
@@ -113,11 +133,30 @@ export function KnowledgeDetailPage() {
   const overSoftCap = body.length > SOFT_CAP
   const overHardCap = body.length > HARD_CAP
 
+  // Dirty check — for new docs, anything-non-empty is dirty; for edits,
+  // we compare against the original snapshot. Tag comparison uses the
+  // raw input string so trailing-comma whitespace isn't treated as an
+  // edit.
+  const isDirty = isNew
+    ? title.trim().length > 0 ||
+      summary.trim().length > 0 ||
+      body.length > 0 ||
+      tagInput.trim().length > 0
+    : originalSnapshot
+    ? title !== originalSnapshot.title ||
+      summary !== originalSnapshot.summary ||
+      body !== originalSnapshot.body ||
+      format !== originalSnapshot.format ||
+      injectionMode !== originalSnapshot.injectionMode ||
+      tagInput !== originalSnapshot.tags
+    : false
+
   const canSave =
     title.trim().length > 0 &&
     summary.trim().length > 0 &&
     body.length > 0 &&
     !overHardCap &&
+    isDirty &&
     !create.isPending &&
     !update.isPending
 
@@ -148,6 +187,15 @@ export function KnowledgeDetailPage() {
             injectionMode,
             tags,
           },
+        })
+        // Reset snapshot to current saved state so isDirty flips back to false.
+        setOriginalSnapshot({
+          title: title.trim(),
+          summary: summary.trim(),
+          body,
+          format,
+          injectionMode,
+          tags: tagInput,
         })
         toast.success('Knowledge doc saved')
       }
@@ -240,12 +288,7 @@ export function KnowledgeDetailPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="summary">
-              Summary
-              <span className="ml-2 text-xs font-normal text-muted-foreground">
-                Shown in the catalog so the agent knows when to load this doc.
-              </span>
-            </Label>
+            <Label htmlFor="summary">Summary</Label>
             <Input
               id="summary"
               value={summary}
@@ -253,6 +296,9 @@ export function KnowledgeDetailPage() {
               placeholder="One-liner: when should the agent reference this?"
               maxLength={500}
             />
+            <p className="text-xs text-muted-foreground">
+              Shown in the catalog so the agent knows when to load this doc.
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -336,18 +382,16 @@ export function KnowledgeDetailPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="tags">
-                  Tags
-                  <span className="ml-2 text-xs font-normal text-muted-foreground">
-                    Comma-separated.
-                  </span>
-                </Label>
+                <Label htmlFor="tags">Tags</Label>
                 <Input
                   id="tags"
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
                   placeholder="e.g. schema, glossary, runbook"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Comma-separated.
+                </p>
                 {tags.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {tags.map((t) => (

@@ -1221,6 +1221,7 @@ function ChatPageInner({ userId }: { userId: string }) {
                             isSpeaking={voiceChat.isSpeaking}
                             startRecording={voiceChat.startRecording}
                             stopRecording={voiceChat.stopRecording}
+                            cancelRecording={voiceChat.cancelRecording}
                             stopSpeaking={voiceChat.stopSpeaking}
                             error={voiceChat.error}
                             disabled={isLoading}
@@ -1298,7 +1299,7 @@ function EmptyStateBody({
         What can I help with{userName ? `, ${userName.split(' ')[0]}` : ''}?
       </h2>
       <p className="text-sm text-muted-foreground -mt-3">
-        Ask anything, drop a file, dictate with the mic, or pick a starter below.
+        Ask anything, drop a file, or click the mic for hands-free voice mode.
       </p>
       <ChatCapabilityRow />
       {modelMissingKey && (

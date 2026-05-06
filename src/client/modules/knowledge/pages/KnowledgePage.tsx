@@ -12,7 +12,7 @@
  * config-diff approval flow that skills use.
  */
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   BookOpen,
   Plus,
@@ -68,6 +68,7 @@ const MODE_VARIANT: Record<InjectionMode, 'default' | 'secondary' | 'outline'> =
 export function KnowledgePage() {
   const { data: session } = useSession()
   const userId = session?.user?.id ?? null
+  const navigate = useNavigate()
 
   const list = useKnowledgeList('user', userId)
   const budget = useKnowledgeBudget()
@@ -147,9 +148,7 @@ export function KnowledgePage() {
           ]}
           action={{
             label: 'New doc',
-            onClick: () => {
-              window.location.href = '/dashboard/knowledge/new'
-            },
+            onClick: () => navigate('/dashboard/knowledge/new'),
           }}
         />
       ) : (

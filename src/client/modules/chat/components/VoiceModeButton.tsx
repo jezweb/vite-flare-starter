@@ -29,10 +29,19 @@ interface VoiceModeButtonProps {
   isSpeaking: boolean
   startRecording: () => Promise<void>
   stopRecording: () => Promise<void>
+  /** Drop captured audio without uploading — used for tap-to-toggle. */
+  cancelRecording: () => void
   stopSpeaking: () => void
   error: string | null
   disabled?: boolean
 }
+
+// Below this threshold we treat a press as a tap (toggle mode off) rather
+// than a hold (record + transcribe). Without this, a single click while
+// voice mode is enabled fires a stray /api/voice/transcribe with ~100ms
+// of silent audio AND toggles the mode off — surprising side-effect.
+// 250ms is the same threshold the Web Touch Spec uses for tap detection.
+const TAP_THRESHOLD_MS = 250
 
 export function VoiceModeButton({
   enabled,
@@ -42,11 +51,13 @@ export function VoiceModeButton({
   isSpeaking,
   startRecording,
   stopRecording,
+  cancelRecording,
   stopSpeaking,
   error,
   disabled,
 }: VoiceModeButtonProps) {
   const holdRef = useRef(false)
+  const pressStartRef = useRef<number | null>(null)
 
   // Defensive: if we lose focus mid-press, stop recording.
   useEffect(() => {
@@ -77,12 +88,25 @@ export function VoiceModeButton({
     e.preventDefault()
     e.currentTarget.setPointerCapture(e.pointerId)
     holdRef.current = true
+    pressStartRef.current = performance.now()
     void startRecording()
   }
   const onPointerUp = (e: React.PointerEvent<HTMLButtonElement>) => {
     if (!enabled || !holdRef.current) return
     e.preventDefault()
     holdRef.current = false
+    const heldMs = pressStartRef.current
+      ? performance.now() - pressStartRef.current
+      : Number.POSITIVE_INFINITY
+    pressStartRef.current = null
+
+    if (heldMs < TAP_THRESHOLD_MS) {
+      // Treat as a tap — drop the recording without uploading and
+      // toggle the mode off instead.
+      cancelRecording()
+      handleToggleEnabled()
+      return
+    }
     void stopRecording()
   }
 

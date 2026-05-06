@@ -49,6 +49,13 @@ export interface UseVoiceChatResult {
   startRecording: () => Promise<void>
   /** Stop recording + trigger transcription. */
   stopRecording: () => Promise<void>
+  /**
+   * Stop recording WITHOUT transcribing. Used by the PTT button when a
+   * press is detected as a tap (too short to be a real utterance) — we
+   * still need to release the mic stream + cancel the recorder, but we
+   * skip the network round-trip.
+   */
+  cancelRecording: () => void
   /** Stop any TTS playback in progress. */
   stopSpeaking: () => void
   /** True while recording — useful for PTT button styling. */
@@ -95,6 +102,22 @@ export function useVoiceChat(opts: UseVoiceChatOpts): UseVoiceChatResult {
     }
     setState((prev) => (prev === 'speaking' ? 'idle' : prev))
   }, [])
+
+  /** Stop recording immediately, drop any captured audio, skip network. */
+  const cancelRecording = useCallback(() => {
+    const recorder = recorderRef.current
+    if (recorder && recorder.state !== 'inactive') {
+      recorder.onstop = null
+      try {
+        recorder.stop()
+      } catch {
+        /* ignore — recorder may already be stopped */
+      }
+    }
+    chunksRef.current = []
+    cleanupStream()
+    setState('idle')
+  }, [cleanupStream])
 
   const startRecording = useCallback(async () => {
     if (!opts.enabled) return
@@ -246,6 +269,7 @@ export function useVoiceChat(opts: UseVoiceChatOpts): UseVoiceChatResult {
     error,
     startRecording,
     stopRecording,
+    cancelRecording,
     stopSpeaking,
     isRecording: state === 'listening',
     isSpeaking: state === 'speaking',

@@ -1,0 +1,6 @@
+# Keep markdown audits, gitignore binary screenshots per CLAUDE.md commit policy.
+*.png
+*.jpg
+*.jpeg
+*.mov
+*.mp4
