@@ -1,6 +1,7 @@
 ---
 name: librarian-curate
-description: Weekly cross-agent curation. Read recent learnings across ALL of the user's agents, identify cross-cutting patterns (same gotcha discovered by multiple agents), promote stable patterns into shared knowledge entities, and write a weekly digest into the Inbox. The librarian role — adapted from goanna's coaching/curation review.
+description: Weekly cross-agent curation routine — surfaces patterns across agents, promotes stable ones into shared knowledge, writes a weekly digest into Inbox. Routine-only.
+disable_model_invocation: true
 ---
 
 # Librarian curate

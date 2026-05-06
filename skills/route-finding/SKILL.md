@@ -1,6 +1,7 @@
 ---
 name: route-finding
-description: Decide where to send a finding the agent has just produced. Use as a SessionEnd hook on routines that emit findings — given the run's output, pick the right channel(s) (inbox_add for review, notify for transient pings, approval_queue for destructive proposals, space_send for team discussion, webhook_post for external integrations) and produce a short summary line for the run history.
+description: SessionEnd hook for routines emitting findings — picks the right channel (inbox_add / notify / approval_queue / space_send / webhook_post) and writes a short run-summary line. Routine-only.
+disable_model_invocation: true
 ---
 
 # Route Finding

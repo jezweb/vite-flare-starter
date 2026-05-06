@@ -23,6 +23,7 @@ import {
   LayoutGrid,
   List as ListIcon,
   Sparkles,
+  Search,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/client/components/EmptyState'
@@ -89,8 +90,18 @@ export function SkillsPage() {
   const [inlineContent, setInlineContent] = useState('')
 
   const [view, setView] = useViewPreference<'cards' | 'list'>('skills', 'cards')
+  const [filter, setFilter] = useState('')
 
-  const skills = data?.skills ?? []
+  const allSkills = data?.skills ?? []
+  const skills = filter.trim()
+    ? allSkills.filter((s) => {
+        const q = filter.trim().toLowerCase()
+        return (
+          s.name.toLowerCase().includes(q) ||
+          s.description.toLowerCase().includes(q)
+        )
+      })
+    : allSkills
 
   const handleInstall = async () => {
     if (!githubUrl.trim()) return
@@ -165,10 +176,24 @@ export function SkillsPage() {
         />
       ) : (
         <>
-          {/* Toolbar — count + view toggle */}
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              {skills.length} {skills.length === 1 ? 'skill' : 'skills'}
+          {/* Toolbar — search + count + view toggle */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                placeholder="Filter skills…"
+                className="pl-9"
+              />
+            </div>
+            <p className="text-sm text-muted-foreground tabular-nums">
+              {skills.length}
+              {filter.trim() && skills.length !== allSkills.length
+                ? ` / ${allSkills.length}`
+                : ''}
+              {' '}
+              {allSkills.length === 1 ? 'skill' : 'skills'}
             </p>
             <ToggleGroup
               type="single"

@@ -144,6 +144,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { to: '/dashboard/agent-observability', label: 'Observability', icon: BarChart3 },
       { to: '/dashboard/activity', label: 'Activity', icon: Activity, feature: 'activity' },
       { to: '/dashboard/files', label: 'Files', icon: FolderOpen, feature: 'files' },
+      { to: '/dashboard/artifacts', label: 'Artifacts', icon: Sparkles, feature: 'chat' },
       { to: '/dashboard/extract', label: 'Extract', icon: Sparkles, feature: 'chat' },
     ],
   },

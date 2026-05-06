@@ -1,6 +1,7 @@
 ---
 name: routine-health-check
-description: Meta-routine that watches every other routine for error rates, drift, and runaway cost. Loaded into a daily routine that fires AssistantAgent — surfaces routine_health findings into the user's Inbox. Per issue #50 decision E + the "errors as findings" pattern.
+description: Daily meta-routine — watches every other routine for error rates, drift, and runaway cost; surfaces routine_health findings into the Inbox. Routine-only.
+disable_model_invocation: true
 ---
 
 # Routine Health Check

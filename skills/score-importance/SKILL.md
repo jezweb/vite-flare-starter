@@ -1,6 +1,7 @@
 ---
 name: score-importance
-description: Calibrate the importance level (high / medium / low) of a finding before it lands in the user's Inbox. Use as a skill loaded into routines that produce inbox_add calls — the agent reads this skill and applies the heuristics consistently across runs, so users learn what each level means.
+description: Calibrates finding importance (high / medium / low) before inbox_add — used by routines for consistent thresholds. Routine-only.
+disable_model_invocation: true
 ---
 
 # Score Importance

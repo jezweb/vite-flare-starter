@@ -1,6 +1,7 @@
 ---
 name: reflect
-description: End-of-day distillation. Read recent agent_runs and recent findings, decide what graduates / dismisses / stays open, then write a one-paragraph summary of the day. Adapted from goanna's reflect cycle for vite-flare-starter's entities-backed findings store. Run once per day, typically 22:00 user-local-time.
+description: End-of-day distillation routine — reads recent runs + findings, decides what graduates / dismisses / stays open, writes a one-paragraph day summary. Routine-only.
+disable_model_invocation: true
 ---
 
 # Reflect

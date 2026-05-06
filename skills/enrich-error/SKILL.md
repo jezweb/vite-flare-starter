@@ -1,6 +1,7 @@
 ---
 name: enrich-error
-description: When a routine run errored, transform the raw error message into a finding the user can actually act on. Use as a SessionEnd hook on routines where transient errors are common (external APIs, OAuth tokens) — turns "Error: 401" into "Gmail token expired — reconnect at /dashboard/connectors".
+description: SessionEnd hook for routines — turns raw error messages into actionable findings (e.g. "Error: 401" → "Gmail token expired — reconnect at /dashboard/connectors"). Routine-only.
+disable_model_invocation: true
 ---
 
 # Enrich Error
