@@ -56,18 +56,78 @@ interface SystemPromptOptions {
 /**
  * Build a structured system prompt from components.
  *
- * The prompt is structured so that static parts come first (for prompt caching)
- * and dynamic parts come last.
+ * Returns a STRING (legacy callers) — the whole prompt, including
+ * dynamic date/time. Use this when prompt caching isn't a concern.
+ *
+ * For prompt-cache-friendly callers (Anthropic), use
+ * `buildCacheableSystemPrompt` instead — that helper splits the static
+ * portion (cacheable) from the dynamic preamble (changes per turn,
+ * goes into a synthetic user-message context block instead).
+ *
+ * The split matters because Anthropic's prompt cache byte-compares the
+ * `system` field — embedding a current-date string makes every turn a
+ * cache MISS. Moving date/time out preserves the cache hit on the rest
+ * of the prompt (skills, persona, instructions).
  */
 export function buildSystemPrompt(options: SystemPromptOptions): string {
-  const parts: string[] = []
+  const { system, dynamic } = buildCacheableSystemPrompt(options)
+  return dynamic ? `${system}\n\n${dynamic}` : system
+}
+
+/**
+ * Static-vs-dynamic split for prompt-cache-friendly assembly.
+ *
+ *   system  — cacheable. Same byte-for-byte across turns of the same
+ *             conversation as long as user / skills / extras don't
+ *             change. Pass to streamText({ system, ... }).
+ *   dynamic — the per-turn fluff (date/time). Inject into the messages
+ *             array as a system-style preamble on the latest user
+ *             message, OR concatenate manually if your provider
+ *             doesn't support per-block cache_control.
+ *
+ * Returns dynamic = '' (empty string) when nothing dynamic was
+ * requested — caller can simply skip the preamble injection.
+ */
+export function buildCacheableSystemPrompt(
+  options: SystemPromptOptions,
+): { system: string; dynamic: string } {
+  const staticParts: string[] = []
+  const dynamicParts: string[] = []
 
   // 1. Base instructions (static — cacheable)
   if (options.baseInstructions) {
-    parts.push(options.baseInstructions)
+    staticParts.push(options.baseInstructions)
   }
 
-  // 2. Current date/time (changes per request but small)
+  // 2. User context (stable per session — cacheable)
+  if (options.user) {
+    const userParts: string[] = []
+    if (options.user.name) userParts.push(`Name: ${options.user.name}`)
+    if (options.user.email) userParts.push(`Email: ${options.user.email}`)
+    if (options.user.role) userParts.push(`Role: ${options.user.role}`)
+    if (userParts.length > 0) {
+      staticParts.push(`## Current User\n${userParts.join('\n')}`)
+    }
+  }
+
+  // 3. Knowledge context (stable per request — cacheable)
+  if (options.knowledge && options.knowledge.length > 0) {
+    const knowledgeSection = options.knowledge
+      .map((item) => `### ${item.title}\n${item.content}`)
+      .join('\n\n')
+    staticParts.push(`## Reference Knowledge\n\n${knowledgeSection}`)
+  }
+
+  // 4. Extra sections (skills, prefs, project, memory — stable per session)
+  if (options.extra) {
+    for (const [key, value] of Object.entries(options.extra)) {
+      staticParts.push(`## ${key}\n${value}`)
+    }
+  }
+
+  // 5. DYNAMIC — current date/time. Changes every minute → cache poison
+  //    if included in static system. Returned separately for the caller
+  //    to inject as a user-message preamble (uncached).
   if (options.currentDate) {
     const tz = options.timezone || 'UTC'
     const dateStr = new Intl.DateTimeFormat('en-AU', {
@@ -80,34 +140,11 @@ export function buildSystemPrompt(options: SystemPromptOptions): string {
       timeZone: tz,
       timeZoneName: 'short',
     }).format(new Date())
-    parts.push(`Current date/time: ${dateStr}`)
+    dynamicParts.push(`Current date/time: ${dateStr}`)
   }
 
-  // 3. User context
-  if (options.user) {
-    const userParts: string[] = []
-    if (options.user.name) userParts.push(`Name: ${options.user.name}`)
-    if (options.user.email) userParts.push(`Email: ${options.user.email}`)
-    if (options.user.role) userParts.push(`Role: ${options.user.role}`)
-    if (userParts.length > 0) {
-      parts.push(`## Current User\n${userParts.join('\n')}`)
-    }
+  return {
+    system: staticParts.join('\n\n'),
+    dynamic: dynamicParts.join('\n\n'),
   }
-
-  // 4. Knowledge context
-  if (options.knowledge && options.knowledge.length > 0) {
-    const knowledgeSection = options.knowledge
-      .map((item) => `### ${item.title}\n${item.content}`)
-      .join('\n\n')
-    parts.push(`## Reference Knowledge\n\n${knowledgeSection}`)
-  }
-
-  // 5. Extra context sections
-  if (options.extra) {
-    for (const [key, value] of Object.entries(options.extra)) {
-      parts.push(`## ${key}\n${value}`)
-    }
-  }
-
-  return parts.join('\n\n')
 }

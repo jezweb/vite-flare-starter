@@ -6,6 +6,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import { files, type File } from './db/schema'
 import { logActivityFromContext } from '@/server/modules/activity/log'
+import { stripImageMetadata } from '@/server/lib/strip-exif'
 
 // Constants
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
@@ -197,8 +198,13 @@ app.post('/', async (c) => {
   const ext = file.name.split('.').pop() || 'bin'
   const key = `users/${userId}/uploads/${fileId}.${ext}`
 
-  // Upload to R2
-  const arrayBuffer = await file.arrayBuffer()
+  // Upload to R2 — strip EXIF / XMP from JPEGs first so GPS coordinates
+  // and Photoshop IPTC blocks don't leak with the file. JFIF + ICC kept
+  // (colour accuracy). Non-JPEG images pass through unchanged. Set
+  // STRIP_IMAGE_METADATA=false to disable.
+  const rawBuffer = await file.arrayBuffer()
+  const stripEnabled = ((c.env as unknown as { STRIP_IMAGE_METADATA?: string }).STRIP_IMAGE_METADATA) !== 'false'
+  const arrayBuffer = stripEnabled ? stripImageMetadata(rawBuffer, file.type) : rawBuffer
   await c.env.FILES.put(key, arrayBuffer, {
     httpMetadata: {
       contentType: file.type,

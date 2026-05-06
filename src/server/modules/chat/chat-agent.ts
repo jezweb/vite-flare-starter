@@ -64,7 +64,7 @@ import { toAiSdkTool } from '@/server/lib/ai/tool-adapter'
 import { resolveModelForUser } from '@/server/lib/ai/providers'
 import { costFor } from '@/server/lib/ai/cost'
 import { buildModel } from '@/server/lib/ai/middleware'
-import { buildSystemPrompt } from '@/server/lib/ai/context'
+import { buildCacheableSystemPrompt } from '@/server/lib/ai/context'
 import { getMCPTools } from '@/server/lib/ai/mcp'
 import { getModel, DEFAULT_MODEL } from '@/server/lib/ai/models'
 import { listSkills, loadAlwaysActiveSkills } from '@/server/lib/ai/skills/registry'
@@ -713,14 +713,21 @@ export class ChatAgent extends AIChatAgent<Env> {
       console.error(JSON.stringify({ event: 'memory_injection_failed', error: String(err) }))
     }
 
-    // ─── 12. Build the system prompt ────────────────────────────────
-    const instructions = buildSystemPrompt({
-      baseInstructions: 'You are a helpful assistant.',
-      user: { name: userRecord.name ?? undefined, email: userRecord.email, role: userRecord.role },
-      currentDate: true,
-      timezone: 'Australia/Sydney',
-      extra: Object.keys(extraSections).length > 0 ? extraSections : undefined,
-    })
+    // ─── 12. Build the system prompt (static-vs-dynamic split) ──────
+    // `instructions` is the cacheable system field — same byte-for-byte
+    // turn-to-turn, so Anthropic's prompt cache hits. `dynamicPreamble`
+    // (current date/time) goes into a synthetic context block at the
+    // start of the latest user message instead, keeping the cache key
+    // stable. Pre-fix this was inlined into the system prompt and
+    // poisoned the cache every minute.
+    const { system: instructions, dynamic: dynamicPreamble } =
+      buildCacheableSystemPrompt({
+        baseInstructions: 'You are a helpful assistant.',
+        user: { name: userRecord.name ?? undefined, email: userRecord.email, role: userRecord.role },
+        currentDate: true,
+        timezone: 'Australia/Sydney',
+        extra: Object.keys(extraSections).length > 0 ? extraSections : undefined,
+      })
 
     // ─── 13. Build toolset (chat tools + env-MCP + per-user MCP) ─────
     let tools: ToolSet = {}
@@ -857,15 +864,23 @@ export class ChatAgent extends AIChatAgent<Env> {
     }
 
     // ─── 18. streamText — the actual model call ─────────────────────
+    // Dynamic preamble (date/time) goes in front of the messages array
+    // as a system-role message. This keeps the cached `system` field
+    // byte-stable across turns. Without this split, the date string
+    // changing per minute breaks every prompt-cache lookup.
+    const prunedMessages = pruneMessages({
+      messages: await convertToModelMessages(validatedMessages),
+      toolCalls: 'before-last-2-messages',
+      reasoning: 'before-last-message',
+    })
+    const messagesWithPreamble = dynamicPreamble
+      ? [{ role: 'system' as const, content: dynamicPreamble }, ...prunedMessages]
+      : prunedMessages
     const result = streamText({
       abortSignal: options?.abortSignal,
       model,
       system: finalInstructions,
-      messages: pruneMessages({
-        messages: await convertToModelMessages(validatedMessages),
-        toolCalls: 'before-last-2-messages',
-        reasoning: 'before-last-message',
-      }),
+      messages: messagesWithPreamble,
       tools,
       stopWhen: modelConfig?.supportsTools
         ? [stepCountIs(5), hasToolCall('done')]

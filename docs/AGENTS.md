@@ -170,6 +170,49 @@ the platform doesn't impose a personality. Goanna's `boss/SOUL.md` is
 the reference shape — short paragraphs about how the agent talks, what
 it cares about, what it refuses.
 
+### Compaction guard — what survives context loss
+
+Long-running autonomous agents lose conversation history when the chat
+DO trims (see `src/server/lib/ai/trim-history.ts`) or when a fork's
+session crosses model context limits. The persona blocks ARE the
+compaction guard — anything inside them re-renders into the system
+prompt every turn, so it survives any history trim.
+
+Use this checklist when a routine fires (or before manually compacting
+state) to decide what should live in blocks vs ephemeral history:
+
+| Belongs in a block | Belongs in history (OK to lose) |
+|---|---|
+| Active goals / commitments the agent owes the user | The discussion that produced the goal |
+| Critical user decisions the agent made *because of* the user | Pleasantries, "ok cool" exchanges |
+| The current `Next` breadcrumb (one line: "Next step: …") | Tool-call traces — they're audit data, not state |
+| Persona, voice, formatting constraints | Streaming chunks, partial drafts |
+| Stable domain facts (style guide, glossary, project conventions) | One-off Q&A the agent already answered |
+
+Recommended block hygiene — write these as part of `reflect` skill or
+the agent's own `setBlock` calls:
+
+- **`memory.next`** — single line: "Next: review the 3 PDFs Jez
+  uploaded; deliver summary by Friday." Updated at end of each
+  productive turn.
+- **`memory.in_flight`** — bullet list of in-progress tasks. Append on
+  start, strike on completion, prune ≥14 days old.
+- **`memory.user_asks`** — open questions OWED TO the user, with dates.
+  Adapted from goanna's `asks.md` pattern. Promote to closed when
+  answered.
+- **`user`** — capped distillation (5-10 lines) of the steering human.
+  Re-derived ~weekly from conversation, not constantly bloated.
+
+What NOT to put in blocks:
+- The full conversation transcript (that's what history is for)
+- Raw tool outputs (they bloat — store in DB / R2 and reference by id)
+- Anything you can re-derive cheaply from D1 in `recallSemantic`
+
+The principle: blocks are the agent's working memory; semantic recall
+(Vectorize) is its long-term memory; history is its short-term memory.
+Compaction loses short-term — make sure working + long-term capture
+the state you can't afford to lose.
+
 ### Domain-scoped system prompts
 
 `buildChatAgent({ env, userId, systemPrompt })` already accepts a
