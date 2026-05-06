@@ -1,19 +1,23 @@
 /**
  * SkillEditor — detail pane rendered to the right of the skills list.
  *
- * Three tabs:
- *  - Source   — raw SKILL.md Textarea (editable)
- *  - Preview  — metadata + ReactMarkdown of the body
- *  - History  — list of prior config-diff proposals for this skill
+ * Two tabs:
+ *  - Edit    — CodeMirror SKILL.md editor on the left, live ReactMarkdown
+ *              preview on the right (above lg breakpoint). Default tab.
+ *  - History — list of prior config-diff proposals for this skill
  *
- * Save flow: user types into Source → clicks Save → a ConfigDiffProposal
+ * Originally there was an Overview tab too — dropped 2026-05-06 once
+ * Edit got side-by-side preview, since Overview was just a duplicate
+ * read-only render of the same body.
+ *
+ * Save flow: user types into Edit → clicks Save → a ConfigDiffProposal
  * is created with before = live state, after = textarea value → a
  * ConfigDiffCard renders in a modal → user approves → backend flips
  * source→r2 and writes R2 body.
  *
  * AI Sparkle: popover with an instruction prompt → POST /skills/:name/ai-edit
  * → returns a ConfigDiffProposal (pending, ai-sparkle origin) → same
- * approval modal. Implemented in Phase 2 — the button is wired here.
+ * approval modal.
  */
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
@@ -24,13 +28,10 @@ import { toast } from 'sonner'
 const MarkdownCodeEditor = lazy(() =>
   import('./MarkdownCodeEditor').then((m) => ({ default: m.MarkdownCodeEditor })),
 )
-import { Link } from 'react-router-dom'
 import {
   Check,
-  Code2,
   Eye,
   History,
-  MessageSquare,
   PencilLine,
   Save,
   Sparkles,
@@ -82,44 +83,6 @@ function stripLeadingH1(body: string): string {
 }
 
 /**
- * Heading wrapper rendered inside the Procedure markdown that exposes a
- * hover-revealed "Edit" affordance. Clicking it jumps to the Source tab
- * and scrolls the editor cursor to the matching heading line.
- *
- * The text passed to the editor's `scrollToLine` is the plain heading
- * text (e.g. "When to use") — the editor finds the first source line
- * that contains it. This works for any markdown heading style (`##`,
- * `###`, etc.) because we match the inner text, not the markdown syntax.
- */
-function EditableHeading({
-  level,
-  text,
-  onEdit,
-  children,
-}: {
-  level: 1 | 2 | 3
-  text: string
-  onEdit: (text: string) => void
-  children: React.ReactNode
-}) {
-  const Tag = `h${level}` as 'h1' | 'h2' | 'h3'
-  return (
-    <Tag className="group/heading flex items-center gap-2">
-      <span>{children}</span>
-      <button
-        type="button"
-        onClick={() => onEdit(text)}
-        className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-hover/heading:opacity-100"
-        aria-label={`Edit "${text}"`}
-      >
-        <PencilLine className="h-3 w-3" />
-        Edit
-      </button>
-    </Tag>
-  )
-}
-
-/**
  * Rebuild the canonical SKILL.md text from the parsed frontmatter + body —
  * matches the server's `loadCurrentContent` for skill kind, so the
  * `before` captured at proposal creation time is byte-identical to what
@@ -168,23 +131,14 @@ export function SkillEditor({ name }: SkillEditorProps) {
   }, [skill])
 
   const [draft, setDraft] = useState('')
-  // Default tab is Overview — what the skill does + how to use it.
-  // Source is second tab for builders editing the SKILL.md body.
-  const [tab, setTab] = useState('overview')
+  // Edit is the default — side-by-side editor + live preview covers what
+  // the old Overview tab did, with one fewer click.
+  const [tab, setTab] = useState('source')
   const [pendingProposal, setPendingProposal] = useState<ConfigDiffProposal | null>(null)
   const [sparkleOpen, setSparkleOpen] = useState(false)
   const [sparkleInstruction, setSparkleInstruction] = useState('')
   const [sparkleError, setSparkleError] = useState<string | null>(null)
   const lastLoadedName = useRef<string | null>(null)
-  // When the user clicks "Edit" next to a Procedure heading on Overview,
-  // we switch to the Source tab and ask MarkdownCodeEditor to scroll
-  // its cursor to the line containing that heading. The token bumps on
-  // every click so the same heading clicked twice still re-fires.
-  const [scrollTarget, setScrollTarget] = useState<{ content: string; token: number } | null>(null)
-  const editFromHeading = (text: string) => {
-    setTab('source')
-    setScrollTarget({ content: text, token: Date.now() })
-  }
 
   // When the selected skill changes, seed the draft from canonical source.
   useEffect(() => {
@@ -384,13 +338,9 @@ export function SkillEditor({ name }: SkillEditorProps) {
 
       <Tabs value={tab} onValueChange={setTab} className="p-4">
         <TabsList>
-          <TabsTrigger value="overview">
-            <Eye className="mr-1 h-3.5 w-3.5" />
-            Overview
-          </TabsTrigger>
           <TabsTrigger value="source">
-            <Code2 className="mr-1 h-3.5 w-3.5" />
-            Source
+            <PencilLine className="mr-1 h-3.5 w-3.5" />
+            Edit
           </TabsTrigger>
           <TabsTrigger value="history">
             <History className="mr-1 h-3.5 w-3.5" />
@@ -402,77 +352,6 @@ export function SkillEditor({ name }: SkillEditorProps) {
             ) : null}
           </TabsTrigger>
         </TabsList>
-
-        <TabsContent value="overview" className="mt-4 space-y-4">
-          {/* What the skill does — full description, not the truncated
-              header version. Plain language for non-builders. */}
-          <div>
-            <h3 className="mb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              What this skill does
-            </h3>
-            <p className="text-sm">{skill.description || 'No description provided.'}</p>
-          </div>
-
-          {/* How to invoke — claude.ai / Claude Code convention is
-              `/skill-name`. The chat agent's system prompt includes
-              skill metadata so the LLM knows when to load + apply. */}
-          <div className="rounded-md border bg-muted/20 p-3">
-            <h3 className="mb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              How to use it
-            </h3>
-            <p className="text-sm">
-              Type{' '}
-              <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
-                /{skill.name}
-              </code>{' '}
-              in chat to invoke this skill. The AI will load the procedure
-              below and follow it for that turn.
-            </p>
-            <div className="mt-3">
-              <Button asChild size="sm">
-                <Link to="/dashboard/chat?new=1">
-                  <MessageSquare className="mr-1 h-3.5 w-3.5" />
-                  Open chat
-                </Link>
-              </Button>
-            </div>
-          </div>
-
-          {/* The skill procedure rendered as readable markdown — what the
-              AI actually loads when invoked. Not the source editor; this
-              is the "what does this do" view. Strip a leading `# Title`
-              line so it doesn't duplicate the page header. Headings get
-              a hover-revealed "Edit" affordance that switches to the
-              Source tab + scrolls the editor to that heading line. */}
-          <div>
-            <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Procedure
-            </h3>
-            <div className="prose prose-sm dark:prose-invert max-w-none">
-              <ReactMarkdown
-                components={{
-                  h1: ({ children }) => (
-                    <EditableHeading level={1} text={String(children)} onEdit={editFromHeading}>
-                      {children}
-                    </EditableHeading>
-                  ),
-                  h2: ({ children }) => (
-                    <EditableHeading level={2} text={String(children)} onEdit={editFromHeading}>
-                      {children}
-                    </EditableHeading>
-                  ),
-                  h3: ({ children }) => (
-                    <EditableHeading level={3} text={String(children)} onEdit={editFromHeading}>
-                      {children}
-                    </EditableHeading>
-                  ),
-                }}
-              >
-                {stripLeadingH1(split.body)}
-              </ReactMarkdown>
-            </div>
-          </div>
-        </TabsContent>
 
         <TabsContent value="source" className="mt-4">
           {/* Side-by-side layout above lg breakpoint: editor left, live
@@ -492,7 +371,6 @@ export function SkillEditor({ name }: SkillEditorProps) {
                 onChange={setDraft}
                 minHeight="400px"
                 aria-label="Skill SKILL.md source"
-                scrollToLine={scrollTarget}
               />
             </Suspense>
             <div className="hidden min-h-[400px] overflow-auto rounded-md border bg-muted/10 p-4 lg:block">
