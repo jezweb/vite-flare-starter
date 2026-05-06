@@ -112,22 +112,29 @@ export function buildFindToolsTool(catalog: SearchableTool[]): ToolDefinition<
     }),
     execute: async ({ query, limit = 8 }) => {
       const q = query.toLowerCase().trim()
+      // Tokenise on whitespace so multi-word queries ("swarm batch task")
+      // score against each token independently. Single-substring match
+      // (the previous shape) returned 0 hits for any phrase the agent
+      // tried with 2+ words. Tokens with <2 chars are dropped as noise.
+      const tokens = q.split(/\s+/).filter((t) => t.length >= 2)
+      if (tokens.length === 0) {
+        return { matches: [], total: 0, truncated: false }
+      }
       const scored: Array<{ tool: SearchableTool; score: number }> = []
       for (const tool of searchable) {
         const nameLower = tool.name.toLowerCase()
         const descLower = tool.description.toLowerCase()
         let score = 0
-        // Exact name match wins big.
-        if (nameLower === q) score += 100
-        // Name contains the query — strong signal.
-        if (nameLower.includes(q)) score += 30
-        // Description contains the query — weaker but still relevant.
-        if (descLower.includes(q)) score += 10
-        // Word-prefix match in name (e.g. "email" matches "email_send").
-        for (const part of nameLower.split(/[_\-/]/)) {
-          if (part.startsWith(q)) {
-            score += 15
-            break
+        // Exact whole-query name match wins big — preserved from v1.
+        if (nameLower === q) score += 200
+        // Per-token scoring across name + description + word parts.
+        for (const tok of tokens) {
+          if (nameLower === tok) score += 100
+          else if (nameLower.includes(tok)) score += 30
+          if (descLower.includes(tok)) score += 10
+          for (const part of nameLower.split(/[_\-/]/)) {
+            if (part === tok) score += 25
+            else if (part.startsWith(tok)) score += 15
           }
         }
         if (score > 0) scored.push({ tool, score })
