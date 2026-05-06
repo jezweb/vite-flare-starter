@@ -19,10 +19,9 @@ import {
   type WorkflowEvent,
   type WorkflowStep,
 } from 'cloudflare:workers'
-import { generateText } from 'ai'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq } from 'drizzle-orm'
-import { resolveModel } from '@/server/lib/ai/providers'
+import { runModelText } from '@/server/lib/ai/providers'
 import { batchItems, batchJobs } from '../db/schema'
 import { completeItem, failItem, setJobStatus, startItem } from '../storage'
 
@@ -132,16 +131,15 @@ async function processOne(
   try {
     const content = await loadItemContent(env, item)
     const prompt = buildPrompt(job.instruction, job.taskKind, content)
-    const model = resolveModel(env as unknown as Parameters<typeof resolveModel>[0], job.model)
 
-    const result = await generateText({
-      model: model as Parameters<typeof generateText>[0]['model'],
-      system:
-        'You are processing one item out of a batch. Follow the user instruction precisely and answer concisely. Return only the result — no preamble, no commentary.',
+    const text = await runModelText(
+      env as unknown as Parameters<typeof runModelText>[0],
+      job.model,
+      'You are processing one item out of a batch. Follow the user instruction precisely and answer concisely. Return only the result — no preamble, no commentary.',
       prompt,
-    })
+    )
 
-    await completeItem(db, item.id, result.text)
+    await completeItem(db, item.id, text)
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     await failItem(db, item.id, msg)

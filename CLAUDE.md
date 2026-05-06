@@ -60,6 +60,11 @@ VITE_FEATURE_ACTIVITY=false
 | **format helpers** | Single-source-of-truth translators: `formatAgentClass / formatOutcome / formatTrigger / formatRole / formatImportance / formatCadenceInterval / deriveInstanceName`. Stops snake_case enum strings from leaking into UI. | `shared/format/agent.ts` |
 | **routine pickers** | AgentPicker / SkillsPicker / ToolsPicker / SingleSkillPicker — replace raw text inputs in NewRoutinePage with discoverable combobox + multi-select. Tools grouped by category (Gmail / Notion / Channels / Core / etc.). | `client/modules/routines/components/RoutinePickers.tsx` |
 | **email providers** | Six pluggable providers (`email-service` / `smtp2go` / `mailgun` / `resend` / `email-routing-send` / `console`), one file each, registry resolves a priority list. `EMAIL_FAILOVER='true'` cascades on error; `EMAIL_PROVIDER_ORDER` overrides priority. | `server/modules/email/providers/` |
+| **batch-tasks** | **Durable swarm fan-out** — Cloudflare Workflow processes N items in parallel windows of 8, retries per-item with exponential backoff. Used via the `start_batch_task` chat tool ("for each of these 50 PDFs, extract X"). Item content is loaded from R2 and converted via `env.AI.toMarkdown` for non-text docs. Approval-gated above 5 items. | `server/modules/batch-tasks/`, `server/modules/chat/tools/batch-task.ts`, `client/modules/jobs/pages/` |
+| **with_review** | **Worker→Reviewer quality loop** (OpenSwarm pair-pipeline pattern). Cheap worker drafts → smarter reviewer scores via APPROVE/REVISE/REJECT verdicts → worker rewrites with notes → cap at max_iters with optional escalation. Reviewer criteria from a Skill (`review-output` ships bundled) or inline prompt. Use for high-quality outputs where iteration matters. | `server/modules/chat/tools/with-review.ts`, `skills/review-output/` |
+| **always_active skills** | Frontmatter `always_active: true` bakes a skill's full body into every chat's system prompt — bypasses `load_skill`. For baseline knowledge (style, persona, project glossary). Loaded via `loadAlwaysActiveSkills(env, userId)`. | `server/lib/ai/skills/registry.ts`, `server/modules/chat/chat-agent.ts` (section 8b) |
+| **hybrid memory recall** | `agentRecall` ranks via `0.55*sim + 0.20*importance + 0.15*recency + 0.10*frequency`. `RECALL_WEIGHTS` exposed as a constant; importance optional on `agentRemember`. Frequency reserved at 0 until Vectorize counter support lands. | `server/lib/agents/agent-memory.ts` |
+| **tool-search** (find + list) | `find_tools(query)` keyword-searches with per-token scoring (multi-word queries work); `list_tools(category)` paginates by name prefix (e.g. `gmail_`). Both core tools — always active in chat agent's prepareStep. | `server/lib/ai/tool-search.ts` |
 
 ---
 
@@ -425,7 +430,21 @@ structured output, token usage + per-tool telemetry, message editing,
 conversation search (FTS5), export (JSON/Markdown), regenerate,
 persistence, MCP integration, MCP-UI rendering, sources footer
 (claude.ai-style citation strip), privileged-tool gating, single-retry
-tool repair, `propose_patch` tool for staged config edits.
+tool repair, `propose_patch` tool for staged config edits, multi-word
+tokenised tool search via `find_tools` + category browse via
+`list_tools`.
+
+**Compositional tools** the agent can reach for via the chat catalog:
+- `start_batch_task` — durable swarm fan-out (Cloudflare Workflow);
+  process N items in parallel with per-item retry + progress page
+- `with_review` — Worker→Reviewer quality loop with structured
+  verdicts; reviewer criteria from a Skill or inline prompt
+- `propose_patch` — stage a config-diff edit (skill / system prompt
+  / setting) for user approval
+
+These compose: a `start_batch_task` could route each item through
+`with_review` for "do 50 things, but quality-gate each output" — not
+wired today, but the contract supports it.
 
 Implementation notes: [`docs/CHAT_INTERNALS.md`](./docs/CHAT_INTERNALS.md).
 Tool catalog + adding new tools:
@@ -444,6 +463,9 @@ Claude Code, Codex, Hermes, OpenClaw, Cursor, and Aider.
 ---
 name: my-skill
 description: What this skill does and when to use it (≤1024 chars)
+# Optional flags:
+always_active: true              # bake the full body into every chat's system prompt
+disable_model_invocation: true   # hide from the model catalog (routine-hook only)
 ---
 
 # My Skill
@@ -452,6 +474,23 @@ Step-by-step instructions the AI follows...
 ```
 
 Required: `name` (lowercase-hyphens, ≤64 chars), `description` (≤1024 chars).
+
+**Optional frontmatter flags:**
+- `always_active: true` — body baked into every chat's system prompt; the
+  agent applies the skill unconditionally (no `load_skill` call needed).
+  Use sparingly for baseline knowledge (style guide, persona, glossary).
+  Cost: ~500 tokens per skill per turn.
+- `disable_model_invocation: true` — hide from the chat catalog. For
+  meta-skills only fired as routine hooks (`reflect`, `route-finding`,
+  `librarian-curate`, etc).
+
+The two flags are orthogonal but mutually contradictory at runtime —
+`loadAlwaysActiveSkills` excludes any skill that has both set.
+
+**Description discipline:** lead with "Use when…" + concrete trigger
+phrases. Anthropic's models tool-select much better against
+trigger-first descriptions than generic "this skill does X" copy. See
+`skills/code-review/SKILL.md` for a worked example.
 
 ### Three storage sources
 

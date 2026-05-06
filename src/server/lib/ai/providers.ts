@@ -283,3 +283,32 @@ export function getAvailableProviders(env: ProviderEnv): string[] {
 export function buildRegistry(_env: ProviderEnv): any {
   throw new Error('buildRegistry removed — use resolveModel() or createWorkersAI() directly for embeddings.')
 }
+
+/**
+ * One-shot AI text completion against a model id. Wraps `resolveModel`
+ * + `generateText` + the `.text.trim()` pattern that ran 3 times across
+ * batch-tasks and with_review.
+ *
+ * Use for any non-streaming, non-tool-using single-prompt completion.
+ * For streaming, tool-calling, or multi-turn chat, go straight through
+ * `resolveModel(env, id)` + `streamText({ model, messages, tools })`.
+ *
+ * @param system - System prompt establishing role/format/constraints
+ * @param prompt - User prompt; the actual task input
+ * @returns Trimmed assistant text
+ */
+export async function runModelText(
+  env: ProviderEnv,
+  modelId: string,
+  system: string,
+  prompt: string,
+): Promise<string> {
+  const { generateText } = await import('ai')
+  const model = resolveModel(env, modelId)
+  const result = await generateText({
+    model: model as Parameters<typeof generateText>[0]['model'],
+    system,
+    prompt,
+  })
+  return result.text.trim()
+}

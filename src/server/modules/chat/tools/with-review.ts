@@ -27,8 +27,7 @@
  */
 import { z } from 'zod'
 import { GitPullRequest } from 'lucide-react'
-import { generateText } from 'ai'
-import { resolveModel } from '@/server/lib/ai/providers'
+import { runModelText } from '@/server/lib/ai/providers'
 import { loadSkill } from '@/server/lib/ai/skills/registry'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 
@@ -124,10 +123,9 @@ async function runWorker(
   previousDraft: string | undefined,
   reviewerNote: string | undefined,
 ): Promise<string> {
-  const model = resolveModel(env as Parameters<typeof resolveModel>[0], modelId)
   const systemPrompt = previousDraft
     ? 'You are revising your previous draft based on reviewer feedback. Address the reviewer\'s specific notes. Return ONLY the revised draft — no preamble, no commentary about what you changed. CRITICAL: use the actual values from the Task (names, amounts, IDs, codes) verbatim — never substitute [PLACEHOLDER] tokens. Bracketed placeholders are a fail.'
-    : 'You are producing the requested output. Return ONLY the final draft — no preamble, no meta-commentary, no apologies. Match the format the user asked for. CRITICAL: use the actual values from the Task (names, amounts, IDs, codes, codes) verbatim — never substitute [PLACEHOLDER] tokens. If the task says "customer Alex" and "$89.50", write "Alex" and "$89.50", not "[CUSTOMER_NAME]" and "[REFUND_AMOUNT]".'
+    : 'You are producing the requested output. Return ONLY the final draft — no preamble, no meta-commentary, no apologies. Match the format the user asked for. CRITICAL: use the actual values from the Task (names, amounts, IDs, codes) verbatim — never substitute [PLACEHOLDER] tokens. If the task says "customer Alex" and "$89.50", write "Alex" and "$89.50", not "[CUSTOMER_NAME]" and "[REFUND_AMOUNT]".'
 
   const userPromptParts = [`Task: ${task}`]
   if (context) userPromptParts.push(`\nContext:\n${context}`)
@@ -135,12 +133,12 @@ async function runWorker(
     userPromptParts.push(`\nPrevious draft:\n${previousDraft}`)
     userPromptParts.push(`\nReviewer notes (address these):\n${reviewerNote}`)
   }
-  const result = await generateText({
-    model: model as Parameters<typeof generateText>[0]['model'],
-    system: systemPrompt,
-    prompt: userPromptParts.join('\n'),
-  })
-  return result.text.trim()
+  return runModelText(
+    env as Parameters<typeof runModelText>[0],
+    modelId,
+    systemPrompt,
+    userPromptParts.join('\n'),
+  )
 }
 
 async function runReviewer(
@@ -151,7 +149,6 @@ async function runReviewer(
   criteriaText: string,
   context: string | undefined,
 ): Promise<{ verdict: z.infer<typeof Verdict>; note: string }> {
-  const model = resolveModel(env as Parameters<typeof resolveModel>[0], modelId)
   const systemPrompt =
     'You are a strict reviewer. Score the worker\'s draft against the criteria, judging it relative to the original Task (which included specific details the worker was meant to use — anything in the Task is grounded, not invented). Respond with EXACTLY ONE LINE in this format and nothing else:\n' +
     '\n' +
@@ -166,13 +163,12 @@ async function runReviewer(
   if (context) userPromptParts.push(`\nContext:\n${context}`)
   userPromptParts.push(`\nWorker's draft:\n${draft}`)
 
-  const result = await generateText({
-    model: model as Parameters<typeof generateText>[0]['model'],
-    system: systemPrompt,
-    prompt: userPromptParts.join('\n'),
-  })
-
-  const text = result.text.trim()
+  const text = await runModelText(
+    env as Parameters<typeof runModelText>[0],
+    modelId,
+    systemPrompt,
+    userPromptParts.join('\n'),
+  )
   const match = text.match(VERDICT_REGEX)
   if (!match) {
     // Reviewer didn't follow the format. Treat as REVISE with full text

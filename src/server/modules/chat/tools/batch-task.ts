@@ -22,7 +22,7 @@
 import { z } from 'zod'
 import { Layers } from 'lucide-react'
 import { drizzle } from 'drizzle-orm/d1'
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, eq, inArray, or } from 'drizzle-orm'
 import { files as filesTable } from '@/server/modules/files/db/schema'
 import { createJob } from '@/server/modules/batch-tasks/storage'
 import { batchJobs } from '@/server/modules/batch-tasks/db/schema'
@@ -102,66 +102,42 @@ const isAvailable = (ctx: AgentContext) => !!getEnv(ctx)
 
 /**
  * Resolve an `r2_file` ref_value to its actual R2 key. The agent may pass
- * the filename, the file row's UUID, or already the bare R2 key.
+ * the filename, the file row's UUID, or already the bare R2 key — one
+ * OR-query covers all three.
  */
 async function resolveR2Keys(
   db: D1Database,
   userId: string,
   refs: string[],
-): Promise<Map<string, { key: string; label?: string } | { error: string }>> {
-  const out = new Map<string, { key: string; label?: string } | { error: string }>()
+): Promise<Map<string, { key: string; label?: string }>> {
+  const out = new Map<string, { key: string; label?: string }>()
   if (refs.length === 0) return out
 
-  const d = drizzle(db)
-  // Pull every candidate file row for this user. Cheap query bounded by
-  // the user's file count; covers the three resolution paths in one
-  // round-trip.
-  const rows = await d
+  const rows = await drizzle(db)
     .select({ id: filesTable.id, name: filesTable.name, key: filesTable.key })
     .from(filesTable)
     .where(
       and(
         eq(filesTable.userId, userId),
-        inArray(filesTable.id, refs),
+        or(
+          inArray(filesTable.id, refs),
+          inArray(filesTable.name, refs),
+          inArray(filesTable.key, refs),
+        ),
       ),
     )
     .catch(() => [] as { id: string; name: string; key: string }[])
-  const byId = new Map(rows.map((r) => [r.id, r]))
 
-  // Second pass: rows by name OR by exact key.
-  const remaining = refs.filter((r) => !byId.has(r))
-  let byNameOrKey: { id: string; name: string; key: string }[] = []
-  if (remaining.length > 0) {
-    byNameOrKey = await d
-      .select({ id: filesTable.id, name: filesTable.name, key: filesTable.key })
-      .from(filesTable)
-      .where(
-        and(
-          eq(filesTable.userId, userId),
-          // Match either name or key; cheap fallback for chat-paste flows.
-          // We do an OR via two queries to keep the index hit straightforward.
-        ),
-      )
-      .catch(() => [] as { id: string; name: string; key: string }[])
-  }
-  const byName = new Map(byNameOrKey.map((r) => [r.name, r]))
-  const byKey = new Map(byNameOrKey.map((r) => [r.key, r]))
+  // Build three lookup tables off the single result set.
+  const byId = new Map(rows.map((r) => [r.id, r]))
+  const byName = new Map(rows.map((r) => [r.name, r]))
+  const byKey = new Map(rows.map((r) => [r.key, r]))
 
   for (const ref of refs) {
-    if (byId.has(ref)) {
-      const row = byId.get(ref)!
-      out.set(ref, { key: row.key, label: row.name })
-    } else if (byName.has(ref)) {
-      const row = byName.get(ref)!
-      out.set(ref, { key: row.key, label: row.name })
-    } else if (byKey.has(ref)) {
-      const row = byKey.get(ref)!
-      out.set(ref, { key: row.key, label: row.name })
-    } else {
-      // Last resort: assume the agent already passed a bare R2 key.
-      // The Workflow will fail with "R2 object not found" if that's wrong.
-      out.set(ref, { key: ref })
-    }
+    const row = byId.get(ref) ?? byName.get(ref) ?? byKey.get(ref)
+    // Last resort: assume the agent already passed a bare R2 key. The
+    // Workflow will surface "R2 object not found" if that's wrong.
+    out.set(ref, row ? { key: row.key, label: row.name } : { key: ref })
   }
   return out
 }
@@ -192,7 +168,7 @@ export const startBatchTaskDefinition: ToolDefinition<
         return { ref_kind: it.ref_kind, ref_value: it.ref_value, label: it.label }
       }
       const r = resolved.get(it.ref_value)
-      if (!r || 'error' in r) {
+      if (!r) {
         return { ref_kind: it.ref_kind as 'r2_file', ref_value: it.ref_value, label: it.label }
       }
       return { ref_kind: 'r2_file' as const, ref_value: r.key, label: it.label ?? r.label }
