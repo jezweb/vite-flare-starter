@@ -46,6 +46,7 @@ import type { ToolDefinition, AgentContext } from '@/shared/agent'
 export const CORE_TOOL_NAMES = new Set<string>([
   // Discovery
   'find_tools',
+  'list_tools',
   // Terminators / control
   'done',
   // Cheap utilities the model reaches for instinctively
@@ -152,15 +153,70 @@ export function buildFindToolsTool(catalog: SearchableTool[]): ToolDefinition<
 }
 
 /**
- * Extract tool names that have been "discovered" by prior find_tools
- * calls in this run. Walks the agent's step history looking at
- * find_tools tool results.
+ * Build the list_tools tool — a sibling to find_tools that enumerates
+ * the catalog by category prefix (or shows everything paginated). Use
+ * cases:
+ *   - "show me all gmail tools" → category='gmail_'
+ *   - "what tools exist?" → no filter, paginate
+ *
+ * Returns tool name + description per match. Same activation contract
+ * as find_tools — anything surfaced becomes callable on subsequent steps.
+ */
+export function buildListToolsTool(catalog: SearchableTool[]): ToolDefinition<
+  { category?: string; offset?: number; limit?: number },
+  { tools: SearchableTool[]; total: number; offset: number; truncated: boolean }
+> {
+  const searchable = catalog.filter((t) => !CORE_TOOL_NAMES.has(t.name))
+
+  return {
+    name: 'list_tools',
+    description:
+      'Enumerate available tools by category prefix or paginate the full catalog. Use to explore "what tools do I have?" — e.g. category="gmail_" lists every Gmail tool. Returns name + description per tool. For keyword search, prefer find_tools.',
+    inputSchema: z.object({
+      category: z
+        .string()
+        .max(40)
+        .optional()
+        .describe('Optional name prefix filter, e.g. "gmail_", "drive_", "calendar_", "image_". Omit for the full catalog.'),
+      offset: z.number().int().min(0).optional().describe('Pagination offset. Default 0.'),
+      limit: z.number().int().min(1).max(50).optional().describe('Max tools to return. Default 20.'),
+    }),
+    outputSchema: z.object({
+      tools: z.array(z.object({ name: z.string(), description: z.string() })),
+      total: z.number(),
+      offset: z.number(),
+      truncated: z.boolean(),
+    }),
+    execute: async ({ category, offset = 0, limit = 20 }) => {
+      const filter = category?.toLowerCase().trim()
+      const filtered = filter
+        ? searchable.filter((t) => t.name.toLowerCase().startsWith(filter))
+        : searchable
+      const sorted = [...filtered].sort((a, b) => a.name.localeCompare(b.name))
+      const slice = sorted.slice(offset, offset + limit)
+      return {
+        tools: slice,
+        total: sorted.length,
+        offset,
+        truncated: offset + slice.length < sorted.length,
+      }
+    },
+    render: { icon: Search, displayName: 'List Tools' },
+  }
+}
+
+/**
+ * Extract tool names that have been "discovered" by prior find_tools or
+ * list_tools calls in this run. Walks the agent's step history looking
+ * at discovery-tool results.
  *
  * Returns the union across all calls — once discovered, a tool stays
  * activated for the rest of the run. Forgetting would require the
  * agent to re-search for the same tool every step, which defeats the
  * purpose.
  */
+const DISCOVERY_TOOL_NAMES = new Set<string>(['find_tools', 'list_tools'])
+
 export function extractDiscoveredToolNames(
   steps: Array<{
     toolCalls?: ReadonlyArray<{ toolName: string }>
@@ -170,10 +226,15 @@ export function extractDiscoveredToolNames(
   const discovered = new Set<string>()
   for (const step of steps) {
     for (const result of step.toolResults ?? []) {
-      if (result.toolName !== 'find_tools') continue
-      const out = result.output as { matches?: Array<{ name?: string }> } | undefined
-      if (!out?.matches) continue
-      for (const m of out.matches) {
+      if (!DISCOVERY_TOOL_NAMES.has(result.toolName)) continue
+      // Both find_tools and list_tools return arrays of {name, description};
+      // the field name differs (matches vs tools).
+      const out = result.output as
+        | { matches?: Array<{ name?: string }>; tools?: Array<{ name?: string }> }
+        | undefined
+      const list = out?.matches ?? out?.tools
+      if (!list) continue
+      for (const m of list) {
         if (typeof m.name === 'string') discovered.add(m.name)
       }
     }

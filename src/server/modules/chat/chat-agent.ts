@@ -55,6 +55,7 @@ import { nullTelemetry } from '@/shared/agent'
 import { tokenBudgetPrepareStep, computeActiveTools } from '@/server/lib/ai/prepare-step'
 import {
   buildFindToolsTool,
+  buildListToolsTool,
   CORE_TOOL_NAMES,
   extractDiscoveredToolNames,
   type SearchableTool,
@@ -768,6 +769,11 @@ export class ChatAgent extends AIChatAgent<Env> {
       const findTools = buildFindToolsTool(searchCatalog)
       tools['find_tools'] = toAiSdkTool(
         findTools as unknown as Parameters<typeof toAiSdkTool>[0],
+        agentCtx,
+      )
+      const listTools = buildListToolsTool(searchCatalog)
+      tools['list_tools'] = toAiSdkTool(
+        listTools as unknown as Parameters<typeof toAiSdkTool>[0],
         agentCtx,
       )
     }
