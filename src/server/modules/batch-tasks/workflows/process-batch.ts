@@ -30,7 +30,13 @@ import { completeItem, failItem, setJobStatus, startItem } from '../storage'
 interface WorkflowEnv {
   DB: D1Database
   FILES?: R2Bucket
-  AI?: unknown
+  AI?: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    toMarkdown: (
+      docs: Array<{ name: string; blob: Blob }>,
+    ) => Promise<Array<{ name: string; mimeType: string; format: string; tokens: number; data: string }>>
+    run: (...args: unknown[]) => Promise<unknown>
+  }
   OPENROUTER_API_KEY?: string
   ANTHROPIC_API_KEY?: string
   OPENAI_API_KEY?: string
@@ -126,7 +132,7 @@ async function processOne(
   try {
     const content = await loadItemContent(env, item)
     const prompt = buildPrompt(job.instruction, job.taskKind, content)
-    const model = resolveModel(env as Parameters<typeof resolveModel>[0], job.model)
+    const model = resolveModel(env as unknown as Parameters<typeof resolveModel>[0], job.model)
 
     const result = await generateText({
       model: model as Parameters<typeof generateText>[0]['model'],
@@ -177,13 +183,62 @@ async function loadItemContent(env: WorkflowEnv, item: { refKind: string; refVal
       const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)))
       return { kind: 'image_url', payload: `data:${mime};base64,${b64}`, mimeType: mime }
     }
+    // Documents: convert via Cloudflare's toMarkdown binding. Supports
+    // PDF, DOCX, XLSX, PPTX, HTML, RTF, ePub, CSV, and Apple iWork docs.
+    // Free, server-side, no per-call cost beyond Workers AI quota.
+    if (isConvertibleDocument(mime, item.refValue)) {
+      if (!env.AI?.toMarkdown) {
+        return {
+          kind: 'unsupported',
+          payload: `Unsupported file type: ${mime}. AI binding with toMarkdown not available — wire env.AI to enable PDF/DOCX/XLSX support.`,
+          mimeType: mime,
+        }
+      }
+      const buf = await obj.arrayBuffer()
+      const filename = item.refValue.split('/').pop() ?? 'document'
+      const [converted] = await env.AI.toMarkdown([
+        { name: filename, blob: new Blob([buf], { type: mime }) },
+      ])
+      if (!converted?.data) {
+        throw new Error(`toMarkdown returned no content for ${filename}`)
+      }
+      return { kind: 'text', payload: converted.data.slice(0, 200_000), mimeType: 'text/markdown' }
+    }
     return {
       kind: 'unsupported',
-      payload: `Unsupported file type: ${mime}. Only text-based files and images are processed in v1; PDFs need OCR conversion first.`,
+      payload: `Unsupported file type: ${mime}.`,
       mimeType: mime,
     }
   }
   throw new Error(`Unknown ref_kind: ${item.refKind}`)
+}
+
+/**
+ * Document mime types Cloudflare's `env.AI.toMarkdown` understands.
+ * Source: https://developers.cloudflare.com/workers-ai/markdown-conversion/
+ */
+function isConvertibleDocument(mime: string, filename: string): boolean {
+  const lower = mime.toLowerCase()
+  const ext = filename.split('.').pop()?.toLowerCase() ?? ''
+  if (
+    lower === 'application/pdf' ||
+    lower === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+    lower === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+    lower === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' ||
+    lower === 'application/msword' ||
+    lower === 'application/vnd.ms-excel' ||
+    lower === 'application/vnd.ms-powerpoint' ||
+    lower === 'application/rtf' ||
+    lower === 'application/epub+zip' ||
+    lower === 'text/html' ||
+    lower === 'application/vnd.apple.pages' ||
+    lower === 'application/vnd.apple.numbers' ||
+    lower === 'application/vnd.apple.keynote'
+  ) {
+    return true
+  }
+  // Fallback to extension when the mime is generic (octet-stream).
+  return ['pdf', 'docx', 'xlsx', 'pptx', 'doc', 'xls', 'ppt', 'rtf', 'epub', 'pages', 'numbers', 'key'].includes(ext)
 }
 
 function buildPrompt(instruction: string, taskKind: string, content: LoadedContent): string {
