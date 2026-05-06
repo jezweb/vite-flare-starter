@@ -331,6 +331,7 @@ export function skillsDefinitions(
       overwrite: z.boolean().optional().describe('Overwrite if a skill with this name already exists (default: false)'),
     }),
     outputSchema: CreateSkillOutput,
+    needsApproval: true,
     execute: async ({ content, overwrite }, ctx) => {
       try {
         const result = await uploadSkillToR2(getSkillsEnv(ctx), content, ctx.userId, { overwrite })
@@ -360,6 +361,7 @@ export function skillsDefinitions(
       url: z.string().describe('Raw GitHub URL to the SKILL.md file (e.g. https://raw.githubusercontent.com/anthropics/skills/main/pdf/SKILL.md)'),
     }),
     outputSchema: InstallSkillOutput,
+    needsApproval: true,
     execute: async ({ url }, ctx) => {
       try {
         const result = await addGitHubSkill(getSkillsEnv(ctx), url)

@@ -33,6 +33,15 @@ export interface SkillSummary {
   isPersonal: boolean
   /** Skills with disable_model_invocation=true are hidden from the model catalog. */
   disableModelInvocation?: boolean
+  /**
+   * Skills with always_active=true have their full SKILL.md body baked
+   * into the chat agent's system prompt every turn — the model never
+   * needs to call load_skill for these. Use for baseline / persona /
+   * style skills that should apply to every conversation. The full body
+   * costs tokens on every turn; use sparingly. See plan
+   * `.jez/artifacts/skills-and-swarm-plan-2026-05-06.md`.
+   */
+  alwaysActive?: boolean
 }
 
 /** Re-export for external consumers that need to distinguish bundled rows. */
@@ -133,9 +142,14 @@ export async function listSkills(
 
   return [...merged.values()].map((r) => {
     let disableModelInvocation = false
+    let alwaysActive = false
     try {
-      const fm = JSON.parse(r.metadata || '{}') as { disable_model_invocation?: boolean }
+      const fm = JSON.parse(r.metadata || '{}') as {
+        disable_model_invocation?: boolean
+        always_active?: boolean
+      }
       disableModelInvocation = fm.disable_model_invocation === true
+      alwaysActive = fm.always_active === true
     } catch {
       // ignore malformed metadata
     }
@@ -146,8 +160,31 @@ export async function listSkills(
       userId: r.userId,
       isPersonal: r.userId === userId,
       disableModelInvocation,
+      alwaysActive,
     }
   })
+}
+
+/**
+ * Load full bodies for every always-active skill the user has. These
+ * get baked into the chat agent's system prompt instead of being
+ * gated behind a load_skill call. Skills with both always_active and
+ * disable_model_invocation are excluded (contradictory shape).
+ *
+ * Returns ordered alphabetically by name for stable prompt ordering
+ * (otherwise prompt-cache keys would churn whenever D1 row order changes).
+ */
+export async function loadAlwaysActiveSkills(
+  env: SkillsEnv,
+  userId: string,
+): Promise<LoadedSkill[]> {
+  const summaries = await listSkills(env, userId)
+  const candidates = summaries
+    .filter((s) => s.alwaysActive && !s.disableModelInvocation)
+    .map((s) => s.name)
+    .sort()
+  const loaded = await Promise.all(candidates.map((name) => loadSkill(env, name, userId)))
+  return loaded.filter((s): s is LoadedSkill => s !== null)
 }
 
 /**

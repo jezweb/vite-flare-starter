@@ -89,6 +89,7 @@ export const entityCreateDefinition: ToolDefinition<
   inputSchema: EntityCreateInput,
   outputSchema: EntityCreateOutput,
   isAvailable: entitiesAvailable,
+  needsApproval: true,
   execute: async (input, ctx) => {
     const db = drizzle(getDb(ctx)!)
     const id = crypto.randomUUID()
@@ -127,6 +128,7 @@ export const entityUpdateDefinition: ToolDefinition<
   description:
     'Update a tracked entity by id (partial). Use to change status (e.g. "open" → "in_progress"), update fields, rename, etc. Always preserves untouched fields.',
   inputSchema: EntityUpdateInput,
+  needsApproval: true,
   outputSchema: EntityCreateOutput,
   isAvailable: entitiesAvailable,
   execute: async ({ id, title, status, externalId, fields }, ctx) => {

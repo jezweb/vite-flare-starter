@@ -298,6 +298,7 @@ export const spaceSend: ToolDefinition<
   inputSchema: SpaceSendInput,
   outputSchema: SpaceSendOutput,
   isAvailable: () => true,
+  needsApproval: true,
   execute: async (input, ctx) => {
     const env = envOf(ctx)
     // Membership check — agent acts on behalf of its owner; the owner

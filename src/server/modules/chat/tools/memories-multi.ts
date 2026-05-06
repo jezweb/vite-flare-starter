@@ -156,6 +156,7 @@ export const memoryAddDefinition: ToolDefinition<
   name: 'memory_add',
   description:
     'Add a memory entry. Use when the user explicitly asks to remember something. Scope defaults to user. Set isPrivate=true for sensitive info that should NOT auto-inject (e.g. credentials hint, account numbers).',
+  needsApproval: true,
   inputSchema: z.object({
     name: z
       .string()
@@ -244,6 +245,7 @@ export const memoryUpdateDefinition: ToolDefinition<
     z.object({ success: z.boolean() }),
     z.object({ error: z.string() }),
   ]),
+  needsApproval: true,
   execute: async (input, ctx) => {
     const db = drizzle(getDB(ctx))
     const userId = getUserId(ctx)
@@ -302,6 +304,7 @@ export const memoryRemoveDefinition: ToolDefinition<
     z.object({ success: z.boolean() }),
     z.object({ error: z.string() }),
   ]),
+  needsApproval: true,
   execute: async ({ id }, ctx) => {
     const db = drizzle(getDB(ctx))
     const userId = getUserId(ctx)

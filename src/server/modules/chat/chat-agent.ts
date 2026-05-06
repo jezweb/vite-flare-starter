@@ -66,7 +66,7 @@ import { buildModel } from '@/server/lib/ai/middleware'
 import { buildSystemPrompt } from '@/server/lib/ai/context'
 import { getMCPTools } from '@/server/lib/ai/mcp'
 import { getModel, DEFAULT_MODEL } from '@/server/lib/ai/models'
-import { listSkills } from '@/server/lib/ai/skills/registry'
+import { listSkills, loadAlwaysActiveSkills } from '@/server/lib/ai/skills/registry'
 import { trimHistoryToTokenBudget } from '@/server/lib/ai/trim-history'
 import { convertToMarkdown } from '@/server/lib/ai/documents'
 import { buildChatTools } from '@/server/modules/chat/tools'
@@ -628,11 +628,31 @@ export class ChatAgent extends AIChatAgent<Env> {
     // ─── 8. Skill catalog (Level 1 progressive disclosure) ───────────
     // Skills with `disable_model_invocation: true` are user-invocable
     // only — hide them from the catalog so the model can't auto-load.
+    // Skills with `always_active: true` have their full body baked
+    // into the prompt below — also hide from the on-demand catalog so
+    // the model doesn't redundantly try to load them.
     const availableSkills = (
       await listSkills(this.env as { DB: D1Database; SKILLS?: R2Bucket }, userId)
     ).filter((s) => !s.disableModelInvocation)
     const skillsCatalog = availableSkills.length > 0
-      ? availableSkills.map((s) => `- **${s.name}**: ${s.description}`).join('\n')
+      ? availableSkills
+          .filter((s) => !s.alwaysActive)
+          .map((s) => `- **${s.name}**: ${s.description}`)
+          .join('\n')
+      : null
+
+    // ─── 8b. Always-active skill bodies (baked baseline) ─────────────
+    // These skills are loaded in full into the system prompt every turn
+    // — no load_skill call needed. Used for baseline knowledge (style,
+    // persona, project glossary) the agent should apply unconditionally.
+    const alwaysActiveSkills = await loadAlwaysActiveSkills(
+      this.env as { DB: D1Database; SKILLS?: R2Bucket },
+      userId,
+    )
+    const baselineBlock = alwaysActiveSkills.length > 0
+      ? alwaysActiveSkills
+          .map((s) => `### Skill: ${s.name}\n\n${s.body.trim()}`)
+          .join('\n\n---\n\n')
       : null
 
     // ─── 9. Chat preferences (per-user prompt block) ─────────────────
@@ -640,12 +660,28 @@ export class ChatAgent extends AIChatAgent<Env> {
     const prefsBlock = chatPrefs ? formatChatPreferences(chatPrefs) : null
 
     // ─── 10. Assemble system prompt extra sections ───────────────────
+    // Order matters for prompt-cache reuse + agent priority:
+    //   1. Active Skills  (baseline always-on knowledge)
+    //   2. Available Skills  (on-demand catalog)
+    //   3. User Preferences
+    //   4. Project instructions
+    //   5. Memory
+    //
+    // Active Skills go FIRST so the agent reads its baseline before
+    // deciding what else it needs.
     const extraSections: Record<string, string> = {}
+    if (baselineBlock) {
+      extraSections['Active Skills'] = [
+        'These skills are always active for this conversation. Apply them throughout — you do not need to call load_skill for any of them.',
+        '',
+        baselineBlock,
+      ].join('\n')
+    }
     if (skillsCatalog) {
       extraSections['Available Skills'] = [
-        'The following skills provide specialised instructions for specific tasks.',
-        'When a task matches a skill\'s description, call the load_skill tool with the skill name to load its full instructions.',
-        'The tool returns a <skill_content> block; follow its instructions, and use fs tools to load any listed resources on demand.',
+        'Before answering, scan the skills below and load any that match the user\'s task. Specialist work (research, drafting, code review, document analysis, data extraction, comparing options, planning) almost always has a matching skill — call load_skill FIRST rather than improvising. If no skill matches, proceed normally.',
+        '',
+        'load_skill returns a <skill_content> block with full instructions; follow it, and use fs tools to read any listed resources on demand.',
         '',
         skillsCatalog,
       ].join('\n')
