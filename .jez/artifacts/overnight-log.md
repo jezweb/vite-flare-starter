@@ -60,6 +60,9 @@ Pick the next AVAILABLE task in ID order. Mark it in-progress in your iteration 
 
 *(Append entries here. Newest at top.)*
 
+### Bail — 2026-05-06T17:04Z
+Bailed — past 2am local (17:04 UTC > 16:00 UTC cutoff) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED). Note: prior agent runs since 2026-05-02 were committing bail entries to an orphaned detached HEAD chain; this entry lands on real main.
+
 ### Bail — 2026-05-02T06:15Z
 Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
 
