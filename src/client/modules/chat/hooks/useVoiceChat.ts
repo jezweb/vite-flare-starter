@@ -174,6 +174,14 @@ export function useVoiceChat(opts: UseVoiceChatOpts): UseVoiceChatResult {
     if (typeof window === 'undefined') return
     const a = new Audio()
     a.preload = 'auto'
+    // playsInline + the lowercase HTML attribute are both needed on iOS
+    // Safari 15-16 — without them, .play() rejects even from inside a
+    // user gesture. Caught by DeepSeek v4 Flash brains-trust, missed by
+    // the higher-cost reviewers — Flash earned its keep.
+    // playsInline isn't on every TS lib; set both the property (cast) and
+    // the lowercase HTML attribute for max iOS compatibility.
+    ;(a as unknown as { playsInline?: boolean }).playsInline = true
+    a.setAttribute('playsinline', '')
     // Set + play silent mp3 inside the gesture to satisfy iOS autoplay policy.
     a.src = SILENT_MP3_DATA_URL
     const playPromise = a.play()
