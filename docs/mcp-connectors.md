@@ -14,11 +14,13 @@ This doc covers:
 
 ## What ships out of the box
 
-**One catalogue entry:** Australian Business Register (ABR) — a no-auth public API wrapped as an MCP server. It's a working example that lets you connect something in one click and see tool discovery, policy controls, and agent tool-calling end-to-end.
+**Curated catalogue (~7 entries)** in `src/shared/config/connector-catalog.ts` — Slack, Notion, GitHub, Linear, Stripe, Airtable (community-maintained via Smithery) plus the no-auth Australian Business Register example. Each entry has a `capabilities: string[]` for the "what your AI can do" bullets and a `source` attribution.
 
-**Everything else:** "Add connector" — paste any MCP URL.
+**Everything else:** **Add an integration → Connect by URL** — paste any MCP server URL. Probe handles OAuth, bearer, or no-auth automatically.
 
-The philosophy is that the starter's *infrastructure* (OAuth 2.1 + PKCE + DCR, bearer fallback, encrypted tokens, per-tool allow/ask/never) is the value. A curated 20-connector catalogue would tie the starter to specific services and create fork-maintenance pain.
+The philosophy is that the starter's *infrastructure* (OAuth 2.1 + PKCE + DCR, bearer fallback, encrypted tokens, per-tool allow/ask/never) is the value. The catalog is intentionally curated rather than exhaustive — we'd rather list 7 entries we trust than auto-fetch 7,000 from a community registry where 22% of the top 100 have known security findings. See [the 2026-05-07 brains-trust audit](../.jez/audits/2026-05-07-tool-ui-and-connectors-brains-trust.md) for the full reasoning.
+
+> ⚠️ **Fork-owners**: Smithery URLs in the catalog can rot. Verify each URL against [smithery.ai](https://smithery.ai) before relying on the entry. The connector probe surfaces dead URLs as clear errors rather than silent failures, so users see "this connector is unavailable" instead of a black hole.
 
 ---
 
@@ -48,11 +50,34 @@ printf "$(openssl rand -base64 32)" | npx wrangler secret put TOKEN_ENCRYPTION_K
 |--------|-----|-------------|
 | Australian Business Register | `https://australian-business.mcpserver.au/mcp` | ABN/ACN lookups (ships in the catalogue) |
 
-### Community MCP registries
+### Community MCP registries (mid-2026 inventory)
 
-- **Smithery.ai** — browse at [smithery.ai/mcp](https://smithery.ai/mcp). Many free, OAuth-enabled servers for GitHub, Notion, Linear, Sentry, etc. Each has its own `/mcp` URL you paste into Add connector.
-- **Anthropic reference servers** — [github.com/anthropics/mcp-servers](https://github.com/modelcontextprotocol/servers) has reference implementations for filesystem, GitHub, Slack, Google Drive, Postgres. Most are stdio-based (run locally); a few expose HTTP endpoints.
-- **Cloudflare Agents SDK** — [developers.cloudflare.com/agents](https://developers.cloudflare.com/agents/) ships examples that deploy as Workers. Paste the Worker URL + `/mcp` path.
+| Registry | Inventory | Best for | Caveat |
+|---|---|---|---|
+| **[Smithery.ai](https://smithery.ai)** | 7,000+ servers | Largest catalog · both local + remote-hosted | 22% of top-100 had security findings ([scan](https://dev.to/saray_chak_/we-scanned-100-smithery-mcp-servers-and-22-came-back-with-security-findings-2lj8)) — verify before connecting |
+| **[Official MCP Registry](https://registry.modelcontextprotocol.io/)** | Canonical metadata feed (Linux Foundation) | Programmatic discovery via API | Intentionally minimal — no curated UX |
+| **[FastMCP](https://fastmcp.me/)** | 1,891+ servers | Discovery surface for "what's hot" | Mostly stdio NPM packages — less useful for our HTTP-only flow |
+| **[Awesome MCP Servers](https://github.com/modelcontextprotocol/servers)** | Anthropic reference set | Reference implementations for filesystem, GitHub, Slack, Drive, Postgres | Most are stdio (run locally); a few expose HTTP |
+
+### Cloudflare's first-party MCP servers (for fork developers)
+
+Cloudflare runs 16 hosted MCP servers at `*.mcp.cloudflare.com/mcp`. These are **dev-shaped** (Workers logs, DNS analytics, AI Gateway debug) — useful while *you* build a fork, but not what you'd ship in your end-user-facing catalog. Connect them yourself via **Connect by URL**:
+
+| URL | Auth | What it gives you |
+|---|---|---|
+| `https://mcp.cloudflare.com/mcp` | OAuth | Codemode access to 2,500+ Cloudflare API endpoints (DNS, Workers, R2, Zero Trust) |
+| `https://docs.mcp.cloudflare.com/mcp` | **none** | Search Cloudflare docs from chat — handy while building |
+| `https://agents.cloudflare.com/mcp` | **none** | Search the Agents SDK docs |
+| `https://bindings.mcp.cloudflare.com/mcp` | OAuth | Manage Workers bindings (KV, R2, AI, etc.) |
+| `https://observability.mcp.cloudflare.com/mcp` | OAuth | Workers logs + analytics |
+| `https://browser.mcp.cloudflare.com/mcp` | OAuth | Fetch pages, convert to markdown, screenshot |
+| `https://containers.mcp.cloudflare.com/mcp` | OAuth | Spin up sandbox dev environments |
+| `https://radar.mcp.cloudflare.com/mcp` | OAuth | Internet traffic insights, URL scanning |
+| `https://ai-gateway.mcp.cloudflare.com/mcp` | OAuth | Search AI Gateway logs |
+
+Plus 7 more (Builds, Logpush, AutoRAG, Audit Logs, DNS Analytics, DEX, CASB, GraphQL) — see [Cloudflare's MCP servers reference](https://developers.cloudflare.com/agents/model-context-protocol/mcp-servers-for-cloudflare/).
+
+These aren't in the curated catalog because the *audience* of the catalog is end-users of forks (small businesses using Slack/Notion/Stripe), not developers managing CF accounts. If your fork is itself developer-facing (e.g., an internal devops tool), consider seeding these into your fork's `connector-catalog.ts`.
 
 ### Self-hosting your own
 
