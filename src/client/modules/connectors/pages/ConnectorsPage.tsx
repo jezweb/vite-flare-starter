@@ -74,6 +74,23 @@ export function ConnectorsPage() {
 
   const qc = useQueryClient()
 
+  // Suggest a chat starter prompt after the user's first successful
+  // connection. Anchored on a localStorage flag so it fires only once.
+  const FIRST_CONNECT_KEY = 'connections:first-success-toasted'
+  const showFirstConnectionToast = useCallback(() => {
+    try {
+      if (localStorage.getItem(FIRST_CONNECT_KEY) === '1') return
+      localStorage.setItem(FIRST_CONNECT_KEY, '1')
+    } catch {
+      // localStorage may throw in private mode — degrade silently.
+    }
+    toast.success('Connected — try asking your AI to use it!', {
+      description:
+        "Try: 'What's in my inbox today?' or 'List recent updates' — the AI will use this connection automatically when relevant.",
+      duration: 8_000,
+    })
+  }, [])
+
   // Listen for OAuth popup completion; triggers list refresh.
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
@@ -89,6 +106,13 @@ export function ConnectorsPage() {
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
   }, [qc])
+
+  // Fire the "now try asking your AI" toast on the first activated
+  // connection — covers OAuth callbacks AND no-auth in one place.
+  useEffect(() => {
+    const activeCount = connections.filter((c) => c.status === 'active').length
+    if (activeCount > 0) showFirstConnectionToast()
+  }, [connections, showFirstConnectionToast])
 
   // Only connectors whose status is "active" are fully connected. Pending
   // OAuth rows stay in the catalogue modal as connectable ("Resume" / "Retry")
@@ -106,14 +130,15 @@ export function ConnectorsPage() {
     <PageContainer type="catalog">
       <PageHeader
         title="Connections"
-        subtitle="Connect Gmail, Calendar, Drive, Notion, Slack, and other apps so your AI can read and act on them for you. Most take 30 seconds — sign in with the provider, click Approve."
+        subtitle="Connect Gmail, Calendar, Drive, Notion, Slack, GitHub, Linear, Stripe, and more so your AI can read and act on them for you. Most take 30 seconds — sign in with the provider, click Approve."
         help={
           <HelpDisclosure>
             <p className="text-muted-foreground max-w-xl">
-              Want a custom integration? Paste a connection URL — public, your
-              own service, or community-hosted. Sign-in via the provider or a
-              token; tokens are encrypted at rest. Built on the Model Context
-              Protocol (MCP) standard, so any MCP server URL works.
+              Want to connect something not in the list? Paste a connection
+              URL — public, your own service, or community-hosted. Sign-in
+              via the provider or a token; tokens are encrypted at rest.
+              Built on the open Model Context Protocol (MCP) standard, so
+              any MCP-compatible server URL works.
             </p>
           </HelpDisclosure>
         }
@@ -121,11 +146,11 @@ export function ConnectorsPage() {
           <>
             <Button onClick={() => setBrowseOpen(true)}>
               <Search className="mr-2 h-4 w-4" />
-              Browse apps
+              Add an integration
             </Button>
             <Button variant="outline" onClick={() => setCustomOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
-              Add custom
+              Connect by URL
             </Button>
           </>
         }
@@ -196,8 +221,8 @@ export function ConnectorsPage() {
           <EmptyState
             icon={Plug}
             title="No apps connected yet"
-            description="Click 'Browse apps' above to see ready-made connections, or 'Add custom app' if you have your own connection URL."
-            action={{ label: 'Browse apps', onClick: () => setBrowseOpen(true) }}
+            description="Connect Slack and your AI can read channels, post updates, find messages. Connect Notion to search docs and create pages. Connect GitHub for code search, issues, and PRs. Most take under 30 seconds."
+            action={{ label: 'Add an integration', onClick: () => setBrowseOpen(true) }}
           />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -416,9 +441,9 @@ function BrowseDialog({
         aria-label="Browse connector examples"
       >
         <DialogHeader>
-          <DialogTitle>Connector examples</DialogTitle>
+          <DialogTitle>Add an integration</DialogTitle>
           <DialogDescription>
-            A short list of public MCP servers to demonstrate the connector flow. For more, paste any MCP server URL via the "Add custom MCP server" button below — Smithery, Anthropic reference servers, and self-hosted Workers all work.
+            Pick a popular app to connect, or paste your own connection URL at the bottom. Sign-in happens with the provider; tokens are encrypted at rest. Some entries are community-maintained — if a connect fails, the URL may need updating.
           </DialogDescription>
         </DialogHeader>
         {showSearch && (
@@ -445,8 +470,23 @@ function BrowseDialog({
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="font-medium">{entry.name}</p>
                   <Badge variant="outline" className="text-[10px]">{entry.category}</Badge>
+                  {entry.source && (
+                    <span className="text-[10px] text-muted-foreground">
+                      {entry.source}
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground">{entry.description}</p>
+                {entry.capabilities && entry.capabilities.length > 0 && (
+                  <ul className="mt-1.5 space-y-0.5 text-[11px] text-muted-foreground">
+                    {entry.capabilities.slice(0, 4).map((c) => (
+                      <li key={c} className="flex items-start gap-1.5">
+                        <span className="mt-1 inline-block size-1 shrink-0 rounded-full bg-muted-foreground/60" />
+                        {c}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
               {connectedIds.has(entry.id) ? (
                 <Button size="sm" variant="outline" disabled>
@@ -482,7 +522,7 @@ function BrowseDialog({
         </div>
         <DialogFooter className="border-t pt-3">
           <p className="mr-auto text-xs text-muted-foreground">
-            Have a different MCP server in mind?
+            Want to connect a different service?
           </p>
           <Button
             variant="outline"
@@ -492,7 +532,7 @@ function BrowseDialog({
             }}
           >
             <Plus className="mr-1.5 size-4" />
-            Add custom MCP server
+            Connect by URL
           </Button>
         </DialogFooter>
       </DialogContent>

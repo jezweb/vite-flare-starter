@@ -78,6 +78,8 @@ import {
 import { proposePatchRenderer } from './propose-patch'
 import { findToolsRenderer } from './tool-search'
 import { memoryRenderers } from './memory'
+import { skillsKnowledgeRenderers } from './skills-knowledge'
+import { shapeRenderers } from './shapes'
 import { defaultRenderers } from './defaults'
 import { matchesRenderer, type ToolRenderer } from './_shared'
 
@@ -148,6 +150,14 @@ export const TOOL_RENDERERS: ToolRenderer[] = [
   findToolsRenderer,
   // Memory — remember / recall / search_memory / list_all_memories / forget
   ...memoryRenderers,
+  // Skills + Knowledge — load_skill, list_skills, knowledge_search, load_knowledge
+  ...skillsKnowledgeRenderers,
+  // Generic shape renderers — duck-type the output and render rich UI
+  // for stdout/image/markdown/table shapes. Catches the long tail of
+  // tools (run_python, browser_screenshot, data.read, etc.) without
+  // per-tool client code. AFTER bespoke renderers so domain UX wins;
+  // BEFORE defaults so the long tail still gets rich rendering.
+  ...shapeRenderers,
   // Default renderers for tools without a custom expanded view — icon +
   // displayName only, falls back to JSON body. Kept LAST so custom
   // renderers above win. See defaults.tsx for the metadata table.

@@ -8,6 +8,7 @@
  * `MessageRenderer.isArtifact()` and rendered by `ArtifactViewer`.
  */
 import { z } from 'zod'
+import { Sparkles, Wand2 } from 'lucide-react'
 import type { ToolDefinition } from '@/shared/agent'
 
 const ArtifactType = z.enum(['html', 'svg', 'mermaid'])
@@ -69,6 +70,14 @@ IMPORTANT: Output the COMPLETE code as the 'code' parameter — no markdown fenc
     code: cleanFences(code),
     height,
   }),
+  render: {
+    icon: Sparkles,
+    displayName: 'Create Artifact',
+    summary: (output) => {
+      const o = output as { type?: string; title?: string }
+      return o?.title ? `${o.title} (${o.type})` : (o?.type ?? null)
+    },
+  },
 }
 
 const EditArtifactOutput = z.object({
@@ -96,6 +105,14 @@ export const editArtifactDefinition: ToolDefinition<
     code: cleanFences(code),
     height,
   }),
+  render: {
+    icon: Wand2,
+    displayName: 'Edit Artifact',
+    summary: (output) => {
+      const o = output as { type?: string; title?: string }
+      return o?.title ? `${o.title} (${o.type})` : (o?.type ?? null)
+    },
+  },
 }
 
 export const artifactDefinitions = [

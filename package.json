@@ -30,7 +30,8 @@
     "type-check": "tsc --noEmit",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
-    "format": "biome format --write ."
+    "format": "biome format --write .",
+    "tool-coverage": "node scripts/tool-coverage.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.69",

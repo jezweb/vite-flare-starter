@@ -79,6 +79,28 @@ import {
   Camera,
   Link2,
   Code,
+  // Bare-tier additions (2026-05-07 brains-trust ship)
+  Wand2 as EditIcon,
+  Bell,
+  Inbox,
+  CheckSquare,
+  Send,
+  Webhook,
+  TableProperties,
+  Filter,
+  TrendingUp,
+  PieChart,
+  FileSpreadsheet,
+  Plus as PlusIcon,
+  Edit3,
+  Eye,
+  Lightbulb,
+  ArrowUpCircle,
+  XCircle as XCircleIcon,
+  Globe,
+  Network,
+  FilePlus2,
+  Box,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { ToolRenderer } from './_shared'
@@ -187,6 +209,62 @@ const DEFAULT_META: Record<string, DefaultMeta> = {
   onedrive_get_file: { icon: FileCheck, displayName: 'OneDrive — Get File' },
   msoffice_calendar_list: { icon: CalendarClock, displayName: 'MS Calendar — List' },
   msoffice_calendar_create: { icon: CalendarClock, displayName: 'MS Calendar — Create' },
+
+  // ─── Tier-3 batch (added 2026-05-07 brains-trust ship — was bare wrench) ───
+  // Most of these will get rich body rendering at runtime via shape
+  // renderers (data tables → table shape, firecrawl markdown → markdown
+  // shape, etc.). Default meta gives them a polished pill regardless.
+
+  // Artifacts (edit) — create has a server render block with summary
+  edit_artifact: { icon: EditIcon, displayName: 'Edit Artifact' },
+
+  // Channels (the 5 routine-dispatch tools)
+  notify: { icon: Bell, displayName: 'Notify User' },
+  inbox_add: { icon: Inbox, displayName: 'Inbox · Add' },
+  approval_queue: { icon: CheckSquare, displayName: 'Approval Queue' },
+  space_send: { icon: Send, displayName: 'Space · Send Message' },
+  webhook_post: { icon: Webhook, displayName: 'Webhook · Post' },
+
+  // Data (will hit table shape renderer for {rows, columns})
+  read_data: { icon: TableProperties, displayName: 'Read Data' },
+  aggregate_data: { icon: BarChart3, displayName: 'Aggregate Data' },
+  pivot_data: { icon: Filter, displayName: 'Pivot Data' },
+  trend_data: { icon: TrendingUp, displayName: 'Trend Data' },
+  distribution_data: { icon: PieChart, displayName: 'Distribution Data' },
+  export_data: { icon: Download, displayName: 'Export Data' },
+
+  // Documents — generate_csv had a server render block, fallback meta here too
+  generate_csv: { icon: FileSpreadsheet, displayName: 'Generate CSV' },
+
+  // Entities (typed CRUD store)
+  entity_create: { icon: PlusIcon, displayName: 'Entity · Create' },
+  entity_update: { icon: Edit3, displayName: 'Entity · Update' },
+  entity_get: { icon: Eye, displayName: 'Entity · Get' },
+  entity_list: { icon: Box, displayName: 'Entity · List' },
+  entity_search: { icon: Search, displayName: 'Entity · Search' },
+
+  // Findings (agent observability)
+  record_finding: { icon: Lightbulb, displayName: 'Record Finding' },
+  promote_finding: { icon: ArrowUpCircle, displayName: 'Promote Finding' },
+  dismiss_finding: { icon: XCircleIcon, displayName: 'Dismiss Finding' },
+
+  // Firecrawl (will hit markdown shape renderer for content)
+  firecrawl_scrape: { icon: Globe, displayName: 'Firecrawl · Scrape' },
+  firecrawl_crawl: { icon: Network, displayName: 'Firecrawl · Crawl' },
+
+  // Google Workspace — markdown→docs upload (others have rich renderers)
+  docs_create_from_markdown: { icon: FilePlus2, displayName: 'Docs · Create from Markdown' },
+
+  // Memory (multi-entry — distinct from the simpler memory.tsx renderers)
+  memory_search: { icon: Search, displayName: 'Memory · Search' },
+  memory_add: { icon: Brain, displayName: 'Memory · Add' },
+  memory_update: { icon: Edit3, displayName: 'Memory · Update' },
+  memory_remove: { icon: Trash2, displayName: 'Memory · Remove' },
+  load_memory: { icon: BookOpen, displayName: 'Memory · Load' },
+
+  // Search (web_search has a domain renderer for search.tsx — this is the
+  // fallback when the registry doesn't recognise the variant)
+  web_search: { icon: Search, displayName: 'Web Search' },
 }
 
 /**

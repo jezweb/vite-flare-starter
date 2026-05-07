@@ -9,6 +9,7 @@
  * generate CSV (which Excel opens natively).
  */
 import { z } from 'zod'
+import { FileType, FileSpreadsheet } from 'lucide-react'
 import {
   Document, Packer, Paragraph, TextRun, HeadingLevel,
   Table, TableRow, TableCell, WidthType,
@@ -146,6 +147,16 @@ Content is an array of blocks:
       return { error: error instanceof Error ? error.message : String(error) }
     }
   },
+  render: {
+    icon: FileType,
+    displayName: 'Generate DOCX',
+    summary: (output) => {
+      const o = output as { title?: string; sizeBytes?: number; error?: string }
+      if (o?.error) return 'error'
+      const kb = o?.sizeBytes ? Math.round(o.sizeBytes / 1024) : null
+      return o?.title ? (kb ? `${o.title} · ${kb} KB` : o.title) : null
+    },
+  },
 }
 
 // ─── generate_csv ────────────────────────────────────────────────
@@ -199,6 +210,16 @@ export const generateCsvDefinition: ToolDefinition<
     } catch (error) {
       return { error: error instanceof Error ? error.message : String(error) }
     }
+  },
+  render: {
+    icon: FileSpreadsheet,
+    displayName: 'Generate CSV',
+    summary: (output) => {
+      const o = output as { title?: string; rowCount?: number; error?: string }
+      if (o?.error) return 'error'
+      const rows = o?.rowCount != null ? `${o.rowCount.toLocaleString()} rows` : null
+      return o?.title ? (rows ? `${o.title} · ${rows}` : o.title) : null
+    },
   },
 }
 

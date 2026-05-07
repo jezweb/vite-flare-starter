@@ -56,12 +56,42 @@ When editing or adding tools in this transitional state:
    - Flag in the PR / commit message that Phase 0 would consolidate these
    - Do NOT invent a third shape
 
+## Rendering coverage requirement
+
+Every tool must satisfy at least one of these so it doesn't drop to a
+generic-wrench JSON dump in the chat transcript:
+
+1. **`_ui` marker output** — tool returns `{ _ui: 'show_*', ... }` and is
+   handled by `client/modules/chat/components/chat-ui/ChatUiElement.tsx`
+   or `InputTakeover.tsx`. Suits agent-authored interactive elements.
+2. **Output matches a registered shape renderer** in
+   `client/modules/chat/components/tool-renderers/shapes.tsx` — stdout/
+   stderr/exitCode → terminal block, image URLs → preview, markdown
+   bodies → prose, `{rows, columns}` → table. Free rich UX with no
+   per-tool client code.
+3. **Bespoke domain renderer** registered in
+   `client/modules/chat/components/tool-renderers/index.ts` — for
+   product-critical UX where generic shapes can't capture the domain
+   (Gmail thread, calendar grid, etc.).
+4. **At minimum a `render` block** with `icon`, `displayName`, and a
+   `summary(output)` string — appears in `defaults.tsx` so the tool
+   gets a polished pill even if the body falls to JSON.
+
+Run `pnpm tool-coverage` (script TBD when added) to audit current
+state. Aim ≥ 75% rich coverage across the registry.
+
+Brains-trust origin (2026-05-07): three-of-four reviewers converged on
+shape renderers as the right architecture over either bulk-bespoke or
+universal `_ui`. See `.jez/audits/2026-05-07-tool-ui-and-connectors-
+brains-trust.md` for the full reasoning.
+
 ## When this rule fires
 
 - Request to "add a new tool"
 - Editing a tool renderer separately from its server execute
 - Any plan that involves touching 2+ files for one logical tool feature
 - Model reports "raw JSON dump" for a tool in the chat UI
+- Tool returns an output shape that doesn't match any rendered shape
 
 ## Linked plans
 
