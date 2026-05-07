@@ -2,6 +2,238 @@
 
 All notable changes to `vite-flare-starter`.
 
+## v1.9.0 — 2026-05-07
+
+Two-week sprint covering: a new Knowledge primitive, voice mode for the
+chat agent, the brains-trust review pattern, a tool-UI rendering tier
+that auto-upgrades the long tail, the durable batch-task swarm, and
+half a dozen cross-project ports. ~30 commits / 628 changes since
+v1.8.0. Live at <https://vite-flare-starter.webfonts.workers.dev>.
+
+### Added — Knowledge module (long-form indexed reference docs)
+
+Third primitive in the agent context layer, sitting between **memories**
+(small structured facts, ≤8KB) and **skills** (procedures with
+progressive-disclosure resources). Knowledge docs are plain reference
+content the agent applies without performing it as a procedure.
+
+- D1 `knowledge_documents` table with `(scope, scopeId)` discriminator
+  matching memories' shape, `injection_mode` enum
+  (`always` | `on_demand` | `disabled`), `format` enum
+  (`markdown` | `json` | `text`), JSON `tags`, `estimatedTokens`.
+- FTS5 virtual table for full-text search; AI/AU/AD triggers maintain
+  the index. `AFTER UPDATE OF title, summary, body, tags` so
+  metadata-only PATCHes don't churn the index.
+- REST routes at `/api/knowledge` (CRUD + search + catalog + budget).
+  List endpoint omits body by default (`?include=body` to opt in).
+  Hard-cap 256KB per doc, soft-cap 100KB.
+- Two chat tools: `knowledge_search` (BM25-ranked FTS5) and
+  `load_knowledge` (returns body wrapped in `<knowledge_content>` for
+  compaction-guard preservation).
+- `chat-agent.ts` section 8c: always-mode bodies inject as
+  "Active Knowledge" extraSection; on-demand entries inject as
+  "Available Knowledge" catalog with `(id: ...)` references.
+  Server-side cap at 50K total always-active tokens with a truncation
+  notice appended to the prompt.
+- `/dashboard/knowledge` list page (cards/list toggle, FTS5 filter,
+  always-active token-budget banner) and `/dashboard/knowledge/:id`
+  editor (split-pane, scope picker, injection-mode + format selectors,
+  comma-separated tag input, live token estimate, dirty-tracking).
+- `VITE_FEATURE_KNOWLEDGE` flag (default ON), nav entry under Setup
+  with `BookOpen` icon.
+
+### Added — Voice mode (push-to-talk + auto-TTS)
+
+Conversational voice IO around the existing ChatAgent. Distinct from
+the older `VoiceDictationButton` (streaming STT into the input field
+via DO+WS) — voice mode adds **AUTO-TTS for every assistant reply**
+and one-shot transcribe via HTTP, no Durable Object.
+
+- Server: `voice-tts.ts` wraps Workers AI Aura 2 (free default) +
+  ElevenLabs (opt-in via `ELEVENLABS_API_KEY`). Aura speaker validated
+  against the `AURA2_SPEAKERS` enum; bad input falls back to default.
+- Server: `voice-routes.ts` at `/api/voice` — POST `/transcribe`
+  (multipart audio → Nova 3 → text), POST `/tts` (JSON → audio/mpeg),
+  GET `/voices` (capability discovery).
+- Client: `useVoiceChat` hook implements the full state machine
+  (idle → listening → transcribing → speaking → idle) with `MediaRecorder`
+  (webm-opus per Nova 3 binding requirement), `AbortController` +
+  25s timeout on both fetches, race-condition-safe via session counter,
+  iOS Safari unlock via primed silent-MP3 audio element + `playsInline`.
+- Client: `VoiceModeButton` push-to-talk control with tap-to-toggle
+  and hold-to-record (250ms threshold), multi-touch guard via
+  `capturedPointerIdRef`, click suppression after pointer release so
+  successful utterances don't toggle the mode off, "voice mode
+  unsupported" tooltip on iOS Safari.
+- Reply-id burned only after `audio.play()` resolves so transient
+  failures don't permanently lose a reply.
+- Live verified end-to-end via TTS → ffmpeg webm-opus → transcribe
+  loopback (`afca706`).
+
+### Added — Brains-trust review pattern
+
+After every non-trivial build, run a **multi-reviewer code review** via
+2-4 frontier models (default panel: GPT-5.5 + Opus 4.7 + DeepSeek v4
+Pro + DeepSeek v4 Flash, ~$0.46-$0.81 per round). Cross-validated
+critical/high issues fixed before commit; cross-validated highs before
+deploy. Caught a guaranteed-fire voice bug, cross-user knowledge leaks,
+silent ElevenLabs billing footgun, iOS playsInline gap, and 13 other
+issues that single-pair review missed.
+
+Codified in `~/Documents/.jez/jeremy/CLAUDE.md` as a session-default
+rule. Audit artefacts in `.jez/audits/2026-05-07-*`.
+
+### Added — Tool UI rendering tier (shape renderers)
+
+`tool-renderers/shapes.tsx` — 4 generic renderers that match by
+**output shape** rather than tool name:
+
+- `{ stdout, stderr, exitCode }` → terminal block with copy button +
+  exit-code badge (covers `run_python`, `run_shell`, `run_js`)
+- `{ imageUrl | dataUrl | url(image-ext) }` → inline image preview
+  with width×height + format badges (covers `browser_screenshot`,
+  `generate_image`, `video_frame`)
+- `{ markdown | content | body }` (≥80 chars + title or markdown
+  markers) → prose viewer with frontmatter expand, char/token count
+- `{ rows: [Object], columns? }` → data table with col detection,
+  50-row preview, total counter (covers data tools, sheets, many MCP)
+
+Auto-upgrades ~30 long-tail tools to rich UX with **zero per-tool
+client code**. Registered AFTER bespoke renderers, BEFORE defaults.
+
+`tool-renderers/skills-knowledge.tsx` — bespoke views for
+`knowledge_search`, `list_skills`, `load_skill`, `load_knowledge` with
+title + scope + tag pills + copy-able body, strips agent-facing
+compaction tags.
+
+`scripts/tool-coverage.mjs` + `pnpm tool-coverage` — audit script that
+walks server tool defs vs client renderers + defaults; exits non-zero
+on any bare-wrench tool. Coverage went from **43% rich + 21% bare** →
+**43% bespoke + 0% bare** (live UI is +25-30% from shape renderers).
+
+### Added — Connector catalog seed (post-brains-trust)
+
+Catalog grew from 1 entry (Australian Business Register) to **7**
+(Slack, Notion, GitHub, Linear, Stripe, Airtable + ABR). Each entry
+has a new `capabilities: string[]` for "what your AI can do" bullets
+and `source` attribution (e.g. "via Smithery"). Header comment warns
+fork-owners to verify URLs before relying.
+
+UI changes:
+- "Browse apps" → **"Add an integration"**
+- "Add custom" → **"Connect by URL"**
+- Empty state: benefit-led copy ("Connect Slack and your AI can read
+  channels, post updates, find messages…")
+- Modal: per-entry capability bullets matching the Workspace card
+  pattern
+- "MCP" purged from primary user-facing copy (kept in one HelpDisclosure)
+- First-connection toast suggesting an example prompt, anchored on
+  localStorage
+
+`docs/mcp-connectors.md` refreshed with the 2026 registry landscape
+(Smithery 7K+, Official MCP Registry, FastMCP, Cloudflare's 16
+first-party MCP servers documented for fork-developer use).
+
+### Added — `batch-tasks` durable swarm (Cloudflare Workflows)
+
+Process N items in parallel windows of 8 with per-item retry +
+exponential backoff. Used via the `start_batch_task` chat tool ("for
+each of these 50 PDFs, extract X"). Item content loaded from R2,
+non-text docs converted via `env.AI.toMarkdown`. Approval-gated above
+5 items.
+
+### Added — `with_review` tool (Worker→Reviewer quality loop)
+
+Cheap worker drafts → smarter reviewer scores via APPROVE / REVISE /
+REJECT verdicts → worker rewrites with notes → cap at `max_iters` with
+optional escalation. Reviewer criteria from a Skill (`review-output`
+ships bundled) or inline prompt. Composes with `start_batch_task` for
+"do 50 things, but quality-gate each output."
+
+### Added — Hybrid memory recall scoring
+
+`agentRecall` now ranks via
+`0.55*sim + 0.20*importance + 0.15*recency + 0.10*frequency`.
+`RECALL_WEIGHTS` exposed as a constant; importance optional on
+`agentRemember`. Frequency reserved at 0 until Vectorize counter
+support lands.
+
+### Added — `find_tools` + `list_tools` meta-tools
+
+`find_tools(query)` keyword-searches with per-token scoring (multi-word
+queries work properly); `list_tools(category)` paginates by name prefix
+(e.g. `gmail_`). Both core tools — always active in the chat agent's
+`prepareStep`. Progressive tool disclosure for the 140-tool registry.
+
+### Added — Cross-project ports (5 + 2 + 2)
+
+Lifted patterns from goanna, rightcover, kindling, and crosbe-ai:
+
+- **EXIF metadata stripping** for image uploads (kindling) — gated
+  by `STRIP_IMAGE_METADATA` env var
+- **OG metadata scraper** (kindling) — adapted with a vfs UA
+- **Domain reviewer skills** — `review-email-tone`, `review-summary-faithfulness`, `review-code-security`
+- **Compaction-guard checklist** in `docs/AGENTS.md`
+- **Static/dynamic prompt split** verification (fixes Anthropic
+  prompt-cache poisoning when current date/time is in the system field)
+- **Per-tool telemetry table** + `/tool-usage` observability endpoint
+- **`agent-asks-tasks` skill** (always_active goanna pattern) for
+  durable agent ask + task logs
+- **`caretaker` skill** — day-of-week rotating outward sweep
+  (Mon=connections / Tue=routines / Wed=skills / etc.)
+- **`reverie` skill** — bounded inward consolidation when an agent
+  has had N consecutive quiet runs
+
+### Changed — Skills polish
+
+- Side-by-side live preview in Source tab (Tier 2.2)
+- Drop Overview tab; default to Edit
+- Edit-from-Overview per-section deep-link to Source
+- Save state shows "Saved"; diff cards collapse context
+- Hide meta-skills (`disable_model_invocation: true`) from the
+  user-facing catalog
+- Skills + filter row + surface artifacts under Builder
+
+### Fixed — Safety patches + binding-shape gotchas
+
+- 8 destructive chat tools were missing approval gates; added
+  `needsApproval: true` to each (`e3a5488`)
+- Aura 2 binding rejects `container='none'` when `encoding='mp3'` —
+  removed; broadened response parser to handle ArrayBuffer /
+  ReadableStream / Uint8Array shapes
+- Nova 3 needs multipart `body` not raw ArrayBuffer — wrapped in
+  FormData (same trick as `audio/routes.ts`)
+- Tool-search FTS query missed reserved keywords (NOT/OR/-/etc) —
+  rewrote to phrase-wrap each token
+- Knowledge `org` scope was unconditionally allowed — denied until
+  Phase 5 lands real membership
+- Knowledge catalog/budget endpoints accepted attacker projectId —
+  validated via `checkScopeAccess`
+- Knowledge chat tool added `ctx.projectId` without ownership
+  intersection — fixed
+- Disabled knowledge docs were searchable+loadable by agent — filtered
+- iOS Safari TTS `play()` after `await fetch()` rejected with
+  `NotAllowedError` — added `unlockAudio()` primed inside the toggle
+  gesture; reuse element via `.src` swap
+- iOS Safari `MediaRecorder` doesn't support webm — `pickMimeType`
+  returns null + UI shows "voice mode unsupported" tooltip
+- Auto-TTS reply-id burned BEFORE play succeeded — silent data loss
+  on transient failures; fixed
+- ElevenLabs default flip on env-key set was a billing footgun — Aura
+  is now unconditional default
+
+### Internal
+
+- `runModelText` helper extracted for the
+  workers-ai-provider/Anthropic raw call patterns
+- `resolveR2Keys` simplified
+- New `.claude/rules/one-file-tool-definitions.md` extension: every
+  tool must satisfy one of (`_ui` marker / matches a shape / bespoke
+  renderer / at-minimum default meta)
+- Audits saved at `.jez/audits/2026-05-{06,07}-*` for full traceability
+
+---
+
 ## 2026-05-02
 
 ### Added — AdminAgent v1 (gh #49)
