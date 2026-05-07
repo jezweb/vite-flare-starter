@@ -60,6 +60,81 @@ Pick the next AVAILABLE task in ID order. Mark it in-progress in your iteration 
 
 *(Append entries here. Newest at top.)*
 
+### Bail — 2026-05-07T03:06Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-07T02:09Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED). Note: local main was diverged from origin/main (orphan-chain issue); synced local to origin/main via checkout -B before this entry.
+
+### Bail — 2026-05-07T01:07Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-07T00:12Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-06T23:13Z
+Bailed — past 2am local (23:13 UTC > 16:00 UTC cutoff) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-06T22:08Z
+Bailed — past 2am local (22:08 UTC > 16:00 UTC cutoff) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-06T20:04Z
+Bailed — past 2am local (20:04 UTC > 16:00 UTC cutoff) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-06T19:08Z
+Bailed — past 2am local (19:08 UTC > 16:00 UTC cutoff) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-06T18:08Z
+Bailed — past 2am local (18:08 UTC > 16:00 UTC cutoff) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-06T17:04Z
+Bailed — past 2am local (17:04 UTC > 16:00 UTC cutoff) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED). Note: local main and origin/main diverged into unrelated orphan chains; local bail commits backed up to branch agent-local-chain-2026-05-06 on origin.
+
+### Bail — 2026-05-06T16:02Z
+Bailed — past 2am local (16:02 UTC > 16:00 UTC cutoff) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-06T15:08Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-06T14:07Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-06T13:10Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-06T12:07Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-06T11:10Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-06T10:03Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-06T08:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-06T07:06Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-06T06:08Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-06T05:03Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-06T04:05Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-06T03:05Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-06T02:07Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-06T01:09Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
 ### Bail — 2026-05-06T00:05Z
 Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
 
