@@ -60,6 +60,9 @@ Pick the next AVAILABLE task in ID order. Mark it in-progress in your iteration 
 
 *(Append entries here. Newest at top.)*
 
+### Bail — 2026-05-08T15:09Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED). Note: re-synced local main to origin/main (orphan chain recovery) before this entry.
+
 ### Bail — 2026-05-08T14:05Z
 Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
 
