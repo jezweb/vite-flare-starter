@@ -158,7 +158,7 @@ export interface StreamingChunk {
  *
  * @example
  * isExternalModel('openai/gpt-4o-mini')  // true
- * isExternalModel('anthropic/claude-3-5-sonnet-20241022')  // true
+ * isExternalModel('anthropic/claude-sonnet-4-6')  // true
  * isExternalModel('@cf/meta/llama-3.1-8b-instruct')  // false
  * isExternalModel('llama-8b')  // false (Workers AI alias)
  */
@@ -178,8 +178,8 @@ export function isExternalModel(modelId: string): boolean {
  * parseExternalModel('openai/gpt-4o-mini')
  * // { provider: 'openai', model: 'gpt-4o-mini' }
  *
- * parseExternalModel('anthropic/claude-3-5-sonnet-20241022')
- * // { provider: 'anthropic', model: 'claude-3-5-sonnet-20241022' }
+ * parseExternalModel('anthropic/claude-sonnet-4-6')
+ * // { provider: 'anthropic', model: 'claude-sonnet-4-6' }
  */
 export function parseExternalModel(modelId: string): {
   provider: ExternalProvider
