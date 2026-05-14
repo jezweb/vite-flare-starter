@@ -60,6 +60,9 @@ Pick the next AVAILABLE task in ID order. Mark it in-progress in your iteration 
 
 *(Append entries here. Newest at top.)*
 
+### Bail — 2026-05-14T08:06Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED). Note: detached HEAD recovered to main; pushed via GitHub MCP.
+
 ### Bail — 2026-05-14T07:13Z
 Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED). Note: pushed via GitHub MCP.
 
