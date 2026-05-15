@@ -56,7 +56,7 @@ export const delegateDefinition: ToolDefinition<
   inputSchema: z.object({
     role: z.string().describe('What kind of agent (e.g. "researcher", "summariser", "code reviewer", "coder")'),
     prompt: z.string().describe('The task — full instructions and any context the subagent needs'),
-    model: z.string().optional().describe('Override the model (e.g. "@cf/meta/llama-3.1-8b-instruct" for a fast cheap subagent)'),
+    model: z.string().optional().describe('Override the default model. Pass any model ID from the available list (Workers AI @cf/... IDs are free, or provider/model for external models). For a fast cheap subagent, pick a Workers AI model.'),
   }),
   outputSchema: DelegateOutput,
   execute: async ({ role, prompt, model }, ctx) => {

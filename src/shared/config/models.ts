@@ -18,10 +18,12 @@
 
 /** Free Workers AI models (always available). */
 export const WORKERS_AI_MODELS = [
-  '@cf/moonshotai/kimi-k2.6',
-  '@cf/google/gemma-4-26b-a4b-it',
-  '@cf/zai-org/glm-4.7-flash',
-  '@cf/qwen/qwq-32b',
+  '@cf/moonshotai/kimi-k2.6',          // 262K ctx, tools, flagship
+  '@cf/google/gemma-4-26b-a4b-it',     // 256K ctx, tools, flagship — also multimodal (vision)
+  '@cf/zai-org/glm-4.7-flash',         // 131K ctx, tools, flagship
+  '@cf/qwen/qwq-32b',                  // reasoning flagship
+  '@cf/openai/gpt-oss-120b',           // 128K ctx, tools, flagship — OpenAI open-weights
+  '@cf/openai/gpt-oss-20b',            // 128K ctx, tools, flagship — smaller GPT-OSS
 ] as const
 
 /**

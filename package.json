@@ -31,7 +31,9 @@
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
-    "tool-coverage": "node scripts/tool-coverage.mjs"
+    "tool-coverage": "node scripts/tool-coverage.mjs",
+    "doctor:auth": "node scripts/doctor-auth.mjs",
+    "doctor:models": "node scripts/doctor-models.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.69",

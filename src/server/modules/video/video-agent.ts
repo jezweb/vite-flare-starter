@@ -33,10 +33,13 @@ import { resolveModel } from '@/server/lib/ai/providers'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class VideoInputExample extends Agent<any> {
   /**
-   * Default vision model — Workers AI Gemma 3 27B supports vision and is
-   * free. Override per-frame by including `model` in the frame message.
+   * Default vision model — Gemma 4 26B is the current flagship Google
+   * multimodal model on Workers AI (gemma-3-27b-it was retired by
+   * Cloudflare 2026-05). Free tier. Override per-frame by including
+   * `model` in the frame message. See `workers-ai-gotchas.md` for the
+   * vision-API shape (chat-style multimodal, not classic image-to-text).
    */
-  private defaultModel = '@cf/google/gemma-3-27b-it'
+  private defaultModel = '@cf/google/gemma-4-26b-a4b-it'
 
   async onConnect(conn: Connection, _ctx: ConnectionContext): Promise<void> {
     console.log(

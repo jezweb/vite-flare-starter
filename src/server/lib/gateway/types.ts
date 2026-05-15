@@ -154,12 +154,12 @@ export interface StreamingChunk {
  * Check if a model ID represents an external (non-Workers AI) model
  *
  * External models use the format: "provider/model-name"
- * Workers AI models use: "@cf/vendor/model-name"
+ * Workers AI models use the format: "@cf/<vendor>/<model-name>"
  *
  * @example
  * isExternalModel('openai/gpt-4o-mini')  // true
  * isExternalModel('anthropic/claude-sonnet-4-6')  // true
- * isExternalModel('@cf/meta/llama-3.1-8b-instruct')  // false
+ * isExternalModel('@cf/meta/llama-3.1-8b-instruct-awq')  // false
  * isExternalModel('llama-8b')  // false (Workers AI alias)
  */
 export function isExternalModel(modelId: string): boolean {

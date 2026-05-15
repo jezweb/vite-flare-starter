@@ -413,13 +413,17 @@ reading source"*. Anywhere you'd say "click Skip", that's a UX bug.
 
 ## AI Module
 
-16 curated models across 8 providers. Edit `src/shared/config/models.ts`.
+18 curated models across 9 providers. Edit `src/shared/config/models.ts`.
 Metadata comes from a bundled snapshot of [models.flared.au](https://models.flared.au)
 + [ai.flared.au](https://ai.flared.au). `pnpm models:refresh` to update.
 
+**Cloudflare retires Workers AI models without notice** — run
+`pnpm doctor:models` to check every `@cf/...` ID in src/ against
+the live catalogue. Re-run after any Workers AI release announcement.
+
 | Source | Models | Keys |
 |---|---|---|
-| **Workers AI** (free) | Kimi K2.6 (default), Gemma 4 26B, GLM 4.7 Flash, QwQ 32B | none |
+| **Workers AI** (free) | Kimi K2.6 (default), Gemma 4 26B, GLM 4.7 Flash, QwQ 32B, GPT-OSS 120b, GPT-OSS 20b | none |
 | **Anthropic** | Claude Opus 4.6, Sonnet 4.6, Haiku 4.5 | via OpenRouter |
 | **OpenAI** | GPT-5.4, GPT-5.4 mini | via OpenRouter |
 | **Google** | Gemini 3.1 Pro, Gemini 3 Flash | via OpenRouter |
@@ -551,6 +555,14 @@ Fork, modify, add your own.
 
 ## Auth
 
+**Debugging tip**: if a fork is hitting "OAuth completes but no
+session" or any other better-auth-on-Workers symptom, run `pnpm
+doctor:auth` before anything else. It checks the seven known
+trap-doors (wrangler flags, code patterns, secrets, D1 tables) at
+once and prints expected values for the things it can't read
+(secret contents, Google Cloud Console redirect URI). ~95% of
+fresh-fork auth issues are environmental, not code.
+
 - **OAuth-only by default** — set `ENABLE_EMAIL_LOGIN=true` for
   email/password.
 - Google OAuth with optional domain restriction via Google Cloud Console.
@@ -629,6 +641,8 @@ pnpm db:generate:named "x"  # Generate migration
 pnpm db:migrate:local       # Apply migrations locally
 pnpm db:migrate:remote      # Apply migrations to production
 pnpm models:refresh         # Update AI model catalogue from flared.au
+pnpm doctor:auth            # Diagnose better-auth setup — run before debugging "OAuth completes, no session". Read-only checks for wrangler flags, code patterns, secrets, D1 tables; prints manual-verification block for things we can't read (secret values, Google Cloud Console redirect URI).
+pnpm doctor:models          # Scan src/ for @cf/ Workers AI model IDs and compare against the live Cloudflare catalogue (via ai.flared.au). Catches deprecations before they 404 in production. Run after a Workers AI release blog post or any "models retired" announcement.
 pnpm test                   # Run unit tests (Vitest, runs in Workers pool)
 pnpm test:e2e               # Run Playwright killer-flow tests (live deploy by default)
 pnpm type-check             # Type check
