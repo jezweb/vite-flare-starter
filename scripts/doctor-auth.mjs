@@ -138,7 +138,7 @@ console.log(
 console.log(`${cl.dim}Read-only checks. Run before debugging "OAuth completes, no session".${cl.reset}`)
 
 // ── Check 1 ────────────────────────────────────────────────────────────────
-header(1, 7, 'wrangler.jsonc')
+header(1, 8, 'wrangler.jsonc')
 const wranglerPath = join(ROOT, 'wrangler.jsonc')
 let wrangler = null
 if (!existsSync(wranglerPath)) {
@@ -175,7 +175,7 @@ if (!existsSync(wranglerPath)) {
 }
 
 // ── Check 2 ────────────────────────────────────────────────────────────────
-header(2, 7, 'Server auth code patterns')
+header(2, 8, 'Server auth code patterns')
 const authPath = join(ROOT, 'src/server/modules/auth/index.ts')
 const authSrc = readSafe(authPath)
 if (!authSrc) {
@@ -203,7 +203,7 @@ if (!authSrc) {
 }
 
 // ── Check 3 ────────────────────────────────────────────────────────────────
-header(3, 7, 'Client SPA login race-condition fix')
+header(3, 8, 'Client SPA login race-condition fix')
 const signInPath = join(ROOT, 'src/client/modules/auth/SignInPage.tsx')
 const signInSrc = readSafe(signInPath)
 if (!signInSrc) {
@@ -223,7 +223,7 @@ if (!signInSrc) {
 }
 
 // ── Check 4 ────────────────────────────────────────────────────────────────
-header(4, 7, 'Deployed secrets')
+header(4, 8, 'Deployed secrets')
 const secretList = runCmd('npx', ['wrangler', 'secret', 'list'])
 if (!secretList.ok) {
   console.log(warn('Could not list secrets — wrangler not authenticated, or worker not deployed yet'))
@@ -324,14 +324,87 @@ function checkD1Tables(scopeFlag, label) {
   }
 }
 
-header(5, 7, 'D1 auth tables (remote)')
+header(5, 8, 'D1 auth tables (remote)')
 checkD1Tables('--remote', 'remote')
 
-header(6, 7, 'D1 auth tables (local)')
+header(6, 8, 'D1 auth tables (local)')
 checkD1Tables('--local', 'local')
 
-// ── Check 7 ────────────────────────────────────────────────────────────────
-header(7, 7, 'Manual verification (we can\'t read secret values from outside)')
+// ── Check 7: plugin-required user columns ─────────────────────────────────
+// Some better-auth plugins (lastLoginMethod) add columns to the user table
+// via their `schema:` export, and their before-create hooks try to write
+// to those columns on real OAuth callbacks. If the migrations don't add
+// the column, the INSERT silently fails and the adapter returns null,
+// surfacing as the opaque "unable_to_create_user" error two layers
+// downstream. Test-auth bypasses this because the plugin's before-hook
+// early-returns without a request context. Issue #67 was the worked example.
+//
+// Mapping is intentionally narrow — only plugins that affect the user
+// table need to appear here. Plugins with their own tables (organization,
+// passkey, magicLink) are covered by Check 5's table existence check.
+const PLUGIN_USER_COLUMNS = {
+  lastLoginMethod: ['lastLoginMethod'],
+}
+
+header(7, 8, 'Plugin-required user columns (remote)')
+if (!authSrc) {
+  console.log(warn('Cannot read auth/index.ts — skipping plugin column check'))
+} else if (!dbName || !D1_NAME_RE.test(dbName ?? '')) {
+  console.log(warn('No usable D1 database_name — skipping plugin column check'))
+} else {
+  // Detect which user-column-affecting plugins are loaded by looking
+  // for their invocation in the plugins array (e.g. `lastLoginMethod()`).
+  const loaded = Object.keys(PLUGIN_USER_COLUMNS).filter((p) =>
+    new RegExp(`\\b${p}\\s*\\(`).test(authSrc),
+  )
+  if (loaded.length === 0) {
+    console.log(dim('(No user-column-affecting plugins loaded — nothing to check)'))
+  } else {
+    const r = runCmd('npx', [
+      'wrangler',
+      'd1',
+      'execute',
+      dbName,
+      '--remote',
+      '--command',
+      "SELECT name FROM pragma_table_info('user')",
+      '--json',
+    ])
+    if (!r.ok) {
+      console.log(warn('Could not query remote D1 — skipping plugin column check'))
+      warnings.push('Could not check plugin columns')
+    } else {
+      let cols = []
+      try {
+        const j = JSON.parse(r.stdout)
+        cols = (j[0]?.results ?? []).map((row) => row.name)
+      } catch {
+        /* leave cols empty */
+      }
+      const colSet = new Set(cols)
+      let anyMissing = false
+      for (const plugin of loaded) {
+        const required = PLUGIN_USER_COLUMNS[plugin]
+        const missing = required.filter((c) => !colSet.has(c))
+        if (missing.length === 0) {
+          console.log(pass(`${plugin} plugin: ${required.join(', ')} present`))
+        } else {
+          anyMissing = true
+          console.log(fail(`${plugin} plugin: missing column(s) on user table: ${missing.join(', ')}`))
+          console.log(dim('OAuth INSERT will silently fail → "unable_to_create_user" (see issue #67)'))
+          console.log(dim('Fix: add ALTER TABLE user ADD COLUMN <name> text migration, then pnpm db:migrate:remote'))
+          issues.push(`${plugin} plugin requires user.${missing.join(', user.')} — missing`)
+        }
+      }
+      if (!anyMissing && loaded.length > 0) {
+        // Already passed individual lines, no need for a summary
+      }
+    }
+  }
+}
+
+// ── Check 8 ────────────────────────────────────────────────────────────────
+header(8, 8, 'Manual verification (we can\'t read secret values from outside)')
 const workerName = wrangler?.name ?? '<worker-name>'
 const customDomain = (wrangler?.routes ?? []).find((r) => r.custom_domain)?.pattern
 const expectedUrl = customDomain
@@ -358,7 +431,7 @@ if (issues.length === 0) {
     console.log(`${cl.yellow}${warnings.length} warning(s) above.${cl.reset}`)
   }
   console.log(
-    `${cl.dim}Still seeing "OAuth completes but no session"? Re-read [7/7] carefully — that's where ~95% of fresh-fork issues live.${cl.reset}`,
+    `${cl.dim}Still seeing "OAuth completes but no session"? Re-read [8/8] carefully — that's where ~95% of fresh-fork issues live.${cl.reset}`,
   )
   process.exit(0)
 } else {

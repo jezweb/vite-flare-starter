@@ -33,6 +33,19 @@ export const user = sqliteTable('user', {
    * Stored on the user table (better-auth requires camelCase column names).
    */
   memoryUpdateMode: text('memoryUpdateMode', { enum: ['ask', 'auto', 'never'] }).notNull().default('auto'),
+  /**
+   * Last login method used by this user — written by better-auth's
+   * `lastLoginMethod()` plugin's `databaseHooks.user.create.before` hook
+   * on real OAuth callbacks. Nullable: legacy users created before the
+   * column existed will have NULL until their next sign-in.
+   *
+   * Missing this column was the root cause of issue #67 — OAuth INSERT
+   * silently failed and the adapter returned null, surfacing as the
+   * opaque "unable_to_create_user" error. Test-auth doesn't trip the
+   * plugin's before-hook (no request context), so headless tests pass
+   * even when production OAuth is broken.
+   */
+  lastLoginMethod: text('lastLoginMethod'),
   createdAt: isoTimestamp('createdAt').notNull().$defaultFn(() => new Date()),
   updatedAt: isoTimestamp('updatedAt').notNull().$defaultFn(() => new Date()),
 })
