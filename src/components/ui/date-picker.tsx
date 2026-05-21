@@ -46,7 +46,7 @@ export function DatePicker({ value, onChange, placeholder = 'Pick a date', disab
             onChange?.(date)
             setOpen(false)
           }}
-          initialFocus
+          autoFocus
         />
       </PopoverContent>
     </Popover>

@@ -29,8 +29,8 @@
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
 
-    // Path Aliases
-    "baseUrl": ".",
+    // Path Aliases — TS 6+ resolves "./..." patterns relative to this tsconfig,
+    // so baseUrl is no longer needed (and is deprecated, removed in TS 7).
     "paths": {
       "@/*": ["./src/*"],
       "@/client/*": ["./src/client/*"],
