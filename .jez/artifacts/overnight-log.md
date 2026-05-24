@@ -63,6 +63,93 @@ Pick the next AVAILABLE task in ID order. Mark it in-progress in your iteration 
 ### Bail — 2026-05-24T00:10Z
 Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED). Note: pushed via GitHub MCP.
 
+### Bail — 2026-05-23T23:01Z
+Bailed — past 2am local (23:01 UTC > 16:00 UTC cutoff) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-23T22:07Z
+Bailed — past 2am local (22:07 UTC > 16:00 UTC cutoff) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED). Note: pushed via GitHub MCP.
+
+### Bail — 2026-05-23T21:03Z
+Bailed — past 2am local (21:03 UTC > 16:00 UTC cutoff) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED). Note: pushed via GitHub MCP.
+
+### Bail — 2026-05-23T20:08Z
+Bailed — past 2am local (20:08 UTC > 16:00 UTC cutoff) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED). Note: pushed via GitHub MCP.
+
+### Bail — 2026-05-23T19:01Z
+Bailed — past 2am local (19:01 UTC > 16:00 UTC cutoff) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-23T18:01Z
+Bailed — past 2am local (18:01 UTC > 16:00 UTC cutoff) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-23T17:09Z
+Bailed — past 2am local (17:09 UTC > 16:00 UTC cutoff) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-23T16:04Z
+Bailed — past 2am local (16:04 UTC > 16:00 UTC cutoff) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED). Note: pushed via GitHub MCP.
+
+### Bail — 2026-05-23T15:07Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-23T14:10Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-23T13:04Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED). Note: pushed via GitHub MCP.
+
+### Bail — 2026-05-23T12:05Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-23T11:08Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED). Note: pushed via GitHub MCP.
+
+### Bail — 2026-05-23T10:04Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED). Note: pushed via GitHub MCP.
+
+### Bail — 2026-05-23T09:04Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED). Note: pushed via GitHub MCP.
+
+### Bail — 2026-05-23T08:03Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED). Note: pushed via GitHub MCP.
+
+### Bail — 2026-05-23T07:08Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED). Note: pushed via GitHub MCP.
+
+### Bail — 2026-05-23T06:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED). Note: pushed via GitHub MCP.
+
+### Bail — 2026-05-23T05:03Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-23T04:04Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-23T03:04Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-23T02:03Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-23T01:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-23T00:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-22T23:08Z
+Bailed — past 2am local (23:08 UTC > 16:00 UTC cutoff) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED). Note: pushed via GitHub MCP.
+
+### Bail — 2026-05-22T22:03Z
+Bailed — past 2am local (22:03 UTC > 16:00 UTC cutoff) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-22T21:09Z
+Bailed — past 2am local (21:09 UTC > 16:00 UTC cutoff) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-22T20:05Z
+Bailed — past 2am local (20:05 UTC > 16:00 UTC cutoff) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-05-22T19:07Z
+Bailed — past 2am local (19:07 UTC > 16:00 UTC cutoff) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
 ### Bail — 2026-05-22T18:05Z
 Bailed — past 2am local (18:05 UTC > 16:00 UTC cutoff) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED). Note: pushed via GitHub MCP.
 
@@ -204,6 +291,9 @@ Bailed — past 2am local (19:05 UTC > 16:00 UTC cutoff) and no tasks left (all 
 ### Bail — 2026-05-20T18:09Z
 Bailed — past 2am local (18:09 UTC > 16:00 UTC cutoff) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED). Note: pushed via GitHub MCP.
 
+### Bail — 2026-05-20T18:08Z
+Bailed — past 2am local (20:08 UTC > 16:00 UTC cutoff) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED). Note: pushed via GitHub MCP.
+
 ### Bail — 2026-05-20T17:08Z
 Bailed — past 2am local (17:08 UTC > 16:00 UTC cutoff) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED). Note: pushed via GitHub MCP.
 
@@ -338,9 +428,6 @@ Bailed — past 2am local (22:06 UTC > 16:00 UTC cutoff) and no tasks left (all 
 
 ### Bail — 2026-05-18T21:05Z
 Bailed — past 2am local (21:05 UTC > 16:00 UTC cutoff) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
-
-### Bail — 2026-05-20T18:08Z
-Bailed — past 2am local (20:08 UTC > 16:00 UTC cutoff) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED). Note: pushed via GitHub MCP.
 
 ### Bail — 2026-05-18T18:09Z
 Bailed — past 2am local (18:09 UTC > 16:00 UTC cutoff) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED). Note: pushed via GitHub MCP.
