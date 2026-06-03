@@ -64,7 +64,6 @@ Output JSON only — no markdown fences, no commentary.`
 const ModelEnum = z
   .enum([
     '@cf/google/gemma-4-26b-a4b-it',
-    '@cf/google/gemma-3-12b-it',
     '@cf/moonshotai/kimi-k2.6',
     '@cf/meta/llama-4-scout-17b-16e-instruct',
     '@cf/mistralai/mistral-small-3.1-24b-instruct',
