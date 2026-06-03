@@ -28,6 +28,8 @@ export type AuthContext = {
       image?: string | null
       role: 'user' | 'manager' | 'admin'
     }
+    /** Current better-auth session id. Null for API-token auth. */
+    sessionId: string | null
     authMethod: 'session' | 'api-token' // Track which auth method was used
     tokenScopes: ApiTokenScope[] // Scopes granted by API token (empty for session auth)
   }
@@ -42,7 +44,7 @@ async function hashToken(token: string): Promise<string> {
   const data = encoder.encode(token)
   const hashBuffer = await crypto.subtle.digest('SHA-256', data)
   const hashArray = Array.from(new Uint8Array(hashBuffer))
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
 }
 
 /**
@@ -51,6 +53,54 @@ async function hashToken(token: string): Promise<string> {
 function parseScopes(scopesStr: string): ApiTokenScope[] {
   if (!scopesStr) return []
   return scopesStr.split(',').filter(Boolean) as ApiTokenScope[]
+}
+
+const API_TOKEN_ROUTE_SCOPES: Array<{
+  method: string
+  pattern: RegExp
+  scopes: ApiTokenScope[]
+}> = [
+  { method: 'PATCH', pattern: /^\/api\/settings\/profile\/?$/, scopes: ['profile:write'] },
+  { method: 'GET', pattern: /^\/api\/settings\/preferences\/?$/, scopes: ['settings:read'] },
+  { method: 'PATCH', pattern: /^\/api\/settings\/preferences\/?$/, scopes: ['settings:write'] },
+  { method: 'POST', pattern: /^\/api\/settings\/avatar\/?$/, scopes: ['profile:write'] },
+  { method: 'DELETE', pattern: /^\/api\/settings\/avatar\/?$/, scopes: ['profile:write'] },
+  { method: 'GET', pattern: /^\/api\/settings\/export\/?$/, scopes: ['settings:read'] },
+  { method: 'GET', pattern: /^\/api\/onboarding\/state\/?$/, scopes: ['settings:read'] },
+  { method: 'GET', pattern: /^\/api\/activity(?:\/.*)?$/, scopes: ['activity:read'] },
+  { method: 'GET', pattern: /^\/api\/notifications(?:\/.*)?$/, scopes: ['notifications:read'] },
+  {
+    method: 'PATCH',
+    pattern: /^\/api\/notifications\/[^/]+\/read\/?$/,
+    scopes: ['notifications:write'],
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/notifications\/read-all\/?$/,
+    scopes: ['notifications:write'],
+  },
+  { method: 'DELETE', pattern: /^\/api\/notifications(?:\/.*)?$/, scopes: ['notifications:write'] },
+  { method: 'GET', pattern: /^\/api\/ai\/models\/?$/, scopes: ['ai:use'] },
+  { method: 'POST', pattern: /^\/api\/ai\/test\/?$/, scopes: ['ai:use'] },
+  { method: 'GET', pattern: /^\/api\/chat\/(?:usage|catalog)\/?$/, scopes: ['chat:write'] },
+  {
+    method: 'POST',
+    pattern: /^\/api\/chat\/(?:extract|stream-extract)\/?$/,
+    scopes: ['chat:write'],
+  },
+]
+
+/**
+ * API tokens are deny-by-default. A route must be declared here before a
+ * bearer token can reach it; otherwise ordinary authenticated modules remain
+ * browser-session only even if they use authMiddleware.
+ */
+export function getApiTokenRouteScopes(method: string, path: string): ApiTokenScope[] | null {
+  const upperMethod = method.toUpperCase()
+  return (
+    API_TOKEN_ROUTE_SCOPES.find((entry) => entry.method === upperMethod && entry.pattern.test(path))
+      ?.scopes ?? null
+  )
 }
 
 /**
@@ -62,7 +112,13 @@ async function authenticateWithBearerToken(
   db: D1Database
 ): Promise<{
   userId: string
-  user: { id: string; email: string; name: string; image?: string | null; role: 'user' | 'manager' | 'admin' }
+  user: {
+    id: string
+    email: string
+    name: string
+    image?: string | null
+    role: 'user' | 'manager' | 'admin'
+  }
   scopes: ApiTokenScope[]
 } | null> {
   // Extract token from "Bearer <token>" format
@@ -98,7 +154,7 @@ async function authenticateWithBearerToken(
     .set({ lastUsedAt: new Date(), updatedAt: new Date() })
     .where(eq(schema.apiTokens.id, apiToken.id))
     .run()
-    .catch(err => console.error('Failed to update lastUsedAt:', err))
+    .catch((err) => console.error('Failed to update lastUsedAt:', err))
 
   return {
     userId: user.id,
@@ -120,8 +176,24 @@ export const authMiddleware = createMiddleware<AuthContext>(async (c, next) => {
     if (authHeader?.toLowerCase().startsWith('bearer ')) {
       const tokenAuth = await authenticateWithBearerToken(authHeader, c.env.DB)
       if (tokenAuth) {
+        const routeScopes = getApiTokenRouteScopes(c.req.method, c.req.path)
+        if (!routeScopes) {
+          return c.json({ error: 'API token access is not enabled for this endpoint' }, 403)
+        }
+        const hasRouteScope = routeScopes.some((scope) => tokenAuth.scopes.includes(scope))
+        if (!hasRouteScope) {
+          return c.json(
+            {
+              error: 'Insufficient permissions',
+              required: routeScopes,
+              granted: tokenAuth.scopes,
+            },
+            403
+          )
+        }
         c.set('userId', tokenAuth.userId)
         c.set('user', tokenAuth.user)
+        c.set('sessionId', null)
         c.set('authMethod', 'api-token')
         c.set('tokenScopes', tokenAuth.scopes)
         await next()
@@ -167,6 +239,7 @@ export const authMiddleware = createMiddleware<AuthContext>(async (c, next) => {
       image: session.user.image,
       role: (dbUser?.role as 'user' | 'manager' | 'admin') || 'user',
     })
+    c.set('sessionId', (session as unknown as { session?: { id?: string } }).session?.id ?? null)
     c.set('authMethod', 'session')
     c.set('tokenScopes', []) // Session auth has full access (empty = no restrictions)
 

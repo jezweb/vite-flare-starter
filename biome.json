@@ -7,12 +7,10 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "ignore": [
-      "node_modules",
-      "dist",
-      ".wrangler",
-      "drizzle"
-    ]
+    "ignore": ["node_modules", "dist", ".wrangler", "drizzle", ".jez", "scripts"]
+  },
+  "organizeImports": {
+    "enabled": false
   },
   "formatter": {
     "enabled": true,
@@ -24,11 +22,56 @@
     "enabled": true,
     "rules": {
       "recommended": true,
+      "a11y": {
+        "noLabelWithoutControl": "warn",
+        "noRedundantRoles": "warn",
+        "noSvgWithoutTitle": "warn",
+        "useButtonType": "warn",
+        "useFocusableInteractive": "warn",
+        "useKeyWithClickEvents": "warn",
+        "useMediaCaption": "warn",
+        "useSemanticElements": "warn"
+      },
+      "correctness": {
+        "noInvalidUseBeforeDeclaration": "warn",
+        "noUnnecessaryContinue": "warn",
+        "useExhaustiveDependencies": "warn",
+        "useJsxKeyInIterable": "warn"
+      },
       "suspicious": {
-        "noExplicitAny": "warn"
+        "noArrayIndexKey": "warn",
+        "noAssignInExpressions": "warn",
+        "noCommentText": "warn",
+        "noConfusingVoidType": "warn",
+        "noControlCharactersInRegex": "warn",
+        "noDoubleEquals": "warn",
+        "noEmptyInterface": "warn",
+        "noExplicitAny": "warn",
+        "noGlobalIsFinite": "warn",
+        "noGlobalIsNan": "warn",
+        "noImplicitAnyLet": "warn",
+        "noShadowRestrictedNames": "warn"
       },
       "complexity": {
-        "noForEach": "off"
+        "noForEach": "off",
+        "noUselessSwitchCase": "warn",
+        "useOptionalChain": "warn",
+        "useLiteralKeys": "off"
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "warn"
+      },
+      "style": {
+        "noInferrableTypes": "warn",
+        "noNonNullAssertion": "warn",
+        "noUnusedTemplateLiteral": "warn",
+        "noUselessElse": "warn",
+        "useExponentiationOperator": "warn",
+        "useImportType": "warn",
+        "useNumberNamespace": "warn",
+        "useSelfClosingElements": "warn",
+        "useSingleVarDeclarator": "warn",
+        "useTemplate": "warn"
       }
     }
   },
@@ -36,7 +79,7 @@
     "formatter": {
       "quoteStyle": "single",
       "trailingCommas": "es5",
-      "semicolons": "always",
+      "semicolons": "asNeeded",
       "arrowParentheses": "always"
     }
   },

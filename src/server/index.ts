@@ -150,6 +150,10 @@ export interface Env {
   SENTRY_DSN?: string
   SENTRY_ENVIRONMENT?: string
 
+  // Reference MCP server. Disabled by default because the scratchpad
+  // example is intentionally unauthenticated unless a fork adds OAuth.
+  ENABLE_SCRATCHPAD_MCP?: string
+
   // API token prefix (optional, for rebranding)
   // Default: "vfs_" - change to hide framework identity
   // Example: "myapp_" (3-4 chars + underscore)
@@ -157,9 +161,9 @@ export interface Env {
 
   // AI Provider API keys (optional — set for the providers you want to use)
   // Workers AI is free and needs no key (uses env.AI binding)
-  ANTHROPIC_API_KEY?: string  // Claude models
-  OPENAI_API_KEY?: string     // GPT models
-  GOOGLE_AI_API_KEY?: string  // Gemini models
+  ANTHROPIC_API_KEY?: string // Claude models
+  OPENAI_API_KEY?: string // GPT models
+  GOOGLE_AI_API_KEY?: string // Gemini models
   OPENROUTER_API_KEY?: string // Any model via OpenRouter (single key)
 
   // Browser Rendering (optional — enables browser_* agent tools)
@@ -184,15 +188,20 @@ const app = new Hono<{ Bindings: Env }>()
 app.use('*', requestIdMiddleware)
 app.use('*', logger())
 app.use('*', securityHeaders)
-app.use('/api/*', cors({
-  origin: (origin, c) => {
-    // Use TRUSTED_ORIGINS if set, otherwise allow same-origin only
-    const trusted = (c.env.TRUSTED_ORIGINS as string | undefined)?.split(',').map(s => s.trim()) ?? []
-    if (trusted.length === 0) return origin // Same-origin: reflect the request origin
-    return trusted.includes(origin) ? origin : trusted[0]!
-  },
-  credentials: true,
-}))
+app.use(
+  '/api/*',
+  cors({
+    origin: (origin, c) => {
+      // Credentialed CORS is deny-by-default. Same-origin browser requests do
+      // not need CORS headers; cross-origin callers must be explicitly listed.
+      const trusted =
+        (c.env.TRUSTED_ORIGINS as string | undefined)?.split(',').map((s) => s.trim()) ?? []
+      if (trusted.length === 0) return null
+      return trusted.includes(origin) ? origin : null
+    },
+    credentials: true,
+  })
+)
 app.use('/api/*', rateLimiter)
 
 // Health check endpoint
@@ -497,13 +506,87 @@ const scratchpadMcpHandler = ScratchpadMcpAgent.serve('/mcp/scratchpad', {
   binding: 'ScratchpadMcpAgent',
 })
 
+type RequestSession = {
+  userId: string
+  sessionId: string | null
+}
+
+async function getRequestSession(env: Env, headers: Headers): Promise<RequestSession | null> {
+  try {
+    const auth = createAuth(env.DB, {
+      BETTER_AUTH_SECRET: env.BETTER_AUTH_SECRET,
+      BETTER_AUTH_URL: env.BETTER_AUTH_URL,
+      GOOGLE_CLIENT_ID: env.GOOGLE_CLIENT_ID,
+      GOOGLE_CLIENT_SECRET: env.GOOGLE_CLIENT_SECRET,
+      EMAIL_API_KEY: env.EMAIL_API_KEY,
+      EMAIL_FROM: env.EMAIL_FROM,
+      ENABLE_EMAIL_LOGIN: env.ENABLE_EMAIL_LOGIN,
+      ENABLE_EMAIL_SIGNUP: env.ENABLE_EMAIL_SIGNUP,
+      TRUSTED_ORIGINS: env.TRUSTED_ORIGINS,
+    })
+    const session = await auth.api.getSession({ headers })
+    const userId = session?.user?.id
+    if (!userId) return null
+    return {
+      userId,
+      sessionId: (session as unknown as { session?: { id?: string } }).session?.id ?? null,
+    }
+  } catch (err) {
+    console.error(JSON.stringify({ event: 'agent_route_auth_error', error: String(err) }))
+    return null
+  }
+}
+
+function jsonResponse(body: unknown, status: number): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+
+function parseAgentRoute(pathname: string): { agentName: string; instanceName: string } | null {
+  const parts = pathname.split('/').filter(Boolean)
+  if (parts[0] !== 'agents' || !parts[1] || !parts[2]) return null
+  return {
+    agentName: parts[1],
+    instanceName: decodeURIComponent(parts[2]),
+  }
+}
+
+function validateAgentAccess(pathname: string, session: RequestSession): Response | null {
+  const route = parseAgentRoute(pathname)
+  if (!route) return null
+
+  if (route.agentName === 'chat-agent') {
+    const match = route.instanceName.match(/^user-([^-].*?)-conv-(.+)$/)
+    const routeUserId = match?.[1]
+    if (!routeUserId) {
+      return jsonResponse({ error: 'Invalid chat agent instance name' }, 400)
+    }
+    if (routeUserId !== session.userId) {
+      return jsonResponse({ error: 'Forbidden' }, 403)
+    }
+  }
+
+  return null
+}
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext) {
     // MCP server routing first — /mcp/* paths are MCP protocol
     // traffic and don't go through Hono.
     const url = new URL(request.url)
     if (url.pathname.startsWith('/mcp/scratchpad')) {
+      if (env.ENABLE_SCRATCHPAD_MCP !== 'true') {
+        return jsonResponse({ error: 'Not Found' }, 404)
+      }
       return scratchpadMcpHandler.fetch(request, env, ctx)
+    }
+    if (url.pathname.startsWith('/agents/')) {
+      const session = await getRequestSession(env, request.headers)
+      if (!session) return jsonResponse({ error: 'Unauthorized' }, 401)
+      const accessError = validateAgentAccess(url.pathname, session)
+      if (accessError) return accessError
     }
     // Try Durable Object agent routing — any request matching
     // /agents/{agent-name-kebab-case}/{instance-name} is routed to the
@@ -551,7 +634,7 @@ export default {
     try {
       const { sweepIdleConversationsForMemory } = await import('./modules/memories/triggers')
       const result = await sweepIdleConversationsForMemory(
-        env as unknown as { DB: D1Database; AI: Ai },
+        env as unknown as { DB: D1Database; AI: Ai }
       )
       if (result.processed > 0) logs['memoryProcessed'] = result.processed
       if (result.errors > 0) logs['memoryErrors'] = result.errors
@@ -571,11 +654,13 @@ export default {
       const { processDueRoutines, sweepStaleRoutineRuns } = await import(
         './modules/routines/scheduler'
       )
-      const result = await processDueRoutines(env as unknown as { DB: D1Database; [k: string]: unknown })
+      const result = await processDueRoutines(
+        env as unknown as { DB: D1Database; [k: string]: unknown }
+      )
       if (result.fired > 0) logs['routinesFired'] = result.fired
       if (result.errors > 0) logs['routinesErrors'] = result.errors
       const sweep = await sweepStaleRoutineRuns(
-        env as unknown as { DB: D1Database; [k: string]: unknown },
+        env as unknown as { DB: D1Database; [k: string]: unknown }
       )
       if (sweep.swept > 0) logs['routinesStaleSwept'] = sweep.swept
     } catch (err) {

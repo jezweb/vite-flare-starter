@@ -92,6 +92,14 @@ interface RateLimitEntry {
 
 const rateLimitStore = new Map<string, RateLimitEntry>()
 
+export interface RateLimitCheck {
+  allowed: boolean
+  limit: number
+  remaining: number
+  resetAt: number
+  retryAfterSeconds?: number
+}
+
 /**
  * Clean up expired entries periodically (every 60 seconds)
  */
@@ -112,7 +120,7 @@ function cleanupExpiredEntries() {
  * Get client identifier for rate limiting
  * Uses CF-Connecting-IP header (set by Cloudflare) or fallback
  */
-function getClientIdentifier(c: any): string {
+function getClientIdentifier(c: { req: { header: (name: string) => string | undefined } }): string {
   // Cloudflare sets CF-Connecting-IP header
   const cfIp = c.req.header('CF-Connecting-IP')
   if (cfIp) return cfIp
@@ -122,6 +130,71 @@ function getClientIdentifier(c: any): string {
   if (xForwardedFor) return xForwardedFor.split(',')[0]?.trim() || 'localhost'
 
   return 'localhost'
+}
+
+export function consumeRateLimit({
+  key,
+  windowMs,
+  identifier,
+  routeKey,
+}: {
+  key: keyof typeof RATE_LIMITS
+  windowMs: number
+  identifier: string
+  routeKey: string
+}): RateLimitCheck {
+  cleanupExpiredEntries()
+
+  const limit = RATE_LIMITS[key]
+  const storeKey = `${routeKey}:${identifier}`
+  const now = Date.now()
+
+  let entry = rateLimitStore.get(storeKey)
+  if (!entry || entry.resetAt < now) {
+    entry = {
+      count: 0,
+      resetAt: now + windowMs,
+    }
+  }
+
+  entry.count++
+  rateLimitStore.set(storeKey, entry)
+
+  const remaining = Math.max(0, limit - entry.count)
+  if (entry.count > limit) {
+    return {
+      allowed: false,
+      limit,
+      remaining: 0,
+      resetAt: entry.resetAt,
+      retryAfterSeconds: Math.ceil((entry.resetAt - now) / 1000),
+    }
+  }
+
+  return {
+    allowed: true,
+    limit,
+    remaining,
+    resetAt: entry.resetAt,
+  }
+}
+
+export function rateLimitHeaders(check: RateLimitCheck): Record<string, string> {
+  return {
+    'X-RateLimit-Limit': String(check.limit),
+    'X-RateLimit-Remaining': String(check.remaining),
+    'X-RateLimit-Reset': String(Math.floor(check.resetAt / 1000)),
+    ...(check.retryAfterSeconds ? { 'Retry-After': String(check.retryAfterSeconds) } : {}),
+  }
+}
+
+export function rateLimitErrorBody(check: RateLimitCheck) {
+  const retryAfterSeconds = check.retryAfterSeconds ?? 0
+  return {
+    error: 'Too many requests',
+    message: `Rate limit exceeded. Try again in ${formatRetryAfter(retryAfterSeconds)}.`,
+    retryAfter: retryAfterSeconds,
+  }
 }
 
 /**
@@ -149,9 +222,7 @@ export const rateLimiter = createMiddleware<{ Bindings: Env }>(async (c, next) =
   let config = ENDPOINT_LIMITS[endpointKey]
   let patternKey = endpointKey
   if (!config) {
-    const patternHit = PATTERN_LIMITS.find(
-      (p) => p.method === method && p.pattern.test(path),
-    )
+    const patternHit = PATTERN_LIMITS.find((p) => p.method === method && p.pattern.test(path))
     if (patternHit) {
       config = patternHit.config
       patternKey = `${method}:${patternHit.displayPath}`
@@ -163,52 +234,26 @@ export const rateLimiter = createMiddleware<{ Bindings: Env }>(async (c, next) =
     return
   }
 
-  const limit = RATE_LIMITS[config.key]
   const identifier = getClientIdentifier(c)
-  const storeKey = `${patternKey}:${identifier}`
-  const now = Date.now()
-
-  // Get or create rate limit entry
-  let entry = rateLimitStore.get(storeKey)
-  if (!entry || entry.resetAt < now) {
-    // Create new entry or reset expired one
-    entry = {
-      count: 0,
-      resetAt: now + config.windowMs,
-    }
-  }
-
-  // Increment count
-  entry.count++
-  rateLimitStore.set(storeKey, entry)
+  const check = consumeRateLimit({
+    key: config.key,
+    windowMs: config.windowMs,
+    identifier,
+    routeKey: patternKey,
+  })
 
   // Check if limit exceeded
-  if (entry.count > limit) {
-    const retryAfterSeconds = Math.ceil((entry.resetAt - now) / 1000)
-
-    return c.json(
-      {
-        error: 'Too many requests',
-        message: `Rate limit exceeded. Try again in ${formatRetryAfter(retryAfterSeconds)}.`,
-        retryAfter: retryAfterSeconds,
-      },
-      429,
-      {
-        'Retry-After': String(retryAfterSeconds),
-        'X-RateLimit-Limit': String(limit),
-        'X-RateLimit-Remaining': '0',
-        'X-RateLimit-Reset': String(Math.floor(entry.resetAt / 1000)),
-      }
-    )
+  if (!check.allowed) {
+    return c.json(rateLimitErrorBody(check), 429, rateLimitHeaders(check))
   }
 
   // Continue with request
   await next()
 
   // Add rate limit headers to response
-  c.res.headers.set('X-RateLimit-Limit', String(limit))
-  c.res.headers.set('X-RateLimit-Remaining', String(Math.max(0, limit - entry.count)))
-  c.res.headers.set('X-RateLimit-Reset', String(Math.floor(entry.resetAt / 1000)))
+  for (const [name, value] of Object.entries(rateLimitHeaders(check))) {
+    c.res.headers.set(name, value)
+  }
 })
 
 /**

@@ -22,7 +22,7 @@ export const securityHeaders = createMiddleware<{ Bindings: Env }>(async (c, nex
   c.res.headers.set('X-XSS-Protection', '1; mode=block')
 
   // Permissions Policy (formerly Feature-Policy)
-  c.res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  c.res.headers.set('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=()')
 
   // Get content type to determine if CSP should be applied
   const contentType = c.res.headers.get('Content-Type') || ''
@@ -48,9 +48,6 @@ export const securityHeaders = createMiddleware<{ Bindings: Env }>(async (c, nex
 
   // HSTS - only in production
   if (c.env.NODE_ENV === 'production') {
-    c.res.headers.set(
-      'Strict-Transport-Security',
-      'max-age=31536000; includeSubDomains; preload'
-    )
+    c.res.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
   }
 })

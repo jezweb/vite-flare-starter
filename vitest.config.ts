@@ -5,6 +5,7 @@ import path from 'node:path'
 export default defineConfig({
   plugins: [
     cloudflareTest({
+      remoteBindings: false,
       wrangler: {
         configPath: './wrangler.jsonc',
       },
@@ -28,15 +29,8 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html', 'json'],
       reportsDirectory: './coverage',
-      include: [
-        'src/server/**/*.ts',
-        'src/shared/**/*.ts',
-      ],
-      exclude: [
-        'src/server/db/**',
-        'src/server/modules/*/db/**',
-        '**/*.d.ts',
-      ],
+      include: ['src/server/**/*.ts', 'src/shared/**/*.ts'],
+      exclude: ['src/server/db/**', 'src/server/modules/*/db/**', '**/*.d.ts'],
     },
   },
   resolve: {

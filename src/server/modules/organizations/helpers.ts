@@ -32,17 +32,17 @@ export interface ActiveOrg {
  * joins via raw SQL (avoiding a Drizzle schema for org/member tables
  * since those are owned by better-auth's adapter).
  */
-export async function getActiveOrg(
-  c: Context<AuthContext>,
-): Promise<ActiveOrg | null> {
+export async function getActiveOrg(c: Context<AuthContext>): Promise<ActiveOrg | null> {
   const userId = c.get('userId')
   if (!userId) return null
   const db = drizzle(c.env.DB)
-  // Single denormalised query: session → member → organization.
-  // sessionToken is the cookie value; better-auth uses the session
-  // table's `id` field as the lookup key for activeOrganizationId
-  // population. We rely on userId here to get the most recent active
-  // session — most users have one active session at a time.
+  const sessionId = c.get('sessionId')
+  if (!sessionId) return null
+
+  // Single denormalised query: current session → member → organization.
+  // better-auth stores activeOrganizationId on the session row. Using the
+  // exact request session avoids cross-device drift when a user has multiple
+  // active sessions with different org switcher state.
   const rows = (await db.all(
     sql`SELECT
           o.id   AS organizationId,
@@ -52,9 +52,10 @@ export async function getActiveOrg(
         FROM session s
         JOIN organization o ON o.id = s.activeOrganizationId
         JOIN member m       ON m.organizationId = o.id AND m.userId = ${userId}
-        WHERE s.userId = ${userId} AND s.activeOrganizationId IS NOT NULL
-        ORDER BY s.expiresAt DESC
-        LIMIT 1`,
+        WHERE s.id = ${sessionId}
+          AND s.userId = ${userId}
+          AND s.activeOrganizationId IS NOT NULL
+        LIMIT 1`
   )) as Array<{
     organizationId: string
     organizationName: string
@@ -80,10 +81,10 @@ export async function getActiveOrg(
 export async function getOrgRole(
   db: D1Database,
   userId: string,
-  organizationId: string,
+  organizationId: string
 ): Promise<OrgRole | null> {
   const rows = (await drizzle(db).all(
-    sql`SELECT role FROM member WHERE userId = ${userId} AND organizationId = ${organizationId} LIMIT 1`,
+    sql`SELECT role FROM member WHERE userId = ${userId} AND organizationId = ${organizationId} LIMIT 1`
   )) as Array<{ role: string }>
   const row = rows[0]
   return row ? (row.role as OrgRole) : null
@@ -95,14 +96,14 @@ export async function getOrgRole(
  */
 export async function listUserOrgs(
   db: D1Database,
-  userId: string,
+  userId: string
 ): Promise<Array<{ id: string; name: string; slug: string; role: OrgRole }>> {
   const rows = (await drizzle(db).all(
     sql`SELECT o.id, o.name, o.slug, m.role
         FROM organization o
         JOIN member m ON m.organizationId = o.id
         WHERE m.userId = ${userId}
-        ORDER BY o.name`,
+        ORDER BY o.name`
   )) as Array<{ id: string; name: string; slug: string; role: string }>
   return rows.map((r) => ({
     id: r.id,
@@ -124,7 +125,7 @@ export async function listUserOrgs(
  */
 export async function requireOrgRole(
   c: Context<AuthContext>,
-  allowedRoles: OrgRole[],
+  allowedRoles: OrgRole[]
 ): Promise<ActiveOrg | Response> {
   const org = await getActiveOrg(c)
   if (!org) {
@@ -133,7 +134,7 @@ export async function requireOrgRole(
   if (!allowedRoles.includes(org.role)) {
     return c.json(
       { error: `Insufficient role: requires ${allowedRoles.join(' or ')}, you are ${org.role}` },
-      403,
+      403
     )
   }
   return org

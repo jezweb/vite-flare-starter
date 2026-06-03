@@ -1,10 +1,10 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import tailwindcss from '@tailwindcss/vite';
-import { cloudflare } from '@cloudflare/vite-plugin';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
+import { cloudflare } from '@cloudflare/vite-plugin'
 
 // Read package.json for version injection
-import packageJson from './package.json';
+import packageJson from './package.json'
 
 // Vite 8 configuration — uses Rolldown (Rust-based bundler)
 // Documentation: https://vitejs.dev/config/
@@ -40,7 +40,7 @@ export default defineConfig({
   // Build configuration
   build: {
     outDir: 'dist',
-    sourcemap: true,
+    sourcemap: process.env['SOURCE_MAPS'] === 'true',
     chunkSizeWarningLimit: 1500,
     // Vite 8 uses rolldownOptions (Rolldown replaces Rollup)
     rollupOptions: {
@@ -51,7 +51,12 @@ export default defineConfig({
           if (id.includes('/streamdown/')) return 'streamdown'
           if (id.includes('/mermaid/')) return 'mermaid'
           if (id.includes('/cytoscape')) return 'cytoscape'
-          if (id.includes('@milkdown/') || id.includes('/milkdown/') || id.includes('/prosemirror-')) return 'milkdown'
+          if (
+            id.includes('@milkdown/') ||
+            id.includes('/milkdown/') ||
+            id.includes('/prosemirror-')
+          )
+            return 'milkdown'
           if (id.includes('/katex/')) return 'katex'
           // Vendor chunks
           if (id.includes('/react-router')) return 'react-router'
@@ -68,4 +73,4 @@ export default defineConfig({
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom'],
   },
-});
+})

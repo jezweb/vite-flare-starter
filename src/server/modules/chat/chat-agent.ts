@@ -46,10 +46,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { and, eq } from 'drizzle-orm'
 
 import type { Env } from '@/server/index'
-import type {
-  AgentContext as CanonicalAgentContext,
-  AgentUser,
-} from '@/shared/agent'
+import type { AgentContext as CanonicalAgentContext, AgentUser } from '@/shared/agent'
 import { nullTelemetry } from '@/shared/agent'
 
 import { tokenBudgetPrepareStep, computeActiveTools } from '@/server/lib/ai/prepare-step'
@@ -68,13 +65,15 @@ import { buildCacheableSystemPrompt } from '@/server/lib/ai/context'
 import { getMCPTools } from '@/server/lib/ai/mcp'
 import { getModel, DEFAULT_MODEL } from '@/server/lib/ai/models'
 import { listSkills, loadAlwaysActiveSkills } from '@/server/lib/ai/skills/registry'
-import {
-  listKnowledgeCatalog,
-  loadAlwaysActiveKnowledge,
-} from '@/server/modules/knowledge/storage'
+import { listKnowledgeCatalog, loadAlwaysActiveKnowledge } from '@/server/modules/knowledge/storage'
 import { trimHistoryToTokenBudget } from '@/server/lib/ai/trim-history'
 import { convertToMarkdown } from '@/server/lib/ai/documents'
 import { buildChatTools } from '@/server/modules/chat/tools'
+import {
+  consumeRateLimit,
+  rateLimitErrorBody,
+  rateLimitHeaders,
+} from '@/server/middleware/rate-limit'
 import { aiUsageLogs, aiToolCalls } from '@/server/modules/chat/db/schema'
 import { userMeta } from '@/server/modules/user-meta/db/schema'
 import { projects } from '@/server/modules/projects/db/schema'
@@ -114,7 +113,7 @@ function extractTitleFromMessage(msg: UIMessage | undefined): string {
   if (!msg) return 'New conversation'
   const parts = msg.parts as Array<{ type?: string; text?: string }> | undefined
   const textPart = parts?.find(
-    (p) => p?.type === 'text' && typeof p.text === 'string' && p.text.trim(),
+    (p) => p?.type === 'text' && typeof p.text === 'string' && p.text.trim()
   )
   if (textPart?.text) {
     const cleaned = stripSkillWrapper(textPart.text)
@@ -156,7 +155,7 @@ async function autoTitleConversation(
   env: Env,
   conversationId: string,
   userId: string,
-  messages: readonly UIMessage[],
+  messages: readonly UIMessage[]
 ): Promise<void> {
   try {
     const firstUser = messages.find((m) => m.role === 'user')
@@ -178,7 +177,7 @@ async function autoTitleConversation(
         {
           role: 'system',
           content:
-            'Summarise the user\'s intent from this chat exchange into a short, specific title (≤6 words, sentence case, no quotes or trailing punctuation). Reply with ONLY the title text.',
+            "Summarise the user's intent from this chat exchange into a short, specific title (≤6 words, sentence case, no quotes or trailing punctuation). Reply with ONLY the title text.",
         },
         { role: 'user', content: `USER: ${userText}\n\nASSISTANT: ${assistantText}\n\nTitle:` },
       ],
@@ -231,7 +230,7 @@ interface ChatPreferences {
 
 async function loadChatPreferences(
   db: D1Database,
-  userId: string,
+  userId: string
 ): Promise<ChatPreferences | null> {
   try {
     const row = await drizzle(db)
@@ -263,7 +262,7 @@ function formatChatPreferences(p: ChatPreferences): string {
     lines.push(
       p.style === 'concise'
         ? '- Response style: Concise — keep replies short and focused. Skip preamble.'
-        : '- Response style: Detailed — include context, reasoning, and worked examples.',
+        : '- Response style: Detailed — include context, reasoning, and worked examples.'
     )
   }
   if (p.tone) {
@@ -280,7 +279,7 @@ function formatChatPreferences(p: ChatPreferences): string {
   }
   if (p.confirmationMode) {
     lines.push(
-      '- Confirmation mode: ON — before calling any tool, briefly describe your plan in one sentence and ask the user to confirm. Only proceed after the user says yes (or equivalent).',
+      '- Confirmation mode: ON — before calling any tool, briefly describe your plan in one sentence and ask the user to confirm. Only proceed after the user says yes (or equivalent).'
     )
   }
   return lines.join('\n')
@@ -293,7 +292,7 @@ function formatChatPreferences(p: ChatPreferences): string {
 async function loadProject(
   db: D1Database,
   projectId: string,
-  userId: string,
+  userId: string
 ): Promise<{ name: string; systemPrompt: string | null; defaultModel: string | null } | null> {
   try {
     const row = await drizzle(db)
@@ -330,11 +329,11 @@ async function loadProject(
  */
 async function preprocessAttachments(
   env: Env,
-  messages: readonly UIMessage[],
+  messages: readonly UIMessage[]
 ): Promise<UIMessage[]> {
   const latestUserIndex = (() => {
     for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i]!.role === 'user') return i
+      if (messages[i]?.role === 'user') return i
     }
     return -1
   })()
@@ -351,7 +350,8 @@ async function preprocessAttachments(
     } as UIMessage
   })
 
-  const target = cloned[latestUserIndex]!
+  const target = cloned[latestUserIndex]
+  if (!target) return cloned
   const parts = target.parts as Array<{
     type: string
     url?: string
@@ -362,8 +362,8 @@ async function preprocessAttachments(
   }>
 
   for (let i = 0; i < parts.length; i++) {
-    const part = parts[i]!
-    if (part.type !== 'file') continue
+    const part = parts[i]
+    if (!part || part.type !== 'file') continue
     const mime = part.mediaType || ''
     // Images pass through — models with vision handle them natively.
     if (mime.startsWith('image/')) continue
@@ -398,9 +398,7 @@ async function preprocessAttachments(
             ? `[Audio transcription]:\n\n${transcript}`
             : '[Audio file attached but transcription returned no text.]'
         } catch (err) {
-          console.warn(
-            JSON.stringify({ event: 'audio_transcription_failed', error: String(err) }),
-          )
+          console.warn(JSON.stringify({ event: 'audio_transcription_failed', error: String(err) }))
           textContent =
             '[Audio file attached but transcription failed. Use the transcribe_audio tool to retry.]'
         }
@@ -416,7 +414,7 @@ async function preprocessAttachments(
           env as unknown as Parameters<typeof convertToMarkdown>[0],
           bytes,
           mime,
-          { filename: part.filename },
+          { filename: part.filename }
         )
         textContent = `[Attached file: ${attachmentLabel(part, bytes.length)}]\n\n${markdown}`
       }
@@ -466,7 +464,7 @@ export class ChatAgent extends AIChatAgent<Env> {
     const { userId, conversationId } = parseInstanceName(this.name)
     if (!userId || !conversationId) {
       throw new Error(
-        `ChatAgent instance name "${this.name}" doesn't match user-{userId}-conv-{conversationId}`,
+        `ChatAgent instance name "${this.name}" doesn't match user-{userId}-conv-{conversationId}`
       )
     }
     return { userId, conversationId }
@@ -474,16 +472,31 @@ export class ChatAgent extends AIChatAgent<Env> {
 
   override async onChatMessage(
     _onFinish: StreamTextOnFinishCallback<ToolSet>,
-    options?: OnChatMessageOptions,
+    options?: OnChatMessageOptions
   ): Promise<Response | undefined> {
     const { userId, conversationId } = this.resolveSession()
     const startTime = Date.now()
 
+    const rateLimit = consumeRateLimit({
+      key: 'CHAT',
+      windowMs: 60 * 60 * 1000,
+      identifier: userId,
+      routeKey: 'WS:ChatAgent:onChatMessage',
+    })
+    if (!rateLimit.allowed) {
+      return new Response(JSON.stringify(rateLimitErrorBody(rateLimit)), {
+        status: 429,
+        headers: {
+          'Content-Type': 'application/json',
+          ...rateLimitHeaders(rateLimit),
+        },
+      })
+    }
+
     // ─── 1. Read body params (client-sent custom data) ───────────────
     // routes.ts line 105-122 — same defensive parse + UUID regex.
     const body = (options?.body ?? {}) as Record<string, unknown>
-    const requestedModel =
-      typeof body['model'] === 'string' ? (body['model'] as string) : undefined
+    const requestedModel = typeof body['model'] === 'string' ? (body['model'] as string) : undefined
     // systemPrompt is intentionally server-controlled — client cannot override.
     // Forks: change the default in buildSystemPrompt baseInstructions below.
     const clientSystemPromptIgnored = undefined as undefined
@@ -504,8 +517,7 @@ export class ChatAgent extends AIChatAgent<Env> {
     // (user=owner + AssistantAgent always-replying) AND records an
     // activity log row.
     const isFirstUserMessage =
-      this.messages.filter((m) => m.role === 'user').length === 1 &&
-      !options?.continuation
+      this.messages.filter((m) => m.role === 'user').length === 1 && !options?.continuation
     const firstUserMsg = this.messages.find((m) => m.role === 'user')
 
     if (isFirstUserMessage && !this._conversationRowEnsured) {
@@ -514,8 +526,7 @@ export class ChatAgent extends AIChatAgent<Env> {
         // Trust the stored row for existing conversations; trust the client
         // for brand-new ones. `getProjectId` returns null when no row exists.
         const existingProjectId = await storage.getProjectId(conversationId, userId)
-        const effectiveProjectId =
-          existingProjectId !== null ? existingProjectId : clientProjectId
+        const effectiveProjectId = existingProjectId !== null ? existingProjectId : clientProjectId
 
         // onConflictDoNothing inside createConversationWithId makes this
         // idempotent for retried streams.
@@ -548,7 +559,7 @@ export class ChatAgent extends AIChatAgent<Env> {
             event: 'chat_conversation_lazy_create_failed',
             conversationId,
             error: String(err),
-          }),
+          })
         )
         // Don't throw — D1 projection is best-effort. The DO still owns
         // the conversation; sidebar listing is what suffers.
@@ -581,7 +592,7 @@ export class ChatAgent extends AIChatAgent<Env> {
           droppedCount: trim.droppedCount,
           summarised: !!trim.summary,
           estimatedTokensAfter: trim.estimatedTokens,
-        }),
+        })
       )
     }
     const trimmedMessages = trim.messages as UIMessage[]
@@ -626,7 +637,7 @@ export class ChatAgent extends AIChatAgent<Env> {
     const baseModel = await resolveModelForUser(
       this.env as unknown as Parameters<typeof resolveModelForUser>[0],
       { userId },
-      modelId,
+      modelId
     )
     const model = buildModel(baseModel, modelId)
 
@@ -639,12 +650,13 @@ export class ChatAgent extends AIChatAgent<Env> {
     const availableSkills = (
       await listSkills(this.env as { DB: D1Database; SKILLS?: R2Bucket }, userId)
     ).filter((s) => !s.disableModelInvocation)
-    const skillsCatalog = availableSkills.length > 0
-      ? availableSkills
-          .filter((s) => !s.alwaysActive)
-          .map((s) => `- **${s.name}**: ${s.description}`)
-          .join('\n')
-      : null
+    const skillsCatalog =
+      availableSkills.length > 0
+        ? availableSkills
+            .filter((s) => !s.alwaysActive)
+            .map((s) => `- **${s.name}**: ${s.description}`)
+            .join('\n')
+        : null
 
     // ─── 8b. Always-active skill bodies (baked baseline) ─────────────
     // These skills are loaded in full into the system prompt every turn
@@ -652,13 +664,14 @@ export class ChatAgent extends AIChatAgent<Env> {
     // persona, project glossary) the agent should apply unconditionally.
     const alwaysActiveSkills = await loadAlwaysActiveSkills(
       this.env as { DB: D1Database; SKILLS?: R2Bucket },
-      userId,
+      userId
     )
-    const baselineBlock = alwaysActiveSkills.length > 0
-      ? alwaysActiveSkills
-          .map((s) => `### Skill: ${s.name}\n\n${s.body.trim()}`)
-          .join('\n\n---\n\n')
-      : null
+    const baselineBlock =
+      alwaysActiveSkills.length > 0
+        ? alwaysActiveSkills
+            .map((s) => `### Skill: ${s.name}\n\n${s.body.trim()}`)
+            .join('\n\n---\n\n')
+        : null
 
     // ─── 8c. Knowledge — always-active bodies + on-demand catalog ───
     // Mirrors 8a/8b for skills. Long-form reference docs marked
@@ -695,33 +708,24 @@ export class ChatAgent extends AIChatAgent<Env> {
         this.env.DB,
         userId,
         safeProjectId,
-        null, // org scope — Phase 5
+        null // org scope — Phase 5
       )
-      knowledgeCatalog = await listKnowledgeCatalog(
-        this.env.DB,
-        userId,
-        safeProjectId,
-        null,
-      )
+      knowledgeCatalog = await listKnowledgeCatalog(this.env.DB, userId, safeProjectId, null)
     } catch (err) {
-      console.error(
-        JSON.stringify({ event: 'knowledge_load_failed', error: String(err) }),
-      )
+      console.error(JSON.stringify({ event: 'knowledge_load_failed', error: String(err) }))
     }
     const alwaysKnowledge = alwaysKnowledgeResult.docs
     const knowledgeTruncationNotice = alwaysKnowledgeResult.truncated
       ? `_Note: ${alwaysKnowledgeResult.truncated.count} always-active doc(s) (~${alwaysKnowledgeResult.truncated.tokensSkipped.toLocaleString()} tokens) were omitted to stay under the 50K-token system-prompt cap._`
       : null
-    const knowledgeBlock = alwaysKnowledge.length > 0
-      ? alwaysKnowledge
-          .map((k) => `### ${k.title}\n\n${k.body.trim()}`)
-          .join('\n\n---\n\n')
-      : null
-    const knowledgeCatalogBlock = knowledgeCatalog.length > 0
-      ? knowledgeCatalog
-          .map((k) => `- **${k.title}** (id: ${k.id}): ${k.summary}`)
-          .join('\n')
-      : null
+    const knowledgeBlock =
+      alwaysKnowledge.length > 0
+        ? alwaysKnowledge.map((k) => `### ${k.title}\n\n${k.body.trim()}`).join('\n\n---\n\n')
+        : null
+    const knowledgeCatalogBlock =
+      knowledgeCatalog.length > 0
+        ? knowledgeCatalog.map((k) => `- **${k.title}** (id: ${k.id}): ${k.summary}`).join('\n')
+        : null
 
     // ─── 9. Chat preferences (per-user prompt block) ─────────────────
     const chatPrefs = await loadChatPreferences(this.env.DB, userId)
@@ -757,7 +761,7 @@ export class ChatAgent extends AIChatAgent<Env> {
     }
     if (skillsCatalog) {
       extraSections['Available Skills'] = [
-        'Before answering, scan the skills below and load any that match the user\'s task. Specialist work (research, drafting, code review, document analysis, data extraction, comparing options, planning) almost always has a matching skill — call load_skill FIRST rather than improvising. If no skill matches, proceed normally.',
+        "Before answering, scan the skills below and load any that match the user's task. Specialist work (research, drafting, code review, document analysis, data extraction, comparing options, planning) almost always has a matching skill — call load_skill FIRST rather than improvising. If no skill matches, proceed normally.",
         '',
         'load_skill returns a <skill_content> block with full instructions; follow it, and use fs tools to read any listed resources on demand.',
         '',
@@ -766,7 +770,7 @@ export class ChatAgent extends AIChatAgent<Env> {
     }
     if (knowledgeCatalogBlock) {
       extraSections['Available Knowledge'] = [
-        "Reference documents available on demand. When the user asks about a topic these cover, call knowledge_search(query) to confirm relevance, then load_knowledge(id) to fetch the body. Prefer this over guessing — the answer is often in the KB already.",
+        'Reference documents available on demand. When the user asks about a topic these cover, call knowledge_search(query) to confirm relevance, then load_knowledge(id) to fetch the body. Prefer this over guessing — the answer is often in the KB already.',
         '',
         knowledgeCatalogBlock,
       ].join('\n')
@@ -807,14 +811,13 @@ export class ChatAgent extends AIChatAgent<Env> {
     // start of the latest user message instead, keeping the cache key
     // stable. Pre-fix this was inlined into the system prompt and
     // poisoned the cache every minute.
-    const { system: instructions, dynamic: dynamicPreamble } =
-      buildCacheableSystemPrompt({
-        baseInstructions: 'You are a helpful assistant.',
-        user: { name: userRecord.name ?? undefined, email: userRecord.email, role: userRecord.role },
-        currentDate: true,
-        timezone: 'Australia/Sydney',
-        extra: Object.keys(extraSections).length > 0 ? extraSections : undefined,
-      })
+    const { system: instructions, dynamic: dynamicPreamble } = buildCacheableSystemPrompt({
+      baseInstructions: 'You are a helpful assistant.',
+      user: { name: userRecord.name ?? undefined, email: userRecord.email, role: userRecord.role },
+      currentDate: true,
+      timezone: 'Australia/Sydney',
+      extra: Object.keys(extraSections).length > 0 ? extraSections : undefined,
+    })
 
     // ─── 13. Build toolset (chat tools + env-MCP + per-user MCP) ─────
     let tools: ToolSet = {}
@@ -839,12 +842,12 @@ export class ChatAgent extends AIChatAgent<Env> {
         availableSkillNames: availableSkills.map((s) => s.name),
       })
       const { tools: mcpTools, cleanup: envCleanup } = await getMCPTools(
-        this.env as unknown as Record<string, unknown>,
+        this.env as unknown as Record<string, unknown>
       )
       const { getUserMcpTools } = await import('@/server/lib/ai/user-mcp')
       const userMcp = await getUserMcpTools(
         this.env as unknown as Parameters<typeof getUserMcpTools>[0],
-        userId,
+        userId
       )
       mcpCleanup = async () => {
         await envCleanup()
@@ -856,19 +859,22 @@ export class ChatAgent extends AIChatAgent<Env> {
       const searchCatalog: SearchableTool[] = Object.entries(tools).map(([name, tool]) => ({
         name,
         description:
-          typeof tool === 'object' && tool && 'description' in tool && typeof tool.description === 'string'
+          typeof tool === 'object' &&
+          tool &&
+          'description' in tool &&
+          typeof tool.description === 'string'
             ? tool.description
             : name,
       }))
       const findTools = buildFindToolsTool(searchCatalog)
       tools['find_tools'] = toAiSdkTool(
         findTools as unknown as Parameters<typeof toAiSdkTool>[0],
-        agentCtx,
+        agentCtx
       )
       const listTools = buildListToolsTool(searchCatalog)
       tools['list_tools'] = toAiSdkTool(
         listTools as unknown as Parameters<typeof toAiSdkTool>[0],
-        agentCtx,
+        agentCtx
       )
     }
 
@@ -876,7 +882,9 @@ export class ChatAgent extends AIChatAgent<Env> {
     // Pair places_search with show_map for a proper map+cards UI.
     const hasPlacesTool = Object.keys(tools).some((t) => {
       const lower = t.toLowerCase()
-      return lower === 'places_search' || lower.includes('google_local_places') || lower === 'places'
+      return (
+        lower === 'places_search' || lower.includes('google_local_places') || lower === 'places'
+      )
     })
     let finalInstructions = instructions
     if (hasPlacesTool) {
@@ -911,7 +919,7 @@ export class ChatAgent extends AIChatAgent<Env> {
           return budgetResult
         }
         const discovered = extractDiscoveredToolNames(
-          opts.steps as Parameters<typeof extractDiscoveredToolNames>[0],
+          opts.steps as Parameters<typeof extractDiscoveredToolNames>[0]
         )
         const activeTools = computeActiveTools(tools, opts.messages, opts.steps, {
           coreToolNames: CORE_TOOL_NAMES,
@@ -946,7 +954,7 @@ export class ChatAgent extends AIChatAgent<Env> {
           event: 'chat_validate_ui_messages_failed',
           conversationId,
           error: String(err),
-        }),
+        })
       )
     }
 
@@ -969,9 +977,7 @@ export class ChatAgent extends AIChatAgent<Env> {
       system: finalInstructions,
       messages: messagesWithPreamble,
       tools,
-      stopWhen: modelConfig?.supportsTools
-        ? [stepCountIs(5), hasToolCall('done')]
-        : stepCountIs(1),
+      stopWhen: modelConfig?.supportsTools ? [stepCountIs(5), hasToolCall('done')] : stepCountIs(1),
       maxOutputTokens: modelConfig?.defaultMaxTokens ?? 16384,
       providerOptions,
       prepareStep: prepareStep as any,
@@ -988,7 +994,7 @@ export class ChatAgent extends AIChatAgent<Env> {
             toolName: toolCall.toolName,
             errorName: error instanceof Error ? error.name : 'UnknownError',
             errorMessage: error instanceof Error ? error.message : String(error),
-          }),
+          })
         )
         return null
       },
@@ -1037,12 +1043,12 @@ export class ChatAgent extends AIChatAgent<Env> {
                 model: modelId,
                 conversationId,
                 errors: errored.map((r) => ({ tool: r.toolName, error: r.toolError })),
-              }),
+              })
             )
           }
         } catch (err) {
           console.error(
-            JSON.stringify({ event: 'step_finish_telemetry_error', error: String(err) }),
+            JSON.stringify({ event: 'step_finish_telemetry_error', error: String(err) })
           )
         }
       },
@@ -1052,9 +1058,7 @@ export class ChatAgent extends AIChatAgent<Env> {
           try {
             await mcpCleanup()
           } catch (err) {
-            console.error(
-              JSON.stringify({ event: 'mcp_cleanup_failed', error: String(err) }),
-            )
+            console.error(JSON.stringify({ event: 'mcp_cleanup_failed', error: String(err) }))
           }
         }
 
@@ -1108,7 +1112,7 @@ export class ChatAgent extends AIChatAgent<Env> {
               error instanceof Error
                 ? { name: error.name, message: error.message, stack: error.stack }
                 : String(error),
-          }),
+          })
         )
         return sanitiseStreamError(error)
       },
@@ -1139,7 +1143,7 @@ export class ChatAgent extends AIChatAgent<Env> {
           event: 'chat_d1_projection_failed',
           conversationId,
           error: String(err),
-        }),
+        })
       )
     }
 
@@ -1151,10 +1155,9 @@ export class ChatAgent extends AIChatAgent<Env> {
     ) {
       // Auto-title — fire-and-forget. The sidebar query picks it up on
       // next render.
-      this.ctx
-        .waitUntil(
-          autoTitleConversation(this.env, conversationId, userId, this.messages as UIMessage[]),
-        )
+      this.ctx.waitUntil(
+        autoTitleConversation(this.env, conversationId, userId, this.messages as UIMessage[])
+      )
 
       // Reactive memory trigger (Phase 3 v2). Looks at the prior
       // conversation in this scope and queues memory extraction.
@@ -1177,7 +1180,7 @@ export class ChatAgent extends AIChatAgent<Env> {
         }
       } catch (err) {
         console.warn(
-          JSON.stringify({ event: 'memory_reactive_trigger_failed', error: String(err) }),
+          JSON.stringify({ event: 'memory_reactive_trigger_failed', error: String(err) })
         )
       }
     }

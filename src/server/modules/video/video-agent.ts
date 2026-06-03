@@ -28,6 +28,11 @@
 import { Agent, type Connection, type ConnectionContext, type WSMessage } from 'agents'
 import { generateText } from 'ai'
 import { resolveModel } from '@/server/lib/ai/providers'
+import {
+  consumeRateLimit,
+  rateLimitErrorBody,
+  rateLimitHeaders,
+} from '@/server/middleware/rate-limit'
 
 // Loosely typed Env — the agents base class expects Cloudflare.Env.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -42,15 +47,13 @@ export class VideoInputExample extends Agent<any> {
   private defaultModel = '@cf/google/gemma-4-26b-a4b-it'
 
   async onConnect(conn: Connection, _ctx: ConnectionContext): Promise<void> {
-    console.log(
-      JSON.stringify({ event: 'video_ws_connect', sessionId: this.name }),
-    )
+    console.log(JSON.stringify({ event: 'video_ws_connect', sessionId: this.name }))
     conn.send(
       JSON.stringify({
         type: 'welcome',
         sessionId: this.name,
         note: 'Send frames as { type: "frame", image: "data:image/jpeg;base64,...", prompt?: "..." }',
-      }),
+      })
     )
   }
 
@@ -78,10 +81,25 @@ export class VideoInputExample extends Agent<any> {
 
     if (data.type !== 'frame') return
 
-    if (!data.image || typeof data.image !== 'string') {
+    const rateLimit = consumeRateLimit({
+      key: 'CHAT',
+      windowMs: 60 * 60 * 1000,
+      identifier: this.name,
+      routeKey: 'WS:VideoInputExample:frame',
+    })
+    if (!rateLimit.allowed) {
       conn.send(
-        JSON.stringify({ type: 'error', message: 'frame requires image: data URL' }),
+        JSON.stringify({
+          type: 'error',
+          ...rateLimitErrorBody(rateLimit),
+          headers: rateLimitHeaders(rateLimit),
+        })
       )
+      return
+    }
+
+    if (!data.image || typeof data.image !== 'string') {
+      conn.send(JSON.stringify({ type: 'error', message: 'frame requires image: data URL' }))
       return
     }
 
@@ -90,7 +108,7 @@ export class VideoInputExample extends Agent<any> {
       const caption = await this.captionFrame(
         data.image,
         data.prompt,
-        data.model ?? this.defaultModel,
+        data.model ?? this.defaultModel
       )
       this.broadcast(
         JSON.stringify({
@@ -99,7 +117,7 @@ export class VideoInputExample extends Agent<any> {
           model: data.model ?? this.defaultModel,
           durationMs: Date.now() - start,
           ts: Date.now(),
-        }),
+        })
       )
     } catch (err) {
       console.error(
@@ -107,13 +125,13 @@ export class VideoInputExample extends Agent<any> {
           event: 'video_caption_error',
           sessionId: this.name,
           error: err instanceof Error ? err.message : String(err),
-        }),
+        })
       )
       conn.send(
         JSON.stringify({
           type: 'error',
           message: err instanceof Error ? err.message : String(err),
-        }),
+        })
       )
     }
   }
@@ -127,7 +145,7 @@ export class VideoInputExample extends Agent<any> {
   private async captionFrame(
     dataUrl: string,
     prompt: string | undefined,
-    modelId: string,
+    modelId: string
   ): Promise<string> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const env = this.env as any

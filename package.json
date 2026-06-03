@@ -28,8 +28,8 @@
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "type-check": "tsc --noEmit",
-    "lint": "biome check .",
-    "lint:fix": "biome check --write .",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
     "format": "biome format --write .",
     "tool-coverage": "node scripts/tool-coverage.mjs",
     "doctor:auth": "node scripts/doctor-auth.mjs",
@@ -159,6 +159,7 @@
   },
   "packageManager": "pnpm@9.0.0",
   "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
     "@cloudflare/vite-plugin": "^1.37.3",
     "@cloudflare/vitest-pool-workers": "^0.16.8",
     "@cloudflare/workers-types": "^4.20260521.1",
