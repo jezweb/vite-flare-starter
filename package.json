@@ -159,7 +159,7 @@
   },
   "packageManager": "pnpm@9.0.0",
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
+    "@biomejs/biome": "^2.4.16",
     "@cloudflare/vite-plugin": "^1.39.2",
     "@cloudflare/vitest-pool-workers": "^0.16.12",
     "@cloudflare/workers-types": "^4.20260603.1",

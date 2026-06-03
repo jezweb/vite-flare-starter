@@ -37,13 +37,13 @@
     <script>
       (function () {
         try {
-          var APP_ID = 'vite-flare-starter';
-          var stored = localStorage.getItem(APP_ID + '-theme');
-          var mode = stored || 'system';
+          const APP_ID = 'vite-flare-starter';
+          const stored = localStorage.getItem(APP_ID + '-theme');
+          let mode = stored || 'system';
           if (mode === 'system') {
             mode = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
           }
-          var root = document.documentElement;
+          const root = document.documentElement;
           if (mode === 'dark') root.classList.add('dark');
           else root.classList.remove('dark');
         } catch (_) {}

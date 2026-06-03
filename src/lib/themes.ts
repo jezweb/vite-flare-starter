@@ -65,10 +65,7 @@ export const THEME_OPTIONAL_VARIABLES = [
 ] as const
 
 /** All theme variables (core + optional). Kept for backwards-compat. */
-export const THEME_CSS_VARIABLES = [
-  ...THEME_CORE_VARIABLES,
-  ...THEME_OPTIONAL_VARIABLES,
-] as const
+export const THEME_CSS_VARIABLES = [...THEME_CORE_VARIABLES, ...THEME_OPTIONAL_VARIABLES] as const
 
 const themes: Record<ThemeScheme, ThemeColors> = {
   default: {
@@ -522,7 +519,9 @@ export function applyTheme(
   // Clear any inline overrides first so keys the new scheme doesn't set
   // fall back to the :root defaults in index.css (important for chart/sidebar
   // when switching from a custom theme that set them to a preset that doesn't).
-  THEME_CSS_VARIABLES.forEach((key) => root.style.removeProperty(`--${key}`))
+  THEME_CSS_VARIABLES.forEach((key) => {
+    root.style.removeProperty(`--${key}`)
+  })
 
   // Update CSS variables on :root (wrap with hsl() for Tailwind v4)
   Object.entries(colors).forEach(([key, value]) => {
@@ -552,7 +551,10 @@ export function applyTheme(
  * Returns the color values for a specific theme and mode
  * Useful for rendering theme previews in UI
  */
-export function getThemeColors(scheme: ThemeScheme, mode: 'light' | 'dark'): Record<string, string> {
+export function getThemeColors(
+  scheme: ThemeScheme,
+  mode: 'light' | 'dark'
+): Record<string, string> {
   return themes[scheme][mode]
 }
 
@@ -791,7 +793,7 @@ export const THEME_EXPORT_MIME = 'application/json'
  */
 export function mergeThemeEnvelope(
   envelope: { light?: Partial<CustomThemeColors>; dark?: Partial<CustomThemeColors> },
-  base?: { light?: CustomThemeColors; dark?: CustomThemeColors },
+  base?: { light?: CustomThemeColors; dark?: CustomThemeColors }
 ): { light: CustomThemeColors; dark: CustomThemeColors } {
   const baseLight = (base?.light ?? themes['default'].light) as unknown as CustomThemeColors
   const baseDark = (base?.dark ?? themes['default'].dark) as unknown as CustomThemeColors
@@ -808,8 +810,10 @@ export function mergeThemeEnvelope(
  * Either mode can be omitted — callers commonly have both.
  */
 export function buildThemeExport(
-  customTheme: { light?: Partial<CustomThemeColors>; dark?: Partial<CustomThemeColors> } | undefined,
-  name?: string,
+  customTheme:
+    | { light?: Partial<CustomThemeColors>; dark?: Partial<CustomThemeColors> }
+    | undefined,
+  name?: string
 ): ThemeExportEnvelope {
   return {
     version: 1,
@@ -832,7 +836,7 @@ export function serializeThemeExport(envelope: ThemeExportEnvelope): string {
  * so callers can show targeted error messages.
  */
 export function parseThemeImport(
-  json: string,
+  json: string
 ): { ok: true; envelope: ThemeExportEnvelope } | { ok: false; error: string } {
   let raw: unknown
   try {
@@ -863,9 +867,10 @@ export function parseThemeImport(
  */
 export function encodeThemeToURL(envelope: ThemeExportEnvelope): string {
   const json = JSON.stringify(envelope)
-  const b64 = typeof btoa === 'function'
-    ? btoa(unescape(encodeURIComponent(json)))
-    : Buffer.from(json, 'utf-8').toString('base64')
+  const b64 =
+    typeof btoa === 'function'
+      ? btoa(unescape(encodeURIComponent(json)))
+      : Buffer.from(json, 'utf-8').toString('base64')
   return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
 
@@ -874,14 +879,15 @@ export function encodeThemeToURL(envelope: ThemeExportEnvelope): string {
  * untrusted input; returns an error rather than throwing.
  */
 export function decodeThemeFromURL(
-  encoded: string,
+  encoded: string
 ): { ok: true; envelope: ThemeExportEnvelope } | { ok: false; error: string } {
   try {
     const b64 = encoded.replace(/-/g, '+').replace(/_/g, '/')
     const pad = b64.length % 4 === 0 ? '' : '='.repeat(4 - (b64.length % 4))
-    const json = typeof atob === 'function'
-      ? decodeURIComponent(escape(atob(b64 + pad)))
-      : Buffer.from(b64 + pad, 'base64').toString('utf-8')
+    const json =
+      typeof atob === 'function'
+        ? decodeURIComponent(escape(atob(b64 + pad)))
+        : Buffer.from(b64 + pad, 'base64').toString('utf-8')
     return parseThemeImport(json)
   } catch {
     return { ok: false, error: 'Theme link is corrupt or incomplete.' }

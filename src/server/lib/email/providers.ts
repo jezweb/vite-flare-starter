@@ -133,6 +133,8 @@ export function getProvidersWithFeature(
         return p.supportsScheduling
       case 'batch':
         return p.supportsBatch
+      default:
+        return false
     }
   })
 }

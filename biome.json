@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.4.16/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -7,11 +7,17 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "ignore": ["node_modules", "dist", ".wrangler", "drizzle", ".jez", "scripts"]
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!**/dist",
+      "!**/.wrangler",
+      "!**/drizzle",
+      "!**/.jez",
+      "!**/scripts"
+    ]
   },
-  "organizeImports": {
-    "enabled": false
-  },
+  "assist": { "actions": { "source": { "organizeImports": "off" } } },
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
@@ -25,7 +31,10 @@
       "a11y": {
         "noLabelWithoutControl": "warn",
         "noRedundantRoles": "warn",
+        "noStaticElementInteractions": "warn",
         "noSvgWithoutTitle": "warn",
+        "useAriaPropsForRole": "warn",
+        "useAriaPropsSupportedByRole": "warn",
         "useButtonType": "warn",
         "useFocusableInteractive": "warn",
         "useKeyWithClickEvents": "warn",
@@ -34,7 +43,6 @@
       },
       "correctness": {
         "noInvalidUseBeforeDeclaration": "warn",
-        "noUnnecessaryContinue": "warn",
         "useExhaustiveDependencies": "warn",
         "useJsxKeyInIterable": "warn"
       },
@@ -56,7 +64,8 @@
         "noForEach": "off",
         "noUselessSwitchCase": "warn",
         "useOptionalChain": "warn",
-        "useLiteralKeys": "off"
+        "useLiteralKeys": "off",
+        "noUselessContinue": "warn"
       },
       "security": {
         "noDangerouslySetInnerHtml": "warn"
@@ -86,6 +95,11 @@
   "json": {
     "formatter": {
       "enabled": true
+    }
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
     }
   }
 }

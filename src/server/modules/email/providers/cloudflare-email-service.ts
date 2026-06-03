@@ -28,6 +28,7 @@ export const cloudflareEmailService: EmailProviderImpl = {
       ...(message.replyTo ? { replyTo: message.replyTo } : {}),
     })
     const r = res as { messageId?: string; id?: string } | undefined
-    return { ...(r?.messageId ?? r?.id ? { messageId: r?.messageId ?? r?.id! } : {}) }
+    const messageId = r?.messageId ?? r?.id
+    return messageId ? { messageId } : {}
   },
 }

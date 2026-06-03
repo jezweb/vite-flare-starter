@@ -1,0 +1,6 @@
+# Mechanical reformat commits — exclude from git blame.
+# GitHub respects this file automatically; locally run:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# 2026-06-04 Biome 1.9.4 -> 2.4.16 repo-wide reformat
+2d8b5a4db8e4ef5f45e4c77af4bfa3aa26aea1b7
