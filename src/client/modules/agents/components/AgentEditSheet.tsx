@@ -31,10 +31,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Spinner } from '@/components/ui/spinner'
 import { formatRelative } from '@/client/lib/format-time'
 import { WORKERS_AI_MODELS, OPENROUTER_MODELS } from '@/shared/config/models'
-import {
-  useAgentInstance,
-  useUpdateAgentInstance,
-} from '../hooks/useAgentInstances'
+import { useAgentInstance, useUpdateAgentInstance } from '../hooks/useAgentInstances'
 import { useAgentCatalog } from '@/client/modules/routines/hooks/useAgentCatalog'
 import { formatAgentClass, formatModelId } from '@/shared/format/agent'
 import { useMemo } from 'react'
@@ -53,7 +50,7 @@ export function AgentEditSheet({ agentClass, agentName, open, onClose }: Props) 
   const { data: catalog } = useAgentCatalog()
   const agentRegistry = useMemo(
     () => new Map((catalog?.agents ?? []).map((a) => [a.className, a])),
-    [catalog],
+    [catalog]
   )
   const friendlyClass = agentClass ? formatAgentClass(agentClass, agentRegistry) : ''
   // Hide the slug when it equals the class name — that means it's the
@@ -74,9 +71,7 @@ export function AgentEditSheet({ agentClass, agentName, open, onClose }: Props) 
     if (data?.state && open) {
       setPersona(data.state.persona)
       setModelId(data.state.modelId)
-      setBudgetText(
-        data.state.dailyBudgetUsd != null ? String(data.state.dailyBudgetUsd) : '',
-      )
+      setBudgetText(data.state.dailyBudgetUsd != null ? String(data.state.dailyBudgetUsd) : '')
     }
   }, [data?.state, agentClass, agentName, open])
 
@@ -118,7 +113,7 @@ export function AgentEditSheet({ agentClass, agentName, open, onClose }: Props) 
             )}
           </SheetTitle>
           <SheetDescription>
-            {data?.metadata?.description ?? 'Edit this agent\'s persona, model, and daily budget.'}
+            {data?.metadata?.description ?? "Edit this agent's persona, model, and daily budget."}
           </SheetDescription>
         </SheetHeader>
 
@@ -137,7 +132,9 @@ export function AgentEditSheet({ agentClass, agentName, open, onClose }: Props) 
               {data?.state && (
                 <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
                   <div className="rounded border bg-muted/30 px-3 py-2">
-                    <p className="text-muted-foreground" title="Invocations">Times run</p>
+                    <p className="text-muted-foreground" title="Invocations">
+                      Times run
+                    </p>
                     <p className="font-mono tabular-nums">{data.state.invocations}</p>
                   </div>
                   <div className="rounded border bg-muted/30 px-3 py-2">
@@ -149,11 +146,15 @@ export function AgentEditSheet({ agentClass, agentName, open, onClose }: Props) 
                     </p>
                   </div>
                   <div className="rounded border bg-muted/30 px-3 py-2">
-                    <p className="text-muted-foreground" title="Memory blocks">Saved memories</p>
+                    <p className="text-muted-foreground" title="Memory blocks">
+                      Saved memories
+                    </p>
                     <p className="font-mono tabular-nums">{data.state.blockCount}</p>
                   </div>
                   <div className="rounded border bg-muted/30 px-3 py-2">
-                    <p className="text-muted-foreground" title="History rows">Past messages</p>
+                    <p className="text-muted-foreground" title="History rows">
+                      Past messages
+                    </p>
                     <p className="font-mono tabular-nums">{data.state.historyCount}</p>
                   </div>
                 </div>
@@ -174,9 +175,9 @@ export function AgentEditSheet({ agentClass, agentName, open, onClose }: Props) 
                       the API. We render it as the first option so the
                       select reflects the live state. */}
                   {modelId &&
-                    !(
-                      [...WORKERS_AI_MODELS, ...OPENROUTER_MODELS] as readonly string[]
-                    ).includes(modelId) && (
+                    !([...WORKERS_AI_MODELS, ...OPENROUTER_MODELS] as readonly string[]).includes(
+                      modelId
+                    ) && (
                       <NativeSelectOption value={modelId}>
                         {formatModelId(modelId)} (custom)
                       </NativeSelectOption>
@@ -202,8 +203,8 @@ export function AgentEditSheet({ agentClass, agentName, open, onClose }: Props) 
                       Pick from the curated list, or paste a custom id via the API. See{' '}
                       <a href="https://models.flared.au" target="_blank" rel="noopener noreferrer">
                         models.flared.au
-                      </a>
-                      {' '}for the catalogue.
+                      </a>{' '}
+                      for the catalogue.
                     </>
                   ) : (
                     <>Pick the AI model that handles requests. Free options work out of the box.</>
@@ -237,7 +238,8 @@ export function AgentEditSheet({ agentClass, agentName, open, onClose }: Props) 
                   className="font-mono text-xs md:text-xs"
                 />
                 <FieldDescription>
-                  Replaces the agent's identity prompt. Persists in DO storage. Edits take effect on the agent's next turn.
+                  Replaces the agent's identity prompt. Persists in DO storage. Edits take effect on
+                  the agent's next turn.
                 </FieldDescription>
               </Field>
             </>

@@ -31,11 +31,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar'
 import { CreateOrganizationDialog } from './CreateOrganizationDialog'
-import {
-  useMembership,
-  useSetActiveOrg,
-  type MyOrg,
-} from '../hooks/useOrganizations'
+import { useMembership, useSetActiveOrg, type MyOrg } from '../hooks/useOrganizations'
 import { appConfig } from '@/shared/config/app'
 import { cn } from '@/lib/utils'
 
@@ -94,8 +90,8 @@ export function OrgSwitcher() {
   const display = active
     ? { name: active.organizationName, role: active.role, id: active.organizationId }
     : orgs[0]
-    ? { name: orgs[0].name, role: orgs[0].role, id: orgs[0].id }
-    : null
+      ? { name: orgs[0].name, role: orgs[0].role, id: orgs[0].id }
+      : null
 
   return (
     <>
@@ -111,7 +107,11 @@ export function OrgSwitcher() {
                 <Avatar name={display?.name} />
                 <div className="grid flex-1 text-left leading-tight">
                   <span className="truncate text-sm font-semibold">
-                    {isLoading ? <span className="text-muted-foreground">Loading…</span> : (display?.name ?? appConfig.name)}
+                    {isLoading ? (
+                      <span className="text-muted-foreground">Loading…</span>
+                    ) : (
+                      (display?.name ?? appConfig.name)
+                    )}
                   </span>
                   {display?.role && (
                     <span className="truncate text-[11px] text-muted-foreground capitalize">
@@ -142,9 +142,7 @@ export function OrgSwitcher() {
                     <div className="truncate text-sm">{org.name}</div>
                     <div className="text-[11px] text-muted-foreground capitalize">{org.role}</div>
                   </div>
-                  {active?.organizationId === org.id && (
-                    <Check className="size-3.5 text-primary" />
-                  )}
+                  {active?.organizationId === org.id && <Check className="size-3.5 text-primary" />}
                 </DropdownMenuItem>
               ))}
               <DropdownMenuSeparator />
@@ -207,8 +205,14 @@ function Avatar({ name, size = 'md' }: { name?: string; size?: 'sm' | 'md' }) {
   const palette = colours[letter.charCodeAt(0) % colours.length]
   const sizing = size === 'sm' ? 'size-6 text-xs' : 'aspect-square size-8 text-sm'
   return (
-    <div className={cn('flex items-center justify-center rounded-lg font-semibold', sizing, palette)}>
-      {/^[A-Z]/.test(letter) ? letter : <Building2 className={size === 'sm' ? 'size-3.5' : 'size-4'} />}
+    <div
+      className={cn('flex items-center justify-center rounded-lg font-semibold', sizing, palette)}
+    >
+      {/^[A-Z]/.test(letter) ? (
+        letter
+      ) : (
+        <Building2 className={size === 'sm' ? 'size-3.5' : 'size-4'} />
+      )}
     </div>
   )
 }

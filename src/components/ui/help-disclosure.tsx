@@ -18,7 +18,8 @@
 import * as React from 'react'
 import { cn } from '@/lib/utils'
 
-interface HelpDisclosureProps extends Omit<React.DetailsHTMLAttributes<HTMLDetailsElement>, 'title'> {
+interface HelpDisclosureProps
+  extends Omit<React.DetailsHTMLAttributes<HTMLDetailsElement>, 'title'> {
   /** Summary text — defaults to "Technical details". */
   title?: React.ReactNode
   /** Override the summary marker classes (e.g. for tone variations). */
@@ -33,15 +34,11 @@ export function HelpDisclosure({
   ...rest
 }: HelpDisclosureProps) {
   return (
-    <details
-      data-slot="help-disclosure"
-      className={cn('group/disc text-xs', className)}
-      {...rest}
-    >
+    <details data-slot="help-disclosure" className={cn('group/disc text-xs', className)} {...rest}>
       <summary
         className={cn(
           'inline-flex cursor-pointer select-none items-center gap-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors marker:hidden [&::-webkit-details-marker]:hidden',
-          summaryClassName,
+          summaryClassName
         )}
       >
         <svg

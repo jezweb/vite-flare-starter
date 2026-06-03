@@ -107,9 +107,7 @@ export function KeyboardShortcuts() {
     const handler = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement
       const inInput =
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable
+        target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable
 
       // Cmd/Ctrl + Shift + N — new chat. Works inside inputs too.
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'N' || e.key === 'n')) {
@@ -169,7 +167,10 @@ export function KeyboardShortcuts() {
         <DialogHeader>
           <DialogTitle>Keyboard shortcuts</DialogTitle>
           <DialogDescription>
-            Press <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-[11px] font-mono">G</kbd>{' '}
+            Press{' '}
+            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-[11px] font-mono">
+              G
+            </kbd>{' '}
             then a destination key to jump anywhere in the app.
           </DialogDescription>
         </DialogHeader>

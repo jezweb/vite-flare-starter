@@ -157,9 +157,7 @@ app.delete('/:id', async (c) => {
   const userId = c.get('userId')
   const id = c.req.param('id')
   const db = drizzle(c.env.DB)
-  await db
-    .delete(inboxItems)
-    .where(and(eq(inboxItems.userId, userId), eq(inboxItems.id, id)))
+  await db.delete(inboxItems).where(and(eq(inboxItems.userId, userId), eq(inboxItems.id, id)))
   return c.json({ deleted: true })
 })
 

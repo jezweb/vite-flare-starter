@@ -59,7 +59,7 @@ export function useCopy(options: UseCopyOptions = {}) {
         return false
       }
     },
-    [toastOnSuccess, toastOnError, resetMs],
+    [toastOnSuccess, toastOnError, resetMs]
   )
 
   return { copy, copied }

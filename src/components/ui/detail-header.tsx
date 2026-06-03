@@ -68,10 +68,7 @@ export function DetailHeader({
   }, [title, docTitle])
 
   return (
-    <header
-      data-slot="detail-header"
-      className={cn('space-y-2', className)}
-    >
+    <header data-slot="detail-header" className={cn('space-y-2', className)}>
       {backTo && (
         <Link
           to={backTo}
@@ -83,9 +80,7 @@ export function DetailHeader({
       )}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="min-w-0 flex-1 space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight truncate">
-            {title}
-          </h1>
+          <h1 className="text-2xl font-semibold tracking-tight truncate">{title}</h1>
           {subtitle && (
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
               {subtitle}

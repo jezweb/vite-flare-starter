@@ -29,7 +29,11 @@
 import { Agent, type Connection, type ConnectionContext } from 'agents'
 import { drizzle } from 'drizzle-orm/d1'
 import { and, eq } from 'drizzle-orm'
-import { conversationMembers, conversationMessages, conversations } from '@/server/modules/conversations/db/schema'
+import {
+  conversationMembers,
+  conversationMessages,
+  conversations,
+} from '@/server/modules/conversations/db/schema'
 import { createAuth } from '@/server/modules/auth'
 
 interface SpaceConnectionState {
@@ -76,7 +80,7 @@ export class SpaceAgent extends Agent<any, Record<string, never>> {
         spaceId: this.name,
         userId,
         connectionId: connection.id,
-      }),
+      })
     )
     // Send the new client a welcome with the current online roster so
     // the client doesn't need a separate REST round-trip on connect.
@@ -85,7 +89,7 @@ export class SpaceAgent extends Agent<any, Record<string, never>> {
         type: 'welcome',
         spaceId: this.name,
         online: this.getOnlineUserIds(),
-      }),
+      })
     )
     // Tell everyone else who just came online.
     this.broadcastPresence([connection.id])
@@ -93,7 +97,7 @@ export class SpaceAgent extends Agent<any, Record<string, never>> {
 
   async onClose(connection: Connection): Promise<void> {
     console.log(
-      JSON.stringify({ event: 'space_ws_close', spaceId: this.name, connectionId: connection.id }),
+      JSON.stringify({ event: 'space_ws_close', spaceId: this.name, connectionId: connection.id })
     )
     this.broadcastPresence()
   }
@@ -110,7 +114,7 @@ export class SpaceAgent extends Agent<any, Record<string, never>> {
         spaceId: this.name,
         connectionId: connection.id,
         raw: typeof raw === 'string' ? raw.slice(0, 200) : '<binary>',
-      }),
+      })
     )
   }
 
@@ -135,7 +139,7 @@ export class SpaceAgent extends Agent<any, Record<string, never>> {
       JSON.stringify({
         type: 'message',
         message: this.shapeMessage(row),
-      }),
+      })
     )
   }
 
@@ -156,7 +160,7 @@ export class SpaceAgent extends Agent<any, Record<string, never>> {
         type: 'presence',
         online: this.getOnlineUserIds(),
       }),
-      excludeIds,
+      excludeIds
     )
   }
 
@@ -186,7 +190,7 @@ export class SpaceAgent extends Agent<any, Record<string, never>> {
       EMAIL_API_KEY?: string
       EMAIL_FROM?: string
     },
-    ctx: ConnectionContext,
+    ctx: ConnectionContext
   ): Promise<string | null> {
     try {
       const auth = createAuth(env.DB, {
@@ -223,8 +227,8 @@ export class SpaceAgent extends Agent<any, Record<string, never>> {
         and(
           eq(conversationMembers.conversationId, this.name),
           eq(conversationMembers.kind, 'user'),
-          eq(conversationMembers.userId, userId),
-        ),
+          eq(conversationMembers.userId, userId)
+        )
       )
       .limit(1)
     return !!member

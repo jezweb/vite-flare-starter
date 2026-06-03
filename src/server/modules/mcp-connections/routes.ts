@@ -10,10 +10,7 @@ import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
 import { and, eq } from 'drizzle-orm'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
-import {
-  userMcpConnections,
-  userMcpToolPolicies,
-} from './db/schema'
+import { userMcpConnections, userMcpToolPolicies } from './db/schema'
 import { probeMcpServer, registerOAuthClient } from './probe'
 import { encrypt, decrypt, generatePkcePair, randomToken } from '@/server/lib/crypto'
 import { MCP_CATALOG, findCatalogEntry } from '@/shared/config/connector-catalog'
@@ -46,7 +43,9 @@ app.get('/callback', async (c) => {
   const pkceMatch = cookieHeader.match(/mcp_pkce=([^;]+)/)
   const connectionMatch = cookieHeader.match(/mcp_conn=([^;]+)/)
   if (!pkceMatch || !connectionMatch) {
-    return c.html(callbackPage({ status: 'error', message: 'Missing session — try connecting again.' }))
+    return c.html(
+      callbackPage({ status: 'error', message: 'Missing session — try connecting again.' })
+    )
   }
   const pkceVerifier = decodeURIComponent(pkceMatch[1]!)
   const connectionId = decodeURIComponent(connectionMatch[1]!)
@@ -71,7 +70,10 @@ app.get('/callback', async (c) => {
     client_id: conn.oauthClientId ?? '',
   })
   if (conn.oauthClientSecret) {
-    const clientSecret = await decrypt(conn.oauthClientSecret, (c.env as unknown as { TOKEN_ENCRYPTION_KEY?: string }).TOKEN_ENCRYPTION_KEY)
+    const clientSecret = await decrypt(
+      conn.oauthClientSecret,
+      (c.env as unknown as { TOKEN_ENCRYPTION_KEY?: string }).TOKEN_ENCRYPTION_KEY
+    )
     if (clientSecret) body.set('client_secret', clientSecret)
   }
 
@@ -161,15 +163,11 @@ app.get('/', async (c) => {
 })
 
 /** POST /probe — inspect an MCP endpoint for auth mode + OAuth metadata. */
-app.post(
-  '/probe',
-  zValidator('json', z.object({ url: z.string().url() })),
-  async (c) => {
-    const { url } = c.req.valid('json')
-    const result = await probeMcpServer(url)
-    return c.json(result)
-  },
-)
+app.post('/probe', zValidator('json', z.object({ url: z.string().url() })), async (c) => {
+  const { url } = c.req.valid('json')
+  const result = await probeMcpServer(url)
+  return c.json(result)
+})
 
 /**
  * POST /connect — create or update a connection row and kick off OAuth
@@ -183,7 +181,7 @@ const connectSchema = z
   })
   .refine(
     (v) => findCatalogEntry(v.connectorId) || (v.connectorId.startsWith('custom:') && v.url),
-    'custom connectors require a url',
+    'custom connectors require a url'
   )
 
 app.post('/connect', zValidator('json', connectSchema), async (c) => {
@@ -206,8 +204,8 @@ app.post('/connect', zValidator('json', connectSchema), async (c) => {
       and(
         eq(userMcpConnections.userId, userId),
         eq(userMcpConnections.connectorId, input.connectorId),
-        eq(userMcpConnections.url, url),
-      ),
+        eq(userMcpConnections.url, url)
+      )
     )
     .limit(1)
 
@@ -273,7 +271,7 @@ app.post('/connect', zValidator('json', connectSchema), async (c) => {
         error:
           'OAuth setup incomplete. The MCP server did not advertise a registration endpoint. Provide a pre-registered client ID via /:id/config.',
       },
-      400,
+      400
     )
   }
 
@@ -315,7 +313,10 @@ app.post('/connect', zValidator('json', connectSchema), async (c) => {
   const secure = c.env.BETTER_AUTH_URL?.startsWith('https://') ? '; Secure' : ''
   const headers = new Headers({ 'Content-Type': 'application/json' })
   headers.append('Set-Cookie', `mcp_pkce=${encodeURIComponent(verifier)}; ${cookieBase}${secure}`)
-  headers.append('Set-Cookie', `mcp_conn=${encodeURIComponent(connectionId)}; ${cookieBase}${secure}`)
+  headers.append(
+    'Set-Cookie',
+    `mcp_conn=${encodeURIComponent(connectionId)}; ${cookieBase}${secure}`
+  )
 
   return new Response(
     JSON.stringify({
@@ -324,38 +325,34 @@ app.post('/connect', zValidator('json', connectSchema), async (c) => {
       status: 'pending',
       authorizationUrl: authUrl.toString(),
     }),
-    { headers },
+    { headers }
   )
 })
 
 /** POST /:id/bearer — save a bearer token the user pasted in. */
-app.post(
-  '/:id/bearer',
-  zValidator('json', z.object({ token: z.string().min(1) })),
-  async (c) => {
-    const userId = c.get('userId')
-    const id = c.req.param('id')
-    const { token } = c.req.valid('json')
-    const db = drizzle(c.env.DB)
-    const tokenKey = (c.env as unknown as { TOKEN_ENCRYPTION_KEY?: string }).TOKEN_ENCRYPTION_KEY
+app.post('/:id/bearer', zValidator('json', z.object({ token: z.string().min(1) })), async (c) => {
+  const userId = c.get('userId')
+  const id = c.req.param('id')
+  const { token } = c.req.valid('json')
+  const db = drizzle(c.env.DB)
+  const tokenKey = (c.env as unknown as { TOKEN_ENCRYPTION_KEY?: string }).TOKEN_ENCRYPTION_KEY
 
-    const enc = await encrypt(token, tokenKey)
-    const result = await db
-      .update(userMcpConnections)
-      .set({
-        accessToken: enc,
-        authType: 'bearer',
-        status: 'active',
-        lastError: null,
-        updatedAt: new Date(),
-      })
-      .where(and(eq(userMcpConnections.id, id), eq(userMcpConnections.userId, userId)))
-      .returning({ id: userMcpConnections.id })
+  const enc = await encrypt(token, tokenKey)
+  const result = await db
+    .update(userMcpConnections)
+    .set({
+      accessToken: enc,
+      authType: 'bearer',
+      status: 'active',
+      lastError: null,
+      updatedAt: new Date(),
+    })
+    .where(and(eq(userMcpConnections.id, id), eq(userMcpConnections.userId, userId)))
+    .returning({ id: userMcpConnections.id })
 
-    if (result.length === 0) return c.json({ error: 'Not found' }, 404)
-    return c.json({ success: true })
-  },
-)
+  if (result.length === 0) return c.json({ error: 'Not found' }, 404)
+  return c.json({ success: true })
+})
 
 /**
  * POST /:id/authorize — re-issue an OAuth authorization URL for a pending
@@ -397,10 +394,7 @@ app.post('/:id/authorize', async (c) => {
   headers.append('Set-Cookie', `mcp_pkce=${encodeURIComponent(verifier)}; ${cookieBase}${secure}`)
   headers.append('Set-Cookie', `mcp_conn=${encodeURIComponent(id)}; ${cookieBase}${secure}`)
 
-  return new Response(
-    JSON.stringify({ authorizationUrl: authUrl.toString() }),
-    { headers },
-  )
+  return new Response(JSON.stringify({ authorizationUrl: authUrl.toString() }), { headers })
 })
 
 /** DELETE /:id — disconnect. Cascades to tool policies. */
@@ -453,7 +447,9 @@ app.get('/:id/resources', async (c) => {
     })
     if (resp.ok) {
       const json = (await resp.json()) as {
-        result?: { resources?: Array<{ uri: string; name?: string; description?: string; mimeType?: string }> }
+        result?: {
+          resources?: Array<{ uri: string; name?: string; description?: string; mimeType?: string }>
+        }
       }
       resources = json.result?.resources ?? []
     }
@@ -535,7 +531,7 @@ app.patch(
     z.object({
       personalityLabel: z.string().max(60).nullable().optional(),
       allowedAgentNames: z.array(z.string().min(1).max(120)).nullable().optional(),
-    }),
+    })
   ),
   async (c) => {
     const userId = c.get('userId')
@@ -564,7 +560,7 @@ app.patch(
       .set(updates)
       .where(and(eq(userMcpConnections.id, id), eq(userMcpConnections.userId, userId)))
     return c.json({ success: true })
-  },
+  }
 )
 
 /** PUT /:id/tool-policies — batch-update policies for tools on a connection. */
@@ -577,9 +573,9 @@ app.put(
         z.object({
           toolName: z.string().min(1),
           policy: z.enum(['always', 'ask', 'never']),
-        }),
+        })
       ),
-    }),
+    })
   ),
   async (c) => {
     const userId = c.get('userId')
@@ -610,7 +606,7 @@ app.put(
     }
 
     return c.json({ success: true, count: policies.length })
-  },
+  }
 )
 
 function callbackPage(args: { status: 'success' | 'error'; message?: string }): string {

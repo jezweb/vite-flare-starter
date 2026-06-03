@@ -46,7 +46,7 @@ export const batchJobs = sqliteTable(
       .notNull()
       .$defaultFn(() => new Date()),
   },
-  (t) => [index('batch_jobs_user_idx').on(t.userId, t.status, t.createdAt)],
+  (t) => [index('batch_jobs_user_idx').on(t.userId, t.status, t.createdAt)]
 )
 
 export const batchItems = sqliteTable(
@@ -73,7 +73,7 @@ export const batchItems = sqliteTable(
     startedAt: integer('started_at', { mode: 'timestamp' }),
     completedAt: integer('completed_at', { mode: 'timestamp' }),
   },
-  (t) => [index('batch_items_job_idx').on(t.jobId, t.status)],
+  (t) => [index('batch_items_job_idx').on(t.jobId, t.status)]
 )
 
 export type BatchJob = typeof batchJobs.$inferSelect

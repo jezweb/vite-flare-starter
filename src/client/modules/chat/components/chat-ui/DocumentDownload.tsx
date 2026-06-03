@@ -18,13 +18,35 @@ interface DocumentData {
 }
 
 export function isDocument(output: unknown): output is DocumentData {
-  return !!output && typeof output === 'object' && (output as Record<string, unknown>)['_document'] === true
+  return (
+    !!output &&
+    typeof output === 'object' &&
+    (output as Record<string, unknown>)['_document'] === true
+  )
 }
 
-const FORMAT_META: Record<string, { icon: typeof FileText; label: string; color: string; mime: string }> = {
-  docx: { icon: FileText, label: 'Word Document', color: 'text-blue-600 dark:text-blue-400', mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' },
-  xlsx: { icon: FileSpreadsheet, label: 'Excel Spreadsheet', color: 'text-green-600 dark:text-green-400', mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' },
-  csv: { icon: Table2, label: 'CSV File', color: 'text-amber-600 dark:text-amber-400', mime: 'text/csv' },
+const FORMAT_META: Record<
+  string,
+  { icon: typeof FileText; label: string; color: string; mime: string }
+> = {
+  docx: {
+    icon: FileText,
+    label: 'Word Document',
+    color: 'text-blue-600 dark:text-blue-400',
+    mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  },
+  xlsx: {
+    icon: FileSpreadsheet,
+    label: 'Excel Spreadsheet',
+    color: 'text-green-600 dark:text-green-400',
+    mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  },
+  csv: {
+    icon: Table2,
+    label: 'CSV File',
+    color: 'text-amber-600 dark:text-amber-400',
+    mime: 'text/csv',
+  },
 }
 
 function formatSize(bytes: number): string {

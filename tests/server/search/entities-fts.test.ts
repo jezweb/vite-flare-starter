@@ -36,9 +36,7 @@ async function ensureSchema(): Promise<void> {
     updated_at INTEGER NOT NULL DEFAULT 0
   )`)
 
-  await runSql(
-    `CREATE VIRTUAL TABLE IF NOT EXISTS entities_fts USING fts5(title, body)`,
-  )
+  await runSql(`CREATE VIRTUAL TABLE IF NOT EXISTS entities_fts USING fts5(title, body)`)
 
   await runSql(`CREATE TRIGGER IF NOT EXISTS entities_fts_ai AFTER INSERT ON entities BEGIN
     INSERT INTO entities_fts(rowid, title, body) VALUES (
@@ -79,24 +77,21 @@ async function insertEntity(opts: {
   await runSql(
     `INSERT INTO entities (id, user_id, type, title, fields, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [opts.id, USER_ID, opts.type, opts.title, fields, now, now],
+    [opts.id, USER_ID, opts.type, opts.title, fields, now, now]
   )
 }
 
 async function search(query: string) {
-  return searchFTS<{ id: string; type: string; title: string; body: string | null }>(
-    env.DB,
-    {
-      ftsTable: 'entities_fts',
-      sourceTable: 'entities',
-      query,
-      limit: 20,
-      select:
-        '"entities".id, "entities".type, "entities".title, JSON_EXTRACT("entities".fields, \'$.body\') AS body',
-      where: '"entities".user_id = ?',
-      whereParams: [USER_ID],
-    },
-  )
+  return searchFTS<{ id: string; type: string; title: string; body: string | null }>(env.DB, {
+    ftsTable: 'entities_fts',
+    sourceTable: 'entities',
+    query,
+    limit: 20,
+    select:
+      '"entities".id, "entities".type, "entities".title, JSON_EXTRACT("entities".fields, \'$.body\') AS body',
+    where: '"entities".user_id = ?',
+    whereParams: [USER_ID],
+  })
 }
 
 describe('entities_fts — full-text search over entities', () => {

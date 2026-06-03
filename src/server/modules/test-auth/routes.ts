@@ -193,7 +193,7 @@ app.post('/cleanup', async (c) => {
           event: 'test_auth_delete_failed',
           userId: row.id,
           error: err instanceof Error ? err.message : String(err),
-        }),
+        })
       )
     }
   }

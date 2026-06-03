@@ -41,17 +41,14 @@ export const slackSearchMessagesRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     return (
       <div className="space-y-2">
         {i?.query && (
           <div className="text-xs text-muted-foreground">
-            <span className="font-medium">Query:</span>{' '}
-            <span className="font-mono">{i.query}</span>
+            <span className="font-medium">Query:</span> <span className="font-mono">{i.query}</span>
           </div>
         )}
         {o.messages.length === 0 ? (
@@ -64,13 +61,9 @@ export const slackSearchMessagesRenderer: ToolRenderer = {
               <li key={`${m.ts}-${idx}`} className="flex flex-col gap-0.5 px-2 py-2">
                 <div className="flex items-center gap-2 text-xs">
                   {m.channel && (
-                    <span className="font-mono text-muted-foreground shrink-0">
-                      {m.channel}
-                    </span>
+                    <span className="font-mono text-muted-foreground shrink-0">{m.channel}</span>
                   )}
-                  <span className="text-muted-foreground ml-auto shrink-0">
-                    {tsToDate(m.ts)}
-                  </span>
+                  <span className="text-muted-foreground ml-auto shrink-0">{tsToDate(m.ts)}</span>
                 </div>
                 <div className="text-sm whitespace-pre-wrap line-clamp-3">
                   {truncate(m.text, 400)}
@@ -110,9 +103,7 @@ export const slackListChannelsRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     return (
@@ -156,9 +147,7 @@ export const slackGetChannelHistoryRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     return (
@@ -169,9 +158,7 @@ export const slackGetChannelHistoryRenderer: ToolRenderer = {
               <span className="font-medium text-foreground truncate">
                 {m.userName ?? m.user ?? 'Unknown'}
               </span>
-              <span className="text-muted-foreground ml-auto shrink-0">
-                {tsToDate(m.ts)}
-              </span>
+              <span className="text-muted-foreground ml-auto shrink-0">{tsToDate(m.ts)}</span>
             </div>
             <div className="text-sm whitespace-pre-wrap">{m.text}</div>
             {m.replyCount != null && m.replyCount > 0 && (
@@ -201,9 +188,7 @@ export const slackGetUserRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     return (
@@ -249,9 +234,7 @@ export const slackPostMessageRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     return (

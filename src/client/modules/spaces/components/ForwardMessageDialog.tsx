@@ -35,7 +35,11 @@ export function ForwardMessageDialog({ message, open, onClose }: Props) {
 
   const submit = async () => {
     if (!target) return
-    await forward.mutateAsync({ messageId: message.id, targetSpaceId: target, note: note.trim() || undefined })
+    await forward.mutateAsync({
+      messageId: message.id,
+      targetSpaceId: target,
+      note: note.trim() || undefined,
+    })
     onClose()
     setNote('')
     setTarget('')
@@ -46,7 +50,9 @@ export function ForwardMessageDialog({ message, open, onClose }: Props) {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Forward to space</DialogTitle>
-          <DialogDescription>Drop this message into another space you&apos;re a member of.</DialogDescription>
+          <DialogDescription>
+            Drop this message into another space you&apos;re a member of.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <Field>

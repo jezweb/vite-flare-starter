@@ -7,7 +7,11 @@
  */
 import { z } from 'zod'
 import { Wand2, Info } from 'lucide-react'
-import { transformImage, getImageInfo, type TransformOptions } from '@/server/modules/images/transform'
+import {
+  transformImage,
+  getImageInfo,
+  type TransformOptions,
+} from '@/server/modules/images/transform'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 
 type ImageTransformEnv = {
@@ -68,10 +72,19 @@ export const imageTransformDefinition: ToolDefinition<
     outputPath: z.string().describe('Path to save the result'),
     width: z.number().optional().describe('Target width in pixels'),
     height: z.number().optional().describe('Target height in pixels'),
-    fit: z.enum(['scale-down', 'contain', 'cover', 'crop', 'pad']).optional().describe('Resize mode'),
-    format: z.enum(['webp', 'avif', 'jpeg', 'png']).optional().describe('Output format (default: webp)'),
+    fit: z
+      .enum(['scale-down', 'contain', 'cover', 'crop', 'pad'])
+      .optional()
+      .describe('Resize mode'),
+    format: z
+      .enum(['webp', 'avif', 'jpeg', 'png'])
+      .optional()
+      .describe('Output format (default: webp)'),
     quality: z.number().min(1).max(100).optional().describe('Output quality 1-100'),
-    gravity: z.enum(['auto', 'face', 'left', 'right', 'top', 'bottom']).optional().describe('Crop anchor (use "face" for AI face detection)'),
+    gravity: z
+      .enum(['auto', 'face', 'left', 'right', 'top', 'bottom'])
+      .optional()
+      .describe('Crop anchor (use "face" for AI face detection)'),
     blur: z.number().min(1).max(250).optional().describe('Gaussian blur radius'),
     sharpen: z.number().min(0).max(10).optional().describe('Sharpening strength'),
     brightness: z.number().optional().describe('Brightness (1.0 = unchanged)'),
@@ -79,12 +92,21 @@ export const imageTransformDefinition: ToolDefinition<
     saturation: z.number().optional().describe('Saturation (0 = grayscale, 1.0 = unchanged)'),
     rotate: z.enum(['90', '180', '270']).optional().describe('Rotation degrees'),
     flip: z.enum(['h', 'v', 'hv']).optional().describe('Mirror: h=horizontal, v=vertical'),
-    removeBackground: z.boolean().optional().describe('AI background removal (returns transparent PNG)'),
-    backgroundColor: z.string().optional().describe('Fill background colour (CSS4 format, e.g. "#ffffff")'),
+    removeBackground: z
+      .boolean()
+      .optional()
+      .describe('AI background removal (returns transparent PNG)'),
+    backgroundColor: z
+      .string()
+      .optional()
+      .describe('Fill background colour (CSS4 format, e.g. "#ffffff")'),
   }),
   outputSchema: ImageTransformOutput,
   isAvailable: available,
-  execute: async ({ sourcePath, outputPath, removeBackground, backgroundColor, rotate, ...rest }, ctx) => {
+  execute: async (
+    { sourcePath, outputPath, removeBackground, backgroundColor, rotate, ...rest },
+    ctx
+  ) => {
     const env = getEnv(ctx)
     try {
       const scopedSource = `users/${ctx.userId}/${sourcePath}`
@@ -131,9 +153,13 @@ const ImageInfoOutput = z.union([
   z.object({ error: z.string() }),
 ])
 
-export const imageInfoDefinition: ToolDefinition<{ path: string }, z.infer<typeof ImageInfoOutput>> = {
+export const imageInfoDefinition: ToolDefinition<
+  { path: string },
+  z.infer<typeof ImageInfoOutput>
+> = {
   name: 'image_info',
-  description: "Get metadata about an image: format, dimensions, file size. Use when the user asks about an image's properties.",
+  description:
+    "Get metadata about an image: format, dimensions, file size. Use when the user asks about an image's properties.",
   inputSchema: z.object({
     path: z.string().describe('Path to image in the filesystem'),
   }),

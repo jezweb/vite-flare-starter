@@ -155,7 +155,11 @@ adminRoutes.get('/users', zValidator('query', userListQuerySchema), async (c) =>
 
   // Build order by clause
   const orderByColumn =
-    sortBy === 'name' ? schema.user.name : sortBy === 'email' ? schema.user.email : schema.user.createdAt
+    sortBy === 'name'
+      ? schema.user.name
+      : sortBy === 'email'
+        ? schema.user.email
+        : schema.user.createdAt
 
   const orderByClause = sortOrder === 'asc' ? asc(orderByColumn) : desc(orderByColumn)
 
@@ -280,7 +284,10 @@ adminRoutes.patch('/users/:id', zValidator('json', updateUserSchema), async (c) 
 
   // Prevent admins from modifying their own account through admin panel
   if (id === currentUser.id) {
-    return c.json({ error: 'Cannot modify your own account through admin panel. Use Settings instead.' }, 400)
+    return c.json(
+      { error: 'Cannot modify your own account through admin panel. Use Settings instead.' },
+      400
+    )
   }
 
   // Check if user exists
@@ -449,23 +456,38 @@ adminRoutes.post('/migrate-file-prefix', async (c) => {
   if (!bucket) return c.json({ error: 'FILES bucket not bound' }, 501)
   const db = drizzle(c.env.DB, { schema })
 
-  const rows = await db.select({
-    id: schema.files.id,
-    userId: schema.files.userId,
-    key: schema.files.key,
-  }).from(schema.files)
+  const rows = await db
+    .select({
+      id: schema.files.id,
+      userId: schema.files.userId,
+      key: schema.files.key,
+    })
+    .from(schema.files)
 
-  let migrated = 0, skipped = 0, errors = 0
+  let migrated = 0,
+    skipped = 0,
+    errors = 0
   const failures: Array<{ key: string; error: string }> = []
 
   for (const row of rows) {
-    if (!row.key.startsWith('files/')) { skipped++; continue }
-    const newKey = row.key.replace(/^files\//, 'users/').replace(`${row.userId}/`, `${row.userId}/uploads/`)
+    if (!row.key.startsWith('files/')) {
+      skipped++
+      continue
+    }
+    const newKey = row.key
+      .replace(/^files\//, 'users/')
+      .replace(`${row.userId}/`, `${row.userId}/uploads/`)
     try {
       const obj = await bucket.get(row.key)
-      if (!obj) { skipped++; continue } // orphaned D1 row — nothing to move
+      if (!obj) {
+        skipped++
+        continue
+      } // orphaned D1 row — nothing to move
       const body = await obj.arrayBuffer()
-      await bucket.put(newKey, body, { httpMetadata: obj.httpMetadata, customMetadata: obj.customMetadata })
+      await bucket.put(newKey, body, {
+        httpMetadata: obj.httpMetadata,
+        customMetadata: obj.customMetadata,
+      })
       await db.update(schema.files).set({ key: newKey }).where(eq(schema.files.id, row.id))
       await bucket.delete(row.key)
       migrated++
@@ -485,53 +507,61 @@ adminRoutes.post('/migrate-file-prefix', async (c) => {
  * Just fires the `invite` template with a sign-up URL the invitee can use.
  * Send history is visible in the admin email-log view.
  */
-adminRoutes.post('/invites', zValidator('json', (await import('zod')).z.object({
-  email: (await import('zod')).z.string().email(),
-  organizationName: (await import('zod')).z.string().min(1).max(100).optional(),
-  message: (await import('zod')).z.string().max(1000).optional(),
-})), async (c) => {
-  const input = c.req.valid('json')
-  const currentUser = c.get('user')
-  const env = c.env as unknown as Record<string, unknown>
-  const { sendEmail } = await import('@/server/modules/email/service')
+adminRoutes.post(
+  '/invites',
+  zValidator(
+    'json',
+    (await import('zod')).z.object({
+      email: (await import('zod')).z.string().email(),
+      organizationName: (await import('zod')).z.string().min(1).max(100).optional(),
+      message: (await import('zod')).z.string().max(1000).optional(),
+    })
+  ),
+  async (c) => {
+    const input = c.req.valid('json')
+    const currentUser = c.get('user')
+    const env = c.env as unknown as Record<string, unknown>
+    const { sendEmail } = await import('@/server/modules/email/service')
 
-  const appUrl = (env['APP_URL'] as string | undefined) || (env['BETTER_AUTH_URL'] as string | undefined) || ''
-  const appName = (env['APP_NAME'] as string | undefined) || 'App'
-  const signUpUrl = `${appUrl}/sign-up?invite=${encodeURIComponent(input.email)}`
+    const appUrl =
+      (env['APP_URL'] as string | undefined) || (env['BETTER_AUTH_URL'] as string | undefined) || ''
+    const appName = (env['APP_NAME'] as string | undefined) || 'App'
+    const signUpUrl = `${appUrl}/sign-up?invite=${encodeURIComponent(input.email)}`
 
-  const result = await sendEmail(
-    {
-      DB: c.env.DB,
-      EMAIL: env['EMAIL'] as never,
-      SEND_EMAIL: env['SEND_EMAIL'] as never,
-      EMAIL_API_KEY: env['EMAIL_API_KEY'] as string | undefined,
-      EMAIL_FROM: env['EMAIL_FROM'] as string | undefined,
-      APP_NAME: appName,
-      APP_URL: appUrl,
-      BETTER_AUTH_URL: env['BETTER_AUTH_URL'] as string | undefined,
-    },
-    {
-      to: input.email,
-      userId: currentUser.id,
-      template: 'invite',
-      templateData: {
-        inviterName: currentUser.name || currentUser.email,
-        inviterEmail: currentUser.email,
-        organizationName: input.organizationName || appName,
-        signUpUrl,
-        message: input.message,
-        appName,
+    const result = await sendEmail(
+      {
+        DB: c.env.DB,
+        EMAIL: env['EMAIL'] as never,
+        SEND_EMAIL: env['SEND_EMAIL'] as never,
+        EMAIL_API_KEY: env['EMAIL_API_KEY'] as string | undefined,
+        EMAIL_FROM: env['EMAIL_FROM'] as string | undefined,
+        APP_NAME: appName,
+        APP_URL: appUrl,
+        BETTER_AUTH_URL: env['BETTER_AUTH_URL'] as string | undefined,
       },
-      tags: ['admin-invite', `by:${currentUser.id}`],
-    },
-  )
+      {
+        to: input.email,
+        userId: currentUser.id,
+        template: 'invite',
+        templateData: {
+          inviterName: currentUser.name || currentUser.email,
+          inviterEmail: currentUser.email,
+          organizationName: input.organizationName || appName,
+          signUpUrl,
+          message: input.message,
+          appName,
+        },
+        tags: ['admin-invite', `by:${currentUser.id}`],
+      }
+    )
 
-  if (result.status === 'failed') {
-    return c.json({ error: result.error ?? 'Failed to send invite' }, 500)
+    if (result.status === 'failed') {
+      return c.json({ error: result.error ?? 'Failed to send invite' }, 500)
+    }
+
+    return c.json({ success: true, status: result.status, provider: result.provider })
   }
-
-  return c.json({ success: true, status: result.status, provider: result.provider })
-})
+)
 
 // Mount admin routes under root
 app.route('/', adminRoutes)

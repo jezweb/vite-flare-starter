@@ -16,7 +16,13 @@ import { Spinner } from '@/components/ui/spinner'
 import { useCopy } from '@/client/lib/use-copy'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Card, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { apiClient } from '@/client/lib/api-client'
@@ -39,7 +45,7 @@ const SCHEMA_OPTIONS: SchemaOption[] = [
     label: 'Summary',
     description: 'Title, summary, key points, word count',
     example:
-      "Cloudflare announced Workers AI at its Birthday Week on 28 September 2023, bringing LLM inference to the edge in over 300 cities worldwide. CEO Matthew Prince emphasised that pricing starts at $0.11 per million tokens, making it significantly cheaper than competitors. The service launched with Llama 2, Whisper, and Stable Diffusion support. Developers can run it via Workers bindings with a single line of config.",
+      'Cloudflare announced Workers AI at its Birthday Week on 28 September 2023, bringing LLM inference to the edge in over 300 cities worldwide. CEO Matthew Prince emphasised that pricing starts at $0.11 per million tokens, making it significantly cheaper than competitors. The service launched with Llama 2, Whisper, and Stable Diffusion support. Developers can run it via Workers bindings with a single line of config.',
   },
   {
     value: 'entities',
@@ -131,9 +137,10 @@ export function ExtractPage() {
         help={
           <HelpDisclosure>
             <p className="text-muted-foreground max-w-xl">
-              Powered by the AI SDK structured-output pipeline (<code className="font-mono">generateText</code>{' '}
-              with <code className="font-mono">Output.object()</code> + Zod schemas). Pick a schema, paste text,
-              and the AI returns a typed JSON object.
+              Powered by the AI SDK structured-output pipeline (
+              <code className="font-mono">generateText</code> with{' '}
+              <code className="font-mono">Output.object()</code> + Zod schemas). Pick a schema,
+              paste text, and the AI returns a typed JSON object.
             </p>
           </HelpDisclosure>
         }

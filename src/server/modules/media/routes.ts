@@ -16,7 +16,13 @@ import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
-import { transformVideo, extractFrame, generateSpritesheet, extractAudio, clipVideo } from './transform'
+import {
+  transformVideo,
+  extractFrame,
+  generateSpritesheet,
+  extractAudio,
+  clipVideo,
+} from './transform'
 
 type MediaEnv = AuthContext & {
   Bindings: AuthContext['Bindings'] & {
@@ -31,7 +37,13 @@ app.use('*', authMiddleware)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const requireMedia = async (c: any, next: any) => {
   if (!c.env.MEDIA) {
-    return c.json({ error: 'Cloudflare Media binding not configured. Add "media": { "binding": "MEDIA" } to wrangler.jsonc.' }, 501)
+    return c.json(
+      {
+        error:
+          'Cloudflare Media binding not configured. Add "media": { "binding": "MEDIA" } to wrangler.jsonc.',
+      },
+      501
+    )
   }
   await next()
 }
@@ -49,7 +61,12 @@ app.post('/transform', async (c) => {
 
     const opts = optionsJson ? JSON.parse(optionsJson) : {}
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return await transformVideo(c.env.MEDIA as any, await file.arrayBuffer(), opts.transform || {}, opts.output || {})
+    return await transformVideo(
+      c.env.MEDIA as any,
+      await file.arrayBuffer(),
+      opts.transform || {},
+      opts.output || {}
+    )
   } catch (error) {
     return c.json({ error: error instanceof Error ? error.message : 'Transform failed' }, 500)
   }
@@ -58,13 +75,16 @@ app.post('/transform', async (c) => {
 /** POST /api/media/clip — clip a video segment */
 app.post(
   '/clip',
-  zValidator('query', z.object({
-    time: z.string().optional().default('0s'),
-    duration: z.string().default('5s'),
-    width: z.coerce.number().optional(),
-    height: z.coerce.number().optional(),
-    removeAudio: z.coerce.boolean().optional(),
-  })),
+  zValidator(
+    'query',
+    z.object({
+      time: z.string().optional().default('0s'),
+      duration: z.string().default('5s'),
+      width: z.coerce.number().optional(),
+      height: z.coerce.number().optional(),
+      removeAudio: z.coerce.boolean().optional(),
+    })
+  ),
   async (c) => {
     try {
       const params = c.req.valid('query')
@@ -83,11 +103,14 @@ app.post(
 /** POST /api/media/frame — extract a still frame */
 app.post(
   '/frame',
-  zValidator('query', z.object({
-    time: z.string().optional().default('0s'),
-    width: z.coerce.number().optional(),
-    height: z.coerce.number().optional(),
-  })),
+  zValidator(
+    'query',
+    z.object({
+      time: z.string().optional().default('0s'),
+      width: z.coerce.number().optional(),
+      height: z.coerce.number().optional(),
+    })
+  ),
   async (c) => {
     try {
       const params = c.req.valid('query')
@@ -98,7 +121,10 @@ app.post(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return await extractFrame(c.env.MEDIA as any, await file.arrayBuffer(), params)
     } catch (error) {
-      return c.json({ error: error instanceof Error ? error.message : 'Frame extraction failed' }, 500)
+      return c.json(
+        { error: error instanceof Error ? error.message : 'Frame extraction failed' },
+        500
+      )
     }
   }
 )
@@ -113,7 +139,10 @@ app.post('/spritesheet', async (c) => {
     if (!file) return c.json({ error: 'file required' }, 400)
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return await generateSpritesheet(c.env.MEDIA as any, await file.arrayBuffer(), { width, height })
+    return await generateSpritesheet(c.env.MEDIA as any, await file.arrayBuffer(), {
+      width,
+      height,
+    })
   } catch (error) {
     return c.json({ error: error instanceof Error ? error.message : 'Spritesheet failed' }, 500)
   }
@@ -129,7 +158,10 @@ app.post('/audio', async (c) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return await extractAudio(c.env.MEDIA as any, await file.arrayBuffer())
   } catch (error) {
-    return c.json({ error: error instanceof Error ? error.message : 'Audio extraction failed' }, 500)
+    return c.json(
+      { error: error instanceof Error ? error.message : 'Audio extraction failed' },
+      500
+    )
   }
 })
 
@@ -169,7 +201,12 @@ app.get('/r2/*', async (c) => {
     if (query['audio'] === 'false') output['audio'] = false
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response = await transformVideo(c.env.MEDIA as any, await object.arrayBuffer(), transform, output)
+    const response = await transformVideo(
+      c.env.MEDIA as any,
+      await object.arrayBuffer(),
+      transform,
+      output
+    )
 
     const headers = new Headers(response.headers)
     headers.set('Cache-Control', 'public, max-age=86400')

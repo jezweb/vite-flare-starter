@@ -31,10 +31,7 @@ function fromBase64Url(s: string): Uint8Array {
 }
 
 async function getKey(envSecret: string): Promise<CryptoKey> {
-  const hash = await crypto.subtle.digest(
-    'SHA-256',
-    new TextEncoder().encode(envSecret),
-  )
+  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(envSecret))
   return crypto.subtle.importKey('raw', hash, 'AES-GCM', false, ['encrypt', 'decrypt'])
 }
 
@@ -47,14 +44,14 @@ export async function encrypt(plaintext: string, envSecret: string | undefined):
   const ctBuf = await crypto.subtle.encrypt(
     { name: 'AES-GCM', iv },
     key,
-    new TextEncoder().encode(plaintext),
+    new TextEncoder().encode(plaintext)
   )
   return `${toBase64Url(iv)}.${toBase64Url(new Uint8Array(ctBuf))}`
 }
 
 export async function decrypt(
   ciphertext: string | null | undefined,
-  envSecret: string | undefined,
+  envSecret: string | undefined
 ): Promise<string | null> {
   if (!ciphertext) return null
   if (!envSecret) {
@@ -68,7 +65,7 @@ export async function decrypt(
   const ptBuf = await crypto.subtle.decrypt(
     { name: 'AES-GCM', iv: iv as unknown as BufferSource },
     key,
-    ct as unknown as BufferSource,
+    ct as unknown as BufferSource
   )
   return new TextDecoder().decode(ptBuf)
 }

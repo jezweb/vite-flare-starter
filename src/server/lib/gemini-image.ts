@@ -66,7 +66,7 @@ export async function callGeminiImage(
   apiKey: string,
   prompt: string,
   sourceImage?: { bytes: Uint8Array; mimeType: string },
-  options: GeminiImageOptions = {},
+  options: GeminiImageOptions = {}
 ): Promise<{ bytes: Uint8Array; mimeType: string }> {
   const parts: GeminiPart[] = [{ text: prompt }]
   if (sourceImage) {

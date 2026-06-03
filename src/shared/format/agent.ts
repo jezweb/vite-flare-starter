@@ -18,7 +18,7 @@
  */
 export function formatAgentClass(
   className: string,
-  registry?: Map<string, { displayName: string }>,
+  registry?: Map<string, { displayName: string }>
 ): string {
   const meta = registry?.get(className)
   if (meta) return meta.displayName
@@ -35,51 +35,74 @@ export function formatAgentClass(
   }
   // Snake_case fallback (agentClass arrived as `my_custom_class`).
   if (className.includes('_')) {
-    return className
-      .replace(/_+/g, ' ')
-      .replace(/\b\w/g, (m) => m.toUpperCase())
+    return className.replace(/_+/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase())
   }
   // CamelCase fallback (`MyCustomAgent` → `My Custom`).
-  return className.replace(/Agent$/, '').replace(/([A-Z])/g, ' $1').trim() || className
+  return (
+    className
+      .replace(/Agent$/, '')
+      .replace(/([A-Z])/g, ' $1')
+      .trim() || className
+  )
 }
 
 export function formatOutcome(outcome: string | null | undefined): string {
   switch (outcome) {
-    case 'ok': return 'Success'
-    case 'error': return 'Error'
-    case 'budget_exceeded': return 'Hit cost cap'
-    case 'started': return 'Running'
-    default: return outcome ?? '—'
+    case 'ok':
+      return 'Success'
+    case 'error':
+      return 'Error'
+    case 'budget_exceeded':
+      return 'Hit cost cap'
+    case 'started':
+      return 'Running'
+    default:
+      return outcome ?? '—'
   }
 }
 
 export function formatTrigger(trigger: string | null | undefined): string {
   switch (trigger) {
-    case 'rest': return 'Manual'
-    case 'schedule': return 'Scheduled'
-    case 'webhook': return 'Webhook'
-    case 'inter_agent': return 'via another agent'
-    default: return trigger ?? '—'
+    case 'rest':
+      return 'Manual'
+    case 'schedule':
+      return 'Scheduled'
+    case 'webhook':
+      return 'Webhook'
+    case 'inter_agent':
+      return 'via another agent'
+    default:
+      return trigger ?? '—'
   }
 }
 
 export function formatRole(role: string | null | undefined): string {
   switch (role) {
-    case 'owner': return 'Owner'
-    case 'admin': return 'Admin'
-    case 'member': return 'Member'
-    case 'manager': return 'Manager'
-    case 'user': return 'Member'
-    default: return role ?? '—'
+    case 'owner':
+      return 'Owner'
+    case 'admin':
+      return 'Admin'
+    case 'member':
+      return 'Member'
+    case 'manager':
+      return 'Manager'
+    case 'user':
+      return 'Member'
+    default:
+      return role ?? '—'
   }
 }
 
 export function formatImportance(importance: string | null | undefined): string {
   switch (importance) {
-    case 'high': return 'High'
-    case 'medium': return 'Medium'
-    case 'low': return 'Low'
-    default: return importance ?? ''
+    case 'high':
+      return 'High'
+    case 'medium':
+      return 'Medium'
+    case 'low':
+      return 'Low'
+    default:
+      return importance ?? ''
   }
 }
 
@@ -110,10 +133,14 @@ export function formatCadenceInterval(intervalSeconds: number | null | undefined
  */
 export function formatAdjustMode(mode: string | null | undefined): string {
   switch (mode) {
-    case 'fixed': return 'Locked to your schedule'
-    case 'suggested': return 'AI proposes changes, you review'
-    case 'direct': return 'AI tunes itself automatically'
-    default: return mode ?? '—'
+    case 'fixed':
+      return 'Locked to your schedule'
+    case 'suggested':
+      return 'AI proposes changes, you review'
+    case 'direct':
+      return 'AI tunes itself automatically'
+    default:
+      return mode ?? '—'
   }
 }
 
@@ -148,10 +175,11 @@ function formatNum(n: number): string {
  * have to invent a slug every time.
  */
 export function deriveInstanceName(routineName: string, userIdSuffix?: string): string {
-  const base = routineName
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-    .slice(0, 40) || 'routine'
+  const base =
+    routineName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 40) || 'routine'
   return userIdSuffix ? `${base}-${userIdSuffix.slice(0, 8)}` : base
 }

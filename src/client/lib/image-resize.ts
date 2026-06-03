@@ -57,16 +57,8 @@ function calculateDimensions(
  * @param options - Resize options
  * @returns Promise resolving to ResizeResult
  */
-export async function resizeImage(
-  file: File,
-  options: ResizeOptions = {}
-): Promise<ResizeResult> {
-  const {
-    maxWidth = 512,
-    maxHeight = 512,
-    quality = 0.9,
-    mimeType = 'image/jpeg',
-  } = options
+export async function resizeImage(file: File, options: ResizeOptions = {}): Promise<ResizeResult> {
+  const { maxWidth = 512, maxHeight = 512, quality = 0.9, mimeType = 'image/jpeg' } = options
 
   // Validate file is an image
   if (!file.type.startsWith('image/')) {
@@ -186,9 +178,7 @@ export function validateFileType(
   allowedTypes: string[] = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 ): boolean {
   if (!allowedTypes.includes(file.type)) {
-    throw new Error(
-      `File type ${file.type} not allowed. Allowed types: ${allowedTypes.join(', ')}`
-    )
+    throw new Error(`File type ${file.type} not allowed. Allowed types: ${allowedTypes.join(', ')}`)
   }
 
   return true

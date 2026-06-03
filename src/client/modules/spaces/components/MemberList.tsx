@@ -52,7 +52,7 @@ export function MemberList({ members, users, online }: Props) {
                     <span
                       className={cn(
                         'absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full ring-2 ring-background',
-                        isOnline ? 'bg-emerald-500' : 'bg-muted-foreground/30',
+                        isOnline ? 'bg-emerald-500' : 'bg-muted-foreground/30'
                       )}
                       title={isOnline ? 'Online' : 'Offline'}
                     />

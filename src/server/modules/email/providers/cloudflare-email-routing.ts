@@ -25,9 +25,7 @@ export const cloudflareEmailRouting: EmailProviderImpl = {
     const mimetext = await import(/* @vite-ignore */ 'mimetext' as string).catch(() => null)
     const cfEmail = await import(/* @vite-ignore */ 'cloudflare:email' as string).catch(() => null)
     if (!mimetext || !cfEmail) {
-      throw new Error(
-        'Email Routing send requires `mimetext` (run `pnpm add mimetext`).',
-      )
+      throw new Error('Email Routing send requires `mimetext` (run `pnpm add mimetext`).')
     }
 
     const factory = mimetext as {
@@ -45,9 +43,11 @@ export const cloudflareEmailRouting: EmailProviderImpl = {
     msg.setSubject(message.subject)
     msg.addMessage({ contentType: 'text/plain', data: message.text })
     msg.addMessage({ contentType: 'text/html', data: message.html })
-    const EmailMessage = (cfEmail as {
-      EmailMessage: new (from: string, to: string, raw: string) => unknown
-    }).EmailMessage
+    const EmailMessage = (
+      cfEmail as {
+        EmailMessage: new (from: string, to: string, raw: string) => unknown
+      }
+    ).EmailMessage
     const built = new EmailMessage(message.from, to, msg.asRaw())
     await env.SEND_EMAIL.send(built)
     return {}

@@ -23,14 +23,12 @@ import type { ToolDefinition } from '@/shared/agent'
 // use a structural schema with `_ui` as a literal-ish string and any
 // passthrough keys so the rendering pipeline can read them without a full
 // per-tool union.
-const UiOutputSchema = z
-  .object({ _ui: z.string() })
-  .catchall(z.unknown())
+const UiOutputSchema = z.object({ _ui: z.string() }).catchall(z.unknown())
 
 function uiTool<I>(
   name: string,
   description: string,
-  inputSchema: z.ZodType<I>,
+  inputSchema: z.ZodType<I>
 ): ToolDefinition<I, z.infer<typeof UiOutputSchema>> {
   return {
     name,
@@ -45,27 +43,38 @@ export const offerChoicesDefinition = uiTool(
   'offer_choices',
   "Display quick-reply buttons the user can click. Use AFTER completing a task to suggest next steps (e.g. 'Send this email', 'Review another', 'Export to PDF'). The selected text becomes the user's next message. Prefer this over 'Would you like me to...' questions.",
   z.object({
-    items: z.array(
-      z.union([
-        z.string(),
-        z.object({
-          text: z.string().describe('Display text for the choice'),
-          icon: z.string().optional().describe("Optional Lucide icon name (e.g. 'phone', 'mail', 'calendar')"),
-        }),
-      ]),
-    ).describe('Array of choice options — strings or {text, icon} objects'),
-    layout: z.enum(['horizontal', 'vertical', 'grid']).optional().describe('How to arrange buttons (default: horizontal)'),
-  }),
+    items: z
+      .array(
+        z.union([
+          z.string(),
+          z.object({
+            text: z.string().describe('Display text for the choice'),
+            icon: z
+              .string()
+              .optional()
+              .describe("Optional Lucide icon name (e.g. 'phone', 'mail', 'calendar')"),
+          }),
+        ])
+      )
+      .describe('Array of choice options — strings or {text, icon} objects'),
+    layout: z
+      .enum(['horizontal', 'vertical', 'grid'])
+      .optional()
+      .describe('How to arrange buttons (default: horizontal)'),
+  })
 )
 
 export const showAlertDefinition = uiTool(
   'show_alert',
   'Display a visually distinct alert/notice box. Use for important notices, deadlines, safety warnings, or caveats that should stand out from conversation text.',
   z.object({
-    type: z.enum(['info', 'success', 'warning', 'error']).optional().describe('Alert style (default: info)'),
+    type: z
+      .enum(['info', 'success', 'warning', 'error'])
+      .optional()
+      .describe('Alert style (default: info)'),
     title: z.string().optional().describe('Alert heading'),
     message: z.string().describe('Alert body text'),
-  }),
+  })
 )
 
 export const showContactDefinition = uiTool(
@@ -78,7 +87,7 @@ export const showContactDefinition = uiTool(
     email: z.string().optional().describe('Email address'),
     address: z.string().optional().describe('Physical address'),
     image: z.string().optional().describe('Avatar/logo image URL'),
-  }),
+  })
 )
 
 export const collectInfoDefinition = uiTool(
@@ -86,37 +95,51 @@ export const collectInfoDefinition = uiTool(
   'Display a form to collect user information. Use when needing multiple fields at once (bookings, registrations, quotes) — more efficient than asking questions one at a time.',
   z.object({
     title: z.string().optional().describe('Form heading'),
-    fields: z.array(
-      z.object({
-        type: z.enum(['text', 'email', 'tel', 'textarea', 'number', 'url']).describe('Input field type'),
-        name: z.string().describe('Field name (used in submitted data)'),
-        label: z.string().describe('Display label'),
-        placeholder: z.string().optional(),
-        required: z.boolean().optional(),
-      }),
-    ).describe('Array of form fields'),
+    fields: z
+      .array(
+        z.object({
+          type: z
+            .enum(['text', 'email', 'tel', 'textarea', 'number', 'url'])
+            .describe('Input field type'),
+          name: z.string().describe('Field name (used in submitted data)'),
+          label: z.string().describe('Display label'),
+          placeholder: z.string().optional(),
+          required: z.boolean().optional(),
+        })
+      )
+      .describe('Array of form fields'),
     submitLabel: z.string().optional().describe('Submit button text (default: "Submit")'),
-  }),
+  })
 )
 
 export const askQuestionsDefinition = uiTool(
   'ask_questions',
-  "Display structured question cards with selectable options. Use BEFORE ambiguous tasks to clarify intent. Single-select auto-advances, multi-select has checkboxes + submit. Prefer this over open-ended text questions.",
+  'Display structured question cards with selectable options. Use BEFORE ambiguous tasks to clarify intent. Single-select auto-advances, multi-select has checkboxes + submit. Prefer this over open-ended text questions.',
   z.object({
-    questions: z.array(
-      z.object({
-        question: z.string().describe('The question to ask'),
-        options: z.array(
-          z.object({
-            label: z.string().describe('Option display text'),
-            description: z.string().optional().describe('Optional explanation'),
-          }),
-        ).describe('Available options'),
-        multiSelect: z.boolean().optional().describe('Allow multiple selections (default: false)'),
-        allowCustom: z.boolean().optional().describe("Show 'Something else' option (default: true)"),
-      }),
-    ).describe('Array of questions with options'),
-  }),
+    questions: z
+      .array(
+        z.object({
+          question: z.string().describe('The question to ask'),
+          options: z
+            .array(
+              z.object({
+                label: z.string().describe('Option display text'),
+                description: z.string().optional().describe('Optional explanation'),
+              })
+            )
+            .describe('Available options'),
+          multiSelect: z
+            .boolean()
+            .optional()
+            .describe('Allow multiple selections (default: false)'),
+          allowCustom: z
+            .boolean()
+            .optional()
+            .describe("Show 'Something else' option (default: true)"),
+        })
+      )
+      .describe('Array of questions with options'),
+  })
 )
 
 export const showDataTableDefinition = uiTool(
@@ -124,31 +147,40 @@ export const showDataTableDefinition = uiTool(
   'Display a sortable data table with column headers and rows. Use for lists, summaries, or any tabular data the user asks to see.',
   z.object({
     title: z.string().optional().describe('Table title'),
-    columns: z.array(
-      z.object({
-        key: z.string().describe('Property key matching row data'),
-        label: z.string().describe('Column header'),
-        align: z.enum(['left', 'right', 'center']).optional().describe('Text alignment (default: left)'),
-      }),
-    ).describe('Column definitions'),
-    rows: z.array(z.record(z.string(), z.unknown())).describe('Array of row objects with keys matching columns'),
-  }),
+    columns: z
+      .array(
+        z.object({
+          key: z.string().describe('Property key matching row data'),
+          label: z.string().describe('Column header'),
+          align: z
+            .enum(['left', 'right', 'center'])
+            .optional()
+            .describe('Text alignment (default: left)'),
+        })
+      )
+      .describe('Column definitions'),
+    rows: z
+      .array(z.record(z.string(), z.unknown()))
+      .describe('Array of row objects with keys matching columns'),
+  })
 )
 
 export const showMetricCardsDefinition = uiTool(
   'show_metric_cards',
   'Display KPI/metric cards with label, value, and optional trend. Use for dashboard stats or key figures to show at a glance.',
   z.object({
-    metrics: z.array(
-      z.object({
-        label: z.string(),
-        value: z.string().describe('Value (number or formatted string)'),
-        trend: z.string().optional().describe("Trend text (e.g. '+12% vs last month')"),
-        trendDirection: z.enum(['up', 'down', 'neutral']).optional(),
-        icon: z.string().optional().describe('Lucide icon name'),
-      }),
-    ).describe('Array of metric cards'),
-  }),
+    metrics: z
+      .array(
+        z.object({
+          label: z.string(),
+          value: z.string().describe('Value (number or formatted string)'),
+          trend: z.string().optional().describe("Trend text (e.g. '+12% vs last month')"),
+          trendDirection: z.enum(['up', 'down', 'neutral']).optional(),
+          icon: z.string().optional().describe('Lucide icon name'),
+        })
+      )
+      .describe('Array of metric cards'),
+  })
 )
 
 export const showTimelineDefinition = uiTool(
@@ -156,15 +188,17 @@ export const showTimelineDefinition = uiTool(
   'Display a vertical timeline of events. Use for milestones, activity history, project phases, or any chronological sequence.',
   z.object({
     title: z.string().optional().describe('Timeline heading'),
-    events: z.array(
-      z.object({
-        title: z.string(),
-        date: z.string().optional().describe('Date or time label'),
-        description: z.string().optional(),
-        status: z.enum(['completed', 'current', 'upcoming']).optional(),
-      }),
-    ).describe('Events in chronological order'),
-  }),
+    events: z
+      .array(
+        z.object({
+          title: z.string(),
+          date: z.string().optional().describe('Date or time label'),
+          description: z.string().optional(),
+          status: z.enum(['completed', 'current', 'upcoming']).optional(),
+        })
+      )
+      .describe('Events in chronological order'),
+  })
 )
 
 export const showProgressDefinition = uiTool(
@@ -172,35 +206,43 @@ export const showProgressDefinition = uiTool(
   'Display a multi-step progress tracker. Use for onboarding, completion status, workflow stages.',
   z.object({
     title: z.string().optional(),
-    steps: z.array(
-      z.object({
-        label: z.string(),
-        status: z.enum(['completed', 'current', 'upcoming']),
-        description: z.string().optional(),
-      }),
-    ).describe('Steps in order'),
-  }),
+    steps: z
+      .array(
+        z.object({
+          label: z.string(),
+          status: z.enum(['completed', 'current', 'upcoming']),
+          description: z.string().optional(),
+        })
+      )
+      .describe('Steps in order'),
+  })
 )
 
 export const showComparisonDefinition = uiTool(
   'show_comparison',
   'Display a side-by-side comparison of options. Use for plans, packages, quotes, or any scenario where the user needs to compare choices.',
   z.object({
-    options: z.array(
-      z.object({
-        title: z.string(),
-        subtitle: z.string().optional(),
-        highlight: z.boolean().optional().describe('Mark this option as recommended'),
-        features: z.array(
-          z.object({
-            label: z.string(),
-            value: z.union([z.string(), z.boolean()]).describe('Feature value — boolean for check/cross, string for text'),
-          }),
-        ).describe('Feature list'),
-        cta: z.string().optional().describe('Call-to-action button text'),
-      }),
-    ).describe('Options to compare'),
-  }),
+    options: z
+      .array(
+        z.object({
+          title: z.string(),
+          subtitle: z.string().optional(),
+          highlight: z.boolean().optional().describe('Mark this option as recommended'),
+          features: z
+            .array(
+              z.object({
+                label: z.string(),
+                value: z
+                  .union([z.string(), z.boolean()])
+                  .describe('Feature value — boolean for check/cross, string for text'),
+              })
+            )
+            .describe('Feature list'),
+          cta: z.string().optional().describe('Call-to-action button text'),
+        })
+      )
+      .describe('Options to compare'),
+  })
 )
 
 export const confirmActionDefinition = uiTool(
@@ -211,7 +253,7 @@ export const confirmActionDefinition = uiTool(
     confirmLabel: z.string().optional().describe('Yes button label (default: "Confirm")'),
     cancelLabel: z.string().optional().describe('No button label (default: "Cancel")'),
     destructive: z.boolean().optional().describe('Style the confirm button as destructive (red)'),
-  }),
+  })
 )
 
 export const collectTextDefinition = uiTool(
@@ -221,33 +263,41 @@ export const collectTextDefinition = uiTool(
     prompt: z.string().describe('The question or instruction to show above the input'),
     placeholder: z.string().optional().describe('Placeholder text in the input field'),
     multiline: z.boolean().optional().describe('Allow multi-line input (default: true)'),
-  }),
+  })
 )
 
 export const showMapDefinition = uiTool(
   'show_map',
   'Display a map with business/place markers and a scrollable side panel of result cards. Use AFTER calling google_local_places (or similar) when the user asks for local businesses, venues, or any places with a location. Cards show name, rating, address, and phone. Clicking a card focuses that marker on the map.',
   z.object({
-    title: z.string().optional().describe('Heading shown above the map (e.g. "Wreckers in Newcastle")'),
-    places: z.array(
-      z.object({
-        name: z.string().describe('Business or place name'),
-        lat: z.number().describe('Latitude'),
-        lng: z.number().describe('Longitude'),
-        address: z.string().optional(),
-        phone: z.string().optional(),
-        website: z.string().optional(),
-        rating: z.number().optional().describe('Star rating 0-5'),
-        reviewCount: z.number().optional(),
-        snippet: z.string().optional().describe('One-line description or review highlight'),
-        photoUrl: z.string().optional().describe('Thumbnail image URL'),
-        placeId: z.string().optional().describe('Google Place ID for deep-linking'),
-        type: z.string().optional().describe('Business category (e.g. "Auto Parts")'),
-      }),
-    ).describe('Places to show on the map'),
-    center: z.object({ lat: z.number(), lng: z.number() }).optional().describe('Map centre point (defaults to mean of places)'),
+    title: z
+      .string()
+      .optional()
+      .describe('Heading shown above the map (e.g. "Wreckers in Newcastle")'),
+    places: z
+      .array(
+        z.object({
+          name: z.string().describe('Business or place name'),
+          lat: z.number().describe('Latitude'),
+          lng: z.number().describe('Longitude'),
+          address: z.string().optional(),
+          phone: z.string().optional(),
+          website: z.string().optional(),
+          rating: z.number().optional().describe('Star rating 0-5'),
+          reviewCount: z.number().optional(),
+          snippet: z.string().optional().describe('One-line description or review highlight'),
+          photoUrl: z.string().optional().describe('Thumbnail image URL'),
+          placeId: z.string().optional().describe('Google Place ID for deep-linking'),
+          type: z.string().optional().describe('Business category (e.g. "Auto Parts")'),
+        })
+      )
+      .describe('Places to show on the map'),
+    center: z
+      .object({ lat: z.number(), lng: z.number() })
+      .optional()
+      .describe('Map centre point (defaults to mean of places)'),
     zoom: z.number().optional().describe('Map zoom level 1-18 (default 12)'),
-  }),
+  })
 )
 
 export const uiDefinitions = [

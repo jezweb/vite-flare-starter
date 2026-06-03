@@ -39,17 +39,11 @@ export const tasksListRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     if (o.tasks.length === 0) {
-      return (
-        <div className="text-xs text-muted-foreground italic">
-          No tasks in this list.
-        </div>
-      )
+      return <div className="text-xs text-muted-foreground italic">No tasks in this list.</div>
     }
     return (
       <ul className="space-y-1 text-xs">
@@ -106,17 +100,13 @@ export const tasksCreateRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     return (
       <div className="space-y-1 text-xs">
         <div className="text-sm font-medium">{o.title}</div>
-        {i?.due && (
-          <div className="text-muted-foreground">Due: {formatDue(i.due)}</div>
-        )}
+        {i?.due && <div className="text-muted-foreground">Due: {formatDue(i.due)}</div>}
         {i?.notes && (
           <div className="rounded-md bg-muted/50 p-2 whitespace-pre-wrap text-foreground/90">
             {i.notes}

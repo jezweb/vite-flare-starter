@@ -28,13 +28,20 @@ export interface ConversationSummary {
 }
 
 export interface ChatStorage {
-  createConversation(userId: string, opts?: { title?: string; model?: string; systemPrompt?: string; projectId?: string | null }): Promise<string>
+  createConversation(
+    userId: string,
+    opts?: { title?: string; model?: string; systemPrompt?: string; projectId?: string | null }
+  ): Promise<string>
   /**
    * Insert a conversation with a caller-supplied id. Used when the id is
    * generated upfront (so the client can navigate to the permalink) but the
    * actual DB row is deferred until first successful message save.
    */
-  createConversationWithId(id: string, userId: string, opts?: { title?: string; model?: string; systemPrompt?: string; projectId?: string | null }): Promise<void>
+  createConversationWithId(
+    id: string,
+    userId: string,
+    opts?: { title?: string; model?: string; systemPrompt?: string; projectId?: string | null }
+  ): Promise<void>
   /**
    * True if this user is the owner (creator) of the conversation.
    *
@@ -61,11 +68,18 @@ export interface ChatStorage {
   getProjectId(conversationId: string, userId: string): Promise<string | null>
   loadChat(conversationId: string): Promise<UIMessage[]>
   saveChat(params: { conversationId: string; messages: UIMessage[] }): Promise<void>
-  listConversations(userId: string, opts?: { limit?: number; offset?: number }): Promise<ConversationSummary[]>
+  listConversations(
+    userId: string,
+    opts?: { limit?: number; offset?: number }
+  ): Promise<ConversationSummary[]>
   deleteConversation(conversationId: string, userId: string): Promise<void>
   updateTitle(conversationId: string, userId: string, title: string): Promise<void>
   /** Write the auto-generated title + sidebar summary after the first assistant turn. */
-  updateSummary(conversationId: string, userId: string, fields: { title?: string | null; summary?: string | null }): Promise<void>
+  updateSummary(
+    conversationId: string,
+    userId: string,
+    fields: { title?: string | null; summary?: string | null }
+  ): Promise<void>
   /** Toggle the starred flag. No-op if the user doesn't own the conversation. */
   setStarred(conversationId: string, userId: string, starred: boolean): Promise<void>
   /**
@@ -140,8 +154,8 @@ export function createD1ChatStorage(db: D1Database): ChatStorage {
             eq(conversationMembers.conversationId, conversationId),
             eq(conversationMembers.kind, 'user'),
             eq(conversationMembers.userId, userId),
-            eq(conversationMembers.role, 'owner'),
-          ),
+            eq(conversationMembers.role, 'owner')
+          )
         )
         .limit(1)
       if (memberRow) return true
@@ -163,8 +177,8 @@ export function createD1ChatStorage(db: D1Database): ChatStorage {
           and(
             eq(conversationMembers.conversationId, conversationId),
             eq(conversationMembers.kind, 'user'),
-            eq(conversationMembers.userId, userId),
-          ),
+            eq(conversationMembers.userId, userId)
+          )
         )
         .limit(1)
       if (row) return true
@@ -239,7 +253,9 @@ export function createD1ChatStorage(db: D1Database): ChatStorage {
             const partsStr = typeof rawParts === 'string' ? rawParts : JSON.stringify(rawParts)
             const rawMeta = (m as unknown as Record<string, unknown>)['metadata']
             const metaStr = rawMeta
-              ? (typeof rawMeta === 'string' ? rawMeta : JSON.stringify(rawMeta))
+              ? typeof rawMeta === 'string'
+                ? rawMeta
+                : JSON.stringify(rawMeta)
               : null
             return {
               id: m.id,
@@ -289,8 +305,12 @@ export function createD1ChatStorage(db: D1Database): ChatStorage {
         starred: r.starred ?? 0,
         projectId: r.projectId ?? null,
         model: r.model,
-        createdAt: r.createdAt ? new Date(r.createdAt as unknown as number).toISOString() : new Date().toISOString(),
-        updatedAt: r.updatedAt ? new Date(r.updatedAt as unknown as number).toISOString() : new Date().toISOString(),
+        createdAt: r.createdAt
+          ? new Date(r.createdAt as unknown as number).toISOString()
+          : new Date().toISOString(),
+        updatedAt: r.updatedAt
+          ? new Date(r.updatedAt as unknown as number).toISOString()
+          : new Date().toISOString(),
       }))
     },
 
@@ -367,7 +387,7 @@ export function createD1ChatStorage(db: D1Database): ChatStorage {
 async function seedDefaultChatMembers(
   d: ReturnType<typeof drizzle>,
   conversationId: string,
-  ownerUserId: string,
+  ownerUserId: string
 ): Promise<void> {
   const now = Math.floor(Date.now() / 1000)
   await d

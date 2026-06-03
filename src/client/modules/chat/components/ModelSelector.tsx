@@ -98,16 +98,14 @@ function CostTierDots({ tier, size = 'sm' }: { tier?: Model['costTier']; size?: 
   if (!tier || tier === 'free') return null
   const filled = tier === 'low' ? 1 : tier === 'mid' ? 2 : 3
   const title =
-    tier === 'low' ? '≤ $1 / M tokens (low cost)'
-    : tier === 'mid' ? '$1–$5 / M tokens (mid cost)'
-    : '> $5 / M tokens (flagship / premium)'
+    tier === 'low'
+      ? '≤ $1 / M tokens (low cost)'
+      : tier === 'mid'
+        ? '$1–$5 / M tokens (mid cost)'
+        : '> $5 / M tokens (flagship / premium)'
   const dotSize = size === 'md' ? 'size-1.5' : 'size-1'
   return (
-    <span
-      className="inline-flex items-center gap-0.5 shrink-0"
-      title={title}
-      aria-hidden
-    >
+    <span className="inline-flex items-center gap-0.5 shrink-0" title={title} aria-hidden>
       {[0, 1, 2].map((i) => (
         <span
           key={i}
@@ -146,9 +144,17 @@ const PROVIDER_LABELS: Record<string, string> = {
 
 /** Order providers so the free models come first, then hosted flagships. */
 const PROVIDER_ORDER = [
-  'moonshotai', 'zai-org', 'qwen', 'google',
-  'anthropic', 'openai', 'deepseek', 'mistralai',
-  'x-ai', 'z-ai', 'meta-llama',
+  'moonshotai',
+  'zai-org',
+  'qwen',
+  'google',
+  'anthropic',
+  'openai',
+  'deepseek',
+  'mistralai',
+  'x-ai',
+  'z-ai',
+  'meta-llama',
 ]
 
 export function ModelSelector({ value, onChange, disabled }: ModelSelectorProps) {
@@ -205,24 +211,18 @@ export function ModelSelector({ value, onChange, disabled }: ModelSelectorProps)
 
   const orderedEntries = [
     ['free', groups.get('free') ?? []] as const,
-    ...PROVIDER_ORDER
-      .filter((p) => p !== 'moonshotai' && p !== 'zai-org' && p !== 'qwen')
-      .map((p) => [p, groups.get(p) ?? []] as const),
-    // Any provider we don't have an explicit label for
-    ...[...groups.entries()].filter(
-      ([k]) => k !== 'free' && !PROVIDER_ORDER.includes(k),
+    ...PROVIDER_ORDER.filter((p) => p !== 'moonshotai' && p !== 'zai-org' && p !== 'qwen').map(
+      (p) => [p, groups.get(p) ?? []] as const
     ),
+    // Any provider we don't have an explicit label for
+    ...[...groups.entries()].filter(([k]) => k !== 'free' && !PROVIDER_ORDER.includes(k)),
   ].filter(([, models]) => models.length > 0)
 
   const groupLabel = (key: string) =>
-    key === 'free' ? 'Free · Workers AI' : PROVIDER_LABELS[key] ?? key
+    key === 'free' ? 'Free · Workers AI' : (PROVIDER_LABELS[key] ?? key)
 
   return (
-    <Select
-      value={value || data.recommended}
-      onValueChange={onChange}
-      disabled={disabled}
-    >
+    <Select value={value || data.recommended} onValueChange={onChange} disabled={disabled}>
       <SelectTrigger
         aria-label={`Select AI model${selectedModel?.name ? ` (current: ${selectedModel.name})` : ''}`}
         className="w-[160px] max-w-[160px]"

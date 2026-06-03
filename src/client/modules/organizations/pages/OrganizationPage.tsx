@@ -101,7 +101,10 @@ export function OrganizationPage() {
             <KeyValueList>
               <KeyValueRow label="Org name" value={active.organizationName} />
               <KeyValueRow label="Slug" value={active.organizationSlug} mono />
-              <KeyValueRow label="Your role" value={<span className="capitalize">{active.role}</span>} />
+              <KeyValueRow
+                label="Your role"
+                value={<span className="capitalize">{active.role}</span>}
+              />
             </KeyValueList>
           </HelpDisclosure>
         }
@@ -135,10 +138,9 @@ export function OrganizationPage() {
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Identity</CardTitle>
               <CardDescription>
-                Editing org name + logo will land in a follow-up — better-auth's
-                update endpoint needs the matching schema columns wired up
-                first. For now, the slug + creation date are the stable
-                identifiers.
+                Editing org name + logo will land in a follow-up — better-auth's update endpoint
+                needs the matching schema columns wired up first. For now, the slug + creation date
+                are the stable identifiers.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2 text-xs">
@@ -152,9 +154,8 @@ export function OrganizationPage() {
             <CardHeader className="pb-3">
               <CardTitle className="text-base text-destructive">Danger zone</CardTitle>
               <CardDescription>
-                Leaving an organisation removes your access; an owner has to
-                re-invite you to come back. Sole owners must transfer
-                ownership before they can leave.
+                Leaving an organisation removes your access; an owner has to re-invite you to come
+                back. Sole owners must transfer ownership before they can leave.
               </CardDescription>
             </CardHeader>
             <CardContent>

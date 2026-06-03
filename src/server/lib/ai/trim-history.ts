@@ -96,10 +96,18 @@ function estimateMessageChars(msg: TrimmableMessage): number {
       if (typeof p['text'] === 'string') total += (p['text'] as string).length
       if (typeof p['reasoning'] === 'string') total += (p['reasoning'] as string).length
       if (p['input'] !== undefined) {
-        try { total += JSON.stringify(p['input']).length } catch { /* skip */ }
+        try {
+          total += JSON.stringify(p['input']).length
+        } catch {
+          /* skip */
+        }
       }
       if (p['output'] !== undefined) {
-        try { total += JSON.stringify(p['output']).length } catch { /* skip */ }
+        try {
+          total += JSON.stringify(p['output']).length
+        } catch {
+          /* skip */
+        }
       }
       if (typeof p['url'] === 'string') total += (p['url'] as string).length
     }
@@ -146,7 +154,7 @@ function renderMessageForSummary(msg: TrimmableMessage): string {
 async function summariseWithHaiku(
   dropped: TrimmableMessage[],
   apiKey: string,
-  modelOverride?: string,
+  modelOverride?: string
 ): Promise<string | null> {
   try {
     let transcript = dropped.map(renderMessageForSummary).join('\n')
@@ -176,7 +184,7 @@ async function summariseWithHaiku(
       JSON.stringify({
         event: 'trim_history_summary_failed',
         error: err instanceof Error ? err.message : String(err),
-      }),
+      })
     )
     return null
   }
@@ -230,7 +238,7 @@ function buildOmissionMessage<M extends TrimmableMessage>(droppedCount: number):
  */
 export async function trimHistoryToTokenBudget<M extends TrimmableMessage>(
   messages: M[],
-  opts: TrimOptions = {},
+  opts: TrimOptions = {}
 ): Promise<TrimResult<M>> {
   const maxTokens = opts.maxTokens ?? DEFAULT_MAX_TOKENS
   const keepRecent = Math.max(1, opts.keepRecent ?? DEFAULT_KEEP_RECENT)

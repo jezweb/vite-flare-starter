@@ -76,9 +76,7 @@ async function mintPersona(token: string, persona: Persona): Promise<MintRespons
     })
     if (!resp.ok()) {
       const body = await resp.text()
-      throw new Error(
-        `test-auth/cookies failed for ${persona.email}: ${resp.status()} ${body}`,
-      )
+      throw new Error(`test-auth/cookies failed for ${persona.email}: ${resp.status()} ${body}`)
     }
     return (await resp.json()) as MintResponse
   } finally {
@@ -111,7 +109,7 @@ async function globalSetup() {
     throw new Error(
       'TEST_AUTH_TOKEN is required. Export it in your shell before running ' +
         'pnpm test:e2e. The shared overnight token is documented in the ' +
-        'regression test brief.',
+        'regression test brief.'
     )
   }
 
@@ -126,8 +124,8 @@ async function globalSetup() {
     // eslint-disable-next-line no-console
     console.log(
       `[playwright global-setup] minted ${persona.email} -> ${path.basename(
-        persona.storageStateFile,
-      )}`,
+        persona.storageStateFile
+      )}`
     )
   }
 }

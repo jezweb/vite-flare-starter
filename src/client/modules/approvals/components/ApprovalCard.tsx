@@ -68,7 +68,7 @@ export function ApprovalCard({
   const { data: agentCatalog } = useAgentCatalog()
   const agentRegistry = useMemo(
     () => new Map((agentCatalog?.agents ?? []).map((a) => [a.className, a])),
-    [agentCatalog],
+    [agentCatalog]
   )
   const [note, setNote] = useState('')
 
@@ -100,7 +100,7 @@ export function ApprovalCard({
   const isMemory = approval.agentClass === 'memory_extraction'
   const ageStr = useMemo(
     () => formatDistanceToNow(new Date(approval.createdAt * 1000), { addSuffix: true }),
-    [approval.createdAt],
+    [approval.createdAt]
   )
   const isStale = useMemo(() => {
     if (approval.status !== 'pending') return false
@@ -113,9 +113,10 @@ export function ApprovalCard({
       className={cn(
         'transition-colors',
         highlight && 'ring-2 ring-primary/50',
-        approval.status === 'executed' && 'border-emerald-500/30 bg-emerald-50/40 dark:bg-emerald-950/10',
+        approval.status === 'executed' &&
+          'border-emerald-500/30 bg-emerald-50/40 dark:bg-emerald-950/10',
         approval.status === 'failed' && 'border-destructive/40 bg-destructive/5',
-        approval.status === 'rejected' && 'opacity-60',
+        approval.status === 'rejected' && 'opacity-60'
       )}
     >
       <CardHeader className="pb-3">
@@ -291,11 +292,18 @@ function MemoryProposalPreview({ payload }: { payload: unknown }) {
     <div className="space-y-2 rounded-md border bg-muted/30 p-3">
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <Brain className="size-3.5 text-muted-foreground" />
-        <span className={cn('rounded border px-1.5 py-0.5 text-[10px] uppercase tracking-wider', verbColor)}>
+        <span
+          className={cn(
+            'rounded border px-1.5 py-0.5 text-[10px] uppercase tracking-wider',
+            verbColor
+          )}
+        >
           {action}
         </span>
         <span className="text-muted-foreground">in</span>
-        <span className="font-medium">{scope === 'project' ? 'project memory' : 'your memory'}</span>
+        <span className="font-medium">
+          {scope === 'project' ? 'project memory' : 'your memory'}
+        </span>
         {update.isPrivate && (
           <span title="Sensitive — never auto-injected">
             <Lock className="size-3 text-amber-600" aria-label="Private" />
@@ -356,7 +364,7 @@ function plainTitle(approval: Approval, isMemory: boolean): string {
 function sourceLabel(
   approval: Approval,
   registry: Map<string, { displayName: string }>,
-  isMemory: boolean,
+  isMemory: boolean
 ): string {
   if (isMemory) return 'From AI memory'
   const friendly = formatAgentClass(approval.agentClass, registry)
@@ -366,7 +374,11 @@ function sourceLabel(
 function StatusBadge({ status }: { status: Status }) {
   const config: Record<
     Status,
-    { label: string; icon: typeof Clock; kind: 'success' | 'info' | 'warning' | 'danger' | 'neutral' }
+    {
+      label: string
+      icon: typeof Clock
+      kind: 'success' | 'info' | 'warning' | 'danger' | 'neutral'
+    }
   > = {
     pending: { label: 'Pending', icon: Clock, kind: 'warning' },
     approved: { label: 'Approved', icon: CheckCircle2, kind: 'info' },

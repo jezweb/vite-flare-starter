@@ -50,27 +50,23 @@ export function SetupCard({
         state === 'active' && 'border-primary/40 bg-primary/5 hover:bg-primary/10',
         state === 'completed' && 'bg-muted/40 opacity-80',
         asChild && 'cursor-pointer',
-        className,
+        className
       )}
       {...rest}
     >
       <div
         className={cn(
           'flex size-9 shrink-0 items-center justify-center rounded-md',
-          state === 'completed' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted text-foreground',
+          state === 'completed' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted text-foreground'
         )}
       >
-        {state === 'completed' ? (
-          <CheckCircle2 className="size-4" />
-        ) : (
-          <Icon className="size-4" />
-        )}
+        {state === 'completed' ? <CheckCircle2 className="size-4" /> : <Icon className="size-4" />}
       </div>
       <div className="min-w-0 flex-1">
         <p
           className={cn(
             'text-sm font-medium',
-            state === 'completed' && 'line-through text-muted-foreground',
+            state === 'completed' && 'line-through text-muted-foreground'
           )}
         >
           {title}
@@ -83,9 +79,7 @@ export function SetupCard({
         <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover/setup:translate-x-0.5" />
       )}
       {/* Children render on the right when not asChild — useful for badges. */}
-      {!asChild && children && (
-        <div className="shrink-0 flex items-center gap-2">{children}</div>
-      )}
+      {!asChild && children && <div className="shrink-0 flex items-center gap-2">{children}</div>}
     </Comp>
   )
 }
@@ -93,13 +87,7 @@ export function SetupCard({
 interface SetupCardListProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function SetupCardList({ className, ...rest }: SetupCardListProps) {
-  return (
-    <div
-      data-slot="setup-card-list"
-      className={cn('grid gap-2', className)}
-      {...rest}
-    />
-  )
+  return <div data-slot="setup-card-list" className={cn('grid gap-2', className)} {...rest} />
 }
 
 SetupCard.displayName = 'SetupCard'

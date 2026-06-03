@@ -51,7 +51,7 @@ function mswEnv(ctx: AgentContext): MicrosoftWorkspaceEnv {
  */
 async function requireActiveToken(
   ctx: AgentContext,
-  requiredScope: string,
+  requiredScope: string
 ): Promise<{ token: string } | { error: string }> {
   const env = mswEnv(ctx)
   const db = drizzle(env.DB)
@@ -106,7 +106,10 @@ function userHasScope(scope: string): (ctx: AgentContext) => Promise<boolean> {
 // ─── OUTLOOK — SEARCH ──────────────────────────────────────────────────
 
 const OutlookSearchInput = z.object({
-  query: z.string().optional().describe('Microsoft Graph $search query (KQL). Example: "from:sarah AND attachment"'),
+  query: z
+    .string()
+    .optional()
+    .describe('Microsoft Graph $search query (KQL). Example: "from:sarah AND attachment"'),
   maxResults: z.number().int().min(1).max(50).default(10).optional(),
 })
 
@@ -122,7 +125,7 @@ const OutlookSearchOutput = z.union([
         hasAttachments: z.boolean().optional(),
         isRead: z.boolean().optional(),
         webLink: z.string().optional(),
-      }),
+      })
     ),
     count: z.number(),
   }),
@@ -144,7 +147,10 @@ export const outlookSearchDefinition: ToolDefinition<
     if ('error' in auth) return auth
     const url = new URL(`${GRAPH_BASE}/me/messages`)
     url.searchParams.set('$top', String(maxResults))
-    url.searchParams.set('$select', 'id,subject,from,bodyPreview,receivedDateTime,hasAttachments,isRead,webLink')
+    url.searchParams.set(
+      '$select',
+      'id,subject,from,bodyPreview,receivedDateTime,hasAttachments,isRead,webLink'
+    )
     if (query) url.searchParams.set('$search', `"${query.replace(/"/g, '\\"')}"`)
     else url.searchParams.set('$orderby', 'receivedDateTime desc')
 
@@ -243,7 +249,7 @@ export const outlookGetMessageDefinition: ToolDefinition<
       to: m.toRecipients?.map((r) =>
         r.emailAddress
           ? `${r.emailAddress.name ?? ''} <${r.emailAddress.address ?? ''}>`.trim()
-          : '',
+          : ''
       ),
       receivedAt: m.receivedDateTime,
       body: m.body?.content,
@@ -275,7 +281,7 @@ export const outlookSendDefinition: ToolDefinition<
 > = {
   name: 'outlook_send',
   description:
-    'Send an email from the user\'s Outlook account. DESTRUCTIVE — triggers an approval dialog unless the user explicitly asked to send.',
+    "Send an email from the user's Outlook account. DESTRUCTIVE — triggers an approval dialog unless the user explicitly asked to send.",
   inputSchema: OutlookSendInput,
   outputSchema: OutlookSendOutput,
   // Privileged — gated by needsApproval so the UI stops and confirms
@@ -332,7 +338,7 @@ const OneDriveSearchOutput = z.union([
         mimeType: z.string().optional(),
         webUrl: z.string().optional(),
         isFolder: z.boolean().optional(),
-      }),
+      })
     ),
     count: z.number(),
   }),
@@ -353,15 +359,18 @@ export const onedriveSearchDefinition: ToolDefinition<
     const auth = await requireActiveToken(ctx, 'Files.Read')
     if ('error' in auth) return auth
     // Graph's search endpoint lives under /me/drive/root/search(q='...')
-    const url = new URL(
-      `${GRAPH_BASE}/me/drive/root/search(q='${encodeURIComponent(query)}')`,
-    )
+    const url = new URL(`${GRAPH_BASE}/me/drive/root/search(q='${encodeURIComponent(query)}')`)
     url.searchParams.set('$top', String(maxResults))
-    url.searchParams.set('$select', 'id,name,size,lastModifiedDateTime,file,folder,parentReference,webUrl')
+    url.searchParams.set(
+      '$select',
+      'id,name,size,lastModifiedDateTime,file,folder,parentReference,webUrl'
+    )
 
     const resp = await fetch(url, { headers: { Authorization: `Bearer ${auth.token}` } })
     if (!resp.ok) {
-      return { error: `OneDrive search failed: ${resp.status} ${(await resp.text()).slice(0, 200)}` }
+      return {
+        error: `OneDrive search failed: ${resp.status} ${(await resp.text()).slice(0, 200)}`,
+      }
     }
     const json = (await resp.json()) as {
       value: Array<{
@@ -426,7 +435,7 @@ export const onedriveGetFileDefinition: ToolDefinition<
     if ('error' in auth) return auth
     const resp = await fetch(
       `${GRAPH_BASE}/me/drive/items/${encodeURIComponent(fileId)}?$select=id,name,size,lastModifiedDateTime,file,webUrl,@microsoft.graph.downloadUrl`,
-      { headers: { Authorization: `Bearer ${auth.token}` } },
+      { headers: { Authorization: `Bearer ${auth.token}` } }
     )
     if (!resp.ok) {
       return { error: `OneDrive get failed: ${resp.status} ${(await resp.text()).slice(0, 200)}` }
@@ -473,7 +482,7 @@ const MsCalendarListOutput = z.union([
         organizer: z.string().optional(),
         webLink: z.string().optional(),
         isAllDay: z.boolean().optional(),
-      }),
+      })
     ),
     count: z.number(),
   }),
@@ -498,15 +507,14 @@ export const msCalendarListDefinition: ToolDefinition<
     url.searchParams.set('startDateTime', start)
     url.searchParams.set('endDateTime', end)
     url.searchParams.set('$top', String(maxResults))
-    url.searchParams.set(
-      '$select',
-      'id,subject,start,end,location,organizer,webLink,isAllDay',
-    )
+    url.searchParams.set('$select', 'id,subject,start,end,location,organizer,webLink,isAllDay')
     url.searchParams.set('$orderby', 'start/dateTime')
 
     const resp = await fetch(url, { headers: { Authorization: `Bearer ${auth.token}` } })
     if (!resp.ok) {
-      return { error: `MS Calendar list failed: ${resp.status} ${(await resp.text()).slice(0, 200)}` }
+      return {
+        error: `MS Calendar list failed: ${resp.status} ${(await resp.text()).slice(0, 200)}`,
+      }
     }
     const json = (await resp.json()) as {
       value: Array<{
@@ -593,9 +601,7 @@ export const msCalendarCreateDefinition: ToolDefinition<
             })),
           }
         : {}),
-      ...(input.body
-        ? { body: { contentType: 'Text', content: input.body } }
-        : {}),
+      ...(input.body ? { body: { contentType: 'Text', content: input.body } } : {}),
       ...(input.isOnlineMeeting
         ? { isOnlineMeeting: true, onlineMeetingProvider: 'teamsForBusiness' }
         : {}),
@@ -609,7 +615,9 @@ export const msCalendarCreateDefinition: ToolDefinition<
       body: JSON.stringify(payload),
     })
     if (!resp.ok) {
-      return { error: `MS Calendar create failed: ${resp.status} ${(await resp.text()).slice(0, 200)}` }
+      return {
+        error: `MS Calendar create failed: ${resp.status} ${(await resp.text()).slice(0, 200)}`,
+      }
     }
     const e = (await resp.json()) as {
       id: string

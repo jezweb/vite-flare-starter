@@ -64,8 +64,17 @@ export const readDataDefinition: ToolDefinition<
   inputSchema: z.object({
     data_ref: z.string().describe('The data_ref returned by an earlier tool call.'),
     offset: z.number().int().min(0).optional().describe('Row offset (default 0).'),
-    limit: z.number().int().min(1).max(500).optional().describe('Max rows to return (default 100, max 500).'),
-    columns: z.array(z.string()).optional().describe('Project these columns only (when rows are objects).'),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(500)
+      .optional()
+      .describe('Max rows to return (default 100, max 500).'),
+    columns: z
+      .array(z.string())
+      .optional()
+      .describe('Project these columns only (when rows are objects).'),
     filter: z
       .record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()]))
       .optional()
@@ -140,8 +149,11 @@ export const aggregateDataDefinition: ToolDefinition<
         z.object({
           field: z.string().optional().describe('Column to aggregate (omit for op=count).'),
           op: z.enum(['sum', 'avg', 'min', 'max', 'count', 'distinct_count', 'stddev']),
-          as: z.string().optional().describe('Result key. Defaults to `${op}_${field}` or `count`.'),
-        }),
+          as: z
+            .string()
+            .optional()
+            .describe('Result key. Defaults to `${op}_${field}` or `count`.'),
+        })
       )
       .min(1),
   }),
@@ -267,7 +279,10 @@ export const pivotDataDefinition: ToolDefinition<
     data_ref: z.string(),
     row_fields: z.array(z.string()).min(1).describe('Column(s) whose values become rows.'),
     column_field: z.string().describe('Column whose distinct values become columns.'),
-    value_field: z.string().optional().describe('Numeric column to aggregate per cell. Omit for op=count.'),
+    value_field: z
+      .string()
+      .optional()
+      .describe('Numeric column to aggregate per cell. Omit for op=count.'),
     op: z.enum(['sum', 'avg', 'min', 'max', 'count']),
   }),
   outputSchema: PivotDataOutput,
@@ -306,7 +321,7 @@ const TrendDataOutput = z.union([
         value: z.number().nullable(),
         change_pct: z.number().nullable(),
         count: z.number(),
-      }),
+      })
     ),
     rows_scanned: z.number(),
     truncated: z.boolean(),
@@ -331,7 +346,10 @@ export const trendDataDefinition: ToolDefinition<
   inputSchema: z.object({
     data_ref: z.string(),
     date_column: z.string().describe('Column holding ISO date strings or unix timestamps.'),
-    metric_field: z.string().optional().describe('Numeric column to aggregate per bucket. Omit for metric_op=count.'),
+    metric_field: z
+      .string()
+      .optional()
+      .describe('Numeric column to aggregate per bucket. Omit for metric_op=count.'),
     metric_op: z.enum(['sum', 'avg', 'min', 'max', 'count']),
     granularity: z.enum(['day', 'week', 'month', 'quarter', 'year']),
   }),
@@ -376,7 +394,7 @@ const DistributionDataOutput = z.union([
         to: z.number(),
         count: z.number(),
         pct: z.number(),
-      }),
+      })
     ),
     stats: z.object({
       count: z.number(),
@@ -403,7 +421,13 @@ export const distributionDataDefinition: ToolDefinition<
   inputSchema: z.object({
     data_ref: z.string(),
     field: z.string().describe('Numeric column to bucket.'),
-    bins: z.number().int().min(2).max(50).optional().describe('Number of histogram bins (default 10, max 50).'),
+    bins: z
+      .number()
+      .int()
+      .min(2)
+      .max(50)
+      .optional()
+      .describe('Number of histogram bins (default 10, max 50).'),
   }),
   outputSchema: DistributionDataOutput,
   isAvailable: lakeAvailable,

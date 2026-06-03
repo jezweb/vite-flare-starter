@@ -49,8 +49,7 @@ export default buildStubRoutes({
       }
       // For bot users (integration), workspace_name is the useful label.
       const workspace = json.bot?.workspace_name
-      const label =
-        json.person?.email ?? json.name ?? workspace ?? 'Notion'
+      const label = json.person?.email ?? json.name ?? workspace ?? 'Notion'
       return { accountLabel: label, accountIdentifier: workspace }
     } catch {
       return {}

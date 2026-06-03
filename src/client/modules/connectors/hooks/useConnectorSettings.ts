@@ -24,8 +24,7 @@ export interface ConnectorSettings {
 export function useConnectorSettings(connectorId: string | null) {
   return useQuery({
     queryKey: ['connector-settings', connectorId],
-    queryFn: () =>
-      apiClient.get<ConnectorSettings>(`/api/connectors/${connectorId}/settings`),
+    queryFn: () => apiClient.get<ConnectorSettings>(`/api/connectors/${connectorId}/settings`),
     enabled: !!connectorId,
     staleTime: 10_000,
   })
@@ -35,10 +34,7 @@ export function useUpdateConnectorSettings(connectorId: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (patch: { enabled?: boolean; enabledTools?: string[] }) =>
-      apiClient.patch<ConnectorSettings>(
-        `/api/connectors/${connectorId}/settings`,
-        patch,
-      ),
+      apiClient.patch<ConnectorSettings>(`/api/connectors/${connectorId}/settings`, patch),
     onSuccess: (data) => {
       qc.setQueryData(['connector-settings', connectorId], data)
       // Chat tools catalog depends on this — invalidate so the next

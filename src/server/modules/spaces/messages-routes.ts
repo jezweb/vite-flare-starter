@@ -49,7 +49,11 @@ app.post('/:id/reactions', zValidator('json', ReactionSchema), async (c) => {
   const id = c.req.param('id')
   const { emoji, action } = c.req.valid('json')
   const d = drizzle(c.env.DB)
-  const [row] = await d.select().from(conversationMessages).where(eq(conversationMessages.id, id)).limit(1)
+  const [row] = await d
+    .select()
+    .from(conversationMessages)
+    .where(eq(conversationMessages.id, id))
+    .limit(1)
   if (!row) return c.json({ error: 'Not found' }, 404)
   if (!(await isMemberOf(c.env.DB, row.conversationId, userId))) {
     return c.json({ error: 'Forbidden' }, 403)
@@ -101,7 +105,11 @@ app.post('/:id/thread', zValidator('json', ThreadReplySchema), async (c) => {
   const parentId = c.req.param('id')
   const body = c.req.valid('json')
   const d = drizzle(c.env.DB)
-  const [parent] = await d.select().from(conversationMessages).where(eq(conversationMessages.id, parentId)).limit(1)
+  const [parent] = await d
+    .select()
+    .from(conversationMessages)
+    .where(eq(conversationMessages.id, parentId))
+    .limit(1)
   if (!parent) return c.json({ error: 'Not found' }, 404)
   const conversationId = parent.conversationId
   if (!(await isMemberOf(c.env.DB, conversationId, userId))) {
@@ -113,7 +121,11 @@ app.post('/:id/thread', zValidator('json', ThreadReplySchema), async (c) => {
     conversationId,
     role: 'user',
     parts: JSON.stringify(body.parts),
-    metadata: JSON.stringify({ ...(body.metadata ?? {}), senderKind: 'user', senderUserId: userId }),
+    metadata: JSON.stringify({
+      ...(body.metadata ?? {}),
+      senderKind: 'user',
+      senderUserId: userId,
+    }),
     parentMessageId: parentId,
   })
   // Bump parent's threadCount + lastThreadAt atomically.
@@ -143,7 +155,9 @@ app.post('/:id/thread', zValidator('json', ThreadReplySchema), async (c) => {
   const mentions = await parseMentions(c.env.DB, conversationId, body.parts)
   if (mentions.length > 0) {
     const inputText = body.parts
-      .map((p) => (typeof (p as { text?: string }).text === 'string' ? (p as { text: string }).text : ''))
+      .map((p) =>
+        typeof (p as { text?: string }).text === 'string' ? (p as { text: string }).text : ''
+      )
       .filter(Boolean)
       .join('\n')
       .trim()
@@ -160,13 +174,23 @@ app.post('/:id/thread', zValidator('json', ThreadReplySchema), async (c) => {
           broadcastNewMessage,
         })
       } catch (err) {
-        console.error(JSON.stringify({ event: 'space_thread_dispatch_error', spaceId: conversationId, error: String(err) }))
+        console.error(
+          JSON.stringify({
+            event: 'space_thread_dispatch_error',
+            spaceId: conversationId,
+            error: String(err),
+          })
+        )
       }
     }
   }
 
   // Return the canonical row.
-  const [created] = await d.select().from(conversationMessages).where(eq(conversationMessages.id, messageId)).limit(1)
+  const [created] = await d
+    .select()
+    .from(conversationMessages)
+    .where(eq(conversationMessages.id, messageId))
+    .limit(1)
   return c.json({ message: created ? shapeMessage(created) : null }, 201)
 })
 
@@ -174,7 +198,11 @@ app.delete('/:id', async (c) => {
   const userId = c.get('userId')
   const id = c.req.param('id')
   const d = drizzle(c.env.DB)
-  const [row] = await d.select().from(conversationMessages).where(eq(conversationMessages.id, id)).limit(1)
+  const [row] = await d
+    .select()
+    .from(conversationMessages)
+    .where(eq(conversationMessages.id, id))
+    .limit(1)
   if (!row) return c.json({ error: 'Not found' }, 404)
   // Author-only delete. We use metadata.senderUserId since the row
   // doesn't have a sender column directly.
@@ -213,7 +241,11 @@ app.patch('/:id/pin', zValidator('json', PinSchema), async (c) => {
   const id = c.req.param('id')
   const { pinned } = c.req.valid('json')
   const d = drizzle(c.env.DB)
-  const [row] = await d.select().from(conversationMessages).where(eq(conversationMessages.id, id)).limit(1)
+  const [row] = await d
+    .select()
+    .from(conversationMessages)
+    .where(eq(conversationMessages.id, id))
+    .limit(1)
   if (!row) return c.json({ error: 'Not found' }, 404)
   // Pin requires admin/owner role on the conversation.
   if (!(await isAdminOf(c.env.DB, row.conversationId, userId))) {
@@ -248,7 +280,11 @@ app.patch('/:id/star', zValidator('json', StarSchema), async (c) => {
   const id = c.req.param('id')
   const { starred } = c.req.valid('json')
   const d = drizzle(c.env.DB)
-  const [row] = await d.select().from(conversationMessages).where(eq(conversationMessages.id, id)).limit(1)
+  const [row] = await d
+    .select()
+    .from(conversationMessages)
+    .where(eq(conversationMessages.id, id))
+    .limit(1)
   if (!row) return c.json({ error: 'Not found' }, 404)
   if (!(await isMemberOf(c.env.DB, row.conversationId, userId))) {
     return c.json({ error: 'Forbidden' }, 403)
@@ -256,9 +292,10 @@ app.patch('/:id/star', zValidator('json', StarSchema), async (c) => {
   let stars: string[] = []
   if (row.starredByUserIds) {
     try {
-      const parsed = typeof row.starredByUserIds === 'string'
-        ? JSON.parse(row.starredByUserIds)
-        : row.starredByUserIds
+      const parsed =
+        typeof row.starredByUserIds === 'string'
+          ? JSON.parse(row.starredByUserIds)
+          : row.starredByUserIds
       if (Array.isArray(parsed)) stars = parsed.filter((x) => typeof x === 'string')
     } catch {
       stars = []
@@ -299,7 +336,11 @@ app.post('/:id/forward', zValidator('json', ForwardSchema), async (c) => {
   const id = c.req.param('id')
   const { targetSpaceId, note } = c.req.valid('json')
   const d = drizzle(c.env.DB)
-  const [src] = await d.select().from(conversationMessages).where(eq(conversationMessages.id, id)).limit(1)
+  const [src] = await d
+    .select()
+    .from(conversationMessages)
+    .where(eq(conversationMessages.id, id))
+    .limit(1)
   if (!src) return c.json({ error: 'Not found' }, 404)
   // Sender must be a member of BOTH spaces.
   if (!(await isMemberOf(c.env.DB, src.conversationId, userId))) {
@@ -375,7 +416,11 @@ app.patch('/:id/thread/subscription', zValidator('json', ThreadSubSchema), async
   return c.json({ ok: true })
 })
 
-async function isMemberOf(db: D1Database, conversationId: string, userId: string): Promise<boolean> {
+async function isMemberOf(
+  db: D1Database,
+  conversationId: string,
+  userId: string
+): Promise<boolean> {
   const [row] = await drizzle(db)
     .select({ id: conversationMembers.id })
     .from(conversationMembers)
@@ -383,8 +428,8 @@ async function isMemberOf(db: D1Database, conversationId: string, userId: string
       and(
         eq(conversationMembers.conversationId, conversationId),
         eq(conversationMembers.kind, 'user'),
-        eq(conversationMembers.userId, userId),
-      ),
+        eq(conversationMembers.userId, userId)
+      )
     )
     .limit(1)
   return !!row
@@ -398,8 +443,8 @@ async function isAdminOf(db: D1Database, conversationId: string, userId: string)
       and(
         eq(conversationMembers.conversationId, conversationId),
         eq(conversationMembers.kind, 'user'),
-        eq(conversationMembers.userId, userId),
-      ),
+        eq(conversationMembers.userId, userId)
+      )
     )
     .limit(1)
   const role = rows[0]?.role

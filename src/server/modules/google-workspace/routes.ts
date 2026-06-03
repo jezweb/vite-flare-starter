@@ -67,9 +67,7 @@ app.get('/callback', async (c) => {
       // app — Google only returns refresh_token the first time unless
       // `prompt=consent` is set on the authorize URL (which we do).
       // Warn in logs and continue.
-      console.warn(
-        JSON.stringify({ event: 'google_workspace_no_refresh_token', userId }),
-      )
+      console.warn(JSON.stringify({ event: 'google_workspace_no_refresh_token', userId }))
     }
 
     const accessTokenEnc = await encrypt(tokens.accessToken, env.TOKEN_ENCRYPTION_KEY)
@@ -109,7 +107,7 @@ app.get('/callback', async (c) => {
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e)
     console.error(
-      JSON.stringify({ event: 'google_workspace_callback_error', userId, error: message }),
+      JSON.stringify({ event: 'google_workspace_callback_error', userId, error: message })
     )
     return finish('error', message.slice(0, 200))
   }
@@ -184,10 +182,7 @@ app.post('/connect', async (c) => {
   headers.append('Set-Cookie', `gws_state=${encodeURIComponent(state)}; ${cookieBase}${secure}`)
   headers.append('Set-Cookie', `gws_user=${encodeURIComponent(userId)}; ${cookieBase}${secure}`)
 
-  return new Response(
-    JSON.stringify({ authorizationUrl: authUrl.toString() }),
-    { headers },
-  )
+  return new Response(JSON.stringify({ authorizationUrl: authUrl.toString() }), { headers })
 })
 
 /** POST /disconnect — revoke token at Google, delete D1 row. */

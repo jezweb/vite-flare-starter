@@ -43,7 +43,10 @@ export function Breadcrumbs({ items, labels = {}, showHome = true, className }: 
   if (breadcrumbs.length === 0) return null
 
   return (
-    <nav aria-label="Breadcrumb" className={cn('flex items-center gap-1 text-sm text-muted-foreground', className)}>
+    <nav
+      aria-label="Breadcrumb"
+      className={cn('flex items-center gap-1 text-sm text-muted-foreground', className)}
+    >
       {showHome && (
         <>
           <Link to="/dashboard" className="hover:text-foreground transition-colors">
@@ -57,10 +60,15 @@ export function Breadcrumbs({ items, labels = {}, showHome = true, className }: 
         return (
           <span key={item.href} className="flex items-center gap-1">
             {isLast ? (
-              <span className="font-medium text-foreground truncate max-w-[200px]">{item.label}</span>
+              <span className="font-medium text-foreground truncate max-w-[200px]">
+                {item.label}
+              </span>
             ) : (
               <>
-                <Link to={item.href} className="hover:text-foreground transition-colors truncate max-w-[150px]">
+                <Link
+                  to={item.href}
+                  className="hover:text-foreground transition-colors truncate max-w-[150px]"
+                >
                   {item.label}
                 </Link>
                 <ChevronRight className="size-3 text-muted-foreground/50 shrink-0" />

@@ -82,7 +82,10 @@ const CreateSpaceSchema = z.object({
   title: z.string().min(1).max(120),
   description: z.string().max(500).optional(),
   spaceMode: z.enum(['open', 'invite', 'org']).optional().default('invite'),
-  defaultReplyMode: z.enum(['always', 'mention', 'proactive', 'ambient', 'off']).optional().default('mention'),
+  defaultReplyMode: z
+    .enum(['always', 'mention', 'proactive', 'ambient', 'off'])
+    .optional()
+    .default('mention'),
   /** Initial member invites — userIds. Creator always becomes owner. */
   inviteUserIds: z.array(z.string()).max(50).optional(),
   /** Initial agent invites — list of { agentClass, agentName, replyMode? }. */
@@ -92,7 +95,7 @@ const CreateSpaceSchema = z.object({
         agentClass: z.string().min(1).max(60),
         agentName: z.string().min(1).max(32),
         replyMode: z.enum(['always', 'mention', 'proactive', 'ambient', 'off']).optional(),
-      }),
+      })
     )
     .max(20)
     .optional(),
@@ -200,7 +203,9 @@ app.get('/:id', async (c) => {
 
   // Resolve user member display info (name, email, image) so the client
   // doesn't need a follow-up call. Bounded by space membership size.
-  const userIds = members.filter((m) => m.kind === 'user' && m.userId).map((m) => m.userId as string)
+  const userIds = members
+    .filter((m) => m.kind === 'user' && m.userId)
+    .map((m) => m.userId as string)
   const userRows = userIds.length
     ? await d
         .select({ id: user.id, name: user.name, email: user.email, image: user.image })
@@ -295,10 +300,7 @@ app.get('/:id/messages', async (c) => {
 })
 
 const SendMessageSchema = z.object({
-  parts: z
-    .array(z.record(z.string(), z.unknown()))
-    .min(1)
-    .max(20),
+  parts: z.array(z.record(z.string(), z.unknown())).min(1).max(20),
   metadata: z.record(z.string(), z.unknown()).optional(),
   parentMessageId: z.string().nullable().optional(),
   /** Phase 2: quoted source message — UI renders an inline quote chip. */
@@ -314,18 +316,25 @@ app.post('/:id/messages', zValidator('json', SendMessageSchema), async (c) => {
 
   const messageId = crypto.randomUUID()
   const partsJson = JSON.stringify(body.parts)
-  const metadataJson = body.metadata ? JSON.stringify({ ...body.metadata, senderKind: 'user', senderUserId: userId }) : JSON.stringify({ senderKind: 'user', senderUserId: userId })
-  await drizzle(c.env.DB).insert(conversationMessages).values({
-    id: messageId,
-    conversationId: id,
-    role: 'user',
-    parts: partsJson,
-    metadata: metadataJson,
-    parentMessageId: body.parentMessageId ?? null,
-    quotedMessageId: body.quotedMessageId ?? null,
-  })
+  const metadataJson = body.metadata
+    ? JSON.stringify({ ...body.metadata, senderKind: 'user', senderUserId: userId })
+    : JSON.stringify({ senderKind: 'user', senderUserId: userId })
+  await drizzle(c.env.DB)
+    .insert(conversationMessages)
+    .values({
+      id: messageId,
+      conversationId: id,
+      role: 'user',
+      parts: partsJson,
+      metadata: metadataJson,
+      parentMessageId: body.parentMessageId ?? null,
+      quotedMessageId: body.quotedMessageId ?? null,
+    })
   // Bump conversation updated_at for sidebar ordering.
-  await drizzle(c.env.DB).update(conversations).set({ updatedAt: new Date() }).where(eq(conversations.id, id))
+  await drizzle(c.env.DB)
+    .update(conversations)
+    .set({ updatedAt: new Date() })
+    .where(eq(conversations.id, id))
   // If reply landed in a thread, bump the parent's threadCount +
   // lastThreadAt in a SINGLE UPDATE — concurrent replies don't race.
   if (body.parentMessageId) {
@@ -348,7 +357,9 @@ app.post('/:id/messages', zValidator('json', SendMessageSchema), async (c) => {
     try {
       await stub.broadcastNewMessage(mid)
     } catch (err) {
-      console.error(JSON.stringify({ event: 'space_broadcast_failed', spaceId: id, mid, error: String(err) }))
+      console.error(
+        JSON.stringify({ event: 'space_broadcast_failed', spaceId: id, mid, error: String(err) })
+      )
     }
   }
   await broadcastNewMessage(messageId)
@@ -362,7 +373,9 @@ app.post('/:id/messages', zValidator('json', SendMessageSchema), async (c) => {
   const mentions = await parseMentions(c.env.DB, id, body.parts)
   const isTopLevel = !body.parentMessageId
   const inputText = body.parts
-    .map((p) => (typeof (p as { text?: string }).text === 'string' ? (p as { text: string }).text : ''))
+    .map((p) =>
+      typeof (p as { text?: string }).text === 'string' ? (p as { text: string }).text : ''
+    )
     .filter(Boolean)
     .join('\n')
     .trim()
@@ -381,7 +394,7 @@ app.post('/:id/messages', zValidator('json', SendMessageSchema), async (c) => {
       isTopLevel,
       hasInputText: !!inputText,
       shouldDispatch,
-    }),
+    })
   )
   if (shouldDispatch) {
     try {
@@ -399,7 +412,9 @@ app.post('/:id/messages', zValidator('json', SendMessageSchema), async (c) => {
       // Don't fail the user's message on dispatch error — they sent
       // it successfully; the agent just didn't reply. Surface for
       // dogfood via observability.
-      console.error(JSON.stringify({ event: 'space_dispatch_error', spaceId: id, error: String(err) }))
+      console.error(
+        JSON.stringify({ event: 'space_dispatch_error', spaceId: id, error: String(err) })
+      )
     }
   }
 
@@ -432,7 +447,12 @@ app.get('/:id/messages/search', async (c) => {
     const rows = await drizzle(c.env.DB)
       .select()
       .from(conversationMessages)
-      .where(and(eq(conversationMessages.conversationId, id), like(conversationMessages.parts, `%${escaped}%`)))
+      .where(
+        and(
+          eq(conversationMessages.conversationId, id),
+          like(conversationMessages.parts, `%${escaped}%`)
+        )
+      )
       .orderBy(desc(conversationMessages.createdAt))
       .limit(20)
     return c.json({ results: rows.map(shapeMessage) })
@@ -450,8 +470,8 @@ app.patch('/:id/read', async (c) => {
       and(
         eq(conversationMembers.conversationId, id),
         eq(conversationMembers.kind, 'user'),
-        eq(conversationMembers.userId, userId),
-      ),
+        eq(conversationMembers.userId, userId)
+      )
     )
   return c.json({ ok: true })
 })
@@ -561,18 +581,20 @@ app.delete('/:id/members/:memberId', async (c) => {
     // We attempt a guarded delete; if zero rows changed we can
     // confidently return the "last owner" error without racing against
     // a concurrent leave.
-    const result = await c.env.DB
-      .prepare(
-        `DELETE FROM conversation_members
+    const result = await c.env.DB.prepare(
+      `DELETE FROM conversation_members
          WHERE id = ?1
            AND (SELECT COUNT(*) FROM conversation_members
-                WHERE conversation_id = ?2 AND role = 'owner') > 1`,
-      )
+                WHERE conversation_id = ?2 AND role = 'owner') > 1`
+    )
       .bind(memberId, id)
       .run()
     const changes = (result.meta as { changes?: number } | undefined)?.changes ?? 0
     if (changes === 0) {
-      return c.json({ error: 'Cannot leave as the last owner — transfer ownership or delete the space' }, 400)
+      return c.json(
+        { error: 'Cannot leave as the last owner — transfer ownership or delete the space' },
+        400
+      )
     }
     return c.json({ ok: true })
   }
@@ -590,8 +612,10 @@ app.patch('/:id/membership', zValidator('json', UpdateMembershipSchema), async (
   if (!(await isSpaceMember(c.env.DB, id, userId))) return c.json({ error: 'Forbidden' }, 403)
   const body = c.req.valid('json')
   const patch: Record<string, unknown> = {}
-  if (body['pinnedToSidebar'] !== undefined) patch['pinnedToSidebar'] = body['pinnedToSidebar'] ? 1 : 0
-  if (body['notificationLevel'] !== undefined) patch['notificationLevel'] = body['notificationLevel']
+  if (body['pinnedToSidebar'] !== undefined)
+    patch['pinnedToSidebar'] = body['pinnedToSidebar'] ? 1 : 0
+  if (body['notificationLevel'] !== undefined)
+    patch['notificationLevel'] = body['notificationLevel']
   if (Object.keys(patch).length === 0) return c.json({ ok: true })
   await drizzle(c.env.DB)
     .update(conversationMembers)
@@ -600,8 +624,8 @@ app.patch('/:id/membership', zValidator('json', UpdateMembershipSchema), async (
       and(
         eq(conversationMembers.conversationId, id),
         eq(conversationMembers.kind, 'user'),
-        eq(conversationMembers.userId, userId),
-      ),
+        eq(conversationMembers.userId, userId)
+      )
     )
   return c.json({ ok: true })
 })
@@ -614,20 +638,27 @@ app.get('/:id/messages/pinned', async (c) => {
   const rows = await drizzle(c.env.DB)
     .select()
     .from(conversationMessages)
-    .where(and(eq(conversationMessages.conversationId, id), sql`${conversationMessages.pinnedAt} IS NOT NULL`))
+    .where(
+      and(
+        eq(conversationMessages.conversationId, id),
+        sql`${conversationMessages.pinnedAt} IS NOT NULL`
+      )
+    )
     .orderBy(desc(conversationMessages.pinnedAt))
     .limit(50)
-  return c.json({ pinned: rows.map((r) => ({
-    id: r.id,
-    parts: safeParse(r.parts),
-    metadata: safeParse(r.metadata),
-    pinnedAt: r.pinnedAt,
-    pinnedByUserId: r.pinnedByUserId,
-    createdAt:
-      r.createdAt instanceof Date
-        ? r.createdAt.toISOString()
-        : new Date((r.createdAt as unknown as number) * 1000).toISOString(),
-  })) })
+  return c.json({
+    pinned: rows.map((r) => ({
+      id: r.id,
+      parts: safeParse(r.parts),
+      metadata: safeParse(r.metadata),
+      pinnedAt: r.pinnedAt,
+      pinnedByUserId: r.pinnedByUserId,
+      createdAt:
+        r.createdAt instanceof Date
+          ? r.createdAt.toISOString()
+          : new Date((r.createdAt as unknown as number) * 1000).toISOString(),
+    })),
+  })
 })
 
 /** PATCH /:id/members/:memberId/block — owner/admin blocks a member. */
@@ -699,8 +730,8 @@ async function isSpaceMember(db: D1Database, spaceId: string, userId: string): P
       and(
         eq(conversationMembers.conversationId, spaceId),
         eq(conversationMembers.kind, 'user'),
-        eq(conversationMembers.userId, userId),
-      ),
+        eq(conversationMembers.userId, userId)
+      )
     )
     .limit(1)
   return !!row
@@ -715,8 +746,8 @@ async function isSpaceOwner(db: D1Database, spaceId: string, userId: string): Pr
         eq(conversationMembers.conversationId, spaceId),
         eq(conversationMembers.kind, 'user'),
         eq(conversationMembers.userId, userId),
-        eq(conversationMembers.role, 'owner'),
-      ),
+        eq(conversationMembers.role, 'owner')
+      )
     )
     .limit(1)
   return !!row

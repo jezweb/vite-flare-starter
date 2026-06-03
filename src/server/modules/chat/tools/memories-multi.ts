@@ -39,7 +39,7 @@ function getUserId(ctx: AgentContext): string {
 
 function resolveScope(
   scope: 'project' | 'user' | 'org' | undefined,
-  ctx: MemoryAgentContext,
+  ctx: MemoryAgentContext
 ): { scope: 'project' | 'user' | 'org'; scopeId: string } | { error: string } {
   const userId = getUserId(ctx)
   const projectId = ctx.projectId ?? null
@@ -47,8 +47,7 @@ function resolveScope(
   if (scope === 'project') {
     if (!projectId) {
       return {
-        error:
-          'No active project. Create or open a project first, or use scope: "user" instead.',
+        error: 'No active project. Create or open a project first, or use scope: "user" instead.',
       }
     }
     return { scope: 'project', scopeId: projectId }
@@ -85,10 +84,7 @@ export const memorySearchDefinition: ToolDefinition<
       .enum(MEMORY_SCOPES)
       .optional()
       .describe('Scope to search: "project" (current project), "user" (this user), or "org".'),
-    type: z
-      .enum(MEMORY_TYPES)
-      .optional()
-      .describe('Filter by memory type.'),
+    type: z.enum(MEMORY_TYPES).optional().describe('Filter by memory type.'),
     includePrivate: z
       .boolean()
       .optional()
@@ -103,7 +99,7 @@ export const memorySearchDefinition: ToolDefinition<
         description: z.string(),
         type: z.string(),
         scope: z.string(),
-      }),
+      })
     ),
   }),
   execute: async ({ query, scope, type, includePrivate, limit }, ctx) => {
@@ -163,17 +159,9 @@ export const memoryAddDefinition: ToolDefinition<
       .min(1)
       .max(80)
       .describe('Short slug ("preferred-tone", "client-john-billing"). Stable id for retrieval.'),
-    description: z
-      .string()
-      .min(1)
-      .max(200)
-      .describe('One-line summary shown in the memory index.'),
+    description: z.string().min(1).max(200).describe('One-line summary shown in the memory index.'),
     type: z.enum(MEMORY_TYPES).describe('What kind of memory this is.'),
-    content: z
-      .string()
-      .min(1)
-      .max(8000)
-      .describe('The full memory body. Be specific.'),
+    content: z.string().min(1).max(8000).describe('The full memory body. Be specific.'),
     scope: z.enum(MEMORY_SCOPES).optional().describe('Default: user.'),
     isPrivate: z
       .boolean()
@@ -241,21 +229,14 @@ export const memoryUpdateDefinition: ToolDefinition<
     content: z.string().min(1).max(8000).optional(),
     isPrivate: z.boolean().optional(),
   }),
-  outputSchema: z.union([
-    z.object({ success: z.boolean() }),
-    z.object({ error: z.string() }),
-  ]),
+  outputSchema: z.union([z.object({ success: z.boolean() }), z.object({ error: z.string() })]),
   needsApproval: true,
   execute: async (input, ctx) => {
     const db = drizzle(getDB(ctx))
     const userId = getUserId(ctx)
     const projectId = (ctx as MemoryAgentContext).projectId ?? null
 
-    const [existing] = await db
-      .select()
-      .from(memories)
-      .where(eq(memories.id, input.id))
-      .limit(1)
+    const [existing] = await db.select().from(memories).where(eq(memories.id, input.id)).limit(1)
 
     if (!existing) return { error: 'Memory not found' }
 
@@ -300,21 +281,14 @@ export const memoryRemoveDefinition: ToolDefinition<
   inputSchema: z.object({
     id: z.string().describe('The memory entry id.'),
   }),
-  outputSchema: z.union([
-    z.object({ success: z.boolean() }),
-    z.object({ error: z.string() }),
-  ]),
+  outputSchema: z.union([z.object({ success: z.boolean() }), z.object({ error: z.string() })]),
   needsApproval: true,
   execute: async ({ id }, ctx) => {
     const db = drizzle(getDB(ctx))
     const userId = getUserId(ctx)
     const projectId = (ctx as MemoryAgentContext).projectId ?? null
 
-    const [existing] = await db
-      .select()
-      .from(memories)
-      .where(eq(memories.id, id))
-      .limit(1)
+    const [existing] = await db.select().from(memories).where(eq(memories.id, id)).limit(1)
 
     if (!existing) return { error: 'Memory not found' }
 
@@ -372,8 +346,8 @@ export const loadMemoryDefinition: ToolDefinition<
         and(
           eq(memories.scope, resolved.scope),
           eq(memories.scopeId, resolved.scopeId),
-          eq(memories.name, name),
-        ),
+          eq(memories.name, name)
+        )
       )
       .limit(1)
 

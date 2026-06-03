@@ -18,11 +18,15 @@ import { isoTimestamp } from './types'
 // User table
 export const user = sqliteTable('user', {
   id: text('id').primaryKey(),
-  name: text('name').notNull().$defaultFn(() => ''),
+  name: text('name')
+    .notNull()
+    .$defaultFn(() => ''),
   email: text('email').notNull().unique(),
   emailVerified: integer('emailVerified', { mode: 'boolean' }).notNull().default(false),
   image: text('image'),
-  role: text('role', { enum: ['user', 'manager', 'admin'] }).notNull().default('user'),
+  role: text('role', { enum: ['user', 'manager', 'admin'] })
+    .notNull()
+    .default('user'),
   preferences: text('preferences', { mode: 'json' })
     .$type<UserPreferences>()
     .$defaultFn(() => ({ theme: 'default', mode: 'system' })),
@@ -32,7 +36,9 @@ export const user = sqliteTable('user', {
    * who want diff-review can flip to 'ask' from Settings → Memory.
    * Stored on the user table (better-auth requires camelCase column names).
    */
-  memoryUpdateMode: text('memoryUpdateMode', { enum: ['ask', 'auto', 'never'] }).notNull().default('auto'),
+  memoryUpdateMode: text('memoryUpdateMode', { enum: ['ask', 'auto', 'never'] })
+    .notNull()
+    .default('auto'),
   /**
    * Last login method used by this user — written by better-auth's
    * `lastLoginMethod()` plugin's `databaseHooks.user.create.before` hook
@@ -46,8 +52,12 @@ export const user = sqliteTable('user', {
    * even when production OAuth is broken.
    */
   lastLoginMethod: text('lastLoginMethod'),
-  createdAt: isoTimestamp('createdAt').notNull().$defaultFn(() => new Date()),
-  updatedAt: isoTimestamp('updatedAt').notNull().$defaultFn(() => new Date()),
+  createdAt: isoTimestamp('createdAt')
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: isoTimestamp('updatedAt')
+    .notNull()
+    .$defaultFn(() => new Date()),
 })
 
 // Session table
@@ -60,32 +70,47 @@ export const session = sqliteTable('session', {
   expiresAt: isoTimestamp('expiresAt').notNull(),
   ipAddress: text('ipAddress'),
   userAgent: text('userAgent'),
-  createdAt: isoTimestamp('createdAt').notNull().$defaultFn(() => new Date()),
-  updatedAt: isoTimestamp('updatedAt').notNull().$defaultFn(() => new Date()),
+  createdAt: isoTimestamp('createdAt')
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: isoTimestamp('updatedAt')
+    .notNull()
+    .$defaultFn(() => new Date()),
 })
 
 // Account table (for OAuth/social logins)
-export const account = sqliteTable('account', {
-  id: text('id').primaryKey(),
-  userId: text('userId')
-    .notNull()
-    .references(() => user.id, { onDelete: 'cascade' }),
-  accountId: text('accountId').notNull(),
-  providerId: text('providerId').notNull(),
-  accessToken: text('accessToken'),
-  refreshToken: text('refreshToken'),
-  idToken: text('idToken'),
-  expiresAt: isoTimestamp('expiresAt'), // Legacy field, kept for compatibility
-  accessTokenExpiresAt: isoTimestamp('accessTokenExpiresAt'),
-  refreshTokenExpiresAt: isoTimestamp('refreshTokenExpiresAt'),
-  scope: text('scope'),
-  password: text('password'), // Hashed password for email/password auth
-  createdAt: isoTimestamp('createdAt').notNull().$defaultFn(() => new Date()),
-  updatedAt: isoTimestamp('updatedAt').notNull().$defaultFn(() => new Date()),
-}, (table) => ({
-  // CRITICAL: Unique constraint required by Better Auth for OAuth account linking
-  providerAccountIdx: uniqueIndex('account_provider_account_idx').on(table.providerId, table.accountId),
-}))
+export const account = sqliteTable(
+  'account',
+  {
+    id: text('id').primaryKey(),
+    userId: text('userId')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    accountId: text('accountId').notNull(),
+    providerId: text('providerId').notNull(),
+    accessToken: text('accessToken'),
+    refreshToken: text('refreshToken'),
+    idToken: text('idToken'),
+    expiresAt: isoTimestamp('expiresAt'), // Legacy field, kept for compatibility
+    accessTokenExpiresAt: isoTimestamp('accessTokenExpiresAt'),
+    refreshTokenExpiresAt: isoTimestamp('refreshTokenExpiresAt'),
+    scope: text('scope'),
+    password: text('password'), // Hashed password for email/password auth
+    createdAt: isoTimestamp('createdAt')
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: isoTimestamp('updatedAt')
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => ({
+    // CRITICAL: Unique constraint required by Better Auth for OAuth account linking
+    providerAccountIdx: uniqueIndex('account_provider_account_idx').on(
+      table.providerId,
+      table.accountId
+    ),
+  })
+)
 
 // Verification table (for email verification, password reset, etc.)
 export const verification = sqliteTable('verification', {
@@ -93,8 +118,12 @@ export const verification = sqliteTable('verification', {
   identifier: text('identifier').notNull(), // Email address or user ID
   value: text('value').notNull(), // Verification token
   expiresAt: isoTimestamp('expiresAt').notNull(),
-  createdAt: isoTimestamp('createdAt').notNull().$defaultFn(() => new Date()),
-  updatedAt: isoTimestamp('updatedAt').notNull().$defaultFn(() => new Date()),
+  createdAt: isoTimestamp('createdAt')
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: isoTimestamp('updatedAt')
+    .notNull()
+    .$defaultFn(() => new Date()),
 })
 
 // Type exports for use in application code

@@ -68,7 +68,8 @@ function providerIdForModel(modelId: string): string | null {
     modelId.startsWith('o1-') ||
     modelId.startsWith('o3-') ||
     modelId.startsWith('o4-')
-  ) return 'openai'
+  )
+    return 'openai'
   if (modelId.startsWith('google/') || modelId.startsWith('gemini-')) return 'google_ai'
   if (modelId.startsWith('deepseek/') || modelId.startsWith('deepseek-')) return 'deepseek'
   if (
@@ -76,7 +77,8 @@ function providerIdForModel(modelId: string): string | null {
     modelId.startsWith('mistral-') ||
     modelId.startsWith('codestral-') ||
     modelId.startsWith('pixtral-')
-  ) return 'mistral'
+  )
+    return 'mistral'
   if (modelId.startsWith('x-ai/') || modelId.startsWith('grok-')) return 'xai'
   return null
 }
@@ -92,7 +94,7 @@ function providerIdForModel(modelId: string): string | null {
 async function buildBYOKEnv(
   baseEnv: ProviderEnv & CredentialEnv,
   owner: CredentialOwner,
-  modelId: string,
+  modelId: string
 ): Promise<ProviderEnv> {
   const provider = providerIdForModel(modelId)
   if (!provider) return baseEnv
@@ -124,7 +126,7 @@ async function buildBYOKEnv(
 export async function resolveModelForUser(
   env: ProviderEnv & CredentialEnv,
   owner: CredentialOwner,
-  modelId: string,
+  modelId: string
 ) {
   const overlay = await buildBYOKEnv(env, owner, modelId)
   return resolveModel(overlay, modelId)
@@ -150,7 +152,9 @@ function tryDirectFromPrefix(env: ProviderEnv, modelId: string) {
     return createOpenAI({ apiKey: env.OPENAI_API_KEY })(modelId.slice('openai/'.length))
   }
   if (modelId.startsWith('google/') && env.GOOGLE_AI_API_KEY) {
-    return createGoogleGenerativeAI({ apiKey: env.GOOGLE_AI_API_KEY })(modelId.slice('google/'.length))
+    return createGoogleGenerativeAI({ apiKey: env.GOOGLE_AI_API_KEY })(
+      modelId.slice('google/'.length)
+    )
   }
   if (modelId.startsWith('deepseek/') && env.DEEPSEEK_API_KEY) {
     return createDeepSeek({ apiKey: env.DEEPSEEK_API_KEY })(modelId.slice('deepseek/'.length))
@@ -176,7 +180,8 @@ export function resolveModel(env: ProviderEnv, modelId: string) {
   // 2. Explicit `openrouter/...` prefix forces OpenRouter even when the
   //    matching direct key is set. Strip and forward.
   if (modelId.startsWith('openrouter/')) {
-    if (!env.OPENROUTER_API_KEY) throw new Error(`OPENROUTER_API_KEY required for model: ${modelId}`)
+    if (!env.OPENROUTER_API_KEY)
+      throw new Error(`OPENROUTER_API_KEY required for model: ${modelId}`)
     const openrouter = createOpenRouter({ apiKey: env.OPENROUTER_API_KEY })
     return openrouter(modelId.replace('openrouter/', ''))
   }
@@ -190,7 +195,7 @@ export function resolveModel(env: ProviderEnv, modelId: string) {
       return openrouter(modelId)
     }
     throw new Error(
-      `No route for model "${modelId}" — set OPENROUTER_API_KEY (or the direct key for the matching provider).`,
+      `No route for model "${modelId}" — set OPENROUTER_API_KEY (or the direct key for the matching provider).`
     )
   }
 
@@ -201,7 +206,12 @@ export function resolveModel(env: ProviderEnv, modelId: string) {
     const normalised = modelId.replace(/(claude-(?:sonnet|opus|haiku)-\d+)\.(\d+)/, '$1-$2')
     return createAnthropic({ apiKey: env.ANTHROPIC_API_KEY })(normalised)
   }
-  if (modelId.startsWith('gpt-') || modelId.startsWith('o1-') || modelId.startsWith('o3-') || modelId.startsWith('o4-')) {
+  if (
+    modelId.startsWith('gpt-') ||
+    modelId.startsWith('o1-') ||
+    modelId.startsWith('o3-') ||
+    modelId.startsWith('o4-')
+  ) {
     if (!env.OPENAI_API_KEY) throw new Error(`OPENAI_API_KEY required for model: ${modelId}`)
     return createOpenAI({ apiKey: env.OPENAI_API_KEY })(modelId)
   }
@@ -213,7 +223,11 @@ export function resolveModel(env: ProviderEnv, modelId: string) {
     if (!env.DEEPSEEK_API_KEY) throw new Error(`DEEPSEEK_API_KEY required for model: ${modelId}`)
     return createDeepSeek({ apiKey: env.DEEPSEEK_API_KEY })(modelId)
   }
-  if (modelId.startsWith('mistral-') || modelId.startsWith('codestral-') || modelId.startsWith('pixtral-')) {
+  if (
+    modelId.startsWith('mistral-') ||
+    modelId.startsWith('codestral-') ||
+    modelId.startsWith('pixtral-')
+  ) {
     if (!env.MISTRAL_API_KEY) throw new Error(`MISTRAL_API_KEY required for model: ${modelId}`)
     return createMistral({ apiKey: env.MISTRAL_API_KEY })(modelId)
   }
@@ -252,15 +266,22 @@ export function routeFor(env: ProviderEnv, modelId: string): string {
   }
   if (modelId.startsWith('claude-') && env.ANTHROPIC_API_KEY) return 'anthropic-direct'
   if (
-    (modelId.startsWith('gpt-') || modelId.startsWith('o1-') || modelId.startsWith('o3-') || modelId.startsWith('o4-')) &&
+    (modelId.startsWith('gpt-') ||
+      modelId.startsWith('o1-') ||
+      modelId.startsWith('o3-') ||
+      modelId.startsWith('o4-')) &&
     env.OPENAI_API_KEY
-  ) return 'openai-direct'
+  )
+    return 'openai-direct'
   if (modelId.startsWith('gemini-') && env.GOOGLE_AI_API_KEY) return 'google-direct'
   if (modelId.startsWith('deepseek-') && env.DEEPSEEK_API_KEY) return 'deepseek-direct'
   if (
-    (modelId.startsWith('mistral-') || modelId.startsWith('codestral-') || modelId.startsWith('pixtral-')) &&
+    (modelId.startsWith('mistral-') ||
+      modelId.startsWith('codestral-') ||
+      modelId.startsWith('pixtral-')) &&
     env.MISTRAL_API_KEY
-  ) return 'mistral-direct'
+  )
+    return 'mistral-direct'
   if (modelId.startsWith('grok-') && env.XAI_API_KEY) return 'xai-direct'
   if (env.OPENROUTER_API_KEY) return 'openrouter'
   return 'workers-ai'
@@ -281,7 +302,9 @@ export function getAvailableProviders(env: ProviderEnv): string[] {
 /** Legacy — kept for embedding/rerank which used the registry. No-op for now. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function buildRegistry(_env: ProviderEnv): any {
-  throw new Error('buildRegistry removed — use resolveModel() or createWorkersAI() directly for embeddings.')
+  throw new Error(
+    'buildRegistry removed — use resolveModel() or createWorkersAI() directly for embeddings.'
+  )
 }
 
 /**
@@ -301,7 +324,7 @@ export async function runModelText(
   env: ProviderEnv,
   modelId: string,
   system: string,
-  prompt: string,
+  prompt: string
 ): Promise<string> {
   const { generateText } = await import('ai')
   const model = resolveModel(env, modelId)

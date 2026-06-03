@@ -82,19 +82,21 @@ export function ChatCapabilityRow() {
   }
 
   const activeConnections = (connections.data?.connections ?? []).filter(
-    (c) => c.status === 'active',
+    (c) => c.status === 'active'
   )
   const skillCount = skills.data?.count ?? 0
 
-  const totalActive =
-    googleProducts.length + microsoftProducts.length + activeConnections.length
+  const totalActive = googleProducts.length + microsoftProducts.length + activeConnections.length
 
   // Empty fallback — let the user know they CAN extend chat without
   // burying the affordance under "Connect more" jargon.
   if (totalActive === 0 && skillCount === 0) {
     return (
       <CapabilityRow className="justify-center pt-1">
-        <Link to="/dashboard/connections" className="rounded-full hover:opacity-80 transition-opacity">
+        <Link
+          to="/dashboard/connections"
+          className="rounded-full hover:opacity-80 transition-opacity"
+        >
           <CapabilityChip state="inactive" icon={Plug} label="Connect apps to extend chat" />
         </Link>
       </CapabilityRow>
@@ -131,10 +133,7 @@ export function ChatCapabilityRow() {
         </Link>
       ))}
       {skillCount > 0 && (
-        <Link
-          to="/dashboard/skills"
-          className="rounded-full hover:opacity-80 transition-opacity"
-        >
+        <Link to="/dashboard/skills" className="rounded-full hover:opacity-80 transition-opacity">
           <CapabilityChip
             state="count"
             icon={Sparkles}

@@ -90,7 +90,7 @@ export const firecrawlScrapeDefinition: ToolDefinition<
       // verification page if rate-limited or anti-bot triggers.
       const detection = detectInterstitial(
         json.data.metadata?.title ?? titleFromMarkdown(markdown),
-        markdown,
+        markdown
       )
       if (detection.isInterstitial) {
         return { url, error: interstitialError(url, detection) }
@@ -116,7 +116,7 @@ const FirecrawlCrawlOutput = z.union([
         url: z.string(),
         title: z.string().optional(),
         markdown: z.string(),
-      }),
+      })
     ),
     total: z.number(),
     truncated: z.boolean(),

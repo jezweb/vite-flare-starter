@@ -112,9 +112,7 @@ export function SpaceHeaderMenu({ space }: Props) {
             <Check className="size-4" />
             Mark as read
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => updateMembership.mutate({ pinnedToSidebar: !isPinned })}
-          >
+          <DropdownMenuItem onClick={() => updateMembership.mutate({ pinnedToSidebar: !isPinned })}>
             {isPinned ? <PinOff className="size-4" /> : <Pin className="size-4" />}
             {isPinned ? 'Unpin from sidebar' : 'Pin to sidebar'}
           </DropdownMenuItem>
@@ -125,7 +123,11 @@ export function SpaceHeaderMenu({ space }: Props) {
               })
             }
           >
-            {notificationLevel === 'muted' ? <Bell className="size-4" /> : <BellOff className="size-4" />}
+            {notificationLevel === 'muted' ? (
+              <Bell className="size-4" />
+            ) : (
+              <BellOff className="size-4" />
+            )}
             {notificationLevel === 'muted' ? 'Unmute' : 'Mute notifications'}
           </DropdownMenuItem>
           <DropdownMenuSeparator />

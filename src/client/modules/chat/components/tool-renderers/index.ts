@@ -17,11 +17,7 @@ import {
   gmailReplyRenderer,
   gmailSendRenderer,
 } from './gmail'
-import {
-  driveSearchRenderer,
-  driveGetFileRenderer,
-  driveCreateFolderRenderer,
-} from './drive'
+import { driveSearchRenderer, driveGetFileRenderer, driveCreateFolderRenderer } from './drive'
 import { tasksListRenderer, tasksCreateRenderer } from './tasks'
 import {
   calendarUpcomingRenderer,
@@ -32,12 +28,7 @@ import {
   calendarUpdateEventRenderer,
   calendarDeleteEventRenderer,
 } from './calendar'
-import {
-  docsSearchRenderer,
-  docsGetRenderer,
-  docsCreateRenderer,
-  docsAppendRenderer,
-} from './docs'
+import { docsSearchRenderer, docsGetRenderer, docsCreateRenderer, docsAppendRenderer } from './docs'
 import {
   sheetsListTabsRenderer,
   sheetsReadRangeRenderer,
@@ -60,11 +51,7 @@ import {
   notionCreatePageRenderer,
   notionAppendBlocksRenderer,
 } from './notion'
-import {
-  generateImageRenderer,
-  editImageRenderer,
-  analyzeImageRenderer,
-} from './image'
+import { generateImageRenderer, editImageRenderer, analyzeImageRenderer } from './image'
 import {
   jiraSearchRenderer,
   jiraGetIssueRenderer,
@@ -164,10 +151,7 @@ export const TOOL_RENDERERS: ToolRenderer[] = [
   ...defaultRenderers,
 ]
 
-export function findRenderer(
-  toolName: string,
-  output: unknown,
-): ToolRenderer | null {
+export function findRenderer(toolName: string, output: unknown): ToolRenderer | null {
   for (const r of TOOL_RENDERERS) {
     if (matchesRenderer(r, toolName, output)) return r
   }

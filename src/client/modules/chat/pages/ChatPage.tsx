@@ -26,7 +26,20 @@ import {
   PromptInputActionAddScreenshotCountdown,
   PromptInputActionAddScreenCapture,
 } from '../components/ScreenCaptureMenuItems'
-import { Plus, MessageSquare, MessagesSquare, Download, ArrowDown, Paperclip, FileText, Folder, X, FileQuestion, ChevronLeft, ArrowUpRight } from 'lucide-react'
+import {
+  Plus,
+  MessageSquare,
+  MessagesSquare,
+  Download,
+  ArrowDown,
+  Paperclip,
+  FileText,
+  Folder,
+  X,
+  FileQuestion,
+  ChevronLeft,
+  ArrowUpRight,
+} from 'lucide-react'
 import { Link as RouterLink } from 'react-router-dom'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 import {
@@ -141,7 +154,8 @@ function ChatPageInner({ userId }: { userId: string }) {
   const isLargeScreen = useMediaQuery('(min-width: 1024px)')
 
   // Share Target: when shared from mobile, params arrive as ?title=&text=&url=
-  const sharedText = searchParams.get('text') || searchParams.get('title') || searchParams.get('url')
+  const sharedText =
+    searchParams.get('text') || searchParams.get('title') || searchParams.get('url')
   // Project quick-chat: ProjectPage navigates here with `?q=<text>` after the
   // user types in "How can I help you today?" and clicks Start chat. We
   // auto-send so they land mid-stream rather than facing a fresh empty
@@ -162,7 +176,11 @@ function ChatPageInner({ userId }: { userId: string }) {
   // loads so the server, not the UI, has the final say.
   const { data: modelsData } = useQuery({
     queryKey: ['ai-models'],
-    queryFn: () => apiClient.get<{ models: Array<{ id: string; supportsVision: boolean; route?: string }>; recommended: string }>('/api/ai/models'),
+    queryFn: () =>
+      apiClient.get<{
+        models: Array<{ id: string; supportsVision: boolean; route?: string }>
+        recommended: string
+      }>('/api/ai/models'),
     staleTime: 5 * 60 * 1000,
   })
   const selectedModelInfo = modelsData?.models.find((m) => m.id === model)
@@ -174,9 +192,7 @@ function ChatPageInner({ userId }: { userId: string }) {
   const selectedModelMissingKey = selectedModelInfo?.route === 'unknown'
   // Accept is "everything" for vision-capable models, or "everything minus images"
   // for text-only models. Drop, paste, and the + menu all respect this.
-  const acceptString = supportsVision
-    ? ACCEPT_ALL
-    : ACCEPT_ALL.replace('image/*,', '')
+  const acceptString = supportsVision ? ACCEPT_ALL : ACCEPT_ALL.replace('image/*,', '')
 
   // Ref to the underlying textarea so preset chips can insert text.
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
@@ -327,7 +343,7 @@ function ChatPageInner({ userId }: { userId: string }) {
       setMessages(truncated)
       setTimeout(() => sendMessage({ text: newText }), 50)
     },
-    [messages, isLoading, setMessages, sendMessage],
+    [messages, isLoading, setMessages, sendMessage]
   )
 
   // Find the last assistant message index
@@ -351,7 +367,7 @@ function ChatPageInner({ userId }: { userId: string }) {
         }
         return true
       }),
-    [messages],
+    [messages]
   )
   const visibleLastAssistantIdx = useMemo(() => {
     const idx = [...visibleMessages].reverse().findIndex((m) => m.role === 'assistant')
@@ -359,7 +375,10 @@ function ChatPageInner({ userId }: { userId: string }) {
   }, [visibleMessages])
 
   // ─── Input Takeover Detection ─────────────────────────────────
-  const [activeTakeover, setActiveTakeover] = useState<{ _ui: string; [key: string]: unknown } | null>(null)
+  const [activeTakeover, setActiveTakeover] = useState<{
+    _ui: string
+    [key: string]: unknown
+  } | null>(null)
 
   useEffect(() => {
     const lastAssistantMsg = [...messages].reverse().find((m) => m.role === 'assistant')
@@ -388,7 +407,7 @@ function ChatPageInner({ userId }: { userId: string }) {
       setActiveTakeover(null)
       sendMessage({ text })
     },
-    [sendMessage],
+    [sendMessage]
   )
 
   const handleTakeoverDismiss = useCallback(() => {
@@ -396,10 +415,17 @@ function ChatPageInner({ userId }: { userId: string }) {
   }, [])
 
   const handleToolApproval = useCallback(
-    ({ toolCallId, result }: { toolCallId: string; toolName: string; result: 'approve' | 'deny' }) => {
+    ({
+      toolCallId,
+      result,
+    }: {
+      toolCallId: string
+      toolName: string
+      result: 'approve' | 'deny'
+    }) => {
       addToolApprovalResponse({ id: toolCallId, approved: result === 'approve' })
     },
-    [addToolApprovalResponse],
+    [addToolApprovalResponse]
   )
 
   // Preview vs pick separation for ActionChips hover:
@@ -415,7 +441,7 @@ function ChatPageInner({ userId }: { userId: string }) {
     // Use the native setter so React's synthetic onChange picks up the change.
     const setter = Object.getOwnPropertyDescriptor(
       window.HTMLTextAreaElement.prototype,
-      'value',
+      'value'
     )?.set
     setter?.call(ta, text)
     ta.dispatchEvent(new Event('input', { bubbles: true }))
@@ -425,64 +451,76 @@ function ChatPageInner({ userId }: { userId: string }) {
     }
   }, [])
 
-  const handlePresetPreview = useCallback((text: string | null) => {
-    const ta = textareaRef.current
-    if (!ta) return
-    if (text === null) {
-      // Restore — only if the preview was actually in effect (guards against
-      // stray mouseleave events when no preview was active).
-      if (priorTextareaRef.current !== null) {
-        setTextareaValue(priorTextareaRef.current, false)
-        priorTextareaRef.current = null
+  const handlePresetPreview = useCallback(
+    (text: string | null) => {
+      const ta = textareaRef.current
+      if (!ta) return
+      if (text === null) {
+        // Restore — only if the preview was actually in effect (guards against
+        // stray mouseleave events when no preview was active).
+        if (priorTextareaRef.current !== null) {
+          setTextareaValue(priorTextareaRef.current, false)
+          priorTextareaRef.current = null
+        }
+      } else {
+        // Save current value once on first preview, then fill.
+        if (priorTextareaRef.current === null) {
+          priorTextareaRef.current = ta.value
+        }
+        setTextareaValue(text, false)
       }
-    } else {
-      // Save current value once on first preview, then fill.
-      if (priorTextareaRef.current === null) {
-        priorTextareaRef.current = ta.value
-      }
-      setTextareaValue(text, false)
-    }
-  }, [setTextareaValue])
+    },
+    [setTextareaValue]
+  )
 
-  const handlePresetPick = useCallback((text: string) => {
-    // Commit — discard the saved prior value so future mouseleave doesn't
-    // undo the user's selection.
-    priorTextareaRef.current = null
-    setTextareaValue(text, true)
-  }, [setTextareaValue])
+  const handlePresetPick = useCallback(
+    (text: string) => {
+      // Commit — discard the saved prior value so future mouseleave doesn't
+      // undo the user's selection.
+      priorTextareaRef.current = null
+      setTextareaValue(text, true)
+    },
+    [setTextareaValue]
+  )
 
   /**
    * Fetch a skill body and wrap it in <skill_content> tags so the model
    * receives the activated skill in the first user message. Returns the
    * final text + body for the UI to send or null if the skill is missing.
    */
-  const activateSkill = useCallback(async (skillName: string, rest: string, files: unknown) => {
-    try {
-      const detail = await apiClient.get<{
-        name: string
-        directory: string
-        body: string
-        resources: string[]
-      }>(`/api/skills/${skillName}`)
-      const resourceBlock = detail.resources.length > 0
-        ? `\n\n<skill_resources>\n${detail.resources.map((r) => `  <file>${r}</file>`).join('\n')}\n</skill_resources>`
-        : ''
-      const wrapper = [
-        `<skill_content name="${detail.name}" directory="${detail.directory}">`,
-        detail.body,
-        '',
-        `Skill directory: ${detail.directory}`,
-        'Relative paths resolve against the skill directory. Use read_skill_resource or run_skill_script for any listed resource.',
-        resourceBlock.trim(),
-        '</skill_content>',
-      ].filter(Boolean).join('\n')
-      const finalText = `${wrapper}\n\n${rest || `Using the ${detail.name} skill.`}`
-      sendMessage({ text: finalText, files: files as never })
-      return true
-    } catch {
-      return false
-    }
-  }, [sendMessage])
+  const activateSkill = useCallback(
+    async (skillName: string, rest: string, files: unknown) => {
+      try {
+        const detail = await apiClient.get<{
+          name: string
+          directory: string
+          body: string
+          resources: string[]
+        }>(`/api/skills/${skillName}`)
+        const resourceBlock =
+          detail.resources.length > 0
+            ? `\n\n<skill_resources>\n${detail.resources.map((r) => `  <file>${r}</file>`).join('\n')}\n</skill_resources>`
+            : ''
+        const wrapper = [
+          `<skill_content name="${detail.name}" directory="${detail.directory}">`,
+          detail.body,
+          '',
+          `Skill directory: ${detail.directory}`,
+          'Relative paths resolve against the skill directory. Use read_skill_resource or run_skill_script for any listed resource.',
+          resourceBlock.trim(),
+          '</skill_content>',
+        ]
+          .filter(Boolean)
+          .join('\n')
+        const finalText = `${wrapper}\n\n${rest || `Using the ${detail.name} skill.`}`
+        sendMessage({ text: finalText, files: files as never })
+        return true
+      } catch {
+        return false
+      }
+    },
+    [sendMessage]
+  )
 
   const handleSubmit = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -511,7 +549,7 @@ function ChatPageInner({ userId }: { userId: string }) {
         sendMessage({ text })
       }
     },
-    [sendMessage, activateSkill],
+    [sendMessage, activateSkill]
   )
 
   // Observe the uncontrolled PromptInputTextarea so the slash-command menu
@@ -538,47 +576,55 @@ function ChatPageInner({ userId }: { userId: string }) {
       .slice(0, 8)
   }, [slashParsed, skillSummary])
   const slashMenuOpen = !!slashParsed && slashMatches.length > 0
-  useEffect(() => { setSlashIndex(0) }, [slashParsed?.query])
+  useEffect(() => {
+    setSlashIndex(0)
+  }, [slashParsed?.query])
 
-  const handleSelectSkill = useCallback(async (skill: SkillSummary) => {
-    if (!slashParsed) return
-    setActivatingSkill(skill.name)
-    const rest = slashParsed.rest.trim()
-    const ok = await activateSkill(skill.name, rest, undefined)
-    setActivatingSkill(null)
-    if (ok) {
-      // Clear the input — the message is in flight.
-      setTextareaValue('', true)
-      setInputValue('')
-    }
-  }, [slashParsed, activateSkill, setTextareaValue])
+  const handleSelectSkill = useCallback(
+    async (skill: SkillSummary) => {
+      if (!slashParsed) return
+      setActivatingSkill(skill.name)
+      const rest = slashParsed.rest.trim()
+      const ok = await activateSkill(skill.name, rest, undefined)
+      setActivatingSkill(null)
+      if (ok) {
+        // Clear the input — the message is in flight.
+        setTextareaValue('', true)
+        setInputValue('')
+      }
+    },
+    [slashParsed, activateSkill, setTextareaValue]
+  )
 
   /**
    * Keyboard navigation for the slash menu. Intercepts Arrow/Enter/Tab/Esc
    * when the menu is open; otherwise lets the textarea handle them normally
    * (Enter submits via PromptInput, Esc does nothing).
    */
-  const handleTextareaKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (!slashMenuOpen) return
-    if (e.key === 'ArrowDown') {
-      e.preventDefault()
-      setSlashIndex((i) => (i + 1) % slashMatches.length)
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault()
-      setSlashIndex((i) => (i - 1 + slashMatches.length) % slashMatches.length)
-    } else if (e.key === 'Enter' || e.key === 'Tab') {
-      const skill = slashMatches[slashIndex]
-      if (skill) {
+  const handleTextareaKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (!slashMenuOpen) return
+      if (e.key === 'ArrowDown') {
         e.preventDefault()
-        e.stopPropagation()
-        void handleSelectSkill(skill)
+        setSlashIndex((i) => (i + 1) % slashMatches.length)
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        setSlashIndex((i) => (i - 1 + slashMatches.length) % slashMatches.length)
+      } else if (e.key === 'Enter' || e.key === 'Tab') {
+        const skill = slashMatches[slashIndex]
+        if (skill) {
+          e.preventDefault()
+          e.stopPropagation()
+          void handleSelectSkill(skill)
+        }
+      } else if (e.key === 'Escape') {
+        e.preventDefault()
+        setTextareaValue('', true)
+        setInputValue('')
       }
-    } else if (e.key === 'Escape') {
-      e.preventDefault()
-      setTextareaValue('', true)
-      setInputValue('')
-    }
-  }, [slashMenuOpen, slashMatches, slashIndex, handleSelectSkill, setTextareaValue])
+    },
+    [slashMenuOpen, slashMatches, slashIndex, handleSelectSkill, setTextareaValue]
+  )
 
   // Helper: convert File/Blob → data URL for AI SDK's FileUIPart
   const toDataUrl = useCallback((blob: Blob): Promise<string> => {
@@ -594,13 +640,22 @@ function ChatPageInner({ userId }: { userId: string }) {
     async (files: File[]) => {
       if (files.length === 0) return
       const parts = await Promise.all(
-        files.map(async (f) => ({ type: 'file' as const, url: await toDataUrl(f), mediaType: f.type })),
+        files.map(async (f) => ({
+          type: 'file' as const,
+          url: await toDataUrl(f),
+          mediaType: f.type,
+        }))
       )
       sendMessage({ text: 'What do you see in this image?', files: parts })
     },
-    [sendMessage, toDataUrl],
+    [sendMessage, toDataUrl]
   )
-  usePasteUpload({ onPaste: handlePastedFiles, accept: 'image/*', global: true, disabled: isLoading })
+  usePasteUpload({
+    onPaste: handlePastedFiles,
+    accept: 'image/*',
+    global: true,
+    disabled: isLoading,
+  })
 
   // Voice dictation — the mic button now streams STT directly into the
   // input field via the voice DO (see VoiceDictationButton). The old
@@ -634,7 +689,7 @@ function ChatPageInner({ userId }: { userId: string }) {
         }
       }
     },
-    [voiceModeStorageKey],
+    [voiceModeStorageKey]
   )
 
   // Latest assistant text — `complete` flips true only when streaming
@@ -658,7 +713,7 @@ function ChatPageInner({ userId }: { userId: string }) {
     (text: string) => {
       sendMessage({ text })
     },
-    [sendMessage],
+    [sendMessage]
   )
 
   const voiceChat = useVoiceChat({
@@ -692,7 +747,7 @@ function ChatPageInner({ userId }: { userId: string }) {
   const storedProjectId = activeConversation?.projectId ?? null
   const activeProjectId = storedProjectId ?? urlProjectId ?? null
   const activeProject = activeProjectId
-    ? projectListData?.projects.find((p) => p.id === activeProjectId) ?? null
+    ? (projectListData?.projects.find((p) => p.id === activeProjectId) ?? null)
     : null
 
   // Track whether the user is near the bottom of the scroll container so we
@@ -836,11 +891,14 @@ function ChatPageInner({ userId }: { userId: string }) {
           actual capture happens inside PromptInput's globalDrop handler. */}
       <DropOverlay disabled={isLoading} />
       {/* Conversation sidebar: inline on desktop, Sheet on mobile */}
-      {showSidebar && isDesktop && (
-        <ConversationSidebar activeConversationId={urlConversationId} />
-      )}
+      {showSidebar && isDesktop && <ConversationSidebar activeConversationId={urlConversationId} />}
       {showSidebar && !isDesktop && (
-        <Sheet open onOpenChange={(open) => { if (!open) setShowSidebar(false) }}>
+        <Sheet
+          open
+          onOpenChange={(open) => {
+            if (!open) setShowSidebar(false)
+          }}
+        >
           <SheetContent side="left" className="w-64 p-0">
             <ConversationSidebar activeConversationId={urlConversationId} />
           </SheetContent>
@@ -883,7 +941,10 @@ function ChatPageInner({ userId }: { userId: string }) {
                   <span className="truncate max-w-[14rem]">{activeProject.name}</span>
                 </RouterLink>
                 <span className="text-muted-foreground/50">/</span>
-                <h1 className="text-sm font-medium truncate max-w-[24rem]" title={activeConversation?.title ?? 'New chat'}>
+                <h1
+                  className="text-sm font-medium truncate max-w-[24rem]"
+                  title={activeConversation?.title ?? 'New chat'}
+                >
                   {activeConversation?.title ?? 'New chat'}
                 </h1>
                 {/* Detach — only for persisted conversations (no server-side
@@ -893,7 +954,9 @@ function ChatPageInner({ userId }: { userId: string }) {
                     variant="ghost"
                     size="icon-xs"
                     className="ml-1 size-5 rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
-                    onClick={() => moveConversation.mutate({ id: urlConversationId, projectId: null })}
+                    onClick={() =>
+                      moveConversation.mutate({ id: urlConversationId, projectId: null })
+                    }
                     title="Remove from project"
                     aria-label="Remove from project"
                   >
@@ -904,7 +967,10 @@ function ChatPageInner({ userId }: { userId: string }) {
             ) : (
               <>
                 <MessageSquare className="size-4 text-muted-foreground ml-1" />
-                <h1 className="text-sm font-medium truncate max-w-[28rem]" title={activeConversation?.title ?? 'AI Chat'}>
+                <h1
+                  className="text-sm font-medium truncate max-w-[28rem]"
+                  title={activeConversation?.title ?? 'AI Chat'}
+                >
                   {activeConversation?.title ?? 'AI Chat'}
                 </h1>
               </>
@@ -917,10 +983,14 @@ function ChatPageInner({ userId }: { userId: string }) {
                 size="icon-sm"
                 className={cn(
                   'text-muted-foreground',
-                  showArtifactPanel && 'bg-accent text-foreground ring-1 ring-primary/30',
+                  showArtifactPanel && 'bg-accent text-foreground ring-1 ring-primary/30'
                 )}
                 onClick={() => setShowArtifactPanel((v) => !v)}
-                title={showArtifactPanel ? 'Hide artifact panel' : `Artifacts (${artifactCount}) & files (${fileCount})`}
+                title={
+                  showArtifactPanel
+                    ? 'Hide artifact panel'
+                    : `Artifacts (${artifactCount}) & files (${fileCount})`
+                }
                 aria-label={showArtifactPanel ? 'Hide artifact panel' : 'Show artifact panel'}
                 aria-pressed={showArtifactPanel}
               >
@@ -943,10 +1013,7 @@ function ChatPageInner({ userId }: { userId: string }) {
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem
                     onClick={() =>
-                      window.open(
-                        `/api/conversations/${conversationId}/export?format=md`,
-                        '_blank',
-                      )
+                      window.open(`/api/conversations/${conversationId}/export?format=md`, '_blank')
                     }
                   >
                     Export as Markdown
@@ -955,7 +1022,7 @@ function ChatPageInner({ userId }: { userId: string }) {
                     onClick={() =>
                       window.open(
                         `/api/conversations/${conversationId}/export?format=json`,
-                        '_blank',
+                        '_blank'
                       )
                     }
                   >
@@ -1154,100 +1221,111 @@ function ChatPageInner({ userId }: { userId: string }) {
                         Activating <span className="font-mono">/{activatingSkill}</span>…
                       </div>
                     )}
-                  <div
-                    className={cn(
-                      'rounded-2xl border bg-background shadow-sm overflow-hidden transition-all',
-                      // Stronger focus treatment — subtle ring in the primary
-                      // colour plus a slightly brighter border. Still calm
-                      // (20% opacity), but actually perceptible in dark mode.
-                      'focus-within:border-primary/30 focus-within:ring-1 focus-within:ring-primary/20',
-                      // Kill the inner InputGroup chrome so only the outer
-                      // wrapper is visible. Keep the outer radius; drop the
-                      // inner ring + border that were stacking.
-                      '[&_[data-slot=input-group]]:border-0',
-                      '[&_[data-slot=input-group]]:rounded-none',
-                      '[&_[data-slot=input-group]]:shadow-none',
-                      '[&_[data-slot=input-group]]:focus-within:ring-0',
-                    )}
-                  >
-                    <PromptInput
-                      onSubmit={handleSubmit}
-                      accept={acceptString}
-                      multiple
-                      maxFiles={5}
-                      maxFileSize={25 * 1024 * 1024}
-                      globalDrop
+                    <div
+                      className={cn(
+                        'rounded-2xl border bg-background shadow-sm overflow-hidden transition-all',
+                        // Stronger focus treatment — subtle ring in the primary
+                        // colour plus a slightly brighter border. Still calm
+                        // (20% opacity), but actually perceptible in dark mode.
+                        'focus-within:border-primary/30 focus-within:ring-1 focus-within:ring-primary/20',
+                        // Kill the inner InputGroup chrome so only the outer
+                        // wrapper is visible. Keep the outer radius; drop the
+                        // inner ring + border that were stacking.
+                        '[&_[data-slot=input-group]]:border-0',
+                        '[&_[data-slot=input-group]]:rounded-none',
+                        '[&_[data-slot=input-group]]:shadow-none',
+                        '[&_[data-slot=input-group]]:focus-within:ring-0'
+                      )}
                     >
-                      <AttachmentTiles />
-                      <PromptInputTextarea
-                        ref={textareaRef}
-                        data-tour="chat-input"
-                        placeholder={hasMessages ? 'Reply to the AI...' : 'Ask anything, or drop a file…'}
-                        onKeyDown={handleTextareaKeyDown}
-                      />
-                      <PromptInputFooter>
-                        <PromptInputTools>
-                          <PromptInputActionMenu>
-                            <PromptInputActionMenuTrigger
-                              aria-label="Attach a file or take a screenshot"
-                              tooltip="Attach"
-                              size="sm"
-                              data-tour="chat-attach"
-                              className="bg-muted hover:bg-muted-foreground/10"
-                            >
-                              <Paperclip className="size-4" />
-                              <span className="hidden sm:inline">Attach</span>
-                            </PromptInputActionMenuTrigger>
-                            <PromptInputActionMenuContent>
-                              <PromptInputActionAddAttachments />
-                              <PromptInputActionAddScreenshotCountdown />
-                              <PromptInputActionAddScreenCapture />
-                            </PromptInputActionMenuContent>
-                          </PromptInputActionMenu>
-                          {/* Only mount when the voice agent DO is wired —
+                      <PromptInput
+                        onSubmit={handleSubmit}
+                        accept={acceptString}
+                        multiple
+                        maxFiles={5}
+                        maxFileSize={25 * 1024 * 1024}
+                        globalDrop
+                      >
+                        <AttachmentTiles />
+                        <PromptInputTextarea
+                          ref={textareaRef}
+                          data-tour="chat-input"
+                          placeholder={
+                            hasMessages ? 'Reply to the AI...' : 'Ask anything, or drop a file…'
+                          }
+                          onKeyDown={handleTextareaKeyDown}
+                        />
+                        <PromptInputFooter>
+                          <PromptInputTools>
+                            <PromptInputActionMenu>
+                              <PromptInputActionMenuTrigger
+                                aria-label="Attach a file or take a screenshot"
+                                tooltip="Attach"
+                                size="sm"
+                                data-tour="chat-attach"
+                                className="bg-muted hover:bg-muted-foreground/10"
+                              >
+                                <Paperclip className="size-4" />
+                                <span className="hidden sm:inline">Attach</span>
+                              </PromptInputActionMenuTrigger>
+                              <PromptInputActionMenuContent>
+                                <PromptInputActionAddAttachments />
+                                <PromptInputActionAddScreenshotCountdown />
+                                <PromptInputActionAddScreenCapture />
+                              </PromptInputActionMenuContent>
+                            </PromptInputActionMenu>
+                            {/* Only mount when the voice agent DO is wired —
                               otherwise the underlying useVoiceInput hook
                               connects to a non-existent DO and logs
                               "Protocol version mismatch: server=undefined". */}
-                          {features.voiceAgent && (
-                            <VoiceDictationButton
-                              textareaRef={textareaRef}
-                              userId={session?.user?.id}
+                            {features.voiceAgent && (
+                              <VoiceDictationButton
+                                textareaRef={textareaRef}
+                                userId={session?.user?.id}
+                              />
+                            )}
+                            <VoiceModeButton
+                              enabled={voiceModeEnabled}
+                              setEnabled={handleSetVoiceMode}
+                              state={voiceChat.state}
+                              isRecording={voiceChat.isRecording}
+                              isSpeaking={voiceChat.isSpeaking}
+                              startRecording={voiceChat.startRecording}
+                              stopRecording={voiceChat.stopRecording}
+                              cancelRecording={voiceChat.cancelRecording}
+                              stopSpeaking={voiceChat.stopSpeaking}
+                              unlockAudio={voiceChat.unlockAudio}
+                              recordingUnsupported={voiceChat.recordingUnsupported}
+                              error={voiceChat.error}
+                              disabled={isLoading}
                             />
-                          )}
-                          <VoiceModeButton
-                            enabled={voiceModeEnabled}
-                            setEnabled={handleSetVoiceMode}
-                            state={voiceChat.state}
-                            isRecording={voiceChat.isRecording}
-                            isSpeaking={voiceChat.isSpeaking}
-                            startRecording={voiceChat.startRecording}
-                            stopRecording={voiceChat.stopRecording}
-                            cancelRecording={voiceChat.cancelRecording}
-                            stopSpeaking={voiceChat.stopSpeaking}
-                            unlockAudio={voiceChat.unlockAudio}
-                            recordingUnsupported={voiceChat.recordingUnsupported}
-                            error={voiceChat.error}
-                            disabled={isLoading}
-                          />
-                          {/* `display: contents` strips the box, so Radix's
+                            {/* `display: contents` strips the box, so Radix's
                               Popover anchor (used by ChatFirstRunTour) falls
                               back to (0,0) and the popover lands upper-left
                               instead of pointing at the model picker.
                               `inline-flex` keeps the original layout but
                               gives the span a real bounding rect. */}
-                          <span data-tour="chat-model-picker" className="inline-flex">
-                            <ModelSelector value={model} onChange={setModel} disabled={isLoading} />
-                          </span>
-                          <ConversationSizeIndicator
-                            messages={messages as unknown as { role: string; metadata?: { inputTokens?: number } }[]}
-                            model={model}
-                            conversationId={urlConversationId ?? conversationId ?? null}
-                          />
-                        </PromptInputTools>
-                        <PromptInputSubmit status={status} onStop={stop} />
-                      </PromptInputFooter>
-                    </PromptInput>
-                  </div>
+                            <span data-tour="chat-model-picker" className="inline-flex">
+                              <ModelSelector
+                                value={model}
+                                onChange={setModel}
+                                disabled={isLoading}
+                              />
+                            </span>
+                            <ConversationSizeIndicator
+                              messages={
+                                messages as unknown as {
+                                  role: string
+                                  metadata?: { inputTokens?: number }
+                                }[]
+                              }
+                              model={model}
+                              conversationId={urlConversationId ?? conversationId ?? null}
+                            />
+                          </PromptInputTools>
+                          <PromptInputSubmit status={status} onStop={stop} />
+                        </PromptInputFooter>
+                      </PromptInput>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1263,7 +1341,12 @@ function ChatPageInner({ userId }: { userId: string }) {
         <ArtifactSidebar messages={messages} onClose={() => setShowArtifactPanel(false)} />
       )}
       {showArtifactPanel && !isLargeScreen && (
-        <Sheet open onOpenChange={(open) => { if (!open) setShowArtifactPanel(false) }}>
+        <Sheet
+          open
+          onOpenChange={(open) => {
+            if (!open) setShowArtifactPanel(false)
+          }}
+        >
           <SheetContent side="right" className="w-80 p-0">
             <ArtifactSidebar messages={messages} onClose={() => setShowArtifactPanel(false)} />
           </SheetContent>
@@ -1311,7 +1394,8 @@ function EmptyStateBody({
             {modelName ? `${modelName} ` : 'This model '}needs an API key to send messages.
           </div>
           <p className="mt-0.5 text-amber-800/90 dark:text-amber-200/80">
-            Pick a free Workers AI model from the dropdown below, or ask the operator to set the provider's API key.
+            Pick a free Workers AI model from the dropdown below, or ask the operator to set the
+            provider's API key.
           </p>
         </div>
       )}
@@ -1340,7 +1424,10 @@ function ExampleQuestions({ onPick }: { onPick: (text: string) => void }) {
           className="group/chip flex items-start gap-2 rounded-lg border border-border/60 bg-background px-3 py-2.5 text-left text-sm text-muted-foreground transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
         >
           <span className="line-clamp-2 flex-1">{q}</span>
-          <ArrowUpRight className="mt-0.5 size-3.5 shrink-0 text-muted-foreground/80 transition-colors group-hover/chip:text-foreground" aria-hidden />
+          <ArrowUpRight
+            className="mt-0.5 size-3.5 shrink-0 text-muted-foreground/80 transition-colors group-hover/chip:text-foreground"
+            aria-hidden
+          />
         </button>
       ))}
     </div>

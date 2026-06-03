@@ -35,7 +35,12 @@ export function TemplateDetailPage() {
   const { id } = useParams<{ id: string }>()
   // const { data, isLoading } = useThing(id)
   const isLoading = false
-  const thing = { id: id ?? '', name: 'Sample thing', status: 'active', description: 'A short description' }
+  const thing = {
+    id: id ?? '',
+    name: 'Sample thing',
+    status: 'active',
+    description: 'A short description',
+  }
 
   if (isLoading) {
     return (
@@ -53,14 +58,18 @@ export function TemplateDetailPage() {
         backLabel="Things"
         subtitle={
           <>
-            <Badge variant="outline" className="text-[10px]">{thing.status}</Badge>
+            <Badge variant="outline" className="text-[10px]">
+              {thing.status}
+            </Badge>
             <span>·</span>
             <span>{thing.description}</span>
           </>
         }
         trailing={
           <>
-            <Button size="sm" variant="outline">Primary action</Button>
+            <Button size="sm" variant="outline">
+              Primary action
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" aria-label="More actions">

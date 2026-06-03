@@ -78,98 +78,125 @@ export interface MarkdownCodeEditorProps {
  * linter() wrapper so it doesn't fire per-keystroke.
  */
 function skillFrontmatterLinter() {
-  return linter((view): Diagnostic[] => {
-    const text = view.state.doc.toString()
-    const out: Diagnostic[] = []
+  return linter(
+    (view): Diagnostic[] => {
+      const text = view.state.doc.toString()
+      const out: Diagnostic[] = []
 
-    const fmMatch = text.match(/^---\r?\n([\s\S]*?)\r?\n---/)
-    if (!fmMatch) {
-      return [
-        {
-          from: 0,
-          to: Math.min(20, text.length),
+      const fmMatch = text.match(/^---\r?\n([\s\S]*?)\r?\n---/)
+      if (!fmMatch) {
+        return [
+          {
+            from: 0,
+            to: Math.min(20, text.length),
+            severity: 'error',
+            message: 'SKILL.md must start with YAML frontmatter delimited by --- lines',
+          },
+        ]
+      }
+
+      const fmBody = fmMatch[1] ?? ''
+      const fmStart = 4 // past the opening "---\n"
+      let hasName = false
+      let hasDescription = false
+      let offset = fmStart
+
+      for (const line of fmBody.split('\n')) {
+        const lineEnd = offset + line.length
+        const colon = line.indexOf(':')
+        if (colon === -1) {
+          offset = lineEnd + 1
+          continue
+        }
+        const key = line.slice(0, colon).trim()
+        const valueStartInLine = line.slice(0, colon + 1).length
+        const leadingSpace = line[colon + 1] === ' ' ? 1 : 0
+        const valueFrom = offset + valueStartInLine + leadingSpace
+        const value = line.slice(colon + 1).trim()
+
+        if (key === 'name') {
+          hasName = true
+          if (value.length === 0) {
+            out.push({
+              from: offset,
+              to: lineEnd,
+              severity: 'error',
+              message: 'name cannot be empty',
+            })
+          } else if (value.length > 64) {
+            out.push({
+              from: valueFrom,
+              to: lineEnd,
+              severity: 'error',
+              message: `name exceeds 64 chars (got ${value.length})`,
+            })
+          } else if (!/^[a-z0-9-]+$/.test(value)) {
+            out.push({
+              from: valueFrom,
+              to: lineEnd,
+              severity: 'error',
+              message: 'name must be lowercase letters, digits, and hyphens only',
+            })
+          }
+        }
+
+        if (key === 'description') {
+          hasDescription = true
+          if (value.length === 0) {
+            out.push({
+              from: offset,
+              to: lineEnd,
+              severity: 'error',
+              message: 'description cannot be empty',
+            })
+          } else if (value.length > 1024) {
+            out.push({
+              from: valueFrom,
+              to: lineEnd,
+              severity: 'error',
+              message: `description exceeds 1024 chars (got ${value.length})`,
+            })
+          } else if (value.length < 20) {
+            out.push({
+              from: valueFrom,
+              to: lineEnd,
+              severity: 'warning',
+              message:
+                'description is very short — agents use this to decide when to load the skill. Describe purpose + trigger conditions.',
+            })
+          }
+        }
+
+        offset = lineEnd + 1 // +1 for the \n
+      }
+
+      const fmEnd = fmStart + fmBody.length
+      if (!hasName) {
+        out.push({
+          from: fmStart,
+          to: fmEnd,
           severity: 'error',
-          message:
-            'SKILL.md must start with YAML frontmatter delimited by --- lines',
-        },
-      ]
-    }
-
-    const fmBody = fmMatch[1] ?? ''
-    const fmStart = 4 // past the opening "---\n"
-    let hasName = false
-    let hasDescription = false
-    let offset = fmStart
-
-    for (const line of fmBody.split('\n')) {
-      const lineEnd = offset + line.length
-      const colon = line.indexOf(':')
-      if (colon === -1) {
-        offset = lineEnd + 1
-        continue
+          message: 'name: field is required',
+        })
       }
-      const key = line.slice(0, colon).trim()
-      const valueStartInLine = line.slice(0, colon + 1).length
-      const leadingSpace = line[colon + 1] === ' ' ? 1 : 0
-      const valueFrom = offset + valueStartInLine + leadingSpace
-      const value = line.slice(colon + 1).trim()
-
-      if (key === 'name') {
-        hasName = true
-        if (value.length === 0) {
-          out.push({ from: offset, to: lineEnd, severity: 'error', message: 'name cannot be empty' })
-        } else if (value.length > 64) {
-          out.push({ from: valueFrom, to: lineEnd, severity: 'error', message: `name exceeds 64 chars (got ${value.length})` })
-        } else if (!/^[a-z0-9-]+$/.test(value)) {
-          out.push({
-            from: valueFrom,
-            to: lineEnd,
-            severity: 'error',
-            message: 'name must be lowercase letters, digits, and hyphens only',
-          })
-        }
+      if (!hasDescription) {
+        out.push({
+          from: fmStart,
+          to: fmEnd,
+          severity: 'error',
+          message: 'description: field is required',
+        })
       }
 
-      if (key === 'description') {
-        hasDescription = true
-        if (value.length === 0) {
-          out.push({ from: offset, to: lineEnd, severity: 'error', message: 'description cannot be empty' })
-        } else if (value.length > 1024) {
-          out.push({
-            from: valueFrom,
-            to: lineEnd,
-            severity: 'error',
-            message: `description exceeds 1024 chars (got ${value.length})`,
-          })
-        } else if (value.length < 20) {
-          out.push({
-            from: valueFrom,
-            to: lineEnd,
-            severity: 'warning',
-            message:
-              'description is very short — agents use this to decide when to load the skill. Describe purpose + trigger conditions.',
-          })
-        }
-      }
-
-      offset = lineEnd + 1 // +1 for the \n
-    }
-
-    const fmEnd = fmStart + fmBody.length
-    if (!hasName) {
-      out.push({ from: fmStart, to: fmEnd, severity: 'error', message: 'name: field is required' })
-    }
-    if (!hasDescription) {
-      out.push({ from: fmStart, to: fmEnd, severity: 'error', message: 'description: field is required' })
-    }
-
-    return out
-  }, { delay: 300 })
+      return out
+    },
+    { delay: 300 }
+  )
 }
 
 function useIsDarkMode() {
-  const [dark, setDark] = useState(() =>
-    typeof document !== 'undefined' && document.documentElement.classList.contains('dark'),
+  const [dark, setDark] = useState(
+    () => typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
   )
   useEffect(() => {
     if (typeof document === 'undefined') return
@@ -247,7 +274,7 @@ export function MarkdownCodeEditor({
         },
         '.cm-gutters': { fontSize: '10px' },
       }),
-    [],
+    []
   )
 
   // Tier-1 editor extensions (see docs/PATTERNS note on skill UX):

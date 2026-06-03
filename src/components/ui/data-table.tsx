@@ -108,10 +108,7 @@ export function DataTable<TData, TValue>({
                           data-state={sorted ? 'sorted' : undefined}
                           onClick={header.column.getToggleSortingHandler()}
                         >
-                          {flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
+                          {flexRender(header.column.columnDef.header, header.getContext())}
                           {sorted === 'asc' ? (
                             <ArrowUp className="ml-1 size-3.5" />
                           ) : sorted === 'desc' ? (
@@ -121,10 +118,7 @@ export function DataTable<TData, TValue>({
                           )}
                         </Button>
                       ) : (
-                        flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )
+                        flexRender(header.column.columnDef.header, header.getContext())
                       )}
                     </TableHead>
                   )
@@ -150,7 +144,10 @@ export function DataTable<TData, TValue>({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center text-muted-foreground"
+                >
                   {emptyState ?? 'No results.'}
                 </TableCell>
               </TableRow>
@@ -170,27 +167,31 @@ export function DataTable<TData, TValue>({
                 <PaginationPrevious
                   href="#"
                   aria-disabled={!table.getCanPreviousPage()}
-                  className={!table.getCanPreviousPage() ? 'pointer-events-none opacity-50' : undefined}
+                  className={
+                    !table.getCanPreviousPage() ? 'pointer-events-none opacity-50' : undefined
+                  }
                   onClick={(e) => {
                     e.preventDefault()
                     table.previousPage()
                   }}
                 />
               </PaginationItem>
-              {Array.from({ length: pageCount }).slice(0, 5).map((_, i) => (
-                <PaginationItem key={i}>
-                  <PaginationLink
-                    href="#"
-                    isActive={pageIndex === i}
-                    onClick={(e) => {
-                      e.preventDefault()
-                      table.setPageIndex(i)
-                    }}
-                  >
-                    {i + 1}
-                  </PaginationLink>
-                </PaginationItem>
-              ))}
+              {Array.from({ length: pageCount })
+                .slice(0, 5)
+                .map((_, i) => (
+                  <PaginationItem key={i}>
+                    <PaginationLink
+                      href="#"
+                      isActive={pageIndex === i}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        table.setPageIndex(i)
+                      }}
+                    >
+                      {i + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
               <PaginationItem>
                 <PaginationNext
                   href="#"

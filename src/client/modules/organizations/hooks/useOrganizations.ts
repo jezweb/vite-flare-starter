@@ -96,7 +96,7 @@ export function useOrgMembers(orgId: string | undefined) {
     queryKey: orgId ? ORG_KEYS.members(orgId) : ['orgs', 'members', 'none'],
     queryFn: () =>
       apiClient.get<{ members: OrgMember[]; total: number }>(
-        `/api/auth/organization/list-members?organizationId=${orgId}`,
+        `/api/auth/organization/list-members?organizationId=${orgId}`
       ),
     enabled: !!orgId,
     staleTime: 30_000,
@@ -115,7 +115,7 @@ export function useOrgInvitations(orgId: string | undefined) {
     queryFn: async () => {
       try {
         const raw = await apiClient.get<OrgInvitation[] | { invitations: OrgInvitation[] }>(
-          `/api/auth/organization/list-invitations?organizationId=${orgId}`,
+          `/api/auth/organization/list-invitations?organizationId=${orgId}`
         )
         const invitations = Array.isArray(raw) ? raw : (raw.invitations ?? [])
         return { invitations, total: invitations.length }
@@ -156,7 +156,7 @@ export function useCreateOrg() {
     mutationFn: (input: CreateOrgInput) =>
       apiClient.post<{ id: string; name: string; slug: string }>(
         '/api/auth/organization/create',
-        input,
+        input
       ),
     onSuccess: () => qc.invalidateQueries({ queryKey: ORG_KEYS.all }),
   })

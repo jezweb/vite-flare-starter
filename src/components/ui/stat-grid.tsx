@@ -40,7 +40,7 @@ export function StatGrid({ items, className }: StatGridProps) {
         cols === 2 && 'grid-cols-2',
         cols === 3 && 'grid-cols-2 sm:grid-cols-3',
         cols === 4 && 'grid-cols-2 sm:grid-cols-4',
-        className,
+        className
       )}
     >
       {items.map((it, i) => (
@@ -52,24 +52,14 @@ export function StatGrid({ items, className }: StatGridProps) {
 
 export function StatCard({ label, value, sub, valueClassName }: StatItem) {
   return (
-    <div
-      data-slot="stat-card"
-      className="rounded-md border bg-card p-3"
-    >
+    <div data-slot="stat-card" className="rounded-md border bg-card p-3">
       <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
-      <p
-        className={cn(
-          'mt-1 text-2xl font-semibold tracking-tight tabular-nums',
-          valueClassName,
-        )}
-      >
+      <p className={cn('mt-1 text-2xl font-semibold tracking-tight tabular-nums', valueClassName)}>
         {value}
       </p>
-      {sub && (
-        <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>
-      )}
+      {sub && <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>}
     </div>
   )
 }

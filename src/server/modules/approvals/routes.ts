@@ -149,9 +149,10 @@ app.post('/:id/approve', zValidator('json', ApproveSchema), async (c) => {
   // directly against D1. Dispatch by agentClass before the DO lookup.
   if (row.agentClass === MEMORY_AGENT_CLASS) {
     try {
-      const payload = alwaysAllow && rawPayload && typeof rawPayload === 'object'
-        ? { ...(rawPayload as Record<string, unknown>), alwaysAllow: true }
-        : rawPayload
+      const payload =
+        alwaysAllow && rawPayload && typeof rawPayload === 'object'
+          ? { ...(rawPayload as Record<string, unknown>), alwaysAllow: true }
+          : rawPayload
       const result = await executeApprovedMemoryUpdate(c.env.DB, payload)
       if (!result.ok) {
         await markFailed(db, id, result.error ?? 'memory apply failed')
@@ -165,7 +166,11 @@ app.post('/:id/approve', zValidator('json', ApproveSchema), async (c) => {
           executedAt: Math.floor(Date.now() / 1000),
         })
         .where(eq(pendingApprovals.id, id))
-      return c.json({ success: true, status: 'executed', result: { applied: true, alwaysAllow: !!alwaysAllow } })
+      return c.json({
+        success: true,
+        status: 'executed',
+        result: { applied: true, alwaysAllow: !!alwaysAllow },
+      })
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       await markFailed(db, id, message)

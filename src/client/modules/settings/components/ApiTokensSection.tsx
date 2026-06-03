@@ -5,7 +5,11 @@ import { toast } from 'sonner'
 import { Key, Trash2, Plus, ExternalLink } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
 import { CopyButton } from '@/components/ui/copy-button'
-import { useApiTokens, useCreateApiToken, useDeleteApiToken } from '@/client/modules/api-tokens/hooks/useApiTokens'
+import {
+  useApiTokens,
+  useCreateApiToken,
+  useDeleteApiToken,
+} from '@/client/modules/api-tokens/hooks/useApiTokens'
 import { createApiTokenSchema } from '@/shared/schemas/api-token.schema'
 import type { CreateApiTokenInput, ApiTokenListItem } from '@/shared/schemas/api-token.schema'
 import { API_TOKEN_SCOPES, SCOPE_CATEGORIES, type ApiTokenScope } from '@/shared/config/scopes'
@@ -77,9 +81,7 @@ function TokenRow({ token, onDeleteClick, isDeleting, anyPending }: TokenRowProp
   return (
     <TableRow>
       <TableCell className="font-medium">{token.name}</TableCell>
-      <TableCell className="font-mono text-sm text-muted-foreground">
-        {token.tokenPrefix}
-      </TableCell>
+      <TableCell className="font-mono text-sm text-muted-foreground">{token.tokenPrefix}</TableCell>
       <TableCell>
         <div className="flex flex-wrap gap-1">
           {token.scopes.slice(0, 3).map((scope) => (
@@ -105,11 +107,7 @@ function TokenRow({ token, onDeleteClick, isDeleting, anyPending }: TokenRowProp
           disabled={isDeleting || anyPending}
           className="text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors"
         >
-          {isDeleting ? (
-            <Spinner size="md" />
-          ) : (
-            <Trash2 className="h-4 w-4" />
-          )}
+          {isDeleting ? <Spinner size="md" /> : <Trash2 className="h-4 w-4" />}
         </Button>
       </TableCell>
     </TableRow>
@@ -223,9 +221,7 @@ export function ApiTokensSection() {
       />
 
       {/* New token display modal */}
-      {newToken && (
-        <NewTokenDisplay token={newToken} onClose={() => setNewToken(null)} />
-      )}
+      {newToken && <NewTokenDisplay token={newToken} onClose={() => setNewToken(null)} />}
 
       {/* API Tokens */}
       <Card>
@@ -400,9 +396,7 @@ export function ApiTokensSection() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Using API Tokens</CardTitle>
-          <CardDescription>
-            How to authenticate with external services
-          </CardDescription>
+          <CardDescription>How to authenticate with external services</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -417,8 +411,16 @@ export function ApiTokensSection() {
             <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
               <li>Create a new API token above</li>
               <li>In ElevenLabs, add a new Webhook tool</li>
-              <li>Set the URL to your API endpoint (e.g., <code className="text-foreground">https://your-app.workers.dev/api/your-endpoint</code>)</li>
-              <li>Add a Header with Type "Value", Name "Authorization", and Value "Bearer your_token"</li>
+              <li>
+                Set the URL to your API endpoint (e.g.,{' '}
+                <code className="text-foreground">
+                  https://your-app.workers.dev/api/your-endpoint
+                </code>
+                )
+              </li>
+              <li>
+                Add a Header with Type "Value", Name "Authorization", and Value "Bearer your_token"
+              </li>
               <li>Configure the HTTP method and other settings as needed</li>
             </ol>
           </div>

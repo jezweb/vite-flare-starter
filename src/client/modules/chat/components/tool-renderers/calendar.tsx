@@ -1,7 +1,18 @@
 /**
  * Calendar tool renderers — calendar_upcoming, calendar_create.
  */
-import { Calendar, CalendarPlus, CalendarSearch, CalendarClock, CalendarCheck, CalendarX, Video, MapPin, Users, ExternalLink } from 'lucide-react'
+import {
+  Calendar,
+  CalendarPlus,
+  CalendarSearch,
+  CalendarClock,
+  CalendarCheck,
+  CalendarX,
+  Video,
+  MapPin,
+  Users,
+  ExternalLink,
+} from 'lucide-react'
 import type { ToolRenderer } from './_shared'
 import { truncate } from './_shared'
 import type {
@@ -57,9 +68,7 @@ export const calendarUpcomingRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     const events = o.events
@@ -75,9 +84,7 @@ export const calendarUpcomingRenderer: ToolRenderer = {
         {events.map((e) => (
           <li key={e.id} className="flex flex-col gap-0.5 px-2 py-2">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium truncate">
-                {truncate(e.summary, 100)}
-              </span>
+              <span className="text-sm font-medium truncate">{truncate(e.summary, 100)}</span>
             </div>
             <div className="text-[11px] text-muted-foreground">
               {formatEventTime(e.start, e.end)}
@@ -185,9 +192,7 @@ export const calendarListEventsRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     const translatedFrom = o.translatedFrom ?? i?.naturalQuery
@@ -213,8 +218,16 @@ export const calendarListEventsRenderer: ToolRenderer = {
         )}
         {(i?.range || i?.query) && (
           <div className="text-[11px] text-muted-foreground">
-            {i?.range && <span className="mr-3">Range: <span className="font-mono">{i.range}</span></span>}
-            {i?.query && <span>Query: <span className="font-mono">{i.query}</span></span>}
+            {i?.range && (
+              <span className="mr-3">
+                Range: <span className="font-mono">{i.range}</span>
+              </span>
+            )}
+            {i?.query && (
+              <span>
+                Query: <span className="font-mono">{i.query}</span>
+              </span>
+            )}
           </div>
         )}
         <ul className="divide-y divide-border/60 -mx-2">
@@ -242,9 +255,7 @@ export const calendarGetEventRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     return (
@@ -265,8 +276,7 @@ export const calendarGetEventRenderer: ToolRenderer = {
         )}
         {o.organizer && (
           <div>
-            <span className="text-muted-foreground">Organizer:</span>{' '}
-            <span>{o.organizer}</span>
+            <span className="text-muted-foreground">Organizer:</span> <span>{o.organizer}</span>
           </div>
         )}
         {o.description && (
@@ -307,23 +317,20 @@ export const calendarFindFreeSlotRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     if (o.candidateCount === 0) {
       return (
         <div className="text-xs text-muted-foreground italic">
-          No {i?.durationMinutes ?? o.durationMinutes}-min slots found in that window. Try widening the range or shortening the duration.
+          No {i?.durationMinutes ?? o.durationMinutes}-min slots found in that window. Try widening
+          the range or shortening the duration.
         </div>
       )
     }
     return (
       <div className="space-y-2">
-        <div className="text-[11px] text-muted-foreground">
-          {o.durationMinutes}-minute slots
-        </div>
+        <div className="text-[11px] text-muted-foreground">{o.durationMinutes}-minute slots</div>
         <ul className="space-y-1">
           {o.slots.map((s, idx) => (
             <li
@@ -331,9 +338,7 @@ export const calendarFindFreeSlotRenderer: ToolRenderer = {
               className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2 text-xs"
             >
               <CalendarClock className="size-3.5 text-muted-foreground shrink-0" />
-              <span className="font-medium">
-                {formatEventTime(s.start, s.end)}
-              </span>
+              <span className="font-medium">{formatEventTime(s.start, s.end)}</span>
             </li>
           ))}
         </ul>
@@ -355,22 +360,22 @@ export const calendarUpdateEventRenderer: ToolRenderer = {
   },
   expanded: ({ output, input }) => {
     const o = output as CalendarUpdateEventOutput | undefined
-    const i = input as {
-      eventId?: string
-      summary?: string
-      start?: string
-      end?: string
-      location?: string
-      description?: string
-      addAttendees?: string[]
-      removeAttendees?: string[]
-    } | undefined
+    const i = input as
+      | {
+          eventId?: string
+          summary?: string
+          start?: string
+          end?: string
+          location?: string
+          description?: string
+          addAttendees?: string[]
+          removeAttendees?: string[]
+        }
+      | undefined
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     const changes: string[] = []
@@ -428,9 +433,7 @@ export const calendarDeleteEventRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     return (
@@ -454,27 +457,25 @@ export const calendarCreateRenderer: ToolRenderer = {
   },
   expanded: ({ output, input }) => {
     const o = output as CalendarCreateOutput | undefined
-    const i = input as {
-      summary?: string
-      start?: string
-      end?: string
-      location?: string
-      attendees?: string[]
-      description?: string
-    } | undefined
+    const i = input as
+      | {
+          summary?: string
+          start?: string
+          end?: string
+          location?: string
+          attendees?: string[]
+          description?: string
+        }
+      | undefined
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     return (
       <div className="space-y-2 text-xs">
-        <div className="text-sm font-medium text-foreground">
-          {i?.summary ?? o.summary}
-        </div>
+        <div className="text-sm font-medium text-foreground">{i?.summary ?? o.summary}</div>
         <div className="text-muted-foreground">
           {formatEventTime(i?.start ?? o.start, i?.end ?? o.end)}
         </div>

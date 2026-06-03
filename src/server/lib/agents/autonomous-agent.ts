@@ -72,7 +72,11 @@ import { generateWebhookSecret } from './webhook-verify'
 import { pendingApprovals } from '@/server/modules/approvals/db/schema'
 import { agentRuns, type AgentRunTrigger } from '@/server/modules/agent-observability/db/schema'
 import { nullTelemetry } from '@/shared/agent'
-import type { ToolDefinition, AgentContext as CanonicalAgentContext, AgentUser } from '@/shared/agent'
+import type {
+  ToolDefinition,
+  AgentContext as CanonicalAgentContext,
+  AgentUser,
+} from '@/shared/agent'
 import type { AgentMetadata } from '@/shared/agent/metadata'
 
 export interface AutonomousAgentEnv {
@@ -255,13 +259,7 @@ const DEFAULT_MAX_STEPS = 5
  * See `docs/AGENTS.md` § "Persona conventions" and goanna's SPEC.md for
  * the broader rationale.
  */
-export const CONVENTIONAL_BLOCK_ORDER = [
-  'soul',
-  'identity',
-  'user',
-  'memory',
-  'style',
-] as const
+export const CONVENTIONAL_BLOCK_ORDER = ['soul', 'identity', 'user', 'memory', 'style'] as const
 
 export type ConventionalBlockName = (typeof CONVENTIONAL_BLOCK_ORDER)[number]
 
@@ -314,7 +312,7 @@ export function renderPersonaBlocks(blocks: Record<string, string>): string[] {
 export class BudgetExceededError extends Error {
   constructor(
     public readonly spentUsd: number,
-    public readonly capUsd: number,
+    public readonly capUsd: number
   ) {
     super(`Daily budget cap exceeded: $${spentUsd.toFixed(4)} of $${capUsd.toFixed(2)}`)
     this.name = 'BudgetExceededError'
@@ -434,7 +432,7 @@ export abstract class AutonomousAgent<
             agentName: this.state.name,
             skill: name,
             error: err instanceof Error ? err.message : String(err),
-          }),
+          })
         )
       }
     }
@@ -457,7 +455,7 @@ export abstract class AutonomousAgent<
    */
   protected async fireHook(
     event: HookEvent,
-    context: { input: string; userId: string; modelId: string },
+    context: { input: string; userId: string; modelId: string }
   ): Promise<string | null> {
     const skillName = this.state.hooks?.[event]
     if (!skillName) return null
@@ -474,7 +472,7 @@ export abstract class AutonomousAgent<
       const model = await resolveModelForUser(
         env as Parameters<typeof resolveModelForUser>[0],
         { userId: context.userId },
-        context.modelId,
+        context.modelId
       )
       const { generateText } = await import('ai')
       const result = await generateText({
@@ -490,7 +488,7 @@ export abstract class AutonomousAgent<
           agentName: this.state.name,
           hookEvent: event,
           error: err instanceof Error ? err.message : String(err),
-        }),
+        })
       )
       return null
     }
@@ -556,17 +554,15 @@ export abstract class AutonomousAgent<
   async setOwner(userId: string, name?: string): Promise<void> {
     if (this.state.userId && this.state.userId !== userId) {
       throw new Error(
-        `AutonomousAgent owner already set to ${this.state.userId}; refusing to reassign to ${userId}`,
+        `AutonomousAgent owner already set to ${this.state.userId}; refusing to reassign to ${userId}`
       )
     }
     const blocks = { ...this.state.blocks }
-    const metadata = (this.constructor as typeof AutonomousAgent & { metadata?: AgentMetadata }).metadata
+    const metadata = (this.constructor as typeof AutonomousAgent & { metadata?: AgentMetadata })
+      .metadata
     const existingIdentity = blocks['identity']
     if (metadata && (!existingIdentity || existingIdentity.trim() === '')) {
-      const identityLines = [
-        `Name: ${metadata.displayName}`,
-        `Role: ${metadata.description}`,
-      ]
+      const identityLines = [`Name: ${metadata.displayName}`, `Role: ${metadata.description}`]
       if (metadata.userPurpose) identityLines.push(`Purpose: ${metadata.userPurpose}`)
       blocks['identity'] = identityLines.join('\n')
     }
@@ -668,18 +664,22 @@ export abstract class AutonomousAgent<
     const auditEnv = this.env as { DB: D1Database }
     const insertAudit = async () => {
       try {
-        await drizzle(auditEnv.DB).insert(agentRuns).values({
-          id: runId,
-          agentClass: (this.constructor as typeof AutonomousAgent).className,
-          agentName: this.state.name,
-          userId: actingUserId,
-          trigger,
-          inputSummary,
-          startedAt: startedAtSec,
-          outcome: 'started',
-        })
+        await drizzle(auditEnv.DB)
+          .insert(agentRuns)
+          .values({
+            id: runId,
+            agentClass: (this.constructor as typeof AutonomousAgent).className,
+            agentName: this.state.name,
+            userId: actingUserId,
+            trigger,
+            inputSummary,
+            startedAt: startedAtSec,
+            outcome: 'started',
+          })
       } catch (err) {
-        console.error(JSON.stringify({ event: 'agent_run_audit_insert_failed', runId, error: String(err) }))
+        console.error(
+          JSON.stringify({ event: 'agent_run_audit_insert_failed', runId, error: String(err) })
+        )
       }
     }
     await insertAudit()
@@ -717,7 +717,7 @@ export abstract class AutonomousAgent<
             spentUsd: spent,
             capUsd: cap,
             pct: Math.round((spent / cap) * 100),
-          }),
+          })
         )
       }
     }
@@ -744,12 +744,12 @@ export abstract class AutonomousAgent<
       const model = input?.prebuiltModel
         ? (input.prebuiltModel as Parameters<typeof streamText>[0]['model'])
         : this.state.userId
-        ? await resolveModelForUser(
-            this.env as Parameters<typeof resolveModelForUser>[0],
-            { userId: this.state.userId },
-            modelId,
-          )
-        : resolveModel(this.env, modelId)
+          ? await resolveModelForUser(
+              this.env as Parameters<typeof resolveModelForUser>[0],
+              { userId: this.state.userId },
+              modelId
+            )
+          : resolveModel(this.env, modelId)
 
       const result = streamText({
         model,
@@ -835,7 +835,9 @@ export abstract class AutonomousAgent<
           })
           .where(eq(agentRuns.id, runId))
       } catch (err) {
-        console.error(JSON.stringify({ event: 'agent_run_audit_finalise_failed', runId, error: String(err) }))
+        console.error(
+          JSON.stringify({ event: 'agent_run_audit_finalise_failed', runId, error: String(err) })
+        )
       }
 
       // Slice 4: fire SessionEnd hook (if configured) — runs the configured
@@ -889,7 +891,10 @@ export abstract class AutonomousAgent<
    * method name. The scheduled fire calls `runOnce({ input })` with
    * whatever was passed.
    */
-  async scheduleSelfRun(when: Date | number, input?: RunOnceInput): Promise<{ scheduleId: string }> {
+  async scheduleSelfRun(
+    when: Date | number,
+    input?: RunOnceInput
+  ): Promise<{ scheduleId: string }> {
     const schedule = await this.schedule(when, 'runScheduled', input ?? {})
     return { scheduleId: schedule.id }
   }
@@ -918,7 +923,7 @@ export abstract class AutonomousAgent<
   async requestApproval<T = unknown>(
     action: string,
     payload: T,
-    summary?: string,
+    summary?: string
   ): Promise<{ approvalId: string; status: 'pending' }> {
     if (!this.state.userId) {
       throw new Error('AutonomousAgent.requestApproval requires an owner — call setOwner first.')
@@ -939,16 +944,15 @@ export abstract class AutonomousAgent<
     // The bell badge picks this up automatically. Best-effort: a
     // notification write failure shouldn't break the approval.
     try {
-      const { userNotifications } = await import(
-        '@/server/modules/notifications/db/schema'
-      )
+      const { userNotifications } = await import('@/server/modules/notifications/db/schema')
       await db.insert(userNotifications).values({
         id: crypto.randomUUID(),
         userId: this.state.userId,
         type: 'info',
         title: 'Approval needed',
         message:
-          summary ?? `${(this.constructor as typeof AutonomousAgent).className} needs approval to ${action}`,
+          summary ??
+          `${(this.constructor as typeof AutonomousAgent).className} needs approval to ${action}`,
         data: JSON.stringify({
           link: `/dashboard/approvals?focus=${id}`,
           approvalId: id,
@@ -962,7 +966,7 @@ export abstract class AutonomousAgent<
           event: 'approval_notification_failed',
           approvalId: id,
           error: err instanceof Error ? err.message : String(err),
-        }),
+        })
       )
     }
     return { approvalId: id, status: 'pending' }
@@ -1040,8 +1044,8 @@ export abstract class AutonomousAgent<
         and(
           eq(agentRuns.agentClass, (this.constructor as typeof AutonomousAgent).className),
           eq(agentRuns.agentName, this.state.name),
-          gte(agentRuns.startedAt, oneDayAgo),
-        ),
+          gte(agentRuns.startedAt, oneDayAgo)
+        )
       )
     return result[0]?.total ?? 0
   }
@@ -1093,7 +1097,7 @@ export abstract class AutonomousAgent<
    */
   async handleWebhook(
     payload: unknown,
-    _headers: Record<string, string>,
+    _headers: Record<string, string>
   ): Promise<RunOnceResult | { skipped: true; reason: string }> {
     return this.runOnce({ input: JSON.stringify(payload) })
   }
@@ -1114,7 +1118,7 @@ export abstract class AutonomousAgent<
    */
   async executeApproved(action: string, _payload: unknown): Promise<unknown> {
     throw new Error(
-      `${(this.constructor as typeof AutonomousAgent).className} does not implement executeApproved for action "${action}". Override executeApproved() in the subclass.`,
+      `${(this.constructor as typeof AutonomousAgent).className} does not implement executeApproved for action "${action}". Override executeApproved() in the subclass.`
     )
   }
 
@@ -1179,7 +1183,7 @@ export abstract class AutonomousAgent<
     const allowed = this.state.toolsAllowed
     const allowedSet = allowed && allowed.length > 0 ? new Set(allowed) : null
     const defs = (await this.getToolDefinitions()).filter(
-      (d) => !allowedSet || allowedSet.has(d.name),
+      (d) => !allowedSet || allowedSet.has(d.name)
     )
     const agentUser: AgentUser = {
       id: this.state.userId ?? '',
@@ -1223,7 +1227,7 @@ export abstract class AutonomousAgent<
               event: 'autonomous_agent_mcp_stale_cleanup_failed',
               agentName: this.state.name,
               error: err instanceof Error ? err.message : String(err),
-            }),
+            })
           )
         }
       }
@@ -1256,9 +1260,9 @@ export abstract class AutonomousAgent<
                   event: 'autonomous_agent_mcp_cleanup_failed',
                   agentName: this.state.name,
                   error: err instanceof Error ? err.message : String(err),
-                }),
+                })
               )
-            }),
+            })
         )
       } catch (err) {
         console.error(
@@ -1266,7 +1270,7 @@ export abstract class AutonomousAgent<
             event: 'autonomous_agent_mcp_load_failed',
             agentName: this.state.name,
             error: err instanceof Error ? err.message : String(err),
-          }),
+          })
         )
       }
     }
@@ -1276,9 +1280,7 @@ export abstract class AutonomousAgent<
     // declares e.g. ['gmail_search', 'inbox_add'] we only want those
     // exposed regardless of where they originate.
     const filteredMcp = allowedSet
-      ? Object.fromEntries(
-          Object.entries(mcpTools).filter(([name]) => allowedSet.has(name)),
-        )
+      ? Object.fromEntries(Object.entries(mcpTools).filter(([name]) => allowedSet.has(name)))
       : mcpTools
 
     return { ...localTools, ...filteredMcp } as Awaited<ReturnType<typeof collectAvailableTools>>

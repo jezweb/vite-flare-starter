@@ -47,7 +47,12 @@ export interface SpaceMessage {
   conversationId: string
   role: string
   parts: unknown[]
-  metadata?: { senderKind?: 'user' | 'agent'; senderUserId?: string; senderAgentName?: string; senderAgentClass?: string }
+  metadata?: {
+    senderKind?: 'user' | 'agent'
+    senderUserId?: string
+    senderAgentName?: string
+    senderAgentClass?: string
+  }
   parentMessageId: string | null
   threadCount: number
   lastThreadAt: number | null
@@ -89,7 +94,10 @@ export function useSpace(id: string | undefined) {
   })
 }
 
-export function useSpaceMessages(id: string | undefined, opts: { threadParentId?: string | null } = {}) {
+export function useSpaceMessages(
+  id: string | undefined,
+  opts: { threadParentId?: string | null } = {}
+) {
   const params = new URLSearchParams()
   params.set('limit', '50')
   if (opts.threadParentId) params.set('threadParentId', opts.threadParentId)
@@ -97,7 +105,7 @@ export function useSpaceMessages(id: string | undefined, opts: { threadParentId?
     queryKey: ['spaces', id, 'messages', opts.threadParentId ?? 'top'],
     queryFn: () =>
       apiClient.get<{ messages: SpaceMessage[] }>(
-        `/api/spaces/${id}/messages?${params.toString()}`,
+        `/api/spaces/${id}/messages?${params.toString()}`
       ),
     enabled: !!id,
   })
@@ -109,7 +117,11 @@ interface CreateSpaceInput {
   spaceMode?: 'open' | 'invite' | 'org'
   defaultReplyMode?: 'always' | 'mention' | 'proactive' | 'ambient' | 'off'
   inviteUserIds?: string[]
-  agents?: Array<{ agentClass: string; agentName: string; replyMode?: 'always' | 'mention' | 'proactive' | 'ambient' | 'off' }>
+  agents?: Array<{
+    agentClass: string
+    agentName: string
+    replyMode?: 'always' | 'mention' | 'proactive' | 'ambient' | 'off'
+  }>
 }
 export function useCreateSpace() {
   const qc = useQueryClient()
@@ -150,7 +162,8 @@ export function useUpdateSpaceMembership(spaceId: string | undefined) {
     Error,
     { pinnedToSidebar?: boolean; notificationLevel?: 'all' | 'mentions' | 'muted' }
   >({
-    mutationFn: (body) => apiClient.patch<{ ok: boolean }>(`/api/spaces/${spaceId}/membership`, body),
+    mutationFn: (body) =>
+      apiClient.patch<{ ok: boolean }>(`/api/spaces/${spaceId}/membership`, body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['spaces'] })
       qc.invalidateQueries({ queryKey: ['spaces', spaceId] })
@@ -215,7 +228,11 @@ export function useInviteAgent(spaceId: string | undefined) {
   return useMutation<
     { ok: boolean },
     Error,
-    { agentClass: string; agentName: string; replyMode?: 'always' | 'mention' | 'proactive' | 'ambient' | 'off' }
+    {
+      agentClass: string
+      agentName: string
+      replyMode?: 'always' | 'mention' | 'proactive' | 'ambient' | 'off'
+    }
   >({
     mutationFn: (body) =>
       apiClient.post<{ ok: boolean }>(`/api/spaces/${spaceId}/members`, { kind: 'agent', ...body }),
@@ -247,13 +264,17 @@ export function useStarMessage() {
     mutationFn: ({ messageId, starred }) =>
       apiClient.patch<{ ok: boolean; starredByUserIds: string[] }>(
         `/api/messages/${messageId}/star`,
-        { starred },
+        { starred }
       ),
   })
 }
 
 export function useForwardMessage() {
-  return useMutation<{ id: string }, Error, { messageId: string; targetSpaceId: string; note?: string }>({
+  return useMutation<
+    { id: string },
+    Error,
+    { messageId: string; targetSpaceId: string; note?: string }
+  >({
     mutationFn: ({ messageId, targetSpaceId, note }) =>
       apiClient.post<{ id: string }>(`/api/messages/${messageId}/forward`, { targetSpaceId, note }),
   })
@@ -269,7 +290,8 @@ export function useThreadSubscription() {
 export function useToggleSpaceHistory(spaceId: string | undefined) {
   const qc = useQueryClient()
   return useMutation<{ ok: boolean }, Error, boolean>({
-    mutationFn: (enabled) => apiClient.patch<{ ok: boolean }>(`/api/spaces/${spaceId}/history`, { enabled }),
+    mutationFn: (enabled) =>
+      apiClient.patch<{ ok: boolean }>(`/api/spaces/${spaceId}/history`, { enabled }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['spaces', spaceId] })
     },
@@ -280,9 +302,15 @@ export function usePinnedMessages(spaceId: string | undefined) {
   return useQuery({
     queryKey: ['spaces', spaceId, 'pinned'],
     queryFn: () =>
-      apiClient.get<{ pinned: Array<{ id: string; parts: unknown; createdAt: string; pinnedAt: number; pinnedByUserId: string }> }>(
-        `/api/spaces/${spaceId}/messages/pinned`,
-      ),
+      apiClient.get<{
+        pinned: Array<{
+          id: string
+          parts: unknown
+          createdAt: string
+          pinnedAt: number
+          pinnedByUserId: string
+        }>
+      }>(`/api/spaces/${spaceId}/messages/pinned`),
     enabled: !!spaceId,
   })
 }
@@ -291,9 +319,11 @@ export function useGlobalSearch(query: string, enabled: boolean) {
   return useQuery({
     queryKey: ['global-search', query],
     queryFn: () =>
-      apiClient.get<{ results: Array<SpaceMessage & { conversationTitle: string | null; conversationKind: string }> }>(
-        `/api/search/messages?q=${encodeURIComponent(query)}`,
-      ),
+      apiClient.get<{
+        results: Array<
+          SpaceMessage & { conversationTitle: string | null; conversationKind: string }
+        >
+      }>(`/api/search/messages?q=${encodeURIComponent(query)}`),
     enabled: enabled && query.length >= 2,
   })
 }
@@ -302,7 +332,9 @@ export function useBlockMember(spaceId: string | undefined) {
   const qc = useQueryClient()
   return useMutation<{ ok: boolean }, Error, { memberId: string; blocked: boolean }>({
     mutationFn: ({ memberId, blocked }) =>
-      apiClient.patch<{ ok: boolean }>(`/api/spaces/${spaceId}/members/${memberId}/block`, { blocked }),
+      apiClient.patch<{ ok: boolean }>(`/api/spaces/${spaceId}/members/${memberId}/block`, {
+        blocked,
+      }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['spaces', spaceId] })
     },
@@ -314,7 +346,7 @@ export function useAvailableAgents(spaceId: string | undefined) {
     queryKey: ['spaces', spaceId, 'agents'],
     queryFn: () =>
       apiClient.get<{ agents: { agentClass: string; agentName: string; description: string }[] }>(
-        `/api/spaces/${spaceId}/agents`,
+        `/api/spaces/${spaceId}/agents`
       ),
     enabled: !!spaceId,
   })

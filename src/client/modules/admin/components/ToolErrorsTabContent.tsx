@@ -104,9 +104,8 @@ export function ToolErrorsTabContent() {
 function ToolErrorRow({ err }: { err: ToolErrorEntry }) {
   const [expanded, setExpanded] = useState(false)
   const needsTruncation = err.toolError.length > PREVIEW_CHAR_LIMIT
-  const display = !expanded && needsTruncation
-    ? err.toolError.slice(0, PREVIEW_CHAR_LIMIT) + '…'
-    : err.toolError
+  const display =
+    !expanded && needsTruncation ? err.toolError.slice(0, PREVIEW_CHAR_LIMIT) + '…' : err.toolError
 
   return (
     <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4">
@@ -116,19 +115,15 @@ function ToolErrorRow({ err }: { err: ToolErrorEntry }) {
             <Badge variant="outline" className="font-mono text-xs">
               {err.toolName}
             </Badge>
-            <span className="text-xs text-muted-foreground">
-              step {err.stepIndex}
-            </span>
+            <span className="text-xs text-muted-foreground">step {err.stepIndex}</span>
             <span className="text-xs text-muted-foreground">·</span>
-            <span className="text-xs text-muted-foreground truncate">
-              {err.model}
-            </span>
+            <span className="text-xs text-muted-foreground truncate">{err.model}</span>
           </div>
           <pre
             className={cn(
               'text-sm whitespace-pre-wrap break-words font-mono',
               !expanded && needsTruncation && 'max-h-32 overflow-hidden',
-              expanded && 'max-h-96 overflow-y-auto',
+              expanded && 'max-h-96 overflow-y-auto'
             )}
           >
             {display}

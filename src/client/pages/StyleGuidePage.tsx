@@ -241,7 +241,8 @@ export function StyleGuidePage() {
         <CardHeader>
           <CardTitle>Theme Preview</CardTitle>
           <CardDescription>
-            Test all color schemes and display modes. Changes apply to the entire app but are not saved to your preferences.
+            Test all color schemes and display modes. Changes apply to the entire app but are not
+            saved to your preferences.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
@@ -249,9 +250,7 @@ export function StyleGuidePage() {
           <div className="space-y-4">
             <div>
               <h3 className="text-sm font-semibold mb-1">Color Scheme</h3>
-              <p className="text-xs text-muted-foreground">
-                Choose from 8 color themes
-              </p>
+              <p className="text-xs text-muted-foreground">Choose from 8 color themes</p>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {COLOR_SCHEMES.map((scheme) => (
@@ -260,9 +259,7 @@ export function StyleGuidePage() {
                   onClick={() => handleSchemeChange(scheme.value)}
                   className={cn(
                     'group relative flex flex-col items-start gap-2 rounded-lg border-2 p-3 text-left transition-all hover:border-muted-foreground/50',
-                    currentScheme === scheme.value
-                      ? 'border-primary bg-accent'
-                      : 'border-muted'
+                    currentScheme === scheme.value ? 'border-primary bg-accent' : 'border-muted'
                   )}
                 >
                   {/* Color preview circles */}
@@ -284,9 +281,7 @@ export function StyleGuidePage() {
                   {/* Label */}
                   <div className="space-y-0.5">
                     <div className="text-sm font-semibold">{scheme.label}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {scheme.description}
-                    </div>
+                    <div className="text-xs text-muted-foreground">{scheme.description}</div>
                   </div>
 
                   {/* Active indicator */}
@@ -548,7 +543,8 @@ export function StyleGuidePage() {
               <Label htmlFor="switch-disabled">Disabled switch</Label>
             </div>
             <p className="text-xs text-muted-foreground">
-              Use Switch for settings that take effect immediately (vs Checkbox for form selections).
+              Use Switch for settings that take effect immediately (vs Checkbox for form
+              selections).
             </p>
           </CardContent>
         </Card>
@@ -574,7 +570,8 @@ export function StyleGuidePage() {
               </div>
             </RadioGroup>
             <p className="text-xs text-muted-foreground">
-              Currently selected: <code className="text-xs bg-muted px-1 py-0.5 rounded">{radioValue}</code>
+              Currently selected:{' '}
+              <code className="text-xs bg-muted px-1 py-0.5 rounded">{radioValue}</code>
             </p>
           </CardContent>
         </Card>
@@ -598,7 +595,13 @@ export function StyleGuidePage() {
               </div>
               <div className="space-y-2">
                 <Label>Disabled Slider</Label>
-                <Slider defaultValue={[33]} max={100} step={1} disabled className="w-full max-w-md" />
+                <Slider
+                  defaultValue={[33]}
+                  max={100}
+                  step={1}
+                  disabled
+                  className="w-full max-w-md"
+                />
               </div>
             </div>
             <p className="text-xs text-muted-foreground">
@@ -634,7 +637,8 @@ export function StyleGuidePage() {
               </Popover>
             </div>
             <p className="text-xs text-muted-foreground">
-              Common for booking forms, scheduling, date filters. Requires Popover + Calendar components.
+              Common for booking forms, scheduling, date filters. Requires Popover + Calendar
+              components.
             </p>
           </CardContent>
         </Card>
@@ -754,7 +758,8 @@ export function StyleGuidePage() {
               </Toggle>
             </div>
             <p className="text-xs text-muted-foreground">
-              Use for toolbar buttons (formatting, filters). Similar to Switch but visually a button.
+              Use for toolbar buttons (formatting, filters). Similar to Switch but visually a
+              button.
             </p>
           </CardContent>
         </Card>
@@ -816,7 +821,9 @@ export function StyleGuidePage() {
         <Card>
           <CardHeader>
             <CardTitle>Cards</CardTitle>
-            <CardDescription>Versatile container component for grouping related content</CardDescription>
+            <CardDescription>
+              Versatile container component for grouping related content
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Basic card */}
@@ -886,7 +893,8 @@ export function StyleGuidePage() {
                 {'<Card><CardHeader><CardTitle>...</CardTitle></CardHeader></Card>'}
               </p>
               <p className="text-xs text-muted-foreground">
-                AI Usage: CardHeader + CardTitle are required. CardDescription and CardFooter are optional.
+                AI Usage: CardHeader + CardTitle are required. CardDescription and CardFooter are
+                optional.
               </p>
             </div>
           </CardContent>
@@ -1038,10 +1046,7 @@ export function StyleGuidePage() {
             >
               Success Toast
             </Button>
-            <Button
-              variant="destructive"
-              onClick={() => toast.error('An error occurred')}
-            >
+            <Button variant="destructive" onClick={() => toast.error('An error occurred')}>
               Error Toast
             </Button>
             <Button
@@ -1105,8 +1110,8 @@ export function StyleGuidePage() {
                 <SheetHeader>
                   <SheetTitle>Sheet Title</SheetTitle>
                   <SheetDescription>
-                    Sheets are useful for displaying additional information or forms without
-                    leaving the current page.
+                    Sheets are useful for displaying additional information or forms without leaving
+                    the current page.
                   </SheetDescription>
                 </SheetHeader>
                 <div className="py-4">
@@ -1272,9 +1277,7 @@ export function StyleGuidePage() {
                   <ListTodo className="h-8 w-8" />
                 </EmptyMedia>
                 <EmptyTitle>No items found</EmptyTitle>
-                <EmptyDescription>
-                  Get started by creating your first item.
-                </EmptyDescription>
+                <EmptyDescription>Get started by creating your first item.</EmptyDescription>
               </EmptyHeader>
             </Empty>
 
@@ -1315,8 +1318,8 @@ export function StyleGuidePage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete the item
-                    from our servers.
+                    This action cannot be undone. This will permanently delete the item from our
+                    servers.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -1352,17 +1355,15 @@ export function StyleGuidePage() {
         <Card>
           <CardHeader>
             <CardTitle>ScrollArea</CardTitle>
-            <CardDescription>
-              Custom styled scrollbars for long content
-            </CardDescription>
+            <CardDescription>Custom styled scrollbars for long content</CardDescription>
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-72 w-full rounded-md border p-4">
               <div className="space-y-4">
                 {Array.from({ length: 20 }).map((_, i) => (
                   <p key={i} className="text-sm">
-                    This is scrollable content item {i + 1}. The ScrollArea component
-                    provides custom-styled scrollbars that match your design system.
+                    This is scrollable content item {i + 1}. The ScrollArea component provides
+                    custom-styled scrollbars that match your design system.
                   </p>
                 ))}
               </div>
@@ -1579,7 +1580,8 @@ export function StyleGuidePage() {
               </div>
             </div>
             <p className="text-xs text-muted-foreground mt-4">
-              AI Usage: Import from 'lucide-react'. Always provide className="h-4 w-4" (or h-5/h-6 for larger)
+              AI Usage: Import from 'lucide-react'. Always provide className="h-4 w-4" (or h-5/h-6
+              for larger)
             </p>
           </CardContent>
         </Card>
@@ -1650,9 +1652,7 @@ export function StyleGuidePage() {
       {/* Footer */}
       <div className="py-8 text-center text-sm text-muted-foreground">
         <p>Style Guide • {appConfig.name} • Built with shadcn/ui and Tailwind CSS</p>
-        <p className="mt-2 text-xs">
-          Reference for developers and AI coding agents
-        </p>
+        <p className="mt-2 text-xs">Reference for developers and AI coding agents</p>
       </div>
     </PageContainer>
   )

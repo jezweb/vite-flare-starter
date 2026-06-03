@@ -57,7 +57,15 @@ export function escape(input: string | null | undefined): string {
 }
 
 /** Wrap template HTML in a minimal, dark-mode-friendly layout. */
-export function layout({ title, body, footer }: { title: string; body: string; footer?: string }): string {
+export function layout({
+  title,
+  body,
+  footer,
+}: {
+  title: string
+  body: string
+  footer?: string
+}): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>

@@ -44,7 +44,10 @@ const ScheduleReminderSchema = z.object({
     .number()
     .int()
     .refine((t) => t > Date.now() + 1000, 'fireAt must be at least 1 second in the future')
-    .refine((t) => t < Date.now() + 365 * 24 * 60 * 60 * 1000, 'fireAt cannot be more than 1 year out'),
+    .refine(
+      (t) => t < Date.now() + 365 * 24 * 60 * 60 * 1000,
+      'fireAt cannot be more than 1 year out'
+    ),
   /** Slot name for the reminder. Lets one user hold multiple active
    *  reminders ("morning-news", "evening-tasks"). Defaults to a UUID. */
   slug: z
@@ -72,7 +75,12 @@ app.post('/reminders', zValidator('json', ScheduleReminderSchema), async (c) => 
 
   const finalSlug = slug ?? crypto.randomUUID()
   const agent = await getReminderAgent(env, userId, finalSlug)
-  const payload: ReminderPayload = { message, userId, ...(title && { title }), ...(link && { link }) }
+  const payload: ReminderPayload = {
+    message,
+    userId,
+    ...(title && { title }),
+    ...(link && { link }),
+  }
   const result = await agent.scheduleReminder(fireAt, payload)
 
   return c.json({

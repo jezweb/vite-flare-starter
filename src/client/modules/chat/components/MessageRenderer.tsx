@@ -24,7 +24,22 @@ import { ToolCard, findRenderer, type ToolState } from './tool-renderers'
 import { SourcesFooter } from './SourcesFooter'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Textarea } from '@/components/ui/textarea'
-import { RotateCcw, Pencil, Copy, Check, ThumbsUp, ThumbsDown, Sparkles, FileText, FileSpreadsheet, FileAudio, FileVideo, FileCode, FileArchive, File as FileIcon } from 'lucide-react'
+import {
+  RotateCcw,
+  Pencil,
+  Copy,
+  Check,
+  ThumbsUp,
+  ThumbsDown,
+  Sparkles,
+  FileText,
+  FileSpreadsheet,
+  FileAudio,
+  FileVideo,
+  FileCode,
+  FileArchive,
+  File as FileIcon,
+} from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { useBuilderMode } from '@/client/lib/builder-mode'
@@ -40,7 +55,11 @@ interface Props {
   onSendMessage?: (text: string) => void
   /** Edit a user message and regenerate from that point. */
   onEdit?: (messageId: string, newText: string) => void
-  onToolApproval?: (params: { toolCallId: string; toolName: string; result: 'approve' | 'deny' }) => void
+  onToolApproval?: (params: {
+    toolCallId: string
+    toolName: string
+    result: 'approve' | 'deny'
+  }) => void
   userImage?: string | null
 }
 
@@ -77,7 +96,7 @@ export const MessageRenderer = memo(function MessageRenderer({
         body: JSON.stringify({ value: next }),
       }).catch(() => {})
     },
-    [feedback, message.id],
+    [feedback, message.id]
   )
 
   const copyMessage = useCallback(() => {
@@ -115,7 +134,7 @@ export const MessageRenderer = memo(function MessageRenderer({
 
   const ariaLabel = (() => {
     const textPart = (message.parts ?? []).find(
-      (p): p is { type: 'text'; text: string } => (p as { type: string }).type === 'text',
+      (p): p is { type: 'text'; text: string } => (p as { type: string }).type === 'text'
     )
     const snippet = textPart?.text?.trim() ?? ''
     const truncated = snippet.length > 50 ? snippet.slice(0, 50) + '…' : snippet
@@ -153,13 +172,20 @@ export const MessageRenderer = memo(function MessageRenderer({
             className="min-h-20 text-sm"
             autoFocus
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitEdit() }
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                submitEdit()
+              }
               if (e.key === 'Escape') setEditing(false)
             }}
           />
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setEditing(false)}>Cancel</Button>
-            <Button size="sm" onClick={submitEdit}>Save & regenerate</Button>
+            <Button variant="ghost" size="sm" onClick={() => setEditing(false)}>
+              Cancel
+            </Button>
+            <Button size="sm" onClick={submitEdit}>
+              Save & regenerate
+            </Button>
           </div>
         </div>
       )}
@@ -224,7 +250,7 @@ export const MessageRenderer = memo(function MessageRenderer({
             size="icon-sm"
             className={cn(
               'text-muted-foreground hover:text-foreground',
-              feedback === 'up' && 'text-primary hover:text-primary',
+              feedback === 'up' && 'text-primary hover:text-primary'
             )}
             onClick={() => sendFeedback('up')}
             title="Helpful"
@@ -238,7 +264,7 @@ export const MessageRenderer = memo(function MessageRenderer({
             size="icon-sm"
             className={cn(
               'text-muted-foreground hover:text-foreground',
-              feedback === 'down' && 'text-destructive hover:text-destructive',
+              feedback === 'down' && 'text-destructive hover:text-destructive'
             )}
             onClick={() => sendFeedback('down')}
             title="Not helpful"
@@ -285,7 +311,11 @@ function MessageBody({
   isLoading?: boolean
   isLast?: boolean
   onSendMessage?: (text: string) => void
-  onToolApproval?: (params: { toolCallId: string; toolName: string; result: 'approve' | 'deny' }) => void
+  onToolApproval?: (params: {
+    toolCallId: string
+    toolName: string
+    result: 'approve' | 'deny'
+  }) => void
   userImage?: string | null
 }) {
   // Defensive: parts must be an array. If it's a string (e.g. double-serialised JSON),
@@ -343,11 +373,7 @@ function MessageBody({
           if (skillActivation) {
             return <SkillActivationBlock key={i} {...skillActivation} />
           }
-          return (
-            <MessageResponse key={i}>
-              {text}
-            </MessageResponse>
-          )
+          return <MessageResponse key={i}>{text}</MessageResponse>
         }
 
         // 2. Reasoning (thinking models)
@@ -363,10 +389,9 @@ function MessageBody({
           // a few seconds". Single-block messages keep the default.
           const reasoningIndex = parts
             .slice(0, i)
-            .filter((p) => p.type === 'reasoning' && !!(p as { text?: string }).text?.trim())
-            .length
+            .filter((p) => p.type === 'reasoning' && !!(p as { text?: string }).text?.trim()).length
           const totalReasoning = parts.filter(
-            (p) => p.type === 'reasoning' && !!(p as { text?: string }).text?.trim(),
+            (p) => p.type === 'reasoning' && !!(p as { text?: string }).text?.trim()
           ).length
           const reasoningLabel = computeReasoningLabel(reasoningIndex, totalReasoning)
           // Some reasoning models (e.g. Kimi K2.5 via workers-ai-provider)
@@ -378,7 +403,7 @@ function MessageBody({
           // block. Rendered in text-sm/muted tone to signal this is the
           // model's chain-of-thought surfaced as an answer, not full prose.
           const anyTextInMessage = parts.some(
-            (p) => p.type === 'text' && !!(p as { text?: string }).text?.trim(),
+            (p) => p.type === 'text' && !!(p as { text?: string }).text?.trim()
           )
           const laterPartsHaveContent = parts.slice(i + 1).some((p) => {
             if (p.type === 'text') return !!(p as { text?: string }).text?.trim()
@@ -447,11 +472,7 @@ function MessageBody({
           // end.
           return (
             <div key={i} data-artifact-id={anchorId} className="transition-shadow rounded-lg">
-              <TranscriptFilePill
-                filename={p.filename}
-                mediaType={p.mediaType}
-                url={p.url}
-              />
+              <TranscriptFilePill filename={p.filename} mediaType={p.mediaType} url={p.url} />
             </div>
           )
         }
@@ -475,8 +496,16 @@ function MessageBody({
                 key={i}
                 toolName={toolName}
                 args={(p['input'] as Record<string, unknown>) ?? {}}
-                onApprove={() => onToolApproval({ toolCallId: String(p['toolCallId']), toolName, result: 'approve' })}
-                onDeny={() => onToolApproval({ toolCallId: String(p['toolCallId']), toolName, result: 'deny' })}
+                onApprove={() =>
+                  onToolApproval({
+                    toolCallId: String(p['toolCallId']),
+                    toolName,
+                    result: 'approve',
+                  })
+                }
+                onDeny={() =>
+                  onToolApproval({ toolCallId: String(p['toolCallId']), toolName, result: 'deny' })
+                }
               />
             )
           }
@@ -485,22 +514,23 @@ function MessageBody({
           if (toolName === 'done') {
             const input = p['input'] as { answer?: string } | undefined
             if (input?.answer) {
-              return (
-                <MessageResponse key={i}>
-                  {input.answer}
-                </MessageResponse>
-              )
+              return <MessageResponse key={i}>{input.answer}</MessageResponse>
             }
             return null // Hide empty done tool calls
           }
 
-          const isComplete = state === 'result' || state === 'call' || state === 'output-available' || output != null
+          const isComplete =
+            state === 'result' || state === 'call' || state === 'output-available' || output != null
 
           // 4b. Artifacts (HTML/SVG/Mermaid). Wrap with an anchor id so the
           // right-side ArtifactSidebar can scroll this into view on click.
           if (isComplete && isArtifact(output)) {
             return (
-              <div key={i} data-artifact-id={`${message.id}-${i}`} className="transition-shadow rounded-lg">
+              <div
+                key={i}
+                data-artifact-id={`${message.id}-${i}`}
+                className="transition-shadow rounded-lg"
+              >
                 <ArtifactViewer artifact={output} />
               </div>
             )
@@ -523,7 +553,7 @@ function MessageBody({
             return (
               <div key={i} className="my-1">
                 <ChatUiElement
-                  element={output as { _ui: string;[key: string]: unknown }}
+                  element={output as { _ui: string; [key: string]: unknown }}
                   onSendMessage={onSendMessage}
                   disabled={!isLast}
                 />
@@ -567,7 +597,7 @@ function MessageBody({
           const cardName =
             typeof renderer?.displayName === 'function'
               ? renderer.displayName(toolName)
-              : renderer?.displayName ?? toolDisplayName
+              : (renderer?.displayName ?? toolDisplayName)
 
           // Bare renderers own their own chrome — skip the Collapsible
           // wrapper entirely. Used when the expanded component already has
@@ -654,9 +684,15 @@ function iconForMime(mediaType?: string) {
   if (mediaType.startsWith('audio/')) return FileAudio
   if (mediaType.startsWith('video/')) return FileVideo
   if (mediaType === 'application/pdf') return FileText
-  if (mediaType.includes('spreadsheet') || mediaType.includes('excel') || mediaType === 'text/csv') return FileSpreadsheet
+  if (mediaType.includes('spreadsheet') || mediaType.includes('excel') || mediaType === 'text/csv')
+    return FileSpreadsheet
   if (mediaType.includes('wordprocessingml') || mediaType === 'application/msword') return FileText
-  if (mediaType.startsWith('text/') || mediaType === 'application/json' || mediaType === 'application/xml') return FileCode
+  if (
+    mediaType.startsWith('text/') ||
+    mediaType === 'application/json' ||
+    mediaType === 'application/xml'
+  )
+    return FileCode
   if (mediaType === 'application/zip' || mediaType === 'application/epub+zip') return FileArchive
   return FileIcon
 }
@@ -686,7 +722,10 @@ function TranscriptFilePill({
   const ext = extensionForMime(filename, mediaType)
   const name = filename || `file.${ext.toLowerCase()}`
   const inner = (
-    <div className="inline-flex items-center gap-2 rounded-lg border border-border bg-background/60 px-2 py-1.5 text-xs" title={name}>
+    <div
+      className="inline-flex items-center gap-2 rounded-lg border border-border bg-background/60 px-2 py-1.5 text-xs"
+      title={name}
+    >
       <div className="flex size-8 shrink-0 items-center justify-center rounded bg-muted/70">
         <Icon className="size-4 text-muted-foreground" />
       </div>
@@ -697,21 +736,37 @@ function TranscriptFilePill({
     </div>
   )
   return url ? (
-    <a href={url} target="_blank" rel="noopener noreferrer" title={name} className="inline-block hover:opacity-80 transition-opacity">
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={name}
+      className="inline-block hover:opacity-80 transition-opacity"
+    >
       {inner}
     </a>
-  ) : inner
+  ) : (
+    inner
+  )
 }
 
-function isGeneratedImage(output: unknown): output is { url: string; prompt?: string; sizeBytes?: number; provider?: string } {
+function isGeneratedImage(
+  output: unknown
+): output is { url: string; prompt?: string; sizeBytes?: number; provider?: string } {
   if (!output || typeof output !== 'object') return false
   const o = output as Record<string, unknown>
   const url = o['url']
   const prompt = o['prompt']
-  return typeof url === 'string' && typeof prompt === 'string' && url.startsWith('/api/files/download/')
+  return (
+    typeof url === 'string' && typeof prompt === 'string' && url.startsWith('/api/files/download/')
+  )
 }
 
-function GeneratedImageBlock({ output }: { output: { url: string; prompt?: string; sizeBytes?: number; provider?: string } }) {
+function GeneratedImageBlock({
+  output,
+}: {
+  output: { url: string; prompt?: string; sizeBytes?: number; provider?: string }
+}) {
   return (
     <figure className="my-1 rounded-lg border border-border bg-background overflow-hidden">
       {/* eslint-disable-next-line jsx-a11y/alt-text */}
@@ -769,7 +824,7 @@ function mergeReasoningRuns<T extends { type: string }>(parts: T[]): T[] {
         const prevText = ((buffer as unknown as { text?: string }).text ?? '').toString()
         const nextText = ((p as unknown as { text?: string }).text ?? '').toString()
         const merged = prevText && nextText ? `${prevText}\n\n${nextText}` : prevText || nextText
-        buffer = ({ ...(buffer as object), text: merged } as unknown) as T
+        buffer = { ...(buffer as object), text: merged } as unknown as T
       } else {
         buffer = p
       }
@@ -784,4 +839,3 @@ function mergeReasoningRuns<T extends { type: string }>(parts: T[]): T[] {
   if (buffer) out.push(buffer)
   return out
 }
-

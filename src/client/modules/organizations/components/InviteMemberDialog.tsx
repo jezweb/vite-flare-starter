@@ -79,9 +79,8 @@ export function InviteMemberDialog({ open, onOpenChange, organizationId }: Props
             <DialogHeader>
               <DialogTitle>Invite a teammate</DialogTitle>
               <DialogDescription>
-                They'll get a link to join your organisation. Email delivery
-                will land in Phase 5; for now copy the link from the next
-                screen and share it however you like.
+                They'll get a link to join your organisation. Email delivery will land in Phase 5;
+                for now copy the link from the next screen and share it however you like.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3 py-3">
@@ -138,8 +137,8 @@ export function InviteMemberDialog({ open, onOpenChange, organizationId }: Props
             <DialogHeader>
               <DialogTitle>Invitation ready</DialogTitle>
               <DialogDescription>
-                Share this link with {email}. It expires in 48 hours by
-                default. Email delivery lands in Phase 5.
+                Share this link with {email}. It expires in 48 hours by default. Email delivery
+                lands in Phase 5.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3 py-3">

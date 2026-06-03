@@ -52,7 +52,7 @@ export interface ProcessDueResult {
  */
 export async function processDueRoutines(
   env: SchedulerEnv,
-  options: { maxPerTick?: number } = {},
+  options: { maxPerTick?: number } = {}
 ): Promise<ProcessDueResult> {
   const max = options.maxPerTick ?? 5
   const db = drizzle(env.DB)
@@ -71,9 +71,12 @@ export async function processDueRoutines(
           isNull(routines.lastRunAt),
           // SQL: lastRunAt + effectiveInterval <= now
           // Drizzle 0.45 needs a tiny raw fragment for the addition.
-          lte(sql<number>`${routines.lastRunAt} + COALESCE(${routines.effectiveInterval}, ${routines.baseInterval}, 0)`, now),
-        ),
-      ),
+          lte(
+            sql<number>`${routines.lastRunAt} + COALESCE(${routines.effectiveInterval}, ${routines.baseInterval}, 0)`,
+            now
+          )
+        )
+      )
     )
     .orderBy(asc(routines.lastRunAt))
     .limit(max)
@@ -107,7 +110,7 @@ export async function processDueRoutines(
             timezone: tz,
             currentHour,
             wantedHour: r.localFireHour,
-          }),
+          })
         )
         continue
       }
@@ -123,7 +126,7 @@ export async function processDueRoutines(
           event: 'routine_fire_error',
           routineId: r.id,
           error: err instanceof Error ? err.message : String(err),
-        }),
+        })
       )
     }
   }
@@ -139,7 +142,10 @@ export async function processDueRoutines(
  * Exported separately from processDueRoutines so tests + the manual-fire
  * REST endpoint can reuse it.
  */
-export async function fireRoutine(env: SchedulerEnv, routine: typeof routines.$inferSelect): Promise<void> {
+export async function fireRoutine(
+  env: SchedulerEnv,
+  routine: typeof routines.$inferSelect
+): Promise<void> {
   // Compose the run-summary tail (last K=5 runs) so the agent sees what
   // it has been doing recently. This is the cheap "long-run agent
   // context" pattern from .jez/artifacts/long-run-agent-context-2026-04-27.md
@@ -221,8 +227,8 @@ export async function fireRoutine(env: SchedulerEnv, routine: typeof routines.$i
       new Promise<never>((_, reject) =>
         setTimeout(
           () => reject(new Error(`routine run exceeded ${RUN_TIMEOUT_MS}ms watchdog`)),
-          RUN_TIMEOUT_MS,
-        ),
+          RUN_TIMEOUT_MS
+        )
       ),
     ])
     // Prefer the SessionEnd hook output if the routine configured one.
@@ -253,7 +259,7 @@ export async function fireRoutine(env: SchedulerEnv, routine: typeof routines.$i
         runId: run.id,
         routineId: routine.id,
         error: err instanceof Error ? err.message : String(err),
-      }),
+      })
     )
   }
 }
@@ -274,7 +280,7 @@ export async function fireRoutine(env: SchedulerEnv, routine: typeof routines.$i
  */
 export async function sweepStaleRoutineRuns(
   env: SchedulerEnv,
-  options: { graceSeconds?: number; maxPerTick?: number } = {},
+  options: { graceSeconds?: number; maxPerTick?: number } = {}
 ): Promise<{ swept: number }> {
   const grace = options.graceSeconds ?? 300
   const max = options.maxPerTick ?? 50
@@ -294,7 +300,11 @@ export async function sweepStaleRoutineRuns(
       .set({
         outcome: 'error',
         finishedAt: now,
-        outputSummary: `error: run abandoned (>${grace}s at outcome='started' — likely worker isolate killed before completion)`.slice(0, 280),
+        outputSummary:
+          `error: run abandoned (>${grace}s at outcome='started' — likely worker isolate killed before completion)`.slice(
+            0,
+            280
+          ),
       })
       .where(eq(routineRuns.id, row.id))
     // Mirror on the routine row so list pages show the right last
@@ -329,7 +339,7 @@ function composeInput(
   template: InputTemplate,
   tail: string,
   routineName: string,
-  routineDescription: string | null,
+  routineDescription: string | null
 ): string {
   // Fallback hierarchy when the user hasn't written explicit instructions:
   //   1. Use the routine's name + description — that's what they typed
@@ -385,10 +395,7 @@ function parseHooksMap(json: string | null): Record<string, string> | null {
  * those fail (older agent class missing a setter, transient DO error)
  * we log and continue rather than aborting the whole fire.
  */
-async function applyConfig(
-  routineId: string,
-  fn: () => Promise<unknown> | void,
-): Promise<void> {
+async function applyConfig(routineId: string, fn: () => Promise<unknown> | void): Promise<void> {
   try {
     await fn()
   } catch (err) {
@@ -397,7 +404,7 @@ async function applyConfig(
         event: 'routine_config_apply_warn',
         routineId,
         error: err instanceof Error ? err.message : String(err),
-      }),
+      })
     )
   }
 }

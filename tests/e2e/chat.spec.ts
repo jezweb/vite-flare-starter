@@ -50,9 +50,7 @@ test.describe('chat', () => {
         preferences: Record<string, unknown>
       }
       const reset = { ...json.preferences, tours: {} }
-      await page.request
-        .patch('/api/settings/preferences', { data: reset })
-        .catch(() => undefined)
+      await page.request.patch('/api/settings/preferences', { data: reset }).catch(() => undefined)
     }
 
     // Reload so the tour evaluates from a clean slate.
@@ -71,9 +69,7 @@ test.describe('chat', () => {
 
     await skipButton.click()
     // Local flag should be set synchronously by the close handler.
-    const localFlag = await page.evaluate(() =>
-      window.localStorage.getItem('chat-tour-seen'),
-    )
+    const localFlag = await page.evaluate(() => window.localStorage.getItem('chat-tour-seen'))
     expect(localFlag).toBe('true')
 
     // Reload — the tour MUST NOT reappear.

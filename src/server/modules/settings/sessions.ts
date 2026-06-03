@@ -94,8 +94,8 @@ app.get('/', async (c) => {
           eq(schema.session.id, currentSessionId),
           // Only backfill when the column is empty — otherwise preserve
           // whatever the original session-create path captured.
-          isNull(schema.session.ipAddress),
-        ),
+          isNull(schema.session.ipAddress)
+        )
       )
       .catch(() => {
         // Non-critical — swallow. Sessions list still works without the backfill.

@@ -21,12 +21,15 @@
 import type { ReactNode } from 'react'
 import { useState } from 'react'
 import type { LucideIcon } from 'lucide-react'
-import { WrenchIcon, ChevronDownIcon, CheckCircleIcon, CircleIcon, ClockIcon, XCircleIcon } from 'lucide-react'
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible'
+  WrenchIcon,
+  ChevronDownIcon,
+  CheckCircleIcon,
+  CircleIcon,
+  ClockIcon,
+  XCircleIcon,
+} from 'lucide-react'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
@@ -135,30 +138,21 @@ export function ToolCard({
         <div className="flex items-center gap-2 min-w-0">
           <Icon className="size-4 text-muted-foreground shrink-0" />
           <span className="font-medium text-sm truncate">{name}</span>
-          <Badge
-            variant="secondary"
-            className="gap-1.5 rounded-full text-xs shrink-0"
-          >
+          <Badge variant="secondary" className="gap-1.5 rounded-full text-xs shrink-0">
             {statusIcons[state]}
             {statusLabels[state]}
           </Badge>
-          {summary && (
-            <span className="text-xs text-muted-foreground truncate">
-              · {summary}
-            </span>
-          )}
+          {summary && <span className="text-xs text-muted-foreground truncate">· {summary}</span>}
         </div>
         <ChevronDownIcon
           className={cn(
             'size-4 text-muted-foreground shrink-0 transition-transform',
-            open && 'rotate-180',
+            open && 'rotate-180'
           )}
         />
       </CollapsibleTrigger>
       <CollapsibleContent className="space-y-3 px-4 pb-4 pt-1 text-sm outline-none data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:slide-in-from-top-2">
-        {children ?? (
-          <FallbackToolBody input={input} output={output} errorText={errorText} />
-        )}
+        {children ?? <FallbackToolBody input={input} output={output} errorText={errorText} />}
       </CollapsibleContent>
     </Collapsible>
   )

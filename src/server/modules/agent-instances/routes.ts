@@ -55,7 +55,7 @@ interface AgentInstancesEnv {
  */
 function getNamespace(
   env: AgentInstancesEnv,
-  agentClass: string,
+  agentClass: string
 ): DurableObjectNamespace<AssistantAgent> | undefined {
   // All AutonomousAgent subclasses share the management RPC methods we
   // call (getStatus / setOwner / setPersona / setModel / setDailyBudget).
@@ -157,7 +157,7 @@ app.get('/', async (c) => {
           stateError: err instanceof Error ? err.message : String(err),
         }
       }
-    }),
+    })
   )
 
   // Dormant: registered classes with NO active instance for this user.
@@ -210,10 +210,7 @@ app.get('/:class/:name', async (c) => {
       metadata: getAgentMetadata(params.class),
     })
   } catch (err) {
-    return c.json(
-      { error: err instanceof Error ? err.message : String(err) },
-      500,
-    )
+    return c.json({ error: err instanceof Error ? err.message : String(err) }, 500)
   }
 })
 
@@ -243,10 +240,7 @@ app.patch('/:class/:name', zValidator('json', PatchSchema), async (c) => {
     const status = await stub.getStatus()
     return c.json({ ok: true, state: status })
   } catch (err) {
-    return c.json(
-      { error: err instanceof Error ? err.message : String(err) },
-      500,
-    )
+    return c.json({ error: err instanceof Error ? err.message : String(err) }, 500)
   }
 })
 

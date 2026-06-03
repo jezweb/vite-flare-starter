@@ -35,7 +35,10 @@ export function InfoForm({ title, fields, submitLabel = 'Submit', onSubmit, disa
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-lg border border-border p-4 max-w-md space-y-3">
+    <form
+      onSubmit={handleSubmit}
+      className="rounded-lg border border-border p-4 max-w-md space-y-3"
+    >
       {title && <h3 className="font-semibold text-sm">{title}</h3>}
       {fields.map((field) => (
         <div key={field.name} className="space-y-1">

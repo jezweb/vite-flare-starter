@@ -16,7 +16,9 @@ const ArtifactType = z.enum(['html', 'svg', 'mermaid'])
 const CreateArtifactInput = z.object({
   type: ArtifactType.describe('Artifact type'),
   title: z.string().describe('Short display title'),
-  code: z.string().describe('The complete HTML/SVG/Mermaid code. No markdown fences. Self-contained.'),
+  code: z
+    .string()
+    .describe('The complete HTML/SVG/Mermaid code. No markdown fences. Self-contained.'),
   height: z.number().optional().describe('Display height in pixels (default: 400)'),
 })
 
@@ -29,7 +31,10 @@ const EditArtifactInput = z.object({
 })
 
 function cleanFences(code: string): string {
-  return code.trim().replace(/^```(?:html|svg|mermaid)?\n?/, '').replace(/\n?```$/, '')
+  return code
+    .trim()
+    .replace(/^```(?:html|svg|mermaid)?\n?/, '')
+    .replace(/\n?```$/, '')
 }
 
 const CreateArtifactOutput = z.object({
@@ -94,7 +99,8 @@ export const editArtifactDefinition: ToolDefinition<
   z.infer<typeof EditArtifactOutput>
 > = {
   name: 'edit_artifact',
-  description: 'Edit an existing artifact by describing what to change. Provide the artifact ID and the change instruction. The AI will output the complete updated code.',
+  description:
+    'Edit an existing artifact by describing what to change. Provide the artifact ID and the change instruction. The AI will output the complete updated code.',
   inputSchema: EditArtifactInput,
   outputSchema: EditArtifactOutput,
   execute: async ({ artifactId, type, title, code, height = 400 }) => ({

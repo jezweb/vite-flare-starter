@@ -65,9 +65,7 @@ export function useMoveTask() {
         queryClient.setQueryData<ListResponse>(QUERY_KEY, {
           ...prev,
           entities: prev.entities.map((e) =>
-            e.id === id
-              ? { ...e, fields: { ...e.fields, column, order } }
-              : e,
+            e.id === id ? { ...e, fields: { ...e.fields, column, order } } : e
           ),
         })
       }

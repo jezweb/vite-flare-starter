@@ -59,7 +59,7 @@ export function VoiceInputExamplePage() {
 
   const combined = useMemo(
     () => transcript + (interimTranscript ? ` ${interimTranscript}` : ''),
-    [transcript, interimTranscript],
+    [transcript, interimTranscript]
   )
 
   return (
@@ -68,12 +68,9 @@ export function VoiceInputExamplePage() {
         <h1 className="text-3xl font-bold tracking-tight">Voice Input Example</h1>
         <p className="mt-1 text-muted-foreground">
           Reference scaffold for the{' '}
-          <code className="px-1 py-0.5 rounded bg-muted font-mono text-sm">
-            @cloudflare/voice
-          </code>{' '}
-          + <code className="px-1 py-0.5 rounded bg-muted font-mono text-sm">agents</code>{' '}
-          SDK pattern. Session id{' '}
-          <code className="font-mono text-xs">{sessionId.slice(0, 8)}</code>.
+          <code className="px-1 py-0.5 rounded bg-muted font-mono text-sm">@cloudflare/voice</code>{' '}
+          + <code className="px-1 py-0.5 rounded bg-muted font-mono text-sm">agents</code> SDK
+          pattern. Session id <code className="font-mono text-xs">{sessionId.slice(0, 8)}</code>.
         </p>
       </div>
 
@@ -113,12 +110,7 @@ export function VoiceInputExamplePage() {
                 </Button>
               </>
             )}
-            <Button
-              onClick={clear}
-              variant="ghost"
-              disabled={!combined}
-              className="ml-auto"
-            >
+            <Button onClick={clear} variant="ghost" disabled={!combined} className="ml-auto">
               Clear transcript
             </Button>
           </div>
@@ -169,18 +161,17 @@ export function VoiceInputExamplePage() {
               </code>
             </li>
             <li>
-              <code className="font-mono text-xs">routeAgentRequest</code> in the Worker
-              entry routes it to the <code className="font-mono text-xs">VoiceInputExample</code>{' '}
-              Durable Object
+              <code className="font-mono text-xs">routeAgentRequest</code> in the Worker entry
+              routes it to the <code className="font-mono text-xs">VoiceInputExample</code> Durable
+              Object
             </li>
             <li>
-              The DO's transcriber (Workers AI Deepgram Nova 3) streams audio in,
-              emits turn-detected utterances via{' '}
-              <code className="font-mono text-xs">onTranscript</code>
+              The DO's transcriber (Workers AI Deepgram Nova 3) streams audio in, emits
+              turn-detected utterances via <code className="font-mono text-xs">onTranscript</code>
             </li>
             <li>
-              Server broadcasts each utterance back over the same WS — this page
-              just renders the final + interim strings from the hook.
+              Server broadcasts each utterance back over the same WS — this page just renders the
+              final + interim strings from the hook.
             </li>
           </ol>
         </CardContent>

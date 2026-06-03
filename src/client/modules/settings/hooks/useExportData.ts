@@ -15,7 +15,9 @@ async function exportData(): Promise<void> {
   })
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: 'Export failed' })) as { error?: string }
+    const errorData = (await response.json().catch(() => ({ error: 'Export failed' }))) as {
+      error?: string
+    }
     throw new Error(errorData.error || 'Failed to export data')
   }
 

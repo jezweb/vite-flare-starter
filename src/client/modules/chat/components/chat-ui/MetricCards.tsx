@@ -22,7 +22,12 @@ const TREND_COLORS = {
 
 export function MetricCards({ metrics }: Props) {
   return (
-    <div className={cn('grid gap-2', metrics.length <= 2 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3')}>
+    <div
+      className={cn(
+        'grid gap-2',
+        metrics.length <= 2 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3'
+      )}
+    >
       {metrics.map((m, i) => {
         const TrendIcon = m.trendDirection ? TREND_ICONS[m.trendDirection] : null
         return (
@@ -30,7 +35,12 @@ export function MetricCards({ metrics }: Props) {
             <div className="text-xs text-muted-foreground">{m.label}</div>
             <div className="text-xl font-semibold mt-1">{m.value}</div>
             {m.trend && (
-              <div className={cn('flex items-center gap-1 text-xs mt-1', m.trendDirection && TREND_COLORS[m.trendDirection])}>
+              <div
+                className={cn(
+                  'flex items-center gap-1 text-xs mt-1',
+                  m.trendDirection && TREND_COLORS[m.trendDirection]
+                )}
+              >
                 {TrendIcon && <TrendIcon className="size-3" />}
                 <span>{m.trend}</span>
               </div>

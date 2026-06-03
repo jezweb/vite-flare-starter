@@ -51,11 +51,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   Accordion,
   AccordionContent,
@@ -94,15 +90,7 @@ import { DatePicker } from '@/components/ui/date-picker'
 import { AudioRecorder } from '@/client/components/AudioRecorder'
 import { EmptyState } from '@/client/components/EmptyState'
 import { toast } from 'sonner'
-import {
-  AlertCircle,
-  Check,
-  Info,
-  MoreHorizontal,
-  Terminal,
-  Inbox,
-  PanelRight,
-} from 'lucide-react'
+import { AlertCircle, Check, Info, MoreHorizontal, Terminal, Inbox, PanelRight } from 'lucide-react'
 
 /**
  * Components showcase page
@@ -142,20 +130,24 @@ export function ComponentsPage() {
               <CardDescription>Different button styles for various use cases</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-4">
-              {([
-                { variant: 'default', label: 'Default' },
-                { variant: 'secondary', label: 'Secondary' },
-                { variant: 'destructive', label: 'Destructive' },
-                { variant: 'outline', label: 'Outline' },
-                { variant: 'ghost', label: 'Ghost' },
-                { variant: 'link', label: 'Link' },
-              ] as const).map(({ variant, label }) => (
+              {(
+                [
+                  { variant: 'default', label: 'Default' },
+                  { variant: 'secondary', label: 'Secondary' },
+                  { variant: 'destructive', label: 'Destructive' },
+                  { variant: 'outline', label: 'Outline' },
+                  { variant: 'ghost', label: 'Ghost' },
+                  { variant: 'link', label: 'Link' },
+                ] as const
+              ).map(({ variant, label }) => (
                 <div
                   key={variant}
                   className="flex flex-col items-center gap-1.5 rounded-md border border-dashed border-border/60 p-3"
                 >
                   <Button variant={variant}>{label}</Button>
-                  <code className="text-[10px] text-muted-foreground">variant=&quot;{variant}&quot;</code>
+                  <code className="text-[10px] text-muted-foreground">
+                    variant=&quot;{variant}&quot;
+                  </code>
                 </div>
               ))}
             </CardContent>
@@ -167,12 +159,14 @@ export function ComponentsPage() {
               <CardDescription>Different button sizes</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap items-center gap-4">
-              {([
-                { size: 'sm', content: 'Small' },
-                { size: 'default', content: 'Default' },
-                { size: 'lg', content: 'Large' },
-                { size: 'icon', content: <Check className="h-4 w-4" /> },
-              ] as const).map(({ size, content }) => (
+              {(
+                [
+                  { size: 'sm', content: 'Small' },
+                  { size: 'default', content: 'Default' },
+                  { size: 'lg', content: 'Large' },
+                  { size: 'icon', content: <Check className="h-4 w-4" /> },
+                ] as const
+              ).map(({ size, content }) => (
                 <div
                   key={size}
                   className="flex flex-col items-center gap-1.5 rounded-md border border-dashed border-border/60 p-3"
@@ -320,7 +314,9 @@ export function ComponentsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Calendar</CardTitle>
-              <CardDescription>Inline calendar for date ranges or always-visible selection</CardDescription>
+              <CardDescription>
+                Inline calendar for date ranges or always-visible selection
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <Calendar
@@ -409,12 +405,16 @@ export function ComponentsPage() {
                 <TableBody>
                   <TableRow>
                     <TableCell>INV001</TableCell>
-                    <TableCell><Badge>Paid</Badge></TableCell>
+                    <TableCell>
+                      <Badge>Paid</Badge>
+                    </TableCell>
                     <TableCell className="text-right">$250.00</TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell>INV002</TableCell>
-                    <TableCell><Badge variant="secondary">Pending</Badge></TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">Pending</Badge>
+                    </TableCell>
                     <TableCell className="text-right">$150.00</TableCell>
                   </TableRow>
                 </TableBody>
@@ -464,9 +464,7 @@ export function ComponentsPage() {
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Error</AlertTitle>
-                <AlertDescription>
-                  Your session has expired. Please log in again.
-                </AlertDescription>
+                <AlertDescription>Your session has expired. Please log in again.</AlertDescription>
               </Alert>
             </CardContent>
           </Card>
@@ -506,7 +504,12 @@ export function ComponentsPage() {
               <Button variant="outline" onClick={() => toast.info('New update available')}>
                 Info
               </Button>
-              <Button variant="outline" onClick={() => toast('Event created', { description: 'Monday, January 3 at 6:00 PM' })}>
+              <Button
+                variant="outline"
+                onClick={() =>
+                  toast('Event created', { description: 'Monday, January 3 at 6:00 PM' })
+                }
+              >
                 With description
               </Button>
             </CardContent>
@@ -594,7 +597,9 @@ export function ComponentsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Sheet</CardTitle>
-              <CardDescription>Slide-over panel from the edge — great for mobile drawers and detail views</CardDescription>
+              <CardDescription>
+                Slide-over panel from the edge — great for mobile drawers and detail views
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <Sheet>
@@ -608,7 +613,8 @@ export function ComponentsPage() {
                   <SheetHeader>
                     <SheetTitle>Sheet Title</SheetTitle>
                     <SheetDescription>
-                      This is a slide-over panel. Use it for detail views, forms, or mobile navigation.
+                      This is a slide-over panel. Use it for detail views, forms, or mobile
+                      navigation.
                     </SheetDescription>
                   </SheetHeader>
                   <div className="py-6 space-y-4">
@@ -626,7 +632,9 @@ export function ComponentsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Command</CardTitle>
-              <CardDescription>Searchable command palette — the building block behind Cmd+K</CardDescription>
+              <CardDescription>
+                Searchable command palette — the building block behind Cmd+K
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <Command className="rounded-lg border">
@@ -659,12 +667,19 @@ export function ComponentsPage() {
             <CardContent className="space-y-4">
               <div>
                 <Label className="text-xs text-muted-foreground mb-2 block">Full mode</Label>
-                <AudioRecorder onRecordingComplete={(_blob, ms) => alert(`Recorded ${(ms / 1000).toFixed(1)}s`)} />
+                <AudioRecorder
+                  onRecordingComplete={(_blob, ms) => alert(`Recorded ${(ms / 1000).toFixed(1)}s`)}
+                />
               </div>
               <Separator />
               <div>
-                <Label className="text-xs text-muted-foreground mb-2 block">Compact mode (for toolbars)</Label>
-                <AudioRecorder compact onRecordingComplete={(_b, ms) => alert(`Recorded ${(ms / 1000).toFixed(1)}s`)} />
+                <Label className="text-xs text-muted-foreground mb-2 block">
+                  Compact mode (for toolbars)
+                </Label>
+                <AudioRecorder
+                  compact
+                  onRecordingComplete={(_b, ms) => alert(`Recorded ${(ms / 1000).toFixed(1)}s`)}
+                />
               </div>
               <Separator />
               <div>

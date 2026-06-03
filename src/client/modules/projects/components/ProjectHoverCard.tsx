@@ -15,19 +15,12 @@
  */
 import { type ReactNode } from 'react'
 
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from '@/components/ui/hover-card'
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card'
 import { Folder, MessageSquare } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
 
 import { useProject } from '../hooks/useProjects'
-import {
-  PROJECT_COLOR_CLASSES,
-  isProjectColor,
-} from '../colors'
+import { PROJECT_COLOR_CLASSES, isProjectColor } from '../colors'
 import { formatRelative } from '@/client/lib/format-time'
 import { cn } from '@/lib/utils'
 
@@ -68,11 +61,7 @@ function ProjectHoverPreview({ projectId }: { projectId: string }) {
   }
 
   if (!data) {
-    return (
-      <p className="text-xs text-muted-foreground">
-        Project not found.
-      </p>
-    )
+    return <p className="text-xs text-muted-foreground">Project not found.</p>
   }
 
   const project = data.project
@@ -87,13 +76,9 @@ function ProjectHoverPreview({ projectId }: { projectId: string }) {
         <div className="min-w-0 flex-1">
           <h4 className="truncate text-sm font-semibold">{project.name}</h4>
           {project.description ? (
-            <p className="line-clamp-3 text-xs text-muted-foreground">
-              {project.description}
-            </p>
+            <p className="line-clamp-3 text-xs text-muted-foreground">{project.description}</p>
           ) : (
-            <p className="text-xs italic text-muted-foreground">
-              No description
-            </p>
+            <p className="text-xs italic text-muted-foreground">No description</p>
           )}
         </div>
       </div>
@@ -103,9 +88,7 @@ function ProjectHoverPreview({ projectId }: { projectId: string }) {
           <MessageSquare className="size-3" />
           {data.conversations.length} {data.conversations.length === 1 ? 'chat' : 'chats'}
         </span>
-        {project.updatedAt && (
-          <span>Updated {formatRelative(project.updatedAt)}</span>
-        )}
+        {project.updatedAt && <span>Updated {formatRelative(project.updatedAt)}</span>}
       </div>
     </div>
   )

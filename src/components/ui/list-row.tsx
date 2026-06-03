@@ -53,7 +53,7 @@ const listRowVariants = cva(
       state: 'default',
       interactive: false,
     },
-  },
+  }
 )
 
 interface ListRowProps
@@ -75,12 +75,12 @@ const ListRow = React.forwardRef<HTMLElement, ListRowProps>(
             state,
             interactive: interactive ?? asChild,
             className,
-          }),
+          })
         )}
         {...props}
       />
     )
-  },
+  }
 )
 ListRow.displayName = 'ListRow'
 
@@ -92,7 +92,7 @@ const ListRowIcon = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDi
       className={cn('shrink-0 [&>svg]:size-4', className)}
       {...props}
     />
-  ),
+  )
 )
 ListRowIcon.displayName = 'ListRow.Icon'
 
@@ -104,7 +104,7 @@ const ListRowBody = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDi
       className={cn('min-w-0 flex-1', className)}
       {...props}
     />
-  ),
+  )
 )
 ListRowBody.displayName = 'ListRow.Body'
 
@@ -116,11 +116,7 @@ const ListRowTitle = React.forwardRef<
   <p
     ref={ref}
     data-slot="list-row-title"
-    className={cn(
-      'truncate text-sm',
-      unread && 'font-medium',
-      className,
-    )}
+    className={cn('truncate text-sm', unread && 'font-medium', className)}
     {...props}
   />
 ))
@@ -141,11 +137,11 @@ const ListRowMeta = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDi
       className={cn(
         'mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground truncate',
         '[&>span]:truncate',
-        className,
+        className
       )}
       {...props}
     />
-  ),
+  )
 )
 ListRowMeta.displayName = 'ListRow.Meta'
 
@@ -157,7 +153,7 @@ const ListRowTrailing = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HT
       className={cn('shrink-0 flex items-center gap-2', className)}
       {...props}
     />
-  ),
+  )
 )
 ListRowTrailing.displayName = 'ListRow.Trailing'
 
@@ -169,7 +165,7 @@ const ListRowGroup = React.forwardRef<HTMLUListElement, React.HTMLAttributes<HTM
       className={cn('divide-y rounded-md border bg-card overflow-hidden', className)}
       {...props}
     />
-  ),
+  )
 )
 ListRowGroup.displayName = 'ListRowGroup'
 

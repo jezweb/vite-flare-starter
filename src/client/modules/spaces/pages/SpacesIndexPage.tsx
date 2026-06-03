@@ -38,9 +38,7 @@ function SpaceCard({ s }: { s: SpaceSummary }) {
           <Hash className="size-4 shrink-0 text-muted-foreground" />
           <h3 className="truncate text-sm font-medium">{s.title || 'Untitled space'}</h3>
         </div>
-        {s.pinnedToSidebar ? (
-          <Pin className="size-3.5 shrink-0 text-amber-500" />
-        ) : null}
+        {s.pinnedToSidebar ? <Pin className="size-3.5 shrink-0 text-amber-500" /> : null}
       </div>
       <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
         <span className="flex items-center gap-1">
@@ -79,9 +77,7 @@ export function SpacesIndexPage() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
-    return q
-      ? spaces.filter((s) => (s.title ?? '').toLowerCase().includes(q))
-      : spaces
+    return q ? spaces.filter((s) => (s.title ?? '').toLowerCase().includes(q)) : spaces
   }, [spaces, search])
 
   const pinned = filtered.filter((s) => s.pinnedToSidebar)

@@ -77,7 +77,7 @@ export interface InterstitialDetection {
  */
 export function detectInterstitial(
   title: string | undefined,
-  content: string | undefined,
+  content: string | undefined
 ): InterstitialDetection {
   const safeTitle = title || ''
   const safeContent = content || ''
@@ -138,10 +138,7 @@ export function titleFromMarkdown(markdown: string): string {
  * Build a user-friendly error message when a scrape returns an
  * interstitial. Names the WAF so the caller knows what blocked them.
  */
-export function interstitialError(
-  url: string,
-  detection: InterstitialDetection,
-): string {
+export function interstitialError(url: string, detection: InterstitialDetection): string {
   const vendor = detection.vendor ?? 'unknown WAF'
   return `Blocked by ${vendor} anti-bot at ${url}. The page returned a challenge / verification interstitial instead of real content. The site may require an authenticated session, an IP whitelist, or an alternative API.`
 }

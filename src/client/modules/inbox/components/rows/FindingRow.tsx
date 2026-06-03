@@ -15,8 +15,7 @@ export function FindingRow(props: RowRendererProps) {
   const queryClient = useQueryClient()
   const agentRegistry = useAgentRegistry()
   const isUnread = row.source === 'inbox' && row.readAt == null
-  const isUrgent =
-    row.importance === 'high' || (row.dueAt != null && row.dueAt * 1000 < Date.now())
+  const isUrgent = row.importance === 'high' || (row.dueAt != null && row.dueAt * 1000 < Date.now())
 
   const toggleRead = useMutation({
     mutationFn: () => apiClient.patch(`/api/inbox/${row.id}`, { read: !!isUnread }),

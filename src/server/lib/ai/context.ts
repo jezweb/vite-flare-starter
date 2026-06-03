@@ -88,9 +88,10 @@ export function buildSystemPrompt(options: SystemPromptOptions): string {
  * Returns dynamic = '' (empty string) when nothing dynamic was
  * requested — caller can simply skip the preamble injection.
  */
-export function buildCacheableSystemPrompt(
-  options: SystemPromptOptions,
-): { system: string; dynamic: string } {
+export function buildCacheableSystemPrompt(options: SystemPromptOptions): {
+  system: string
+  dynamic: string
+} {
   const staticParts: string[] = []
   const dynamicParts: string[] = []
 

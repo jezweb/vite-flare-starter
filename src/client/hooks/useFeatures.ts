@@ -144,7 +144,9 @@ export function useToggleFeature() {
       })
 
       if (!response.ok) {
-        const errorData = (await response.json().catch(() => ({ error: 'Unknown error' }))) as { error?: string }
+        const errorData = (await response.json().catch(() => ({ error: 'Unknown error' }))) as {
+          error?: string
+        }
         throw new Error(errorData.error || 'Failed to toggle feature')
       }
 
@@ -176,7 +178,9 @@ export function useSyncFeatures() {
       })
 
       if (!response.ok) {
-        const errorData = (await response.json().catch(() => ({ error: 'Unknown error' }))) as { error?: string }
+        const errorData = (await response.json().catch(() => ({ error: 'Unknown error' }))) as {
+          error?: string
+        }
         throw new Error(errorData.error || 'Failed to sync features')
       }
 
@@ -202,7 +206,9 @@ export function useDeleteFeature() {
       })
 
       if (!response.ok) {
-        const errorData = (await response.json().catch(() => ({ error: 'Unknown error' }))) as { error?: string }
+        const errorData = (await response.json().catch(() => ({ error: 'Unknown error' }))) as {
+          error?: string
+        }
         throw new Error(errorData.error || 'Failed to delete feature')
       }
     },

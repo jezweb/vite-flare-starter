@@ -9,7 +9,21 @@
  * file with the right extension (.html / .svg / .mmd / original filename).
  */
 import { useMemo, useCallback, useState } from 'react'
-import { FileText, FileCode, FileImage, FileAudio, FileVideo, FileSpreadsheet, FileArchive, File as FileIcon, Download, X, Maximize2, FolderPlus, Check } from 'lucide-react'
+import {
+  FileText,
+  FileCode,
+  FileImage,
+  FileAudio,
+  FileVideo,
+  FileSpreadsheet,
+  FileArchive,
+  File as FileIcon,
+  Download,
+  X,
+  Maximize2,
+  FolderPlus,
+  Check,
+} from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -48,7 +62,10 @@ const ARTIFACT_MIME: Record<CollectedArtifact['type'], string> = {
  * Walk the message tree and return every artifact + file part we can surface.
  * Keep the identity stable across re-renders so React keys don't thrash.
  */
-function collect(messages: UIMessageType[]): { artifacts: CollectedArtifact[]; files: CollectedFile[] } {
+function collect(messages: UIMessageType[]): {
+  artifacts: CollectedArtifact[]
+  files: CollectedFile[]
+} {
   const artifacts: CollectedArtifact[] = []
   const files: CollectedFile[] = []
   for (const message of messages) {
@@ -87,9 +104,15 @@ function iconForMime(mediaType?: string) {
   if (mediaType.startsWith('audio/')) return FileAudio
   if (mediaType.startsWith('video/')) return FileVideo
   if (mediaType === 'application/pdf') return FileText
-  if (mediaType.includes('spreadsheet') || mediaType.includes('excel') || mediaType === 'text/csv') return FileSpreadsheet
+  if (mediaType.includes('spreadsheet') || mediaType.includes('excel') || mediaType === 'text/csv')
+    return FileSpreadsheet
   if (mediaType.includes('wordprocessingml') || mediaType === 'application/msword') return FileText
-  if (mediaType.startsWith('text/') || mediaType === 'application/json' || mediaType === 'application/xml') return FileCode
+  if (
+    mediaType.startsWith('text/') ||
+    mediaType === 'application/json' ||
+    mediaType === 'application/xml'
+  )
+    return FileCode
   if (mediaType === 'application/zip' || mediaType === 'application/epub+zip') return FileArchive
   return FileIcon
 }
@@ -101,7 +124,13 @@ function iconForArtifact(type: CollectedArtifact['type']) {
 }
 
 function safeFilename(title: string, ext: string): string {
-  const slug = title.trim().toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').slice(0, 60) || 'artifact'
+  const slug =
+    title
+      .trim()
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .slice(0, 60) || 'artifact'
   return `${slug}.${ext}`
 }
 
@@ -138,29 +167,45 @@ export function ArtifactSidebar({ messages, onClose, scrollRoot: _scrollRoot }: 
   /** Per-file save state: idle | saving | saved. Keyed by file id. */
   const [saveState, setSaveState] = useState<Record<string, 'saving' | 'saved'>>({})
 
-  const saveToFiles = useCallback(async (file: CollectedFile) => {
-    if (!file.url || saveState[file.id]) return
-    setSaveState((s) => ({ ...s, [file.id]: 'saving' }))
-    try {
-      const resp = await fetch(file.url)
-      const blob = await resp.blob()
-      const fallbackExt = (file.mediaType?.split('/')[1] || 'bin').split('+')[0]
-      const filename = file.name || `attachment-${Date.now()}.${fallbackExt}`
-      const form = new FormData()
-      form.append('file', new File([blob], filename, { type: file.mediaType || blob.type || 'application/octet-stream' }))
-      form.append('folder', '/chat-attachments')
-      const upload = await fetch('/api/files', { method: 'POST', body: form })
-      if (!upload.ok) {
-        const err = await upload.json().catch(() => ({ error: upload.statusText })) as { error?: string }
-        throw new Error(err.error || `Upload failed (${upload.status})`)
+  const saveToFiles = useCallback(
+    async (file: CollectedFile) => {
+      if (!file.url || saveState[file.id]) return
+      setSaveState((s) => ({ ...s, [file.id]: 'saving' }))
+      try {
+        const resp = await fetch(file.url)
+        const blob = await resp.blob()
+        const fallbackExt = (file.mediaType?.split('/')[1] || 'bin').split('+')[0]
+        const filename = file.name || `attachment-${Date.now()}.${fallbackExt}`
+        const form = new FormData()
+        form.append(
+          'file',
+          new File([blob], filename, {
+            type: file.mediaType || blob.type || 'application/octet-stream',
+          })
+        )
+        form.append('folder', '/chat-attachments')
+        const upload = await fetch('/api/files', { method: 'POST', body: form })
+        if (!upload.ok) {
+          const err = (await upload.json().catch(() => ({ error: upload.statusText }))) as {
+            error?: string
+          }
+          throw new Error(err.error || `Upload failed (${upload.status})`)
+        }
+        setSaveState((s) => ({ ...s, [file.id]: 'saved' }))
+        toast.success('Saved to Files', { description: filename })
+      } catch (err) {
+        setSaveState((s) => {
+          const next = { ...s }
+          delete next[file.id]
+          return next
+        })
+        toast.error('Could not save to Files', {
+          description: err instanceof Error ? err.message : String(err),
+        })
       }
-      setSaveState((s) => ({ ...s, [file.id]: 'saved' }))
-      toast.success('Saved to Files', { description: filename })
-    } catch (err) {
-      setSaveState((s) => { const next = { ...s }; delete next[file.id]; return next })
-      toast.error('Could not save to Files', { description: err instanceof Error ? err.message : String(err) })
-    }
-  }, [saveState])
+    },
+    [saveState]
+  )
 
   const scrollTo = useCallback((id: string) => {
     const el = document.querySelector<HTMLElement>(`[data-artifact-id="${CSS.escape(id)}"]`)
@@ -168,7 +213,11 @@ export function ArtifactSidebar({ messages, onClose, scrollRoot: _scrollRoot }: 
     el.scrollIntoView({ behavior: 'smooth', block: 'center' })
     // Brief highlight flash so users can see which one they clicked.
     el.classList.add('ring-2', 'ring-primary/50', 'ring-offset-2', 'ring-offset-background')
-    setTimeout(() => el.classList.remove('ring-2', 'ring-primary/50', 'ring-offset-2', 'ring-offset-background'), 1200)
+    setTimeout(
+      () =>
+        el.classList.remove('ring-2', 'ring-primary/50', 'ring-offset-2', 'ring-offset-background'),
+      1200
+    )
   }, [])
 
   /**
@@ -187,7 +236,7 @@ export function ArtifactSidebar({ messages, onClose, scrollRoot: _scrollRoot }: 
       }
       scrollTo(artifact.id)
     },
-    [scrollTo],
+    [scrollTo]
   )
 
   const downloadAll = useCallback(() => {
@@ -236,7 +285,8 @@ export function ArtifactSidebar({ messages, onClose, scrollRoot: _scrollRoot }: 
           <div className="px-2 py-8 text-xs text-muted-foreground text-center space-y-2">
             <p className="font-medium text-foreground/80">Nothing here yet</p>
             <p>
-              Ask the AI for a chart, dashboard, or diagram — or drop a file into the chat. Both show up in this panel.
+              Ask the AI for a chart, dashboard, or diagram — or drop a file into the chat. Both
+              show up in this panel.
             </p>
           </div>
         )}
@@ -261,7 +311,7 @@ export function ArtifactSidebar({ messages, onClose, scrollRoot: _scrollRoot }: 
                   className={cn(
                     'w-full group flex items-center gap-2 rounded-lg border border-border bg-background cursor-pointer',
                     'px-2 py-2 text-left transition-colors hover:bg-accent/50 focus-visible:outline-none',
-                    'focus-visible:ring-2 focus-visible:ring-primary/40',
+                    'focus-visible:ring-2 focus-visible:ring-primary/40'
                   )}
                   title="Click to scroll to · cmd/ctrl-click or use the expand icon to open in a lightbox"
                 >
@@ -283,7 +333,7 @@ export function ArtifactSidebar({ messages, onClose, scrollRoot: _scrollRoot }: 
                       }}
                       className={cn(
                         'rounded p-1 text-muted-foreground opacity-0 transition-opacity',
-                        'group-hover:opacity-100 hover:bg-muted hover:text-foreground',
+                        'group-hover:opacity-100 hover:bg-muted hover:text-foreground'
                       )}
                       title="Open in lightbox"
                       aria-label={`Open ${a.title} in lightbox`}
@@ -294,11 +344,15 @@ export function ArtifactSidebar({ messages, onClose, scrollRoot: _scrollRoot }: 
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation()
-                        downloadBlob(safeFilename(a.title, ARTIFACT_EXT[a.type]), a.code, ARTIFACT_MIME[a.type])
+                        downloadBlob(
+                          safeFilename(a.title, ARTIFACT_EXT[a.type]),
+                          a.code,
+                          ARTIFACT_MIME[a.type]
+                        )
                       }}
                       className={cn(
                         'rounded p-1 text-muted-foreground opacity-0 transition-opacity',
-                        'group-hover:opacity-100 hover:bg-muted hover:text-foreground',
+                        'group-hover:opacity-100 hover:bg-muted hover:text-foreground'
                       )}
                       title={`Download .${ARTIFACT_EXT[a.type]}`}
                       aria-label={`Download ${a.title}`}
@@ -328,7 +382,7 @@ export function ArtifactSidebar({ messages, onClose, scrollRoot: _scrollRoot }: 
                   className={cn(
                     'w-full group flex items-center gap-2 rounded-lg border border-border bg-background',
                     'px-2 py-2 text-left transition-colors hover:bg-accent/50 focus-visible:outline-none',
-                    'focus-visible:ring-2 focus-visible:ring-primary/40',
+                    'focus-visible:ring-2 focus-visible:ring-primary/40'
                   )}
                   title={f.name}
                 >
@@ -360,7 +414,7 @@ export function ArtifactSidebar({ messages, onClose, scrollRoot: _scrollRoot }: 
                           saveState[f.id] === 'saved'
                             ? 'text-primary opacity-100'
                             : 'opacity-0 group-hover:opacity-100 hover:bg-muted hover:text-foreground',
-                          saveState[f.id] === 'saving' && 'opacity-100',
+                          saveState[f.id] === 'saving' && 'opacity-100'
                         )}
                         title={
                           saveState[f.id] === 'saved'
@@ -385,7 +439,7 @@ export function ArtifactSidebar({ messages, onClose, scrollRoot: _scrollRoot }: 
                         onClick={(e) => e.stopPropagation()}
                         className={cn(
                           'rounded p-1 text-muted-foreground opacity-0 transition-opacity',
-                          'group-hover:opacity-100 hover:bg-muted hover:text-foreground',
+                          'group-hover:opacity-100 hover:bg-muted hover:text-foreground'
                         )}
                         title={`Download ${f.name}`}
                         aria-label={`Download ${f.name}`}
@@ -405,7 +459,12 @@ export function ArtifactSidebar({ messages, onClose, scrollRoot: _scrollRoot }: 
           icon. Reuses ArtifactViewer so behaviour stays identical (code toggle,
           copy, open in new tab for HTML). Wide viewport (80vw) with a generous
           height so dashboards/mermaids have room to breathe. */}
-      <Dialog open={!!lightbox} onOpenChange={(open) => { if (!open) setLightbox(null) }}>
+      <Dialog
+        open={!!lightbox}
+        onOpenChange={(open) => {
+          if (!open) setLightbox(null)
+        }}
+      >
         <DialogContent
           // sm: prefix is REQUIRED to override shadcn Dialog's default
           // `sm:max-w-lg`. See rules/css-patterns.md — breakpoint overrides
@@ -424,7 +483,13 @@ export function ArtifactSidebar({ messages, onClose, scrollRoot: _scrollRoot }: 
                * paint uses the big space; the ResizeObserver inside the iframe
                * will still clamp to its content height if that's smaller.
                */}
-              <ArtifactViewer artifact={{ ...lightbox, _artifact: true, height: Math.floor(window.innerHeight * 0.7) }} />
+              <ArtifactViewer
+                artifact={{
+                  ...lightbox,
+                  _artifact: true,
+                  height: Math.floor(window.innerHeight * 0.7),
+                }}
+              />
             </div>
           )}
         </DialogContent>
@@ -434,7 +499,10 @@ export function ArtifactSidebar({ messages, onClose, scrollRoot: _scrollRoot }: 
 }
 
 /** Expose the collector so the chat page can decide whether to show the toggle. */
-export function countArtifactsAndFiles(messages: UIMessageType[]): { artifactCount: number; fileCount: number } {
+export function countArtifactsAndFiles(messages: UIMessageType[]): {
+  artifactCount: number
+  fileCount: number
+} {
   const { artifacts, files } = collect(messages)
   return { artifactCount: artifacts.length, fileCount: files.length }
 }

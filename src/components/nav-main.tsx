@@ -19,11 +19,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import type { NavItem } from '@/shared/config/nav'
 
 interface Props {
@@ -43,7 +39,7 @@ export function NavMain({ label, items, defaultCollapsed = false }: Props) {
   const hasActiveItem = items.some(
     (item) =>
       location.pathname === item.to ||
-      (item.to !== '/dashboard' && location.pathname.startsWith(item.to + '/')),
+      (item.to !== '/dashboard' && location.pathname.startsWith(item.to + '/'))
   )
 
   const list = (
@@ -137,11 +133,11 @@ function CollapsibleSection({
       <Collapsible open={effectiveOpen} onOpenChange={setOpen}>
         <CollapsibleTrigger asChild>
           {/*
-            * Render as a real <button> so the trigger is keyboard-focusable
-            * out of the box (tabIndex=0, Enter/Space activate). asChild on
-            * SidebarGroupLabel produces a div that's invisible to Tab.
-            * Reuses the SidebarGroupLabel styling via the same class string.
-            */}
+           * Render as a real <button> so the trigger is keyboard-focusable
+           * out of the box (tabIndex=0, Enter/Space activate). asChild on
+           * SidebarGroupLabel produces a div that's invisible to Tab.
+           * Reuses the SidebarGroupLabel styling via the same class string.
+           */}
           <button
             type="button"
             aria-expanded={effectiveOpen}

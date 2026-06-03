@@ -62,7 +62,7 @@ export function parseTimestamp(input: Date | string | number): Date {
  */
 export function formatRelative(
   input: Date | string | number,
-  opts: { suffix?: boolean } = {},
+  opts: { suffix?: boolean } = {}
 ): string {
   const date = parseTimestamp(input)
   return formatDistanceToNow(date, { addSuffix: opts.suffix !== false })
@@ -92,7 +92,9 @@ export function formatShort(input: Date | string | number): string {
  */
 export function formatAbsolute(input: Date | string | number): string {
   const date = parseTimestamp(input)
-  return fmt(date, "d MMM yyyy, h:mm a").toLowerCase().replace(/(\d) (am|pm)/, '$1$2')
+  return fmt(date, 'd MMM yyyy, h:mm a')
+    .toLowerCase()
+    .replace(/(\d) (am|pm)/, '$1$2')
 }
 
 /**

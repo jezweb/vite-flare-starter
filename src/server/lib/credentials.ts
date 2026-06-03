@@ -79,7 +79,7 @@ export interface CredentialOwner {
 export async function getServiceKey(
   env: CredentialEnv,
   owner: CredentialOwner,
-  provider: string,
+  provider: string
 ): Promise<string | null> {
   const db = drizzle(env.DB)
 
@@ -93,8 +93,8 @@ export async function getServiceKey(
           eq(serviceCredentials.userId, owner.userId),
           eq(serviceCredentials.provider, provider),
           eq(serviceCredentials.status, 'active'),
-          eq(serviceCredentials.label, 'default'),
-        ),
+          eq(serviceCredentials.label, 'default')
+        )
       )
       .limit(1)
     if (row) {
@@ -107,7 +107,7 @@ export async function getServiceKey(
             provider,
             ownerType: 'user',
             error: err instanceof Error ? err.message : String(err),
-          }),
+          })
         )
       }
     }
@@ -123,8 +123,8 @@ export async function getServiceKey(
           eq(serviceCredentials.organizationId, owner.organizationId),
           eq(serviceCredentials.provider, provider),
           eq(serviceCredentials.status, 'active'),
-          eq(serviceCredentials.label, 'default'),
-        ),
+          eq(serviceCredentials.label, 'default')
+        )
       )
       .limit(1)
     if (row) {
@@ -137,7 +137,7 @@ export async function getServiceKey(
             provider,
             ownerType: 'org',
             error: err instanceof Error ? err.message : String(err),
-          }),
+          })
         )
       }
     }
@@ -162,7 +162,7 @@ export async function setServiceKey(
   owner: CredentialOwner,
   provider: string,
   plaintext: string,
-  opts?: { label?: string },
+  opts?: { label?: string }
 ): Promise<{ id: string; lastFour: string }> {
   if (!owner.userId && !owner.organizationId) {
     throw new Error('setServiceKey requires either userId or organizationId')
@@ -179,14 +179,18 @@ export async function setServiceKey(
     ? and(
         eq(serviceCredentials.userId, owner.userId),
         eq(serviceCredentials.provider, provider),
-        eq(serviceCredentials.label, label),
+        eq(serviceCredentials.label, label)
       )
     : and(
         eq(serviceCredentials.organizationId, owner.organizationId!),
         eq(serviceCredentials.provider, provider),
-        eq(serviceCredentials.label, label),
+        eq(serviceCredentials.label, label)
       )
-  const [existing] = await db.select({ id: serviceCredentials.id }).from(serviceCredentials).where(where).limit(1)
+  const [existing] = await db
+    .select({ id: serviceCredentials.id })
+    .from(serviceCredentials)
+    .where(where)
+    .limit(1)
   if (existing) {
     await db
       .update(serviceCredentials)
@@ -221,7 +225,7 @@ export async function revokeServiceKey(
   env: CredentialEnv,
   owner: CredentialOwner,
   provider: string,
-  opts?: { label?: string },
+  opts?: { label?: string }
 ): Promise<{ revoked: boolean }> {
   const label = opts?.label ?? 'default'
   const db = drizzle(env.DB)
@@ -229,13 +233,13 @@ export async function revokeServiceKey(
     ? and(
         eq(serviceCredentials.userId, owner.userId),
         eq(serviceCredentials.provider, provider),
-        eq(serviceCredentials.label, label),
+        eq(serviceCredentials.label, label)
       )
     : owner.organizationId
       ? and(
           eq(serviceCredentials.organizationId, owner.organizationId),
           eq(serviceCredentials.provider, provider),
-          eq(serviceCredentials.label, label),
+          eq(serviceCredentials.label, label)
         )
       : null
   if (!where) return { revoked: false }
@@ -253,16 +257,18 @@ export async function revokeServiceKey(
  */
 export async function listServiceCredentials(
   env: CredentialEnv,
-  owner: CredentialOwner,
-): Promise<Array<{
-  id: string
-  provider: string
-  label: string
-  lastFour: string | null
-  status: string
-  createdAt: number
-  updatedAt: number
-}>> {
+  owner: CredentialOwner
+): Promise<
+  Array<{
+    id: string
+    provider: string
+    label: string
+    lastFour: string | null
+    status: string
+    createdAt: number
+    updatedAt: number
+  }>
+> {
   const db = drizzle(env.DB)
   const where = owner.userId
     ? eq(serviceCredentials.userId, owner.userId)
@@ -294,18 +300,90 @@ export const SUPPORTED_PROVIDERS: Array<{
   category: 'ai' | 'search' | 'scraping'
 }> = [
   // AI
-  { id: 'anthropic', name: 'Anthropic', description: 'Claude models direct', signupUrl: 'https://console.anthropic.com', category: 'ai' },
-  { id: 'openai', name: 'OpenAI', description: 'GPT + image generation', signupUrl: 'https://platform.openai.com', category: 'ai' },
-  { id: 'google_ai', name: 'Google AI Studio', description: 'Gemini models direct', signupUrl: 'https://aistudio.google.com', category: 'ai' },
-  { id: 'openrouter', name: 'OpenRouter', description: 'Unified gateway to all paid models', signupUrl: 'https://openrouter.ai', category: 'ai' },
-  { id: 'deepseek', name: 'DeepSeek', description: 'V4 / reasoning models direct', signupUrl: 'https://platform.deepseek.com', category: 'ai' },
-  { id: 'mistral', name: 'Mistral', description: 'Mistral / Codestral / Pixtral direct', signupUrl: 'https://console.mistral.ai', category: 'ai' },
-  { id: 'xai', name: 'xAI', description: 'Grok models direct', signupUrl: 'https://x.ai/api', category: 'ai' },
+  {
+    id: 'anthropic',
+    name: 'Anthropic',
+    description: 'Claude models direct',
+    signupUrl: 'https://console.anthropic.com',
+    category: 'ai',
+  },
+  {
+    id: 'openai',
+    name: 'OpenAI',
+    description: 'GPT + image generation',
+    signupUrl: 'https://platform.openai.com',
+    category: 'ai',
+  },
+  {
+    id: 'google_ai',
+    name: 'Google AI Studio',
+    description: 'Gemini models direct',
+    signupUrl: 'https://aistudio.google.com',
+    category: 'ai',
+  },
+  {
+    id: 'openrouter',
+    name: 'OpenRouter',
+    description: 'Unified gateway to all paid models',
+    signupUrl: 'https://openrouter.ai',
+    category: 'ai',
+  },
+  {
+    id: 'deepseek',
+    name: 'DeepSeek',
+    description: 'V4 / reasoning models direct',
+    signupUrl: 'https://platform.deepseek.com',
+    category: 'ai',
+  },
+  {
+    id: 'mistral',
+    name: 'Mistral',
+    description: 'Mistral / Codestral / Pixtral direct',
+    signupUrl: 'https://console.mistral.ai',
+    category: 'ai',
+  },
+  {
+    id: 'xai',
+    name: 'xAI',
+    description: 'Grok models direct',
+    signupUrl: 'https://x.ai/api',
+    category: 'ai',
+  },
   // Search
-  { id: 'serper', name: 'Serper', description: 'Google search results — 2500/mo free', signupUrl: 'https://serper.dev', category: 'search' },
-  { id: 'brave', name: 'Brave Search', description: 'Independent search index', signupUrl: 'https://brave.com/search/api', category: 'search' },
-  { id: 'tavily', name: 'Tavily', description: 'AI-optimised search', signupUrl: 'https://tavily.com', category: 'search' },
-  { id: 'exa', name: 'Exa', description: 'Semantic web search', signupUrl: 'https://exa.ai', category: 'search' },
+  {
+    id: 'serper',
+    name: 'Serper',
+    description: 'Google search results — 2500/mo free',
+    signupUrl: 'https://serper.dev',
+    category: 'search',
+  },
+  {
+    id: 'brave',
+    name: 'Brave Search',
+    description: 'Independent search index',
+    signupUrl: 'https://brave.com/search/api',
+    category: 'search',
+  },
+  {
+    id: 'tavily',
+    name: 'Tavily',
+    description: 'AI-optimised search',
+    signupUrl: 'https://tavily.com',
+    category: 'search',
+  },
+  {
+    id: 'exa',
+    name: 'Exa',
+    description: 'Semantic web search',
+    signupUrl: 'https://exa.ai',
+    category: 'search',
+  },
   // Scraping
-  { id: 'firecrawl', name: 'Firecrawl', description: 'Scrape JS-heavy pages, crawl sites', signupUrl: 'https://firecrawl.dev', category: 'scraping' },
+  {
+    id: 'firecrawl',
+    name: 'Firecrawl',
+    description: 'Scrape JS-heavy pages, crawl sites',
+    signupUrl: 'https://firecrawl.dev',
+    category: 'scraping',
+  },
 ]

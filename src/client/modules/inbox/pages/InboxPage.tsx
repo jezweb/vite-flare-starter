@@ -48,11 +48,7 @@ import {
 import { PageLoading } from '@/client/components/PageState'
 import { apiClient } from '@/client/lib/api-client'
 import { ApprovalSheet } from '../components/ApprovalSheet'
-import {
-  resolveRenderer,
-  type InboxImportance,
-  type UnifiedRow,
-} from '../row-shapes'
+import { resolveRenderer, type InboxImportance, type UnifiedRow } from '../row-shapes'
 
 type Status = 'unread' | 'undecided' | 'all'
 
@@ -89,14 +85,14 @@ export function InboxPage() {
 
   const queryKey = useMemo(
     () => ['inbox', status, importance ?? 'any'] as const,
-    [status, importance],
+    [status, importance]
   )
 
   const { data, isLoading } = useQuery({
     queryKey,
     queryFn: () =>
       apiClient.get<ListResponse>(
-        `/api/inbox?status=${status}&limit=200${importance ? `&importance=${importance}` : ''}`,
+        `/api/inbox?status=${status}&limit=200${importance ? `&importance=${importance}` : ''}`
       ),
     refetchInterval: 30_000,
   })
@@ -153,7 +149,7 @@ export function InboxPage() {
       .map((r) => r.id)
     if (inboxKeys.length === 0) return
     const results = await Promise.allSettled(
-      inboxKeys.map((id) => apiClient.patch(`/api/inbox/${id}`, { read: true })),
+      inboxKeys.map((id) => apiClient.patch(`/api/inbox/${id}`, { read: true }))
     )
     const ok = results.filter((r) => r.status === 'fulfilled').length
     const failed = results.length - ok
@@ -170,7 +166,7 @@ export function InboxPage() {
       .map((r) => r.id)
     if (approvalIds.length === 0) return
     const results = await Promise.allSettled(
-      approvalIds.map((id) => apiClient.post(`/api/approvals/${id}/approve`, {})),
+      approvalIds.map((id) => apiClient.post(`/api/approvals/${id}/approve`, {}))
     )
     const ok = results.filter((r) => r.status === 'fulfilled').length
     const failed = results.length - ok
@@ -189,8 +185,8 @@ export function InboxPage() {
     if (approvalIds.length === 0) return
     const results = await Promise.allSettled(
       approvalIds.map((id) =>
-        apiClient.post(`/api/approvals/${id}/reject`, { reason: 'bulk-rejected' }),
-      ),
+        apiClient.post(`/api/approvals/${id}/reject`, { reason: 'bulk-rejected' })
+      )
     )
     const ok = results.filter((r) => r.status === 'fulfilled').length
     const failed = results.length - ok
@@ -227,9 +223,7 @@ export function InboxPage() {
     const handler = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement
       const inInput =
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable
+        target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable
       if (inInput) return
       if (e.metaKey || e.ctrlKey || e.altKey) return
       if (items.length === 0) return
@@ -319,8 +313,8 @@ export function InboxPage() {
             status === 'all'
               ? 'No findings or approvals on file yet. They land here as agents emit them.'
               : status === 'unread'
-              ? "You've opened everything that's come in."
-              : 'Nothing waiting on a decision right now. Check the Unread or All tabs to see older items.'
+                ? "You've opened everything that's come in."
+                : 'Nothing waiting on a decision right now. Check the Unread or All tabs to see older items.'
           }
           tips={[
             'Findings appear when a routine notices something while running on a schedule.',

@@ -85,11 +85,13 @@ export function useStarConversation() {
         : apiClient.delete<StarResponse>(`/api/conversations/${id}/star`),
     onMutate: async ({ id, starred }) => {
       await queryClient.cancelQueries({ queryKey: ['conversations'] })
-      const prev = queryClient.getQueryData<{ conversations: ConversationSummary[] }>(['conversations'])
+      const prev = queryClient.getQueryData<{ conversations: ConversationSummary[] }>([
+        'conversations',
+      ])
       if (prev) {
         queryClient.setQueryData(['conversations'], {
           conversations: prev.conversations.map((c) =>
-            c.id === id ? { ...c, starred: starred ? 1 : 0 } : c,
+            c.id === id ? { ...c, starred: starred ? 1 : 0 } : c
           ),
         })
       }

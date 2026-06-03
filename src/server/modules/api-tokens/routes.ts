@@ -77,7 +77,7 @@ app.get('/', async (c) => {
     .orderBy(desc(apiTokens.createdAt))
 
   // Convert Date objects to timestamps for JSON serialization
-  const formattedTokens = tokens.map(token => ({
+  const formattedTokens = tokens.map((token) => ({
     ...token,
     scopes: parseScopes(token.scopes),
     lastUsedAt: token.lastUsedAt?.getTime() ?? null,
@@ -134,17 +134,20 @@ app.post('/', zValidator('json', createApiTokenSchema), async (c) => {
     .get()
 
   // Return the response with the raw token (only shown once!)
-  return c.json({
-    token: {
-      id: newToken.id,
-      name: newToken.name,
-      tokenPrefix: newToken.tokenPrefix,
-      scopes: input.scopes,
-      rawToken, // This is only returned on creation!
-      expiresAt: newToken.expiresAt?.getTime() ?? null,
-      createdAt: newToken.createdAt.getTime(),
+  return c.json(
+    {
+      token: {
+        id: newToken.id,
+        name: newToken.name,
+        tokenPrefix: newToken.tokenPrefix,
+        scopes: input.scopes,
+        rawToken, // This is only returned on creation!
+        expiresAt: newToken.expiresAt?.getTime() ?? null,
+        createdAt: newToken.createdAt.getTime(),
+      },
     },
-  }, 201)
+    201
+  )
 })
 
 /**

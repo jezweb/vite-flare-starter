@@ -65,19 +65,38 @@ export function AgentsPage() {
         </summary>
         <div className="mt-2 space-y-2 leading-relaxed">
           <p>
-            A <strong className="text-foreground">type</strong> is a pattern shipped with the starter — like a template. The 5 here cover the main AI-agent shapes:
+            A <strong className="text-foreground">type</strong> is a pattern shipped with the
+            starter — like a template. The 5 here cover the main AI-agent shapes:
           </p>
           <ul className="ml-4 list-disc space-y-1">
-            <li><strong className="text-foreground">AI assistant</strong> — general purpose. Chat with it, give it tools. Default for most cases.</li>
-            <li><strong className="text-foreground">Researcher → Writer</strong> — specialist handoff. Researcher gathers info, Writer turns it into prose.</li>
-            <li><strong className="text-foreground">Sweeper</strong> — runs on a schedule, scans for things needing action.</li>
-            <li><strong className="text-foreground">Platform Admin</strong> — configures the platform on your behalf via chat.</li>
+            <li>
+              <strong className="text-foreground">AI assistant</strong> — general purpose. Chat with
+              it, give it tools. Default for most cases.
+            </li>
+            <li>
+              <strong className="text-foreground">Researcher → Writer</strong> — specialist handoff.
+              Researcher gathers info, Writer turns it into prose.
+            </li>
+            <li>
+              <strong className="text-foreground">Sweeper</strong> — runs on a schedule, scans for
+              things needing action.
+            </li>
+            <li>
+              <strong className="text-foreground">Platform Admin</strong> — configures the platform
+              on your behalf via chat.
+            </li>
           </ul>
           <p>
-            Each one you create here gets its own <strong className="text-foreground">persona</strong> (system prompt), <strong className="text-foreground">model</strong>, and <strong className="text-foreground">budget cap</strong>. Saving creates a per-user instance you can chat with or schedule.
+            Each one you create here gets its own{' '}
+            <strong className="text-foreground">persona</strong> (system prompt),{' '}
+            <strong className="text-foreground">model</strong>, and{' '}
+            <strong className="text-foreground">budget cap</strong>. Saving creates a per-user
+            instance you can chat with or schedule.
           </p>
           <p className="text-[11px]">
-            Other agent patterns (voice, video, MCP, simple cron) live as worked examples elsewhere in the dashboard — those are different shapes that don't have a "persona to edit" surface.
+            Other agent patterns (voice, video, MCP, simple cron) live as worked examples elsewhere
+            in the dashboard — those are different shapes that don't have a "persona to edit"
+            surface.
           </p>
         </div>
       </details>
@@ -91,14 +110,12 @@ export function AgentsPage() {
               key={`${inst.agentClass}:${inst.agentName}`}
               className={cn(
                 'border bg-card transition-colors hover:bg-muted/30',
-                inst.dormant && 'opacity-75',
+                inst.dormant && 'opacity-75'
               )}
             >
               <button
                 type="button"
-                onClick={() =>
-                  setEditTarget({ class: inst.agentClass, name: inst.agentName })
-                }
+                onClick={() => setEditTarget({ class: inst.agentClass, name: inst.agentName })}
                 className="flex min-w-0 flex-1 items-start gap-3 rounded-md text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
               >
                 <ItemMedia variant="icon">

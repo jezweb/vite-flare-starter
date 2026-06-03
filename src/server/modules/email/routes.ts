@@ -64,10 +64,26 @@ app.post('/test', zValidator('json', testSchema), async (c) => {
 
   // Default demo payload per template so admins don't need to guess fields.
   const demoData: Record<string, unknown> = {
-    passwordReset: { name: 'Test User', resetUrl: `${env.APP_URL || env.BETTER_AUTH_URL}/reset-password?token=demo`, appName: env.APP_NAME ?? 'App' },
-    emailVerification: { name: 'Test User', verifyUrl: `${env.APP_URL || env.BETTER_AUTH_URL}/verify-email?token=demo`, appName: env.APP_NAME ?? 'App' },
-    magicLink: { name: 'Test User', signInUrl: `${env.APP_URL || env.BETTER_AUTH_URL}/sign-in/callback?token=demo`, appName: env.APP_NAME ?? 'App' },
-    welcome: { name: 'Test User', appName: env.APP_NAME ?? 'App', appUrl: env.APP_URL ?? env.BETTER_AUTH_URL ?? '' },
+    passwordReset: {
+      name: 'Test User',
+      resetUrl: `${env.APP_URL || env.BETTER_AUTH_URL}/reset-password?token=demo`,
+      appName: env.APP_NAME ?? 'App',
+    },
+    emailVerification: {
+      name: 'Test User',
+      verifyUrl: `${env.APP_URL || env.BETTER_AUTH_URL}/verify-email?token=demo`,
+      appName: env.APP_NAME ?? 'App',
+    },
+    magicLink: {
+      name: 'Test User',
+      signInUrl: `${env.APP_URL || env.BETTER_AUTH_URL}/sign-in/callback?token=demo`,
+      appName: env.APP_NAME ?? 'App',
+    },
+    welcome: {
+      name: 'Test User',
+      appName: env.APP_NAME ?? 'App',
+      appUrl: env.APP_URL ?? env.BETTER_AUTH_URL ?? '',
+    },
     invite: {
       name: 'Test User',
       inviterName: 'Admin',
@@ -83,8 +99,17 @@ app.post('/test', zValidator('json', testSchema), async (c) => {
       inAppUrl: env.APP_URL,
       appName: env.APP_NAME ?? 'App',
     },
-    emailChange: { name: 'Test User', newEmail: input.to, confirmUrl: `${env.APP_URL || env.BETTER_AUTH_URL}/verify-email-change?token=demo`, appName: env.APP_NAME ?? 'App' },
-    deleteAccount: { name: 'Test User', confirmUrl: `${env.APP_URL || env.BETTER_AUTH_URL}/delete-account?token=demo`, appName: env.APP_NAME ?? 'App' },
+    emailChange: {
+      name: 'Test User',
+      newEmail: input.to,
+      confirmUrl: `${env.APP_URL || env.BETTER_AUTH_URL}/verify-email-change?token=demo`,
+      appName: env.APP_NAME ?? 'App',
+    },
+    deleteAccount: {
+      name: 'Test User',
+      confirmUrl: `${env.APP_URL || env.BETTER_AUTH_URL}/delete-account?token=demo`,
+      appName: env.APP_NAME ?? 'App',
+    },
   }
 
   if (input.template) {
@@ -140,7 +165,7 @@ app.get('/logs', zValidator('query', logsQuerySchema), async (c) => {
     q.until ? lte(emailLog.sentAt, new Date(q.until)) : undefined,
   ].filter(Boolean)
 
-  const whereExpr = filters.length > 0 ? and(...(filters as [typeof filters[0]])) : undefined
+  const whereExpr = filters.length > 0 ? and(...(filters as [(typeof filters)[0]])) : undefined
 
   const rows = await db
     .select()

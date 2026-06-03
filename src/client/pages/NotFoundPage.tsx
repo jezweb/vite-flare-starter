@@ -26,8 +26,10 @@ export function NotFoundPage() {
         <h1 className="text-3xl font-semibold tracking-tight">Page not found</h1>
         <p className="max-w-md text-sm text-muted-foreground">
           We couldn't find anything at{' '}
-          <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">{location.pathname}</code>.
-          It may have moved, been deleted, or never existed.
+          <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">
+            {location.pathname}
+          </code>
+          . It may have moved, been deleted, or never existed.
         </p>
       </div>
       <div className="flex flex-wrap items-center justify-center gap-2">

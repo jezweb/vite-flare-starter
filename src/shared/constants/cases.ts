@@ -10,8 +10,18 @@
 export const CASE_STATUSES = [
   { value: 'new', label: 'New', color: 'secondary', description: 'Newly created case' },
   { value: 'open', label: 'Open', color: 'default', description: 'Case is acknowledged and open' },
-  { value: 'in_progress', label: 'In Progress', color: 'warning', description: 'Currently being worked on' },
-  { value: 'resolved', label: 'Resolved', color: 'success', description: 'Issue has been resolved' },
+  {
+    value: 'in_progress',
+    label: 'In Progress',
+    color: 'warning',
+    description: 'Currently being worked on',
+  },
+  {
+    value: 'resolved',
+    label: 'Resolved',
+    color: 'success',
+    description: 'Issue has been resolved',
+  },
   { value: 'closed', label: 'Closed', color: 'outline', description: 'Case is closed' },
 ] as const
 
@@ -19,7 +29,12 @@ export const CASE_PRIORITIES = [
   { value: 'low', label: 'Low', color: 'secondary', description: 'Low priority' },
   { value: 'medium', label: 'Medium', color: 'default', description: 'Medium priority' },
   { value: 'high', label: 'High', color: 'warning', description: 'High priority' },
-  { value: 'urgent', label: 'Urgent', color: 'destructive', description: 'Urgent - needs immediate attention' },
+  {
+    value: 'urgent',
+    label: 'Urgent',
+    color: 'destructive',
+    description: 'Urgent - needs immediate attention',
+  },
 ] as const
 
 export const CASE_TYPES = [
@@ -31,9 +46,9 @@ export const CASE_TYPES = [
 ] as const
 
 // Type exports for TypeScript
-export type CaseStatus = typeof CASE_STATUSES[number]['value']
-export type CasePriority = typeof CASE_PRIORITIES[number]['value']
-export type CaseType = typeof CASE_TYPES[number]['value']
+export type CaseStatus = (typeof CASE_STATUSES)[number]['value']
+export type CasePriority = (typeof CASE_PRIORITIES)[number]['value']
+export type CaseType = (typeof CASE_TYPES)[number]['value']
 
 // Helper functions
 export function getCaseStatusLabel(status: CaseStatus): string {

@@ -14,7 +14,8 @@ import { useSession } from '@/client/lib/auth'
 export function PublicLayout() {
   const { data: session } = useSession()
   // Build footer text from config or default
-  const footerText = appConfig.footerText || `© ${new Date().getFullYear()} ${appConfig.name}. MIT Licensed.`
+  const footerText =
+    appConfig.footerText || `© ${new Date().getFullYear()} ${appConfig.name}. MIT Licensed.`
   // signIn wordmark logo (falls back to plain text name when not set).
   const wordmark = getLogoUrl('signIn')
 

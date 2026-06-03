@@ -19,7 +19,7 @@ export const consoleProvider: EmailProviderImpl = {
         from: message.from,
         subject: message.subject,
         hint: 'No email provider configured. Set EMAIL binding (Cloudflare Email Service), SMTP2GO_API_KEY, MAILGUN_API_KEY+MAILGUN_DOMAIN, or RESEND_API_KEY.',
-      }),
+      })
     )
     return {}
   },

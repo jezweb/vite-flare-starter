@@ -93,7 +93,7 @@ export function redirectUri(env: MicrosoftWorkspaceEnv): string {
  */
 export async function getAccessToken(
   env: MicrosoftWorkspaceEnv,
-  userId: string,
+  userId: string
 ): Promise<string | null> {
   const db = drizzle(env.DB)
   const [row] = await db
@@ -177,7 +177,7 @@ export async function getAccessToken(
       })
       .where(eq(microsoftWorkspaceTokens.userId, userId))
     console.error(
-      JSON.stringify({ event: 'microsoft_workspace_refresh_failed', userId, error: message }),
+      JSON.stringify({ event: 'microsoft_workspace_refresh_failed', userId, error: message })
     )
     return null
   }
@@ -189,7 +189,7 @@ export async function getAccessToken(
  */
 export async function exchangeAuthCode(
   env: MicrosoftWorkspaceEnv,
-  code: string,
+  code: string
 ): Promise<{
   accessToken: string
   refreshToken: string | null
@@ -230,7 +230,7 @@ export async function exchangeAuthCode(
   if (tokenJson.id_token) {
     try {
       const payload = JSON.parse(
-        atob(tokenJson.id_token.split('.')[1]!.replace(/-/g, '+').replace(/_/g, '/')),
+        atob(tokenJson.id_token.split('.')[1]!.replace(/-/g, '+').replace(/_/g, '/'))
       ) as { email?: string; preferred_username?: string; upn?: string; tid?: string }
       email = payload.email ?? payload.preferred_username ?? payload.upn ?? null
       tenantId = payload.tid ?? null
@@ -270,10 +270,7 @@ export async function exchangeAuthCode(
  * https://myaccount.microsoft.com/consent — we surface that URL in the
  * disconnect dialog so they can follow up if they care.
  */
-export async function revokeAndDelete(
-  env: MicrosoftWorkspaceEnv,
-  userId: string,
-): Promise<void> {
+export async function revokeAndDelete(env: MicrosoftWorkspaceEnv, userId: string): Promise<void> {
   const db = drizzle(env.DB)
   await db.delete(microsoftWorkspaceTokens).where(eq(microsoftWorkspaceTokens.userId, userId))
 }

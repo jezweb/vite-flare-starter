@@ -64,8 +64,7 @@ export function StubConnectorPanel({ providerId, logo }: StubConnectorPanelProps
 
   const { data, isLoading } = useQuery({
     queryKey: [providerId, 'status'],
-    queryFn: () =>
-      apiClient.get<StatusResponse>(`/api/${provider?.apiPrefix}/status`),
+    queryFn: () => apiClient.get<StatusResponse>(`/api/${provider?.apiPrefix}/status`),
     staleTime: 10_000,
     enabled: !!provider,
   })
@@ -84,10 +83,7 @@ export function StubConnectorPanel({ providerId, logo }: StubConnectorPanelProps
 
   const connect = useMutation({
     mutationFn: () =>
-      apiClient.post<{ authorizationUrl: string }>(
-        `/api/${provider?.apiPrefix}/connect`,
-        {},
-      ),
+      apiClient.post<{ authorizationUrl: string }>(`/api/${provider?.apiPrefix}/connect`, {}),
     onSuccess: (res) => {
       window.location.href = res.authorizationUrl
     },
@@ -99,10 +95,7 @@ export function StubConnectorPanel({ providerId, logo }: StubConnectorPanelProps
 
   const disconnect = useMutation({
     mutationFn: () =>
-      apiClient.post<{ success: boolean }>(
-        `/api/${provider?.apiPrefix}/disconnect`,
-        {},
-      ),
+      apiClient.post<{ success: boolean }>(`/api/${provider?.apiPrefix}/disconnect`, {}),
     onSuccess: () => {
       toast.success(`${provider?.label} disconnected`)
       qc.invalidateQueries({ queryKey: [providerId] })
@@ -155,9 +148,7 @@ export function StubConnectorPanel({ providerId, logo }: StubConnectorPanelProps
               </>
             ) : (
               <>
-                <p className="text-xs text-muted-foreground">
-                  {provider.description}
-                </p>
+                <p className="text-xs text-muted-foreground">{provider.description}</p>
                 {provider.developerPortalUrl && (
                   <a
                     href={provider.developerPortalUrl}
@@ -238,11 +229,7 @@ export function StubConnectorPanel({ providerId, logo }: StubConnectorPanelProps
         </div>
       </CardContent>
 
-      <ManageToolsDialog
-        connectorId={providerId}
-        open={manageOpen}
-        onOpenChange={setManageOpen}
-      />
+      <ManageToolsDialog connectorId={providerId} open={manageOpen} onOpenChange={setManageOpen} />
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
@@ -250,8 +237,8 @@ export function StubConnectorPanel({ providerId, logo }: StubConnectorPanelProps
             <AlertDialogTitle>Disconnect {provider.label}?</AlertDialogTitle>
             <AlertDialogDescription>
               The AI will lose access to {provider.label} tools
-              {data?.email ? ` for ${data.email}` : ''}.
-              Stored tokens are removed — you can reconnect any time.
+              {data?.email ? ` for ${data.email}` : ''}. Stored tokens are removed — you can
+              reconnect any time.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

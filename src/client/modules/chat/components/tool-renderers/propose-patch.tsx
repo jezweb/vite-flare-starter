@@ -25,25 +25,18 @@ interface ProposePatchOutput {
   summary: string
 }
 
-function ProposePatchInline({
-  output,
-}: {
-  output: ProposePatchOutput
-}) {
+function ProposePatchInline({ output }: { output: ProposePatchOutput }) {
   const { data, isLoading, error } = useProposal(output.proposalId)
   const approve = useApproveProposal()
   const reject = useRejectProposal()
 
   if (isLoading) {
-    return (
-      <div className="h-16 animate-pulse rounded-lg border bg-muted/20" />
-    )
+    return <div className="h-16 animate-pulse rounded-lg border bg-muted/20" />
   }
   if (error || !data?.proposal) {
     return (
       <div className="rounded-lg border bg-muted/20 p-3 text-xs text-muted-foreground">
-        Couldn't load proposal {output.proposalId}. It may have been rejected
-        or expired.
+        Couldn't load proposal {output.proposalId}. It may have been rejected or expired.
       </div>
     )
   }

@@ -59,7 +59,7 @@ test('P4-002: skill editor arms beforeunload prompt while dirty', async ({ page 
   })
 
   const handlerArmed = await page.evaluate(
-    () => (window as unknown as { __dirty?: boolean }).__dirty === true,
+    () => (window as unknown as { __dirty?: boolean }).__dirty === true
   )
   expect(handlerArmed || dialogSeen).toBe(true)
 })

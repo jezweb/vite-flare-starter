@@ -67,14 +67,12 @@ export function PageHeader({
       data-slot="page-header"
       className={cn(
         'flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4',
-        className,
+        className
       )}
     >
       <div className="min-w-0 flex-1 space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        {subtitle && (
-          <p className="text-sm text-muted-foreground max-w-2xl">{subtitle}</p>
-        )}
+        {subtitle && <p className="text-sm text-muted-foreground max-w-2xl">{subtitle}</p>}
         {help && <div className="pt-1">{help}</div>}
       </div>
       {trailing && (

@@ -104,8 +104,7 @@ export const GLOSSARY_ENTRIES: GlossaryEntry[] = [
     icon: CheckSquare,
     summary:
       'Review queue for actions agents want to take on your behalf — sending email, posting to chat, saving memory. You approve or reject before anything leaves the app.',
-    whenToUse:
-      'Any time you let an agent act with side effects. Approvals are the safety net.',
+    whenToUse: 'Any time you let an agent act with side effects. Approvals are the safety net.',
     action: { label: 'Open Approvals', route: '/dashboard/approvals' },
   },
   {

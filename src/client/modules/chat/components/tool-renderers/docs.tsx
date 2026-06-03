@@ -35,9 +35,7 @@ export const docsSearchRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     if (o.docs.length === 0) {
@@ -92,9 +90,7 @@ export const docsGetRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     const preview = o.content.length > 2000 ? o.content.slice(0, 2000) + '…' : o.content
@@ -103,9 +99,8 @@ export const docsGetRenderer: ToolRenderer = {
         <div className="text-sm font-semibold">{o.title}</div>
         {o.degraded && (
           <div className="rounded-md bg-amber-500/10 dark:bg-amber-500/15 p-2 text-[11px] text-amber-700 dark:text-amber-400">
-            Heading structure lost — content fetched via Drive export fallback.
-            Ask the user to reconnect with the `documents.readonly` scope for
-            a richer read.
+            Heading structure lost — content fetched via Drive export fallback. Ask the user to
+            reconnect with the `documents.readonly` scope for a richer read.
           </div>
         )}
         <pre className="rounded-md bg-muted/50 p-3 whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-foreground/90 max-h-80 overflow-y-auto">
@@ -142,9 +137,7 @@ export const docsCreateRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     return (
@@ -188,9 +181,7 @@ export const docsAppendRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     return (

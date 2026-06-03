@@ -4,7 +4,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { applyTheme, getThemeColors, THEME_CORE_VARIABLES, THEME_OPTIONAL_VARIABLES } from '@/lib/themes'
+import {
+  applyTheme,
+  getThemeColors,
+  THEME_CORE_VARIABLES,
+  THEME_OPTIONAL_VARIABLES,
+} from '@/lib/themes'
 import { formatHSL, hslToHex, parseHSL } from '@/lib/theme-colors'
 import { type CustomThemeColors, type ThemeScheme } from '@/shared/schemas/preferences.schema'
 
@@ -28,35 +33,44 @@ const CORE_GROUPS: Group[] = [
   {
     label: 'Surfaces',
     vars: [
-      'card', 'card-foreground',
-      'popover', 'popover-foreground',
-      'secondary', 'secondary-foreground',
-      'muted', 'muted-foreground',
-      'accent', 'accent-foreground',
+      'card',
+      'card-foreground',
+      'popover',
+      'popover-foreground',
+      'secondary',
+      'secondary-foreground',
+      'muted',
+      'muted-foreground',
+      'accent',
+      'accent-foreground',
     ],
     defaultOpen: true,
   },
   {
     label: 'Actions',
-    vars: [
-      'primary', 'primary-foreground',
-      'destructive', 'destructive-foreground',
-      'ring',
-    ],
+    vars: ['primary', 'primary-foreground', 'destructive', 'destructive-foreground', 'ring'],
     defaultOpen: true,
   },
   { label: 'Form', vars: ['border', 'input'], defaultOpen: false },
 ]
 
 const OPTIONAL_GROUPS: Group[] = [
-  { label: 'Charts', vars: ['chart-1', 'chart-2', 'chart-3', 'chart-4', 'chart-5'], defaultOpen: false },
+  {
+    label: 'Charts',
+    vars: ['chart-1', 'chart-2', 'chart-3', 'chart-4', 'chart-5'],
+    defaultOpen: false,
+  },
   {
     label: 'Sidebar',
     vars: [
-      'sidebar', 'sidebar-foreground',
-      'sidebar-primary', 'sidebar-primary-foreground',
-      'sidebar-accent', 'sidebar-accent-foreground',
-      'sidebar-border', 'sidebar-ring',
+      'sidebar',
+      'sidebar-foreground',
+      'sidebar-primary',
+      'sidebar-primary-foreground',
+      'sidebar-accent',
+      'sidebar-accent-foreground',
+      'sidebar-border',
+      'sidebar-ring',
     ],
     defaultOpen: false,
   },
@@ -66,7 +80,7 @@ const OPTIONAL_GROUPS: Group[] = [
 function seedMode(
   mode: Mode,
   baseScheme: Exclude<ThemeScheme, 'custom'>,
-  overrides?: Partial<CustomThemeColors>,
+  overrides?: Partial<CustomThemeColors>
 ): Partial<CustomThemeColors> {
   const preset = getThemeColors(baseScheme, mode)
   const result: Record<string, string> = { ...preset }
@@ -82,25 +96,39 @@ function seedMode(
 function fillCore(
   mode: Mode,
   baseScheme: Exclude<ThemeScheme, 'custom'>,
-  partial: Partial<CustomThemeColors>,
+  partial: Partial<CustomThemeColors>
 ): CustomThemeColors {
   const preset = getThemeColors(baseScheme, mode)
   return { ...preset, ...partial } as CustomThemeColors
 }
 
-export function ThemeVisualEditor({ current, baseScheme, onPersist, isSaving }: ThemeVisualEditorProps) {
+export function ThemeVisualEditor({
+  current,
+  baseScheme,
+  onPersist,
+  isSaving,
+}: ThemeVisualEditorProps) {
   const [mode, setMode] = useState<Mode>(() =>
-    typeof window !== 'undefined' && document.documentElement.classList.contains('dark') ? 'dark' : 'light',
+    typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
+      ? 'dark'
+      : 'light'
   )
 
-  const [light, setLight] = useState<Partial<CustomThemeColors>>(() => seedMode('light', baseScheme, current?.light))
-  const [dark, setDark] = useState<Partial<CustomThemeColors>>(() => seedMode('dark', baseScheme, current?.dark))
+  const [light, setLight] = useState<Partial<CustomThemeColors>>(() =>
+    seedMode('light', baseScheme, current?.light)
+  )
+  const [dark, setDark] = useState<Partial<CustomThemeColors>>(() =>
+    seedMode('dark', baseScheme, current?.dark)
+  )
 
   const active = mode === 'light' ? light : dark
 
   // Live-apply changes to CSS variables on every edit
   useEffect(() => {
-    applyTheme('custom', mode, { light: light as CustomThemeColors, dark: dark as CustomThemeColors })
+    applyTheme('custom', mode, {
+      light: light as CustomThemeColors,
+      dark: dark as CustomThemeColors,
+    })
   }, [light, dark, mode])
 
   // Debounced persist
@@ -115,9 +143,14 @@ export function ThemeVisualEditor({ current, baseScheme, onPersist, isSaving }: 
         })
       }, 500)
     },
-    [onPersist, baseScheme],
+    [onPersist, baseScheme]
   )
-  useEffect(() => () => { if (persistTimer.current) clearTimeout(persistTimer.current) }, [])
+  useEffect(
+    () => () => {
+      if (persistTimer.current) clearTimeout(persistTimer.current)
+    },
+    []
+  )
 
   const handleChange = (key: string, value: string) => {
     if (mode === 'light') {
@@ -132,7 +165,9 @@ export function ThemeVisualEditor({ current, baseScheme, onPersist, isSaving }: 
   }
 
   const handleReset = (key: string) => {
-    const presetValue = getThemeColors(baseScheme, mode)[key as keyof ReturnType<typeof getThemeColors>]
+    const presetValue = getThemeColors(baseScheme, mode)[
+      key as keyof ReturnType<typeof getThemeColors>
+    ]
     if (presetValue) handleChange(key, presetValue)
     else handleChange(key, '') // optional var without preset — let it fall back to :root
   }
@@ -213,7 +248,10 @@ function GroupBlock({
         className="flex w-full items-center justify-between text-left text-sm font-medium py-1.5 hover:text-primary transition-colors"
         onClick={() => setOpen((v) => !v)}
       >
-        <span>{group.label} {optional && <span className="text-muted-foreground font-normal">(optional)</span>}</span>
+        <span>
+          {group.label}{' '}
+          {optional && <span className="text-muted-foreground font-normal">(optional)</span>}
+        </span>
         <span className="text-xs text-muted-foreground">{open ? '−' : '+'}</span>
       </button>
       {open && (
@@ -250,7 +288,9 @@ function ColorRow({
   const [textValue, setTextValue] = useState(value)
 
   // Keep local text in sync when parent changes (e.g. mode toggle)
-  useEffect(() => { setTextValue(value) }, [value])
+  useEffect(() => {
+    setTextValue(value)
+  }, [value])
 
   return (
     <div className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-2">
@@ -312,31 +352,31 @@ function formatLabel(key: string): string {
  * actually controls — T2 from the UX audit.
  */
 const TOKEN_DESCRIPTIONS: Record<string, string> = {
-  'Background': 'Main page background colour',
-  'Foreground': 'Default text colour on the main background',
-  'Card': 'Background for cards and panels',
+  Background: 'Main page background colour',
+  Foreground: 'Default text colour on the main background',
+  Card: 'Background for cards and panels',
   'Card Foreground': 'Text colour on cards and panels',
-  'Popover': 'Background for popovers, dropdowns, and menus',
+  Popover: 'Background for popovers, dropdowns, and menus',
   'Popover Foreground': 'Text colour on popovers and dropdowns',
-  'Secondary': 'Secondary button background (lower emphasis actions)',
+  Secondary: 'Secondary button background (lower emphasis actions)',
   'Secondary Foreground': 'Text on secondary buttons',
-  'Muted': 'Background for badges, chips, and subtle surfaces',
+  Muted: 'Background for badges, chips, and subtle surfaces',
   'Muted Foreground': 'De-emphasised text (helper text, timestamps)',
-  'Accent': 'Hover / focus background on list rows and dropdown items',
+  Accent: 'Hover / focus background on list rows and dropdown items',
   'Accent Foreground': 'Text on accent-coloured surfaces',
-  'Primary': 'Primary button background — the brand action colour',
+  Primary: 'Primary button background — the brand action colour',
   'Primary Foreground': 'Text on primary buttons',
-  'Destructive': 'Danger button background (delete, remove)',
+  Destructive: 'Danger button background (delete, remove)',
   'Destructive Foreground': 'Text on destructive buttons',
-  'Ring': 'Focus ring around inputs, buttons, and dialogs',
-  'Border': 'Hairlines between cards, rows, and sections',
-  'Input': 'Border colour around text inputs and selects',
+  Ring: 'Focus ring around inputs, buttons, and dialogs',
+  Border: 'Hairlines between cards, rows, and sections',
+  Input: 'Border colour around text inputs and selects',
   'Chart 1': 'First series colour in charts',
   'Chart 2': 'Second series colour in charts',
   'Chart 3': 'Third series colour in charts',
   'Chart 4': 'Fourth series colour in charts',
   'Chart 5': 'Fifth series colour in charts',
-  'Sidebar': 'Sidebar background',
+  Sidebar: 'Sidebar background',
   'Sidebar Foreground': 'Default text in the sidebar',
   'Sidebar Primary': 'Active nav-item background',
   'Sidebar Primary Foreground': 'Active nav-item text',

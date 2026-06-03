@@ -63,7 +63,7 @@ export async function transformVideo(
   media: MediaBinding,
   videoData: ArrayBuffer | Uint8Array | ReadableStream,
   transform: VideoTransformOptions = {},
-  output: VideoOutputOptions = {},
+  output: VideoOutputOptions = {}
 ): Promise<Response> {
   let pipeline = media.input(toStream(videoData))
 
@@ -92,13 +92,18 @@ export async function transformVideo(
 export async function extractFrame(
   media: MediaBinding,
   videoData: ArrayBuffer | Uint8Array | ReadableStream,
-  options: { time?: string; width?: number; height?: number; fit?: VideoTransformOptions['fit'] } = {},
+  options: {
+    time?: string
+    width?: number
+    height?: number
+    fit?: VideoTransformOptions['fit']
+  } = {}
 ): Promise<Response> {
   return transformVideo(
     media,
     videoData,
     { width: options.width, height: options.height, fit: options.fit },
-    { mode: 'frame', time: options.time || '0s' },
+    { mode: 'frame', time: options.time || '0s' }
   )
 }
 
@@ -108,13 +113,13 @@ export async function extractFrame(
 export async function generateSpritesheet(
   media: MediaBinding,
   videoData: ArrayBuffer | Uint8Array | ReadableStream,
-  options: { width?: number; height?: number } = {},
+  options: { width?: number; height?: number } = {}
 ): Promise<Response> {
   return transformVideo(
     media,
     videoData,
     { width: options.width, height: options.height },
-    { mode: 'spritesheet' },
+    { mode: 'spritesheet' }
   )
 }
 
@@ -123,7 +128,7 @@ export async function generateSpritesheet(
  */
 export async function extractAudio(
   media: MediaBinding,
-  videoData: ArrayBuffer | Uint8Array | ReadableStream,
+  videoData: ArrayBuffer | Uint8Array | ReadableStream
 ): Promise<Response> {
   return transformVideo(media, videoData, {}, { mode: 'audio' })
 }
@@ -134,12 +139,23 @@ export async function extractAudio(
 export async function clipVideo(
   media: MediaBinding,
   videoData: ArrayBuffer | Uint8Array | ReadableStream,
-  options: { time?: string; duration: string; width?: number; height?: number; removeAudio?: boolean },
+  options: {
+    time?: string
+    duration: string
+    width?: number
+    height?: number
+    removeAudio?: boolean
+  }
 ): Promise<Response> {
   return transformVideo(
     media,
     videoData,
     { width: options.width, height: options.height },
-    { mode: 'video', time: options.time, duration: options.duration, audio: options.removeAudio ? false : undefined },
+    {
+      mode: 'video',
+      time: options.time,
+      duration: options.duration,
+      audio: options.removeAudio ? false : undefined,
+    }
   )
 }

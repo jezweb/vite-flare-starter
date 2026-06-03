@@ -16,7 +16,9 @@ export type CredentialStatus = 'active' | 'revoked'
 export const serviceCredentials = sqliteTable(
   'service_credentials',
   {
-    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
     userId: text('user_id').references(() => user.id, { onDelete: 'cascade' }),
     organizationId: text('organization_id'),
     /** Provider id (e.g. 'anthropic', 'openrouter', 'serper', 'firecrawl'). */
@@ -28,11 +30,15 @@ export const serviceCredentials = sqliteTable(
     status: text('status').$type<CredentialStatus>().notNull().default('active'),
     /** Last 4 chars for UI display. Not sensitive on its own. */
     lastFour: text('last_four'),
-    createdAt: integer('created_at').notNull().$defaultFn(() => Math.floor(Date.now() / 1000)),
-    updatedAt: integer('updated_at').notNull().$defaultFn(() => Math.floor(Date.now() / 1000)),
+    createdAt: integer('created_at')
+      .notNull()
+      .$defaultFn(() => Math.floor(Date.now() / 1000)),
+    updatedAt: integer('updated_at')
+      .notNull()
+      .$defaultFn(() => Math.floor(Date.now() / 1000)),
   },
   (table) => [
     index('service_creds_user_idx').on(table.userId),
     index('service_creds_org_idx').on(table.organizationId),
-  ],
+  ]
 )

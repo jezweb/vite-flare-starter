@@ -36,7 +36,7 @@ const ALL_PROVIDERS: EmailProviderImpl[] = [
 ]
 
 const PROVIDERS_BY_ID = new Map<EmailProvider, EmailProviderImpl>(
-  ALL_PROVIDERS.map((p) => [p.id, p]),
+  ALL_PROVIDERS.map((p) => [p.id, p])
 )
 
 /**
@@ -82,4 +82,10 @@ function parseOrder(raw: string | undefined): EmailProvider[] {
     .filter((s) => s.length > 0)
 }
 
-export type { EmailEnv, EmailProvider, EmailProviderImpl, NormalisedMessage, ProviderSendResult } from './types'
+export type {
+  EmailEnv,
+  EmailProvider,
+  EmailProviderImpl,
+  NormalisedMessage,
+  ProviderSendResult,
+} from './types'

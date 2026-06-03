@@ -26,16 +26,9 @@ import { toast } from 'sonner'
 // Lazy-loaded CodeMirror editor — ~100KB gzipped. Only pays its bundle
 // cost when the Source tab on a skill detail pane actually renders.
 const MarkdownCodeEditor = lazy(() =>
-  import('./MarkdownCodeEditor').then((m) => ({ default: m.MarkdownCodeEditor })),
+  import('./MarkdownCodeEditor').then((m) => ({ default: m.MarkdownCodeEditor }))
 )
-import {
-  Check,
-  Eye,
-  History,
-  PencilLine,
-  Save,
-  Sparkles,
-} from 'lucide-react'
+import { Check, Eye, History, PencilLine, Save, Sparkles } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
@@ -48,11 +41,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { ConfigDiffCard } from '@/client/components/ConfigDiffCard'
 import { useBeforeUnload } from '@/client/hooks/useBeforeUnload'
 import {
@@ -88,10 +77,7 @@ function stripLeadingH1(body: string): string {
  * `before` captured at proposal creation time is byte-identical to what
  * the user sees in the textarea before editing. Avoids spurious diffs.
  */
-function rebuildSkillSource(
-  frontmatter: Record<string, unknown>,
-  body: string,
-): string {
+function rebuildSkillSource(frontmatter: Record<string, unknown>, body: string): string {
   const fmLines: string[] = ['---']
   for (const [key, value] of Object.entries(frontmatter)) {
     if (typeof value === 'string') {
@@ -248,7 +234,10 @@ export function SkillEditor({ name }: SkillEditorProps) {
               {skill.source}
             </Badge>
             {isPersonal ? (
-              <Badge variant="outline" className="text-[10px] text-emerald-600 dark:text-emerald-400">
+              <Badge
+                variant="outline"
+                className="text-[10px] text-emerald-600 dark:text-emerald-400"
+              >
                 Personal override
               </Badge>
             ) : (
@@ -257,9 +246,7 @@ export function SkillEditor({ name }: SkillEditorProps) {
               </Badge>
             )}
           </div>
-          <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-            {skill.description}
-          </p>
+          <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{skill.description}</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <Popover
@@ -300,11 +287,7 @@ export function SkillEditor({ name }: SkillEditorProps) {
                   {sparkleError ? <FieldError>{sparkleError}</FieldError> : null}
                 </Field>
                 <div className="flex justify-end gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSparkleOpen(false)}
-                  >
+                  <Button variant="ghost" size="sm" onClick={() => setSparkleOpen(false)}>
                     Cancel
                   </Button>
                   <Button
@@ -319,11 +302,7 @@ export function SkillEditor({ name }: SkillEditorProps) {
             </PopoverContent>
           </Popover>
           {isDirty ? (
-            <Button
-              size="sm"
-              onClick={submitSave}
-              disabled={createProposal.isPending}
-            >
+            <Button size="sm" onClick={submitSave} disabled={createProposal.isPending}>
               <Save className="mr-1 h-3.5 w-3.5" />
               {createProposal.isPending ? 'Preparing…' : 'Save changes'}
             </Button>
@@ -379,14 +358,15 @@ export function SkillEditor({ name }: SkillEditorProps) {
                 Live preview
               </div>
               <div className="prose prose-sm dark:prose-invert max-w-none">
-                <ReactMarkdown>{stripLeadingH1(split.body) || '_Empty — start typing in the editor to preview._'}</ReactMarkdown>
+                <ReactMarkdown>
+                  {stripLeadingH1(split.body) || '_Empty — start typing in the editor to preview._'}
+                </ReactMarkdown>
               </div>
             </div>
           </div>
           <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
             <span>
-              {draft.length.toLocaleString()} chars · {draft.split('\n').length}{' '}
-              lines
+              {draft.length.toLocaleString()} chars · {draft.split('\n').length} lines
             </span>
             {isDirty ? (
               <span className="text-amber-700 dark:text-amber-400">Unsaved changes</span>
@@ -408,12 +388,7 @@ export function SkillEditor({ name }: SkillEditorProps) {
             </p>
           ) : (
             history.data.proposals.map((p) => (
-              <ConfigDiffCard
-                key={p.id}
-                proposal={p}
-                readOnly
-                compact
-              />
+              <ConfigDiffCard key={p.id} proposal={p} readOnly compact />
             ))
           )}
         </TabsContent>
@@ -428,8 +403,7 @@ export function SkillEditor({ name }: SkillEditorProps) {
           <DialogHeader>
             <DialogTitle>Review change</DialogTitle>
             <DialogDescription>
-              Nothing has been applied yet. Review the diff and approve or
-              reject.
+              Nothing has been applied yet. Review the diff and approve or reject.
             </DialogDescription>
           </DialogHeader>
           {pendingProposal ? (

@@ -49,9 +49,10 @@ async function verifySignature(
     return false
   }
 
-  const signature = headers.get('x-webhook-signature')
-    || headers.get('x-hub-signature-256')?.replace('sha256=', '')
-    || headers.get('stripe-signature')
+  const signature =
+    headers.get('x-webhook-signature') ||
+    headers.get('x-hub-signature-256')?.replace('sha256=', '') ||
+    headers.get('stripe-signature')
 
   if (!signature) return false
 
@@ -80,11 +81,13 @@ async function processWebhook(
   _payload: unknown,
   _env: Env
 ): Promise<{ processed: boolean; message?: string }> {
-  console.log(JSON.stringify({
-    event: 'webhook_received',
-    provider,
-    timestamp: new Date().toISOString(),
-  }))
+  console.log(
+    JSON.stringify({
+      event: 'webhook_received',
+      provider,
+      timestamp: new Date().toISOString(),
+    })
+  )
 
   // Add provider-specific handlers:
   // switch (provider) {
@@ -122,11 +125,13 @@ app.post('/:provider', async (c) => {
     const result = await processWebhook(provider, payload, c.env)
     return c.json(result)
   } catch (error) {
-    console.error(JSON.stringify({
-      event: 'webhook_error',
-      provider,
-      error: error instanceof Error ? error.message : String(error),
-    }))
+    console.error(
+      JSON.stringify({
+        event: 'webhook_error',
+        provider,
+        error: error instanceof Error ? error.message : String(error),
+      })
+    )
     return c.json({ error: 'Webhook processing failed' }, 500)
   }
 })

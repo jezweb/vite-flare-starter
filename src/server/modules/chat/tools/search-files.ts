@@ -35,7 +35,7 @@ const SearchFilesOutput = z.union([
         chunkIndex: z.number().optional(),
         excerpt: z.string().optional(),
         similarity: z.number(),
-      }),
+      })
     ),
     message: z.string().optional(),
   }),
@@ -66,7 +66,9 @@ export const searchFilesDefinition: ToolDefinition<
     fileId: z
       .string()
       .optional()
-      .describe('Restrict search to one file ID. Use when the user is asking about a specific file.'),
+      .describe(
+        'Restrict search to one file ID. Use when the user is asking about a specific file.'
+      ),
   }),
   outputSchema: SearchFilesOutput,
   isAvailable: (ctx) => !!getEnv(ctx).VECTORS,
@@ -98,8 +100,10 @@ export const searchFilesDefinition: ToolDefinition<
 
       const fileIds = Array.from(
         new Set(
-          vectorResults.matches.map((m) => (m.metadata as Record<string, unknown>)?.['fileId'] as string),
-        ),
+          vectorResults.matches.map(
+            (m) => (m.metadata as Record<string, unknown>)?.['fileId'] as string
+          )
+        )
       ).filter(Boolean)
 
       const db = drizzle(env.DB)

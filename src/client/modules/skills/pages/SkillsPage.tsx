@@ -58,10 +58,7 @@ import {
   ItemMedia,
   ItemTitle,
 } from '@/components/ui/item'
-import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from '@/components/ui/toggle-group'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { cn } from '@/lib/utils'
 import { useViewPreference } from '@/client/lib/use-view-preference'
 import {
@@ -96,10 +93,7 @@ export function SkillsPage() {
   const skills = filter.trim()
     ? allSkills.filter((s) => {
         const q = filter.trim().toLowerCase()
-        return (
-          s.name.toLowerCase().includes(q) ||
-          s.description.toLowerCase().includes(q)
-        )
+        return s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q)
       })
     : allSkills
 
@@ -142,13 +136,8 @@ export function SkillsPage() {
                 <DropdownMenuItem onClick={() => setInstallOpen(true)}>
                   <GithubIcon className="mr-2 size-4" /> Install from GitHub
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => sync.mutate()}
-                  disabled={sync.isPending}
-                >
-                  <RefreshCw
-                    className={`mr-2 size-4 ${sync.isPending ? 'animate-spin' : ''}`}
-                  />
+                <DropdownMenuItem onClick={() => sync.mutate()} disabled={sync.isPending}>
+                  <RefreshCw className={`mr-2 size-4 ${sync.isPending ? 'animate-spin' : ''}`} />
                   Refresh starter skills
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -189,10 +178,7 @@ export function SkillsPage() {
             </div>
             <p className="text-sm text-muted-foreground tabular-nums">
               {skills.length}
-              {filter.trim() && skills.length !== allSkills.length
-                ? ` / ${allSkills.length}`
-                : ''}
-              {' '}
+              {filter.trim() && skills.length !== allSkills.length ? ` / ${allSkills.length}` : ''}{' '}
               {allSkills.length === 1 ? 'skill' : 'skills'}
             </p>
             <ToggleGroup
@@ -219,9 +205,7 @@ export function SkillsPage() {
                   key={s.id}
                   skill={s}
                   to={`/dashboard/skills/${encodeURIComponent(s.name)}`}
-                  onToggle={(checked) =>
-                    toggle.mutate({ name: s.name, enabled: checked })
-                  }
+                  onToggle={(checked) => toggle.mutate({ name: s.name, enabled: checked })}
                 />
               ))}
             </div>
@@ -233,9 +217,7 @@ export function SkillsPage() {
                     key={s.id}
                     skill={s}
                     to={`/dashboard/skills/${encodeURIComponent(s.name)}`}
-                    onToggle={(checked) =>
-                      toggle.mutate({ name: s.name, enabled: checked })
-                    }
+                    onToggle={(checked) => toggle.mutate({ name: s.name, enabled: checked })}
                   />
                 ))}
               </ul>
@@ -250,8 +232,8 @@ export function SkillsPage() {
           <DialogHeader>
             <DialogTitle>Install skill from GitHub</DialogTitle>
             <DialogDescription>
-              Paste a directory URL or raw SKILL.md URL. Directory imports
-              copy scripts/references/assets into R2.
+              Paste a directory URL or raw SKILL.md URL. Directory imports copy
+              scripts/references/assets into R2.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
@@ -270,32 +252,24 @@ export function SkillsPage() {
                 .split('/')
                 .pop()
                 ?.toLowerCase()
-              const existing =
-                guessedName && skills.find((s) => s.name === guessedName)
+              const existing = guessedName && skills.find((s) => s.name === guessedName)
               if (!existing) return null
               return (
                 <p className="text-xs text-amber-500">
-                  ⚠ A skill named{' '}
-                  <code className="whitespace-nowrap">/{guessedName}</code>{' '}
-                  already exists ({existing.source}). Installing may overwrite
-                  or collide.
+                  ⚠ A skill named <code className="whitespace-nowrap">/{guessedName}</code> already
+                  exists ({existing.source}). Installing may overwrite or collide.
                 </p>
               )
             })()}
             {install.isError && (
-              <p className="text-sm text-destructive">
-                {(install.error as Error).message}
-              </p>
+              <p className="text-sm text-destructive">{(install.error as Error).message}</p>
             )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setInstallOpen(false)}>
               Cancel
             </Button>
-            <Button
-              onClick={handleInstall}
-              disabled={install.isPending || !githubUrl.trim()}
-            >
+            <Button onClick={handleInstall} disabled={install.isPending || !githubUrl.trim()}>
               {install.isPending ? 'Installing…' : 'Install'}
             </Button>
           </DialogFooter>
@@ -308,8 +282,8 @@ export function SkillsPage() {
           <DialogHeader>
             <DialogTitle>Upload a skill</DialogTitle>
             <DialogDescription>
-              Upload a zip archive (must contain <code>SKILL.md</code> at the
-              root) or paste a SKILL.md inline.
+              Upload a zip archive (must contain <code>SKILL.md</code> at the root) or paste a
+              SKILL.md inline.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -341,9 +315,7 @@ export function SkillsPage() {
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs">
-                <span className="bg-background px-2 text-muted-foreground">
-                  OR
-                </span>
+                <span className="bg-background px-2 text-muted-foreground">OR</span>
               </div>
             </div>
             <div>
@@ -371,9 +343,7 @@ export function SkillsPage() {
               onClick={handleInline}
               disabled={uploadContent.isPending || !inlineContent.trim()}
             >
-              {uploadContent.isPending
-                ? 'Uploading…'
-                : 'Upload pasted SKILL.md'}
+              {uploadContent.isPending ? 'Uploading…' : 'Upload pasted SKILL.md'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -401,7 +371,7 @@ function SkillCard({ skill: s, to, onToggle }: SkillRowProps) {
     <Item
       className={cn(
         'border bg-card transition-colors hover:bg-muted/30',
-        !s.enabled && 'opacity-60',
+        !s.enabled && 'opacity-60'
       )}
     >
       <Link
@@ -420,16 +390,11 @@ function SkillCard({ skill: s, to, onToggle }: SkillRowProps) {
               {formatSkillSlash(s.name)}
             </span>
           </ItemTitle>
-          <ItemDescription className="line-clamp-2">
-            {s.description}
-          </ItemDescription>
+          <ItemDescription className="line-clamp-2">{s.description}</ItemDescription>
         </ItemContent>
       </Link>
       <ItemActions className="shrink-0 flex-col items-end gap-2 self-start">
-        <Badge
-          variant={s.source === 'bundled' ? 'secondary' : 'outline'}
-          className="text-[10px]"
-        >
+        <Badge variant={s.source === 'bundled' ? 'secondary' : 'outline'} className="text-[10px]">
           {s.source}
         </Badge>
         <Switch
@@ -452,7 +417,7 @@ function SkillListRow({ skill: s, to, onToggle }: SkillRowProps) {
     <li
       className={cn(
         'group flex items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/40',
-        !s.enabled && 'opacity-60',
+        !s.enabled && 'opacity-60'
       )}
     >
       <Link
@@ -462,26 +427,18 @@ function SkillListRow({ skill: s, to, onToggle }: SkillRowProps) {
         <Sparkles className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-1.5">
-            <span
-              className="truncate text-sm font-medium"
-              title={formatSkillName(s.name)}
-            >
+            <span className="truncate text-sm font-medium" title={formatSkillName(s.name)}>
               {formatSkillName(s.name)}
             </span>
             <span className="shrink-0 truncate font-mono text-[10px] text-muted-foreground">
               {formatSkillSlash(s.name)}
             </span>
           </div>
-          <p className="line-clamp-1 text-xs text-muted-foreground">
-            {s.description}
-          </p>
+          <p className="line-clamp-1 text-xs text-muted-foreground">{s.description}</p>
         </div>
       </Link>
       <div className="flex shrink-0 items-center gap-2">
-        <Badge
-          variant={s.source === 'bundled' ? 'secondary' : 'outline'}
-          className="text-[10px]"
-        >
+        <Badge variant={s.source === 'bundled' ? 'secondary' : 'outline'} className="text-[10px]">
           {s.source}
         </Badge>
         <Switch

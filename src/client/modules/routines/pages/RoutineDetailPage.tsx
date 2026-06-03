@@ -12,15 +12,7 @@
  */
 import { useNavigate, useParams } from 'react-router-dom'
 import { formatDistanceToNow } from 'date-fns'
-import {
-  Play,
-  Trash2,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
-  Clock,
-  Activity,
-} from 'lucide-react'
+import { Play, Trash2, CheckCircle2, XCircle, AlertTriangle, Clock, Activity } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -41,7 +33,12 @@ import {
 import { useAgentCatalog } from '../hooks/useAgentCatalog'
 import { formatCadence } from './RoutinesPage'
 import { cn } from '@/lib/utils'
-import { formatAgentClass, formatOutcome, formatTrigger, formatAdjustMode } from '@/shared/format/agent'
+import {
+  formatAgentClass,
+  formatOutcome,
+  formatTrigger,
+  formatAdjustMode,
+} from '@/shared/format/agent'
 
 export function RoutineDetailPage() {
   const { routineId } = useParams<{ routineId: string }>()
@@ -73,7 +70,7 @@ export function RoutineDetailPage() {
 
   const cadence = formatCadence(
     routine.triggerKind,
-    routine.effectiveInterval ?? routine.baseInterval ?? null,
+    routine.effectiveInterval ?? routine.baseInterval ?? null
   )
   const skills = parseList(routine.skillsLoadedJson)
   const tools = parseList(routine.toolsAllowedJson)
@@ -100,8 +97,13 @@ export function RoutineDetailPage() {
         backLabel="Routines"
         subtitle={
           <>
-            <span>Runs the {formatAgentClass(routine.agentClass, agentRegistry)} {cadence.toLowerCase()}.</span>
-            {routine.description && <span className="text-muted-foreground/80">· {routine.description}</span>}
+            <span>
+              Runs the {formatAgentClass(routine.agentClass, agentRegistry)} {cadence.toLowerCase()}
+              .
+            </span>
+            {routine.description && (
+              <span className="text-muted-foreground/80">· {routine.description}</span>
+            )}
           </>
         }
         trailing={
@@ -155,7 +157,9 @@ export function RoutineDetailPage() {
             {routine.minInterval && <KV k="Min interval" v={`${routine.minInterval}s`} />}
             {routine.maxInterval && <KV k="Max interval" v={`${routine.maxInterval}s`} />}
             <KV k="Adjust mode" v={formatAdjustMode(routine.adjustMode)} />
-            {routine.dailyBudgetUsd != null && <KV k="Daily budget" v={`$${routine.dailyBudgetUsd}`} />}
+            {routine.dailyBudgetUsd != null && (
+              <KV k="Daily budget" v={`$${routine.dailyBudgetUsd}`} />
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -163,13 +167,23 @@ export function RoutineDetailPage() {
             <CardTitle className="text-sm">Behaviour</CardTitle>
           </CardHeader>
           <CardContent className="space-y-1.5 text-xs">
-            <KV k="Skills" v={skills.length ? skills.join(', ') : 'No starter skills'} mono={skills.length > 0} />
-            <KV k="Tools allowed" v={tools.length ? tools.join(', ') : 'All tools available'} mono={tools.length > 0} />
+            <KV
+              k="Skills"
+              v={skills.length ? skills.join(', ') : 'No starter skills'}
+              mono={skills.length > 0}
+            />
+            <KV
+              k="Tools allowed"
+              v={tools.length ? tools.join(', ') : 'All tools available'}
+              mono={tools.length > 0}
+            />
             <KV
               k="After each run"
               v={
                 Object.keys(hooks).length
-                  ? Object.entries(hooks).map(([k, v]) => `${k}→${v}`).join(', ')
+                  ? Object.entries(hooks)
+                      .map(([k, v]) => `${k}→${v}`)
+                      .join(', ')
                   : 'Nothing extra'
               }
               mono={Object.keys(hooks).length > 0}
@@ -191,10 +205,7 @@ export function RoutineDetailPage() {
         </Card>
       )}
 
-      <details
-        className="group rounded border bg-muted/20 px-3 py-2"
-        open={showInternal}
-      >
+      <details className="group rounded border bg-muted/20 px-3 py-2" open={showInternal}>
         <summary
           className="cursor-pointer text-[11px] text-muted-foreground select-none"
           onClick={(e) => {
@@ -215,9 +226,7 @@ export function RoutineDetailPage() {
         <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2">
           <CardTitle className="text-sm">Recent runs</CardTitle>
           {runsData && (
-            <span className="text-[11px] text-muted-foreground">
-              {runsData.total} total
-            </span>
+            <span className="text-[11px] text-muted-foreground">{runsData.total} total</span>
           )}
         </CardHeader>
         <CardContent>
@@ -229,7 +238,9 @@ export function RoutineDetailPage() {
             </p>
           ) : (
             <ul className="space-y-1.5">
-              {runsData.runs.map((r) => <RunRow key={r.id} run={r} />)}
+              {runsData.runs.map((r) => (
+                <RunRow key={r.id} run={r} />
+              ))}
             </ul>
           )}
         </CardContent>
@@ -239,20 +250,22 @@ export function RoutineDetailPage() {
 }
 
 function RunRow({ run }: { run: RoutineRun }) {
-  const Icon = run.outcome === 'ok'
-    ? CheckCircle2
-    : run.outcome === 'error'
-    ? XCircle
-    : run.outcome === 'budget_exceeded'
-    ? AlertTriangle
-    : Activity
-  const colour = run.outcome === 'ok'
-    ? 'text-emerald-600'
-    : run.outcome === 'error' || run.outcome === 'budget_exceeded'
-    ? 'text-destructive'
-    : 'text-muted-foreground'
+  const Icon =
+    run.outcome === 'ok'
+      ? CheckCircle2
+      : run.outcome === 'error'
+        ? XCircle
+        : run.outcome === 'budget_exceeded'
+          ? AlertTriangle
+          : Activity
+  const colour =
+    run.outcome === 'ok'
+      ? 'text-emerald-600'
+      : run.outcome === 'error' || run.outcome === 'budget_exceeded'
+        ? 'text-destructive'
+        : 'text-muted-foreground'
   const ageStr = formatDistanceToNow(new Date(run.startedAt * 1000), { addSuffix: true })
-  const duration = run.finishedAt ? `${(run.finishedAt - run.startedAt)}s` : null
+  const duration = run.finishedAt ? `${run.finishedAt - run.startedAt}s` : null
   return (
     <li className="rounded-md border p-2.5">
       <div className="flex items-center gap-2 text-xs">
@@ -275,7 +288,9 @@ function RunRow({ run }: { run: RoutineRun }) {
             <span className="font-mono text-muted-foreground">${run.costUsd.toFixed(4)}</span>
           </>
         )}
-        <span className="ml-auto font-mono text-[10px] text-muted-foreground">#{run.runNumber}</span>
+        <span className="ml-auto font-mono text-[10px] text-muted-foreground">
+          #{run.runNumber}
+        </span>
       </div>
       {run.outputSummary && (
         <p className="mt-1 text-xs leading-snug whitespace-pre-wrap">
@@ -300,7 +315,10 @@ function renderRunSummary(text: string): import('react').ReactNode[] {
     if (part.startsWith('**') && part.endsWith('**')) {
       return <strong key={i}>{part.slice(2, -2)}</strong>
     }
-    if ((part.startsWith('_') && part.endsWith('_')) || (part.startsWith('*') && part.endsWith('*'))) {
+    if (
+      (part.startsWith('_') && part.endsWith('_')) ||
+      (part.startsWith('*') && part.endsWith('*'))
+    ) {
       return <em key={i}>{part.slice(1, -1)}</em>
     }
     return <span key={i}>{part}</span>

@@ -117,7 +117,11 @@ export function ChatUiElement({ element, onSendMessage, disabled }: Props) {
       )
 
     case 'show_metric_cards':
-      return <MetricCards metrics={(data['metrics'] as Parameters<typeof MetricCards>[0]['metrics']) || []} />
+      return (
+        <MetricCards
+          metrics={(data['metrics'] as Parameters<typeof MetricCards>[0]['metrics']) || []}
+        />
+      )
 
     case 'show_timeline':
       return (
@@ -166,10 +170,6 @@ export function ChatUiElement({ element, onSendMessage, disabled }: Props) {
       )
 
     default:
-      return (
-        <div className="text-xs text-muted-foreground italic">
-          Unknown UI element: {_ui}
-        </div>
-      )
+      return <div className="text-xs text-muted-foreground italic">Unknown UI element: {_ui}</div>
   }
 }

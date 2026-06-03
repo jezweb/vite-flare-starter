@@ -16,10 +16,7 @@ import { Hono } from 'hono'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq, and, desc } from 'drizzle-orm'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
-import {
-  conversations,
-  conversationMessages,
-} from '@/server/modules/conversations/db/schema'
+import { conversations, conversationMessages } from '@/server/modules/conversations/db/schema'
 
 const app = new Hono<AuthContext>()
 app.use('*', authMiddleware)

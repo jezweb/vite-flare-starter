@@ -34,7 +34,9 @@ async function searchSerper(apiKey: string, query: string, limit: number): Promi
     body: JSON.stringify({ q: query, num: limit }),
   })
   if (!response.ok) throw new Error(`Serper API error: ${response.status}`)
-  const data = await response.json() as { organic?: Array<{ title?: string; link?: string; snippet?: string; date?: string }> }
+  const data = (await response.json()) as {
+    organic?: Array<{ title?: string; link?: string; snippet?: string; date?: string }>
+  }
   return (data.organic || []).map((r) => ({
     title: r.title || '',
     url: r.link || '',
@@ -49,7 +51,9 @@ async function searchBrave(apiKey: string, query: string, limit: number): Promis
     headers: { 'X-Subscription-Token': apiKey, Accept: 'application/json' },
   })
   if (!response.ok) throw new Error(`Brave API error: ${response.status}`)
-  const data = await response.json() as { web?: { results?: Array<{ title?: string; url?: string; description?: string; age?: string }> } }
+  const data = (await response.json()) as {
+    web?: { results?: Array<{ title?: string; url?: string; description?: string; age?: string }> }
+  }
   return (data.web?.results || []).map((r) => ({
     title: r.title || '',
     url: r.url || '',
@@ -65,7 +69,9 @@ async function searchTavily(apiKey: string, query: string, limit: number): Promi
     body: JSON.stringify({ api_key: apiKey, query, max_results: limit }),
   })
   if (!response.ok) throw new Error(`Tavily API error: ${response.status}`)
-  const data = await response.json() as { results?: Array<{ title?: string; url?: string; content?: string; published_date?: string }> }
+  const data = (await response.json()) as {
+    results?: Array<{ title?: string; url?: string; content?: string; published_date?: string }>
+  }
   return (data.results || []).map((r) => ({
     title: r.title || '',
     url: r.url || '',
@@ -81,7 +87,9 @@ async function searchExa(apiKey: string, query: string, limit: number): Promise<
     body: JSON.stringify({ query, numResults: limit }),
   })
   if (!response.ok) throw new Error(`Exa API error: ${response.status}`)
-  const data = await response.json() as { results?: Array<{ title?: string; url?: string; text?: string; publishedDate?: string }> }
+  const data = (await response.json()) as {
+    results?: Array<{ title?: string; url?: string; text?: string; publishedDate?: string }>
+  }
   return (data.results || []).map((r) => ({
     title: r.title || '',
     url: r.url || '',
@@ -92,18 +100,27 @@ async function searchExa(apiKey: string, query: string, limit: number): Promise<
 
 // ─── Provider Factory ───────────────────────────────────────────────────
 
-export async function webSearch(env: SearchEnv, query: string, limit = 10): Promise<SearchResult[]> {
+export async function webSearch(
+  env: SearchEnv,
+  query: string,
+  limit = 10
+): Promise<SearchResult[]> {
   const provider = env.SEARCH_PROVIDER || 'serper'
 
   switch (provider) {
     case 'serper':
-      if (!env.SERPER_API_KEY) throw new Error('SERPER_API_KEY required. Get one free at https://serper.dev (2500 queries/month)')
+      if (!env.SERPER_API_KEY)
+        throw new Error(
+          'SERPER_API_KEY required. Get one free at https://serper.dev (2500 queries/month)'
+        )
       return searchSerper(env.SERPER_API_KEY, query, limit)
     case 'brave':
-      if (!env.BRAVE_API_KEY) throw new Error('BRAVE_API_KEY required. Get one at https://brave.com/search/api/')
+      if (!env.BRAVE_API_KEY)
+        throw new Error('BRAVE_API_KEY required. Get one at https://brave.com/search/api/')
       return searchBrave(env.BRAVE_API_KEY, query, limit)
     case 'tavily':
-      if (!env.TAVILY_API_KEY) throw new Error('TAVILY_API_KEY required. Get one at https://tavily.com')
+      if (!env.TAVILY_API_KEY)
+        throw new Error('TAVILY_API_KEY required. Get one at https://tavily.com')
       return searchTavily(env.TAVILY_API_KEY, query, limit)
     case 'exa':
       if (!env.EXA_API_KEY) throw new Error('EXA_API_KEY required. Get one at https://exa.ai')
@@ -139,7 +156,7 @@ const WebSearchOutput = z.union([
         url: z.string(),
         snippet: z.string(),
         date: z.string().optional(),
-      }),
+      })
     ),
     count: z.number(),
     provider: z.string(),

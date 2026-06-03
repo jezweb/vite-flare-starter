@@ -41,7 +41,11 @@
  */
 import { drizzle } from 'drizzle-orm/d1'
 import { and, eq, inArray, lte } from 'drizzle-orm'
-import { AutonomousAgent, type AutonomousAgentEnv, type AutonomousAgentState } from '@/server/lib/agents/autonomous-agent'
+import {
+  AutonomousAgent,
+  type AutonomousAgentEnv,
+  type AutonomousAgentState,
+} from '@/server/lib/agents/autonomous-agent'
 import { entities } from '@/server/modules/entities/db/schema'
 import type { ToolDefinition } from '@/shared/agent'
 
@@ -83,7 +87,8 @@ export class SweeperAgent extends AutonomousAgent<Env, SweeperState> {
     displayName: 'Sweeper',
     description:
       'Periodically scans entities (tickets, leads, etc.) for stale items and proposes followup actions. Use for: stuck-ticket sweeps, lead-followup queues, anything "remind me to act on stale X".',
-    userPurpose: 'Use to scan a list of items (tickets, leads, projects) on a schedule and surface anything stuck or overdue.',
+    userPurpose:
+      'Use to scan a list of items (tickets, leads, projects) on a schedule and surface anything stuck or overdue.',
     category: 'sweeper' as const,
   }
 
@@ -109,11 +114,10 @@ export class SweeperAgent extends AutonomousAgent<Env, SweeperState> {
     const { coreDefinitions } = await import('@/server/modules/chat/tools/core')
     const { entityDefinitions } = await import('@/server/modules/chat/tools/entities')
     const { memoryDefinitions } = await import('@/server/modules/chat/tools/memory')
-    return [
-      ...coreDefinitions,
-      ...memoryDefinitions,
-      ...entityDefinitions,
-    ] as ToolDefinition<unknown, unknown>[]
+    return [...coreDefinitions, ...memoryDefinitions, ...entityDefinitions] as ToolDefinition<
+      unknown,
+      unknown
+    >[]
   }
 
   /**
@@ -153,7 +157,7 @@ export class SweeperAgent extends AutonomousAgent<Env, SweeperState> {
     const schedule = await this.scheduleEvery<Record<string, never>>(
       config.intervalSeconds ?? 3600,
       'doSweep',
-      {},
+      {}
     )
     return { scheduleId: schedule.id, nextRunAt: schedule.time }
   }
@@ -242,14 +246,16 @@ export class SweeperAgent extends AutonomousAgent<Env, SweeperState> {
         ? await resolveModelForUser(
             this.env as Parameters<typeof resolveModelForUser>[0],
             { userId: this.state.userId },
-            this.state.modelId,
+            this.state.modelId
           )
         : resolveModel(this.env, this.state.modelId)
     } catch (err) {
-      console.warn(JSON.stringify({
-        event: 'sweeper_prebuild_model_failed',
-        error: err instanceof Error ? err.message : String(err),
-      }))
+      console.warn(
+        JSON.stringify({
+          event: 'sweeper_prebuild_model_failed',
+          error: err instanceof Error ? err.message : String(err),
+        })
+      )
     }
 
     let queued = 0

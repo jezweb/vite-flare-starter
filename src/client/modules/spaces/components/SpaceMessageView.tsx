@@ -33,24 +33,32 @@ interface Props {
   canPin?: boolean
 }
 
-export function SpaceMessageView({ message, users, allMessages, onOpenThread, onQuote, canPin }: Props) {
+export function SpaceMessageView({
+  message,
+  users,
+  allMessages,
+  onOpenThread,
+  onQuote,
+  canPin,
+}: Props) {
   const { data: session } = useSession()
   const currentUserId = session?.user?.id
   const meta = message.metadata ?? {}
   const senderKind = meta.senderKind ?? (message.role === 'assistant' ? 'agent' : 'user')
   const senderUser = meta.senderUserId ? users.find((u) => u.id === meta.senderUserId) : null
-  const stars: string[] = Array.isArray((message as unknown as { starredByUserIds?: string[] }).starredByUserIds)
-    ? ((message as unknown as { starredByUserIds: string[] }).starredByUserIds)
+  const stars: string[] = Array.isArray(
+    (message as unknown as { starredByUserIds?: string[] }).starredByUserIds
+  )
+    ? (message as unknown as { starredByUserIds: string[] }).starredByUserIds
     : []
   const isStarred = currentUserId ? stars.includes(currentUserId) : false
   const isPinned = !!message.pinnedAt
-  const quotedId = (message as unknown as { quotedMessageId?: string | null }).quotedMessageId ?? null
+  const quotedId =
+    (message as unknown as { quotedMessageId?: string | null }).quotedMessageId ?? null
   const quotedSource =
-    quotedId && allMessages ? allMessages.find((m) => m.id === quotedId) ?? null : null
+    quotedId && allMessages ? (allMessages.find((m) => m.id === quotedId) ?? null) : null
   const senderLabel =
-    senderKind === 'agent'
-      ? `@${meta.senderAgentName ?? 'agent'}`
-      : senderUser?.name ?? 'Member'
+    senderKind === 'agent' ? `@${meta.senderAgentName ?? 'agent'}` : (senderUser?.name ?? 'Member')
   const isBot = senderKind === 'agent'
 
   const parts = Array.isArray(message.parts) ? (message.parts as PartLike[]) : []
@@ -60,7 +68,7 @@ export function SpaceMessageView({ message, users, allMessages, onOpenThread, on
       <div
         className={cn(
           'mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full',
-          isBot ? 'bg-emerald-500/15' : 'bg-muted',
+          isBot ? 'bg-emerald-500/15' : 'bg-muted'
         )}
       >
         {isBot ? (
@@ -96,7 +104,7 @@ export function SpaceMessageView({ message, users, allMessages, onOpenThread, on
             </div>
             <div className="line-clamp-3 whitespace-pre-wrap break-words">
               {renderParts(
-                Array.isArray(quotedSource.parts) ? (quotedSource.parts as PartLike[]) : [],
+                Array.isArray(quotedSource.parts) ? (quotedSource.parts as PartLike[]) : []
               )}
             </div>
           </div>
@@ -129,7 +137,12 @@ export function SpaceMessageView({ message, users, allMessages, onOpenThread, on
           flex child to compute width=0 at narrow viewports). */}
       <div className="absolute right-2 top-1 flex items-start opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
         <div className="flex items-center gap-0.5 rounded-md border border-border bg-background p-0.5 shadow-sm">
-          <MessageReactions messageId={message.id} reactions={message.reactions} currentUserId={currentUserId} quickBar />
+          <MessageReactions
+            messageId={message.id}
+            reactions={message.reactions}
+            currentUserId={currentUserId}
+            quickBar
+          />
           {onOpenThread && (
             <button
               type="button"
@@ -175,9 +188,7 @@ function CardMessage({ card }: { card: SpaceMessageCard }) {
     <div className={`mt-1 rounded-md border-l-4 px-3 py-2 ${toneClass}`}>
       {card.title && <div className="text-sm font-semibold">{card.title}</div>}
       {card.subtitle && <div className="text-xs text-muted-foreground">{card.subtitle}</div>}
-      {card.body && (
-        <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed">{card.body}</p>
-      )}
+      {card.body && <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed">{card.body}</p>}
       {card.fields && card.fields.length > 0 && (
         <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
           {card.fields.map((f, i) => (

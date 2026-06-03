@@ -100,7 +100,7 @@ export interface KanbanBoardProps<TCard extends KanbanCard> {
 function computeOrder(
   cardsInTargetColumn: KanbanCard[],
   insertIndex: number,
-  excludeCardId: string,
+  excludeCardId: string
 ): number {
   const sorted = cardsInTargetColumn
     .filter((c) => c.id !== excludeCardId)
@@ -122,21 +122,16 @@ interface SortableCardProps {
 }
 
 function SortableCard({ id, children }: SortableCardProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id })
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+  })
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.4 : 1,
   }
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className="touch-none"
-    >
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="touch-none">
       {children}
     </div>
   )
@@ -162,10 +157,7 @@ function KanbanColumnView<TCard extends KanbanCard>({
   // nothing — `over` is null, no move event fires.
   const { setNodeRef, isOver } = useDroppable({ id: `column:${column.id}` })
 
-  const sortedCards = React.useMemo(
-    () => [...cards].sort((a, b) => a.order - b.order),
-    [cards],
-  )
+  const sortedCards = React.useMemo(() => [...cards].sort((a, b) => a.order - b.order), [cards])
   const cardIds = React.useMemo(() => sortedCards.map((c) => c.id), [sortedCards])
   const isCollapsed = column.collapsed ?? false
   const Icon = isCollapsed ? ChevronRight : ChevronDown
@@ -176,15 +168,10 @@ function KanbanColumnView<TCard extends KanbanCard>({
       data-column-id={column.id}
       className={cn(
         'bg-muted/30 rounded-lg p-3 w-72 shrink-0 flex flex-col',
-        isCollapsed && 'w-12 items-center',
+        isCollapsed && 'w-12 items-center'
       )}
     >
-      <div
-        className={cn(
-          'flex items-center gap-2 mb-3',
-          isCollapsed && 'flex-col mb-0',
-        )}
-      >
+      <div className={cn('flex items-center gap-2 mb-3', isCollapsed && 'flex-col mb-0')}>
         {onToggle ? (
           <button
             type="button"
@@ -201,9 +188,7 @@ function KanbanColumnView<TCard extends KanbanCard>({
           </div>
         )}
         {!isCollapsed && (
-          <span className="text-xs text-muted-foreground tabular-nums">
-            {sortedCards.length}
-          </span>
+          <span className="text-xs text-muted-foreground tabular-nums">{sortedCards.length}</span>
         )}
       </div>
 
@@ -213,7 +198,7 @@ function KanbanColumnView<TCard extends KanbanCard>({
             ref={setNodeRef}
             className={cn(
               'flex flex-col gap-2 min-h-12 rounded-md transition-colors',
-              isOver && 'bg-accent/30 outline-2 outline-dashed outline-accent-foreground/20',
+              isOver && 'bg-accent/30 outline-2 outline-dashed outline-accent-foreground/20'
             )}
           >
             {sortedCards.map((card) => (
@@ -249,7 +234,7 @@ export function KanbanBoard<TCard extends KanbanCard>({
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 
   const cardsByColumn = React.useMemo(() => {
@@ -263,8 +248,8 @@ export function KanbanBoard<TCard extends KanbanCard>({
   }, [columns, cards])
 
   const activeCard = React.useMemo(
-    () => (activeId ? cards.find((c) => c.id === activeId) ?? null : null),
-    [activeId, cards],
+    () => (activeId ? (cards.find((c) => c.id === activeId) ?? null) : null),
+    [activeId, cards]
   )
 
   const handleDragStart = (e: DragStartEvent) => {
@@ -304,10 +289,7 @@ export function KanbanBoard<TCard extends KanbanCard>({
     }
 
     // No-op: dropped on itself in the same column at the same position.
-    if (
-      dragged.columnId === toColumnId &&
-      activeCardId === overId
-    ) {
+    if (dragged.columnId === toColumnId && activeCardId === overId) {
       return
     }
 
@@ -327,10 +309,7 @@ export function KanbanBoard<TCard extends KanbanCard>({
     >
       <div
         data-slot="kanban-board"
-        className={cn(
-          'flex gap-3 overflow-x-auto pb-2 items-start',
-          className,
-        )}
+        className={cn('flex gap-3 overflow-x-auto pb-2 items-start', className)}
       >
         {columns.map((col) => (
           <KanbanColumnView

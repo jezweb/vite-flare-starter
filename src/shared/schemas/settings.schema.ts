@@ -30,11 +30,7 @@ export const updateNameSchema = z.object({
  * User stays logged in. Email updates only after verification.
  */
 export const changeEmailSchema = z.object({
-  email: z
-    .string()
-    .email('Invalid email address')
-    .toLowerCase()
-    .trim(),
+  email: z.string().email('Invalid email address').toLowerCase().trim(),
 })
 
 /**
@@ -43,21 +39,19 @@ export const changeEmailSchema = z.object({
  *
  * Requires current password verification before allowing change.
  */
-export const changePasswordSchema = z.object({
-  currentPassword: z
-    .string()
-    .min(1, 'Current password is required'),
-  newPassword: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .max(128, 'Password must be 128 characters or less'),
-  confirmPassword: z
-    .string()
-    .min(1, 'Please confirm your new password'),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: 'Passwords do not match',
-  path: ['confirmPassword'],
-})
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Current password is required'),
+    newPassword: z
+      .string()
+      .min(8, 'Password must be at least 8 characters')
+      .max(128, 'Password must be 128 characters or less'),
+    confirmPassword: z.string().min(1, 'Please confirm your new password'),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  })
 
 /**
  * Delete user account
@@ -71,10 +65,7 @@ export const changePasswordSchema = z.object({
  * Cascade deletes all user data via afterDelete hook.
  */
 export const deleteAccountSchema = z.object({
-  password: z
-    .string()
-    .min(1, 'Password is required to delete your account')
-    .optional(), // Optional for OAuth users
+  password: z.string().min(1, 'Password is required to delete your account').optional(), // Optional for OAuth users
 })
 
 // Type exports for use in TypeScript code

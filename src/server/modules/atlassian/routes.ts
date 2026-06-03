@@ -45,10 +45,9 @@ export default buildStubRoutes({
   },
   fetchAccountInfo: async (token) => {
     try {
-      const resp = await fetch(
-        'https://api.atlassian.com/oauth/token/accessible-resources',
-        { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' } },
-      )
+      const resp = await fetch('https://api.atlassian.com/oauth/token/accessible-resources', {
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+      })
       if (!resp.ok) return {}
       const sites = (await resp.json()) as Array<{
         id?: string

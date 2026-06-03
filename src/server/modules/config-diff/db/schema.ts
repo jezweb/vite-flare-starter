@@ -44,11 +44,7 @@ export const configDiffProposals = sqliteTable(
   },
   (table) => [
     index('config_diff_user_idx').on(table.userId),
-    index('config_diff_resource_idx').on(
-      table.userId,
-      table.resourceKind,
-      table.resourceId,
-    ),
+    index('config_diff_resource_idx').on(table.userId, table.resourceKind, table.resourceId),
     index('config_diff_status_idx').on(table.userId, table.status),
-  ],
+  ]
 )

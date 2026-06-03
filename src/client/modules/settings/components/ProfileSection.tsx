@@ -4,11 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import { Download } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
-import {
-  useSession,
-  useUpdateProfile,
-  useChangeEmail,
-} from '../hooks/useSettings'
+import { useSession, useUpdateProfile, useChangeEmail } from '../hooks/useSettings'
 import { useExportData } from '../hooks/useExportData'
 import { updateNameSchema, changeEmailSchema } from '@/shared/schemas/settings.schema'
 import type { UpdateNameInput, ChangeEmailInput } from '@/shared/schemas/settings.schema'
@@ -215,11 +211,7 @@ export function ProfileSection() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button
-            variant="outline"
-            onClick={handleExportData}
-            disabled={exportData.isPending}
-          >
+          <Button variant="outline" onClick={handleExportData} disabled={exportData.isPending}>
             {exportData.isPending ? (
               <>
                 <Spinner size="md" className="mr-2" />

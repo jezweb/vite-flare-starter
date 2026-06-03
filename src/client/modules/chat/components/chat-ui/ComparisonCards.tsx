@@ -22,7 +22,12 @@ interface Props {
 
 export function ComparisonCards({ options, onSelect }: Props) {
   return (
-    <div className={cn('grid gap-3', options.length === 2 ? 'grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3')}>
+    <div
+      className={cn(
+        'grid gap-3',
+        options.length === 2 ? 'grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+      )}
+    >
       {options.map((opt) => (
         <div
           key={opt.title}
@@ -32,7 +37,9 @@ export function ComparisonCards({ options, onSelect }: Props) {
           )}
         >
           {opt.highlight && (
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-primary mb-1">Recommended</div>
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-primary mb-1">
+              Recommended
+            </div>
           )}
           <div className="font-semibold text-sm">{opt.title}</div>
           {opt.subtitle && <div className="text-xs text-muted-foreground mb-2">{opt.subtitle}</div>}
@@ -48,7 +55,12 @@ export function ComparisonCards({ options, onSelect }: Props) {
                 ) : (
                   <span className="text-muted-foreground shrink-0">•</span>
                 )}
-                <span className={cn('flex-1', typeof f.value === 'boolean' && !f.value && 'text-muted-foreground/50')}>
+                <span
+                  className={cn(
+                    'flex-1',
+                    typeof f.value === 'boolean' && !f.value && 'text-muted-foreground/50'
+                  )}
+                >
                   {typeof f.value === 'string' ? `${f.label}: ${f.value}` : f.label}
                 </span>
               </li>

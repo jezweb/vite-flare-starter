@@ -65,7 +65,7 @@ export function SkillsSlashMenu({
     <div
       className={cn(
         'absolute bottom-full left-0 right-0 mb-2 mx-4 max-h-[300px] overflow-y-auto rounded-md border bg-popover text-popover-foreground shadow-md z-20',
-        className,
+        className
       )}
       role="listbox"
     >
@@ -82,14 +82,12 @@ export function SkillsSlashMenu({
           onMouseEnter={() => setActiveIndex(i)}
           className={cn(
             'w-full text-left px-3 py-2 border-b last:border-b-0 cursor-pointer focus:outline-none',
-            i === activeIndex ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50',
+            i === activeIndex ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50'
           )}
         >
           <div className="flex items-center gap-2">
             <span className="font-medium text-sm">{formatSkillName(skill.name)}</span>
-            <span className="text-[10px] font-mono text-muted-foreground/70">
-              /{skill.name}
-            </span>
+            <span className="text-[10px] font-mono text-muted-foreground/70">/{skill.name}</span>
             <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
               {skill.source}
             </span>

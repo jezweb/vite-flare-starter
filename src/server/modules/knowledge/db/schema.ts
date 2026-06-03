@@ -37,29 +37,39 @@ export type KnowledgeFormat = (typeof KNOWLEDGE_FORMATS)[number]
 export const INJECTION_MODES = ['always', 'on_demand', 'disabled'] as const
 export type InjectionMode = (typeof INJECTION_MODES)[number]
 
-export const knowledgeDocuments = sqliteTable('knowledge_documents', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  scope: text('scope', { enum: KNOWLEDGE_SCOPES }).notNull(),
-  /** user.id | projects.id | organization.id depending on scope. */
-  scopeId: text('scope_id').notNull(),
-  title: text('title').notNull(),
-  /** One-liner shown in catalog injection — when to use this doc. */
-  summary: text('summary').notNull(),
-  /** Soft cap 100KB. Hard validate at 256KB in routes. */
-  body: text('body').notNull(),
-  format: text('format', { enum: KNOWLEDGE_FORMATS }).notNull().default('markdown'),
-  injectionMode: text('injection_mode', { enum: INJECTION_MODES }).notNull().default('on_demand'),
-  /** JSON array of free-form tags for grouping. */
-  tags: text('tags').notNull().default('[]'),
-  /** Estimated tokens for the body — set by routes on insert/update. */
-  estimatedTokens: integer('estimated_tokens').notNull().default(0),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
-}, (t) => [
-  index('knowledge_scope_idx').on(t.scope, t.scopeId),
-  index('knowledge_injection_idx').on(t.injectionMode),
-  index('knowledge_scope_injection_idx').on(t.scope, t.scopeId, t.injectionMode),
-])
+export const knowledgeDocuments = sqliteTable(
+  'knowledge_documents',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    scope: text('scope', { enum: KNOWLEDGE_SCOPES }).notNull(),
+    /** user.id | projects.id | organization.id depending on scope. */
+    scopeId: text('scope_id').notNull(),
+    title: text('title').notNull(),
+    /** One-liner shown in catalog injection — when to use this doc. */
+    summary: text('summary').notNull(),
+    /** Soft cap 100KB. Hard validate at 256KB in routes. */
+    body: text('body').notNull(),
+    format: text('format', { enum: KNOWLEDGE_FORMATS }).notNull().default('markdown'),
+    injectionMode: text('injection_mode', { enum: INJECTION_MODES }).notNull().default('on_demand'),
+    /** JSON array of free-form tags for grouping. */
+    tags: text('tags').notNull().default('[]'),
+    /** Estimated tokens for the body — set by routes on insert/update. */
+    estimatedTokens: integer('estimated_tokens').notNull().default(0),
+    createdAt: integer('created_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer('updated_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (t) => [
+    index('knowledge_scope_idx').on(t.scope, t.scopeId),
+    index('knowledge_injection_idx').on(t.injectionMode),
+    index('knowledge_scope_injection_idx').on(t.scope, t.scopeId, t.injectionMode),
+  ]
+)
 
 export type KnowledgeDocument = typeof knowledgeDocuments.$inferSelect
 export type NewKnowledgeDocument = typeof knowledgeDocuments.$inferInsert

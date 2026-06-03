@@ -34,7 +34,7 @@ const SemanticSearchOutput = z.union([
         value: z.string().optional(),
         type: z.string().optional(),
         similarity: z.number(),
-      }),
+      })
     ),
   }),
   z.object({
@@ -45,7 +45,7 @@ const SemanticSearchOutput = z.union([
         key: z.string(),
         value: z.string(),
         similarity: z.number(),
-      }),
+      })
     ),
     message: z.string().optional(),
   }),
@@ -153,7 +153,10 @@ export const vectorizeContentDefinition: ToolDefinition<
   execute: async ({ id, content, type = 'memory', key }, ctx) => {
     const env = getSemanticEnv(ctx)
     if (!env.VECTORS) {
-      return { indexed: false, message: 'Vectorize not configured. Content saved but not indexed for semantic search.' }
+      return {
+        indexed: false,
+        message: 'Vectorize not configured. Content saved but not indexed for semantic search.',
+      }
     }
     try {
       const embedding = await embedText(env, content)

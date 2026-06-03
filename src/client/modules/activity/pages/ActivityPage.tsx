@@ -90,18 +90,30 @@ function formatTime(dateString: string): string {
 
 function formatActionVerb(action: Activity['action']): string {
   switch (action) {
-    case 'create': return 'Created'
-    case 'update': return 'Updated'
-    case 'delete': return 'Deleted'
-    case 'archive': return 'Archived'
-    case 'restore': return 'Restored'
-    case 'import': return 'Imported'
-    case 'export': return 'Exported'
-    case 'assign': return 'Assigned'
-    case 'unassign': return 'Unassigned'
-    case 'view': return 'Viewed'
-    case 'convert': return 'Converted'
-    default: return action
+    case 'create':
+      return 'Created'
+    case 'update':
+      return 'Updated'
+    case 'delete':
+      return 'Deleted'
+    case 'archive':
+      return 'Archived'
+    case 'restore':
+      return 'Restored'
+    case 'import':
+      return 'Imported'
+    case 'export':
+      return 'Exported'
+    case 'assign':
+      return 'Assigned'
+    case 'unassign':
+      return 'Unassigned'
+    case 'view':
+      return 'Viewed'
+    case 'convert':
+      return 'Converted'
+    default:
+      return action
   }
 }
 
@@ -152,9 +164,7 @@ function ActivityItem({ activity }: { activity: Activity }) {
               ("xvIsfu0FYPuMG…") which adds zero info — the entity-type
               badge already tells the user what was created. */}
           {activity.entityName && (
-            <span className="text-sm text-muted-foreground truncate">
-              {activity.entityName}
-            </span>
+            <span className="text-sm text-muted-foreground truncate">{activity.entityName}</span>
           )}
         </div>
         <ListRowMeta>
@@ -203,9 +213,9 @@ export function ActivityPage() {
 
       <StatGrid
         items={[
-          { label: 'Total', value: statsLoading ? '—' : stats?.total ?? 0 },
-          { label: 'Today', value: statsLoading ? '—' : stats?.today ?? 0 },
-          { label: 'This week', value: statsLoading ? '—' : stats?.thisWeek ?? 0 },
+          { label: 'Total', value: statsLoading ? '—' : (stats?.total ?? 0) },
+          { label: 'Today', value: statsLoading ? '—' : (stats?.today ?? 0) },
+          { label: 'This week', value: statsLoading ? '—' : (stats?.thisWeek ?? 0) },
         ]}
       />
 
@@ -257,9 +267,7 @@ export function ActivityPage() {
           doesn't flash over skeleton rows on first mount. */}
       {!activitiesLoading && activities.length > 0 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Page {page}
-          </p>
+          <p className="text-sm text-muted-foreground">Page {page}</p>
           <div className="flex gap-2">
             <Button
               variant="outline"

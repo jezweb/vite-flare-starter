@@ -29,7 +29,14 @@ interface BatchJob {
   updatedAt: string | number
 }
 
-const STATUS_BADGE: Record<BatchJob['status'], { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; Icon: typeof Layers }> = {
+const STATUS_BADGE: Record<
+  BatchJob['status'],
+  {
+    label: string
+    variant: 'default' | 'secondary' | 'destructive' | 'outline'
+    Icon: typeof Layers
+  }
+> = {
   queued: { label: 'Queued', variant: 'outline', Icon: Clock },
   running: { label: 'Running', variant: 'default', Icon: Loader2 },
   completed: { label: 'Completed', variant: 'secondary', Icon: CheckCircle2 },
@@ -81,10 +88,12 @@ export function JobsPage() {
 
 function JobRow({ job }: { job: BatchJob }) {
   const meta = STATUS_BADGE[job.status]
-  const created = typeof job.createdAt === 'number'
-    ? new Date(job.createdAt * 1000)
-    : new Date(job.createdAt)
-  const pct = job.totalItems === 0 ? 0 : Math.round(((job.completedItems + job.failedItems) / job.totalItems) * 100)
+  const created =
+    typeof job.createdAt === 'number' ? new Date(job.createdAt * 1000) : new Date(job.createdAt)
+  const pct =
+    job.totalItems === 0
+      ? 0
+      : Math.round(((job.completedItems + job.failedItems) / job.totalItems) * 100)
 
   return (
     <Link

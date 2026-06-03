@@ -18,13 +18,7 @@
 import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq } from 'drizzle-orm'
-import {
-  Database,
-  FileText,
-  Plus,
-  Search,
-  StickyNote,
-} from 'lucide-react'
+import { Database, FileText, Plus, Search, StickyNote } from 'lucide-react'
 import { notionTokens } from '@/server/modules/notion/db/schema'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 
@@ -63,7 +57,7 @@ function userHasNotion(): (ctx: AgentContext) => Promise<boolean> {
 }
 
 async function requireNotionToken(
-  ctx: AgentContext,
+  ctx: AgentContext
 ): Promise<{ token: string } | { error: string }> {
   const env = notionEnvOf(ctx)
   const db = drizzle(env.DB)
@@ -85,7 +79,7 @@ async function requireNotionToken(
 async function notionCall<T>(
   token: string,
   path: string,
-  init: RequestInit = {},
+  init: RequestInit = {}
 ): Promise<{ ok: true; data: T } | { ok: false; error: string }> {
   const resp = await fetch(`${NOTION_API}${path}`, {
     ...init,
@@ -102,10 +96,14 @@ async function notionCall<T>(
       const j = JSON.parse(text) as { message?: string; code?: string }
       return {
         ok: false,
-        error: `Notion ${init.method ?? 'GET'} ${path}: ${j.code ?? resp.status} ${j.message ?? ''}`.trim(),
+        error:
+          `Notion ${init.method ?? 'GET'} ${path}: ${j.code ?? resp.status} ${j.message ?? ''}`.trim(),
       }
     } catch {
-      return { ok: false, error: `Notion ${init.method ?? 'GET'} ${path}: ${resp.status} ${text.slice(0, 120)}` }
+      return {
+        ok: false,
+        error: `Notion ${init.method ?? 'GET'} ${path}: ${resp.status} ${text.slice(0, 120)}`,
+      }
     }
   }
   try {
@@ -137,9 +135,7 @@ interface NotionBlock {
  */
 function richTextToString(rich: unknown): string {
   if (!Array.isArray(rich)) return ''
-  return rich
-    .map((r: NotionRichText) => r.plain_text ?? r.text?.content ?? '')
-    .join('')
+  return rich.map((r: NotionRichText) => r.plain_text ?? r.text?.content ?? '').join('')
 }
 
 /**
@@ -170,7 +166,9 @@ function blocksToMarkdown(blocks: NotionBlock[]): string {
   const lines: string[] = []
   for (const b of blocks) {
     const block = b as unknown as Record<string, unknown>
-    const payload = block[b.type] as { rich_text?: unknown; checked?: boolean; language?: string } | undefined
+    const payload = block[b.type] as
+      | { rich_text?: unknown; checked?: boolean; language?: string }
+      | undefined
     const rich = richTextToString(payload?.rich_text)
     switch (b.type) {
       case 'heading_1':
@@ -209,13 +207,16 @@ function blocksToMarkdown(blocks: NotionBlock[]): string {
         lines.push(rich ? rich : `[${b.type}]`)
     }
   }
-  return lines.join('\n\n').replace(/\n\n\n+/g, '\n\n').trim()
+  return lines
+    .join('\n\n')
+    .replace(/\n\n\n+/g, '\n\n')
+    .trim()
 }
 
 // ─── SEARCH ─────────────────────────────────────────────────────────────
 
 const SearchInput = z.object({
-  query: z.string().describe('Free-text search across the user\'s Notion workspace.'),
+  query: z.string().describe("Free-text search across the user's Notion workspace."),
   filterBy: z
     .enum(['page', 'database'])
     .optional()
@@ -232,7 +233,7 @@ const SearchOutput = z.union([
         object: z.enum(['page', 'database']),
         url: z.string(),
         lastEdited: z.string().optional(),
-      }),
+      })
     ),
     count: z.number(),
     nextCursor: z.string().nullable().optional(),
@@ -269,10 +270,7 @@ export const notionSearchDefinition: ToolDefinition<
     if (!res.ok) return { error: res.error }
     const results = res.data.results.map((r) => ({
       id: r.id,
-      title:
-        r.object === 'database'
-          ? richTextToString(r.title) || pageTitle(r)
-          : pageTitle(r),
+      title: r.object === 'database' ? richTextToString(r.title) || pageTitle(r) : pageTitle(r),
       object: r.object,
       url: r.url ?? '',
       lastEdited: r.last_edited_time,
@@ -359,7 +357,7 @@ const GetDatabaseOutput = z.union([
         name: z.string(),
         type: z.string(),
         options: z.array(z.string()).optional(),
-      }),
+      })
     ),
   }),
   z.object({ error: z.string() }),
@@ -393,16 +391,14 @@ export const notionGetDatabaseDefinition: ToolDefinition<
       >
     }>(auth.token, `/databases/${encodeURIComponent(databaseId)}`)
     if (!res.ok) return { error: res.error }
-    const properties = Object.entries(res.data.properties ?? {}).map(
-      ([name, prop]) => ({
-        name,
-        type: prop.type,
-        options:
-          prop.select?.options?.map((o) => o.name) ??
-          prop.multi_select?.options?.map((o) => o.name) ??
-          prop.status?.options?.map((o) => o.name),
-      }),
-    )
+    const properties = Object.entries(res.data.properties ?? {}).map(([name, prop]) => ({
+      name,
+      type: prop.type,
+      options:
+        prop.select?.options?.map((o) => o.name) ??
+        prop.multi_select?.options?.map((o) => o.name) ??
+        prop.status?.options?.map((o) => o.name),
+    }))
     return {
       id: res.data.id,
       title: richTextToString(res.data.title),
@@ -430,7 +426,7 @@ const QueryDatabaseOutput = z.union([
         title: z.string(),
         url: z.string(),
         properties: z.record(z.string(), z.string()),
-      }),
+      })
     ),
     count: z.number(),
     nextCursor: z.string().nullable().optional(),
@@ -514,15 +510,14 @@ function projectProperty(prop: unknown): string {
     case 'select':
       return p.select?.name ?? ''
     case 'multi_select':
-      return (p.multi_select ?? []).map((s) => s.name).filter(Boolean).join(', ')
+      return (p.multi_select ?? [])
+        .map((s) => s.name)
+        .filter(Boolean)
+        .join(', ')
     case 'status':
       return p.status?.name ?? ''
     case 'date':
-      return p.date?.start
-        ? p.date.end
-          ? `${p.date.start} → ${p.date.end}`
-          : p.date.start
-        : ''
+      return p.date?.start ? (p.date.end ? `${p.date.start} → ${p.date.end}` : p.date.start) : ''
     case 'checkbox':
       return p.checkbox ? 'true' : 'false'
     case 'url':
@@ -532,7 +527,10 @@ function projectProperty(prop: unknown): string {
     case 'phone_number':
       return p.phone_number ?? ''
     case 'people':
-      return (p.people ?? []).map((pp) => pp.name).filter(Boolean).join(', ')
+      return (p.people ?? [])
+        .map((pp) => pp.name)
+        .filter(Boolean)
+        .join(', ')
     default:
       return ''
   }
@@ -587,14 +585,10 @@ export const notionCreatePageDefinition: ToolDefinition<
       ? { title: { title: [{ type: 'text', text: { content: title } }] } }
       : { title: [{ type: 'text', text: { content: title } }] }
     const children = body ? markdownToBlocks(body) : []
-    const res = await notionCall<{ id: string; url?: string }>(
-      auth.token,
-      '/pages',
-      {
-        method: 'POST',
-        body: JSON.stringify({ parent: parentPayload, properties, children }),
-      },
-    )
+    const res = await notionCall<{ id: string; url?: string }>(auth.token, '/pages', {
+      method: 'POST',
+      body: JSON.stringify({ parent: parentPayload, properties, children }),
+    })
     if (!res.ok) return { error: res.error }
     return { created: true as const, id: res.data.id, url: res.data.url ?? '' }
   },
@@ -631,7 +625,7 @@ export const notionAppendBlocksDefinition: ToolDefinition<
     const res = await notionCall<{ results?: unknown[] }>(
       auth.token,
       `/blocks/${encodeURIComponent(blockId)}/children`,
-      { method: 'PATCH', body: JSON.stringify({ children }) },
+      { method: 'PATCH', body: JSON.stringify({ children }) }
     )
     if (!res.ok) return { error: res.error }
     return { appended: true as const, count: children.length }

@@ -23,7 +23,10 @@ test.describe('findings', () => {
     await page.goto('/dashboard/findings')
     // Wait for the page to render the filter chips (or the empty state —
     // the filter row is rendered either way).
-    await page.getByRole('heading', { name: /findings/i }).first().waitFor()
+    await page
+      .getByRole('heading', { name: /findings/i })
+      .first()
+      .waitFor()
 
     // Click the "Open" filter chip.
     const openChip = page.getByRole('button', { name: /^open$/i }).first()
@@ -39,9 +42,7 @@ test.describe('findings', () => {
     await expect(page).toHaveURL(/[?&]status=open/)
   })
 
-  test('P4-005: truncated row titles expose full text via title attribute', async ({
-    page,
-  }) => {
+  test('P4-005: truncated row titles expose full text via title attribute', async ({ page }) => {
     const api = await apiContext('regression')
     const longTitle =
       'This is a very long finding title that should clip at the column edge and need a tooltip to read it in full'
@@ -86,9 +87,7 @@ test.describe('findings', () => {
 
       // Click Promote — must not 400. We assert via the toast that
       // appears on success ("Finding promoted to a learning").
-      const promoteBtn = page
-        .getByRole('button', { name: /promote to learning/i })
-        .first()
+      const promoteBtn = page.getByRole('button', { name: /promote to learning/i }).first()
       await promoteBtn.click()
 
       // Either a success toast OR the row's status badge flips to

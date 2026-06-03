@@ -51,9 +51,7 @@ export function useProject(projectId: string | undefined) {
   return useQuery({
     queryKey: ['projects', projectId],
     queryFn: () =>
-      apiClient.get<{ project: Project; conversations: unknown[] }>(
-        `/api/projects/${projectId}`,
-      ),
+      apiClient.get<{ project: Project; conversations: unknown[] }>(`/api/projects/${projectId}`),
     enabled: !!projectId,
   })
 }
@@ -67,11 +65,16 @@ export function useCreateProject() {
   return useMutation<
     { id: string; success: boolean },
     Error,
-    { name: string; description?: string; systemPrompt?: string; defaultModel?: string; color?: string },
+    {
+      name: string
+      description?: string
+      systemPrompt?: string
+      defaultModel?: string
+      color?: string
+    },
     CreateContext
   >({
-    mutationFn: (input) =>
-      apiClient.post<{ id: string; success: boolean }>('/api/projects', input),
+    mutationFn: (input) => apiClient.post<{ id: string; success: boolean }>('/api/projects', input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] })
     },
@@ -104,8 +107,7 @@ export function useUpdateProject() {
 export function useDeleteProject() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) =>
-      apiClient.delete<{ success: boolean }>(`/api/projects/${id}`),
+    mutationFn: (id: string) => apiClient.delete<{ success: boolean }>(`/api/projects/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] })
       queryClient.invalidateQueries({ queryKey: ['conversations'] })
@@ -156,8 +158,7 @@ export interface TemplateSummary {
 export function useProjectTemplates() {
   return useQuery({
     queryKey: ['project-templates'],
-    queryFn: () =>
-      apiClient.get<{ templates: TemplateSummary[] }>('/api/projects/templates'),
+    queryFn: () => apiClient.get<{ templates: TemplateSummary[] }>('/api/projects/templates'),
     staleTime: 1000 * 60 * 60, // templates are static, cache for an hour
   })
 }
@@ -197,16 +198,9 @@ export interface ScaffoldDraft {
 }
 
 export function useScaffoldProject() {
-  return useMutation<
-    { success: boolean; draft: ScaffoldDraft },
-    Error,
-    { prompt: string }
-  >({
+  return useMutation<{ success: boolean; draft: ScaffoldDraft }, Error, { prompt: string }>({
     mutationFn: (input) =>
-      apiClient.post<{ success: boolean; draft: ScaffoldDraft }>(
-        '/api/projects/scaffold',
-        input,
-      ),
+      apiClient.post<{ success: boolean; draft: ScaffoldDraft }>('/api/projects/scaffold', input),
   })
 }
 
@@ -224,10 +218,7 @@ export function useCreateFromScaffold() {
     }
   >({
     mutationFn: (input) =>
-      apiClient.post<{ id: string; success: boolean }>(
-        '/api/projects/from-scaffold',
-        input,
-      ),
+      apiClient.post<{ id: string; success: boolean }>('/api/projects/from-scaffold', input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] })
     },
@@ -255,9 +246,7 @@ export function useMoveConversation() {
       const prev = queryClient.getQueryData<MoveContext['prev']>(['conversations'])
       if (prev) {
         queryClient.setQueryData(['conversations'], {
-          conversations: prev.conversations.map((c) =>
-            c.id === id ? { ...c, projectId } : c,
-          ),
+          conversations: prev.conversations.map((c) => (c.id === id ? { ...c, projectId } : c)),
         })
       }
       return { prev }

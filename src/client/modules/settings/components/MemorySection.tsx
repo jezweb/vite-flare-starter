@@ -18,7 +18,8 @@ export function MemorySection() {
 
   const { data: modeData } = useQuery({
     queryKey: ['memory-user-mode'],
-    queryFn: () => apiClient.get<{ memoryUpdateMode: 'ask' | 'auto' | 'never' }>('/api/memories/user-mode'),
+    queryFn: () =>
+      apiClient.get<{ memoryUpdateMode: 'ask' | 'auto' | 'never' }>('/api/memories/user-mode'),
     enabled: !!session?.user,
   })
 
@@ -26,7 +27,7 @@ export function MemorySection() {
     mutationFn: (memoryUpdateMode: 'ask' | 'auto' | 'never') =>
       apiClient.patch<{ success: boolean; memoryUpdateMode: 'ask' | 'auto' | 'never' }>(
         '/api/memories/user-mode',
-        { memoryUpdateMode },
+        { memoryUpdateMode }
       ),
     onSuccess: (_, mode) => {
       queryClient.setQueryData(['memory-user-mode'], { memoryUpdateMode: mode })
@@ -56,8 +57,8 @@ export function MemorySection() {
           <h2 className="text-lg font-semibold">Personal memory</h2>
         </div>
         <p className="text-sm text-muted-foreground">
-          Persistent memory the AI holds about you, across all conversations and projects.
-          Use the privacy toggle for sensitive entries that should never auto-inject.
+          Persistent memory the AI holds about you, across all conversations and projects. Use the
+          privacy toggle for sensitive entries that should never auto-inject.
         </p>
       </div>
 

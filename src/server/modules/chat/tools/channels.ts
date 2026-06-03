@@ -63,9 +63,14 @@ const InboxAddInput = z.object({
   kind: z
     .string()
     .min(1)
-    .describe('Domain tag for grouping (e.g. "lead", "youtube_summary", "stuck_ticket"). snake_case.'),
+    .describe(
+      'Domain tag for grouping (e.g. "lead", "youtube_summary", "stuck_ticket"). snake_case.'
+    ),
   summary: z.string().min(1).describe('1-line headline shown in the Inbox row.'),
-  payload: z.unknown().optional().describe('Free-form structured data (any JSON-serialisable value).'),
+  payload: z
+    .unknown()
+    .optional()
+    .describe('Free-form structured data (any JSON-serialisable value).'),
   importance: z.enum(['high', 'medium', 'low']).optional(),
   confidence: z.number().min(0).max(1).optional(),
   reasoning: z.string().max(2000).optional().describe('Brief why-this-matters note.'),
@@ -79,20 +84,12 @@ const InboxAddInput = z.object({
         kind: z.string(),
         ref: z.string(),
         label: z.string().optional(),
-      }),
+      })
     )
     .optional()
     .describe('Provenance — what the agent cited.'),
-  dueAt: z
-    .number()
-    .int()
-    .optional()
-    .describe('Unix seconds — when the user should act on this.'),
-  expiresAt: z
-    .number()
-    .int()
-    .optional()
-    .describe('Unix seconds — auto-archive after this.'),
+  dueAt: z.number().int().optional().describe('Unix seconds — when the user should act on this.'),
+  expiresAt: z.number().int().optional().describe('Unix seconds — auto-archive after this.'),
   effortMinutes: z.number().int().min(1).optional(),
   tags: z.array(z.string()).optional(),
   threadSpaceId: z.string().optional().describe('Optional Space link for cross-team discussion.'),
@@ -106,7 +103,7 @@ export const inboxAdd: ToolDefinition<
 > = {
   name: 'inbox_add',
   description:
-    'Drop a finding into the user\'s Inbox. Use this to surface things the user might want to know / review / decide that don\'t require immediate action — leads worth following up, summaries, errors detected by a meta-routine, ideas, anomalies. Different from approval_queue (which gates a specific destructive action) and notify (which is a transient bell ping).',
+    "Drop a finding into the user's Inbox. Use this to surface things the user might want to know / review / decide that don't require immediate action — leads worth following up, summaries, errors detected by a meta-routine, ideas, anomalies. Different from approval_queue (which gates a specific destructive action) and notify (which is a transient bell ping).",
   inputSchema: InboxAddInput,
   outputSchema: InboxAddOutput,
   execute: async (input, ctx) => {
@@ -123,9 +120,7 @@ export const inboxAdd: ToolDefinition<
         importance: input.importance ?? null,
         confidence: input.confidence ?? null,
         reasoning: input.reasoning ?? null,
-        suggestedActionJson: input.suggestedAction
-          ? JSON.stringify(input.suggestedAction)
-          : null,
+        suggestedActionJson: input.suggestedAction ? JSON.stringify(input.suggestedAction) : null,
         sourcesJson: input.sources ? JSON.stringify(input.sources) : null,
         dueAt: input.dueAt ?? null,
         expiresAt: input.expiresAt ?? null,
@@ -161,13 +156,8 @@ const ApprovalQueueInput = z.object({
     .string()
     .min(1)
     .describe('Short snake_case identifier for the action (e.g. "send_email").'),
-  summary: z
-    .string()
-    .min(1)
-    .describe('One-line description of what will happen if approved.'),
-  payload: z
-    .unknown()
-    .describe('Free-form JSON payload — the executor reads this when approved.'),
+  summary: z.string().min(1).describe('One-line description of what will happen if approved.'),
+  payload: z.unknown().describe('Free-form JSON payload — the executor reads this when approved.'),
 })
 
 const ApprovalQueueOutput = z.object({
@@ -265,7 +255,7 @@ export const notify: ToolDefinition<z.infer<typeof NotifyInput>, z.infer<typeof 
         JSON.stringify({
           event: 'notify_tool_failed',
           error: err instanceof Error ? err.message : String(err),
-        }),
+        })
       )
       return { delivered: false }
     }
@@ -310,8 +300,8 @@ export const spaceSend: ToolDefinition<
         and(
           eq(conversationMembers.conversationId, input.spaceId),
           eq(conversationMembers.kind, 'user'),
-          eq(conversationMembers.userId, ctx.userId),
-        ),
+          eq(conversationMembers.userId, ctx.userId)
+        )
       )
       .limit(1)
     if (!member) {
@@ -350,13 +340,8 @@ export const spaceSend: ToolDefinition<
 // ─── webhook_post ──────────────────────────────────────────────────────
 
 const WebhookPostInput = z.object({
-  url: z
-    .string()
-    .url()
-    .describe('Full URL to POST to. Must be https in production.'),
-  body: z
-    .unknown()
-    .describe('JSON-serialisable body sent as application/json.'),
+  url: z.string().url().describe('Full URL to POST to. Must be https in production.'),
+  body: z.unknown().describe('JSON-serialisable body sent as application/json.'),
   headers: z
     .record(z.string(), z.string())
     .optional()

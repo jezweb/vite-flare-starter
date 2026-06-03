@@ -32,7 +32,11 @@
 import { z } from 'zod'
 import { Send } from 'lucide-react'
 import { getAgentByName } from 'agents'
-import { AutonomousAgent, type AutonomousAgentEnv, type AutonomousAgentState } from '@/server/lib/agents/autonomous-agent'
+import {
+  AutonomousAgent,
+  type AutonomousAgentEnv,
+  type AutonomousAgentState,
+} from '@/server/lib/agents/autonomous-agent'
 import type { ToolDefinition } from '@/shared/agent'
 import type { WriterAgent } from './writer-agent'
 
@@ -57,7 +61,8 @@ export class ResearcherAgent extends AutonomousAgent<Env, AutonomousAgentState> 
     displayName: 'Researcher',
     description:
       'Searches the web, gathers information on a topic, then hands off a brief to the Writer. Use for: market research, competitor scans, "what\'s happening with X" digests.',
-    userPurpose: 'Use to gather context on a topic — searches the web and saves sources to memory before handing off to a writer.',
+    userPurpose:
+      'Use to gather context on a topic — searches the web and saves sources to memory before handing off to a writer.',
     category: 'researcher' as const,
   }
 
@@ -72,10 +77,7 @@ export class ResearcherAgent extends AutonomousAgent<Env, AutonomousAgentState> 
 
   protected override async getToolDefinitions(): Promise<ToolDefinition<unknown, unknown>[]> {
     const { searchDefinitions } = await import('@/server/modules/chat/tools/search')
-    return [
-      ...searchDefinitions,
-      this.delegateToWriterTool(),
-    ] as ToolDefinition<unknown, unknown>[]
+    return [...searchDefinitions, this.delegateToWriterTool()] as ToolDefinition<unknown, unknown>[]
   }
 
   /**
@@ -99,9 +101,20 @@ export class ResearcherAgent extends AutonomousAgent<Env, AutonomousAgentState> 
       description:
         'Hand off research notes to the WriterAgent for polishing. Call this once you have enough material to answer the user. The writer returns clean prose; relay it back to the user verbatim.',
       inputSchema: z.object({
-        notes: z.string().min(10).max(20_000).describe('Research notes — facts, URLs, 1-line summaries.'),
-        brief: z.string().min(5).max(2000).describe('What the user actually asked for, in your words.'),
-        model: z.string().optional().describe('Override the writer model (default: Haiku). Use sparingly.'),
+        notes: z
+          .string()
+          .min(10)
+          .max(20_000)
+          .describe('Research notes — facts, URLs, 1-line summaries.'),
+        brief: z
+          .string()
+          .min(5)
+          .max(2000)
+          .describe('What the user actually asked for, in your words.'),
+        model: z
+          .string()
+          .optional()
+          .describe('Override the writer model (default: Haiku). Use sparingly.'),
       }),
       outputSchema: z.union([
         z.object({
@@ -113,7 +126,10 @@ export class ResearcherAgent extends AutonomousAgent<Env, AutonomousAgentState> 
       ]),
       execute: async ({ notes, brief, model }) => {
         if (!userId) {
-          return { ok: false as const, error: 'ResearcherAgent has no owner — call setOwner first.' }
+          return {
+            ok: false as const,
+            error: 'ResearcherAgent has no owner — call setOwner first.',
+          }
         }
         try {
           const writer = await getAgentByName(env.WriterAgent, `${userId}:writer`)

@@ -19,10 +19,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { eq } from 'drizzle-orm'
 import { BookOpen, Search } from 'lucide-react'
 import { projects } from '@/server/modules/projects/db/schema'
-import {
-  getKnowledgeForUser,
-  searchKnowledge,
-} from '@/server/modules/knowledge/storage'
+import { getKnowledgeForUser, searchKnowledge } from '@/server/modules/knowledge/storage'
 import type { KnowledgeScope } from '@/server/modules/knowledge/db/schema'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 
@@ -45,7 +42,7 @@ const knowledgeAvailable = (ctx: AgentContext) => !!getDb(ctx)
 async function userScopes(
   db: D1Database,
   userId: string,
-  projectId: string | null,
+  projectId: string | null
 ): Promise<Array<{ scope: KnowledgeScope; scopeId: string }>> {
   const d = drizzle(db)
   const ownProjects = await d
@@ -78,19 +75,25 @@ const SearchOutput = z.union([
         scope: z.enum(['user', 'project', 'org']),
         tags: z.array(z.string()),
         estimatedTokens: z.number(),
-      }),
+      })
     ),
     count: z.number(),
   }),
   z.object({ error: z.string() }),
 ])
 
-const knowledgeSearchDef: ToolDefinition<{ query: string; limit?: number }, z.infer<typeof SearchOutput>> = {
+const knowledgeSearchDef: ToolDefinition<
+  { query: string; limit?: number },
+  z.infer<typeof SearchOutput>
+> = {
   name: 'knowledge_search',
   description:
     "Search the user's knowledge base by keyword across user + project scopes. Returns ranked matches with title + summary + scope + tags. Use to discover relevant reference docs BEFORE asking the user — the answer to a factual question may already exist in their KB. Follow up with load_knowledge(id) to read a hit's body.",
   inputSchema: z.object({
-    query: z.string().min(1).describe('Keyword query, e.g. "broker pricing" or "queensland conveyancing".'),
+    query: z
+      .string()
+      .min(1)
+      .describe('Keyword query, e.g. "broker pricing" or "queensland conveyancing".'),
     limit: z.number().int().min(1).max(50).optional().describe('Max hits to return (default 20).'),
   }),
   outputSchema: SearchOutput,

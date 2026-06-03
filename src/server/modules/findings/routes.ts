@@ -226,16 +226,8 @@ findingsApp.post('/:id/promote', zValidator('json', PromoteBody), async (c) => {
     })
     .where(eq(entities.id, findingId))
 
-  const [learning] = await db
-    .select()
-    .from(entities)
-    .where(eq(entities.id, learningId))
-    .limit(1)
-  const [updated] = await db
-    .select()
-    .from(entities)
-    .where(eq(entities.id, findingId))
-    .limit(1)
+  const [learning] = await db.select().from(entities).where(eq(entities.id, learningId)).limit(1)
+  const [updated] = await db.select().from(entities).where(eq(entities.id, findingId)).limit(1)
   return c.json({
     finding: updated ? serialiseFinding(updated) : null,
     learning: learning ? serialiseFinding(learning) : null,

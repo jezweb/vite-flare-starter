@@ -17,7 +17,13 @@ import { useState, useCallback } from 'react'
 import { Upload, ArrowRight, Check, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 
 interface FieldDef {
@@ -33,7 +39,10 @@ interface Props {
 }
 
 function parseCsv(text: string): { headers: string[]; rows: string[][] } {
-  const lines = text.split('\n').map((l) => l.trim()).filter(Boolean)
+  const lines = text
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
   if (lines.length === 0) return { headers: [], rows: [] }
 
   const parseRow = (line: string) => {
@@ -41,8 +50,15 @@ function parseCsv(text: string): { headers: string[]; rows: string[][] } {
     let current = ''
     let inQuotes = false
     for (const char of line) {
-      if (char === '"') { inQuotes = !inQuotes; continue }
-      if (char === ',' && !inQuotes) { result.push(current.trim()); current = ''; continue }
+      if (char === '"') {
+        inQuotes = !inQuotes
+        continue
+      }
+      if (char === ',' && !inQuotes) {
+        result.push(current.trim())
+        current = ''
+        continue
+      }
       current += char
     }
     result.push(current.trim())
@@ -56,29 +72,39 @@ function parseCsv(text: string): { headers: string[]; rows: string[][] } {
 
 export function CsvImportWizard({ fields, onImport, maxPreviewRows = 5 }: Props) {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
-  const [csvData, setCsvData] = useState<{ headers: string[]; rows: string[][] }>({ headers: [], rows: [] })
+  const [csvData, setCsvData] = useState<{ headers: string[]; rows: string[][] }>({
+    headers: [],
+    rows: [],
+  })
   const [mapping, setMapping] = useState<Record<string, string>>({})
   const [importing, setImporting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const handleFile = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      const data = parseCsv(reader.result as string)
-      setCsvData(data)
-      // Auto-map exact matches
-      const autoMap: Record<string, string> = {}
-      for (const field of fields) {
-        const match = data.headers.find((h) => h.toLowerCase() === field.key.toLowerCase() || h.toLowerCase() === field.label.toLowerCase())
-        if (match) autoMap[field.key] = match
+  const handleFile = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      if (!file) return
+      const reader = new FileReader()
+      reader.onload = () => {
+        const data = parseCsv(reader.result as string)
+        setCsvData(data)
+        // Auto-map exact matches
+        const autoMap: Record<string, string> = {}
+        for (const field of fields) {
+          const match = data.headers.find(
+            (h) =>
+              h.toLowerCase() === field.key.toLowerCase() ||
+              h.toLowerCase() === field.label.toLowerCase()
+          )
+          if (match) autoMap[field.key] = match
+        }
+        setMapping(autoMap)
+        setStep(2)
       }
-      setMapping(autoMap)
-      setStep(2)
-    }
-    reader.readAsText(file)
-  }, [fields])
+      reader.readAsText(file)
+    },
+    [fields]
+  )
 
   const mappedRows = csvData.rows.map((row) => {
     const obj: Record<string, string> = {}
@@ -112,8 +138,20 @@ export function CsvImportWizard({ fields, onImport, maxPreviewRows = 5 }: Props)
       {/* Step indicator */}
       <div className="flex items-center gap-2 text-sm">
         {['Upload', 'Map columns', 'Preview', 'Done'].map((label, i) => (
-          <span key={label} className={cn('flex items-center gap-1', (i + 1) <= step ? 'text-foreground font-medium' : 'text-muted-foreground')}>
-            {(i + 1) < step ? <Check className="size-3.5 text-green-600 dark:text-green-400" /> : <span className="size-5 rounded-full border text-xs flex items-center justify-center">{i + 1}</span>}
+          <span
+            key={label}
+            className={cn(
+              'flex items-center gap-1',
+              i + 1 <= step ? 'text-foreground font-medium' : 'text-muted-foreground'
+            )}
+          >
+            {i + 1 < step ? (
+              <Check className="size-3.5 text-green-600 dark:text-green-400" />
+            ) : (
+              <span className="size-5 rounded-full border text-xs flex items-center justify-center">
+                {i + 1}
+              </span>
+            )}
             {label}
             {i < 3 && <ArrowRight className="size-3 text-muted-foreground/50 mx-1" />}
           </span>
@@ -132,22 +170,33 @@ export function CsvImportWizard({ fields, onImport, maxPreviewRows = 5 }: Props)
       {/* Step 2: Map columns */}
       {step === 2 && (
         <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">Map CSV columns to fields. {csvData.rows.length} rows found.</p>
+          <p className="text-sm text-muted-foreground">
+            Map CSV columns to fields. {csvData.rows.length} rows found.
+          </p>
           <div className="space-y-2">
             {fields.map((field) => (
               <div key={field.key} className="flex items-center gap-3">
-                <span className="text-sm w-32 shrink-0">{field.label}{field.required && <span className="text-destructive">*</span>}</span>
+                <span className="text-sm w-32 shrink-0">
+                  {field.label}
+                  {field.required && <span className="text-destructive">*</span>}
+                </span>
                 <ArrowRight className="size-3 text-muted-foreground shrink-0" />
                 <Select
                   value={mapping[field.key] || '__skip__'}
-                  onValueChange={(v) => setMapping((m) => ({ ...m, [field.key]: v === '__skip__' ? '' : v }))}
+                  onValueChange={(v) =>
+                    setMapping((m) => ({ ...m, [field.key]: v === '__skip__' ? '' : v }))
+                  }
                 >
                   <SelectTrigger className="h-8 flex-1">
                     <SelectValue placeholder="— Skip —" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__skip__">— Skip —</SelectItem>
-                    {csvData.headers.map((h) => <SelectItem key={h} value={h}>{h}</SelectItem>)}
+                    {csvData.headers.map((h) => (
+                      <SelectItem key={h} value={h}>
+                        {h}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -175,17 +224,25 @@ export function CsvImportWizard({ fields, onImport, maxPreviewRows = 5 }: Props)
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/50">
-                  {fields.filter((f) => mapping[f.key]).map((f) => (
-                    <th key={f.key} className="px-3 py-1.5 text-left text-xs font-medium">{f.label}</th>
-                  ))}
+                  {fields
+                    .filter((f) => mapping[f.key])
+                    .map((f) => (
+                      <th key={f.key} className="px-3 py-1.5 text-left text-xs font-medium">
+                        {f.label}
+                      </th>
+                    ))}
                 </tr>
               </thead>
               <tbody>
                 {mappedRows.slice(0, maxPreviewRows).map((row, i) => (
                   <tr key={i} className="border-b">
-                    {fields.filter((f) => mapping[f.key]).map((f) => (
-                      <td key={f.key} className="px-3 py-1.5 truncate max-w-[200px]">{row[f.key]}</td>
-                    ))}
+                    {fields
+                      .filter((f) => mapping[f.key])
+                      .map((f) => (
+                        <td key={f.key} className="px-3 py-1.5 truncate max-w-[200px]">
+                          {row[f.key]}
+                        </td>
+                      ))}
                   </tr>
                 ))}
               </tbody>
@@ -193,7 +250,9 @@ export function CsvImportWizard({ fields, onImport, maxPreviewRows = 5 }: Props)
           </div>
           {error && <div className="text-sm text-destructive">{error}</div>}
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setStep(2)}>Back</Button>
+            <Button variant="outline" onClick={() => setStep(2)}>
+              Back
+            </Button>
             <Button onClick={handleImport} disabled={importing}>
               {importing ? 'Importing...' : `Import ${mappedRows.length} rows`}
             </Button>
@@ -206,7 +265,9 @@ export function CsvImportWizard({ fields, onImport, maxPreviewRows = 5 }: Props)
         <div className="flex flex-col items-center gap-2 py-8">
           <Check className="size-10 text-green-600 dark:text-green-400" />
           <p className="text-sm font-medium">Import complete</p>
-          <p className="text-xs text-muted-foreground">{mappedRows.length} rows imported successfully</p>
+          <p className="text-xs text-muted-foreground">
+            {mappedRows.length} rows imported successfully
+          </p>
         </div>
       )}
     </div>

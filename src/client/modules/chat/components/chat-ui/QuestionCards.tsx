@@ -92,7 +92,9 @@ export function QuestionCards({ questions, onAnswer, disabled }: Props) {
                   )}
                   <div className="flex-1 min-w-0">
                     <div>{opt.label}</div>
-                    {opt.description && <div className="text-xs text-muted-foreground mt-0.5">{opt.description}</div>}
+                    {opt.description && (
+                      <div className="text-xs text-muted-foreground mt-0.5">{opt.description}</div>
+                    )}
                   </div>
                 </button>
               )
@@ -101,7 +103,12 @@ export function QuestionCards({ questions, onAnswer, disabled }: Props) {
         </div>
       ))}
       {hasMultiSelect && (
-        <Button onClick={handleSubmit} disabled={!allAnswered || isDisabled} size="sm" className="w-full">
+        <Button
+          onClick={handleSubmit}
+          disabled={!allAnswered || isDisabled}
+          size="sm"
+          className="w-full"
+        >
           {submitted ? 'Submitted' : 'Submit'}
         </Button>
       )}

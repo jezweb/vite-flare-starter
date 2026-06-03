@@ -40,7 +40,8 @@ export function ThemeURLHandler() {
 
     // Always strip the param so a refresh doesn't re-apply every time
     params.delete('theme')
-    const clean = window.location.pathname + (params.toString() ? `?${params}` : '') + window.location.hash
+    const clean =
+      window.location.pathname + (params.toString() ? `?${params}` : '') + window.location.hash
     window.history.replaceState(null, '', clean)
 
     if (!result.ok) {

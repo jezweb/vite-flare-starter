@@ -60,7 +60,7 @@ function gwsEnv(ctx: AgentContext): GoogleWorkspaceEnv {
  */
 async function requireActiveToken(
   ctx: AgentContext,
-  requiredScope: string,
+  requiredScope: string
 ): Promise<{ token: string } | { error: string }> {
   const env = gwsEnv(ctx)
   const db = drizzle(env.DB)
@@ -115,14 +115,16 @@ const GmailSearchInput = z
       .min(1)
       .max(500)
       .optional()
-      .describe('Gmail search query in operator syntax. Prefer this when you can construct it yourself.'),
+      .describe(
+        'Gmail search query in operator syntax. Prefer this when you can construct it yourself.'
+      ),
     naturalQuery: z
       .string()
       .min(1)
       .max(500)
       .optional()
       .describe(
-        'Free-form English — "emails from nick last week with attachments". Use only when you have free-form user intent and would otherwise have to guess the Gmail operator syntax. Server translates via Nemotron 3 (costs ~3-8s of extra latency per call).',
+        'Free-form English — "emails from nick last week with attachments". Use only when you have free-form user intent and would otherwise have to guess the Gmail operator syntax. Server translates via Nemotron 3 (costs ~3-8s of extra latency per call).'
       ),
     limit: z.number().int().min(1).max(50).default(10).optional(),
   })
@@ -141,7 +143,10 @@ const GmailMessage = z.object({
 const GmailSearchOutput = z.union([
   z.object({
     query: z.string(),
-    translatedFrom: z.string().optional().describe('Original naturalQuery when the server translated it'),
+    translatedFrom: z
+      .string()
+      .optional()
+      .describe('Original naturalQuery when the server translated it'),
     count: z.number(),
     messages: z.array(GmailMessage),
   }),
@@ -169,10 +174,7 @@ export const gmailSearchDefinition: ToolDefinition<GmailSearchInput, GmailSearch
     let effectiveQuery = query
     if (!effectiveQuery && naturalQuery) {
       const { translateGmailQuery } = await import('./google-workspace-nlp')
-      const result = await translateGmailQuery(
-        gwsEnv(ctx) as unknown as { AI: Ai },
-        naturalQuery,
-      )
+      const result = await translateGmailQuery(gwsEnv(ctx) as unknown as { AI: Ai }, naturalQuery)
       effectiveQuery = result.query
       translatedFrom = naturalQuery
     }
@@ -194,7 +196,7 @@ export const gmailSearchDefinition: ToolDefinition<GmailSearchInput, GmailSearch
       ids.map(async (id) => {
         const r = await fetch(
           `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`,
-          { headers: { Authorization: `Bearer ${auth.token}` } },
+          { headers: { Authorization: `Bearer ${auth.token}` } }
         )
         if (!r.ok) return null
         const m = (await r.json()) as {
@@ -211,7 +213,7 @@ export const gmailSearchDefinition: ToolDefinition<GmailSearchInput, GmailSearch
           date: hdr('Date') ?? '',
           snippet: m.snippet ?? '',
         }
-      }),
+      })
     )
     const filtered = messages.filter((m): m is NonNullable<typeof m> => m != null)
     return {
@@ -268,17 +270,14 @@ export const gmailSendDefinition: ToolDefinition<GmailSendInput, GmailSendOutput
 
     const raw = base64UrlEncode(buildMimeMessage({ to, subject, body, cc }))
 
-    const resp = await fetch(
-      'https://gmail.googleapis.com/gmail/v1/users/me/messages/send',
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${auth.token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ raw }),
+    const resp = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${auth.token}`,
+        'Content-Type': 'application/json',
       },
-    )
+      body: JSON.stringify({ raw }),
+    })
     if (!resp.ok) {
       const errBody = await resp.text()
       return { error: `Send failed: ${resp.status} ${errBody.slice(0, 200)}` }
@@ -305,7 +304,7 @@ const DriveSearchInput = z.object({
     .min(1)
     .max(500)
     .describe(
-      "Drive query — supports 'name contains \"foo\"' and full-text 'fullText contains \"foo\"'. Defaults to fullText if plain text is passed.",
+      'Drive query — supports \'name contains "foo"\' and full-text \'fullText contains "foo"\'. Defaults to fullText if plain text is passed.'
     ),
   limit: z.number().int().min(1).max(50).default(10).optional(),
 })
@@ -351,7 +350,7 @@ export const driveSearchDefinition: ToolDefinition<DriveSearchInput, DriveSearch
     url.searchParams.set('pageSize', String(limit))
     url.searchParams.set(
       'fields',
-      'files(id,name,mimeType,modifiedTime,webViewLink,owners(emailAddress))',
+      'files(id,name,mimeType,modifiedTime,webViewLink,owners(emailAddress))'
     )
     const resp = await fetch(url, { headers: { Authorization: `Bearer ${auth.token}` } })
     if (!resp.ok) return { error: `Drive search failed: ${resp.status}` }
@@ -424,7 +423,10 @@ const CalendarUpcomingOutput = z.union([
 export type CalendarUpcomingInput = z.infer<typeof CalendarUpcomingInput>
 export type CalendarUpcomingOutput = z.infer<typeof CalendarUpcomingOutput>
 
-export const calendarUpcomingDefinition: ToolDefinition<CalendarUpcomingInput, CalendarUpcomingOutput> = {
+export const calendarUpcomingDefinition: ToolDefinition<
+  CalendarUpcomingInput,
+  CalendarUpcomingOutput
+> = {
   name: 'calendar_upcoming',
   description:
     "List the user's upcoming calendar events (default: next 10 events across the primary calendar). Use before suggesting a meeting time or answering 'what's on my schedule?'",
@@ -535,7 +537,7 @@ export const calendarCreateDefinition: ToolDefinition<CalendarCreateInput, Calen
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(event),
-      },
+      }
     )
     if (!resp.ok) {
       const errBody = await resp.text()
@@ -586,21 +588,21 @@ const GmailFullMessage = z.object({
         filename: z.string(),
         mimeType: z.string(),
         sizeBytes: z.number(),
-      }),
+      })
     )
     .optional(),
   labelIds: z.array(z.string()).optional(),
 })
 
-const GmailGetMessageOutput = z.union([
-  GmailFullMessage,
-  z.object({ error: z.string() }),
-])
+const GmailGetMessageOutput = z.union([GmailFullMessage, z.object({ error: z.string() })])
 
 export type GmailGetMessageInput = z.infer<typeof GmailGetMessageInput>
 export type GmailGetMessageOutput = z.infer<typeof GmailGetMessageOutput>
 
-export const gmailGetMessageDefinition: ToolDefinition<GmailGetMessageInput, GmailGetMessageOutput> = {
+export const gmailGetMessageDefinition: ToolDefinition<
+  GmailGetMessageInput,
+  GmailGetMessageOutput
+> = {
   name: 'gmail_get_message',
   description:
     "Read one Gmail message in full (body + headers + attachment metadata). Call after gmail_search when the user asks about a specific thread. Format 'summary' returns metadata only — cheaper when you just need subject/from.",
@@ -613,7 +615,7 @@ export const gmailGetMessageDefinition: ToolDefinition<GmailGetMessageInput, Gma
 
     const apiFormat = format === 'summary' ? 'metadata' : 'full'
     const url = new URL(
-      `https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(messageId)}`,
+      `https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(messageId)}`
     )
     url.searchParams.set('format', apiFormat)
     if (apiFormat === 'metadata') {
@@ -677,7 +679,10 @@ const GmailListLabelsOutput = z.union([
 export type GmailListLabelsInput = z.infer<typeof GmailListLabelsInput>
 export type GmailListLabelsOutput = z.infer<typeof GmailListLabelsOutput>
 
-export const gmailListLabelsDefinition: ToolDefinition<GmailListLabelsInput, GmailListLabelsOutput> = {
+export const gmailListLabelsDefinition: ToolDefinition<
+  GmailListLabelsInput,
+  GmailListLabelsOutput
+> = {
   name: 'gmail_list_labels',
   description:
     "List the user's Gmail labels (both system labels like INBOX / STARRED and user-created labels). Useful when the user wants to filter by a custom label or organise mail.",
@@ -797,7 +802,9 @@ export const gmailDraftDefinition: ToolDefinition<GmailDraftInput, GmailDraftOut
 // an email to the original recipients.
 
 const GmailReplyInput = z.object({
-  messageId: z.string().describe('The message id to reply to (from gmail_search / gmail_get_message)'),
+  messageId: z
+    .string()
+    .describe('The message id to reply to (from gmail_search / gmail_get_message)'),
   body: z.string().min(1).max(20000),
   /** Reply to everyone (To + all Cc) vs just the sender. Default: false (sender only). */
   replyAll: z.boolean().default(false).optional(),
@@ -819,7 +826,7 @@ export type GmailReplyOutput = z.infer<typeof GmailReplyOutput>
 export const gmailReplyDefinition: ToolDefinition<GmailReplyInput, GmailReplyOutput> = {
   name: 'gmail_reply',
   description:
-    "Reply to a Gmail message. Auto-handles threading (In-Reply-To, References, Re: prefix) so Gmail groups the reply with the original. Set replyAll=true to include everyone on the original. Always confirm the body with the user first — this actually sends.",
+    'Reply to a Gmail message. Auto-handles threading (In-Reply-To, References, Re: prefix) so Gmail groups the reply with the original. Set replyAll=true to include everyone on the original. Always confirm the body with the user first — this actually sends.',
   inputSchema: GmailReplyInput,
   outputSchema: GmailReplyOutput,
   isAvailable: gwsAvailable,
@@ -832,7 +839,7 @@ export const gmailReplyDefinition: ToolDefinition<GmailReplyInput, GmailReplyOut
     //    The profile lookup gives us the user's own email so we can strip
     //    it from the replyAll cc list (Gmail does NOT dedupe self-addresses).
     const metaUrl = new URL(
-      `https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(messageId)}`,
+      `https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(messageId)}`
     )
     metaUrl.searchParams.set('format', 'metadata')
     for (const h of ['From', 'To', 'Cc', 'Subject', 'Message-ID', 'References', 'In-Reply-To']) {
@@ -869,13 +876,11 @@ export const gmailReplyDefinition: ToolDefinition<GmailReplyInput, GmailReplyOut
     // self-addresses on send.
     const ccList = replyAll
       ? splitAddresses([origTo, origCc].filter(Boolean).join(', ')).filter(
-          (addr) => !selfEmail || !addressEquals(addr, selfEmail),
+          (addr) => !selfEmail || !addressEquals(addr, selfEmail)
         )
       : []
     const subject = /^re:/i.test(origSubject) ? origSubject : `Re: ${origSubject}`
-    const references = origRefs
-      ? `${origRefs} ${origMessageIdHeader}`.trim()
-      : origMessageIdHeader
+    const references = origRefs ? `${origRefs} ${origMessageIdHeader}`.trim() : origMessageIdHeader
 
     const extraHeaders: string[] = []
     if (origMessageIdHeader) extraHeaders.push(`In-Reply-To: ${origMessageIdHeader}`)
@@ -887,7 +892,7 @@ export const gmailReplyDefinition: ToolDefinition<GmailReplyInput, GmailReplyOut
         body,
         cc: ccList.length > 0 ? ccList : undefined,
         extraHeaders,
-      }),
+      })
     )
 
     const resp = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
@@ -925,19 +930,32 @@ const CALENDAR_RANGES = ['today', 'tomorrow', 'thisWeek', 'nextWeek', 'thisMonth
 type CalendarRange = (typeof CALENDAR_RANGES)[number]
 
 const CalendarListEventsInput = z.object({
-  range: z.enum(CALENDAR_RANGES).optional().describe('Preset date window. Mutually exclusive with start/end.'),
-  start: z.string().optional().describe('ISO 8601 start. Required if range is not set AND naturalQuery not provided.'),
-  end: z.string().optional().describe('ISO 8601 end. Required if range is not set AND naturalQuery not provided.'),
+  range: z
+    .enum(CALENDAR_RANGES)
+    .optional()
+    .describe('Preset date window. Mutually exclusive with start/end.'),
+  start: z
+    .string()
+    .optional()
+    .describe('ISO 8601 start. Required if range is not set AND naturalQuery not provided.'),
+  end: z
+    .string()
+    .optional()
+    .describe('ISO 8601 end. Required if range is not set AND naturalQuery not provided.'),
   limit: z.number().int().min(1).max(100).default(25).optional(),
   calendarId: z.string().default('primary').optional(),
-  query: z.string().max(200).optional().describe('Free-text search within event summary/description'),
+  query: z
+    .string()
+    .max(200)
+    .optional()
+    .describe('Free-text search within event summary/description'),
   naturalQuery: z
     .string()
     .min(1)
     .max(300)
     .optional()
     .describe(
-      'Free-form English — "meetings with Sarah this week". Server translates via Nemotron 3 into range/start/end/query. Use when the user intent is free-form and structured fields would require guessing. Structured fields (range, start, end, query) take precedence if BOTH are provided.',
+      'Free-form English — "meetings with Sarah this week". Server translates via Nemotron 3 into range/start/end/query. Use when the user intent is free-form and structured fields would require guessing. Structured fields (range, start, end, query) take precedence if BOTH are provided.'
     ),
   timezone: z
     .string()
@@ -966,7 +984,7 @@ export const calendarListEventsDefinition: ToolDefinition<
 > = {
   name: 'calendar_list_events',
   description:
-    "List calendar events. Three ways to specify the window: `range` preset (today/tomorrow/thisWeek/nextWeek/thisMonth), explicit `start`/`end` ISO timestamps, OR `naturalQuery` free-form English that the server translates via Nemotron 3. Falls back to the primary calendar unless calendarId is given.",
+    'List calendar events. Three ways to specify the window: `range` preset (today/tomorrow/thisWeek/nextWeek/thisMonth), explicit `start`/`end` ISO timestamps, OR `naturalQuery` free-form English that the server translates via Nemotron 3. Falls back to the primary calendar unless calendarId is given.',
   inputSchema: CalendarListEventsInput,
   outputSchema: CalendarListEventsOutput,
   isAvailable: gwsAvailable,
@@ -981,7 +999,7 @@ export const calendarListEventsDefinition: ToolDefinition<
       naturalQuery,
       timezone = 'Australia/Sydney',
     },
-    ctx,
+    ctx
   ) => {
     const auth = await requireActiveToken(ctx, 'calendar.events')
     if ('error' in auth) return auth
@@ -999,7 +1017,7 @@ export const calendarListEventsDefinition: ToolDefinition<
       const result = await translateCalendarListQuery(
         gwsEnv(ctx) as unknown as { AI: Ai },
         naturalQuery,
-        timezone,
+        timezone
       )
       effectiveRange = result.fields.range ?? effectiveRange
       effectiveStart = result.fields.start ?? effectiveStart
@@ -1025,7 +1043,7 @@ export const calendarListEventsDefinition: ToolDefinition<
     }
 
     const url = new URL(
-      `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`,
+      `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`
     )
     url.searchParams.set('timeMin', rangeStart.toISOString())
     url.searchParams.set('timeMax', rangeEnd.toISOString())
@@ -1072,10 +1090,7 @@ const CalendarEventFull = CalendarEvent.extend({
   updated: z.string().optional(),
 })
 
-const CalendarGetEventOutput = z.union([
-  CalendarEventFull,
-  z.object({ error: z.string() }),
-])
+const CalendarGetEventOutput = z.union([CalendarEventFull, z.object({ error: z.string() })])
 
 export type CalendarGetEventInput = z.infer<typeof CalendarGetEventInput>
 export type CalendarGetEventOutput = z.infer<typeof CalendarGetEventOutput>
@@ -1096,7 +1111,7 @@ export const calendarGetEventDefinition: ToolDefinition<
 
     const resp = await fetch(
       `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`,
-      { headers: { Authorization: `Bearer ${auth.token}` } },
+      { headers: { Authorization: `Bearer ${auth.token}` } }
     )
     if (!resp.ok) return { error: `Calendar get failed: ${resp.status}` }
     const e = (await resp.json()) as GoogleCalendarApiEvent & {
@@ -1181,7 +1196,7 @@ export const calendarFindFreeSlotDefinition: ToolDefinition<
 > = {
   name: 'calendar_find_free_slot',
   description:
-    "Find candidate free slots for a meeting. Takes a duration (minutes), a search window (earliest/latest ISO timestamps), optional working-hours (default 9-17), and returns up to N non-overlapping candidate slots. Use before suggesting a time to the user.",
+    'Find candidate free slots for a meeting. Takes a duration (minutes), a search window (earliest/latest ISO timestamps), optional working-hours (default 9-17), and returns up to N non-overlapping candidate slots. Use before suggesting a time to the user.',
   inputSchema: CalendarFindFreeSlotInput,
   outputSchema: CalendarFindFreeSlotOutput,
   isAvailable: gwsAvailable,
@@ -1195,7 +1210,7 @@ export const calendarFindFreeSlotDefinition: ToolDefinition<
       candidates = 5,
       calendarIds = ['primary'],
     },
-    ctx,
+    ctx
   ) => {
     const auth = await requireActiveToken(ctx, 'calendar.events')
     if ('error' in auth) return auth
@@ -1360,7 +1375,7 @@ export const calendarUpdateEventDefinition: ToolDefinition<
       removeAttendees,
       sendUpdates = 'all',
     },
-    ctx,
+    ctx
   ) => {
     const auth = await requireActiveToken(ctx, 'calendar.events')
     if ('error' in auth) return auth
@@ -1370,7 +1385,7 @@ export const calendarUpdateEventDefinition: ToolDefinition<
     if (addAttendees || removeAttendees) {
       const getResp = await fetch(
         `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`,
-        { headers: { Authorization: `Bearer ${auth.token}` } },
+        { headers: { Authorization: `Bearer ${auth.token}` } }
       )
       if (!getResp.ok) return { error: `Event lookup failed: ${getResp.status}` }
       const existing = (await getResp.json()) as {
@@ -1391,11 +1406,14 @@ export const calendarUpdateEventDefinition: ToolDefinition<
     if (attendees !== undefined) patch['attendees'] = attendees
 
     if (Object.keys(patch).length === 0) {
-      return { error: 'No fields to update — pass at least one of summary/start/end/description/location/attendees.' }
+      return {
+        error:
+          'No fields to update — pass at least one of summary/start/end/description/location/attendees.',
+      }
     }
 
     const url = new URL(
-      `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`,
+      `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`
     )
     url.searchParams.set('sendUpdates', sendUpdates)
     const resp = await fetch(url, {
@@ -1454,7 +1472,7 @@ export const calendarDeleteEventDefinition: ToolDefinition<
 > = {
   name: 'calendar_delete_event',
   description:
-    "Cancel / delete an event. Google sends cancellations to attendees by default (sendUpdates=all). Privileged action — confirm intent and the specific event before calling.",
+    'Cancel / delete an event. Google sends cancellations to attendees by default (sendUpdates=all). Privileged action — confirm intent and the specific event before calling.',
   inputSchema: CalendarDeleteEventInput,
   outputSchema: CalendarDeleteEventOutput,
   isAvailable: gwsAvailable,
@@ -1464,7 +1482,7 @@ export const calendarDeleteEventDefinition: ToolDefinition<
     if ('error' in auth) return auth
 
     const url = new URL(
-      `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`,
+      `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`
     )
     url.searchParams.set('sendUpdates', sendUpdates)
     const resp = await fetch(url, {
@@ -1533,10 +1551,7 @@ export const docsSearchDefinition: ToolDefinition<DocsSearchInput, DocsSearchOut
     url.searchParams.set('q', q)
     url.searchParams.set('pageSize', String(limit))
     url.searchParams.set('orderBy', 'modifiedTime desc')
-    url.searchParams.set(
-      'fields',
-      'files(id,name,modifiedTime,webViewLink,owners(emailAddress))',
-    )
+    url.searchParams.set('fields', 'files(id,name,modifiedTime,webViewLink,owners(emailAddress))')
     const resp = await fetch(url, { headers: { Authorization: `Bearer ${auth.token}` } })
     if (!resp.ok) return { error: `Docs search failed: ${resp.status}` }
     const json = (await resp.json()) as {
@@ -1617,7 +1632,7 @@ export const docsGetDefinition: ToolDefinition<DocsGetInput, DocsGetOutput> = {
 
     const resp = await fetch(
       `https://docs.googleapis.com/v1/documents/${encodeURIComponent(docId)}`,
-      { headers: { Authorization: `Bearer ${auth.token}` } },
+      { headers: { Authorization: `Bearer ${auth.token}` } }
     )
     if (!resp.ok) return { error: `Docs get failed: ${resp.status}` }
     const doc = (await resp.json()) as GoogleDocsApiDoc
@@ -1662,7 +1677,7 @@ export type DocsCreateOutput = z.infer<typeof DocsCreateOutput>
 export const docsCreateDefinition: ToolDefinition<DocsCreateInput, DocsCreateOutput> = {
   name: 'docs_create',
   description:
-    "Create a new Google Doc. Optional `content` is appended after creation using the same rules as docs_append (paragraphs + `# heading` lines). Returns the docId and shareable URL.",
+    'Create a new Google Doc. Optional `content` is appended after creation using the same rules as docs_append (paragraphs + `# heading` lines). Returns the docId and shareable URL.',
   inputSchema: DocsCreateInput,
   outputSchema: DocsCreateOutput,
   isAvailable: gwsAvailable,
@@ -1722,7 +1737,9 @@ const DocsAppendInput = z.object({
     .string()
     .min(1)
     .max(50000)
-    .describe('Paragraphs separated by blank lines. Lines starting with # / ## / ### become H1 / H2 / H3.'),
+    .describe(
+      'Paragraphs separated by blank lines. Lines starting with # / ## / ### become H1 / H2 / H3.'
+    ),
 })
 
 const DocsAppendOutput = z.union([
@@ -1784,7 +1801,7 @@ const DocsCreateFromMarkdownInput = z.object({
     .min(1)
     .max(200_000)
     .describe(
-      'Full markdown document. Headings, bold/italic, code, lists, links, task items render as native Docs structure.',
+      'Full markdown document. Headings, bold/italic, code, lists, links, task items render as native Docs structure.'
     ),
 })
 
@@ -1866,7 +1883,7 @@ export const docsCreateFromMarkdownDefinition: ToolDefinition<
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ requests: chunk }),
-        },
+        }
       )
       if (!resp.ok) {
         const errBody = await resp.text()
@@ -1935,9 +1952,12 @@ export const sheetsListTabsDefinition: ToolDefinition<SheetsListTabsInput, Sheet
     if ('error' in auth) return auth
 
     const url = new URL(
-      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}`
     )
-    url.searchParams.set('fields', 'properties(title),sheets(properties(sheetId,title,index,gridProperties))')
+    url.searchParams.set(
+      'fields',
+      'properties(title),sheets(properties(sheetId,title,index,gridProperties))'
+    )
     const resp = await fetch(url, { headers: { Authorization: `Bearer ${auth.token}` } })
     if (!resp.ok) return { error: `Sheets list failed: ${resp.status}` }
     const json = (await resp.json()) as {
@@ -1998,10 +2018,13 @@ const SheetsReadRangeOutput = z.union([
 export type SheetsReadRangeInput = z.infer<typeof SheetsReadRangeInput>
 export type SheetsReadRangeOutput = z.infer<typeof SheetsReadRangeOutput>
 
-export const sheetsReadRangeDefinition: ToolDefinition<SheetsReadRangeInput, SheetsReadRangeOutput> = {
+export const sheetsReadRangeDefinition: ToolDefinition<
+  SheetsReadRangeInput,
+  SheetsReadRangeOutput
+> = {
   name: 'sheets_read_range',
   description:
-    "Read a range from a Google Sheets spreadsheet in A1 notation. Default valueRenderOption is FORMATTED_VALUE (strings — what the user sees); use UNFORMATTED_VALUE for raw numbers/dates or FORMULA to inspect formulas.",
+    'Read a range from a Google Sheets spreadsheet in A1 notation. Default valueRenderOption is FORMATTED_VALUE (strings — what the user sees); use UNFORMATTED_VALUE for raw numbers/dates or FORMULA to inspect formulas.',
   inputSchema: SheetsReadRangeInput,
   outputSchema: SheetsReadRangeOutput,
   isAvailable: gwsAvailable,
@@ -2010,7 +2033,7 @@ export const sheetsReadRangeDefinition: ToolDefinition<SheetsReadRangeInput, She
     if ('error' in auth) return auth
 
     const url = new URL(
-      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(range)}`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(range)}`
     )
     url.searchParams.set('valueRenderOption', valueRenderOption)
     const resp = await fetch(url, { headers: { Authorization: `Bearer ${auth.token}` } })
@@ -2041,7 +2064,7 @@ const SheetsAppendRowInput = z.object({
   range: z
     .string()
     .describe(
-      "A1 of the target table, e.g. 'Sheet1' or 'Sheet1!A:D'. Google scans this range to find the 'logical table' (trailing empty rows are ignored) and inserts new rows AFTER that table, pushing any data in unrelated rows below down one row per appended row.",
+      "A1 of the target table, e.g. 'Sheet1' or 'Sheet1!A:D'. Google scans this range to find the 'logical table' (trailing empty rows are ignored) and inserts new rows AFTER that table, pushing any data in unrelated rows below down one row per appended row."
     ),
   rows: z
     .array(z.array(z.union([z.string(), z.number(), z.boolean()])))
@@ -2064,23 +2087,23 @@ const SheetsAppendRowOutput = z.union([
 export type SheetsAppendRowInput = z.infer<typeof SheetsAppendRowInput>
 export type SheetsAppendRowOutput = z.infer<typeof SheetsAppendRowOutput>
 
-export const sheetsAppendRowDefinition: ToolDefinition<SheetsAppendRowInput, SheetsAppendRowOutput> = {
+export const sheetsAppendRowDefinition: ToolDefinition<
+  SheetsAppendRowInput,
+  SheetsAppendRowOutput
+> = {
   name: 'sheets_append_row',
   description:
-    "Append one or more rows to the end of a Google Sheets tab. valueInputOption=USER_ENTERED (default) parses numbers/dates/formulas like the UI does; RAW stores the string verbatim. Privileged — confirm with the user before calling.",
+    'Append one or more rows to the end of a Google Sheets tab. valueInputOption=USER_ENTERED (default) parses numbers/dates/formulas like the UI does; RAW stores the string verbatim. Privileged — confirm with the user before calling.',
   inputSchema: SheetsAppendRowInput,
   outputSchema: SheetsAppendRowOutput,
   isAvailable: gwsAvailable,
   needsApproval: true,
-  execute: async (
-    { spreadsheetId, range, rows, valueInputOption = 'USER_ENTERED' },
-    ctx,
-  ) => {
+  execute: async ({ spreadsheetId, range, rows, valueInputOption = 'USER_ENTERED' }, ctx) => {
     const auth = await requireActiveToken(ctx, 'spreadsheets')
     if ('error' in auth) return auth
 
     const url = new URL(
-      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(range)}:append`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(range)}:append`
     )
     url.searchParams.set('valueInputOption', valueInputOption)
     url.searchParams.set('insertDataOption', 'INSERT_ROWS')
@@ -2142,23 +2165,23 @@ const SheetsWriteRangeOutput = z.union([
 export type SheetsWriteRangeInput = z.infer<typeof SheetsWriteRangeInput>
 export type SheetsWriteRangeOutput = z.infer<typeof SheetsWriteRangeOutput>
 
-export const sheetsWriteRangeDefinition: ToolDefinition<SheetsWriteRangeInput, SheetsWriteRangeOutput> = {
+export const sheetsWriteRangeDefinition: ToolDefinition<
+  SheetsWriteRangeInput,
+  SheetsWriteRangeOutput
+> = {
   name: 'sheets_write_range',
   description:
-    "Overwrite a range in Google Sheets with the provided values. The range must match the values matrix shape. Privileged — this replaces existing data.",
+    'Overwrite a range in Google Sheets with the provided values. The range must match the values matrix shape. Privileged — this replaces existing data.',
   inputSchema: SheetsWriteRangeInput,
   outputSchema: SheetsWriteRangeOutput,
   isAvailable: gwsAvailable,
   needsApproval: true,
-  execute: async (
-    { spreadsheetId, range, values, valueInputOption = 'USER_ENTERED' },
-    ctx,
-  ) => {
+  execute: async ({ spreadsheetId, range, values, valueInputOption = 'USER_ENTERED' }, ctx) => {
     const auth = await requireActiveToken(ctx, 'spreadsheets')
     if ('error' in auth) return auth
 
     const url = new URL(
-      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(range)}`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(range)}`
     )
     url.searchParams.set('valueInputOption', valueInputOption)
     const resp = await fetch(url, {
@@ -2231,7 +2254,7 @@ export const driveGetFileDefinition: ToolDefinition<DriveGetFileInput, DriveGetF
 
     // 1. Fetch metadata
     const metaUrl = new URL(
-      `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}`,
+      `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}`
     )
     metaUrl.searchParams.set('fields', 'id,name,mimeType,size,modifiedTime,webViewLink')
     const metaResp = await fetch(metaUrl, { headers: { Authorization: `Bearer ${auth.token}` } })
@@ -2269,8 +2292,7 @@ export const driveGetFileDefinition: ToolDefinition<DriveGetFileInput, DriveGetF
       return {
         ...base,
         notSupported: true,
-        notSupportedReason:
-          'Google Sheets — use sheets_list_tabs + sheets_read_range instead.',
+        notSupportedReason: 'Google Sheets — use sheets_list_tabs + sheets_read_range instead.',
       }
     }
     if (!isTextShape && !isGoogleDoc) {
@@ -2298,7 +2320,7 @@ export const driveGetFileDefinition: ToolDefinition<DriveGetFileInput, DriveGetF
     // size can't surprise us with a heap blowout.
     if (isGoogleDoc) {
       const exportUrl = new URL(
-        `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}/export`,
+        `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}/export`
       )
       exportUrl.searchParams.set('mimeType', 'text/plain')
       const resp = await fetch(exportUrl, { headers: { Authorization: `Bearer ${auth.token}` } })
@@ -2307,7 +2329,7 @@ export const driveGetFileDefinition: ToolDefinition<DriveGetFileInput, DriveGetF
       return { ...base, content }
     } else {
       const getUrl = new URL(
-        `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}`,
+        `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}`
       )
       getUrl.searchParams.set('alt', 'media')
       const resp = await fetch(getUrl, { headers: { Authorization: `Bearer ${auth.token}` } })
@@ -2385,7 +2407,7 @@ export const driveCreateFolderDefinition: ToolDefinition<
 async function createFolderWithToken(
   token: string,
   name: string,
-  parentId?: string,
+  parentId?: string
 ): Promise<DriveCreateFolderOutput> {
   const body: Record<string, unknown> = {
     name,
@@ -2478,10 +2500,10 @@ async function listTasksWithToken(
   token: string,
   taskListId: string,
   showCompleted: boolean,
-  maxResults: number,
+  maxResults: number
 ): Promise<TasksListOutput> {
   const url = new URL(
-    `https://tasks.googleapis.com/tasks/v1/lists/${encodeURIComponent(taskListId)}/tasks`,
+    `https://tasks.googleapis.com/tasks/v1/lists/${encodeURIComponent(taskListId)}/tasks`
   )
   url.searchParams.set('maxResults', String(maxResults))
   url.searchParams.set('showCompleted', String(showCompleted))
@@ -2516,10 +2538,7 @@ async function listTasksWithToken(
 const TasksCreateInput = z.object({
   title: z.string().min(1).max(200),
   notes: z.string().max(2000).optional(),
-  due: z
-    .string()
-    .optional()
-    .describe('ISO 8601 due date (time component ignored by Google Tasks)'),
+  due: z.string().optional().describe('ISO 8601 due date (time component ignored by Google Tasks)'),
   taskListId: z.string().default('@default').optional(),
 })
 
@@ -2561,7 +2580,7 @@ export const tasksCreateDefinition: ToolDefinition<TasksCreateInput, TasksCreate
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(body),
-      },
+      }
     )
     if (!resp.ok) {
       const errBody = await resp.text()
@@ -2771,9 +2790,15 @@ interface GmailApiMessage {
   payload?: GmailPayloadPart
 }
 
-function extractGmailBody(
-  payload: GmailPayloadPart | undefined,
-): { body: string; attachments: Array<{ attachmentId: string; filename: string; mimeType: string; sizeBytes: number }> } {
+function extractGmailBody(payload: GmailPayloadPart | undefined): {
+  body: string
+  attachments: Array<{
+    attachmentId: string
+    filename: string
+    mimeType: string
+    sizeBytes: number
+  }>
+} {
   if (!payload) return { body: '', attachments: [] }
   const attachments: Array<{
     attachmentId: string
@@ -2918,7 +2943,10 @@ function flattenGoogleDoc(doc: GoogleDocsApiDoc): string {
         parts.push(text)
     }
   }
-  return parts.join('\n\n').replace(/\n{3,}/g, '\n\n').trim()
+  return parts
+    .join('\n\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
 }
 
 /**
@@ -2926,12 +2954,9 @@ function flattenGoogleDoc(doc: GoogleDocsApiDoc): string {
  * as plain text via the Drive API and synthesise a matching response.
  * Loses heading structure but recovers SOMETHING rather than erroring.
  */
-async function readDocViaDriveExport(
-  docId: string,
-  token: string,
-): Promise<DocsGetOutput> {
+async function readDocViaDriveExport(docId: string, token: string): Promise<DocsGetOutput> {
   const url = new URL(
-    `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(docId)}/export`,
+    `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(docId)}/export`
   )
   url.searchParams.set('mimeType', 'text/plain')
   const resp = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
@@ -2961,12 +2986,12 @@ async function readDocViaDriveExport(
 async function appendToGoogleDoc(
   token: string,
   docId: string,
-  content: string,
+  content: string
 ): Promise<{ ok: true } | { error: string }> {
   // Fetch current end-of-body index so we know where to insert
   const docResp = await fetch(
     `https://docs.googleapis.com/v1/documents/${encodeURIComponent(docId)}?fields=body(content(endIndex))`,
-    { headers: { Authorization: `Bearer ${token}` } },
+    { headers: { Authorization: `Bearer ${token}` } }
   )
   if (!docResp.ok) return { error: `Append lookup failed: ${docResp.status}` }
   const doc = (await docResp.json()) as {
@@ -2993,8 +3018,7 @@ async function appendToGoogleDoc(
   })
 
   // Leading newline so we don't merge into the last existing paragraph.
-  const strippedText =
-    '\n' + processed.map((p) => p.text).join('\n')
+  const strippedText = '\n' + processed.map((p) => p.text).join('\n')
 
   // Walk the stripped text to compute each heading paragraph's range in
   // post-insert coordinates. cursor starts at insertAt + 1 (past the
@@ -3027,7 +3051,7 @@ async function appendToGoogleDoc(
       body: JSON.stringify({
         requests: [{ insertText: { location: { index: insertAt }, text: strippedText } }],
       }),
-    },
+    }
   )
   if (!applyInsert.ok) {
     const errBody = await applyInsert.text()
@@ -3046,7 +3070,7 @@ async function appendToGoogleDoc(
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ requests: styleRequests }),
-      },
+      }
     )
     if (!applyStyle.ok) {
       const errBody = await applyStyle.text()
@@ -3065,7 +3089,8 @@ function detectHeading(line: string): { style: string; prefixLen: number } | nul
 
 function resolveRange(range: CalendarRange, now: Date): [Date, Date] {
   const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0)
-  const endOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999)
+  const endOfDay = (d: Date) =>
+    new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999)
   const addDays = (d: Date, n: number) => new Date(d.getTime() + n * 24 * 60 * 60 * 1000)
 
   switch (range) {

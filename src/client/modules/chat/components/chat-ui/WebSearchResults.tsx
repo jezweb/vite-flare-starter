@@ -93,7 +93,7 @@ export function WebSearchResults({ output }: Props) {
         onClick={() => setOpen((v) => !v)}
         className={cn(
           'group flex w-full items-center gap-2 rounded-md px-1 py-1 text-left',
-          'text-muted-foreground hover:text-foreground transition-colors',
+          'text-muted-foreground hover:text-foreground transition-colors'
         )}
         aria-expanded={open}
       >
@@ -149,9 +149,7 @@ export function WebSearchResults({ output }: Props) {
                     <span className="min-w-0 flex-1 truncate text-sm text-foreground">
                       {r.title}
                     </span>
-                    <span className="shrink-0 text-xs text-muted-foreground">
-                      {domain}
-                    </span>
+                    <span className="shrink-0 text-xs text-muted-foreground">{domain}</span>
                   </a>
                 </li>
               )

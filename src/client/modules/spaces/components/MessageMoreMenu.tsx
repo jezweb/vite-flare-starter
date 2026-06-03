@@ -54,8 +54,10 @@ export function MessageMoreMenu({ message, onQuote, canPin }: Props) {
 
   const meta = message.metadata ?? {}
   const isAuthor = meta.senderUserId === sessionUserId
-  const stars: string[] = Array.isArray((message as unknown as { starredByUserIds?: string[] }).starredByUserIds)
-    ? ((message as unknown as { starredByUserIds: string[] }).starredByUserIds)
+  const stars: string[] = Array.isArray(
+    (message as unknown as { starredByUserIds?: string[] }).starredByUserIds
+  )
+    ? (message as unknown as { starredByUserIds: string[] }).starredByUserIds
     : []
   const isStarred = sessionUserId ? stars.includes(sessionUserId) : false
   const isPinned = !!message.pinnedAt
@@ -90,7 +92,9 @@ export function MessageMoreMenu({ message, onQuote, canPin }: Props) {
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuItem onClick={() => star.mutate({ messageId: message.id, starred: !isStarred })}>
+          <DropdownMenuItem
+            onClick={() => star.mutate({ messageId: message.id, starred: !isStarred })}
+          >
             {isStarred ? <StarOff className="size-4" /> : <Star className="size-4" />}
             {isStarred ? 'Unstar' : 'Star'}
           </DropdownMenuItem>

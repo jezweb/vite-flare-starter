@@ -54,7 +54,7 @@ async function checkScopeAccess(
   d: ReturnType<typeof drizzle>,
   userId: string,
   scope: KnowledgeScope,
-  scopeId: string,
+  scopeId: string
 ): Promise<boolean> {
   if (scope === 'user') return scopeId === userId
   if (scope === 'project') {
@@ -77,7 +77,7 @@ async function checkScopeAccess(
  */
 async function userAccessibleScopes(
   d: ReturnType<typeof drizzle>,
-  userId: string,
+  userId: string
 ): Promise<Array<{ scope: KnowledgeScope; scopeId: string }>> {
   const ownProjects = await d
     .select({ id: projects.id })
@@ -112,7 +112,12 @@ app.get('/', zValidator('query', listQuerySchema), async (c) => {
     return c.json({ error: 'Forbidden' }, 403)
   }
 
-  const tags = tag ? tag.split(',').map((t) => t.trim()).filter(Boolean) : undefined
+  const tags = tag
+    ? tag
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean)
+    : undefined
   const rows = await listKnowledge(c.env.DB, scope, scopeId, { injectionMode, tags })
   return c.json({
     knowledge: rows.map((r) => serializeRow(r, includeBody)),
@@ -269,10 +274,7 @@ app.delete('/:id', async (c) => {
   return c.json({ ok })
 })
 
-function serializeRow(
-  r: typeof knowledgeDocuments.$inferSelect,
-  includeBody = true,
-) {
+function serializeRow(r: typeof knowledgeDocuments.$inferSelect, includeBody = true) {
   return {
     id: r.id,
     scope: r.scope,

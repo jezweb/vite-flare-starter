@@ -76,8 +76,8 @@ export function CreateOrganizationDialog({ open, onOpenChange }: Props) {
           <DialogHeader>
             <DialogTitle>Create organisation</DialogTitle>
             <DialogDescription>
-              Workspaces are how you separate identities — you might have a
-              personal workspace and one per team or client.
+              Workspaces are how you separate identities — you might have a personal workspace and
+              one per team or client.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-3">
@@ -106,8 +106,8 @@ export function CreateOrganizationDialog({ open, onOpenChange }: Props) {
                 maxLength={48}
               />
               <FieldDescription className="text-[11px]">
-                URL-safe, used in invitation links. Choose carefully — changing
-                it later invalidates pending invitations.
+                URL-safe, used in invitation links. Choose carefully — changing it later invalidates
+                pending invitations.
               </FieldDescription>
             </Field>
             {error && <p className="text-xs text-destructive">{error}</p>}

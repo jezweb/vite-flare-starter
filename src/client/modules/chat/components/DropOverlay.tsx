@@ -56,7 +56,7 @@ export function DropOverlay({ disabled = false }: { disabled?: boolean }) {
       className={cn(
         'fixed inset-0 z-50 flex items-center justify-center',
         'bg-primary/10 backdrop-blur-sm pointer-events-none',
-        'animate-in fade-in duration-150',
+        'animate-in fade-in duration-150'
       )}
     >
       <div className="flex flex-col items-center gap-4 rounded-2xl border-2 border-dashed border-primary bg-background/95 px-12 py-10 shadow-2xl">
@@ -65,9 +65,7 @@ export function DropOverlay({ disabled = false }: { disabled?: boolean }) {
         </div>
         <div className="text-center">
           <p className="text-lg font-semibold">Drop files to attach</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Images, PDFs, docs, audio, and more
-          </p>
+          <p className="text-sm text-muted-foreground mt-1">Images, PDFs, docs, audio, and more</p>
         </div>
       </div>
     </div>

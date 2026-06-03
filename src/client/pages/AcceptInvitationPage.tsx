@@ -26,7 +26,10 @@ import { Button } from '@/components/ui/button'
 import { useSession } from '@/client/lib/auth'
 import { apiClient } from '@/client/lib/api-client'
 import { appConfig } from '@/shared/config/app'
-import { useAcceptInvitation, useSetActiveOrg } from '@/client/modules/organizations/hooks/useOrganizations'
+import {
+  useAcceptInvitation,
+  useSetActiveOrg,
+} from '@/client/modules/organizations/hooks/useOrganizations'
 
 const PENDING_INVITE_KEY = 'pending-invitation-id'
 
@@ -92,7 +95,9 @@ export function AcceptInvitationPage() {
           }
         }
         // Clear the stash so a refresh doesn't redo the flow.
-        try { sessionStorage.removeItem(PENDING_INVITE_KEY) } catch {}
+        try {
+          sessionStorage.removeItem(PENDING_INVITE_KEY)
+        } catch {}
         setState({
           status: 'success',
           organizationName: orgName,
@@ -133,9 +138,7 @@ export function AcceptInvitationPage() {
             {appConfig.name} invitation
           </div>
           <CardTitle>{titleFor(state)}</CardTitle>
-          {descriptionFor(state) && (
-            <CardDescription>{descriptionFor(state)}</CardDescription>
-          )}
+          {descriptionFor(state) && <CardDescription>{descriptionFor(state)}</CardDescription>}
         </CardHeader>
         <CardContent className="space-y-3">
           {state.status === 'loading' && (
@@ -149,8 +152,8 @@ export function AcceptInvitationPage() {
               <div className="rounded-md border border-emerald-500/40 bg-emerald-500/5 p-3 flex items-start gap-2">
                 <CheckCircle2 className="size-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                 <div className="text-sm">
-                  You've joined <strong>{state.organizationName}</strong>. We've
-                  set it as your active workspace.
+                  You've joined <strong>{state.organizationName}</strong>. We've set it as your
+                  active workspace.
                 </div>
               </div>
               <Button onClick={goToDashboard} className="w-full">
@@ -162,8 +165,7 @@ export function AcceptInvitationPage() {
             <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 flex items-start gap-2">
               <AlertTriangle className="size-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <div className="text-sm">
-                This invitation has expired or was already used. Ask your
-                inviter for a fresh link.
+                This invitation has expired or was already used. Ask your inviter for a fresh link.
               </div>
             </div>
           )}
@@ -195,23 +197,35 @@ export function AcceptInvitationPage() {
 
 function titleFor(state: State): string {
   switch (state.status) {
-    case 'loading': return 'Joining organisation'
-    case 'success': return 'Welcome aboard'
-    case 'expired': return 'Invitation expired'
-    case 'already-member': return 'Already a member'
-    case 'error': return "Couldn't accept invitation"
-    case 'auth-required': return 'Sign in to continue'
+    case 'loading':
+      return 'Joining organisation'
+    case 'success':
+      return 'Welcome aboard'
+    case 'expired':
+      return 'Invitation expired'
+    case 'already-member':
+      return 'Already a member'
+    case 'error':
+      return "Couldn't accept invitation"
+    case 'auth-required':
+      return 'Sign in to continue'
   }
 }
 
 function descriptionFor(state: State): string | null {
   switch (state.status) {
-    case 'loading': return 'Verifying your invitation token.'
-    case 'success': return null
-    case 'expired': return null
-    case 'already-member': return 'You already have access to this organisation.'
-    case 'error': return null
-    case 'auth-required': return 'Redirecting to sign in.'
+    case 'loading':
+      return 'Verifying your invitation token.'
+    case 'success':
+      return null
+    case 'expired':
+      return null
+    case 'already-member':
+      return 'You already have access to this organisation.'
+    case 'error':
+      return null
+    case 'auth-required':
+      return 'Redirecting to sign in.'
   }
 }
 

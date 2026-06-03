@@ -100,8 +100,8 @@ export function EmailLogsTabContent() {
                 Email logs
               </CardTitle>
               <CardDescription>
-                Most recent outbound emails across all users. Sends are
-                recorded regardless of provider — failed attempts included.
+                Most recent outbound emails across all users. Sends are recorded regardless of
+                provider — failed attempts included.
               </CardDescription>
             </div>
             <TestSendDialog onSent={() => refetch()} />
@@ -112,10 +112,14 @@ export function EmailLogsTabContent() {
             <div className="space-y-1.5">
               <Label className="text-xs">Template</Label>
               <Select value={template} onValueChange={setTemplate}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {TEMPLATE_OPTIONS.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -123,10 +127,14 @@ export function EmailLogsTabContent() {
             <div className="space-y-1.5">
               <Label className="text-xs">Status</Label>
               <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {STATUS_OPTIONS.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -194,10 +202,7 @@ function EmailLogRow({ row }: { row: EmailLogRow }) {
         )}
       </div>
       <div className="text-right shrink-0">
-        <p
-          className="text-xs text-muted-foreground"
-          title={format(new Date(row.sentAt), 'PPpp')}
-        >
+        <p className="text-xs text-muted-foreground" title={format(new Date(row.sentAt), 'PPpp')}>
           {formatDistanceToNow(new Date(row.sentAt), { addSuffix: true })}
         </p>
       </div>
@@ -221,7 +226,11 @@ function StatusIcon({ status }: { status: EmailLogRow['status'] }) {
     )
   }
   return (
-    <div className={cn('mt-0.5 h-6 w-6 rounded-full bg-muted flex items-center justify-center shrink-0')}>
+    <div
+      className={cn(
+        'mt-0.5 h-6 w-6 rounded-full bg-muted flex items-center justify-center shrink-0'
+      )}
+    >
       <Clock className="h-3.5 w-3.5 text-muted-foreground" />
     </div>
   )
@@ -271,7 +280,8 @@ function TestSendDialog({ onSent }: { onSent: () => void }) {
         <DialogHeader>
           <DialogTitle>Send a test email</DialogTitle>
           <DialogDescription>
-            Verifies the configured provider (Email Service / SendEmail binding / Resend) is wired up. Uses demo template data.
+            Verifies the configured provider (Email Service / SendEmail binding / Resend) is wired
+            up. Uses demo template data.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
@@ -287,21 +297,24 @@ function TestSendDialog({ onSent }: { onSent: () => void }) {
           <div className="space-y-1.5">
             <Label>Template</Label>
             <Select value={tpl} onValueChange={setTpl}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 {TEMPLATE_OPTIONS.filter((o) => o.value !== '__all__').map((o) => (
-                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button
-            onClick={() => mutation.mutate()}
-            disabled={mutation.isPending || !toAddr}
-          >
+          <Button variant="ghost" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={() => mutation.mutate()} disabled={mutation.isPending || !toAddr}>
             {mutation.isPending ? (
               <>
                 <Spinner size="md" className="mr-2" />

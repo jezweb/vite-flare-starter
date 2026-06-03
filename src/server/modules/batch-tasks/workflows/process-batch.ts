@@ -14,11 +14,7 @@
  * the run-loop bails before scheduling more items. Already-running steps
  * finish (we don't kill them mid-call).
  */
-import {
-  WorkflowEntrypoint,
-  type WorkflowEvent,
-  type WorkflowStep,
-} from 'cloudflare:workers'
+import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from 'cloudflare:workers'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq } from 'drizzle-orm'
 import { runModelText } from '@/server/lib/ai/providers'
@@ -32,8 +28,10 @@ interface WorkflowEnv {
   AI?: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     toMarkdown: (
-      docs: Array<{ name: string; blob: Blob }>,
-    ) => Promise<Array<{ name: string; mimeType: string; format: string; tokens: number; data: string }>>
+      docs: Array<{ name: string; blob: Blob }>
+    ) => Promise<
+      Array<{ name: string; mimeType: string; format: string; tokens: number; data: string }>
+    >
     run: (...args: unknown[]) => Promise<unknown>
   }
   OPENROUTER_API_KEY?: string
@@ -73,7 +71,12 @@ export class ProcessBatchWorkflow extends WorkflowEntrypoint<WorkflowEnv, BatchW
       // Strip large fields to fit comfortably under 1MB step-output cap.
       return {
         job: { id: j.id, instruction: j.instruction, model: j.model, taskKind: j.taskKind },
-        items: its.map((it) => ({ id: it.id, refKind: it.refKind, refValue: it.refValue, label: it.label })),
+        items: its.map((it) => ({
+          id: it.id,
+          refKind: it.refKind,
+          refValue: it.refValue,
+          label: it.label,
+        })),
       }
     })
 
@@ -83,7 +86,11 @@ export class ProcessBatchWorkflow extends WorkflowEntrypoint<WorkflowEnv, BatchW
     for (let i = 0; i < items.length; i += concurrency) {
       // Cooperative cancellation check between windows.
       const stillRunning = await step.do(`check-${i}`, async () => {
-        const [j] = await drizzle(db).select().from(batchJobs).where(eq(batchJobs.id, jobId)).limit(1)
+        const [j] = await drizzle(db)
+          .select()
+          .from(batchJobs)
+          .where(eq(batchJobs.id, jobId))
+          .limit(1)
         return j?.status === 'running'
       })
       if (!stillRunning) break
@@ -93,13 +100,16 @@ export class ProcessBatchWorkflow extends WorkflowEntrypoint<WorkflowEnv, BatchW
         window.map((item) =>
           step.do(
             `item-${item.id}`,
-            { retries: { limit: 3, delay: '5 seconds', backoff: 'exponential' }, timeout: '5 minutes' },
+            {
+              retries: { limit: 3, delay: '5 seconds', backoff: 'exponential' },
+              timeout: '5 minutes',
+            },
             async () => {
               await processOne(this.env, db, job, item)
               return { itemId: item.id }
-            },
-          ),
-        ),
+            }
+          )
+        )
       )
     }
 
@@ -125,7 +135,7 @@ async function processOne(
   env: WorkflowEnv,
   db: D1Database,
   job: { id: string; instruction: string; model: string; taskKind: string },
-  item: { id: string; refKind: string; refValue: string; label: string | null },
+  item: { id: string; refKind: string; refValue: string; label: string | null }
 ): Promise<void> {
   await startItem(db, item.id)
   try {
@@ -136,7 +146,7 @@ async function processOne(
       env as unknown as Parameters<typeof runModelText>[0],
       job.model,
       'You are processing one item out of a batch. Follow the user instruction precisely and answer concisely. Return only the result — no preamble, no commentary.',
-      prompt,
+      prompt
     )
 
     await completeItem(db, item.id, text)
@@ -157,12 +167,17 @@ interface LoadedContent {
   filename?: string
 }
 
-async function loadItemContent(env: WorkflowEnv, item: { refKind: string; refValue: string }): Promise<LoadedContent> {
+async function loadItemContent(
+  env: WorkflowEnv,
+  item: { refKind: string; refValue: string }
+): Promise<LoadedContent> {
   if (item.refKind === 'text') {
     return { kind: 'text', payload: item.refValue }
   }
   if (item.refKind === 'url') {
-    const resp = await fetch(item.refValue, { headers: { 'User-Agent': 'vite-flare-starter/batch-tasks' } })
+    const resp = await fetch(item.refValue, {
+      headers: { 'User-Agent': 'vite-flare-starter/batch-tasks' },
+    })
     if (!resp.ok) throw new Error(`Fetch failed: ${resp.status}`)
     const text = await resp.text()
     return { kind: 'text', payload: text.slice(0, 200_000), mimeType: 'text/plain' }
@@ -172,7 +187,12 @@ async function loadItemContent(env: WorkflowEnv, item: { refKind: string; refVal
     const obj = await env.FILES.get(item.refValue)
     if (!obj) throw new Error(`R2 object not found: ${item.refValue}`)
     const mime = obj.httpMetadata?.contentType ?? 'application/octet-stream'
-    if (mime.startsWith('text/') || mime.includes('json') || mime.includes('xml') || mime.includes('csv')) {
+    if (
+      mime.startsWith('text/') ||
+      mime.includes('json') ||
+      mime.includes('xml') ||
+      mime.includes('csv')
+    ) {
       const text = await obj.text()
       return { kind: 'text', payload: text.slice(0, 200_000), mimeType: mime }
     }
@@ -236,7 +256,20 @@ function isConvertibleDocument(mime: string, filename: string): boolean {
     return true
   }
   // Fallback to extension when the mime is generic (octet-stream).
-  return ['pdf', 'docx', 'xlsx', 'pptx', 'doc', 'xls', 'ppt', 'rtf', 'epub', 'pages', 'numbers', 'key'].includes(ext)
+  return [
+    'pdf',
+    'docx',
+    'xlsx',
+    'pptx',
+    'doc',
+    'xls',
+    'ppt',
+    'rtf',
+    'epub',
+    'pages',
+    'numbers',
+    'key',
+  ].includes(ext)
 }
 
 function buildPrompt(instruction: string, taskKind: string, content: LoadedContent): string {

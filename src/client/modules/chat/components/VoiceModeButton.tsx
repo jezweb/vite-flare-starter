@@ -26,11 +26,7 @@ import { useEffect, useRef } from 'react'
 import { Mic, MicOff, Loader2, Volume2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import type { VoiceState } from '../hooks/useVoiceChat'
 
 // Below this threshold we treat a press as a tap (toggle mode off) rather
@@ -164,25 +160,26 @@ export function VoiceModeButton({
   }
 
   const showSpinner = state === 'transcribing'
-  const Icon = recordingUnsupported && enabled
-    ? MicOff
-    : !enabled
-    ? MicOff
-    : showSpinner
-    ? Loader2
-    : isSpeaking
-    ? Volume2
-    : Mic
+  const Icon =
+    recordingUnsupported && enabled
+      ? MicOff
+      : !enabled
+        ? MicOff
+        : showSpinner
+          ? Loader2
+          : isSpeaking
+            ? Volume2
+            : Mic
 
   const ariaLabel = recordingUnsupported
     ? 'Voice mode unsupported on this browser'
     : !enabled
-    ? 'Enable voice mode'
-    : isRecording
-    ? 'Release to send'
-    : isSpeaking
-    ? 'Stop speaking'
-    : 'Hold to record · click to disable voice mode'
+      ? 'Enable voice mode'
+      : isRecording
+        ? 'Release to send'
+        : isSpeaking
+          ? 'Stop speaking'
+          : 'Hold to record · click to disable voice mode'
 
   return (
     <Tooltip>
@@ -195,7 +192,7 @@ export function VoiceModeButton({
             'shrink-0 transition-colors',
             isRecording && 'animate-pulse',
             isSpeaking && 'border-primary/40 bg-primary/10 text-primary',
-            recordingUnsupported && 'opacity-60',
+            recordingUnsupported && 'opacity-60'
           )}
           disabled={disabled || (recordingUnsupported && !enabled)}
           aria-label={ariaLabel}
@@ -224,14 +221,14 @@ export function VoiceModeButton({
           <>
             <strong>Voice mode unsupported</strong>
             <br />
-            Needs a browser with WebM/Opus MediaRecorder (Chrome, Firefox, or desktop Safari). iOS Safari support coming soon.
+            Needs a browser with WebM/Opus MediaRecorder (Chrome, Firefox, or desktop Safari). iOS
+            Safari support coming soon.
           </>
         ) : !enabled ? (
           <>
             <strong>Voice mode</strong>
             <br />
-            Click to enable. Replies will play aloud and you can hold the
-            button to speak.
+            Click to enable. Replies will play aloud and you can hold the button to speak.
           </>
         ) : isRecording ? (
           'Release to send'

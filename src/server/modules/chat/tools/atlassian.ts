@@ -59,7 +59,7 @@ function userHasAtlassian(): (ctx: AgentContext) => Promise<boolean> {
 }
 
 async function requireAtlassianAuth(
-  ctx: AgentContext,
+  ctx: AgentContext
 ): Promise<{ token: string; cloudId: string } | { error: string }> {
   const env = aEnv(ctx)
   const db = drizzle(env.DB)
@@ -80,7 +80,9 @@ async function requireAtlassianAuth(
   }
   if (row.status !== 'active') return { error: RECONNECT_HINT }
   if (!row.cloudId) {
-    return { error: 'Atlassian cloud site was not captured during connect. Ask the user to reconnect.' }
+    return {
+      error: 'Atlassian cloud site was not captured during connect. Ask the user to reconnect.',
+    }
   }
   return { token: row.accessToken, cloudId: row.cloudId }
 }
@@ -88,7 +90,7 @@ async function requireAtlassianAuth(
 async function atlassianCall<T>(
   token: string,
   url: string,
-  init: RequestInit = {},
+  init: RequestInit = {}
 ): Promise<{ ok: true; data: T } | { ok: false; error: string }> {
   const resp = await fetch(url, {
     ...init,
@@ -101,7 +103,10 @@ async function atlassianCall<T>(
   })
   const text = await resp.text()
   if (!resp.ok) {
-    return { ok: false, error: `Atlassian ${init.method ?? 'GET'} ${resp.status}: ${text.slice(0, 200)}` }
+    return {
+      ok: false,
+      error: `Atlassian ${init.method ?? 'GET'} ${resp.status}: ${text.slice(0, 200)}`,
+    }
   }
   if (!text) return { ok: true, data: {} as T }
   try {
@@ -150,11 +155,15 @@ function renderAdfBlock(node: ADFNode): string {
         .map((li, i) => `${i + 1}. ${renderInline(li.content?.[0]?.content)}`)
         .join('\n')
     case 'codeBlock':
-      return '```' + ((node.attrs?.['language'] as string) ?? '') + '\n' + renderInline(node.content) + '\n```'
+      return (
+        '```' +
+        ((node.attrs?.['language'] as string) ?? '') +
+        '\n' +
+        renderInline(node.content) +
+        '\n```'
+      )
     case 'blockquote':
-      return (node.content ?? [])
-        .map((b) => `> ${renderAdfBlock(b)}`)
-        .join('\n')
+      return (node.content ?? []).map((b) => `> ${renderAdfBlock(b)}`).join('\n')
     case 'rule':
       return '---'
     case 'hardBreak':
@@ -259,9 +268,7 @@ export function markdownToAdf(md: string): ADFNode {
     if (line.startsWith('> ')) {
       content.push({
         type: 'blockquote',
-        content: [
-          { type: 'paragraph', content: [{ type: 'text', text: line.slice(2) }] },
-        ],
+        content: [{ type: 'paragraph', content: [{ type: 'text', text: line.slice(2) }] }],
       })
       i++
       continue
@@ -299,7 +306,7 @@ export function xhtmlToMarkdown(xhtml: string): string {
   md = md.replace(/<code[^>]*>([\s\S]*?)<\/code>/gi, '`$1`')
   md = md.replace(
     /<a[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi,
-    (_m, href, text) => `[${text}](${href})`,
+    (_m, href, text) => `[${text}](${href})`
   )
   md = md.replace(/<p[^>]*>([\s\S]*?)<\/p>/gi, '$1\n\n')
   md = md.replace(/<[^>]+>/g, '')
@@ -381,7 +388,11 @@ function siteBrowseUrl(_self: string | undefined, key: string): string {
 // ─── JIRA: SEARCH ISSUES ───────────────────────────────────────────────
 
 const JiraSearchInput = z.object({
-  jql: z.string().describe('JQL query (e.g. "assignee = currentUser() AND status != Done ORDER BY updated DESC").'),
+  jql: z
+    .string()
+    .describe(
+      'JQL query (e.g. "assignee = currentUser() AND status != Done ORDER BY updated DESC").'
+    ),
   maxResults: z.number().int().min(1).max(50).default(20).optional(),
 })
 
@@ -396,7 +407,7 @@ const JiraSearchOutput = z.union([
         priority: z.string().optional(),
         updated: z.string().optional(),
         url: z.string(),
-      }),
+      })
     ),
     count: z.number(),
     total: z.number(),
@@ -410,7 +421,7 @@ export const jiraSearchIssuesDefinition: ToolDefinition<
 > = {
   name: 'jira_search_issues',
   description:
-    "Search Jira with JQL. Returns key, summary, status, assignee, priority, updated, url.",
+    'Search Jira with JQL. Returns key, summary, status, assignee, priority, updated, url.',
   inputSchema: JiraSearchInput,
   outputSchema: JiraSearchOutput,
   isAvailable: userHasAtlassian(),
@@ -540,8 +551,7 @@ export const jiraCreateIssueDefinition: ToolDefinition<
   z.infer<typeof JiraCreateOutput>
 > = {
   name: 'jira_create_issue',
-  description:
-    'Create a Jira issue. DESTRUCTIVE — triggers approval dialog.',
+  description: 'Create a Jira issue. DESTRUCTIVE — triggers approval dialog.',
   inputSchema: JiraCreateInput,
   outputSchema: JiraCreateOutput,
   needsApproval: true,
@@ -559,7 +569,7 @@ export const jiraCreateIssueDefinition: ToolDefinition<
     const res = await atlassianCall<{ key: string; id: string }>(
       auth.token,
       jiraPath(auth.cloudId, '/issue'),
-      { method: 'POST', body: JSON.stringify({ fields }) },
+      { method: 'POST', body: JSON.stringify({ fields }) }
     )
     if (!res.ok) return { error: res.error }
     return {
@@ -600,7 +610,7 @@ export const jiraAddCommentDefinition: ToolDefinition<
     const res = await atlassianCall<{ id: string }>(
       auth.token,
       jiraPath(auth.cloudId, `/issue/${encodeURIComponent(keyOrId)}/comment`),
-      { method: 'POST', body: JSON.stringify({ body: markdownToAdf(body) }) },
+      { method: 'POST', body: JSON.stringify({ body: markdownToAdf(body) }) }
     )
     if (!res.ok) return { error: res.error }
     return { commented: true as const, id: res.data.id }
@@ -622,7 +632,7 @@ const JiraTransitionOutput = z.union([
   z.object({ transitioned: z.literal(true), transitionId: z.string() }),
   z.object({
     availableTransitions: z.array(
-      z.object({ id: z.string(), name: z.string(), toStatus: z.string().optional() }),
+      z.object({ id: z.string(), name: z.string(), toStatus: z.string().optional() })
     ),
   }),
   z.object({ error: z.string() }),
@@ -658,7 +668,7 @@ export const jiraTransitionIssueDefinition: ToolDefinition<
     const res = await atlassianCall<unknown>(
       auth.token,
       jiraPath(auth.cloudId, `/issue/${encodeURIComponent(keyOrId)}/transitions`),
-      { method: 'POST', body: JSON.stringify({ transition: { id: transitionId } }) },
+      { method: 'POST', body: JSON.stringify({ transition: { id: transitionId } }) }
     )
     if (!res.ok) return { error: res.error }
     return { transitioned: true as const, transitionId }
@@ -681,7 +691,7 @@ const ConfluenceSearchOutput = z.union([
         title: z.string(),
         spaceId: z.string().optional(),
         url: z.string().optional(),
-      }),
+      })
     ),
     count: z.number(),
   }),
@@ -813,7 +823,7 @@ export const confluenceCreatePageDefinition: ToolDefinition<
     const res = await atlassianCall<{ id: string; _links?: { webui?: string } }>(
       auth.token,
       confluencePath(auth.cloudId, '/pages'),
-      { method: 'POST', body: JSON.stringify(payload) },
+      { method: 'POST', body: JSON.stringify(payload) }
     )
     if (!res.ok) return { error: res.error }
     return {

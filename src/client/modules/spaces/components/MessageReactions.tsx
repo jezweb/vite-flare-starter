@@ -45,7 +45,7 @@ export function MessageReactions({ messageId, reactions, currentUserId, quickBar
               type="button"
               className={cn(
                 'flex h-7 w-7 items-center justify-center rounded-md text-sm transition-colors',
-                hasReacted ? 'bg-primary/10' : 'hover:bg-accent',
+                hasReacted ? 'bg-primary/10' : 'hover:bg-accent'
               )}
               onClick={() =>
                 react.mutate({ messageId, emoji, action: hasReacted ? 'remove' : 'add' })
@@ -74,7 +74,7 @@ export function MessageReactions({ messageId, reactions, currentUserId, quickBar
               'inline-flex h-6 items-center gap-1 rounded-full border px-2 text-xs transition-colors',
               hasReacted
                 ? 'border-primary/40 bg-primary/10 text-primary'
-                : 'border-border bg-background text-foreground hover:bg-accent',
+                : 'border-border bg-background text-foreground hover:bg-accent'
             )}
             onClick={() =>
               react.mutate({ messageId, emoji, action: hasReacted ? 'remove' : 'add' })
@@ -90,13 +90,7 @@ export function MessageReactions({ messageId, reactions, currentUserId, quickBar
   )
 }
 
-function PickerButton({
-  onPick,
-  compact,
-}: {
-  onPick: (emoji: string) => void
-  compact?: boolean
-}) {
+function PickerButton({ onPick, compact }: { onPick: (emoji: string) => void; compact?: boolean }) {
   const [open, setOpen] = useState(false)
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -105,7 +99,7 @@ function PickerButton({
           type="button"
           className={cn(
             'flex items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground',
-            compact ? 'size-6' : 'size-7',
+            compact ? 'size-6' : 'size-7'
           )}
           aria-label="Pick a reaction"
         >
@@ -113,7 +107,9 @@ function PickerButton({
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="end">
-        <Suspense fallback={<div className="px-3 py-2 text-xs text-muted-foreground">Loading…</div>}>
+        <Suspense
+          fallback={<div className="px-3 py-2 text-xs text-muted-foreground">Loading…</div>}
+        >
           <EmojiPicker
             onPick={(emoji) => {
               onPick(emoji)

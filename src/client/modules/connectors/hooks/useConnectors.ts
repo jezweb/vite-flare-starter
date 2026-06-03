@@ -83,7 +83,8 @@ export function useConnect() {
 export function useDisconnect() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) => apiClient.delete<{ success: boolean }>(`/api/mcp-connections/${id}`),
+    mutationFn: (id: string) =>
+      apiClient.delete<{ success: boolean }>(`/api/mcp-connections/${id}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['mcp-connections'] })
     },
@@ -128,7 +129,7 @@ export function useUpdateToolPolicies() {
     }) =>
       apiClient.put<{ success: boolean; count: number }>(
         `/api/mcp-connections/${connectionId}/tool-policies`,
-        { policies },
+        { policies }
       ),
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ['mcp-connections', vars.connectionId, 'tools'] })
@@ -155,9 +156,6 @@ export function useProbeMcp() {
 export function useAuthorizeConnection() {
   return useMutation({
     mutationFn: (id: string) =>
-      apiClient.post<{ authorizationUrl: string }>(
-        `/api/mcp-connections/${id}/authorize`,
-        {},
-      ),
+      apiClient.post<{ authorizationUrl: string }>(`/api/mcp-connections/${id}/authorize`, {}),
   })
 }

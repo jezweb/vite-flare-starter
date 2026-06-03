@@ -22,8 +22,7 @@ export function DecisionRow(props: RowRendererProps) {
   const agentRegistry = useAgentRegistry()
 
   const isPending = !row.status || row.status === 'pending'
-  const isUrgent =
-    row.importance === 'high' || (row.dueAt != null && row.dueAt * 1000 < Date.now())
+  const isUrgent = row.importance === 'high' || (row.dueAt != null && row.dueAt * 1000 < Date.now())
 
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: ['inbox'] })

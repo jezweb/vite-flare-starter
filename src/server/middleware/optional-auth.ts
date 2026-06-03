@@ -54,7 +54,7 @@ export const optionalAuthMiddleware = createMiddleware<OptionalAuthContext>(asyn
         email: session.user.email,
         name: session.user.name,
         image: session.user.image,
-        role: (session.user as { role?: string }).role as 'user' | 'manager' | 'admin' || 'user',
+        role: ((session.user as { role?: string }).role as 'user' | 'manager' | 'admin') || 'user',
       })
       c.set('isAuthenticated', true)
     } else {

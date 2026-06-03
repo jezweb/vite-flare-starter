@@ -110,7 +110,7 @@ describe('P2-002 — always-mode dispatch on zero-mention top-level message', ()
       `INSERT INTO conversation_members
        (conversation_id, kind, agent_class, agent_name, reply_mode)
        VALUES (?, 'agent', 'AdminAgent', 'admin', 'always')`,
-      [SPACE_ID],
+      [SPACE_ID]
     )
     // Seed a triggering top-level message — needed because runAlwaysAgents
     // calls loadContextMessages which selects from conversation_messages.
@@ -118,7 +118,7 @@ describe('P2-002 — always-mode dispatch on zero-mention top-level message', ()
     await runSql(
       `INSERT INTO conversation_messages (id, conversation_id, role, parts)
        VALUES (?, ?, 'user', ?)`,
-      [triggerId, SPACE_ID, JSON.stringify([{ type: 'text', text: 'diagnostic ping' }])],
+      [triggerId, SPACE_ID, JSON.stringify([{ type: 'text', text: 'diagnostic ping' }])]
     )
 
     const { namespace, calls } = makeStubNamespace('Pong! Always-mode reply.')
@@ -153,7 +153,7 @@ describe('P2-002 — always-mode dispatch on zero-mention top-level message', ()
       `INSERT INTO conversation_members
        (conversation_id, kind, agent_class, agent_name, reply_mode)
        VALUES (?, 'agent', 'AdminAgent', 'admin', 'always')`,
-      [SPACE_ID],
+      [SPACE_ID]
     )
 
     const { namespace, calls } = makeStubNamespace('should not fire')
@@ -183,7 +183,7 @@ describe('P2-002 — always-mode dispatch on zero-mention top-level message', ()
       `INSERT INTO conversation_members
        (conversation_id, kind, agent_class, agent_name, reply_mode)
        VALUES (?, 'agent', 'AdminAgent', 'admin', 'mention')`,
-      [SPACE_ID],
+      [SPACE_ID]
     )
 
     const { namespace, calls } = makeStubNamespace('should not fire')
@@ -215,13 +215,13 @@ describe('P2-002 — always-mode dispatch on zero-mention top-level message', ()
        VALUES (?, 'agent', 'AdminAgent', 'a1', 'always'),
               (?, 'agent', 'AdminAgent', 'a2', 'always'),
               (?, 'agent', 'AdminAgent', 'a3', 'always')`,
-      [SPACE_ID, SPACE_ID, SPACE_ID],
+      [SPACE_ID, SPACE_ID, SPACE_ID]
     )
     // Trigger message
     await runSql(
       `INSERT INTO conversation_messages (id, conversation_id, role, parts)
        VALUES ('msg-cap-trigger', ?, 'user', ?)`,
-      [SPACE_ID, JSON.stringify([{ type: 'text', text: 'cap test' }])],
+      [SPACE_ID, JSON.stringify([{ type: 'text', text: 'cap test' }])]
     )
 
     const { namespace, calls } = makeStubNamespace('reply')

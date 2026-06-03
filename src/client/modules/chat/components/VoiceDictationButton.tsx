@@ -60,15 +60,7 @@ export function VoiceDictationButton({
   onStart,
   onStop,
 }: VoiceDictationButtonProps) {
-  const {
-    transcript,
-    interimTranscript,
-    audioLevel,
-    error,
-    start,
-    stop,
-    clear,
-  } = useVoiceInput({
+  const { transcript, interimTranscript, audioLevel, error, start, stop, clear } = useVoiceInput({
     agent: 'VoiceInputExample',
     name: userId ?? 'anonymous',
   })
@@ -88,11 +80,7 @@ export function VoiceDictationButton({
 
     const spoken = [transcript, interimTranscript].filter(Boolean).join(' ').trim()
     const base = baseTextRef.current
-    const nextValue = base
-      ? spoken
-        ? `${base.trimEnd()} ${spoken}`
-        : base
-      : spoken
+    const nextValue = base ? (spoken ? `${base.trimEnd()} ${spoken}` : base) : spoken
 
     if (el.value !== nextValue) {
       el.value = nextValue
@@ -149,10 +137,7 @@ export function VoiceDictationButton({
       title={title}
       aria-label={title}
       aria-pressed={isActive}
-      className={cn(
-        'h-9 w-9 p-0 relative',
-        isActive && 'text-red-600 dark:text-red-400',
-      )}
+      className={cn('h-9 w-9 p-0 relative', isActive && 'text-red-600 dark:text-red-400')}
     >
       {isActive ? (
         <>

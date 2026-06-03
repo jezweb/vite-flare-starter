@@ -81,7 +81,7 @@ export function ProjectFilesSection({ projectId }: { projectId: string }) {
       })
 
       if (!response.ok) {
-        const err = await response.json().catch(() => ({})) as { error?: string }
+        const err = (await response.json().catch(() => ({}))) as { error?: string }
         throw new Error(err.error ?? `Upload failed (${response.status})`)
       }
 
@@ -128,14 +128,20 @@ export function ProjectFilesSection({ projectId }: { projectId: string }) {
       {files.length > 0 && (
         <div className="mb-3">
           <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
-            <span>{formatBytes(totalBytes)} of {formatBytes(PROJECT_CAPACITY_BYTES)}</span>
+            <span>
+              {formatBytes(totalBytes)} of {formatBytes(PROJECT_CAPACITY_BYTES)}
+            </span>
             <span>{Math.round(capacityPct)}% used</span>
           </div>
           <div className="h-1 rounded-full bg-muted overflow-hidden">
             <div
               className={cn(
                 'h-full transition-all',
-                capacityPct > 90 ? 'bg-destructive' : capacityPct > 75 ? 'bg-amber-500' : 'bg-primary',
+                capacityPct > 90
+                  ? 'bg-destructive'
+                  : capacityPct > 75
+                    ? 'bg-amber-500'
+                    : 'bg-primary'
               )}
               style={{ width: `${capacityPct}%` }}
             />

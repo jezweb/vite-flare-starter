@@ -48,7 +48,9 @@ export function ApprovalsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['approvals', filter],
     queryFn: () =>
-      apiClient.get<ListResponse>(`/api/approvals?status=${filter === 'all' ? 'all' : 'pending'}&limit=200`),
+      apiClient.get<ListResponse>(
+        `/api/approvals?status=${filter === 'all' ? 'all' : 'pending'}&limit=200`
+      ),
     refetchInterval: filter === 'pending' ? 15_000 : false,
   })
 

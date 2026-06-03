@@ -10,13 +10,14 @@ import { Check, ChevronsUpDown, Search } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Badge } from '@/components/ui/badge'
-import { useAgentCatalog, useToolsCatalog, type RegisteredAgent, type CatalogTool } from '../hooks/useAgentCatalog'
+import {
+  useAgentCatalog,
+  useToolsCatalog,
+  type RegisteredAgent,
+  type CatalogTool,
+} from '../hooks/useAgentCatalog'
 import { useSkillSummary, type SkillSummary } from '@/client/modules/skills/hooks/useSkills'
 import { formatSkillName } from '@/shared/format/skill'
 import { cn } from '@/lib/utils'
@@ -64,10 +65,21 @@ export function AgentPicker({ value, onChange }: AgentPickerProps) {
       </PopoverTrigger>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
         <ul className="max-h-80 overflow-auto p-1">
-          {agents.map((a) => <AgentOption key={a.className} agent={a} active={a.className === value} onPick={() => { onChange(a.className); setOpen(false) }} />)}
+          {agents.map((a) => (
+            <AgentOption
+              key={a.className}
+              agent={a}
+              active={a.className === value}
+              onPick={() => {
+                onChange(a.className)
+                setOpen(false)
+              }}
+            />
+          ))}
           {agents.length === 0 && (
             <li className="p-3 text-xs text-muted-foreground">
-              No registered agents found. Add a `static metadata` field to your AutonomousAgent subclass.
+              No registered agents found. Add a `static metadata` field to your AutonomousAgent
+              subclass.
             </li>
           )}
         </ul>
@@ -76,7 +88,15 @@ export function AgentPicker({ value, onChange }: AgentPickerProps) {
   )
 }
 
-function AgentOption({ agent, active, onPick }: { agent: RegisteredAgent; active: boolean; onPick: () => void }) {
+function AgentOption({
+  agent,
+  active,
+  onPick,
+}: {
+  agent: RegisteredAgent
+  active: boolean
+  onPick: () => void
+}) {
   return (
     <li>
       <button
@@ -84,10 +104,12 @@ function AgentOption({ agent, active, onPick }: { agent: RegisteredAgent; active
         onClick={onPick}
         className={cn(
           'w-full text-left rounded-md px-2 py-2 hover:bg-muted transition-colors flex items-start gap-2',
-          active && 'bg-muted',
+          active && 'bg-muted'
         )}
       >
-        <Check className={cn('mt-0.5 size-4 shrink-0', active ? 'text-primary' : 'text-transparent')} />
+        <Check
+          className={cn('mt-0.5 size-4 shrink-0', active ? 'text-primary' : 'text-transparent')}
+        />
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-medium">{agent.displayName}</span>
           <span className="block text-[11px] text-muted-foreground">{agent.description}</span>
@@ -113,8 +135,9 @@ export function SkillsPicker({ value, onChange, placeholder = 'Pick skills…' }
   const visible = useMemo(() => {
     const q = filter.trim().toLowerCase()
     if (!q) return skills
-    return skills.filter((s: SkillSummary) =>
-      s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q),
+    return skills.filter(
+      (s: SkillSummary) =>
+        s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q)
     )
   }, [skills, filter])
 
@@ -136,7 +159,9 @@ export function SkillsPicker({ value, onChange, placeholder = 'Pick skills…' }
             {value.length === 0 ? (
               <span className="text-muted-foreground">{placeholder}</span>
             ) : (
-              <span>{value.length} skill{value.length === 1 ? '' : 's'} selected</span>
+              <span>
+                {value.length} skill{value.length === 1 ? '' : 's'} selected
+              </span>
             )}
             <ChevronsUpDown className="size-4 text-muted-foreground" />
           </Button>
@@ -161,16 +186,27 @@ export function SkillsPicker({ value, onChange, placeholder = 'Pick skills…' }
                   onClick={() => toggle(s.name)}
                   className={cn(
                     'w-full text-left rounded-md px-2 py-2 hover:bg-muted transition-colors flex items-start gap-2',
-                    value.includes(s.name) && 'bg-muted',
+                    value.includes(s.name) && 'bg-muted'
                   )}
                 >
-                  <Check className={cn('mt-0.5 size-4 shrink-0', value.includes(s.name) ? 'text-primary' : 'text-transparent')} />
+                  <Check
+                    className={cn(
+                      'mt-0.5 size-4 shrink-0',
+                      value.includes(s.name) ? 'text-primary' : 'text-transparent'
+                    )}
+                  />
                   <span className="min-w-0 flex-1">
                     <span className="flex items-baseline gap-1.5">
-                      <span className="text-sm font-medium truncate">{formatSkillName(s.name)}</span>
-                      <span className="text-[10px] font-mono text-muted-foreground/70 shrink-0">/{s.name}</span>
+                      <span className="text-sm font-medium truncate">
+                        {formatSkillName(s.name)}
+                      </span>
+                      <span className="text-[10px] font-mono text-muted-foreground/70 shrink-0">
+                        /{s.name}
+                      </span>
                     </span>
-                    <span className="block text-[11px] text-muted-foreground line-clamp-2">{s.description}</span>
+                    <span className="block text-[11px] text-muted-foreground line-clamp-2">
+                      {s.description}
+                    </span>
                   </span>
                 </button>
               </li>
@@ -216,11 +252,18 @@ export function SingleSkillPicker({ value, onChange }: SingleSkillPickerProps) {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button type="button" variant="outline" className="w-full justify-between font-normal" disabled={isLoading}>
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full justify-between font-normal"
+          disabled={isLoading}
+        >
           {selected ? (
             <span className="flex items-baseline gap-1.5 truncate">
               <span className="truncate">{formatSkillName(selected.name)}</span>
-              <span className="text-[10px] font-mono text-muted-foreground/70 shrink-0">/{selected.name}</span>
+              <span className="text-[10px] font-mono text-muted-foreground/70 shrink-0">
+                /{selected.name}
+              </span>
             </span>
           ) : value ? (
             <span className="font-mono truncate">{value}</span>
@@ -235,8 +278,14 @@ export function SingleSkillPicker({ value, onChange }: SingleSkillPickerProps) {
           <li>
             <button
               type="button"
-              onClick={() => { onChange(''); setOpen(false) }}
-              className={cn('w-full text-left rounded-md px-2 py-2 hover:bg-muted text-sm', !value && 'bg-muted')}
+              onClick={() => {
+                onChange('')
+                setOpen(false)
+              }}
+              className={cn(
+                'w-full text-left rounded-md px-2 py-2 hover:bg-muted text-sm',
+                !value && 'bg-muted'
+              )}
             >
               <span className="text-muted-foreground italic">None — skip this hook</span>
             </button>
@@ -245,16 +294,31 @@ export function SingleSkillPicker({ value, onChange }: SingleSkillPickerProps) {
             <li key={s.name}>
               <button
                 type="button"
-                onClick={() => { onChange(s.name); setOpen(false) }}
-                className={cn('w-full text-left rounded-md px-2 py-2 hover:bg-muted flex items-start gap-2', s.name === value && 'bg-muted')}
+                onClick={() => {
+                  onChange(s.name)
+                  setOpen(false)
+                }}
+                className={cn(
+                  'w-full text-left rounded-md px-2 py-2 hover:bg-muted flex items-start gap-2',
+                  s.name === value && 'bg-muted'
+                )}
               >
-                <Check className={cn('mt-0.5 size-4 shrink-0', s.name === value ? 'text-primary' : 'text-transparent')} />
+                <Check
+                  className={cn(
+                    'mt-0.5 size-4 shrink-0',
+                    s.name === value ? 'text-primary' : 'text-transparent'
+                  )}
+                />
                 <span className="min-w-0 flex-1">
                   <span className="flex items-baseline gap-1.5">
                     <span className="text-sm font-medium truncate">{formatSkillName(s.name)}</span>
-                    <span className="text-[10px] font-mono text-muted-foreground/70 shrink-0">/{s.name}</span>
+                    <span className="text-[10px] font-mono text-muted-foreground/70 shrink-0">
+                      /{s.name}
+                    </span>
                   </span>
-                  <span className="block text-[11px] text-muted-foreground line-clamp-1">{s.description}</span>
+                  <span className="block text-[11px] text-muted-foreground line-clamp-1">
+                    {s.description}
+                  </span>
                 </span>
               </button>
             </li>
@@ -282,8 +346,9 @@ export function ToolsPicker({ value, onChange }: ToolsPickerProps) {
   const groups = useMemo(() => {
     const q = filter.trim().toLowerCase()
     const filtered = q
-      ? tools.filter((t: CatalogTool) =>
-          t.name.toLowerCase().includes(q) || t.description.toLowerCase().includes(q),
+      ? tools.filter(
+          (t: CatalogTool) =>
+            t.name.toLowerCase().includes(q) || t.description.toLowerCase().includes(q)
         )
       : tools
     const byCategory = new Map<string, CatalogTool[]>()
@@ -304,16 +369,26 @@ export function ToolsPicker({ value, onChange }: ToolsPickerProps) {
     <div className="space-y-1.5">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button type="button" variant="outline" className="w-full justify-between font-normal" disabled={isLoading}>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full justify-between font-normal"
+            disabled={isLoading}
+          >
             {value.length === 0 ? (
               <span className="text-muted-foreground">All tools available — click to restrict</span>
             ) : (
-              <span>{value.length} tool{value.length === 1 ? '' : 's'} allowed</span>
+              <span>
+                {value.length} tool{value.length === 1 ? '' : 's'} allowed
+              </span>
             )}
             <ChevronsUpDown className="size-4 text-muted-foreground" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[var(--radix-popover-trigger-width)] max-w-2xl p-0" align="start">
+        <PopoverContent
+          className="w-[var(--radix-popover-trigger-width)] max-w-2xl p-0"
+          align="start"
+        >
           <div className="border-b p-2">
             <div className="relative">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
@@ -339,13 +414,20 @@ export function ToolsPicker({ value, onChange }: ToolsPickerProps) {
                         onClick={() => toggle(t.name)}
                         className={cn(
                           'w-full text-left rounded-md px-2 py-1.5 hover:bg-muted transition-colors flex items-start gap-2',
-                          value.includes(t.name) && 'bg-muted',
+                          value.includes(t.name) && 'bg-muted'
                         )}
                       >
-                        <Check className={cn('mt-0.5 size-3.5 shrink-0', value.includes(t.name) ? 'text-primary' : 'text-transparent')} />
+                        <Check
+                          className={cn(
+                            'mt-0.5 size-3.5 shrink-0',
+                            value.includes(t.name) ? 'text-primary' : 'text-transparent'
+                          )}
+                        />
                         <span className="min-w-0 flex-1">
                           <span className="block text-xs font-mono">{t.name}</span>
-                          <span className="block text-[11px] text-muted-foreground line-clamp-1">{t.description}</span>
+                          <span className="block text-[11px] text-muted-foreground line-clamp-1">
+                            {t.description}
+                          </span>
                         </span>
                       </button>
                     </li>

@@ -13,9 +13,7 @@ import type { AdminToolFactoryArgs } from './types'
 
 export type { AdminToolFactoryArgs } from './types'
 
-export function buildAdminTools(
-  args: AdminToolFactoryArgs,
-): ToolDefinition<unknown, unknown>[] {
+export function buildAdminTools(args: AdminToolFactoryArgs): ToolDefinition<unknown, unknown>[] {
   return [
     ...buildRoutineAdminTools(args),
     ...buildAwarenessTools(args),

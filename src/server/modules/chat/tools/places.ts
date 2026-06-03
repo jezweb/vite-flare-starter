@@ -86,18 +86,22 @@ export type PlacesSearchOutput = z.infer<typeof PlacesSearchOutput>
 
 const PlaceDetailsOutput = z.union([
   NormalisedPlaceSchema.extend({
-    hours: z.object({
-      openNow: z.boolean().optional(),
-      weekdayDescriptions: z.array(z.string()).optional(),
-    }).optional(),
-    reviews: z.array(
-      z.object({
-        author: z.string().optional(),
-        rating: z.number().optional(),
-        text: z.string().optional(),
-        time: z.string().optional(),
-      }),
-    ).optional(),
+    hours: z
+      .object({
+        openNow: z.boolean().optional(),
+        weekdayDescriptions: z.array(z.string()).optional(),
+      })
+      .optional(),
+    reviews: z
+      .array(
+        z.object({
+          author: z.string().optional(),
+          rating: z.number().optional(),
+          text: z.string().optional(),
+          time: z.string().optional(),
+        })
+      )
+      .optional(),
     editorialSummary: z.string().optional(),
   }),
   z.object({ error: z.string() }),
@@ -127,7 +131,15 @@ function normalise(place: any): NormalisedPlace {
 async function textSearch(
   apiKey: string,
   query: string,
-  opts: { lat?: number; lng?: number; radius?: number; maxResults?: number; openNow?: boolean; type?: string; region?: string }
+  opts: {
+    lat?: number
+    lng?: number
+    radius?: number
+    maxResults?: number
+    openNow?: boolean
+    type?: string
+    region?: string
+  }
 ): Promise<NormalisedPlace[]> {
   const body: {
     textQuery: string
@@ -169,18 +181,26 @@ async function textSearch(
   return (data.places ?? []).map(normalise)
 }
 
-async function placeDetails(apiKey: string, placeId: string): Promise<NormalisedPlace & {
-  hours?: { openNow?: boolean; weekdayDescriptions?: string[] }
-  reviews?: Array<{ author?: string; rating?: number; text?: string; time?: string }>
-  editorialSummary?: string
-}> {
-  const response = await fetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}`, {
-    method: 'GET',
-    headers: {
-      'X-Goog-Api-Key': apiKey,
-      'X-Goog-FieldMask': DETAIL_FIELD_MASK,
-    },
-  })
+async function placeDetails(
+  apiKey: string,
+  placeId: string
+): Promise<
+  NormalisedPlace & {
+    hours?: { openNow?: boolean; weekdayDescriptions?: string[] }
+    reviews?: Array<{ author?: string; rating?: number; text?: string; time?: string }>
+    editorialSummary?: string
+  }
+> {
+  const response = await fetch(
+    `https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}`,
+    {
+      method: 'GET',
+      headers: {
+        'X-Goog-Api-Key': apiKey,
+        'X-Goog-FieldMask': DETAIL_FIELD_MASK,
+      },
+    }
+  )
 
   if (!response.ok) {
     const text = await response.text()
@@ -237,7 +257,10 @@ export const placesSearchDefinition: ToolDefinition<
     radius: z.number().optional().describe('Bias radius in metres (default 50000)'),
     max_results: z.number().optional().describe('Max results 1-20 (default 8)'),
     open_now: z.boolean().optional().describe('Only return places currently open'),
-    type: z.string().optional().describe('Filter by Google place type (e.g. "restaurant", "car_repair")'),
+    type: z
+      .string()
+      .optional()
+      .describe('Filter by Google place type (e.g. "restaurant", "car_repair")'),
     region: z.string().optional().describe('ISO country code for region bias (default "AU")'),
   }),
   outputSchema: PlacesSearchOutput,

@@ -16,11 +16,7 @@
  * (possibly stale) idea of current content.
  */
 
-export type ConfigDiffKind =
-  | 'skill'
-  | 'system-prompt'
-  | 'setting'
-  | 'connector-tool-policy'
+export type ConfigDiffKind = 'skill' | 'system-prompt' | 'setting' | 'connector-tool-policy'
 
 export type ConfigDiffFormat = 'markdown' | 'json' | 'yaml' | 'plain'
 

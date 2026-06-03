@@ -110,7 +110,7 @@ export async function storeDataset(
   env: DataLakeEnv,
   userId: string,
   rows: unknown[],
-  opts: { source?: string; ttlHours?: number } = {},
+  opts: { source?: string; ttlHours?: number } = {}
 ): Promise<{ dataRef: string; manifest: Manifest }> {
   if (!env.DATA_LAKE) {
     throw new Error('storeDataset called without DATA_LAKE binding')
@@ -141,7 +141,7 @@ export async function storeDataset(
     writes.push(
       env.DATA_LAKE.put(chunkKey(dataRef, i), JSON.stringify(slice), {
         httpMetadata: { contentType: 'application/json' },
-      }),
+      })
     )
   }
   await Promise.all(writes)
@@ -162,7 +162,7 @@ export async function storeDataset(
 export async function getManifest(
   env: DataLakeEnv,
   userId: string,
-  dataRef: string,
+  dataRef: string
 ): Promise<Manifest | null> {
   if (!env.DATA_LAKE) return null
   if (!isValidDataRef(dataRef)) return null
@@ -187,14 +187,11 @@ export async function getManifest(
 function chunksForRange(
   manifest: Manifest,
   offset: number,
-  limit: number,
+  limit: number
 ): { start: number; end: number } {
   const start = Math.max(0, Math.floor(offset / manifest.rowsPerChunk))
   const lastRow = Math.max(0, offset + limit - 1)
-  const end = Math.min(
-    manifest.totalChunks - 1,
-    Math.floor(lastRow / manifest.rowsPerChunk),
-  )
+  const end = Math.min(manifest.totalChunks - 1, Math.floor(lastRow / manifest.rowsPerChunk))
   return { start, end }
 }
 
@@ -202,13 +199,13 @@ async function loadChunks(
   env: DataLakeEnv,
   dataRef: string,
   start: number,
-  end: number,
+  end: number
 ): Promise<unknown[][]> {
   if (!env.DATA_LAKE) return []
   const promises: Promise<unknown[]>[] = []
   for (let i = start; i <= end; i++) {
     promises.push(
-      env.DATA_LAKE.get(chunkKey(dataRef, i)).then((obj) => obj?.json<unknown[]>() ?? []),
+      env.DATA_LAKE.get(chunkKey(dataRef, i)).then((obj) => obj?.json<unknown[]>() ?? [])
     )
   }
   return Promise.all(promises)
@@ -246,7 +243,7 @@ export async function readDataset(
   env: DataLakeEnv,
   userId: string,
   dataRef: string,
-  opts: ReadDataOptions = {},
+  opts: ReadDataOptions = {}
 ): Promise<ReadDataResult | null> {
   const manifest = await getManifest(env, userId, dataRef)
   if (!manifest) return null
@@ -333,7 +330,7 @@ export async function aggregateDataset(
   env: DataLakeEnv,
   userId: string,
   dataRef: string,
-  opts: { groupBy: string[]; metrics: AggregateMetric[] },
+  opts: { groupBy: string[]; metrics: AggregateMetric[] }
 ): Promise<AggregateResult | null> {
   const manifest = await getManifest(env, userId, dataRef)
   if (!manifest) return null
@@ -345,7 +342,7 @@ export async function aggregateDataset(
   const cap = Math.min(manifest.totalRows, MAX_AGGREGATE_ROWS)
   const lastChunk = Math.min(
     manifest.totalChunks - 1,
-    Math.floor((cap - 1) / manifest.rowsPerChunk),
+    Math.floor((cap - 1) / manifest.rowsPerChunk)
   )
   const chunks = await loadChunks(env, dataRef, 0, lastChunk)
 
@@ -407,10 +404,12 @@ export async function aggregateDataset(
           acc.sumSquares[field] = (acc.sumSquares[field] ?? 0) + value * value
           acc.fieldCounts[field] = (acc.fieldCounts[field] ?? 0) + 1
           if (m.op === 'min') {
-            acc.mins[field] = acc.mins[field] === undefined ? value : Math.min(acc.mins[field]!, value)
+            acc.mins[field] =
+              acc.mins[field] === undefined ? value : Math.min(acc.mins[field]!, value)
           }
           if (m.op === 'max') {
-            acc.maxes[field] = acc.maxes[field] === undefined ? value : Math.max(acc.maxes[field]!, value)
+            acc.maxes[field] =
+              acc.maxes[field] === undefined ? value : Math.max(acc.maxes[field]!, value)
           }
         }
       }
@@ -490,19 +489,22 @@ export async function pivotDataset(
   env: DataLakeEnv,
   userId: string,
   dataRef: string,
-  opts: PivotOptions,
+  opts: PivotOptions
 ): Promise<PivotResult | null> {
   const manifest = await getManifest(env, userId, dataRef)
   if (!manifest) return null
   const cap = Math.min(manifest.totalRows, MAX_AGGREGATE_ROWS)
   const lastChunk = Math.min(
     manifest.totalChunks - 1,
-    Math.floor((cap - 1) / manifest.rowsPerChunk),
+    Math.floor((cap - 1) / manifest.rowsPerChunk)
   )
   const chunks = await loadChunks(env, dataRef, 0, lastChunk)
 
   // {rowKeyJSON: {colKey: {sum, count, min, max}}}
-  const matrix = new Map<string, Map<string | number, { sum: number; count: number; min: number; max: number }>>()
+  const matrix = new Map<
+    string,
+    Map<string | number, { sum: number; count: number; min: number; max: number }>
+  >()
   const colSet = new Set<string | number>()
   let scanned = 0
   for (const chunk of chunks) {
@@ -520,9 +522,11 @@ export async function pivotDataset(
       // Coerce non-string column keys (numbers stay numbers; objects
       // get stringified). Avoids `[object Object]` columns.
       const colKey: string | number =
-        typeof colVal === 'number' ? colVal
-        : typeof colVal === 'string' ? colVal
-        : JSON.stringify(colVal)
+        typeof colVal === 'number'
+          ? colVal
+          : typeof colVal === 'string'
+            ? colVal
+            : JSON.stringify(colVal)
       colSet.add(colKey)
 
       let rowMap = matrix.get(rowKeyStr)
@@ -564,11 +568,21 @@ export async function pivotDataset(
         continue
       }
       switch (opts.op) {
-        case 'sum': out[String(col)] = cell.sum; break
-        case 'avg': out[String(col)] = cell.count > 0 ? cell.sum / cell.count : null; break
-        case 'min': out[String(col)] = cell.min === Infinity ? null : cell.min; break
-        case 'max': out[String(col)] = cell.max === -Infinity ? null : cell.max; break
-        case 'count': out[String(col)] = cell.count; break
+        case 'sum':
+          out[String(col)] = cell.sum
+          break
+        case 'avg':
+          out[String(col)] = cell.count > 0 ? cell.sum / cell.count : null
+          break
+        case 'min':
+          out[String(col)] = cell.min === Infinity ? null : cell.min
+          break
+        case 'max':
+          out[String(col)] = cell.max === -Infinity ? null : cell.max
+          break
+        case 'count':
+          out[String(col)] = cell.count
+          break
       }
     }
     rows.push(out)
@@ -635,7 +649,10 @@ function bucketLabel(date: Date, granularity: TrendGranularity): string {
   const week =
     1 +
     Math.round(
-      ((tmp.getTime() - firstThursday.getTime()) / 86_400_000 - 3 + ((firstThursday.getUTCDay() + 6) % 7)) / 7,
+      ((tmp.getTime() - firstThursday.getTime()) / 86_400_000 -
+        3 +
+        ((firstThursday.getUTCDay() + 6) % 7)) /
+        7
     )
   return `${tmp.getUTCFullYear()}-W${String(week).padStart(2, '0')}`
 }
@@ -644,14 +661,14 @@ export async function trendDataset(
   env: DataLakeEnv,
   userId: string,
   dataRef: string,
-  opts: TrendOptions,
+  opts: TrendOptions
 ): Promise<TrendResult | null> {
   const manifest = await getManifest(env, userId, dataRef)
   if (!manifest) return null
   const cap = Math.min(manifest.totalRows, MAX_AGGREGATE_ROWS)
   const lastChunk = Math.min(
     manifest.totalChunks - 1,
-    Math.floor((cap - 1) / manifest.rowsPerChunk),
+    Math.floor((cap - 1) / manifest.rowsPerChunk)
   )
   const chunks = await loadChunks(env, dataRef, 0, lastChunk)
 
@@ -705,12 +722,22 @@ export async function trendDataset(
   for (const [label, cell] of sorted) {
     let value: number | null
     switch (opts.metricOp) {
-      case 'sum': value = cell.sum; break
-      case 'avg': value = cell.count > 0 ? cell.sum / cell.count : null; break
-      case 'min': value = cell.min === Infinity ? null : cell.min; break
-      case 'max': value = cell.max === -Infinity ? null : cell.max; break
+      case 'sum':
+        value = cell.sum
+        break
+      case 'avg':
+        value = cell.count > 0 ? cell.sum / cell.count : null
+        break
+      case 'min':
+        value = cell.min === Infinity ? null : cell.min
+        break
+      case 'max':
+        value = cell.max === -Infinity ? null : cell.max
+        break
       case 'count':
-      default: value = cell.count; break
+      default:
+        value = cell.count
+        break
     }
     let changePct: number | null = null
     if (prev !== null && value !== null && prev !== 0) {
@@ -763,7 +790,7 @@ export async function distributionDataset(
   env: DataLakeEnv,
   userId: string,
   dataRef: string,
-  opts: DistributionOptions,
+  opts: DistributionOptions
 ): Promise<DistributionResult | null> {
   const manifest = await getManifest(env, userId, dataRef)
   if (!manifest) return null
@@ -771,7 +798,7 @@ export async function distributionDataset(
   const cap = Math.min(manifest.totalRows, MAX_AGGREGATE_ROWS)
   const lastChunk = Math.min(
     manifest.totalChunks - 1,
-    Math.floor((cap - 1) / manifest.rowsPerChunk),
+    Math.floor((cap - 1) / manifest.rowsPerChunk)
   )
   const chunks = await loadChunks(env, dataRef, 0, lastChunk)
 
@@ -847,7 +874,7 @@ export async function distributionDataset(
 export async function exportDatasetCsv(
   env: DataLakeEnv,
   userId: string,
-  dataRef: string,
+  dataRef: string
 ): Promise<{ csv: string; rowCount: number; columns: string[] } | null> {
   const manifest = await getManifest(env, userId, dataRef)
   if (!manifest) return null
@@ -873,7 +900,7 @@ export async function exportDatasetCsv(
 export async function exportDatasetJson(
   env: DataLakeEnv,
   userId: string,
-  dataRef: string,
+  dataRef: string
 ): Promise<{ json: string; rowCount: number } | null> {
   const manifest = await getManifest(env, userId, dataRef)
   if (!manifest) return null

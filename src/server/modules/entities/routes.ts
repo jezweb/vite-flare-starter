@@ -232,7 +232,7 @@ async function loadOwned(
   dbBinding: D1Database,
   userId: string,
   id: string,
-  orgId: string | null = null,
+  orgId: string | null = null
 ) {
   const db = drizzle(dbBinding)
   const orgClause = orgScopeWhere(orgId)

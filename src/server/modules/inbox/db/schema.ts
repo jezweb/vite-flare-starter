@@ -84,5 +84,5 @@ export const inboxItems = sqliteTable(
     index('inbox_items_user_undecided_idx').on(table.userId, table.decidedAt),
     index('inbox_items_due_at_idx').on(table.dueAt),
     index('inbox_items_routine_run_idx').on(table.routineRunId),
-  ],
+  ]
 )

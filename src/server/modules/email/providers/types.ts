@@ -12,12 +12,12 @@ import type { D1Database } from '@cloudflare/workers-types'
  * provider.
  */
 export type EmailProvider =
-  | 'email-service'      // env.EMAIL — Cloudflare Email Service (beta)
+  | 'email-service' // env.EMAIL — Cloudflare Email Service (beta)
   | 'email-routing-send' // env.SEND_EMAIL — Cloudflare Email Routing
-  | 'smtp2go'            // SMTP2Go HTTP API
-  | 'mailgun'            // Mailgun HTTP API
-  | 'resend'             // Resend HTTP API
-  | 'console'            // dev fallback (logs only)
+  | 'smtp2go' // SMTP2Go HTTP API
+  | 'mailgun' // Mailgun HTTP API
+  | 'resend' // Resend HTTP API
+  | 'console' // dev fallback (logs only)
 
 /**
  * Minimal binding shape for the Cloudflare Email Service binding —

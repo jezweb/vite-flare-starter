@@ -24,10 +24,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  NativeSelect,
-  NativeSelectOption,
-} from '@/components/ui/native-select'
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { useRegisteredAgents } from '../hooks/useAgentInstances'
 
@@ -130,7 +127,9 @@ export function NewAgentDialog({ open, onOpenChange, onCreate }: Props) {
               maxLength={60}
             />
             <FieldDescription>
-              A short identifier for this specific agent. Useful when you have several of the same type (e.g. one researcher for "cf-workers" and another for "startups"). Lowercase letters, numbers, hyphens, underscores.
+              A short identifier for this specific agent. Useful when you have several of the same
+              type (e.g. one researcher for "cf-workers" and another for "startups"). Lowercase
+              letters, numbers, hyphens, underscores.
             </FieldDescription>
             {/* Rename is genuinely impossible — the slug is baked into
                 the Durable Object id. Promote that warning out of the
@@ -138,7 +137,8 @@ export function NewAgentDialog({ open, onOpenChange, onCreate }: Props) {
             <p className="mt-1 inline-flex items-start gap-1.5 text-xs text-amber-700 dark:text-amber-400">
               <AlertTriangle className="size-3.5 shrink-0 mt-px" />
               <span>
-                <strong>Pick carefully — this name is permanent.</strong> It identifies your agent across sessions and can't be changed later.
+                <strong>Pick carefully — this name is permanent.</strong> It identifies your agent
+                across sessions and can't be changed later.
               </span>
             </p>
             {slug && !slugValid && (

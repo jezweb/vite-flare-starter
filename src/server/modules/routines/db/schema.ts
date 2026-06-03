@@ -24,13 +24,7 @@
  * Inbox items (`inbox_items`) live in their own schema (slice 5) — this
  * file deliberately doesn't reference them.
  */
-import {
-  sqliteTable,
-  text,
-  integer,
-  real,
-  index,
-} from 'drizzle-orm/sqlite-core'
+import { sqliteTable, text, integer, real, index } from 'drizzle-orm/sqlite-core'
 import { user } from '@/server/modules/auth/db/schema'
 
 // ─── Trigger kinds ──────────────────────────────────────────────────
@@ -41,11 +35,7 @@ export type RoutineTriggerKind =
   | 'event' // internal event filter (slice 6+)
   | 'manual' // user-triggered only
 
-export type RoutineOutcome =
-  | 'started'
-  | 'ok'
-  | 'error'
-  | 'budget_exceeded'
+export type RoutineOutcome = 'started' | 'ok' | 'error' | 'budget_exceeded'
 
 /** How the routine reacts when the agent suggests a different interval. */
 export type CadenceAdjustMode =
@@ -81,10 +71,7 @@ export const routines = sqliteTable(
     agentName: text('agent_name').notNull(),
 
     // How it fires.
-    triggerKind: text('trigger_kind')
-      .$type<RoutineTriggerKind>()
-      .notNull()
-      .default('schedule'),
+    triggerKind: text('trigger_kind').$type<RoutineTriggerKind>().notNull().default('schedule'),
     /** JSON config specific to triggerKind:
      *  - schedule: { interval: number (seconds) }
      *  - webhook: { secret: string }
@@ -117,10 +104,7 @@ export const routines = sqliteTable(
     /** Currently active interval. May differ from baseInterval after the
      *  agent has self-adjusted (within bounds). */
     effectiveInterval: integer('effective_interval'),
-    adjustMode: text('adjust_mode')
-      .$type<CadenceAdjustMode>()
-      .notNull()
-      .default('suggested'),
+    adjustMode: text('adjust_mode').$type<CadenceAdjustMode>().notNull().default('suggested'),
 
     /** Optional gate: if set (0-23), the routine only fires when the
      *  user's local hour (resolved via user.preferences.timezone) matches
@@ -149,7 +133,7 @@ export const routines = sqliteTable(
     index('routines_enabled_idx').on(table.enabled),
     index('routines_trigger_kind_idx').on(table.triggerKind),
     index('routines_org_idx').on(table.organizationId),
-  ],
+  ]
 )
 
 // ─── routine_runs ───────────────────────────────────────────────────
@@ -182,17 +166,14 @@ export const routineRuns = sqliteTable(
      *  the most recent K of these as the run-summary tail. */
     outputSummary: text('output_summary'),
 
-    outcome: text('outcome')
-      .$type<RoutineOutcome>()
-      .notNull()
-      .default('started'),
+    outcome: text('outcome').$type<RoutineOutcome>().notNull().default('started'),
     costUsd: real('cost_usd'),
   },
   (table) => [
     index('routine_runs_routine_id_idx').on(table.routineId),
     index('routine_runs_started_at_idx').on(table.startedAt),
     index('routine_runs_routine_run_idx').on(table.routineId, table.runNumber),
-  ],
+  ]
 )
 
 // ─── routine_cadence_changes ────────────────────────────────────────
@@ -218,7 +199,5 @@ export const routineCadenceChanges = sqliteTable(
       .notNull()
       .$defaultFn(() => Math.floor(Date.now() / 1000)),
   },
-  (table) => [
-    index('routine_cadence_changes_routine_id_idx').on(table.routineId),
-  ],
+  (table) => [index('routine_cadence_changes_routine_id_idx').on(table.routineId)]
 )

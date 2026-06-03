@@ -18,7 +18,11 @@
  */
 
 const MONTH_DAY = new Intl.DateTimeFormat('en-AU', { day: 'numeric', month: 'short' })
-const MONTH_DAY_YEAR = new Intl.DateTimeFormat('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
+const MONTH_DAY_YEAR = new Intl.DateTimeFormat('en-AU', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+})
 
 export function formatRelative(input: string | number | Date | null | undefined): string {
   if (input == null) return ''
@@ -46,7 +50,7 @@ export function formatRelative(input: string | number | Date | null | undefined)
  */
 export function formatRelativeWithPrefix(
   prefix: string,
-  input: string | number | Date | null | undefined,
+  input: string | number | Date | null | undefined
 ): string {
   const rel = formatRelative(input)
   if (!rel) return ''

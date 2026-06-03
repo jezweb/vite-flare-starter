@@ -23,7 +23,13 @@ interface DatePickerProps {
   className?: string
 }
 
-export function DatePicker({ value, onChange, placeholder = 'Pick a date', disabled, className }: DatePickerProps) {
+export function DatePicker({
+  value,
+  onChange,
+  placeholder = 'Pick a date',
+  disabled,
+  className,
+}: DatePickerProps) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -32,7 +38,11 @@ export function DatePicker({ value, onChange, placeholder = 'Pick a date', disab
         <Button
           variant="outline"
           disabled={disabled}
-          className={cn('w-full justify-start text-left font-normal', !value && 'text-muted-foreground', className)}
+          className={cn(
+            'w-full justify-start text-left font-normal',
+            !value && 'text-muted-foreground',
+            className
+          )}
         >
           <CalendarIcon className="mr-2 size-4" />
           {value ? format(value, 'PPP') : placeholder}

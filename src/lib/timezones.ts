@@ -333,7 +333,10 @@ export function formatTimeInTimezone(
  * Format relative time (e.g., "2 days ago")
  * Note: This uses the browser's current time as reference
  */
-export function formatRelativeTime(date: Date | string | number, options?: { addSuffix?: boolean }): string {
+export function formatRelativeTime(
+  date: Date | string | number,
+  options?: { addSuffix?: boolean }
+): string {
   const dateObj = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date
   return formatDistanceToNow(dateObj, { addSuffix: options?.addSuffix ?? true })
 }

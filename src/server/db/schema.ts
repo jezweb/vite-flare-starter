@@ -21,7 +21,10 @@ export { activityLogs, activityLogsRelations } from '@/server/modules/activity/d
 export { featureFlags, featureFlagsRelations } from '@/server/modules/feature-flags/db/schema'
 
 // Notifications module schemas
-export { userNotifications, userNotificationsRelations } from '@/server/modules/notifications/db/schema'
+export {
+  userNotifications,
+  userNotificationsRelations,
+} from '@/server/modules/notifications/db/schema'
 
 // Files module schemas
 export { files } from '@/server/modules/files/db/schema'

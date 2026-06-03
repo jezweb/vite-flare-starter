@@ -44,7 +44,7 @@ export function ActionChips({ onPick, onPreview, className }: Props) {
                 'inline-flex items-center rounded-full border px-4 py-1.5 text-sm transition-colors',
                 isActive
                   ? 'border-primary bg-primary/10 text-foreground'
-                  : 'border-border bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground',
+                  : 'border-border bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground'
               )}
             >
               {chip.label}

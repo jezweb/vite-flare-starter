@@ -56,9 +56,7 @@ function resolveTitle(pathname: string): string | null {
   const segments = pathname.split('/').filter(Boolean)
   const last = segments[segments.length - 1]
   if (!last || last === 'dashboard') return null
-  return last
-    .replace(/[-_]+/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase())
+  return last.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
 function DocumentTitleSync() {
@@ -91,8 +89,7 @@ function useResponsiveSidebarOpen(): {
   open: boolean
   onOpenChange: (next: boolean) => void
 } {
-  const computeDefault = () =>
-    typeof window === 'undefined' ? true : window.innerWidth >= 1024
+  const computeDefault = () => (typeof window === 'undefined' ? true : window.innerWidth >= 1024)
   const [open, setOpen] = useState<boolean>(computeDefault)
   const userOverrideRef = useRef(false)
 

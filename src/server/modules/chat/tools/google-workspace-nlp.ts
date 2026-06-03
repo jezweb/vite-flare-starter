@@ -65,7 +65,7 @@ function structuredLog(event: string, fields: Record<string, unknown>): void {
 export async function translateGmailQuery(
   env: NlpEnv,
   naturalQuery: string,
-  timezone = 'Australia/Sydney',
+  timezone = 'Australia/Sydney'
 ): Promise<{ query: string; translated: boolean; fallbackReason?: string }> {
   const started = Date.now()
   try {
@@ -155,7 +155,7 @@ export type CalendarListNlp = z.infer<typeof CalendarListNlpSchema>
 export async function translateCalendarListQuery(
   env: NlpEnv,
   naturalQuery: string,
-  timezone = 'Australia/Sydney',
+  timezone = 'Australia/Sydney'
 ): Promise<{ fields: CalendarListNlp; translated: boolean; fallbackReason?: string }> {
   const started = Date.now()
   try {
@@ -171,7 +171,7 @@ export async function translateCalendarListQuery(
         '      today, tomorrow, thisWeek, nextWeek, thisMonth',
         '  • Only fall back to explicit `start`/`end` ISO timestamps when no preset fits',
         '    (e.g. "the next 3 weeks", "Monday to Friday", "this afternoon").',
-        '  • All ISO timestamps MUST include the user\'s timezone offset',
+        "  • All ISO timestamps MUST include the user's timezone offset",
         `    (${timezone} — compute the offset for today\'s date).`,
         '  • Use `query` for free-text filters: attendee names, event titles,',
         '    location terms. Omit for pure time-window requests.',

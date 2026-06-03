@@ -42,11 +42,7 @@ import { useAgentCatalog } from '../hooks/useAgentCatalog'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/client/lib/api-client'
 import { cn } from '@/lib/utils'
-import {
-  formatAgentClass,
-  formatOutcome,
-  formatCadenceInterval,
-} from '@/shared/format/agent'
+import { formatAgentClass, formatOutcome, formatCadenceInterval } from '@/shared/format/agent'
 
 export function RoutinesPage() {
   const { data, isLoading } = useRoutines()
@@ -103,8 +99,7 @@ export function RoutinesPage() {
               {seed.isPending ? 'Seeding…' : 'Or seed two example routines'}
             </Button>
             <p className="mt-1 text-[11px] text-muted-foreground">
-              Seeds the bundled example routines as paused — you can edit
-              and turn them on.
+              Seeds the bundled example routines as paused — you can edit and turn them on.
             </p>
           </div>
         </div>
@@ -220,7 +215,7 @@ function OutcomeBadge({ outcome }: { outcome: NonNullable<Routine['lastOutcome']
 
 export function formatCadence(
   kind: Routine['triggerKind'],
-  intervalSeconds: number | null,
+  intervalSeconds: number | null
 ): string {
   if (kind === 'schedule') return formatCadenceInterval(intervalSeconds)
   if (kind === 'webhook') return 'On webhook'

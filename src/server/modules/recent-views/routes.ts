@@ -22,7 +22,9 @@ app.get('/', async (c) => {
   const limit = Number(c.req.query('limit') || '20')
   const db = drizzle(c.env.DB)
 
-  const rows = await db.select().from(recentViews)
+  const rows = await db
+    .select()
+    .from(recentViews)
     .where(eq(recentViews.userId, userId))
     .orderBy(desc(recentViews.viewedAt))
     .limit(Math.min(limit, MAX_RECENT))
@@ -40,7 +42,8 @@ app.post(
     const db = drizzle(c.env.DB)
 
     // Upsert: update viewedAt if exists, insert if not
-    await db.insert(recentViews)
+    await db
+      .insert(recentViews)
       .values({ userId, entityType, entityId })
       .onConflictDoUpdate({
         target: [recentViews.userId, recentViews.entityType, recentViews.entityId],

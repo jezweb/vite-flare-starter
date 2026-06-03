@@ -103,7 +103,9 @@ export function ToolUIResource({ resource }: ToolUIResourceProps) {
   try {
     const metadata = getUIResourceMetadata(resource as never) as Record<string, unknown> | undefined
     title = metadata?.['title'] as string | undefined
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 
   return (
     <div className="my-2 rounded-lg border border-border overflow-hidden">

@@ -36,9 +36,7 @@ export const gmailSearchRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     const messages = o.messages
@@ -54,9 +52,7 @@ export const gmailSearchRenderer: ToolRenderer = {
         )}
         {shownQuery && (
           <div className="text-xs text-muted-foreground">
-            <span className="font-medium">
-              {translatedFrom ? 'Translated to:' : 'Query:'}
-            </span>{' '}
+            <span className="font-medium">{translatedFrom ? 'Translated to:' : 'Query:'}</span>{' '}
             <span className="font-mono">{shownQuery}</span>
           </div>
         )}
@@ -71,20 +67,14 @@ export const gmailSearchRenderer: ToolRenderer = {
               return (
                 <li key={m.id} className="flex flex-col gap-0.5 px-2 py-2">
                   <div className="flex items-center gap-2 text-xs">
-                    <span className="font-medium text-foreground truncate">
-                      {from.name}
-                    </span>
+                    <span className="font-medium text-foreground truncate">{from.name}</span>
                     <span className="text-muted-foreground ml-auto shrink-0">
                       {formatToolDate(m.date)}
                     </span>
                   </div>
-                  <div className="text-sm font-medium truncate">
-                    {truncate(m.subject, 100)}
-                  </div>
+                  <div className="text-sm font-medium truncate">{truncate(m.subject, 100)}</div>
                   {m.snippet && (
-                    <div className="text-xs text-muted-foreground line-clamp-2">
-                      {m.snippet}
-                    </div>
+                    <div className="text-xs text-muted-foreground line-clamp-2">{m.snippet}</div>
                   )}
                 </li>
               )
@@ -111,9 +101,7 @@ export const gmailGetMessageRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     const from = parseFromHeader(o.from)
@@ -121,9 +109,7 @@ export const gmailGetMessageRenderer: ToolRenderer = {
       <div className="space-y-2">
         <div className="flex items-baseline justify-between gap-3">
           <div className="text-sm font-semibold truncate">{o.subject}</div>
-          <div className="text-[11px] text-muted-foreground shrink-0">
-            {formatToolDate(o.date)}
-          </div>
+          <div className="text-[11px] text-muted-foreground shrink-0">{formatToolDate(o.date)}</div>
         </div>
         <div className="text-xs text-muted-foreground">
           <div>
@@ -150,9 +136,7 @@ export const gmailGetMessageRenderer: ToolRenderer = {
               >
                 <Paperclip className="size-3" />
                 <span className="font-medium truncate max-w-[180px]">{a.filename}</span>
-                <span className="text-muted-foreground">
-                  {formatBytes(a.sizeBytes)}
-                </span>
+                <span className="text-muted-foreground">{formatBytes(a.sizeBytes)}</span>
               </span>
             ))}
           </div>
@@ -182,9 +166,7 @@ export const gmailListLabelsRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     const sys = o.labels.filter((l) => l.type === 'system')
@@ -239,13 +221,13 @@ export const gmailDraftRenderer: ToolRenderer = {
   },
   expanded: ({ output, input }) => {
     const o = output as GmailDraftOutput | undefined
-    const i = input as { to?: string; subject?: string; body?: string; cc?: string[]; bcc?: string[] } | undefined
+    const i = input as
+      | { to?: string; subject?: string; body?: string; cc?: string[]; bcc?: string[] }
+      | undefined
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     return (
@@ -300,9 +282,7 @@ export const gmailReplyRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     return (
@@ -349,9 +329,7 @@ export const gmailSendRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     return (

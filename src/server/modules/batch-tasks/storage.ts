@@ -65,7 +65,11 @@ export async function createJob(db: D1Database, args: CreateJobArgs): Promise<Ba
   return created
 }
 
-export async function getJob(db: D1Database, userId: string, jobId: string): Promise<BatchJob | null> {
+export async function getJob(
+  db: D1Database,
+  userId: string,
+  jobId: string
+): Promise<BatchJob | null> {
   const d = drizzle(db)
   const [row] = await d
     .select()
@@ -90,7 +94,11 @@ export async function listItems(db: D1Database, jobId: string): Promise<BatchIte
   return d.select().from(batchItems).where(eq(batchItems.jobId, jobId))
 }
 
-export async function setJobWorkflowId(db: D1Database, jobId: string, workflowId: string): Promise<void> {
+export async function setJobWorkflowId(
+  db: D1Database,
+  jobId: string,
+  workflowId: string
+): Promise<void> {
   await drizzle(db)
     .update(batchJobs)
     .set({ workflowId, status: 'running', updatedAt: new Date() })
@@ -101,7 +109,7 @@ export async function setJobStatus(
   db: D1Database,
   jobId: string,
   status: BatchJob['status'],
-  resultSummary?: string,
+  resultSummary?: string
 ): Promise<void> {
   await drizzle(db)
     .update(batchJobs)

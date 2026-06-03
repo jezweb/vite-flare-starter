@@ -143,9 +143,7 @@ export function NotificationBell() {
                         {formatTime(notification.createdAt)}
                       </p>
                     </div>
-                    {!notification.read && (
-                      <span className="h-2 w-2 rounded-full bg-primary" />
-                    )}
+                    {!notification.read && <span className="h-2 w-2 rounded-full bg-primary" />}
                   </div>
                 </DropdownMenuItem>
               ))}

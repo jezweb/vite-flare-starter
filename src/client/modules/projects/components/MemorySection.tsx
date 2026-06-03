@@ -24,7 +24,13 @@ import { Textarea } from '@/components/ui/textarea'
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { apiClient } from '@/client/lib/api-client'
 import { toast } from 'sonner'
@@ -77,7 +83,7 @@ export function MemorySection({
     queryKey: ['memories', scope, scopeId],
     queryFn: () =>
       apiClient.get<MemoriesResponse>(
-        `/api/memories?scope=${scope}&scopeId=${encodeURIComponent(scopeId)}`,
+        `/api/memories?scope=${scope}&scopeId=${encodeURIComponent(scopeId)}`
       ),
     enabled: !!scopeId,
   })
@@ -191,7 +197,8 @@ export function MemorySection({
           </div>
         ) : memoriesList.length === 0 ? (
           <p className="text-xs text-muted-foreground">
-            {emptyHint ?? 'Things the AI learns about this project — names, preferences, decisions — show up here. They get pulled into every chat in this project so you don\'t have to repeat yourself.'}
+            {emptyHint ??
+              "Things the AI learns about this project — names, preferences, decisions — show up here. They get pulled into every chat in this project so you don't have to repeat yourself."}
           </p>
         ) : (
           <ul className="space-y-2">
@@ -232,7 +239,8 @@ export function MemorySection({
                       <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-2 border-t border-border/50">
                         <span className="inline-flex items-center gap-1.5 flex-wrap">
                           <span>
-                            Updated {m.updatedAt ? new Date(m.updatedAt).toLocaleDateString() : 'recently'}
+                            Updated{' '}
+                            {m.updatedAt ? new Date(m.updatedAt).toLocaleDateString() : 'recently'}
                           </span>
                           {m.sourceConversationId && (
                             <>
@@ -323,8 +331,20 @@ function MemoryEditorModal({
   open: boolean
   onOpenChange: (open: boolean) => void
   title: string
-  initial?: { name: string; description: string; type: MemoryType; content: string; isPrivate: number }
-  onSave: (input: { name: string; description: string; type: MemoryType; content: string; isPrivate: boolean }) => void
+  initial?: {
+    name: string
+    description: string
+    type: MemoryType
+    content: string
+    isPrivate: number
+  }
+  onSave: (input: {
+    name: string
+    description: string
+    type: MemoryType
+    content: string
+    isPrivate: boolean
+  }) => void
   isPending: boolean
 }) {
   const [name, setName] = useState(initial?.name ?? '')
@@ -376,8 +396,8 @@ function MemoryEditorModal({
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            Memory entries are injected into the system prompt overview. Use the privacy
-            switch for sensitive info that should only be loaded on demand.
+            Memory entries are injected into the system prompt overview. Use the privacy switch for
+            sensitive info that should only be loaded on demand.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
@@ -402,7 +422,9 @@ function MemoryEditorModal({
                 className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
               >
                 {MEMORY_TYPES.map((t) => (
-                  <option key={t} value={t}>{t}</option>
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
                 ))}
               </select>
             </Field>
@@ -436,9 +458,16 @@ function MemoryEditorModal({
           </Field>
           <div className="flex items-center justify-between rounded-md border bg-muted/20 px-3 py-2">
             <div className="flex items-start gap-2">
-              <Lock className={cn('size-4 mt-0.5', isPrivate ? 'text-amber-600' : 'text-muted-foreground')} />
+              <Lock
+                className={cn(
+                  'size-4 mt-0.5',
+                  isPrivate ? 'text-amber-600' : 'text-muted-foreground'
+                )}
+              />
               <div>
-                <Label htmlFor="memory-private" className="cursor-pointer">Private</Label>
+                <Label htmlFor="memory-private" className="cursor-pointer">
+                  Private
+                </Label>
                 <FieldDescription className="text-xs">
                   Never auto-injected. Available only via explicit load_memory tool.
                 </FieldDescription>
@@ -447,9 +476,18 @@ function MemoryEditorModal({
             <Switch id="memory-private" checked={isPrivate} onCheckedChange={setIsPrivate} />
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" disabled={!name.trim() || !description.trim() || !content.trim() || isPending}>
-              {isPending ? <Spinner size="sm" className="mr-1.5" /> : <Brain className="size-3.5 mr-1.5" />}
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={!name.trim() || !description.trim() || !content.trim() || isPending}
+            >
+              {isPending ? (
+                <Spinner size="sm" className="mr-1.5" />
+              ) : (
+                <Brain className="size-3.5 mr-1.5" />
+              )}
               Save memory
             </Button>
           </div>

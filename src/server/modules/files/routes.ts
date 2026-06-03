@@ -182,7 +182,10 @@ app.post('/', async (c) => {
 
   // Validate file size
   if (file.size > MAX_FILE_SIZE) {
-    return c.json({ error: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB` }, 400)
+    return c.json(
+      { error: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB` },
+      400
+    )
   }
 
   // Validate MIME type
@@ -203,7 +206,8 @@ app.post('/', async (c) => {
   // (colour accuracy). Non-JPEG images pass through unchanged. Set
   // STRIP_IMAGE_METADATA=false to disable.
   const rawBuffer = await file.arrayBuffer()
-  const stripEnabled = ((c.env as unknown as { STRIP_IMAGE_METADATA?: string }).STRIP_IMAGE_METADATA) !== 'false'
+  const stripEnabled =
+    (c.env as unknown as { STRIP_IMAGE_METADATA?: string }).STRIP_IMAGE_METADATA !== 'false'
   const arrayBuffer = stripEnabled ? stripImageMetadata(rawBuffer, file.type) : rawBuffer
   await c.env.FILES.put(key, arrayBuffer, {
     httpMetadata: {
@@ -249,7 +253,7 @@ app.post('/', async (c) => {
     const task = ingestFile(
       c.env as unknown as Parameters<typeof ingestFile>[0],
       fileId,
-      userId,
+      userId
     ).catch((err) => {
       console.error(JSON.stringify({ event: 'ingest_failed_async', fileId, error: String(err) }))
     })
@@ -335,13 +339,16 @@ app.delete('/:id', async (c) => {
   await c.env.FILES.delete(file.key)
 
   // Delete ingested vectors before dropping the row (needs indexChunks).
-  if ((c.env as unknown as { VECTORS?: VectorizeIndex }).VECTORS && file.indexStatus === 'indexed') {
+  if (
+    (c.env as unknown as { VECTORS?: VectorizeIndex }).VECTORS &&
+    file.indexStatus === 'indexed'
+  ) {
     try {
       const { deleteFileVectors } = await import('./ingest')
       await deleteFileVectors(
         c.env as unknown as Parameters<typeof deleteFileVectors>[0],
         fileId,
-        userId,
+        userId
       )
     } catch (err) {
       console.error(JSON.stringify({ event: 'vector_cleanup_failed', fileId, error: String(err) }))
@@ -378,7 +385,7 @@ app.post('/:id/reindex', async (c) => {
   const result = await ingestFile(
     c.env as unknown as Parameters<typeof ingestFile>[0],
     fileId,
-    userId,
+    userId
   )
   if (result.status === 'failed') {
     return c.json({ error: result.error ?? 'Reindex failed' }, 500)
@@ -437,9 +444,7 @@ app.get('/folders/list', async (c) => {
     .where(eq(files.userId, userId))
     .groupBy(files.folder)
 
-  const folders = [...new Set(userFiles.map((f) => f.folder || '/'))]
-    .filter(Boolean)
-    .sort()
+  const folders = [...new Set(userFiles.map((f) => f.folder || '/'))].filter(Boolean).sort()
 
   return c.json({ folders })
 })

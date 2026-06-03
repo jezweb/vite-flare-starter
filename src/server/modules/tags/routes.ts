@@ -25,16 +25,25 @@ app.get('/', async (c) => {
 /** POST /api/tags — create a tag */
 app.post(
   '/',
-  zValidator('json', z.object({
-    name: z.string().min(1).max(50),
-    colour: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
-    entityType: z.string(),
-  })),
+  zValidator(
+    'json',
+    z.object({
+      name: z.string().min(1).max(50),
+      colour: z
+        .string()
+        .regex(/^#[0-9a-fA-F]{6}$/)
+        .optional(),
+      entityType: z.string(),
+    })
+  ),
   async (c) => {
     const input = c.req.valid('json')
     const userId = c.get('userId')
     const db = drizzle(c.env.DB)
-    const [tag] = await db.insert(tags).values({ ...input, userId }).returning()
+    const [tag] = await db
+      .insert(tags)
+      .values({ ...input, userId })
+      .returning()
     return c.json({ tag }, 201)
   }
 )
@@ -66,11 +75,14 @@ app.get('/entity', async (c) => {
 /** POST /api/tags/entity — attach a tag to an entity */
 app.post(
   '/entity',
-  zValidator('json', z.object({
-    entityType: z.string(),
-    entityId: z.string(),
-    tagId: z.string(),
-  })),
+  zValidator(
+    'json',
+    z.object({
+      entityType: z.string(),
+      entityId: z.string(),
+      tagId: z.string(),
+    })
+  ),
   async (c) => {
     const input = c.req.valid('json')
     const db = drizzle(c.env.DB)
@@ -82,17 +94,26 @@ app.post(
 /** DELETE /api/tags/entity — detach a tag from an entity */
 app.delete(
   '/entity',
-  zValidator('json', z.object({
-    entityType: z.string(),
-    entityId: z.string(),
-    tagId: z.string(),
-  })),
+  zValidator(
+    'json',
+    z.object({
+      entityType: z.string(),
+      entityId: z.string(),
+      tagId: z.string(),
+    })
+  ),
   async (c) => {
     const { entityType, entityId, tagId } = c.req.valid('json')
     const db = drizzle(c.env.DB)
-    await db.delete(entityTags).where(
-      and(eq(entityTags.entityType, entityType), eq(entityTags.entityId, entityId), eq(entityTags.tagId, tagId))
-    )
+    await db
+      .delete(entityTags)
+      .where(
+        and(
+          eq(entityTags.entityType, entityType),
+          eq(entityTags.entityId, entityId),
+          eq(entityTags.tagId, tagId)
+        )
+      )
     return c.json({ success: true })
   }
 )

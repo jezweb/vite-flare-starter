@@ -18,12 +18,12 @@
 
 /** Free Workers AI models (always available). */
 export const WORKERS_AI_MODELS = [
-  '@cf/moonshotai/kimi-k2.6',          // 262K ctx, tools, flagship
-  '@cf/google/gemma-4-26b-a4b-it',     // 256K ctx, tools, flagship — also multimodal (vision)
-  '@cf/zai-org/glm-4.7-flash',         // 131K ctx, tools, flagship
-  '@cf/qwen/qwq-32b',                  // reasoning flagship
-  '@cf/openai/gpt-oss-120b',           // 128K ctx, tools, flagship — OpenAI open-weights
-  '@cf/openai/gpt-oss-20b',            // 128K ctx, tools, flagship — smaller GPT-OSS
+  '@cf/moonshotai/kimi-k2.6', // 262K ctx, tools, flagship
+  '@cf/google/gemma-4-26b-a4b-it', // 256K ctx, tools, flagship — also multimodal (vision)
+  '@cf/zai-org/glm-4.7-flash', // 131K ctx, tools, flagship
+  '@cf/qwen/qwq-32b', // reasoning flagship
+  '@cf/openai/gpt-oss-120b', // 128K ctx, tools, flagship — OpenAI open-weights
+  '@cf/openai/gpt-oss-20b', // 128K ctx, tools, flagship — smaller GPT-OSS
 ] as const
 
 /**
@@ -48,8 +48,8 @@ export const OPENROUTER_MODELS = [
 
   // DeepSeek — V4 dropped 2026-04-24, MIT license, 1M context.
   // V3.2-speciale retired (deepseek-chat/reasoner endpoints sunset 2026-07-24).
-  'deepseek/deepseek-v4-pro',     // 1.6T MoE, 49B active; $1.74/$3.48 per Mtok
-  'deepseek/deepseek-v4-flash',   // 284B MoE, 13B active; $0.14/$0.28 per Mtok
+  'deepseek/deepseek-v4-pro', // 1.6T MoE, 49B active; $1.74/$3.48 per Mtok
+  'deepseek/deepseek-v4-flash', // 284B MoE, 13B active; $0.14/$0.28 per Mtok
 
   // Qwen
   'qwen/qwen3.6-plus',
@@ -65,10 +65,7 @@ export const OPENROUTER_MODELS = [
 ] as const
 
 /** Every enabled model ID — used by the chat model selector. */
-export const ENABLED_MODEL_IDS: readonly string[] = [
-  ...WORKERS_AI_MODELS,
-  ...OPENROUTER_MODELS,
-]
+export const ENABLED_MODEL_IDS: readonly string[] = [...WORKERS_AI_MODELS, ...OPENROUTER_MODELS]
 
 /**
  * Default model when the user hasn't picked one. Kimi is free and handles

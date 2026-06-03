@@ -104,6 +104,6 @@ export function stripImageMetadata(buffer: ArrayBuffer, contentType: string): Ar
   // ArrayBuffer view — return underlying buffer.
   return stripped.buffer.slice(
     stripped.byteOffset,
-    stripped.byteOffset + stripped.byteLength,
+    stripped.byteOffset + stripped.byteLength
   ) as ArrayBuffer
 }

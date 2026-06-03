@@ -9,7 +9,18 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ChevronLeft, X, Hash, MessageSquare, Search, Pin, Quote as QuoteIcon, Users, Bell, BellOff } from 'lucide-react'
+import {
+  ChevronLeft,
+  X,
+  Hash,
+  MessageSquare,
+  Search,
+  Pin,
+  Quote as QuoteIcon,
+  Users,
+  Bell,
+  BellOff,
+} from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { useSession } from '@/client/lib/auth'
@@ -70,8 +81,8 @@ export function SpacePage() {
   }, [messages.length])
 
   const threadParent = useMemo(
-    () => (threadParentId ? messages.find((m) => m.id === threadParentId) ?? null : null),
-    [threadParentId, messages],
+    () => (threadParentId ? (messages.find((m) => m.id === threadParentId) ?? null) : null),
+    [threadParentId, messages]
   )
 
   if (isLoading) {
@@ -85,7 +96,10 @@ export function SpacePage() {
     return (
       <div className="container mx-auto py-12 text-sm text-muted-foreground">
         <p>Space not found, or you don&apos;t have access.</p>
-        <Link to="/dashboard/spaces" className="mt-2 inline-flex items-center gap-1 text-primary hover:underline">
+        <Link
+          to="/dashboard/spaces"
+          className="mt-2 inline-flex items-center gap-1 text-primary hover:underline"
+        >
           <ChevronLeft className="size-3.5" />
           Back to spaces
         </Link>
@@ -180,8 +194,12 @@ export function SpacePage() {
           </div>
           <ul className="space-y-1">
             {pinnedQuery.data?.pinned.map((p) => {
-              const partsArr = Array.isArray(p.parts) ? p.parts as Array<{ text?: string }> : []
-              const txt = partsArr.map((pp) => pp.text ?? '').filter(Boolean).join(' ').trim()
+              const partsArr = Array.isArray(p.parts) ? (p.parts as Array<{ text?: string }>) : []
+              const txt = partsArr
+                .map((pp) => pp.text ?? '')
+                .filter(Boolean)
+                .join(' ')
+                .trim()
               return (
                 <li key={p.id} className="truncate text-muted-foreground">
                   • {txt.slice(0, 140) || '<no text>'}
@@ -248,11 +266,19 @@ export function SpacePage() {
               <div className="mb-2 flex items-start gap-2 rounded-md border-l-2 border-primary/60 bg-primary/5 px-2 py-1.5 text-xs">
                 <QuoteIcon className="mt-0.5 size-3 text-primary/70" />
                 <div className="min-w-0 flex-1">
-                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Quoting</div>
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Quoting
+                  </div>
                   <div className="line-clamp-2 truncate text-muted-foreground">
                     {(() => {
-                      const arr = Array.isArray(quoted.parts) ? (quoted.parts as Array<{ text?: string }>) : []
-                      return arr.map((p) => p.text ?? '').filter(Boolean).join(' ').slice(0, 140)
+                      const arr = Array.isArray(quoted.parts)
+                        ? (quoted.parts as Array<{ text?: string }>)
+                        : []
+                      return arr
+                        .map((p) => p.text ?? '')
+                        .filter(Boolean)
+                        .join(' ')
+                        .slice(0, 140)
                     })()}
                   </div>
                 </div>
@@ -280,7 +306,12 @@ export function SpacePage() {
 
         {/* Right pane — search OR thread, mutually exclusive */}
         {searchOpen && id ? (
-          <SearchInSpacePane spaceId={id} users={users} open={searchOpen} onClose={() => setSearchOpen(false)} />
+          <SearchInSpacePane
+            spaceId={id}
+            users={users}
+            open={searchOpen}
+            onClose={() => setSearchOpen(false)}
+          />
         ) : threadParentId && threadParent ? (
           <ThreadAside
             spaceMessages={messages}
@@ -314,7 +345,18 @@ interface ThreadAsideProps {
 }
 
 function ThreadAside(props: ThreadAsideProps) {
-  const { threadParentId, threadParent, threadMessages, members, users, send, onClose, canPin, onQuote, spaceMessages } = props
+  const {
+    threadParentId,
+    threadParent,
+    threadMessages,
+    members,
+    users,
+    send,
+    onClose,
+    canPin,
+    onQuote,
+    spaceMessages,
+  } = props
   const subscribe = useThreadSubscription()
   const [muted, setMuted] = useState(false)
   return (

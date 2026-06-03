@@ -72,7 +72,7 @@ export interface SendResult {
  */
 export async function sendEmail<K extends TemplateKey | undefined = undefined>(
   env: EmailEnv,
-  input: SendEmailInput<K>,
+  input: SendEmailInput<K>
 ): Promise<SendResult> {
   const fromAddress = input.from ?? env.EMAIL_FROM ?? 'onboarding@example.com'
   // RFC 5322 From with optional display name. EMAIL_FROM_NAME wins; APP_NAME
@@ -80,15 +80,12 @@ export async function sendEmail<K extends TemplateKey | undefined = undefined>(
   // branded From line. If the caller passed `input.from` already containing
   // a display name (`Display <addr>`), we don't double-wrap it.
   const fromName = env.EMAIL_FROM_NAME || env.APP_NAME
-  const from =
-    fromName && !fromAddress.includes('<')
-      ? `${fromName} <${fromAddress}>`
-      : fromAddress
+  const from = fromName && !fromAddress.includes('<') ? `${fromName} <${fromAddress}>` : fromAddress
   const recipients = Array.isArray(input.to) ? input.to : [input.to]
 
   // Resolve template → subject + html + text
-  let subject = 'subject' in input ? input.subject ?? '' : ''
-  let html = 'html' in input ? input.html ?? '' : ''
+  let subject = 'subject' in input ? (input.subject ?? '') : ''
+  let html = 'html' in input ? (input.html ?? '') : ''
   let text = 'text' in input ? input.text : undefined
 
   if (input.template) {
@@ -164,7 +161,7 @@ export async function sendEmail<K extends TemplateKey | undefined = undefined>(
           template: input.template,
           error: errMsg,
           willFailover: failoverEnabled,
-        }),
+        })
       )
       // Without failover, surface the failure immediately.
       if (!failoverEnabled) {
@@ -222,10 +219,11 @@ async function finaliseLog(
     status: SendResult['status']
     messageId?: string
     error?: string
-  },
+  }
 ): Promise<SendResult> {
   const recipients = Array.isArray(args.input.to) ? args.input.to : [args.input.to]
-  const logStatus = args.status === 'sent' ? 'sent' : args.status === 'skipped' ? 'queued' : 'failed'
+  const logStatus =
+    args.status === 'sent' ? 'sent' : args.status === 'skipped' ? 'queued' : 'failed'
   try {
     const db = drizzle(env.DB)
     await db.insert(emailLog).values({
@@ -246,7 +244,7 @@ async function finaliseLog(
       JSON.stringify({
         event: 'email_log_insert_failed',
         error: err instanceof Error ? err.message : String(err),
-      }),
+      })
     )
   }
   return {

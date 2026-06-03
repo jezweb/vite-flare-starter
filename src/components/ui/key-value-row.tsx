@@ -17,33 +17,17 @@ interface KeyValueRowProps extends React.HTMLAttributes<HTMLDivElement> {
   mono?: boolean
 }
 
-export function KeyValueRow({
-  label,
-  value,
-  mono = false,
-  className,
-  ...rest
-}: KeyValueRowProps) {
+export function KeyValueRow({ label, value, mono = false, className, ...rest }: KeyValueRowProps) {
   return (
     <div
       data-slot="key-value-row"
-      className={cn(
-        'grid gap-1 py-1.5 sm:grid-cols-[8rem_1fr] sm:gap-3',
-        className,
-      )}
+      className={cn('grid gap-1 py-1.5 sm:grid-cols-[8rem_1fr] sm:gap-3', className)}
       {...rest}
     >
       <dt className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
         {label}
       </dt>
-      <dd
-        className={cn(
-          'text-xs',
-          mono ? 'font-mono break-all' : 'leading-relaxed',
-        )}
-      >
-        {value}
-      </dd>
+      <dd className={cn('text-xs', mono ? 'font-mono break-all' : 'leading-relaxed')}>{value}</dd>
     </div>
   )
 }

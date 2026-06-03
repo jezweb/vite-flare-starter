@@ -86,9 +86,7 @@ const STATUS_OPTIONS: { value: FindingStatus; label: string }[] = [
   { value: 'dismissed', label: 'Dismissed' },
 ]
 
-function statusVariant(
-  status: string,
-): 'default' | 'secondary' | 'outline' | 'destructive' {
+function statusVariant(status: string): 'default' | 'secondary' | 'outline' | 'destructive' {
   switch (status) {
     case 'open':
       return 'outline'
@@ -139,8 +137,7 @@ export function FindingsPage() {
 
   const learningsQuery = useQuery({
     queryKey: ['learnings'],
-    queryFn: () =>
-      apiClient.get<LearningsResponse>('/api/learnings?limit=100'),
+    queryFn: () => apiClient.get<LearningsResponse>('/api/learnings?limit=100'),
     enabled: tab === 'learnings',
   })
 
@@ -148,7 +145,7 @@ export function FindingsPage() {
     mutationFn: (findingId: string) =>
       apiClient.post<{ finding: Finding; learning: Finding }>(
         `/api/findings/${findingId}/promote`,
-        {},
+        {}
       ),
     onSuccess: () => {
       toast.success('Finding promoted to a learning')
@@ -171,8 +168,7 @@ export function FindingsPage() {
         .post<{ finding: Finding }>(`/api/findings/${finding.id}/dismiss`, {})
         .then((res) => ({ res, prior: finding.status })),
     onSuccess: ({ prior }, finding) => {
-      const restoreStatus: 'open' | 'recurred' =
-        prior === 'recurred' ? 'recurred' : 'open'
+      const restoreStatus: 'open' | 'recurred' = prior === 'recurred' ? 'recurred' : 'open'
       // Sonner action callback fires when the user clicks Undo. The
       // toast auto-dismisses after the default duration (~10s) so the
       // window closes itself if no action is taken.
@@ -186,7 +182,7 @@ export function FindingsPage() {
                 onSuccess: () => {
                   toast.success('Dismiss reverted')
                 },
-              },
+              }
             ),
         },
       })
@@ -201,16 +197,10 @@ export function FindingsPage() {
   // P4-008 — reopen a dismissed finding back to its prior status
   // (open or recurred). Reused by P4-007 for the dismiss-undo flow.
   const reopenMutation = useMutation({
-    mutationFn: ({
-      findingId,
-      status,
-    }: {
-      findingId: string
-      status?: 'open' | 'recurred'
-    }) =>
+    mutationFn: ({ findingId, status }: { findingId: string; status?: 'open' | 'recurred' }) =>
       apiClient.post<{ finding: Finding }>(
         `/api/findings/${findingId}/reopen`,
-        status ? { status } : {},
+        status ? { status } : {}
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['findings'] })
@@ -221,8 +211,7 @@ export function FindingsPage() {
     },
   })
 
-  const isLoading =
-    tab === 'findings' ? findingsQuery.isLoading : learningsQuery.isLoading
+  const isLoading = tab === 'findings' ? findingsQuery.isLoading : learningsQuery.isLoading
   const items = useMemo<Finding[]>(() => {
     if (tab === 'findings') return findingsQuery.data?.findings ?? []
     return learningsQuery.data?.learnings ?? []
@@ -272,11 +261,7 @@ export function FindingsPage() {
       ) : items.length === 0 ? (
         <EmptyState
           icon={tab === 'findings' ? Lightbulb : BookOpen}
-          title={
-            tab === 'findings'
-              ? 'No findings yet'
-              : 'No learnings yet'
-          }
+          title={tab === 'findings' ? 'No findings yet' : 'No learnings yet'}
           description={
             tab === 'findings'
               ? 'Findings are observations your agents surface during work. The reflect routine fires nightly and writes them.'
@@ -313,7 +298,7 @@ export function FindingsPage() {
                 key={item.id}
                 className={cn(
                   'transition-colors hover:bg-muted/30',
-                  isOpen && 'ring-1 ring-primary/30',
+                  isOpen && 'ring-1 ring-primary/30'
                 )}
               >
                 <CardContent className="p-3">
@@ -358,9 +343,7 @@ export function FindingsPage() {
                       </div>
                       <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                         {(item.agentName || item.agentClass) && (
-                          <span>
-                            {item.agentName ?? item.agentClass}
-                          </span>
+                          <span>{item.agentName ?? item.agentClass}</span>
                         )}
                         <span className="flex items-center gap-1">
                           <Clock className="size-3" />
@@ -439,7 +422,7 @@ export function FindingsPage() {
                                   onSuccess: () => {
                                     toast.success('Finding reopened')
                                   },
-                                },
+                                }
                               )
                             }
                             disabled={reopenMutation.isPending}

@@ -24,31 +24,41 @@ function getDB(ctx: AgentContext): D1Database {
 
 // ─── Schema (inline — exported for use in db/schema.ts) ─────────────
 
-export const scheduledJobs = sqliteTable('scheduled_jobs', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  userId: text('user_id').notNull(),
-  /** Human-readable name */
-  name: text('name').notNull(),
-  /** The prompt to execute when the job fires */
-  prompt: text('prompt').notNull(),
-  /** Optional skill to load before executing */
-  skillName: text('skill_name'),
-  /** Cron expression (e.g. "0 6 * * *") or null for one-shot */
-  cron: text('cron'),
-  /** Next run time as unix timestamp (ms) */
-  nextRun: integer('next_run').notNull(),
-  /** Last run time */
-  lastRun: integer('last_run'),
-  /** Last run result (truncated) */
-  lastResult: text('last_result'),
-  /** Status */
-  status: text('status', { enum: ['active', 'paused', 'completed', 'failed'] }).notNull().default('active'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
-}, (table) => [
-  index('scheduled_jobs_user_id_idx').on(table.userId),
-  index('scheduled_jobs_next_run_idx').on(table.nextRun),
-  index('scheduled_jobs_status_idx').on(table.status),
-])
+export const scheduledJobs = sqliteTable(
+  'scheduled_jobs',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text('user_id').notNull(),
+    /** Human-readable name */
+    name: text('name').notNull(),
+    /** The prompt to execute when the job fires */
+    prompt: text('prompt').notNull(),
+    /** Optional skill to load before executing */
+    skillName: text('skill_name'),
+    /** Cron expression (e.g. "0 6 * * *") or null for one-shot */
+    cron: text('cron'),
+    /** Next run time as unix timestamp (ms) */
+    nextRun: integer('next_run').notNull(),
+    /** Last run time */
+    lastRun: integer('last_run'),
+    /** Last run result (truncated) */
+    lastResult: text('last_result'),
+    /** Status */
+    status: text('status', { enum: ['active', 'paused', 'completed', 'failed'] })
+      .notNull()
+      .default('active'),
+    createdAt: integer('created_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => [
+    index('scheduled_jobs_user_id_idx').on(table.userId),
+    index('scheduled_jobs_next_run_idx').on(table.nextRun),
+    index('scheduled_jobs_status_idx').on(table.status),
+  ]
+)
 
 // ─── Cron Parser (minimal — supports standard 5-field cron) ─────────
 
@@ -103,10 +113,25 @@ export const scheduleTaskDefinition: ToolDefinition<
     'Schedule a task to run later. The prompt will be sent to the AI at the scheduled time. Use for reminders, recurring reports, daily briefs, or any delayed work. Supports one-shot (specific time) or recurring (cron expression).',
   inputSchema: z.object({
     name: z.string().describe('Short name for the task (e.g. "Morning brief", "Weekly report")'),
-    prompt: z.string().describe('The full prompt to execute when the task fires — include all context the AI will need'),
-    skillName: z.string().optional().describe('Optional: skill to load before executing (e.g. "morning-brief")'),
-    runAt: z.string().optional().describe('ISO 8601 datetime for one-shot tasks (e.g. "2026-04-14T09:00:00+11:00")'),
-    cron: z.string().optional().describe('Cron expression for recurring tasks (e.g. "0 6 * * *" = daily at 6am, "0 9 * * 1" = Monday 9am)'),
+    prompt: z
+      .string()
+      .describe(
+        'The full prompt to execute when the task fires — include all context the AI will need'
+      ),
+    skillName: z
+      .string()
+      .optional()
+      .describe('Optional: skill to load before executing (e.g. "morning-brief")'),
+    runAt: z
+      .string()
+      .optional()
+      .describe('ISO 8601 datetime for one-shot tasks (e.g. "2026-04-14T09:00:00+11:00")'),
+    cron: z
+      .string()
+      .optional()
+      .describe(
+        'Cron expression for recurring tasks (e.g. "0 6 * * *" = daily at 6am, "0 9 * * 1" = Monday 9am)'
+      ),
   }),
   outputSchema: ScheduleTaskOutput,
   execute: async ({ name, prompt, skillName, runAt, cron: cronExpr }, ctx) => {
@@ -133,7 +158,13 @@ export const scheduleTaskDefinition: ToolDefinition<
         nextRun,
         status: 'active',
       })
-      return { id, name, nextRun: new Date(nextRun).toISOString(), recurring: !!cronExpr, cron: cronExpr }
+      return {
+        id,
+        name,
+        nextRun: new Date(nextRun).toISOString(),
+        recurring: !!cronExpr,
+        cron: cronExpr,
+      }
     } catch (error) {
       return { error: error instanceof Error ? error.message : String(error) }
     }
@@ -153,7 +184,7 @@ const ListTasksOutput = z.union([
         recurring: z.boolean(),
         cron: z.string().nullable(),
         skillName: z.string().nullable(),
-      }),
+      })
     ),
     count: z.number(),
   }),
@@ -165,19 +196,25 @@ export const listTasksDefinition: ToolDefinition<
   z.infer<typeof ListTasksOutput>
 > = {
   name: 'list_tasks',
-  description: 'List your scheduled tasks. Shows upcoming, recurring, and completed tasks with their next run times.',
+  description:
+    'List your scheduled tasks. Shows upcoming, recurring, and completed tasks with their next run times.',
   inputSchema: z.object({
-    status: z.enum(['all', 'active', 'paused', 'completed', 'failed']).optional().describe('Filter by status (default: active)'),
+    status: z
+      .enum(['all', 'active', 'paused', 'completed', 'failed'])
+      .optional()
+      .describe('Filter by status (default: active)'),
   }),
   outputSchema: ListTasksOutput,
   execute: async ({ status = 'active' }, ctx) => {
     try {
       const db = drizzle(getDB(ctx))
-      const query = status === 'all'
-        ? db.select().from(scheduledJobs).where(eq(scheduledJobs.userId, ctx.userId))
-        : db.select().from(scheduledJobs).where(
-            and(eq(scheduledJobs.userId, ctx.userId), eq(scheduledJobs.status, status))
-          )
+      const query =
+        status === 'all'
+          ? db.select().from(scheduledJobs).where(eq(scheduledJobs.userId, ctx.userId))
+          : db
+              .select()
+              .from(scheduledJobs)
+              .where(and(eq(scheduledJobs.userId, ctx.userId), eq(scheduledJobs.status, status)))
       const jobs = await query
       return {
         tasks: jobs.map((j) => ({
@@ -204,9 +241,13 @@ const CancelTaskOutput = z.union([
   z.object({ error: z.string() }),
 ])
 
-export const cancelTaskDefinition: ToolDefinition<{ id: string }, z.infer<typeof CancelTaskOutput>> = {
+export const cancelTaskDefinition: ToolDefinition<
+  { id: string },
+  z.infer<typeof CancelTaskOutput>
+> = {
   name: 'cancel_task',
-  description: "Cancel a scheduled task by ID. Pauses it so it won't run, but keeps it in the list for reference.",
+  description:
+    "Cancel a scheduled task by ID. Pauses it so it won't run, but keeps it in the list for reference.",
   inputSchema: z.object({
     id: z.string().describe('The task ID to cancel'),
   }),
@@ -245,7 +286,10 @@ export const scheduleDefinitions = [
  * }
  * ```
  */
-export async function processDueJobs(dbBinding: D1Database, env: Record<string, unknown>): Promise<number> {
+export async function processDueJobs(
+  dbBinding: D1Database,
+  env: Record<string, unknown>
+): Promise<number> {
   const db = drizzle(dbBinding)
   const now = Date.now()
 
@@ -293,14 +337,21 @@ export async function processDueJobs(dbBinding: D1Database, env: Record<string, 
       await db.update(scheduledJobs).set(updates).where(eq(scheduledJobs.id, job.id))
       processed++
 
-      console.log(JSON.stringify({ event: 'scheduled_job_completed', jobId: job.id, name: job.name }))
+      console.log(
+        JSON.stringify({ event: 'scheduled_job_completed', jobId: job.id, name: job.name })
+      )
     } catch (error) {
-      console.error(JSON.stringify({
-        event: 'scheduled_job_failed',
-        jobId: job.id,
-        error: error instanceof Error ? error.message : String(error),
-      }))
-      await db.update(scheduledJobs).set({ status: 'failed', lastRun: now, lastResult: String(error) }).where(eq(scheduledJobs.id, job.id))
+      console.error(
+        JSON.stringify({
+          event: 'scheduled_job_failed',
+          jobId: job.id,
+          error: error instanceof Error ? error.message : String(error),
+        })
+      )
+      await db
+        .update(scheduledJobs)
+        .set({ status: 'failed', lastRun: now, lastResult: String(error) })
+        .where(eq(scheduledJobs.id, job.id))
     }
   }
 

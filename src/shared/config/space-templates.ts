@@ -40,7 +40,7 @@ export const SPACE_TEMPLATES: SpaceTemplate[] = [
     tagline: 'Just you + every default agent in @-mention mode.',
     suggestedTitle: 'Workshop',
     description:
-      "Your personal multi-agent room. @ any of the agents to ask them to help — they stay quiet otherwise.",
+      'Your personal multi-agent room. @ any of the agents to ask them to help — they stay quiet otherwise.',
     agents: [
       { agentClass: 'AssistantAgent', agentName: 'assistant', replyMode: 'mention' },
       { agentClass: 'ResearcherAgent', agentName: 'research', replyMode: 'mention' },
@@ -81,7 +81,8 @@ export const SPACE_TEMPLATES: SpaceTemplate[] = [
     emoji: '🔎',
     tagline: 'Deep-dive a topic with the researcher.',
     suggestedTitle: 'research',
-    description: 'A focused room for one researcher and you. @research drives, @assistant fills gaps.',
+    description:
+      'A focused room for one researcher and you. @research drives, @assistant fills gaps.',
     agents: [
       { agentClass: 'ResearcherAgent', agentName: 'research', replyMode: 'mention' },
       { agentClass: 'AssistantAgent', agentName: 'assistant', replyMode: 'mention' },

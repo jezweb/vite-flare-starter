@@ -14,15 +14,12 @@ import { apiContext, storageStatePath } from './setup/fixtures'
 test.use({ storageState: storageStatePath('regression') })
 
 test.describe('routines', () => {
-  test('P4-001: new-routine form persists across navigation away and back', async ({
-    page,
-  }) => {
+  test('P4-001: new-routine form persists across navigation away and back', async ({ page }) => {
     await page.goto('/dashboard/routines/new')
     await page.locator('#name').waitFor({ state: 'visible' })
 
     const uniqueName = `Persisted draft ${Date.now()}`
-    const uniqueDescription =
-      'Description that should survive a sidebar click + return.'
+    const uniqueDescription = 'Description that should survive a sidebar click + return.'
 
     await page.locator('#name').fill(uniqueName)
     await page.locator('#description').fill(uniqueDescription)
@@ -91,9 +88,9 @@ test.describe('routines', () => {
 
   test('routines index renders without error', async ({ page }) => {
     await page.goto('/dashboard/routines')
-    await expect(
-      page.getByRole('heading', { name: /routines/i }).first(),
-    ).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('heading', { name: /routines/i }).first()).toBeVisible({
+      timeout: 10_000,
+    })
     // The page renders with EITHER routine cards or an empty state —
     // both are acceptable. Just assert no error boundary is shown.
     await expect(page.getByText(/something went wrong/i)).toHaveCount(0)

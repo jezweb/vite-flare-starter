@@ -55,8 +55,11 @@ export function CreateSpaceModal({ open, onClose }: Props) {
   // One row per catalogue entry — tracks enabled + replyMode for each.
   const [agentSel, setAgentSel] = useState<Record<string, AgentSelection>>(() =>
     Object.fromEntries(
-      AGENT_CATALOGUE.map((a) => [a.agentName, { enabled: true, replyMode: 'mention' as ReplyMode }]),
-    ),
+      AGENT_CATALOGUE.map((a) => [
+        a.agentName,
+        { enabled: true, replyMode: 'mention' as ReplyMode },
+      ])
+    )
   )
 
   useEffect(() => {
@@ -67,8 +70,8 @@ export function CreateSpaceModal({ open, onClose }: Props) {
       setTab('template')
       setAgentSel(
         Object.fromEntries(
-          AGENT_CATALOGUE.map((a) => [a.agentName, { enabled: true, replyMode: 'mention' }]),
-        ),
+          AGENT_CATALOGUE.map((a) => [a.agentName, { enabled: true, replyMode: 'mention' }])
+        )
       )
     }
   }, [open])
@@ -184,13 +187,17 @@ export function CreateSpaceModal({ open, onClose }: Props) {
             <div className="space-y-2">
               <Label>Agents</Label>
               <p className="text-xs text-muted-foreground">
-                Tick the agents to invite, then choose how each one responds. You can change this later.
+                Tick the agents to invite, then choose how each one responds. You can change this
+                later.
               </p>
               <div className="space-y-2 rounded-md border border-border p-2">
                 {AGENT_CATALOGUE.map((a) => {
                   const sel = agentSel[a.agentName] ?? { enabled: false, replyMode: 'mention' }
                   return (
-                    <div key={a.agentName} className="flex items-start gap-3 rounded-md p-2 hover:bg-accent/40">
+                    <div
+                      key={a.agentName}
+                      className="flex items-start gap-3 rounded-md p-2 hover:bg-accent/40"
+                    >
                       <Checkbox
                         id={`agent-${a.agentName}`}
                         checked={sel.enabled}
@@ -203,7 +210,10 @@ export function CreateSpaceModal({ open, onClose }: Props) {
                         className="mt-0.5"
                       />
                       <div className="min-w-0 flex-1">
-                        <label htmlFor={`agent-${a.agentName}`} className="cursor-pointer text-sm font-medium">
+                        <label
+                          htmlFor={`agent-${a.agentName}`}
+                          className="cursor-pointer text-sm font-medium"
+                        >
                           @{a.agentName}
                         </label>
                         <p className="text-xs text-muted-foreground">{a.description}</p>
@@ -258,7 +268,8 @@ export function CreateSpaceModal({ open, onClose }: Props) {
           {/* Templates */}
           <TabsContent value="template" className="space-y-3 pt-3">
             <p className="text-xs text-muted-foreground">
-              Pick a template to start with a curated agent set + suggested name. Edit anything after.
+              Pick a template to start with a curated agent set + suggested name. Edit anything
+              after.
             </p>
             <div className="grid gap-2 sm:grid-cols-2">
               {SPACE_TEMPLATES.map((tpl) => (
@@ -268,7 +279,7 @@ export function CreateSpaceModal({ open, onClose }: Props) {
                   className={cn(
                     'group relative flex flex-col items-start gap-1 rounded-md border border-border bg-background p-3 text-left transition-all',
                     'hover:border-foreground/30 hover:bg-accent/40 hover:shadow-sm',
-                    'disabled:cursor-not-allowed disabled:opacity-50',
+                    'disabled:cursor-not-allowed disabled:opacity-50'
                   )}
                   onClick={() => submitTemplate(tpl)}
                   disabled={create.isPending}
@@ -284,13 +295,18 @@ export function CreateSpaceModal({ open, onClose }: Props) {
                   {tpl.agents.length > 0 ? (
                     <div className="mt-1 flex flex-wrap gap-1">
                       {tpl.agents.map((a) => (
-                        <span key={a.agentName} className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] text-emerald-700 dark:text-emerald-300">
+                        <span
+                          key={a.agentName}
+                          className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] text-emerald-700 dark:text-emerald-300"
+                        >
                           @{a.agentName}
                         </span>
                       ))}
                     </div>
                   ) : (
-                    <span className="mt-1 text-[10px] text-muted-foreground">No agents — add later</span>
+                    <span className="mt-1 text-[10px] text-muted-foreground">
+                      No agents — add later
+                    </span>
                   )}
                 </button>
               ))}

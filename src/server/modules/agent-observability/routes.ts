@@ -78,10 +78,7 @@ app.get('/runs/:id', async (c) => {
  * cheap and queries stay index-only on `agent_runs_started_at_idx`.
  */
 const StatsSchema = z.object({
-  range: z
-    .enum(['7d', '14d', '30d', '90d'])
-    .optional()
-    .default('7d'),
+  range: z.enum(['7d', '14d', '30d', '90d']).optional().default('7d'),
 })
 
 app.get('/stats', zValidator('query', StatsSchema), async (c) => {

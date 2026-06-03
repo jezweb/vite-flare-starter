@@ -61,7 +61,10 @@ import {
 import type { AgentContext } from '@/shared/agent'
 import type { ToolDefinition } from '@/shared/agent/tool'
 
-export async function buildChatTools(ctx: AgentContext, options: { availableSkillNames?: string[] } = {}) {
+export async function buildChatTools(
+  ctx: AgentContext,
+  options: { availableSkillNames?: string[] } = {}
+) {
   const allDefinitions: ToolDefinition<unknown, unknown>[] = [
     ...coreDefinitions,
     ...memoryDefinitions,
@@ -110,7 +113,7 @@ export async function buildChatTools(ctx: AgentContext, options: { availableSkil
   // include the read-only subset of each provider).
   const allowed = await getAllowedConnectorTools(
     ctx.env as unknown as ConnectorSettingsEnv,
-    ctx.userId,
+    ctx.userId
   )
   const filtered = filterToolsByUserSettings(allDefinitions, allowed)
 

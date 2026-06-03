@@ -2,14 +2,7 @@
  * Notion tool renderers — search, get_page, get_database, query_database,
  * create_page, append_blocks.
  */
-import {
-  BookOpen,
-  Database,
-  FileText,
-  Plus,
-  Search,
-  StickyNote,
-} from 'lucide-react'
+import { BookOpen, Database, FileText, Plus, Search, StickyNote } from 'lucide-react'
 import type { ToolRenderer } from './_shared'
 import { truncate, formatToolDate } from './_shared'
 import type {
@@ -39,9 +32,7 @@ export const notionSearchRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     return (
@@ -99,9 +90,7 @@ export const notionGetPageRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     return (
@@ -124,7 +113,8 @@ export const notionGetPageRenderer: ToolRenderer = {
         </div>
         {o.hasMoreBlocks && (
           <div className="text-[11px] text-muted-foreground italic">
-            This page has more blocks than shown. Ask the agent to read specific child pages if needed.
+            This page has more blocks than shown. Ask the agent to read specific child pages if
+            needed.
           </div>
         )}
       </div>
@@ -147,9 +137,7 @@ export const notionGetDatabaseRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     return (
@@ -172,9 +160,7 @@ export const notionGetDatabaseRenderer: ToolRenderer = {
             <li key={p.name} className="px-2 py-1.5 text-xs">
               <div className="flex items-center gap-2">
                 <span className="font-medium">{p.name}</span>
-                <code className="text-[10px] text-muted-foreground font-mono">
-                  {p.type}
-                </code>
+                <code className="text-[10px] text-muted-foreground font-mono">{p.type}</code>
               </div>
               {p.options && p.options.length > 0 && (
                 <div className="text-[11px] text-muted-foreground truncate">
@@ -204,9 +190,7 @@ export const notionQueryDatabaseRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     if (o.rows.length === 0) {
@@ -260,9 +244,7 @@ export const notionCreatePageRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     return (
@@ -302,9 +284,7 @@ export const notionAppendBlocksRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     return (

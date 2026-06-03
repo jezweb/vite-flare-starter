@@ -86,7 +86,9 @@ export interface SearchableTool {
  * Tools in CORE_TOOL_NAMES are excluded from search results — they're
  * already always-active, no point reminding the model they exist.
  */
-export function buildFindToolsTool(catalog: SearchableTool[]): ToolDefinition<
+export function buildFindToolsTool(
+  catalog: SearchableTool[]
+): ToolDefinition<
   { query: string; limit?: number },
   { matches: SearchableTool[]; total: number; truncated: boolean }
 > {
@@ -103,8 +105,16 @@ export function buildFindToolsTool(catalog: SearchableTool[]): ToolDefinition<
         .string()
         .min(1)
         .max(100)
-        .describe('Keyword(s) to search tool names + descriptions for (e.g. "email", "calendar event", "image gen").'),
-      limit: z.number().int().min(1).max(20).optional().describe('Max matches to return. Default 8.'),
+        .describe(
+          'Keyword(s) to search tool names + descriptions for (e.g. "email", "calendar event", "image gen").'
+        ),
+      limit: z
+        .number()
+        .int()
+        .min(1)
+        .max(20)
+        .optional()
+        .describe('Max matches to return. Default 8.'),
     }),
     outputSchema: z.object({
       matches: z.array(z.object({ name: z.string(), description: z.string() })),
@@ -162,7 +172,9 @@ export function buildFindToolsTool(catalog: SearchableTool[]): ToolDefinition<
  * Returns tool name + description per match. Same activation contract
  * as find_tools — anything surfaced becomes callable on subsequent steps.
  */
-export function buildListToolsTool(catalog: SearchableTool[]): ToolDefinition<
+export function buildListToolsTool(
+  catalog: SearchableTool[]
+): ToolDefinition<
   { category?: string; offset?: number; limit?: number },
   { tools: SearchableTool[]; total: number; offset: number; truncated: boolean }
 > {
@@ -177,9 +189,17 @@ export function buildListToolsTool(catalog: SearchableTool[]): ToolDefinition<
         .string()
         .max(40)
         .optional()
-        .describe('Optional name prefix filter, e.g. "gmail_", "drive_", "calendar_", "image_". Omit for the full catalog.'),
+        .describe(
+          'Optional name prefix filter, e.g. "gmail_", "drive_", "calendar_", "image_". Omit for the full catalog.'
+        ),
       offset: z.number().int().min(0).optional().describe('Pagination offset. Default 0.'),
-      limit: z.number().int().min(1).max(50).optional().describe('Max tools to return. Default 20.'),
+      limit: z
+        .number()
+        .int()
+        .min(1)
+        .max(50)
+        .optional()
+        .describe('Max tools to return. Default 20.'),
     }),
     outputSchema: z.object({
       tools: z.array(z.object({ name: z.string(), description: z.string() })),
@@ -221,7 +241,7 @@ export function extractDiscoveredToolNames(
   steps: Array<{
     toolCalls?: ReadonlyArray<{ toolName: string }>
     toolResults?: ReadonlyArray<{ toolName: string; output?: unknown }>
-  }>,
+  }>
 ): Set<string> {
   const discovered = new Set<string>()
   for (const step of steps) {

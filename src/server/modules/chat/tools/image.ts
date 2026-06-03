@@ -38,22 +38,22 @@ function getImageEnv(ctx: AgentContext): ImageEnv {
   return ctx.env as unknown as ImageEnv
 }
 
-const ProviderEnum = z.enum([
-  'workers-ai',
-  'openai',
-  'openai-1',
-  'nano-banana-2',
-  'gemini-direct',
-])
+const ProviderEnum = z.enum(['workers-ai', 'openai', 'openai-1', 'nano-banana-2', 'gemini-direct'])
 
 const GenerateImageInput = z.object({
-  prompt: z.string().describe('Detailed image description — be specific about subject, style, lighting, composition'),
+  prompt: z
+    .string()
+    .describe(
+      'Detailed image description — be specific about subject, style, lighting, composition'
+    ),
   size: z
     .string()
     .optional()
-    .describe('Image size: 1024x1024 (default), 1536x1024, 1024x1536. Some providers (Workers AI FLUX) ignore non-square sizes.'),
+    .describe(
+      'Image size: 1024x1024 (default), 1536x1024, 1024x1536. Some providers (Workers AI FLUX) ignore non-square sizes.'
+    ),
   provider: ProviderEnum.optional().describe(
-    "Image provider. 'workers-ai' (default, free FLUX), 'openai' (GPT Image 2 — paid, multilingual text + infographics), 'openai-1' (legacy GPT Image 1), 'nano-banana-2' (Gemini via OpenRouter), 'gemini-direct' (Gemini direct — best for multi-turn).",
+    "Image provider. 'workers-ai' (default, free FLUX), 'openai' (GPT Image 2 — paid, multilingual text + infographics), 'openai-1' (legacy GPT Image 1), 'nano-banana-2' (Gemini via OpenRouter), 'gemini-direct' (Gemini direct — best for multi-turn)."
   ),
 })
 
@@ -85,11 +85,9 @@ function bytesToBase64(bytes: Uint8Array): string {
 async function generateNanoBanana2(
   apiKey: string,
   prompt: string,
-  size: string | undefined,
+  size: string | undefined
 ): Promise<{ bytes: Uint8Array; mimeType: string }> {
-  const text = size
-    ? `${prompt}\n\nOutput size: ${size}.`
-    : prompt
+  const text = size ? `${prompt}\n\nOutput size: ${size}.` : prompt
   const resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -128,7 +126,8 @@ async function generateNanoBanana2(
   }
   if (!dataUrl) throw new Error('Nano Banana 2 returned no image — model may have refused.')
   const m = dataUrl.match(/^data:([^;]+);base64,(.+)$/)
-  if (!m?.[1] || !m?.[2]) throw new Error('Generated image was not in the expected data URL format.')
+  if (!m?.[1] || !m?.[2])
+    throw new Error('Generated image was not in the expected data URL format.')
   const bin = atob(m[2])
   const bytes = new Uint8Array(bin.length)
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
@@ -156,7 +155,9 @@ export const generateImageDefinition: ToolDefinition<
 
       if (provider === 'gemini-direct') {
         if (!env.GEMINI_API_KEY) {
-          return { error: "provider='gemini-direct' requires GEMINI_API_KEY (Google AI Studio key)." }
+          return {
+            error: "provider='gemini-direct' requires GEMINI_API_KEY (Google AI Studio key).",
+          }
         }
         const out = await callGeminiImage(env.GEMINI_API_KEY, prompt)
         bytes = out.bytes

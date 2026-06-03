@@ -18,7 +18,10 @@ import type { ModelId } from './types'
 /**
  * Build a model instance with the full middleware stack applied.
  */
-export function buildModel(baseModel: Parameters<typeof wrapLanguageModel>[0]['model'], modelId: ModelId) {
+export function buildModel(
+  baseModel: Parameters<typeof wrapLanguageModel>[0]['model'],
+  modelId: ModelId
+) {
   let model = baseModel
 
   // 1. Default settings — standardise temperature across providers

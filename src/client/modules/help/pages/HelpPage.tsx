@@ -30,11 +30,7 @@ export function HelpPage() {
       />
 
       <div className="mt-4 max-w-md">
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder="Search the glossary…"
-        />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search the glossary…" />
       </div>
 
       {filtered.length === 0 ? (

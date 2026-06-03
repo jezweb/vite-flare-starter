@@ -52,9 +52,7 @@ export interface ApplyOutput {
 
 const SYNTHETIC_AGENT_CLASS = 'memory_extraction'
 
-export async function applyExtractionResult(
-  input: ApplyInput,
-): Promise<ApplyOutput> {
+export async function applyExtractionResult(input: ApplyInput): Promise<ApplyOutput> {
   const { db, userId, conversationId, projectId, result, allowTitleReplace } = input
   const d = drizzle(db)
   const out: ApplyOutput = { applied: 0, queued: 0, skipped: 0, metadataApplied: 0 }
@@ -134,7 +132,7 @@ interface OneInput {
 
 async function applyOne(
   d: ReturnType<typeof drizzle>,
-  { update, userId, projectId, conversationId }: OneInput,
+  { update, userId, projectId, conversationId }: OneInput
 ): Promise<boolean> {
   const scopeId = update.scope === 'user' ? userId : projectId
   if (!scopeId) return false
@@ -164,8 +162,8 @@ async function applyOne(
         and(
           eq(memories.id, update.targetMemoryId),
           eq(memories.scope, update.scope),
-          eq(memories.scopeId, scopeId),
-        ),
+          eq(memories.scopeId, scopeId)
+        )
       )
       .limit(1)
     if (!existing) return false
@@ -194,7 +192,7 @@ async function applyOne(
 
 async function queueOne(
   d: ReturnType<typeof drizzle>,
-  { update, userId, projectId, conversationId }: OneInput,
+  { update, userId, projectId, conversationId }: OneInput
 ): Promise<void> {
   // Build a one-line summary the queue UI shows. Title-case the
   // memory key so "tool-troubleshooting-preference" surfaces as "Tool
@@ -231,7 +229,7 @@ async function queueOne(
 
 async function loadUserMode(
   d: ReturnType<typeof drizzle>,
-  userId: string,
+  userId: string
 ): Promise<'ask' | 'auto' | 'never'> {
   const [row] = await d
     .select({ memoryUpdateMode: user.memoryUpdateMode })
@@ -243,7 +241,7 @@ async function loadUserMode(
 
 async function loadProjectMode(
   d: ReturnType<typeof drizzle>,
-  projectId: string,
+  projectId: string
 ): Promise<'ask' | 'auto' | 'never'> {
   const [row] = await d
     .select({ memoryUpdateMode: projects.memoryUpdateMode })
@@ -266,13 +264,14 @@ async function loadProjectMode(
  */
 export async function executeApprovedMemoryUpdate(
   db: D1Database,
-  payload: unknown,
+  payload: unknown
 ): Promise<{ ok: boolean; error?: string }> {
   const d = drizzle(db)
   if (!payload || typeof payload !== 'object') return { ok: false, error: 'invalid payload' }
   const p = payload as Record<string, unknown>
   const update = p['update'] as MemoryUpdate | undefined
-  const conversationId = typeof p['conversationId'] === 'string' ? (p['conversationId'] as string) : ''
+  const conversationId =
+    typeof p['conversationId'] === 'string' ? (p['conversationId'] as string) : ''
   const projectId = typeof p['projectId'] === 'string' ? (p['projectId'] as string) : null
   const userId = typeof p['userId'] === 'string' ? (p['userId'] as string) : ''
   const alwaysAllow = p['alwaysAllow'] === true
@@ -290,8 +289,8 @@ export async function executeApprovedMemoryUpdate(
         and(
           eq(memories.id, update.targetMemoryId),
           eq(memories.scope, update.scope),
-          eq(memories.scopeId, scopeId),
-        ),
+          eq(memories.scopeId, scopeId)
+        )
       )
   } else {
     const ok = await applyOne(d, { update, userId, projectId, conversationId })
@@ -301,10 +300,7 @@ export async function executeApprovedMemoryUpdate(
   // 3-way trust: flip to auto if the user clicked "Approve & always allow"
   if (alwaysAllow) {
     if (update.scope === 'user') {
-      await d
-        .update(user)
-        .set({ memoryUpdateMode: 'auto' })
-        .where(eq(user.id, userId))
+      await d.update(user).set({ memoryUpdateMode: 'auto' }).where(eq(user.id, userId))
     } else if (projectId) {
       await d
         .update(projects)

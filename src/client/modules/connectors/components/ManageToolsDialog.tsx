@@ -30,10 +30,7 @@ import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { PRIVILEGED_TOOL_NAMES } from '@/shared/config/privileged-tools'
 import { getProvider } from '@/shared/config/connector-providers'
-import {
-  useConnectorSettings,
-  useUpdateConnectorSettings,
-} from '../hooks/useConnectorSettings'
+import { useConnectorSettings, useUpdateConnectorSettings } from '../hooks/useConnectorSettings'
 import { groupTools, humanizeToolName } from '../lib/tool-groups'
 
 interface ManageToolsDialogProps {
@@ -42,25 +39,15 @@ interface ManageToolsDialogProps {
   onOpenChange: (open: boolean) => void
 }
 
-export function ManageToolsDialog({
-  connectorId,
-  open,
-  onOpenChange,
-}: ManageToolsDialogProps) {
+export function ManageToolsDialog({ connectorId, open, onOpenChange }: ManageToolsDialogProps) {
   const provider = getProvider(connectorId)
   const { data, isLoading } = useConnectorSettings(open ? connectorId : null)
   const update = useUpdateConnectorSettings(connectorId)
   const [query, setQuery] = useState('')
 
-  const groups = useMemo(
-    () => (provider ? groupTools(provider.toolNames) : []),
-    [provider],
-  )
+  const groups = useMemo(() => (provider ? groupTools(provider.toolNames) : []), [provider])
 
-  const enabledSet = useMemo(
-    () => new Set(data?.enabledTools ?? []),
-    [data?.enabledTools],
-  )
+  const enabledSet = useMemo(() => new Set(data?.enabledTools ?? []), [data?.enabledTools])
 
   const filteredGroups = useMemo(() => {
     if (!query.trim()) return groups
@@ -72,7 +59,7 @@ export function ManageToolsDialog({
           (t) =>
             t.toLowerCase().includes(q) ||
             humanizeToolName(t).toLowerCase().includes(q) ||
-            g.label.toLowerCase().includes(q),
+            g.label.toLowerCase().includes(q)
         ),
       }))
       .filter((g) => g.tools.length > 0)
@@ -104,9 +91,8 @@ export function ManageToolsDialog({
         <SheetHeader className="border-b">
           <SheetTitle>Manage {provider.label} tools</SheetTitle>
           <SheetDescription>
-            Choose which tools the AI can use. Changes apply to the next
-            message. Destructive tools still require explicit approval
-            when called.
+            Choose which tools the AI can use. Changes apply to the next message. Destructive tools
+            still require explicit approval when called.
           </SheetDescription>
         </SheetHeader>
 
@@ -121,8 +107,8 @@ export function ManageToolsDialog({
               <div>
                 <p className="text-sm font-medium">Enable {provider.label}</p>
                 <p className="text-xs text-muted-foreground">
-                  Master switch — turn off to disable every tool without
-                  changing individual toggles.
+                  Master switch — turn off to disable every tool without changing individual
+                  toggles.
                 </p>
               </div>
               <Switch
@@ -182,9 +168,9 @@ export function ManageToolsDialog({
                   </p>
                   <div className="space-y-1">
                     {group.tools.map((name) => {
-                      const isPrivileged = (
-                        PRIVILEGED_TOOL_NAMES as readonly string[]
-                      ).includes(name)
+                      const isPrivileged = (PRIVILEGED_TOOL_NAMES as readonly string[]).includes(
+                        name
+                      )
                       const checked = enabledSet.has(name)
                       return (
                         <label
@@ -193,9 +179,7 @@ export function ManageToolsDialog({
                         >
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="text-sm">
-                                {humanizeToolName(name)}
-                              </span>
+                              <span className="text-sm">{humanizeToolName(name)}</span>
                               {isPrivileged && (
                                 <Badge
                                   variant="outline"

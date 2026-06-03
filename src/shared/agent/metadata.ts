@@ -24,12 +24,12 @@
  */
 
 export type AgentCategory =
-  | 'general'       // does many things — the default chat-style agent
-  | 'sweeper'       // scans entities + queues followups
-  | 'researcher'    // gathers information
-  | 'writer'        // produces prose
-  | 'utility'       // alerts, reminders, single-purpose
-  | 'meta'          // watches other agents
+  | 'general' // does many things — the default chat-style agent
+  | 'sweeper' // scans entities + queues followups
+  | 'researcher' // gathers information
+  | 'writer' // produces prose
+  | 'utility' // alerts, reminders, single-purpose
+  | 'meta' // watches other agents
 
 export interface AgentMetadata {
   /** Friendly name shown to users (e.g. "ChatBot" instead of `AssistantAgent`). */

@@ -16,11 +16,7 @@ import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
 import { PageLoading } from '@/client/components/PageState'
 import { EmptyState } from '@/client/components/EmptyState'
-import {
-  KanbanBoard,
-  type KanbanColumn,
-  type KanbanCardMove,
-} from '@/components/ui/kanban'
+import { KanbanBoard, type KanbanColumn, type KanbanCardMove } from '@/components/ui/kanban'
 import {
   useTaskEntities,
   useMoveTask,
@@ -52,8 +48,7 @@ function isTaskColumn(value: unknown): value is TaskColumn {
 function entityToCard(entity: TaskEntity): KanbanTask {
   const rawColumn = entity.fields.column
   const columnId = isTaskColumn(rawColumn) ? rawColumn : 'todo'
-  const order =
-    typeof entity.fields.order === 'number' ? entity.fields.order : entity.createdAt
+  const order = typeof entity.fields.order === 'number' ? entity.fields.order : entity.createdAt
   return {
     id: entity.id,
     columnId,
@@ -81,10 +76,7 @@ export function KanbanDemoPage() {
   // forks adopting this primitive can wire it to user prefs / localStorage.
   const [collapsed, setCollapsed] = React.useState<Set<string>>(new Set())
 
-  const cards: KanbanTask[] = React.useMemo(
-    () => (data?.entities ?? []).map(entityToCard),
-    [data],
-  )
+  const cards: KanbanTask[] = React.useMemo(() => (data?.entities ?? []).map(entityToCard), [data])
 
   const columns: KanbanColumn[] = React.useMemo(
     () =>
@@ -92,7 +84,7 @@ export function KanbanDemoPage() {
         ...c,
         collapsed: collapsed.has(c.id),
       })),
-    [collapsed],
+    [collapsed]
   )
 
   const handleMove = (move: KanbanCardMove) => {

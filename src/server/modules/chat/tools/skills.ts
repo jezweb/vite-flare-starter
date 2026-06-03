@@ -18,7 +18,15 @@ import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
 import { and, eq } from 'drizzle-orm'
 import { getSandbox } from '@cloudflare/sandbox'
-import { BookOpen, List, FileSearch, Terminal, PlusSquare, Download, ToggleRight } from 'lucide-react'
+import {
+  BookOpen,
+  List,
+  FileSearch,
+  Terminal,
+  PlusSquare,
+  Download,
+  ToggleRight,
+} from 'lucide-react'
 import {
   listSkills,
   loadSkill,
@@ -59,11 +67,12 @@ function interpreterFor(path: string): { cmd: string; lang: string } | null {
  * skill names. If empty, falls back to a free-form string.
  */
 export function skillsDefinitions(
-  availableSkillNames: string[] = [],
+  availableSkillNames: string[] = []
 ): ToolDefinition<unknown, unknown>[] {
-  const nameSchema = availableSkillNames.length > 0
-    ? z.enum(availableSkillNames as [string, ...string[]])
-    : z.string()
+  const nameSchema =
+    availableSkillNames.length > 0
+      ? z.enum(availableSkillNames as [string, ...string[]])
+      : z.string()
 
   // Dedup tracker scoped to this factory invocation (one per request).
   const loadedSkills = new Set<string>()
@@ -143,9 +152,10 @@ export function skillsDefinitions(
         }
         loadedSkills.add(name)
 
-        const resourceBlock = skill.resources.length > 0
-          ? `\n\n<skill_resources>\n${skill.resources.map((r) => `  <file>${r}</file>`).join('\n')}\n</skill_resources>`
-          : ''
+        const resourceBlock =
+          skill.resources.length > 0
+            ? `\n\n<skill_resources>\n${skill.resources.map((r) => `  <file>${r}</file>`).join('\n')}\n</skill_resources>`
+            : ''
         const content = [
           `<skill_content name="${skill.name}" directory="${skill.directory}">`,
           skill.body,
@@ -154,7 +164,9 @@ export function skillsDefinitions(
           'Relative paths in this skill resolve against the skill directory. Use the read_skill_resource tool (with the same skill name and the relative path) to load any listed resource on demand.',
           resourceBlock ? resourceBlock.trim() : '',
           '</skill_content>',
-        ].filter(Boolean).join('\n')
+        ]
+          .filter(Boolean)
+          .join('\n')
 
         return {
           name: skill.name,
@@ -186,7 +198,11 @@ export function skillsDefinitions(
       "Read a resource file (script, reference, asset) bundled with a skill. The skill's load_skill result lists available resources under <skill_resources>. Use this to pull a specific file's content — do NOT eagerly read everything listed.",
     inputSchema: z.object({
       name: nameSchema.describe('The skill name'),
-      path: z.string().describe('The resource path relative to the skill directory, e.g. "scripts/extract.py" or "references/spec.md"'),
+      path: z
+        .string()
+        .describe(
+          'The resource path relative to the skill directory, e.g. "scripts/extract.py" or "references/spec.md"'
+        ),
     }),
     outputSchema: ReadSkillResourceOutput,
     execute: async ({ name, path }, ctx) => {
@@ -201,7 +217,8 @@ export function skillsDefinitions(
           }
         }
         const content = await skill.fetchResource(path)
-        if (content === null) return { name, path, error: `Resource "${path}" could not be loaded.` }
+        if (content === null)
+          return { name, path, error: `Resource "${path}" could not be loaded.` }
         return { name, path, content }
       } catch (error) {
         return { name, path, error: error instanceof Error ? error.message : String(error) }
@@ -234,7 +251,10 @@ export function skillsDefinitions(
     inputSchema: z.object({
       name: nameSchema.describe('The skill name'),
       path: z.string().describe('Relative resource path to the script, e.g. "scripts/extract.py"'),
-      stdin: z.string().optional().describe('Optional stdin content (string) piped into the script'),
+      stdin: z
+        .string()
+        .optional()
+        .describe('Optional stdin content (string) piped into the script'),
       timeout: z.number().optional().describe('Timeout in seconds (default: 60)'),
     }),
     outputSchema: RunSkillScriptOutput,
@@ -242,16 +262,29 @@ export function skillsDefinitions(
       try {
         const env = getSkillsEnv(ctx)
         if (!env.SANDBOX) {
-          return { name, path, error: 'Cloudflare Sandbox not configured — SANDBOX binding missing. Use read_skill_resource + run_python/run_shell/run_js as a fallback.' }
+          return {
+            name,
+            path,
+            error:
+              'Cloudflare Sandbox not configured — SANDBOX binding missing. Use read_skill_resource + run_python/run_shell/run_js as a fallback.',
+          }
         }
         const skill = await loadSkill(env, name, ctx.userId)
         if (!skill) return { name, path, error: `Skill "${name}" not found` }
         if (!skill.resources.includes(path)) {
-          return { name, path, error: `"${path}" is not a listed resource of skill "${name}". Available: ${skill.resources.join(', ') || '(none)'}` }
+          return {
+            name,
+            path,
+            error: `"${path}" is not a listed resource of skill "${name}". Available: ${skill.resources.join(', ') || '(none)'}`,
+          }
         }
         const interp = interpreterFor(path)
         if (!interp) {
-          return { name, path, error: `Unsupported script extension on "${path}". Supported: .py, .sh, .bash, .js, .mjs.` }
+          return {
+            name,
+            path,
+            error: `Unsupported script extension on "${path}". Supported: .py, .sh, .bash, .js, .mjs.`,
+          }
         }
         const content = await skill.fetchResource(path)
         if (content === null) return { name, path, error: `Script "${path}" could not be loaded.` }
@@ -260,12 +293,18 @@ export function skillsDefinitions(
         const sandbox = getSandbox(env.SANDBOX, sandboxId)
 
         if (interp.lang === 'python') {
-          const preamble = stdin !== undefined
-            ? `import io, sys\nsys.stdin = io.StringIO(${JSON.stringify(stdin)})\n`
-            : ''
-          const result = await sandbox.runCode(preamble + content, { language: 'python', timeout: timeout * 1000 })
+          const preamble =
+            stdin !== undefined
+              ? `import io, sys\nsys.stdin = io.StringIO(${JSON.stringify(stdin)})\n`
+              : ''
+          const result = await sandbox.runCode(preamble + content, {
+            language: 'python',
+            timeout: timeout * 1000,
+          })
           return {
-            name, path, language: interp.lang,
+            name,
+            path,
+            language: interp.lang,
             stdout: (result.logs?.stdout || []).join(''),
             stderr: (result.logs?.stderr || []).join(''),
             exitCode: result.error ? 1 : 0,
@@ -273,12 +312,16 @@ export function skillsDefinitions(
           }
         }
         if (interp.lang === 'javascript') {
-          const preamble = stdin !== undefined
-            ? `globalThis.__stdin = ${JSON.stringify(stdin)};\n`
-            : ''
-          const result = await sandbox.runCode(preamble + content, { language: 'javascript', timeout: timeout * 1000 })
+          const preamble =
+            stdin !== undefined ? `globalThis.__stdin = ${JSON.stringify(stdin)};\n` : ''
+          const result = await sandbox.runCode(preamble + content, {
+            language: 'javascript',
+            timeout: timeout * 1000,
+          })
           return {
-            name, path, language: interp.lang,
+            name,
+            path,
+            language: interp.lang,
             stdout: (result.logs?.stdout || []).join(''),
             stderr: (result.logs?.stderr || []).join(''),
             exitCode: result.error ? 1 : 0,
@@ -296,7 +339,9 @@ export function skillsDefinitions(
           ...(stdin !== undefined ? { env: execEnv } : {}),
         })
         return {
-          name, path, language: interp.lang,
+          name,
+          path,
+          language: interp.lang,
           stdout: result.stdout || '',
           stderr: result.stderr || '',
           exitCode: result.exitCode ?? 0,
@@ -327,8 +372,15 @@ export function skillsDefinitions(
     description:
       "Create a new skill from a SKILL.md document. The skill will be stored in R2 and available immediately. Use when you've developed a useful procedure that should be reusable. Requires the full SKILL.md content with YAML frontmatter (name + description) and markdown body.",
     inputSchema: z.object({
-      content: z.string().describe('Full SKILL.md content including YAML frontmatter (---\\nname: ...\\ndescription: ...\\n---) and markdown body'),
-      overwrite: z.boolean().optional().describe('Overwrite if a skill with this name already exists (default: false)'),
+      content: z
+        .string()
+        .describe(
+          'Full SKILL.md content including YAML frontmatter (---\\nname: ...\\ndescription: ...\\n---) and markdown body'
+        ),
+      overwrite: z
+        .boolean()
+        .optional()
+        .describe('Overwrite if a skill with this name already exists (default: false)'),
     }),
     outputSchema: CreateSkillOutput,
     needsApproval: true,
@@ -358,7 +410,11 @@ export function skillsDefinitions(
     description:
       'Install a skill from a GitHub URL. Fetches the SKILL.md, registers it, and caches it in R2. Use to add community skills or skills from the Anthropic skills repo.',
     inputSchema: z.object({
-      url: z.string().describe('Raw GitHub URL to the SKILL.md file (e.g. https://raw.githubusercontent.com/anthropics/skills/main/pdf/SKILL.md)'),
+      url: z
+        .string()
+        .describe(
+          'Raw GitHub URL to the SKILL.md file (e.g. https://raw.githubusercontent.com/anthropics/skills/main/pdf/SKILL.md)'
+        ),
     }),
     outputSchema: InstallSkillOutput,
     needsApproval: true,

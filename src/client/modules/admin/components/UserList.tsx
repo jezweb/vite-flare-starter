@@ -117,7 +117,9 @@ export function UserList({ users }: UserListProps) {
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={user.image || undefined} alt={user.name} />
-                        <AvatarFallback className="text-xs">{getInitials(user.name)}</AvatarFallback>
+                        <AvatarFallback className="text-xs">
+                          {getInitials(user.name)}
+                        </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0">
                         <p className="truncate font-medium">{user.name}</p>
@@ -199,9 +201,9 @@ export function UserList({ users }: UserListProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete User</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete <strong>{deleteUser?.name}</strong>?
-              This will permanently remove their account and all associated data.
-              This action cannot be undone.
+              Are you sure you want to delete <strong>{deleteUser?.name}</strong>? This will
+              permanently remove their account and all associated data. This action cannot be
+              undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -228,9 +230,7 @@ export function UserList({ users }: UserListProps) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleRevokeSessions}>
-              Revoke Sessions
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleRevokeSessions}>Revoke Sessions</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

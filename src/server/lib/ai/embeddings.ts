@@ -49,7 +49,7 @@ export async function embedBatch(env: ProviderEnv, texts: string[], modelId?: st
 export function findSimilar<T>(
   queryEmbedding: number[],
   items: Array<{ embedding: number[]; data: T }>,
-  topK: number = 5,
+  topK: number = 5
 ): Array<{ data: T; similarity: number }> {
   return items
     .map((item) => ({

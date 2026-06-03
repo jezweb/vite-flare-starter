@@ -40,18 +40,17 @@ export function CapabilityChip({
       data-state={state}
       className={cn(
         'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs transition-colors',
-        state === 'active' && 'border-emerald-500/40 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400',
-        state === 'inactive' && 'border-dashed border-border text-muted-foreground hover:text-foreground hover:border-border',
+        state === 'active' &&
+          'border-emerald-500/40 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400',
+        state === 'inactive' &&
+          'border-dashed border-border text-muted-foreground hover:text-foreground hover:border-border',
         state === 'count' && 'border-border bg-muted/50 text-muted-foreground',
-        className,
+        className
       )}
       {...rest}
     >
       {state === 'active' && (
-        <span
-          aria-hidden="true"
-          className="size-1.5 rounded-full bg-emerald-500"
-        />
+        <span aria-hidden="true" className="size-1.5 rounded-full bg-emerald-500" />
       )}
       {Icon && <Icon className="size-3" />}
       <span>{label}</span>

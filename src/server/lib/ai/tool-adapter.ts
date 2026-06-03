@@ -13,7 +13,11 @@
 import { tool, type Tool } from 'ai'
 import type { ToolDefinition } from '@/shared/agent/tool'
 import type { AgentContext } from '@/shared/agent/context'
-import { truncateToolResult, DEFAULT_MAX_CHARS, type TruncateMetadata } from './truncate-tool-result'
+import {
+  truncateToolResult,
+  DEFAULT_MAX_CHARS,
+  type TruncateMetadata,
+} from './truncate-tool-result'
 import { storeDataset, type DataLakeEnv } from '@/server/lib/data-lake'
 
 /**
@@ -48,10 +52,7 @@ const TRUNCATION_BYPASS = new Set<string>([
  * `execute` will validate input with Zod before running, validate output
  * after, and report telemetry on both success and failure paths.
  */
-export function toAiSdkTool<I, O>(
-  def: ToolDefinition<I, O>,
-  ctx: AgentContext,
-): Tool {
+export function toAiSdkTool<I, O>(def: ToolDefinition<I, O>, ctx: AgentContext): Tool {
   // AI SDK's `tool()` generic binds awkwardly with our parametric <I, O>
   // (Zod v4 vs the SDK's internal FlexibleSchema<> constraints). Cast to
   // a flexible record so Zod v3/v4 interop works — our ToolDefinition
@@ -112,7 +113,7 @@ export function toAiSdkTool<I, O>(
                 ctx.userId,
                 validated,
                 trunc.metadata,
-                `tool:${def.name}`,
+                `tool:${def.name}`
               )
               if (dataRef) {
                 if (finalResult && typeof finalResult === 'object') {
@@ -146,8 +147,12 @@ export function toAiSdkTool<I, O>(
                 collectionKey: trunc.metadata.collectionKey,
                 totalItems: trunc.metadata.totalItems,
                 keptItems: trunc.metadata.keptItems,
-                spilledToLake: !!(finalResult && typeof finalResult === 'object' && 'data_ref' in finalResult),
-              }),
+                spilledToLake: !!(
+                  finalResult &&
+                  typeof finalResult === 'object' &&
+                  'data_ref' in finalResult
+                ),
+              })
             )
           }
         }
@@ -191,7 +196,7 @@ export function toAiSdkTool<I, O>(
  */
 export async function collectAvailableTools(
   defs: ToolDefinition<unknown, unknown>[],
-  ctx: AgentContext,
+  ctx: AgentContext
 ): Promise<Record<string, Tool>> {
   const availability = await Promise.all(
     defs.map(async (def) => {
@@ -203,7 +208,7 @@ export async function collectAvailableTools(
         // omit the tool. Telemetry would catch this if we wanted.
         return false
       }
-    }),
+    })
   )
 
   const tools: Record<string, Tool> = {}
@@ -233,7 +238,7 @@ async function tryStoreToDataLake(
   userId: string,
   output: unknown,
   metadata: TruncateMetadata,
-  source: string,
+  source: string
 ): Promise<string | null> {
   try {
     let fullArray: unknown[] | null = null
@@ -259,9 +264,8 @@ async function tryStoreToDataLake(
         userId,
         source,
         error: err instanceof Error ? err.message : String(err),
-      }),
+      })
     )
     return null
   }
 }
-

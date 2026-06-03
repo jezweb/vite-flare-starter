@@ -142,12 +142,12 @@ export function FileUploader({
           </code>
         </p>
         <p>
-          Supported for search: PDFs, text, markdown, DOCX, images (OCR), audio (transcribed).
-          Other formats still upload but won't be searchable.
+          Supported for search: PDFs, text, markdown, DOCX, images (OCR), audio (transcribed). Other
+          formats still upload but won't be searchable.
         </p>
         <p>
-          Indexing runs automatically after upload — takes a few seconds to a minute depending
-          on size. Watch for the{' '}
+          Indexing runs automatically after upload — takes a few seconds to a minute depending on
+          size. Watch for the{' '}
           <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:text-green-400">
             Indexed
           </span>{' '}
@@ -190,7 +190,12 @@ export function FileUploader({
                 </div>
               </div>
               {(item.status === 'error' || item.status === 'pending') && (
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => clearFile(item.file)}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={() => clearFile(item.file)}
+                >
                   <X className="h-4 w-4" />
                 </Button>
               )}

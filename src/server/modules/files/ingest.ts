@@ -46,7 +46,7 @@ export interface IngestResult {
 export async function ingestFile(
   env: IngestEnv,
   fileId: string,
-  userId: string,
+  userId: string
 ): Promise<IngestResult> {
   const db = drizzle(env.DB)
 
@@ -140,7 +140,7 @@ export async function ingestFile(
         fileId,
         userId,
         error: message,
-      }),
+      })
     )
     return { status: 'failed', error: message }
   }
@@ -153,7 +153,7 @@ export async function ingestFile(
 export async function deleteFileVectors(
   env: IngestEnv,
   fileId: string,
-  userId: string,
+  userId: string
 ): Promise<void> {
   if (!env.VECTORS) return
   const db = drizzle(env.DB)
@@ -195,7 +195,11 @@ export function chunkMarkdown(text: string, size = CHUNK_SIZE, overlap = CHUNK_O
       const tail = trimmed.slice(end - 200, end)
       const paraBreak = tail.lastIndexOf('\n\n')
       const lineBreak = tail.lastIndexOf('\n')
-      const sentenceEnd = Math.max(tail.lastIndexOf('. '), tail.lastIndexOf('! '), tail.lastIndexOf('? '))
+      const sentenceEnd = Math.max(
+        tail.lastIndexOf('. '),
+        tail.lastIndexOf('! '),
+        tail.lastIndexOf('? ')
+      )
       const boundary = paraBreak !== -1 ? paraBreak : lineBreak !== -1 ? lineBreak : sentenceEnd
       if (boundary !== -1) end = end - 200 + boundary + 1
     }

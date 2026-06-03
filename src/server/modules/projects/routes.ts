@@ -74,7 +74,7 @@ app.get('/', async (c) => {
     .where(
       includeArchived
         ? eq(projects.userId, userId)
-        : and(eq(projects.userId, userId), eq(projects.archived, 0)),
+        : and(eq(projects.userId, userId), eq(projects.archived, 0))
     )
     .groupBy(projects.id)
 
@@ -83,7 +83,7 @@ app.get('/', async (c) => {
     filtered = rows.filter(
       (r) =>
         r.name.toLowerCase().includes(search) ||
-        (r.description ?? '').toLowerCase().includes(search),
+        (r.description ?? '').toLowerCase().includes(search)
     )
   }
 
@@ -257,15 +257,18 @@ app.post('/from-template', zValidator('json', fromTemplateSchema), async (c) => 
         content: m.content,
         createdAt: now,
         updatedAt: now,
-      })),
+      }))
     )
   }
 
-  return c.json({
-    id,
-    success: true,
-    suggestedFirstPrompts: tpl.suggestedFirstPrompts,
-  }, 201)
+  return c.json(
+    {
+      id,
+      success: true,
+      suggestedFirstPrompts: tpl.suggestedFirstPrompts,
+    },
+    201
+  )
 })
 
 const scaffoldSchema = z.object({
@@ -295,11 +298,12 @@ app.post('/scaffold', zValidator('json', scaffoldSchema), async (c) => {
     .where(and(eq(memories.scope, 'user'), eq(memories.scopeId, userId), eq(memories.isPrivate, 0)))
     .limit(20)
 
-  const userContextBlock = userMemories.length > 0
-    ? `\n\nUSER CONTEXT (about this user, use to personalise output):\n${userMemories
-        .map((m) => `- ${m.name}: ${m.description}`)
-        .join('\n')}`
-    : ''
+  const userContextBlock =
+    userMemories.length > 0
+      ? `\n\nUSER CONTEXT (about this user, use to personalise output):\n${userMemories
+          .map((m) => `- ${m.name}: ${m.description}`)
+          .join('\n')}`
+      : ''
 
   const systemPrompt = `You help users create well-structured AI projects in this app.
 The user describes what they want; produce a draft project they can edit.
@@ -332,14 +336,17 @@ EXAMPLE OUTPUT for input "a project to write emails to clients":
 Output MUST be a single JSON object matching the schema. No markdown fences, no commentary.`
 
   try {
-    const result = await c.env.AI.run('@cf/google/gemma-4-26b-a4b-it' as never, {
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: prompt },
-      ],
-      max_tokens: 2000,
-      temperature: 0.6,
-    } as never) as { response?: string }
+    const result = (await c.env.AI.run(
+      '@cf/google/gemma-4-26b-a4b-it' as never,
+      {
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: prompt },
+        ],
+        max_tokens: 2000,
+        temperature: 0.6,
+      } as never
+    )) as { response?: string }
 
     const text = (result.response ?? '').trim()
 
@@ -367,7 +374,9 @@ Output MUST be a single JSON object matching the schema. No markdown fences, no 
               name: String(m.name ?? '').slice(0, 80),
               description: String(m.description ?? '').slice(0, 200),
               content: String(m.content ?? '').slice(0, 4000),
-              type: ['fact', 'preference', 'decision', 'context', 'reference'].includes(String(m.type))
+              type: ['fact', 'preference', 'decision', 'context', 'reference'].includes(
+                String(m.type)
+              )
                 ? (m.type as 'fact' | 'preference' | 'decision' | 'context' | 'reference')
                 : 'context',
             }))
@@ -387,9 +396,10 @@ Output MUST be a single JSON object matching the schema. No markdown fences, no 
     return c.json(
       {
         success: false,
-        error: 'Could not generate a draft. Try simplifying your description or use Blank/Template instead.',
+        error:
+          'Could not generate a draft. Try simplifying your description or use Blank/Template instead.',
       },
-      500,
+      500
     )
   }
 })
@@ -406,7 +416,7 @@ const fromScaffoldSchema = z.object({
         description: z.string().min(1).max(200),
         content: z.string().min(1).max(4000),
         type: z.enum(['fact', 'preference', 'decision', 'context', 'reference']),
-      }),
+      })
     )
     .optional(),
 })
@@ -446,7 +456,7 @@ app.post('/from-scaffold', zValidator('json', fromScaffoldSchema), async (c) => 
         content: m.content,
         createdAt: now,
         updatedAt: now,
-      })),
+      }))
     )
   }
 
@@ -497,9 +507,7 @@ app.delete('/:id', async (c) => {
   const id = c.req.param('id')
   const d = drizzle(c.env.DB)
 
-  await d
-    .delete(projects)
-    .where(and(eq(projects.id, id), eq(projects.userId, userId)))
+  await d.delete(projects).where(and(eq(projects.id, id), eq(projects.userId, userId)))
 
   return c.json({ success: true })
 })

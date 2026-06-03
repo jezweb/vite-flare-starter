@@ -57,10 +57,7 @@ app.put('/:key', async (c) => {
     .get()
 
   if (existing) {
-    await db
-      .update(userMeta)
-      .set({ value, updatedAt: now })
-      .where(eq(userMeta.id, existing.id))
+    await db.update(userMeta).set({ value, updatedAt: now }).where(eq(userMeta.id, existing.id))
   } else {
     await db.insert(userMeta).values({ userId, key, value, updatedAt: now })
   }
@@ -74,9 +71,7 @@ app.delete('/:key', async (c) => {
   const key = c.req.param('key')
   const db = drizzle(c.env.DB)
 
-  await db
-    .delete(userMeta)
-    .where(and(eq(userMeta.userId, userId), eq(userMeta.key, key)))
+  await db.delete(userMeta).where(and(eq(userMeta.userId, userId), eq(userMeta.key, key)))
 
   return c.json({ key, deleted: true })
 })

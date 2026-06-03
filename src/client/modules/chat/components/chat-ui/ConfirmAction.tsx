@@ -43,7 +43,12 @@ export function ConfirmAction({
             >
               {responded === 'yes' ? '✓' : ''} {confirmLabel}
             </Button>
-            <Button size="sm" variant="outline" onClick={() => handleResponse(false)} disabled={isDisabled}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleResponse(false)}
+              disabled={isDisabled}
+            >
               {responded === 'no' ? '✓' : ''} {cancelLabel}
             </Button>
           </div>

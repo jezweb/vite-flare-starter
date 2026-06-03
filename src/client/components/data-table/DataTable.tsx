@@ -30,7 +30,14 @@ import {
   type VisibilityState,
   type RowSelectionState,
 } from '@tanstack/react-table'
-import { ArrowUpDown, ChevronLeft, ChevronRight, Search, SlidersHorizontal, Download } from 'lucide-react'
+import {
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  SlidersHorizontal,
+  Download,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -116,7 +123,10 @@ export function DataTable<TData>({
         return typeof val === 'string' ? val : JSON.stringify(val ?? '')
       })
     )
-    const csv = [headers.join(','), ...rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))].join('\n')
+    const csv = [
+      headers.join(','),
+      ...rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')),
+    ].join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -157,15 +167,18 @@ export function DataTable<TData>({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {table.getAllColumns().filter((c) => c.getCanHide()).map((column) => (
-                <DropdownMenuCheckboxItem
-                  key={column.id}
-                  checked={column.getIsVisible()}
-                  onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                >
-                  {column.id}
-                </DropdownMenuCheckboxItem>
-              ))}
+              {table
+                .getAllColumns()
+                .filter((c) => c.getCanHide())
+                .map((column) => (
+                  <DropdownMenuCheckboxItem
+                    key={column.id}
+                    checked={column.getIsVisible()}
+                    onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                  >
+                    {column.id}
+                  </DropdownMenuCheckboxItem>
+                ))}
             </DropdownMenuContent>
           </DropdownMenu>
         )}
@@ -191,12 +204,15 @@ export function DataTable<TData>({
                     key={header.id}
                     className={cn(
                       'px-3 py-2 text-left text-xs font-medium text-muted-foreground',
-                      header.column.getCanSort() && 'cursor-pointer select-none hover:text-foreground transition-colors'
+                      header.column.getCanSort() &&
+                        'cursor-pointer select-none hover:text-foreground transition-colors'
                     )}
                     onClick={header.column.getToggleSortingHandler()}
                   >
                     <div className="flex items-center gap-1">
-                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(header.column.columnDef.header, header.getContext())}
                       {header.column.getCanSort() && (
                         <ArrowUpDown className="size-3 text-muted-foreground/50" />
                       )}
@@ -220,13 +236,22 @@ export function DataTable<TData>({
               ))
             ) : table.getRowModel().rows.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="px-3 py-8 text-center text-sm text-muted-foreground">
+                <td
+                  colSpan={columns.length}
+                  className="px-3 py-8 text-center text-sm text-muted-foreground"
+                >
                   {emptyMessage}
                 </td>
               </tr>
             ) : (
               table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className={cn('border-b hover:bg-muted/50 transition-colors', row.getIsSelected() && 'bg-primary/5')}>
+                <tr
+                  key={row.id}
+                  className={cn(
+                    'border-b hover:bg-muted/50 transition-colors',
+                    row.getIsSelected() && 'bg-primary/5'
+                  )}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className="px-3 py-2 text-sm">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -252,7 +277,9 @@ export function DataTable<TData>({
             className="h-8 rounded-md border bg-background px-2 text-xs"
           >
             {pageSizeOptions.map((size) => (
-              <option key={size} value={size}>{size} / page</option>
+              <option key={size} value={size}>
+                {size} / page
+              </option>
             ))}
           </select>
           <div className="flex items-center gap-1">

@@ -1,8 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import {
-  renderPersonaBlocks,
-  CONVENTIONAL_BLOCK_ORDER,
-} from '@/server/lib/agents/autonomous-agent'
+import { renderPersonaBlocks, CONVENTIONAL_BLOCK_ORDER } from '@/server/lib/agents/autonomous-agent'
 
 describe('renderPersonaBlocks', () => {
   it('returns empty array when no blocks set', () => {
@@ -10,9 +7,7 @@ describe('renderPersonaBlocks', () => {
   })
 
   it('skips empty/whitespace-only block values', () => {
-    expect(
-      renderPersonaBlocks({ soul: '', identity: '   ', memory: '\n\n' }),
-    ).toEqual([])
+    expect(renderPersonaBlocks({ soul: '', identity: '   ', memory: '\n\n' })).toEqual([])
   })
 
   it('renders conventional blocks in stable order regardless of insertion order', () => {
@@ -52,9 +47,7 @@ describe('renderPersonaBlocks', () => {
 
   it('handles only-custom-blocks (no conventional)', () => {
     const result = renderPersonaBlocks({ apple: 'A', banana: 'B' })
-    expect(result).toEqual([
-      '## Context blocks\n\n### apple\nA\n\n### banana\nB',
-    ])
+    expect(result).toEqual(['## Context blocks\n\n### apple\nA\n\n### banana\nB'])
   })
 
   it('trims block values when rendering conventional blocks', () => {
@@ -63,12 +56,6 @@ describe('renderPersonaBlocks', () => {
   })
 
   it('CONVENTIONAL_BLOCK_ORDER reflects goanna alignment', () => {
-    expect(CONVENTIONAL_BLOCK_ORDER).toEqual([
-      'soul',
-      'identity',
-      'user',
-      'memory',
-      'style',
-    ])
+    expect(CONVENTIONAL_BLOCK_ORDER).toEqual(['soul', 'identity', 'user', 'memory', 'style'])
   })
 })

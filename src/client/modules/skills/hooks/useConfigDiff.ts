@@ -6,10 +6,7 @@
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/client/lib/api-client'
-import type {
-  ConfigDiffKind,
-  ConfigDiffProposal,
-} from '@/shared/config/diff-proposal'
+import type { ConfigDiffKind, ConfigDiffProposal } from '@/shared/config/diff-proposal'
 
 export const configDiffKeys = {
   all: ['config-diff'] as const,
@@ -35,7 +32,7 @@ export function useCreateProposal() {
       qc.invalidateQueries({
         queryKey: configDiffKeys.forResource(
           data.proposal.resource.kind,
-          data.proposal.resource.id,
+          data.proposal.resource.id
         ),
       })
     },
@@ -45,21 +42,17 @@ export function useCreateProposal() {
 export function useProposal(id: string | null | undefined) {
   return useQuery({
     queryKey: configDiffKeys.byId(id ?? ''),
-    queryFn: () =>
-      apiClient.get<{ proposal: ConfigDiffProposal }>(`/api/config-diff/${id}`),
+    queryFn: () => apiClient.get<{ proposal: ConfigDiffProposal }>(`/api/config-diff/${id}`),
     enabled: !!id,
   })
 }
 
-export function useProposalsForResource(
-  kind: ConfigDiffKind,
-  id: string | null | undefined,
-) {
+export function useProposalsForResource(kind: ConfigDiffKind, id: string | null | undefined) {
   return useQuery({
     queryKey: configDiffKeys.forResource(kind, id ?? ''),
     queryFn: () =>
       apiClient.get<{ proposals: ConfigDiffProposal[]; count: number }>(
-        `/api/config-diff/for-resource?kind=${encodeURIComponent(kind)}&id=${encodeURIComponent(id ?? '')}`,
+        `/api/config-diff/for-resource?kind=${encodeURIComponent(kind)}&id=${encodeURIComponent(id ?? '')}`
       ),
     enabled: !!id,
   })
@@ -69,10 +62,7 @@ export function useApproveProposal() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) =>
-      apiClient.post<{ proposal: ConfigDiffProposal }>(
-        `/api/config-diff/${id}/apply`,
-        {},
-      ),
+      apiClient.post<{ proposal: ConfigDiffProposal }>(`/api/config-diff/${id}/apply`, {}),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: configDiffKeys.all })
       // Also invalidate skills so the rewritten body shows up.
@@ -85,10 +75,7 @@ export function useRejectProposal() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) =>
-      apiClient.post<{ proposal: ConfigDiffProposal }>(
-        `/api/config-diff/${id}/reject`,
-        {},
-      ),
+      apiClient.post<{ proposal: ConfigDiffProposal }>(`/api/config-diff/${id}/reject`, {}),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: configDiffKeys.all })
     },
@@ -103,10 +90,7 @@ export function useAiEditSkill(name: string | null | undefined) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (body: AiEditSkillBody) =>
-      apiClient.post<{ proposal: ConfigDiffProposal }>(
-        `/api/skills/${name}/ai-edit`,
-        body,
-      ),
+      apiClient.post<{ proposal: ConfigDiffProposal }>(`/api/skills/${name}/ai-edit`, body),
     onSuccess: () => {
       if (name) {
         qc.invalidateQueries({

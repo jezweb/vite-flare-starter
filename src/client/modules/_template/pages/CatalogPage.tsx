@@ -31,10 +31,7 @@ import {
   ItemTitle,
 } from '@/components/ui/item'
 import { Badge } from '@/components/ui/badge'
-import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from '@/components/ui/toggle-group'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import {
   ListRow,
   ListRowGroup,
@@ -130,9 +127,7 @@ export function TemplateCatalogPage() {
               {data.things.map((thing) => (
                 <Item
                   key={thing.id}
-                  className={cn(
-                    'border bg-card transition-colors hover:bg-muted/30',
-                  )}
+                  className={cn('border bg-card transition-colors hover:bg-muted/30')}
                 >
                   <Link
                     to={`/dashboard/things/${thing.id}`}

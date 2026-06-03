@@ -34,12 +34,7 @@ app.get('/messages', async (c) => {
   const memberships = await d
     .select({ conversationId: conversationMembers.conversationId })
     .from(conversationMembers)
-    .where(
-      and(
-        eq(conversationMembers.userId, userId),
-        eq(conversationMembers.kind, 'user'),
-      ),
-    )
+    .where(and(eq(conversationMembers.userId, userId), eq(conversationMembers.kind, 'user')))
   const conversationIds = memberships.map((m) => m.conversationId)
   if (conversationIds.length === 0) return c.json({ results: [] })
 
@@ -117,8 +112,8 @@ app.get('/messages', async (c) => {
       .where(
         and(
           inArray(conversationMessages.conversationId, conversationIds),
-          like(conversationMessages.parts, `%${escaped}%`),
-        ),
+          like(conversationMessages.parts, `%${escaped}%`)
+        )
       )
       .orderBy(desc(conversationMessages.createdAt))
       .limit(30)
@@ -200,7 +195,7 @@ app.get('/entities', async (c) => {
        FROM entities
        WHERE user_id = ? AND title LIKE ? ESCAPE '\\'
        ORDER BY updated_at DESC
-       LIMIT ?`,
+       LIMIT ?`
     )
       .bind(userId, `%${escaped}%`, limit)
       .all<{ id: string; type: string; title: string; body: string | null }>()

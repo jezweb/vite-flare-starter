@@ -33,7 +33,7 @@ export interface ConnectorSettingsEnv {
  */
 export async function getAllowedConnectorTools(
   env: ConnectorSettingsEnv,
-  userId: string,
+  userId: string
 ): Promise<Set<string>> {
   const db = drizzle(env.DB)
   const rows = await db
@@ -74,7 +74,7 @@ export async function getAllowedConnectorTools(
  */
 export function filterToolsByUserSettings<T extends { name: string }>(
   tools: T[],
-  allowed: Set<string>,
+  allowed: Set<string>
 ): T[] {
   return tools.filter((t) => {
     const providerId = TOOL_TO_PROVIDER[t.name]
@@ -90,7 +90,7 @@ export function filterToolsByUserSettings<T extends { name: string }>(
 export async function getProviderSettings(
   env: ConnectorSettingsEnv,
   userId: string,
-  connectorId: string,
+  connectorId: string
 ): Promise<{
   enabled: boolean
   enabledTools: string[]
@@ -107,8 +107,8 @@ export async function getProviderSettings(
     .where(
       and(
         eq(userConnectorSettings.userId, userId),
-        eq(userConnectorSettings.connectorId, connectorId),
-      ),
+        eq(userConnectorSettings.connectorId, connectorId)
+      )
     )
     .limit(1)
   if (!row) {
@@ -135,7 +135,7 @@ export async function updateProviderSettings(
   env: ConnectorSettingsEnv,
   userId: string,
   connectorId: string,
-  patch: { enabled?: boolean; enabledTools?: string[] },
+  patch: { enabled?: boolean; enabledTools?: string[] }
 ): Promise<void> {
   const provider = getProvider(connectorId)
   if (!provider) throw new Error(`Unknown connector: ${connectorId}`)

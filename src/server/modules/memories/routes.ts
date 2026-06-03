@@ -51,7 +51,7 @@ async function checkScopeAccess(
   db: ReturnType<typeof drizzle>,
   userId: string,
   scope: 'project' | 'user' | 'org',
-  scopeId: string,
+  scopeId: string
 ): Promise<boolean> {
   if (scope === 'user') return scopeId === userId
   if (scope === 'project') {
@@ -90,12 +90,8 @@ app.get('/', zValidator('query', listQuerySchema), async (c) => {
   return c.json({
     memories: rows.map((m) => ({
       ...m,
-      createdAt: m.createdAt
-        ? new Date(m.createdAt as unknown as number).toISOString()
-        : null,
-      updatedAt: m.updatedAt
-        ? new Date(m.updatedAt as unknown as number).toISOString()
-        : null,
+      createdAt: m.createdAt ? new Date(m.createdAt as unknown as number).toISOString() : null,
+      updatedAt: m.updatedAt ? new Date(m.updatedAt as unknown as number).toISOString() : null,
     })),
   })
 })
@@ -138,18 +134,19 @@ app.get('/:id', async (c) => {
   const [m] = await d.select().from(memories).where(eq(memories.id, id)).limit(1)
   if (!m) return c.json({ error: 'Memory not found' }, 404)
 
-  const allowed = await checkScopeAccess(d, userId, m.scope as 'project' | 'user' | 'org', m.scopeId)
+  const allowed = await checkScopeAccess(
+    d,
+    userId,
+    m.scope as 'project' | 'user' | 'org',
+    m.scopeId
+  )
   if (!allowed) return c.json({ error: 'Forbidden' }, 403)
 
   return c.json({
     memory: {
       ...m,
-      createdAt: m.createdAt
-        ? new Date(m.createdAt as unknown as number).toISOString()
-        : null,
-      updatedAt: m.updatedAt
-        ? new Date(m.updatedAt as unknown as number).toISOString()
-        : null,
+      createdAt: m.createdAt ? new Date(m.createdAt as unknown as number).toISOString() : null,
+      updatedAt: m.updatedAt ? new Date(m.updatedAt as unknown as number).toISOString() : null,
     },
   })
 })
@@ -213,7 +210,7 @@ app.patch('/:id', zValidator('json', updateSchema), async (c) => {
     d,
     userId,
     existing.scope as 'project' | 'user' | 'org',
-    existing.scopeId,
+    existing.scopeId
   )
   if (!allowed) return c.json({ error: 'Forbidden' }, 403)
 
@@ -241,7 +238,7 @@ app.delete('/:id', async (c) => {
     d,
     userId,
     existing.scope as 'project' | 'user' | 'org',
-    existing.scopeId,
+    existing.scopeId
   )
   if (!allowed) return c.json({ error: 'Forbidden' }, 403)
 
@@ -279,7 +276,11 @@ app.post('/regenerate', zValidator('json', regenerateSchema), async (c) => {
 
   // Ownership check
   const [conv] = await d
-    .select({ id: conversations.id, projectId: conversations.projectId, title: conversations.title })
+    .select({
+      id: conversations.id,
+      projectId: conversations.projectId,
+      title: conversations.title,
+    })
     .from(conversations)
     .where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)))
     .limit(1)

@@ -57,11 +57,7 @@ export function IdentityRow({
   const initials = computeInitials(name, secondary)
   const displayName = name?.trim() || (typeof secondary === 'string' ? secondary : '?')
   return (
-    <div
-      data-slot="identity-row"
-      className={cn('flex items-center gap-3', className)}
-      {...rest}
-    >
+    <div data-slot="identity-row" className={cn('flex items-center gap-3', className)} {...rest}>
       <Avatar className={cn(avatarSize[size], 'shrink-0')}>
         {imageUrl && <AvatarImage src={imageUrl} alt={displayName} />}
         <AvatarFallback className="rounded-full text-xs">{initials}</AvatarFallback>
@@ -75,9 +71,7 @@ export function IdentityRow({
             </span>
           )}
         </div>
-        {secondary && (
-          <p className="text-xs text-muted-foreground truncate">{secondary}</p>
-        )}
+        {secondary && <p className="text-xs text-muted-foreground truncate">{secondary}</p>}
       </div>
       {rightSlot && <div className="shrink-0">{rightSlot}</div>}
     </div>

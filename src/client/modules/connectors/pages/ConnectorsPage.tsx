@@ -118,12 +118,10 @@ export function ConnectorsPage() {
   // OAuth rows stay in the catalogue modal as connectable ("Resume" / "Retry")
   // so users aren't locked out when a popup is blocked. (Cn2 fix)
   const connectedIds = new Set(
-    connections.filter((c) => c.status === 'active').map((c) => c.connectorId),
+    connections.filter((c) => c.status === 'active').map((c) => c.connectorId)
   )
   const pendingByConnector = new Map(
-    connections
-      .filter((c) => c.status === 'pending')
-      .map((c) => [c.connectorId, c] as const),
+    connections.filter((c) => c.status === 'pending').map((c) => [c.connectorId, c] as const)
   )
 
   return (
@@ -134,11 +132,10 @@ export function ConnectorsPage() {
         help={
           <HelpDisclosure>
             <p className="text-muted-foreground max-w-xl">
-              Want to connect something not in the list? Paste a connection
-              URL — public, your own service, or community-hosted. Sign-in
-              via the provider or a token; tokens are encrypted at rest.
-              Built on the open Model Context Protocol (MCP) standard, so
-              any MCP-compatible server URL works.
+              Want to connect something not in the list? Paste a connection URL — public, your own
+              service, or community-hosted. Sign-in via the provider or a token; tokens are
+              encrypted at rest. Built on the open Model Context Protocol (MCP) standard, so any
+              MCP-compatible server URL works.
             </p>
           </HelpDisclosure>
         }
@@ -167,15 +164,15 @@ export function ConnectorsPage() {
       </Section>
 
       {/*
-        * "Coming soon" stubs are reference implementations for fork
-        * authors. Hidden behind the `devTools` feature flag so a
-        * normal signed-in user never sees fake offerings on a live
-        * product page (audit P1-007). The flag is true in dev mode
-        * by default and explicitly gateable in production via
-        * VITE_FEATURE_DEV_TOOLS=true. `isBuilder` is intentionally
-        * not used here — Builder Mode defaults to ON for the starter,
-        * which would still leak this section to non-builder users.
-        */}
+       * "Coming soon" stubs are reference implementations for fork
+       * authors. Hidden behind the `devTools` feature flag so a
+       * normal signed-in user never sees fake offerings on a live
+       * product page (audit P1-007). The flag is true in dev mode
+       * by default and explicitly gateable in production via
+       * VITE_FEATURE_DEV_TOOLS=true. `isBuilder` is intentionally
+       * not used here — Builder Mode defaults to ON for the starter,
+       * which would still leak this section to non-builder users.
+       */}
       {features.devTools && (
         <Section
           title="Coming soon (builder preview)"
@@ -202,7 +199,10 @@ export function ConnectorsPage() {
             logo={
               <svg viewBox="0 0 24 24" aria-hidden className="h-6 w-6" fill="#2684FF">
                 <path d="M6.5 11.5L2 20h8.5c.2 0 .4-.2.4-.4 0-.1 0-.2-.1-.3L6.8 11.6c-.2-.2-.4-.2-.3-.1z" />
-                <path d="M11.4 4c-.2 0-.4.1-.5.3l-3.6 7.2-.8 1.6 4.6 8.5c.1.2.3.4.6.4H22c.3 0 .5-.2.5-.5 0-.1 0-.2-.1-.3L12 4.3c-.2-.2-.4-.3-.6-.3z" fill="#0052CC" />
+                <path
+                  d="M11.4 4c-.2 0-.4.1-.5.3l-3.6 7.2-.8 1.6 4.6 8.5c.1.2.3.4.6.4H22c.3 0 .5-.2.5-.5 0-.1 0-.2-.1-.3L12 4.3c-.2-.2-.4-.3-.6-.3z"
+                  fill="#0052CC"
+                />
               </svg>
             }
           />
@@ -242,12 +242,7 @@ export function ConnectorsPage() {
       </Section>
 
       {/* Detail sheet for selected connection */}
-      {detailId && (
-        <ConnectionDetail
-          connectionId={detailId}
-          onClose={() => setDetailId(null)}
-        />
-      )}
+      {detailId && <ConnectionDetail connectionId={detailId} onClose={() => setDetailId(null)} />}
 
       <BrowseDialog
         open={browseOpen}
@@ -294,7 +289,9 @@ function ConnectionCard({
               <p className="font-medium truncate">{connection.displayName}</p>
               <StatusBadge status={connection.status} />
               {connection.connectorId.startsWith('custom:') && (
-                <Badge variant="outline" className="text-[10px]">CUSTOM</Badge>
+                <Badge variant="outline" className="text-[10px]">
+                  CUSTOM
+                </Badge>
               )}
             </div>
             <p className="text-xs text-muted-foreground truncate" title={connection.url}>
@@ -332,8 +329,8 @@ function ConnectionCard({
           <AlertDialogHeader>
             <AlertDialogTitle>Disconnect {connection.displayName}?</AlertDialogTitle>
             <AlertDialogDescription>
-              The AI will lose access to this connector's tools. Tokens stored for this
-              connection will be removed. You can reconnect any time.
+              The AI will lose access to this connector's tools. Tokens stored for this connection
+              will be removed. You can reconnect any time.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -389,7 +386,7 @@ function BrowseDialog({
         (e) =>
           e.name.toLowerCase().includes(query.toLowerCase()) ||
           e.description.toLowerCase().includes(query.toLowerCase()) ||
-          e.category.toLowerCase().includes(query.toLowerCase()),
+          e.category.toLowerCase().includes(query.toLowerCase())
       )
     : sorted
   // Hide search when the catalogue is small — search through 1-3 items
@@ -428,10 +425,10 @@ function BrowseDialog({
               description: err instanceof Error ? err.message : String(err),
             })
           },
-        },
+        }
       )
     },
-    [connect, onOpenChange, onOpenConnection],
+    [connect, onOpenChange, onOpenConnection]
   )
 
   return (
@@ -443,7 +440,9 @@ function BrowseDialog({
         <DialogHeader>
           <DialogTitle>Add an integration</DialogTitle>
           <DialogDescription>
-            Pick a popular app to connect, or paste your own connection URL at the bottom. Sign-in happens with the provider; tokens are encrypted at rest. Some entries are community-maintained — if a connect fails, the URL may need updating.
+            Pick a popular app to connect, or paste your own connection URL at the bottom. Sign-in
+            happens with the provider; tokens are encrypted at rest. Some entries are
+            community-maintained — if a connect fails, the URL may need updating.
           </DialogDescription>
         </DialogHeader>
         {showSearch && (
@@ -469,11 +468,11 @@ function BrowseDialog({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="font-medium">{entry.name}</p>
-                  <Badge variant="outline" className="text-[10px]">{entry.category}</Badge>
+                  <Badge variant="outline" className="text-[10px]">
+                    {entry.category}
+                  </Badge>
                   {entry.source && (
-                    <span className="text-[10px] text-muted-foreground">
-                      {entry.source}
-                    </span>
+                    <span className="text-[10px] text-muted-foreground">{entry.source}</span>
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">{entry.description}</p>
@@ -504,11 +503,7 @@ function BrowseDialog({
                   Resume
                 </Button>
               ) : (
-                <Button
-                  size="sm"
-                  disabled={connect.isPending}
-                  onClick={() => handleConnect(entry)}
-                >
+                <Button size="sm" disabled={connect.isPending} onClick={() => handleConnect(entry)}>
                   Connect
                 </Button>
               )}
@@ -586,7 +581,7 @@ function CustomConnectorDialog({
           toast.error('Connect failed', {
             description: err instanceof Error ? err.message : String(err),
           }),
-      },
+      }
     )
   }
 
@@ -602,9 +597,9 @@ function CustomConnectorDialog({
         <DialogHeader>
           <DialogTitle>Connect a custom app</DialogTitle>
           <DialogDescription>
-            If your business uses an app that isn't in our list, paste its
-            connection URL here and we'll set it up. Most apps come from the
-            "Browse apps" list — try that first if you're not sure.
+            If your business uses an app that isn't in our list, paste its connection URL here and
+            we'll set it up. Most apps come from the "Browse apps" list — try that first if you're
+            not sure.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
@@ -634,7 +629,8 @@ function CustomConnectorDialog({
               </p>
               {probe.data.authorizationEndpoint && (
                 <p className="truncate text-muted-foreground">
-                  <strong className="text-foreground">Endpoint:</strong> {probe.data.authorizationEndpoint}
+                  <strong className="text-foreground">Endpoint:</strong>{' '}
+                  {probe.data.authorizationEndpoint}
                 </p>
               )}
               {probe.data.error && (
@@ -678,10 +674,14 @@ function CustomConnectorDialog({
 
 function prettifyAuthType(authType: string): string {
   switch (authType) {
-    case 'oauth': return 'Sign in with the provider'
-    case 'bearer': return 'Paste an API token'
-    case 'none': return 'No sign-in needed'
-    default: return authType
+    case 'oauth':
+      return 'Sign in with the provider'
+    case 'bearer':
+      return 'Paste an API token'
+    case 'none':
+      return 'No sign-in needed'
+    default:
+      return authType
   }
 }
 

@@ -37,9 +37,15 @@ function iconFor(mediaType?: string) {
   if (mediaType.startsWith('audio/')) return FileAudio
   if (mediaType.startsWith('video/')) return FileVideo
   if (mediaType === 'application/pdf') return FileText
-  if (mediaType.includes('spreadsheet') || mediaType.includes('excel') || mediaType === 'text/csv') return FileSpreadsheet
+  if (mediaType.includes('spreadsheet') || mediaType.includes('excel') || mediaType === 'text/csv')
+    return FileSpreadsheet
   if (mediaType.includes('wordprocessingml') || mediaType === 'application/msword') return FileText
-  if (mediaType.startsWith('text/') || mediaType === 'application/json' || mediaType === 'application/xml') return FileCode
+  if (
+    mediaType.startsWith('text/') ||
+    mediaType === 'application/json' ||
+    mediaType === 'application/xml'
+  )
+    return FileCode
   if (mediaType === 'application/zip' || mediaType === 'application/epub+zip') return FileArchive
   return FileIcon
 }
@@ -90,9 +96,7 @@ export function AttachmentTiles() {
       <Dialog open={!!preview} onOpenChange={(open) => !open && setPreview(null)}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle className="truncate">
-              {preview?.filename || 'File preview'}
-            </DialogTitle>
+            <DialogTitle className="truncate">{preview?.filename || 'File preview'}</DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-auto">
             {preview && <AttachmentPreview file={preview} />}
@@ -121,7 +125,7 @@ function AttachmentTile({
     <div
       className={cn(
         'group relative flex items-center gap-2 rounded-lg border border-border bg-muted/40 pr-1.5',
-        'hover:border-primary/50 transition-colors',
+        'hover:border-primary/50 transition-colors'
       )}
       title={name}
     >
@@ -131,16 +135,12 @@ function AttachmentTile({
         onClick={onPreview}
         className={cn(
           'relative flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-l-lg bg-background',
-          'hover:ring-1 hover:ring-primary/50 transition-all',
+          'hover:ring-1 hover:ring-primary/50 transition-all'
         )}
       >
         {isImage && file.url ? (
           // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
-          <img
-            src={file.url}
-            alt={name}
-            className="size-full object-cover"
-          />
+          <img src={file.url} alt={name} className="size-full object-cover" />
         ) : (
           <div className="flex flex-col items-center justify-center">
             <Icon className="size-4 text-muted-foreground" />
@@ -167,7 +167,7 @@ function AttachmentTile({
         aria-label={`Remove ${name}`}
         className={cn(
           'ml-0.5 flex size-5 shrink-0 items-center justify-center rounded-full',
-          'text-muted-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors',
+          'text-muted-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors'
         )}
       >
         <X className="size-3" />
@@ -181,7 +181,9 @@ function AttachmentPreview({ file }: { file: AttachmentFile }) {
 
   if (mt.startsWith('image/') && file.url) {
     // eslint-disable-next-line jsx-a11y/alt-text, @next/next/no-img-element
-    return <img src={file.url} alt={file.filename || 'image'} className="max-w-full h-auto mx-auto" />
+    return (
+      <img src={file.url} alt={file.filename || 'image'} className="max-w-full h-auto mx-auto" />
+    )
   }
 
   if (mt.startsWith('video/') && file.url) {
@@ -201,7 +203,9 @@ function AttachmentPreview({ file }: { file: AttachmentFile }) {
   }
 
   if (mt === 'application/pdf' && file.url) {
-    return <iframe src={file.url} title={file.filename || 'PDF'} className="w-full h-[60vh] border-0" />
+    return (
+      <iframe src={file.url} title={file.filename || 'PDF'} className="w-full h-[60vh] border-0" />
+    )
   }
 
   // Fallback for binary/unknown: show metadata
@@ -212,7 +216,8 @@ function AttachmentPreview({ file }: { file: AttachmentFile }) {
       <p className="text-sm font-medium">{file.filename || 'File'}</p>
       <p className="text-xs text-muted-foreground mt-1">{mt || 'unknown type'}</p>
       <p className="text-xs text-muted-foreground mt-4 max-w-md">
-        Preview not available for this file type. It will be sent to the AI and converted to text for processing.
+        Preview not available for this file type. It will be sent to the AI and converted to text
+        for processing.
       </p>
     </div>
   )

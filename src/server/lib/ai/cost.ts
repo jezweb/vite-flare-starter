@@ -48,7 +48,7 @@ const PRICING = new Map<string, { input: number; output: number; isFree: boolean
         isFree,
       },
     ]
-  }),
+  })
 )
 
 export interface CostBreakdown {
@@ -75,14 +75,12 @@ export interface CostBreakdown {
 export function computeCost(
   modelId: string,
   inputTokens: number,
-  outputTokens: number,
+  outputTokens: number
 ): CostBreakdown {
   // Strip the optional explicit-OpenRouter prefix — the catalogue is
   // keyed on the canonical id (`anthropic/claude-...`), not the routed
   // form (`openrouter/anthropic/claude-...`).
-  const lookupId = modelId.startsWith('openrouter/')
-    ? modelId.slice('openrouter/'.length)
-    : modelId
+  const lookupId = modelId.startsWith('openrouter/') ? modelId.slice('openrouter/'.length) : modelId
   const pricing = PRICING.get(lookupId)
   if (!pricing) {
     return { total: null, input: null, output: null, isFree: false, source: 'unknown' }
@@ -111,10 +109,10 @@ export function costFor(modelId: string, inputTokens: number, outputTokens: numb
  * cost helper will use. Useful for the admin panel to show "you're
  * billed at $X/M in, $Y/M out for this model".
  */
-export function pricingFor(modelId: string): { input: number; output: number; isFree: boolean } | null {
-  const lookupId = modelId.startsWith('openrouter/')
-    ? modelId.slice('openrouter/'.length)
-    : modelId
+export function pricingFor(
+  modelId: string
+): { input: number; output: number; isFree: boolean } | null {
+  const lookupId = modelId.startsWith('openrouter/') ? modelId.slice('openrouter/'.length) : modelId
   return PRICING.get(lookupId) ?? null
 }
 

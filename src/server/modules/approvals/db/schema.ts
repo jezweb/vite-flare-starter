@@ -21,18 +21,17 @@
 import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core'
 import { user } from '@/server/modules/auth/db/schema'
 
-export type ApprovalStatus =
-  | 'pending'
-  | 'approved'
-  | 'rejected'
-  | 'executed'
-  | 'failed'
+export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'executed' | 'failed'
 
 export const pendingApprovals = sqliteTable(
   'pending_approvals',
   {
-    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-    userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
     /** DO class name — used to route the approve callback back to the right binding. */
     agentClass: text('agent_class').notNull(),
     /** Agent's idFromName partition (usually `${userId}:${slug}`). */
@@ -52,7 +51,9 @@ export const pendingApprovals = sqliteTable(
     resultJson: text('result_json'),
     /** If executeApproved threw, the error message. */
     errorMessage: text('error_message'),
-    createdAt: integer('created_at').notNull().$defaultFn(() => Math.floor(Date.now() / 1000)),
+    createdAt: integer('created_at')
+      .notNull()
+      .$defaultFn(() => Math.floor(Date.now() / 1000)),
     /** When status moved off 'pending' (regardless of approve/reject). */
     resolvedAt: integer('resolved_at'),
     /** When executeApproved finished (only set for status='executed'/'failed'). */
@@ -81,5 +82,5 @@ export const pendingApprovals = sqliteTable(
     index('pending_approvals_agent_idx').on(table.agentClass, table.agentName),
     index('pending_approvals_created_at_idx').on(table.createdAt),
     index('pending_approvals_space_idx').on(table.spaceId),
-  ],
+  ]
 )

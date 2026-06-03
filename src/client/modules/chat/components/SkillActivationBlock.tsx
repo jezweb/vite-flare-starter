@@ -45,7 +45,11 @@ export function parseSkillActivation(text: string): SkillActivationBlockProps | 
   }
 }
 
-export function SkillActivationBlock({ skillName, skillBody, userText }: SkillActivationBlockProps) {
+export function SkillActivationBlock({
+  skillName,
+  skillBody,
+  userText,
+}: SkillActivationBlockProps) {
   const [expanded, setExpanded] = useState(false)
   return (
     <div className="flex flex-col gap-2">
@@ -54,7 +58,7 @@ export function SkillActivationBlock({ skillName, skillBody, userText }: SkillAc
         onClick={() => setExpanded((v) => !v)}
         className={cn(
           'inline-flex items-center gap-1.5 self-start rounded-md border bg-muted/40 px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground',
-          expanded && 'bg-muted text-foreground',
+          expanded && 'bg-muted text-foreground'
         )}
         aria-expanded={expanded}
         aria-label={expanded ? 'Hide skill instructions' : 'Show skill instructions'}

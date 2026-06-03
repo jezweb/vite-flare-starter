@@ -96,10 +96,10 @@ export interface GatewayGenerateResult {
  */
 export type GatewayContentPart =
   | { type: 'text'; text: string }
-  | { type: 'image_url'; image_url: { url: string } }  // OpenAI/Workers AI format
-  | { type: 'image'; source: { type: 'base64'; media_type: string; data: string } }  // Anthropic format
-  | { type: 'document'; source: { type: 'base64'; media_type: string; data: string } }  // Anthropic PDF format
-  | { type: 'file'; file: { filename: string; file_data: string } }  // OpenRouter file format (PDFs)
+  | { type: 'image_url'; image_url: { url: string } } // OpenAI/Workers AI format
+  | { type: 'image'; source: { type: 'base64'; media_type: string; data: string } } // Anthropic format
+  | { type: 'document'; source: { type: 'base64'; media_type: string; data: string } } // Anthropic PDF format
+  | { type: 'file'; file: { filename: string; file_data: string } } // OpenRouter file format (PDFs)
 
 /**
  * Chat message format (OpenAI-compatible)

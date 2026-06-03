@@ -4,10 +4,7 @@
  */
 import { Globe } from 'lucide-react'
 import type { ToolRenderer } from './_shared'
-import {
-  WebSearchResults,
-  isWebSearchOutput,
-} from '../chat-ui/WebSearchResults'
+import { WebSearchResults, isWebSearchOutput } from '../chat-ui/WebSearchResults'
 
 export const webSearchRenderer: ToolRenderer = {
   // Match by BOTH tool name and shape — covers `web_search`, `search`, and

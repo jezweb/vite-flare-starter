@@ -22,7 +22,7 @@ import { appConfig } from '@/shared/config/app'
 
 export function useViewPreference<T extends string>(
   surfaceKey: string,
-  defaultView: T,
+  defaultView: T
 ): [T, (next: T) => void] {
   const storageKey = `${appConfig.id}-view-${surfaceKey}`
   const [view, setView] = useState<T>(defaultView)

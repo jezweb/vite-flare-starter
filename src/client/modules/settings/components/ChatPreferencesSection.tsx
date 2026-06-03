@@ -92,8 +92,8 @@ export function ChatPreferencesSection() {
           <CardTitle>Chat preferences</CardTitle>
         </div>
         <CardDescription>
-          Personalise how the AI responds to you. These settings are appended to the system
-          prompt on every chat request. Leave any field blank to use the default behaviour.
+          Personalise how the AI responds to you. These settings are appended to the system prompt
+          on every chat request. Leave any field blank to use the default behaviour.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -167,9 +167,7 @@ export function ChatPreferencesSection() {
             <Switch
               id="confirmationMode"
               checked={prefs.confirmationMode ?? false}
-              onCheckedChange={(checked) =>
-                setPrefs((p) => ({ ...p, confirmationMode: checked }))
-              }
+              onCheckedChange={(checked) => setPrefs((p) => ({ ...p, confirmationMode: checked }))}
               disabled={isLoading}
             />
           </div>
@@ -190,7 +188,8 @@ Works well with markdown — bullet lists, headings, anything you'd put in a pro
               className="resize-y min-h-32"
             />
             <p className="text-xs text-muted-foreground">
-              {(prefs.about ?? '').length}/2000 characters · markdown supported · applies to every chat
+              {(prefs.about ?? '').length}/2000 characters · markdown supported · applies to every
+              chat
             </p>
           </div>
           <div className="flex items-center justify-end gap-2">

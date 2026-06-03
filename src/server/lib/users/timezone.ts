@@ -28,10 +28,7 @@ export const DEFAULT_TIMEZONE = 'UTC'
  * invalid. Cheap (single indexed lookup) but cache at the call site
  * if firing in a hot loop.
  */
-export async function getUserTimezone(
-  db: D1Database,
-  userId: string,
-): Promise<string> {
+export async function getUserTimezone(db: D1Database, userId: string): Promise<string> {
   if (!userId) return DEFAULT_TIMEZONE
   try {
     const rows = await drizzle(db)
@@ -51,7 +48,7 @@ export async function getUserTimezone(
         event: 'get_user_timezone_failed',
         userId,
         error: err instanceof Error ? err.message : String(err),
-      }),
+      })
     )
     return DEFAULT_TIMEZONE
   }

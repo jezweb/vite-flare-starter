@@ -73,8 +73,7 @@ interface OneResponse {
 export function useAgentInstance(agentClass: string | null, agentName: string | null) {
   return useQuery<OneResponse>({
     queryKey: ['agent-instances', agentClass, agentName],
-    queryFn: () =>
-      apiClient.get<OneResponse>(`/api/agent-instances/${agentClass}/${agentName}`),
+    queryFn: () => apiClient.get<OneResponse>(`/api/agent-instances/${agentClass}/${agentName}`),
     enabled: !!agentClass && !!agentName,
   })
 }
@@ -91,7 +90,7 @@ export function useUpdateAgentInstance(agentClass: string, agentName: string) {
     mutationFn: (patch) =>
       apiClient.patch<{ ok: true; state: AgentInstanceState }>(
         `/api/agent-instances/${agentClass}/${agentName}`,
-        patch,
+        patch
       ),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['agent-instances'] })

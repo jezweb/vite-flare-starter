@@ -104,8 +104,7 @@ export const CACHE = {
  * (drizzle-kit generating migrations) the global isn't defined, so
  * guard the access — falls back to '0.0.0' there.
  */
-export const APP_VERSION =
-  typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.0.0'
+export const APP_VERSION = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.0.0'
 
 // Declare the global for TypeScript
 declare const __APP_VERSION__: string | undefined

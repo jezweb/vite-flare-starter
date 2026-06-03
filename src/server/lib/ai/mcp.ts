@@ -31,13 +31,15 @@ export interface MCPServerConfig {
   /** Transport type */
   transport: 'http' | 'sse'
   /** Auth method */
-  auth?: {
-    type: 'bearer'
-    token: string
-  } | {
-    type: 'header'
-    headers: Record<string, string>
-  }
+  auth?:
+    | {
+        type: 'bearer'
+        token: string
+      }
+    | {
+        type: 'header'
+        headers: Record<string, string>
+      }
   /** Enable elicitation support */
   elicitation?: boolean
 }
@@ -51,7 +53,9 @@ export interface MCPManager {
   /** All tools from all connected servers (spread into streamText) */
   tools: Record<string, unknown>
   /** List resources from all connected servers */
-  listResources: () => Promise<Array<{ uri: string; name: string; description?: string; server: string }>>
+  listResources: () => Promise<
+    Array<{ uri: string; name: string; description?: string; server: string }>
+  >
   /** Read a specific resource by URI */
   readResource: (uri: string) => Promise<{ contents: unknown }>
   /** List available prompts from all servers */
@@ -94,7 +98,7 @@ function discoverServers(env: Record<string, unknown>): MCPServerConfig[] {
 
     const url = env[key] as string
     const token = env[`MCP_${match[1]}_TOKEN`] as string | undefined
-    const transport = (env[`MCP_${match[1]}_TRANSPORT`] as string || 'http') as 'http' | 'sse'
+    const transport = ((env[`MCP_${match[1]}_TRANSPORT`] as string) || 'http') as 'http' | 'sse'
 
     servers.push({
       id,
@@ -150,18 +154,22 @@ export async function createMCPManager(env: Record<string, unknown>): Promise<MC
       const tools = await client.tools()
       Object.assign(allTools, tools)
 
-      console.log(JSON.stringify({
-        event: 'mcp_connected',
-        server: config.name,
-        toolCount: Object.keys(tools).length,
-      }))
+      console.log(
+        JSON.stringify({
+          event: 'mcp_connected',
+          server: config.name,
+          toolCount: Object.keys(tools).length,
+        })
+      )
     } catch (error) {
-      console.error(JSON.stringify({
-        event: 'mcp_connection_failed',
-        server: config.name,
-        url: config.url,
-        error: error instanceof Error ? error.message : String(error),
-      }))
+      console.error(
+        JSON.stringify({
+          event: 'mcp_connection_failed',
+          server: config.name,
+          url: config.url,
+          error: error instanceof Error ? error.message : String(error),
+        })
+      )
     }
   }
 
@@ -176,10 +184,17 @@ export async function createMCPManager(env: Record<string, unknown>): Promise<MC
           const res = await client.listResources()
           if (res?.resources) {
             for (const r of res.resources) {
-              results.push({ uri: r.uri, name: r.name, description: r.description, server: config.name })
+              results.push({
+                uri: r.uri,
+                name: r.name,
+                description: r.description,
+                server: config.name,
+              })
             }
           }
-        } catch { /* server may not support resources */ }
+        } catch {
+          /* server may not support resources */
+        }
       }
       return results
     },
@@ -189,7 +204,9 @@ export async function createMCPManager(env: Record<string, unknown>): Promise<MC
       for (const { client } of clients) {
         try {
           return await client.readResource({ uri })
-        } catch { continue }
+        } catch {
+          continue
+        }
       }
       throw new Error(`Resource not found: ${uri}`)
     },
@@ -204,7 +221,9 @@ export async function createMCPManager(env: Record<string, unknown>): Promise<MC
               results.push({ name: p.name, description: p.description, server: config.name })
             }
           }
-        } catch { /* server may not support prompts */ }
+        } catch {
+          /* server may not support prompts */
+        }
       }
       return results
     },
@@ -214,7 +233,9 @@ export async function createMCPManager(env: Record<string, unknown>): Promise<MC
         try {
           const result = await client.experimental_getPrompt({ name, arguments: args })
           if (result) return { messages: result.messages }
-        } catch { continue }
+        } catch {
+          continue
+        }
       }
       throw new Error(`Prompt not found: ${name}`)
     },

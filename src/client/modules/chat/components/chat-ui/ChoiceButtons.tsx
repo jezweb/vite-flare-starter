@@ -47,8 +47,12 @@ export function ChoiceButtons({ items, layout = 'horizontal', onSelect, disabled
             className={cn(
               'rounded-lg border px-3 py-1.5 text-sm text-left transition-colors',
               isSelected && 'border-primary bg-primary/10 text-primary',
-              !isSelected && isDisabled && 'border-border/50 text-muted-foreground/50 cursor-not-allowed',
-              !isSelected && !isDisabled && 'border-border text-foreground hover:border-primary hover:bg-primary/5 cursor-pointer'
+              !isSelected &&
+                isDisabled &&
+                'border-border/50 text-muted-foreground/50 cursor-not-allowed',
+              !isSelected &&
+                !isDisabled &&
+                'border-border text-foreground hover:border-primary hover:bg-primary/5 cursor-pointer'
             )}
           >
             {text}

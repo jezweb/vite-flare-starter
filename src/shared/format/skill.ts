@@ -17,8 +17,23 @@
 // when title-casing a slug. A small allow-list — extend per-fork rather
 // than getting clever with heuristics.
 const ACRONYMS = new Set([
-  'ai', 'api', 'cli', 'csv', 'css', 'html', 'json', 'mcp', 'pdf',
-  'qa', 'sql', 'svg', 'tts', 'ui', 'url', 'xml', 'yaml',
+  'ai',
+  'api',
+  'cli',
+  'csv',
+  'css',
+  'html',
+  'json',
+  'mcp',
+  'pdf',
+  'qa',
+  'sql',
+  'svg',
+  'tts',
+  'ui',
+  'url',
+  'xml',
+  'yaml',
 ])
 
 /**

@@ -49,7 +49,11 @@ interface ArtifactData {
 }
 
 export function isArtifact(output: unknown): output is ArtifactData {
-  return !!output && typeof output === 'object' && (output as Record<string, unknown>)['_artifact'] === true
+  return (
+    !!output &&
+    typeof output === 'object' &&
+    (output as Record<string, unknown>)['_artifact'] === true
+  )
 }
 
 interface Props {
@@ -94,7 +98,10 @@ export function ArtifactViewer({ artifact }: Props) {
             variant="ghost"
             size="icon-sm"
             onClick={() => setShowCode(!showCode)}
-            className={cn('text-muted-foreground hover:text-foreground', showCode && 'bg-muted text-foreground')}
+            className={cn(
+              'text-muted-foreground hover:text-foreground',
+              showCode && 'bg-muted text-foreground'
+            )}
             title={showCode ? 'Show preview' : 'Show code'}
             aria-label={showCode ? 'Show preview' : 'Show code'}
           >
@@ -108,7 +115,11 @@ export function ArtifactViewer({ artifact }: Props) {
             title="Copy code"
             aria-label={copied ? 'Copied' : 'Copy code'}
           >
-            {copied ? <Check className="size-3.5 text-green-600 dark:text-green-400" /> : <Copy className="size-3.5" />}
+            {copied ? (
+              <Check className="size-3.5 text-green-600 dark:text-green-400" />
+            ) : (
+              <Copy className="size-3.5" />
+            )}
           </Button>
           {artifact.type === 'html' && (
             <Button
@@ -129,7 +140,9 @@ export function ArtifactViewer({ artifact }: Props) {
       </div>
 
       {showCode ? (
-        <pre className="p-3 text-xs font-mono overflow-auto max-h-96 bg-background">{artifact.code}</pre>
+        <pre className="p-3 text-xs font-mono overflow-auto max-h-96 bg-background">
+          {artifact.code}
+        </pre>
       ) : (
         <div className="bg-muted/50">
           {artifact.type === 'svg' ? (

@@ -42,11 +42,11 @@ export interface TransformOptions {
   flip?: 'h' | 'v' | 'hv'
 
   // Visual effects
-  blur?: number       // 1-250
-  sharpen?: number    // 0-10
+  blur?: number // 1-250
+  sharpen?: number // 0-10
   brightness?: number // 1.0 = unchanged
-  contrast?: number   // 1.0 = unchanged
-  gamma?: number      // 0.5 darkens, 2.0 lightens
+  contrast?: number // 1.0 = unchanged
+  gamma?: number // 0.5 darkens, 2.0 lightens
   saturation?: number // 0 = grayscale, 1.0 = unchanged
 
   // AI features
@@ -56,8 +56,10 @@ export interface TransformOptions {
   format?: 'auto' | 'avif' | 'webp' | 'jpeg' | 'png' | 'baseline-jpeg' | 'json'
   quality?: number | 'high' | 'medium-high' | 'medium-low' | 'low'
   compression?: 'fast'
-  background?: string  // CSS4 colour
-  border?: { color: string; width: number } | { color: string; top?: number; right?: number; bottom?: number; left?: number }
+  background?: string // CSS4 colour
+  border?:
+    | { color: string; width: number }
+    | { color: string; top?: number; right?: number; bottom?: number; left?: number }
   metadata?: 'copyright' | 'keep' | 'none'
   anim?: boolean
 }
@@ -82,7 +84,9 @@ interface ImagesBinding {
 interface ImagePipeline {
   transform(options: Record<string, unknown>): ImagePipeline
   draw(overlay: ImagePipeline, options?: Record<string, unknown>): ImagePipeline
-  output(options: { format: string; quality?: number; anim?: boolean }): { response(): Promise<Response> }
+  output(options: { format: string; quality?: number; anim?: boolean }): {
+    response(): Promise<Response>
+  }
   info(): Promise<ImageInfo>
 }
 
@@ -93,17 +97,20 @@ interface ImagePipeline {
 export async function transformImage(
   images: ImagesBinding,
   imageData: ArrayBuffer | Uint8Array | ReadableStream,
-  options: TransformOptions,
+  options: TransformOptions
 ): Promise<Response> {
   // Create input stream
-  const stream = imageData instanceof ReadableStream
-    ? imageData
-    : new ReadableStream({
-        start(controller) {
-          controller.enqueue(imageData instanceof Uint8Array ? imageData : new Uint8Array(imageData))
-          controller.close()
-        },
-      })
+  const stream =
+    imageData instanceof ReadableStream
+      ? imageData
+      : new ReadableStream({
+          start(controller) {
+            controller.enqueue(
+              imageData instanceof Uint8Array ? imageData : new Uint8Array(imageData)
+            )
+            controller.close()
+          },
+        })
 
   // Build transform options (only include set values)
   const transformOpts: Record<string, unknown> = {}
@@ -146,15 +153,21 @@ export async function transformImage(
 /**
  * Get image metadata without transforming.
  */
-export async function getImageInfo(images: ImagesBinding, imageData: ArrayBuffer | Uint8Array | ReadableStream): Promise<ImageInfo> {
-  const stream = imageData instanceof ReadableStream
-    ? imageData
-    : new ReadableStream({
-        start(controller) {
-          controller.enqueue(imageData instanceof Uint8Array ? imageData : new Uint8Array(imageData))
-          controller.close()
-        },
-      })
+export async function getImageInfo(
+  images: ImagesBinding,
+  imageData: ArrayBuffer | Uint8Array | ReadableStream
+): Promise<ImageInfo> {
+  const stream =
+    imageData instanceof ReadableStream
+      ? imageData
+      : new ReadableStream({
+          start(controller) {
+            controller.enqueue(
+              imageData instanceof Uint8Array ? imageData : new Uint8Array(imageData)
+            )
+            controller.close()
+          },
+        })
 
   return images.input(stream).info()
 }
@@ -166,8 +179,15 @@ export async function overlayImage(
   images: ImagesBinding,
   baseImage: ArrayBuffer | Uint8Array | ReadableStream,
   overlayImageData: ArrayBuffer | Uint8Array | ReadableStream,
-  position: { top?: number; left?: number; bottom?: number; right?: number; opacity?: number; repeat?: boolean },
-  outputOptions: { format?: string; quality?: number } = {},
+  position: {
+    top?: number
+    left?: number
+    bottom?: number
+    right?: number
+    opacity?: number
+    repeat?: boolean
+  },
+  outputOptions: { format?: string; quality?: number } = {}
 ): Promise<Response> {
   const toStream = (data: ArrayBuffer | Uint8Array | ReadableStream) =>
     data instanceof ReadableStream
@@ -183,8 +203,5 @@ export async function overlayImage(
   const overlay = images.input(toStream(overlayImageData))
 
   const format = `image/${outputOptions.format || 'webp'}`
-  return base
-    .draw(overlay, position)
-    .output({ format, quality: outputOptions.quality })
-    .response()
+  return base.draw(overlay, position).output({ format, quality: outputOptions.quality }).response()
 }

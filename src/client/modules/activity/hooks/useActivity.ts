@@ -13,7 +13,18 @@ import { useQuery } from '@tanstack/react-query'
 export interface Activity {
   id: string
   userId: string
-  action: 'create' | 'update' | 'delete' | 'archive' | 'restore' | 'import' | 'export' | 'assign' | 'unassign' | 'view' | 'convert'
+  action:
+    | 'create'
+    | 'update'
+    | 'delete'
+    | 'archive'
+    | 'restore'
+    | 'import'
+    | 'export'
+    | 'assign'
+    | 'unassign'
+    | 'view'
+    | 'convert'
   entityType: string
   entityId: string
   entityName: string | null

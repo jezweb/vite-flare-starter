@@ -46,18 +46,18 @@ export interface PersonalOrgResult {
  */
 export async function ensurePersonalOrg(
   env: SeedEnv,
-  input: PersonalOrgInput,
+  input: PersonalOrgInput
 ): Promise<PersonalOrgResult> {
   const db = drizzle(env.DB)
   // Guard: already a member of some org? bail.
   const memberCount = (await db.all(
-    sql`SELECT COUNT(*) AS n FROM member WHERE userId = ${input.userId}`,
+    sql`SELECT COUNT(*) AS n FROM member WHERE userId = ${input.userId}`
   )) as Array<{ n: number }>
   if ((memberCount[0]?.n ?? 0) > 0) {
     // Pull the user's first org so the caller can set it active.
     const existing = (await db.all(
       sql`SELECT organizationId FROM member WHERE userId = ${input.userId}
-          ORDER BY createdAt ASC LIMIT 1`,
+          ORDER BY createdAt ASC LIMIT 1`
     )) as Array<{ organizationId: string }>
     return {
       created: false,
@@ -73,7 +73,12 @@ export async function ensurePersonalOrg(
   const orgName = display === 'Personal' ? 'Personal' : `${display}'s workspace`
   // Slug: lowercased name + 8 chars of user id for uniqueness. Slugs
   // have a UNIQUE constraint, so even two "Alices" don't collide.
-  const slugBase = orgName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'workspace'
+  const slugBase =
+    orgName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 40) || 'workspace'
   const slug = `${slugBase}-${input.userId.slice(0, 8)}`
 
   try {
@@ -82,11 +87,11 @@ export async function ensurePersonalOrg(
     await env.DB.batch([
       env.DB.prepare(
         `INSERT INTO organization (id, name, slug, logo, metadata, createdAt)
-         VALUES (?, ?, ?, NULL, NULL, unixepoch())`,
+         VALUES (?, ?, ?, NULL, NULL, unixepoch())`
       ).bind(orgId, orgName, slug),
       env.DB.prepare(
         `INSERT INTO member (id, organizationId, userId, role, createdAt)
-         VALUES (?, ?, ?, 'owner', unixepoch())`,
+         VALUES (?, ?, ?, 'owner', unixepoch())`
       ).bind(memberId, orgId, input.userId),
     ])
     return { created: true, organizationId: orgId }
@@ -99,7 +104,7 @@ export async function ensurePersonalOrg(
         event: 'ensure_personal_org_failed',
         userId: input.userId,
         error: err instanceof Error ? err.message : String(err),
-      }),
+      })
     )
     return { created: false, organizationId: null }
   }
@@ -117,23 +122,23 @@ export async function ensurePersonalOrg(
 export async function setDefaultActiveOrgForSession(
   env: SeedEnv,
   sessionId: string,
-  userId: string,
+  userId: string
 ): Promise<void> {
   const db = drizzle(env.DB)
   // Only act when the session has no active org yet.
   const session = (await db.all(
-    sql`SELECT activeOrganizationId FROM session WHERE id = ${sessionId} LIMIT 1`,
+    sql`SELECT activeOrganizationId FROM session WHERE id = ${sessionId} LIMIT 1`
   )) as Array<{ activeOrganizationId: string | null }>
   if (!session[0] || session[0].activeOrganizationId) return
 
   const earliest = (await db.all(
     sql`SELECT organizationId FROM member WHERE userId = ${userId}
-        ORDER BY createdAt ASC LIMIT 1`,
+        ORDER BY createdAt ASC LIMIT 1`
   )) as Array<{ organizationId: string }>
   if (!earliest[0]) return
 
   await db.run(
     sql`UPDATE session SET activeOrganizationId = ${earliest[0].organizationId}
-        WHERE id = ${sessionId}`,
+        WHERE id = ${sessionId}`
   )
 }

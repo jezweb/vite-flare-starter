@@ -33,7 +33,13 @@ app.use('*', authMiddleware)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const requireImages = async (c: any, next: any) => {
   if (!c.env.IMAGES) {
-    return c.json({ error: 'Cloudflare Images binding not configured. Add "images": { "binding": "IMAGES" } to wrangler.jsonc.' }, 501)
+    return c.json(
+      {
+        error:
+          'Cloudflare Images binding not configured. Add "images": { "binding": "IMAGES" } to wrangler.jsonc.',
+      },
+      501
+    )
   }
   await next()
 }
@@ -104,7 +110,10 @@ app.post('/remove-bg', async (c) => {
     const response = await transformImage(c.env.IMAGES as any, await file.arrayBuffer(), options)
     return response
   } catch (error) {
-    return c.json({ error: error instanceof Error ? error.message : 'Background removal failed' }, 500)
+    return c.json(
+      { error: error instanceof Error ? error.message : 'Background removal failed' },
+      500
+    )
   }
 })
 
@@ -115,10 +124,13 @@ app.post('/remove-bg', async (c) => {
  */
 app.post(
   '/thumbnail',
-  zValidator('query', z.object({
-    size: z.coerce.number().min(16).max(2000).optional().default(200),
-    format: z.enum(['webp', 'jpeg', 'avif', 'png']).optional().default('webp'),
-  })),
+  zValidator(
+    'query',
+    z.object({
+      size: z.coerce.number().min(16).max(2000).optional().default(200),
+      format: z.enum(['webp', 'jpeg', 'avif', 'png']).optional().default('webp'),
+    })
+  ),
   async (c) => {
     try {
       const { size, format } = c.req.valid('query')
@@ -149,11 +161,14 @@ app.post(
  */
 app.post(
   '/optimize',
-  zValidator('query', z.object({
-    format: z.enum(['webp', 'avif', 'auto']).optional().default('webp'),
-    quality: z.coerce.number().min(1).max(100).optional().default(80),
-    maxWidth: z.coerce.number().min(1).max(8000).optional(),
-  })),
+  zValidator(
+    'query',
+    z.object({
+      format: z.enum(['webp', 'avif', 'auto']).optional().default('webp'),
+      quality: z.coerce.number().min(1).max(100).optional().default(80),
+      maxWidth: z.coerce.number().min(1).max(8000).optional(),
+    })
+  ),
   async (c) => {
     try {
       const { format, quality, maxWidth } = c.req.valid('query')

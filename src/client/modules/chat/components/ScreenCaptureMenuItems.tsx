@@ -30,11 +30,7 @@ import { usePromptInputAttachments } from '@/components/ai-elements/prompt-input
 
 /** Generate a safe, sortable filename for a screen-capture artifact. */
 function timestampName(prefix: string, ext: string): string {
-  const ts = new Date()
-    .toISOString()
-    .replaceAll(/[:.]/g, '-')
-    .replace('T', '_')
-    .replace('Z', '')
+  const ts = new Date().toISOString().replaceAll(/[:.]/g, '-').replace('T', '_').replace('Z', '')
   return `${prefix}-${ts}.${ext}`
 }
 
@@ -59,7 +55,9 @@ type ScreenshotState =
 
 export function PromptInputActionAddScreenshotCountdown({
   label = 'Take screenshot',
-}: { label?: string }) {
+}: {
+  label?: string
+}) {
   const attachments = usePromptInputAttachments()
   const [state, setState] = useState<ScreenshotState>({ kind: 'idle' })
   const videoRef = useRef<HTMLVideoElement | null>(null)
@@ -72,7 +70,11 @@ export function PromptInputActionAddScreenshotCountdown({
       stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false })
     } catch (err) {
       // User cancelled the source picker — bail silently.
-      if (err instanceof DOMException && (err.name === 'NotAllowedError' || err.name === 'AbortError')) return
+      if (
+        err instanceof DOMException &&
+        (err.name === 'NotAllowedError' || err.name === 'AbortError')
+      )
+        return
       throw err
     }
     setState({ kind: 'preview', stream, countdown: 3 })
@@ -154,19 +156,24 @@ export function PromptInputActionAddScreenshotCountdown({
         <Monitor className="mr-2 size-4" />
         {label}
       </DropdownMenuItem>
-      {state.kind === 'preview' && createPortal(
-        <ScreenCapturePreviewCard
-          title="Screenshot"
-          subtitle={`Capturing in ${state.countdown}s…`}
-          videoRef={videoRef}
-          primary={{ label: 'Capture now', onClick: capture, icon: <Circle className="size-3.5 fill-current" /> }}
-          secondary={[
-            { label: 'Retake', onClick: retake, icon: <RefreshCw className="size-3.5" /> },
-            { label: 'Cancel', onClick: cancel, icon: <X className="size-3.5" /> },
-          ]}
-        />,
-        document.body,
-      )}
+      {state.kind === 'preview' &&
+        createPortal(
+          <ScreenCapturePreviewCard
+            title="Screenshot"
+            subtitle={`Capturing in ${state.countdown}s…`}
+            videoRef={videoRef}
+            primary={{
+              label: 'Capture now',
+              onClick: capture,
+              icon: <Circle className="size-3.5 fill-current" />,
+            }}
+            secondary={[
+              { label: 'Retake', onClick: retake, icon: <RefreshCw className="size-3.5" /> },
+              { label: 'Cancel', onClick: cancel, icon: <X className="size-3.5" /> },
+            ]}
+          />,
+          document.body
+        )}
     </>
   )
 }
@@ -194,7 +201,7 @@ type CaptureStepsState =
 
 /** Build a 4-column grid PNG from a list of frames with timestamp captions. */
 async function compositeFrames(
-  frames: { dataUrl: string; timestampMs: number }[],
+  frames: { dataUrl: string; timestampMs: number }[]
 ): Promise<Blob | null> {
   if (frames.length === 0) return null
   // Load each frame into an <img> so we can draw it at known dimensions.
@@ -206,8 +213,8 @@ async function compositeFrames(
           img.onload = () => resolve(img)
           img.onerror = () => reject(new Error('frame load failed'))
           img.src = f.dataUrl
-        }),
-    ),
+        })
+    )
   )
   // Each cell is 480x270 (16:9). Four columns, variable rows.
   const CELL_W = 480
@@ -252,7 +259,7 @@ async function compositeFrames(
 /** Replay a recorded webm blob and sample frames at fixed intervals. */
 async function sampleFrames(
   blob: Blob,
-  maxFrames: number,
+  maxFrames: number
 ): Promise<{ frames: { dataUrl: string; timestampMs: number }[]; durationMs: number }> {
   const url = URL.createObjectURL(blob)
   const video = document.createElement('video')
@@ -268,7 +275,12 @@ async function sampleFrames(
     // Nudge it if needed.
     if (!isFinite(video.duration)) {
       video.currentTime = 1e10
-      await new Promise<void>((resolve) => { video.ontimeupdate = () => { video.ontimeupdate = null; resolve() } })
+      await new Promise<void>((resolve) => {
+        video.ontimeupdate = () => {
+          video.ontimeupdate = null
+          resolve()
+        }
+      })
     }
     const durationMs = Math.max(1000, Math.floor((video.duration || 5) * 1000))
     const frameCount = Math.min(maxFrames, Math.max(2, Math.floor(durationMs / 3000) + 1))
@@ -282,7 +294,10 @@ async function sampleFrames(
       // opening and closing frames at the extremes.
       const t = (i / Math.max(1, frameCount - 1)) * (durationMs / 1000)
       await new Promise<void>((resolve) => {
-        video.onseeked = () => { video.onseeked = null; resolve() }
+        video.onseeked = () => {
+          video.onseeked = null
+          resolve()
+        }
         video.currentTime = t
       })
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
@@ -302,7 +317,9 @@ async function sampleFrames(
 async function extractWavFromRecording(blob: Blob): Promise<Blob | null> {
   try {
     const arrayBuffer = await blob.arrayBuffer()
-    const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+    const AC =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
     const tmp = new AC()
     const audioBuffer = await tmp.decodeAudioData(arrayBuffer.slice(0))
     tmp.close()
@@ -367,9 +384,7 @@ async function transcribeAudio(blob: Blob): Promise<string | null> {
   }
 }
 
-export function PromptInputActionAddScreenCapture({
-  label = 'Capture steps',
-}: { label?: string }) {
+export function PromptInputActionAddScreenCapture({ label = 'Capture steps' }: { label?: string }) {
   const attachments = usePromptInputAttachments()
   const [state, setState] = useState<CaptureStepsState>({ kind: 'idle' })
   const [withAudio, setWithAudio] = useState(true)
@@ -410,7 +425,9 @@ export function PromptInputActionAddScreenCapture({
         : 'video/webm;codecs=vp8,opus'
       const recorder = new MediaRecorder(combined, { mimeType: mime })
       const chunks: Blob[] = []
-      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data) }
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data)
+      }
       recorder.start(1000)
 
       setState({
@@ -425,7 +442,10 @@ export function PromptInputActionAddScreenCapture({
     } catch (err) {
       stopStream(displayStream)
       stopStream(micStream)
-      if (err instanceof DOMException && (err.name === 'NotAllowedError' || err.name === 'AbortError')) {
+      if (
+        err instanceof DOMException &&
+        (err.name === 'NotAllowedError' || err.name === 'AbortError')
+      ) {
         setState({ kind: 'idle' })
         return
       }
@@ -437,7 +457,9 @@ export function PromptInputActionAddScreenCapture({
     if (state.kind !== 'recording') return
     const { recorder, chunks, stream, withAudio: recordedWithAudio } = state
     // Stop & drain.
-    const stopped = new Promise<void>((resolve) => { recorder.onstop = () => resolve() })
+    const stopped = new Promise<void>((resolve) => {
+      recorder.onstop = () => resolve()
+    })
     recorder.stop()
     await stopped
     stopStream(stream)
@@ -468,7 +490,7 @@ export function PromptInputActionAddScreenCapture({
             if (ta) {
               const setter = Object.getOwnPropertyDescriptor(
                 window.HTMLTextAreaElement.prototype,
-                'value',
+                'value'
               )?.set
               const prefix = `[Screen capture (${(durationMs / 1000).toFixed(1)}s) narration]\n${transcript}\n\n`
               setter?.call(ta, prefix + ta.value)
@@ -486,7 +508,9 @@ export function PromptInputActionAddScreenCapture({
 
   const cancelRecording = useCallback(() => {
     if (state.kind !== 'recording') return
-    try { state.recorder.stop() } catch {}
+    try {
+      state.recorder.stop()
+    } catch {}
     stopStream(state.stream)
     setState({ kind: 'idle' })
   }, [state])
@@ -531,53 +555,77 @@ export function PromptInputActionAddScreenCapture({
         {label}
       </DropdownMenuItem>
 
-      {state.kind === 'config' && createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 p-4" onClick={() => setState({ kind: 'idle' })}>
-          <div className="w-full max-w-sm rounded-lg border bg-background p-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-sm font-medium mb-2">Capture steps</h3>
-            <p className="text-xs text-muted-foreground mb-4">
-              Records up to {MAX_DURATION_MS / 1000}s of your screen, then makes a single
-              image of the key frames you can send to any vision model.
-            </p>
-            <label className="flex items-center justify-between py-2">
-              <div>
-                <div className="text-sm">Record narration</div>
-                <div className="text-[11px] text-muted-foreground">Your voice is transcribed and added to the prompt</div>
+      {state.kind === 'config' &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 p-4"
+            onClick={() => setState({ kind: 'idle' })}
+          >
+            <div
+              className="w-full max-w-sm rounded-lg border bg-background p-4 shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-sm font-medium mb-2">Capture steps</h3>
+              <p className="text-xs text-muted-foreground mb-4">
+                Records up to {MAX_DURATION_MS / 1000}s of your screen, then makes a single image of
+                the key frames you can send to any vision model.
+              </p>
+              <label className="flex items-center justify-between py-2">
+                <div>
+                  <div className="text-sm">Record narration</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    Your voice is transcribed and added to the prompt
+                  </div>
+                </div>
+                <Switch checked={withAudio} onCheckedChange={setWithAudio} />
+              </label>
+              <div className="flex justify-end gap-2 mt-3">
+                <Button variant="ghost" size="sm" onClick={() => setState({ kind: 'idle' })}>
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    void beginRecording()
+                  }}
+                >
+                  <Circle className="size-3.5 mr-1 fill-red-500 text-red-500" />
+                  Start recording
+                </Button>
               </div>
-              <Switch checked={withAudio} onCheckedChange={setWithAudio} />
-            </label>
-            <div className="flex justify-end gap-2 mt-3">
-              <Button variant="ghost" size="sm" onClick={() => setState({ kind: 'idle' })}>Cancel</Button>
-              <Button size="sm" onClick={() => { void beginRecording() }}>
-                <Circle className="size-3.5 mr-1 fill-red-500 text-red-500" />
-                Start recording
-              </Button>
             </div>
-          </div>
-        </div>,
-        document.body,
-      )}
+          </div>,
+          document.body
+        )}
 
-      {state.kind === 'recording' && createPortal(
-        <ScreenCapturePreviewCard
-          title="Recording"
-          subtitle={`${(state.elapsedMs / 1000).toFixed(1)}s / ${MAX_DURATION_MS / 1000}s`}
-          videoRef={videoRef}
-          accent="record"
-          primary={{ label: 'Stop', onClick: () => { void finishRecording() }, icon: <Square className="size-3.5 fill-current" /> }}
-          secondary={[
-            { label: 'Cancel', onClick: cancelRecording, icon: <X className="size-3.5" /> },
-          ]}
-        />,
-        document.body,
-      )}
+      {state.kind === 'recording' &&
+        createPortal(
+          <ScreenCapturePreviewCard
+            title="Recording"
+            subtitle={`${(state.elapsedMs / 1000).toFixed(1)}s / ${MAX_DURATION_MS / 1000}s`}
+            videoRef={videoRef}
+            accent="record"
+            primary={{
+              label: 'Stop',
+              onClick: () => {
+                void finishRecording()
+              },
+              icon: <Square className="size-3.5 fill-current" />,
+            }}
+            secondary={[
+              { label: 'Cancel', onClick: cancelRecording, icon: <X className="size-3.5" /> },
+            ]}
+          />,
+          document.body
+        )}
 
-      {state.kind === 'processing' && createPortal(
-        <div className="fixed bottom-24 right-4 z-50 rounded-lg border bg-background px-3 py-2 text-xs shadow-lg">
-          Processing capture…
-        </div>,
-        document.body,
-      )}
+      {state.kind === 'processing' &&
+        createPortal(
+          <div className="fixed bottom-24 right-4 z-50 rounded-lg border bg-background px-3 py-2 text-xs shadow-lg">
+            Processing capture…
+          </div>,
+          document.body
+        )}
     </>
   )
 }
@@ -595,23 +643,29 @@ interface PreviewCardProps {
   secondary: { label: string; onClick: () => void; icon: React.ReactNode }[]
 }
 
-function ScreenCapturePreviewCard({ title, subtitle, videoRef, accent = 'default', primary, secondary }: PreviewCardProps) {
+function ScreenCapturePreviewCard({
+  title,
+  subtitle,
+  videoRef,
+  accent = 'default',
+  primary,
+  secondary,
+}: PreviewCardProps) {
   return (
     <div className="fixed bottom-24 right-4 z-50 w-72 overflow-hidden rounded-lg border bg-background shadow-2xl">
-      <div className={cn(
-        'flex items-center justify-between px-3 py-2 text-xs',
-        accent === 'record' ? 'bg-red-500/10 text-red-600 dark:text-red-400' : 'bg-muted',
-      )}>
+      <div
+        className={cn(
+          'flex items-center justify-between px-3 py-2 text-xs',
+          accent === 'record' ? 'bg-red-500/10 text-red-600 dark:text-red-400' : 'bg-muted'
+        )}
+      >
         <div className="flex items-center gap-1.5">
           {accent === 'record' && <span className="size-2 rounded-full bg-red-500 animate-pulse" />}
           <span className="font-medium">{title}</span>
         </div>
         <span className="tabular-nums">{subtitle}</span>
       </div>
-      <video
-        ref={videoRef}
-        className="aspect-video w-full bg-black object-contain"
-      />
+      <video ref={videoRef} className="aspect-video w-full bg-black object-contain" />
       <div className="flex items-center gap-1 p-2">
         <Button size="sm" className="flex-1 gap-1.5" onClick={primary.onClick}>
           {primary.icon}

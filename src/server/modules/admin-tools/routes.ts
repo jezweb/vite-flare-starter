@@ -13,10 +13,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { and, eq } from 'drizzle-orm'
 
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
-import {
-  conversations,
-  conversationMembers,
-} from '@/server/modules/conversations/db/schema'
+import { conversations, conversationMembers } from '@/server/modules/conversations/db/schema'
 
 const app = new Hono<AuthContext>()
 app.use('*', authMiddleware)
@@ -36,8 +33,8 @@ app.post('/ensure-space', async (c) => {
       and(
         eq(conversations.userId, userId),
         eq(conversations.kind, 'space'),
-        eq(conversations.title, ADMIN_TITLE),
-      ),
+        eq(conversations.title, ADMIN_TITLE)
+      )
     )
     .limit(1)
   if (existing.length > 0 && existing[0]) {

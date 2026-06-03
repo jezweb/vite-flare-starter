@@ -6,10 +6,7 @@
  * Everything else (storage, UI, chat tool) is generic.
  */
 import { uploadSkillToR2 } from '@/server/lib/ai/skills/registry'
-import type {
-  ConfigDiffProposal,
-  ConfigDiffResource,
-} from '@/shared/config/diff-proposal'
+import type { ConfigDiffProposal, ConfigDiffResource } from '@/shared/config/diff-proposal'
 
 export interface ApplyEnv {
   DB: D1Database
@@ -26,7 +23,7 @@ export interface ApplyEnv {
 export async function loadCurrentContent(
   env: ApplyEnv,
   resource: Pick<ConfigDiffResource, 'kind' | 'id'>,
-  userId: string,
+  userId: string
 ): Promise<string> {
   switch (resource.kind) {
     case 'skill': {
@@ -60,15 +57,12 @@ export async function loadCurrentContent(
  * proposal's status has been flipped to 'applied' — this function is
  * pure effect.
  */
-export async function applyProposal(
-  env: ApplyEnv,
-  proposal: ConfigDiffProposal,
-): Promise<void> {
+export async function applyProposal(env: ApplyEnv, proposal: ConfigDiffProposal): Promise<void> {
   switch (proposal.resource.kind) {
     case 'skill': {
       if (!env.SKILLS) {
         throw new Error(
-          'SKILLS R2 bucket not configured — cannot persist skill edits. Add the binding in wrangler.jsonc.',
+          'SKILLS R2 bucket not configured — cannot persist skill edits. Add the binding in wrangler.jsonc.'
         )
       }
       // uploadSkillToR2 writes to `${userId}/${name}/SKILL.md` and
@@ -81,8 +75,6 @@ export async function applyProposal(
     case 'system-prompt':
     case 'setting':
     case 'connector-tool-policy':
-      throw new Error(
-        `Apply handler for kind "${proposal.resource.kind}" not yet implemented.`,
-      )
+      throw new Error(`Apply handler for kind "${proposal.resource.kind}" not yet implemented.`)
   }
 }

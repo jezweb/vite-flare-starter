@@ -1,4 +1,4 @@
-import { defineConfig } from 'drizzle-kit';
+import { defineConfig } from 'drizzle-kit'
 
 // Drizzle Kit Configuration
 // Documentation: https://orm.drizzle.team/kit-docs/config-reference
@@ -42,4 +42,4 @@ export default defineConfig({
 
   // Strict mode (recommended)
   strict: true,
-});
+})

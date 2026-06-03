@@ -115,12 +115,14 @@ export function VideoInputExamplePage() {
       if (err instanceof Error) {
         if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
           setError(
-            "Camera access denied. Grant permission in your browser's site settings, then click Start again.",
+            "Camera access denied. Grant permission in your browser's site settings, then click Start again."
           )
         } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
           setError('No camera found. Connect a camera or use a device with one.')
         } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-          setError('Camera is in use by another application. Close other apps that might be using it.')
+          setError(
+            'Camera is in use by another application. Close other apps that might be using it.'
+          )
         } else if (err.name === 'OverconstrainedError') {
           setError('No camera matching the requested settings. Try a different device.')
         } else {
@@ -156,11 +158,11 @@ export function VideoInputExamplePage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Video Input Example</h1>
         <p className="mt-1 text-muted-foreground">
-          Sampled-frames-over-WebSocket reference scaffold. No Cloudflare
-          Realtime SDK required — just <code className="px-1 py-0.5 rounded bg-muted font-mono text-sm">getUserMedia</code>,{' '}
-          <code className="px-1 py-0.5 rounded bg-muted font-mono text-sm">&lt;canvas&gt;</code>, and the{' '}
-          <code className="px-1 py-0.5 rounded bg-muted font-mono text-sm">agents</code> SDK WebSocket. Session id{' '}
-          <code className="font-mono text-xs">{sessionId.slice(0, 8)}</code>.
+          Sampled-frames-over-WebSocket reference scaffold. No Cloudflare Realtime SDK required —
+          just <code className="px-1 py-0.5 rounded bg-muted font-mono text-sm">getUserMedia</code>,{' '}
+          <code className="px-1 py-0.5 rounded bg-muted font-mono text-sm">&lt;canvas&gt;</code>,
+          and the <code className="px-1 py-0.5 rounded bg-muted font-mono text-sm">agents</code> SDK
+          WebSocket. Session id <code className="font-mono text-xs">{sessionId.slice(0, 8)}</code>.
         </p>
       </div>
 
@@ -186,11 +188,7 @@ export function VideoInputExamplePage() {
               playsInline
               aria-label="Camera preview"
             />
-            {!isActive && (
-              <div className="absolute text-sm text-muted-foreground">
-                Camera off
-              </div>
-            )}
+            {!isActive && <div className="absolute text-sm text-muted-foreground">Camera off</div>}
           </div>
 
           {/* Hidden canvas for frame capture */}
@@ -250,9 +248,7 @@ export function VideoInputExamplePage() {
                   <li key={`${c.ts}-${i}`} className="border-l-2 border-border pl-3">
                     <span className="text-foreground">{c.text}</span>
                     {c.durationMs != null && (
-                      <span className="ml-2 font-mono text-[11px]">
-                        · {c.durationMs}ms
-                      </span>
+                      <span className="ml-2 font-mono text-[11px]">· {c.durationMs}ms</span>
                     )}
                   </li>
                 ))}
@@ -269,11 +265,13 @@ export function VideoInputExamplePage() {
             <li>
               Browser grabs a <code className="font-mono text-xs">MediaStream</code> via{' '}
               <code className="font-mono text-xs">getUserMedia</code> and opens a WS to{' '}
-              <code className="font-mono text-xs">/agents/video-input-example/&#123;sessionId&#125;</code>
+              <code className="font-mono text-xs">
+                /agents/video-input-example/&#123;sessionId&#125;
+              </code>
             </li>
             <li>
-              Every {SAMPLE_INTERVAL_MS / 1000} seconds, a frame is drawn onto a canvas
-              and encoded as a JPEG data URL (~{FRAME_MAX_WIDTH}px wide for bandwidth)
+              Every {SAMPLE_INTERVAL_MS / 1000} seconds, a frame is drawn onto a canvas and encoded
+              as a JPEG data URL (~{FRAME_MAX_WIDTH}px wide for bandwidth)
             </li>
             <li>
               The DO's <code className="font-mono text-xs">onMessage</code> handler runs the frame

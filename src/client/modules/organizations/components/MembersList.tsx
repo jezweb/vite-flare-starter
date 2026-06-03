@@ -115,7 +115,7 @@ export function MembersList({ organizationId, myRole }: Props) {
               <span className="hidden sm:inline text-[11px] text-muted-foreground tabular-nums">
                 joined <Time value={m.createdAt} display="relative" />
               </span>
-              {(canChangeRole || canRemoveThisMember) ? (
+              {canChangeRole || canRemoveThisMember ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -177,4 +177,3 @@ export function MembersList({ organizationId, myRole }: Props) {
     </>
   )
 }
-

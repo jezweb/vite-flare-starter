@@ -103,10 +103,7 @@ export async function ensureBundledSynced(env: SkillsEnv): Promise<void> {
  *
  * Auto-syncs bundled skills on first call per isolate. Idempotent.
  */
-export async function listSkills(
-  env: SkillsEnv,
-  userId: string,
-): Promise<SkillSummary[]> {
+export async function listSkills(env: SkillsEnv, userId: string): Promise<SkillSummary[]> {
   const db = drizzle(env.DB)
 
   await ensureBundledSynced(env)
@@ -123,15 +120,13 @@ export async function listSkills(
     .where(
       and(
         eq(skills.enabled, true),
-        or(eq(skills.userId, userId), eq(skills.userId, BUNDLED_USER_ID)),
-      ),
+        or(eq(skills.userId, userId), eq(skills.userId, BUNDLED_USER_ID))
+      )
     )
 
   // Index user's overrides by name, then prefer them over bundled.
-  const personalByName = new Map(
-    rows.filter((r) => r.userId === userId).map((r) => [r.name, r]),
-  )
-  const merged = new Map<string, typeof rows[number]>()
+  const personalByName = new Map(rows.filter((r) => r.userId === userId).map((r) => [r.name, r]))
+  const merged = new Map<string, (typeof rows)[number]>()
   for (const row of rows) {
     if (row.userId === userId) {
       merged.set(row.name, row)
@@ -176,7 +171,7 @@ export async function listSkills(
  */
 export async function loadAlwaysActiveSkills(
   env: SkillsEnv,
-  userId: string,
+  userId: string
 ): Promise<LoadedSkill[]> {
   const summaries = await listSkills(env, userId)
   const candidates = summaries
@@ -200,7 +195,7 @@ export async function loadAlwaysActiveSkills(
 export async function loadSkill(
   env: SkillsEnv,
   name: string,
-  userId: string,
+  userId: string
 ): Promise<LoadedSkill | null> {
   const db = drizzle(env.DB)
   // Pull both rows in one query, pick the user's override if present.
@@ -208,13 +203,11 @@ export async function loadSkill(
     .select()
     .from(skills)
     .where(
-      and(
-        eq(skills.name, name),
-        or(eq(skills.userId, userId), eq(skills.userId, BUNDLED_USER_ID)),
-      ),
+      and(eq(skills.name, name), or(eq(skills.userId, userId), eq(skills.userId, BUNDLED_USER_ID)))
     )
 
-  const row = rows.find((r) => r.userId === userId) ?? rows.find((r) => r.userId === BUNDLED_USER_ID)
+  const row =
+    rows.find((r) => r.userId === userId) ?? rows.find((r) => r.userId === BUNDLED_USER_ID)
   if (!row || !row.enabled) return null
 
   let content: string
@@ -260,13 +253,15 @@ export async function loadSkill(
           content = await cached.text()
         } else {
           const response = await fetch(row.path)
-          if (!response.ok) throw new Error(`Failed to fetch skill from ${row.path}: ${response.status}`)
+          if (!response.ok)
+            throw new Error(`Failed to fetch skill from ${row.path}: ${response.status}`)
           content = await response.text()
           await env.SKILLS.put(cacheKey, content)
         }
       } else {
         const response = await fetch(row.path)
-        if (!response.ok) throw new Error(`Failed to fetch skill from ${row.path}: ${response.status}`)
+        if (!response.ok)
+          throw new Error(`Failed to fetch skill from ${row.path}: ${response.status}`)
         content = await response.text()
       }
       directory = `github:${row.path}`
@@ -298,7 +293,9 @@ export async function loadSkill(
  * Sync bundled skills to the registry. Call on startup or via admin action.
  * Also cleans up bundled entries that no longer exist.
  */
-export async function syncBundledSkills(env: SkillsEnv): Promise<{ added: number; updated: number; removed: number }> {
+export async function syncBundledSkills(
+  env: SkillsEnv
+): Promise<{ added: number; updated: number; removed: number }> {
   const db = drizzle(env.DB)
   const bundled = await listBundledSkills()
   // Pull EVERY row owned by the bundled sentinel regardless of source.
@@ -307,10 +304,7 @@ export async function syncBundledSkills(env: SkillsEnv): Promise<{ added: number
   // subsequent INSERT hit a UNIQUE constraint on (userId, name).
   // We treat any pre-existing row at (BUNDLED_USER_ID, name) as the
   // target and upsert it back to source='bundled'.
-  const existing = await db
-    .select()
-    .from(skills)
-    .where(eq(skills.userId, BUNDLED_USER_ID))
+  const existing = await db.select().from(skills).where(eq(skills.userId, BUNDLED_USER_ID))
 
   const existingByName = new Map(existing.map((s) => [s.name, s]))
   const bundledNames = new Set(bundled.map((s) => s.name))
@@ -384,7 +378,7 @@ export async function syncBundledSkills(env: SkillsEnv): Promise<{ added: number
 export async function addGitHubSkill(
   env: SkillsEnv,
   url: string,
-  userId: string = BUNDLED_USER_ID,
+  userId: string = BUNDLED_USER_ID
 ): Promise<{ name: string; description: string }> {
   const response = await fetch(url)
   if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.status}`)
@@ -440,23 +434,27 @@ export async function addGitHubSkill(
 export async function addGitHubSkillDirectory(
   env: SkillsEnv,
   input: string,
-  userId: string = BUNDLED_USER_ID,
+  userId: string = BUNDLED_USER_ID
 ): Promise<{ name: string; description: string; files: string[] }> {
-  if (!env.SKILLS) throw new Error('SKILLS R2 bucket required for directory imports — bind it in wrangler.jsonc')
+  if (!env.SKILLS)
+    throw new Error('SKILLS R2 bucket required for directory imports — bind it in wrangler.jsonc')
 
   const spec = parseGitHubSpec(input)
   if (!spec) {
     throw new Error(
       `Could not parse GitHub directory URL: "${input}". Try a format like ` +
-      `"https://github.com/owner/repo/tree/main/skill-name" or the shorthand ` +
-      `"owner/repo/skill-name".`,
+        `"https://github.com/owner/repo/tree/main/skill-name" or the shorthand ` +
+        `"owner/repo/skill-name".`
     )
   }
 
   // Walk the tree at {owner}/{repo}/{path}@{ref}
   const files = await listGitHubTree(spec)
   const skillMd = files.find((f) => f.path === 'SKILL.md')
-  if (!skillMd) throw new Error(`No SKILL.md found at ${spec.owner}/${spec.repo}/${spec.path} (ref: ${spec.ref})`)
+  if (!skillMd)
+    throw new Error(
+      `No SKILL.md found at ${spec.owner}/${spec.repo}/${spec.path} (ref: ${spec.ref})`
+    )
 
   // Fetch SKILL.md first to validate and get the skill name
   const skillMdContent = await fetchGitHubBlob(spec, skillMd.path)
@@ -478,7 +476,9 @@ export async function addGitHubSkillDirectory(
       throw new Error(`Directory exceeds 10 MB limit; import aborted at ${file.path}.`)
     }
     const r2Key = `${r2Prefix}/${file.path}`
-    await env.SKILLS.put(r2Key, content, { httpMetadata: { contentType: guessMimeType(file.path) } })
+    await env.SKILLS.put(r2Key, content, {
+      httpMetadata: { contentType: guessMimeType(file.path) },
+    })
   }
 
   // Register the skill pointing to R2 source.
@@ -498,7 +498,10 @@ export async function addGitHubSkillDirectory(
     }),
   }
   if (existing) {
-    await db.update(skills).set({ ...values, updatedAt: new Date() }).where(eq(skills.id, existing.id))
+    await db
+      .update(skills)
+      .set({ ...values, updatedAt: new Date() })
+      .where(eq(skills.id, existing.id))
   } else {
     await db.insert(skills).values({ userId, name: skillName, ...values })
   }
@@ -520,9 +523,10 @@ export async function addGitHubSkillDirectory(
 export async function addSkillFromZip(
   env: SkillsEnv,
   zipBytes: Uint8Array,
-  userId: string = BUNDLED_USER_ID,
+  userId: string = BUNDLED_USER_ID
 ): Promise<{ name: string; description: string; files: string[] }> {
-  if (!env.SKILLS) throw new Error('SKILLS R2 bucket required for zip imports — bind it in wrangler.jsonc')
+  if (!env.SKILLS)
+    throw new Error('SKILLS R2 bucket required for zip imports — bind it in wrangler.jsonc')
 
   const { unzipSync, strFromU8 } = await import('fflate')
   const unzipped = unzipSync(zipBytes)
@@ -542,7 +546,8 @@ export async function addSkillFromZip(
   }
 
   const skillMd = filesByPath['SKILL.md']
-  if (!skillMd) throw new Error('Zip must contain SKILL.md at the root (or inside a single wrapping folder).')
+  if (!skillMd)
+    throw new Error('Zip must contain SKILL.md at the root (or inside a single wrapping folder).')
 
   const skillMdText = strFromU8(skillMd)
   const parsed = parseSkill(skillMdText)
@@ -552,7 +557,8 @@ export async function addSkillFromZip(
   const MAX_TOTAL = 10 * 1024 * 1024
   let totalBytes = 0
   for (const buf of Object.values(filesByPath)) totalBytes += buf.length
-  if (totalBytes > MAX_TOTAL) throw new Error(`Zip contents exceed 10 MB limit (${(totalBytes / 1024 / 1024).toFixed(1)} MB)`)
+  if (totalBytes > MAX_TOTAL)
+    throw new Error(`Zip contents exceed 10 MB limit (${(totalBytes / 1024 / 1024).toFixed(1)} MB)`)
 
   // Upload each file into R2 under `${userId}/${skillName}/<rel>`
   const r2Prefix = `${userId}/${skillName}`
@@ -575,7 +581,10 @@ export async function addSkillFromZip(
     metadata: JSON.stringify({ ...parsed.frontmatter, _origin: 'zip-upload' }),
   }
   if (existing) {
-    await db.update(skills).set({ ...values, updatedAt: new Date() }).where(eq(skills.id, existing.id))
+    await db
+      .update(skills)
+      .set({ ...values, updatedAt: new Date() })
+      .where(eq(skills.id, existing.id))
   } else {
     await db.insert(skills).values({ userId, name: skillName, ...values })
   }
@@ -606,13 +615,14 @@ function parseGitHubSpec(input: string): GitHubSpec | null {
   const trimmed = input.trim().replace(/\/+$/, '')
 
   // https://github.com/{owner}/{repo}/(tree|blob)/{ref}/{path}
-  const urlMatch = trimmed.match(/^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/(tree|blob)\/([^/]+)\/(.+)$/)
+  const urlMatch = trimmed.match(
+    /^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/(tree|blob)\/([^/]+)\/(.+)$/
+  )
   if (urlMatch) {
     const [, owner, repo, kind, ref, rest] = urlMatch
     // If the user linked to the SKILL.md itself, trim back to the parent dir
-    const path = kind === 'blob' && rest!.endsWith('SKILL.md')
-      ? rest!.replace(/\/SKILL\.md$/, '')
-      : rest!
+    const path =
+      kind === 'blob' && rest!.endsWith('SKILL.md') ? rest!.replace(/\/SKILL\.md$/, '') : rest!
     return { owner: owner!, repo: repo!, ref: ref!, path }
   }
 
@@ -627,7 +637,7 @@ function parseGitHubSpec(input: string): GitHubSpec | null {
 }
 
 interface GitHubFile {
-  path: string  // relative to spec.path
+  path: string // relative to spec.path
   sha: string
   size: number
 }
@@ -645,9 +655,14 @@ async function listGitHubTree(spec: GitHubSpec): Promise<GitHubFile[]> {
     },
   })
   if (!resp.ok) throw new Error(`GitHub tree fetch failed: ${resp.status} ${resp.statusText}`)
-  const data = await resp.json() as { tree: Array<{ path: string; type: string; sha: string; size?: number }>; truncated?: boolean }
+  const data = (await resp.json()) as {
+    tree: Array<{ path: string; type: string; sha: string; size?: number }>
+    truncated?: boolean
+  }
   if (data.truncated) {
-    console.warn(`GitHub tree response truncated for ${spec.owner}/${spec.repo}@${spec.ref}; some files may be missing.`)
+    console.warn(
+      `GitHub tree response truncated for ${spec.owner}/${spec.repo}@${spec.ref}; some files may be missing.`
+    )
   }
   const prefix = spec.path ? `${spec.path}/` : ''
   return data.tree
@@ -675,12 +690,24 @@ async function fetchGitHubBlob(spec: GitHubSpec, relPath: string): Promise<strin
 function guessMimeType(path: string): string {
   const ext = path.toLowerCase().split('.').pop() || ''
   const map: Record<string, string> = {
-    md: 'text/markdown', txt: 'text/plain', json: 'application/json',
-    yaml: 'application/yaml', yml: 'application/yaml',
-    py: 'text/x-python', sh: 'text/x-shellscript', bash: 'text/x-shellscript',
-    js: 'text/javascript', mjs: 'text/javascript', ts: 'text/typescript',
-    csv: 'text/csv', html: 'text/html', xml: 'application/xml',
-    png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', svg: 'image/svg+xml',
+    md: 'text/markdown',
+    txt: 'text/plain',
+    json: 'application/json',
+    yaml: 'application/yaml',
+    yml: 'application/yaml',
+    py: 'text/x-python',
+    sh: 'text/x-shellscript',
+    bash: 'text/x-shellscript',
+    js: 'text/javascript',
+    mjs: 'text/javascript',
+    ts: 'text/typescript',
+    csv: 'text/csv',
+    html: 'text/html',
+    xml: 'application/xml',
+    png: 'image/png',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    svg: 'image/svg+xml',
   }
   return map[ext] || 'application/octet-stream'
 }

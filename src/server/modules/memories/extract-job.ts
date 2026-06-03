@@ -98,9 +98,7 @@ export interface ExtractOutput {
  *   4. Call Workers AI with structured-output schema; one retry on parse fail
  *   5. Validate result; return for the caller to apply
  */
-export async function extractMemoryFromConversation(
-  input: ExtractInput,
-): Promise<ExtractOutput> {
+export async function extractMemoryFromConversation(input: ExtractInput): Promise<ExtractOutput> {
   const { db, ai, conversationId, userId } = input
   const d = drizzle(db)
 
@@ -173,7 +171,13 @@ export async function extractMemoryFromConversation(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const raw: any = await ai.run(EXTRACTION_MODEL, {
         messages: [
-          { role: 'system', content: attempt === 1 ? systemPrompt : `${systemPrompt}\n\nIMPORTANT: Reply with ONLY a JSON object matching the schema. No prose, no code fence.` },
+          {
+            role: 'system',
+            content:
+              attempt === 1
+                ? systemPrompt
+                : `${systemPrompt}\n\nIMPORTANT: Reply with ONLY a JSON object matching the schema. No prose, no code fence.`,
+          },
           { role: 'user', content: userPrompt },
         ],
         // Don't cap output tokens — see workers-ai-structured-output rule
@@ -184,12 +188,14 @@ export async function extractMemoryFromConversation(
       const parsed = ExtractionResultSchema.safeParse(json)
       if (!parsed.success) {
         if (attempt === 2) {
-          console.warn(JSON.stringify({
-            event: 'memory_extract_schema_fail',
-            conversationId,
-            error: parsed.error.message,
-            sample: text.slice(0, 200),
-          }))
+          console.warn(
+            JSON.stringify({
+              event: 'memory_extract_schema_fail',
+              conversationId,
+              error: parsed.error.message,
+              sample: text.slice(0, 200),
+            })
+          )
           return { ok: false, error: 'schema_validation_failed', meta }
         }
         continue
@@ -200,12 +206,14 @@ export async function extractMemoryFromConversation(
       // memoryUpdateMode for the scope.
       return { ok: true, result: parsed.data, meta }
     } catch (err) {
-      console.warn(JSON.stringify({
-        event: 'memory_extract_call_fail',
-        conversationId,
-        attempt,
-        error: err instanceof Error ? err.message : String(err),
-      }))
+      console.warn(
+        JSON.stringify({
+          event: 'memory_extract_call_fail',
+          conversationId,
+          attempt,
+          error: err instanceof Error ? err.message : String(err),
+        })
+      )
       if (attempt === 2) return { ok: false, error: 'model_call_failed', meta }
     }
   }
@@ -217,9 +225,7 @@ export async function extractMemoryFromConversation(
 
 const TRANSCRIPT_CHAR_BUDGET = 10_000
 
-function renderTranscript(
-  rows: Array<typeof conversationMessages.$inferSelect>,
-): string {
+function renderTranscript(rows: Array<typeof conversationMessages.$inferSelect>): string {
   // Keep latest-N to stay within budget. For short chats this is everything.
   const lines: string[] = []
   for (const row of rows) {
@@ -263,15 +269,20 @@ function buildSystemPrompt(input: {
   projectMems: MemRef[]
   hasProject: boolean
 }): string {
-  const userIndex = input.userMems.length === 0
-    ? '(no entries yet)'
-    : input.userMems.map((m) => `- id=${m.id} name="${m.name}" type=${m.type} — ${m.description}`).join('\n')
+  const userIndex =
+    input.userMems.length === 0
+      ? '(no entries yet)'
+      : input.userMems
+          .map((m) => `- id=${m.id} name="${m.name}" type=${m.type} — ${m.description}`)
+          .join('\n')
 
   const projectIndex = !input.hasProject
     ? '(no active project)'
     : input.projectMems.length === 0
-    ? '(no entries yet)'
-    : input.projectMems.map((m) => `- id=${m.id} name="${m.name}" type=${m.type} — ${m.description}`).join('\n')
+      ? '(no entries yet)'
+      : input.projectMems
+          .map((m) => `- id=${m.id} name="${m.name}" type=${m.type} — ${m.description}`)
+          .join('\n')
 
   return `You analyse a chat between a user and an AI assistant, then propose three things:
 
@@ -327,9 +338,7 @@ Reply with ONLY the JSON object.`
 }
 
 function buildUserPrompt(input: { transcript: string; currentTitle: string | null }): string {
-  const titleBlock = input.currentTitle
-    ? `Current title: "${input.currentTitle}"\n\n`
-    : ''
+  const titleBlock = input.currentTitle ? `Current title: "${input.currentTitle}"\n\n` : ''
   return `${titleBlock}Transcript:\n\n${input.transcript}`
 }
 

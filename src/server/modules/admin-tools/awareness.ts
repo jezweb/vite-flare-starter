@@ -45,7 +45,10 @@ const ConnectionSummarySchema = z.object({
   url: z.string(),
   status: z.string(),
 })
-const ConnectionsListSchema = z.object({ total: z.number(), connections: z.array(ConnectionSummarySchema) })
+const ConnectionsListSchema = z.object({
+  total: z.number(),
+  connections: z.array(ConnectionSummarySchema),
+})
 type ConnectionsListType = z.infer<typeof ConnectionsListSchema>
 
 const SpaceSummarySchema = z.object({
@@ -61,7 +64,7 @@ type SpacesListType = z.infer<typeof SpacesListSchema>
 // ─── Factory ───────────────────────────────────────────────────────
 
 export function buildAwarenessTools(
-  args: AdminToolFactoryArgs,
+  args: AdminToolFactoryArgs
 ): ToolDefinition<unknown, unknown>[] {
   const { userId, env } = args
 
@@ -87,7 +90,7 @@ export function buildAwarenessTools(
     {
       name: 'list_my_connections',
       description:
-        'List the user\'s MCP connections (Gmail, Drive, Calendar, etc.). Returns id, server URL, label, and enabled status. Use to confirm a tool is available before proposing a routine that needs it.',
+        "List the user's MCP connections (Gmail, Drive, Calendar, etc.). Returns id, server URL, label, and enabled status. Use to confirm a tool is available before proposing a routine that needs it.",
       inputSchema: z.object({}),
       outputSchema: ConnectionsListSchema,
       execute: async (): Promise<ConnectionsListType> => {
@@ -112,7 +115,7 @@ export function buildAwarenessTools(
     {
       name: 'list_my_spaces',
       description:
-        'List the top-level spaces the user is a member of. Returns id, title, summary, and the user\'s role + joined date in each.',
+        "List the top-level spaces the user is a member of. Returns id, title, summary, and the user's role + joined date in each.",
       inputSchema: z.object({}),
       outputSchema: SpacesListSchema,
       execute: async (): Promise<SpacesListType> => {
@@ -128,12 +131,7 @@ export function buildAwarenessTools(
           })
           .from(conversationMembers)
           .innerJoin(conversations, eq(conversationMembers.conversationId, conversations.id))
-          .where(
-            and(
-              eq(conversationMembers.userId, userId),
-              eq(conversations.kind, 'space'),
-            ),
-          )
+          .where(and(eq(conversationMembers.userId, userId), eq(conversations.kind, 'space')))
           .orderBy(desc(conversationMembers.joinedAt))
         return {
           total: rows.length,

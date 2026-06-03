@@ -121,7 +121,7 @@ export function MentionAutocomplete({ members, users, query, onPick, onCancel }:
           key={`person-${i}`}
           className={cn(
             'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left',
-            i === active ? 'bg-accent' : 'hover:bg-accent/60',
+            i === active ? 'bg-accent' : 'hover:bg-accent/60'
           )}
           onMouseEnter={() => setActive(i)}
           // Prevent the textarea from blurring before our click handler
@@ -146,7 +146,7 @@ export function MentionAutocomplete({ members, users, query, onPick, onCancel }:
             key={`agent-${idx}`}
             className={cn(
               'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left',
-              i === active ? 'bg-accent' : 'hover:bg-accent/60',
+              i === active ? 'bg-accent' : 'hover:bg-accent/60'
             )}
             onMouseEnter={() => setActive(i)}
             onMouseDown={(e) => e.preventDefault()}

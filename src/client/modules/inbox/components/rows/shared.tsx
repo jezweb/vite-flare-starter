@@ -113,11 +113,8 @@ export function StandardMeta({
       </span>
       <span>·</span>
       <span
-        className={cn(
-          'shrink-0',
-          stale && 'text-amber-700 dark:text-amber-400 font-medium',
-        )}
-        title={stale ? "This has been waiting for action — consider reviewing it soon" : undefined}
+        className={cn('shrink-0', stale && 'text-amber-700 dark:text-amber-400 font-medium')}
+        title={stale ? 'This has been waiting for action — consider reviewing it soon' : undefined}
       >
         {ageStr}
       </span>
@@ -125,9 +122,7 @@ export function StandardMeta({
         <>
           <span>·</span>
           <span className="inline-flex items-center gap-1 shrink-0">
-            {row.dueAt * 1000 < Date.now() && (
-              <AlertTriangle className="size-3 text-amber-500" />
-            )}
+            {row.dueAt * 1000 < Date.now() && <AlertTriangle className="size-3 text-amber-500" />}
             <Clock className="size-3" />
             due {formatDistanceToNow(new Date(row.dueAt * 1000), { addSuffix: true })}
           </span>
@@ -154,7 +149,7 @@ export function useAgentRegistry(): Map<string, { displayName: string }> {
   const { data: agentCatalog } = useAgentCatalog()
   return useMemo(
     () => new Map((agentCatalog?.agents ?? []).map((a) => [a.className, a])),
-    [agentCatalog],
+    [agentCatalog]
   )
 }
 
@@ -231,7 +226,7 @@ export function RowShell({
           interactive
           className={cn(
             isSelected && 'bg-primary/10 hover:bg-primary/15',
-            isFocused && 'ring-2 ring-ring/50 ring-inset',
+            isFocused && 'ring-2 ring-ring/50 ring-inset'
           )}
           onClick={handleClick}
           onMouseEnter={onFocusChange}
@@ -276,9 +271,7 @@ export function RowShell({
           {isSelected ? 'Deselect' : 'Select'}
         </ContextMenuItem>
         {isApproval && (
-          <ContextMenuItem onSelect={() => onOpenApproval(row.id)}>
-            Review approval
-          </ContextMenuItem>
+          <ContextMenuItem onSelect={() => onOpenApproval(row.id)}>Review approval</ContextMenuItem>
         )}
         {extraMenuItems}
         <ContextMenuSeparator />

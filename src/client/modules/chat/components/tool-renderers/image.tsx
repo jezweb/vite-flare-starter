@@ -42,9 +42,7 @@ export const generateImageRenderer: ToolRenderer = {
     if (!o) return null
     if (o.error) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     if (!o.url) return null
@@ -57,9 +55,7 @@ export const generateImageRenderer: ToolRenderer = {
             className="rounded-md border max-h-96 w-auto"
           />
         </a>
-        {i?.prompt && (
-          <div className="text-xs text-muted-foreground line-clamp-2">{i.prompt}</div>
-        )}
+        {i?.prompt && <div className="text-xs text-muted-foreground line-clamp-2">{i.prompt}</div>}
         <div className="text-[11px] text-muted-foreground flex gap-3">
           {o.model && <code className="font-mono">{o.model}</code>}
           {o.sizeBytes && <span>{formatBytes(o.sizeBytes)}</span>}
@@ -85,9 +81,7 @@ export const editImageRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     return (
@@ -134,9 +128,7 @@ export const analyzeImageRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     if (o.mode === 'caption') {
@@ -180,9 +172,7 @@ export const analyzeImageRenderer: ToolRenderer = {
               )}
             </dl>
           )}
-          {s.subjects && s.subjects.length > 0 && (
-            <Section label="Subjects" items={s.subjects} />
-          )}
+          {s.subjects && s.subjects.length > 0 && <Section label="Subjects" items={s.subjects} />}
           {s.identified && s.identified.length > 0 && (
             <div className="space-y-0.5">
               <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -193,14 +183,10 @@ export const analyzeImageRenderer: ToolRenderer = {
                   <li key={i} className="flex items-center gap-2">
                     <span className="font-medium">{it.name}</span>
                     {it.type && (
-                      <code className="text-[10px] text-muted-foreground font-mono">
-                        {it.type}
-                      </code>
+                      <code className="text-[10px] text-muted-foreground font-mono">{it.type}</code>
                     )}
                     {it.confidence && (
-                      <span className="text-[10px] text-muted-foreground">
-                        ({it.confidence})
-                      </span>
+                      <span className="text-[10px] text-muted-foreground">({it.confidence})</span>
                     )}
                   </li>
                 ))}
@@ -223,9 +209,7 @@ export const analyzeImageRenderer: ToolRenderer = {
               </p>
             </div>
           )}
-          {s.notable && s.notable.length > 0 && (
-            <Section label="Notable" items={s.notable} />
-          )}
+          {s.notable && s.notable.length > 0 && <Section label="Notable" items={s.notable} />}
           <ModelChip model={o.model} latencyMs={o.latencyMs} />
         </div>
       )

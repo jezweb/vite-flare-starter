@@ -8,7 +8,13 @@
 import { useMemo, useState, useEffect } from 'react'
 import { Shield, Trash2, KeyRound, ExternalLink } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Field, FieldLabel } from '@/components/ui/field'
@@ -40,11 +46,7 @@ import {
 import { useRoutines, type Routine } from '@/client/modules/routines/hooks/useRoutines'
 import { useAgentCatalog } from '@/client/modules/routines/hooks/useAgentCatalog'
 import { formatAgentClass } from '@/shared/format/agent'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Check, ChevronsUpDown, Plus, X } from 'lucide-react'
 
 type Policy = 'always' | 'ask' | 'never'
@@ -77,8 +79,7 @@ export function ConnectionDetail({
     setDirty({})
   }, [connectionId])
 
-  const effective = (tool: ConnectionTool): Policy =>
-    (dirty[tool.name] ?? tool.policy) as Policy
+  const effective = (tool: ConnectionTool): Policy => (dirty[tool.name] ?? tool.policy) as Policy
 
   const setPolicy = (name: string, policy: Policy) => {
     setDirty((prev) => ({ ...prev, [name]: policy }))
@@ -102,7 +103,7 @@ export function ConnectionDetail({
           toast.error('Save failed', {
             description: err instanceof Error ? err.message : String(err),
           }),
-      },
+      }
     )
   }
 
@@ -117,7 +118,12 @@ export function ConnectionDetail({
   }, [tools])
 
   return (
-    <Sheet open onOpenChange={(open) => { if (!open) onClose() }}>
+    <Sheet
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose()
+      }}
+    >
       <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
@@ -127,8 +133,12 @@ export function ConnectionDetail({
           <SheetDescription className="space-y-1">
             <p className="truncate">{connection?.url}</p>
             <p>
-              <Badge variant="outline" className="text-[10px] mr-1">{connection?.authType}</Badge>
-              <Badge variant="outline" className="text-[10px]">{connection?.status}</Badge>
+              <Badge variant="outline" className="text-[10px] mr-1">
+                {connection?.authType}
+              </Badge>
+              <Badge variant="outline" className="text-[10px]">
+                {connection?.status}
+              </Badge>
             </p>
           </SheetDescription>
         </SheetHeader>
@@ -189,8 +199,8 @@ export function ConnectionDetail({
                   Disconnect {connection?.displayName ?? 'connector'}?
                 </AlertDialogTitle>
                 <AlertDialogDescription>
-                  The AI will lose access to this connector's tools. Stored tokens will be
-                  removed. You can reconnect any time.
+                  The AI will lose access to this connector's tools. Stored tokens will be removed.
+                  You can reconnect any time.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -212,12 +222,15 @@ export function ConnectionDetail({
             </AlertDialogContent>
           </AlertDialog>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" onClick={onClose}>Close</Button>
-            <Button
-              disabled={!pending || update.isPending}
-              onClick={save}
-            >
-              {update.isPending ? <Spinner size="md" /> : `Save ${pending ? `(${Object.keys(dirty).length})` : ''}`}
+            <Button variant="ghost" onClick={onClose}>
+              Close
+            </Button>
+            <Button disabled={!pending || update.isPending} onClick={save}>
+              {update.isPending ? (
+                <Spinner size="md" />
+              ) : (
+                `Save ${pending ? `(${Object.keys(dirty).length})` : ''}`
+              )}
             </Button>
           </div>
         </div>
@@ -244,14 +257,13 @@ function PolicyGroup({
     <div>
       <div className="flex items-center gap-2 mb-2">
         <h3 className={cn('text-sm font-semibold', danger && 'text-destructive')}>{title}</h3>
-        <Badge variant="outline" className="text-[10px]">{tools.length}</Badge>
+        <Badge variant="outline" className="text-[10px]">
+          {tools.length}
+        </Badge>
       </div>
       <div className="space-y-1 rounded-lg border">
         {tools.map((t) => (
-          <div
-            key={t.name}
-            className="flex items-center gap-3 p-3 border-b last:border-b-0"
-          >
+          <div key={t.name} className="flex items-center gap-3 p-3 border-b last:border-b-0">
             <div className="flex-1 min-w-0">
               <p className="text-sm font-mono truncate">{t.name}</p>
               {t.description && (
@@ -282,7 +294,7 @@ function PolicyPicker({ value, onChange }: { value: Policy; onChange: (p: Policy
                 : p === 'ask'
                   ? 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-400'
                   : 'bg-destructive/15 text-destructive'
-              : 'text-muted-foreground hover:bg-muted',
+              : 'text-muted-foreground hover:bg-muted'
           )}
         >
           {p === 'always' ? 'Allow' : p === 'ask' ? 'Ask' : 'Never'}
@@ -325,7 +337,7 @@ function BearerTokenPanel({ connectionId }: { connectionId: string }) {
                 toast.success('Token saved')
                 setToken('')
               },
-            },
+            }
           )
         }
       >
@@ -360,7 +372,8 @@ function ResumeOAuthPanel({ connectionId }: { connectionId: string }) {
         Finish OAuth sign-in
       </div>
       <p className="text-xs text-muted-foreground">
-        The authorization step didn't complete. Click below to resume — you'll be redirected to the provider and returned here once done.
+        The authorization step didn't complete. Click below to resume — you'll be redirected to the
+        provider and returned here once done.
       </p>
       <Button size="sm" onClick={onResume} disabled={authorize.isPending}>
         {authorize.isPending ? (
@@ -394,7 +407,7 @@ function ProfilePanel({ connection }: { connection: McpConnection }) {
   const { data: agentCatalog } = useAgentCatalog()
   const agentRegistry = useMemo(
     () => new Map((agentCatalog?.agents ?? []).map((a) => [a.className, a])),
-    [agentCatalog],
+    [agentCatalog]
   )
   const [label, setLabel] = useState(connection.personalityLabel ?? '')
   const [allowedNames, setAllowedNames] = useState<string[]>(connection.allowedAgentNames ?? [])
@@ -418,7 +431,7 @@ function ProfilePanel({ connection }: { connection: McpConnection }) {
       {
         onSuccess: () => toast.success('Profile updated'),
         onError: (err) => toast.error((err as Error)?.message ?? 'Profile update failed'),
-      },
+      }
     )
   }
 
@@ -429,13 +442,14 @@ function ProfilePanel({ connection }: { connection: McpConnection }) {
         Connection profile
       </div>
       <p className="text-[11px] text-muted-foreground -mt-2">
-        Label this connection so it's easy to recognise. Optionally restrict
-        which routines or AI agents can use it (handy if you have a
-        "personal Gmail" vs "work Gmail").
+        Label this connection so it's easy to recognise. Optionally restrict which routines or AI
+        agents can use it (handy if you have a "personal Gmail" vs "work Gmail").
       </p>
       <div className="space-y-2">
         <Field>
-          <FieldLabel htmlFor="profile-label" className="text-xs">Label</FieldLabel>
+          <FieldLabel htmlFor="profile-label" className="text-xs">
+            Label
+          </FieldLabel>
           <Input
             id="profile-label"
             value={label}
@@ -579,10 +593,12 @@ function RestrictAgentPicker({
                   onClick={() => toggle(opt.name)}
                   className={cn(
                     'flex w-full items-start gap-2 rounded-sm px-2 py-1.5 text-left text-xs hover:bg-muted',
-                    checked && 'bg-muted',
+                    checked && 'bg-muted'
                   )}
                 >
-                  <Check className={cn('mt-0.5 size-3 shrink-0', checked ? 'opacity-100' : 'opacity-0')} />
+                  <Check
+                    className={cn('mt-0.5 size-3 shrink-0', checked ? 'opacity-100' : 'opacity-0')}
+                  />
                   <div className="min-w-0 flex-1">
                     <div className="font-medium">{opt.label}</div>
                     {opt.sublabel && (

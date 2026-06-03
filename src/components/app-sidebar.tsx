@@ -25,7 +25,7 @@ function filterItems(
   items: NavItem[],
   featureFlags: Record<string, boolean>,
   userRole: string | undefined,
-  isBuilder: boolean,
+  isBuilder: boolean
 ): NavItem[] {
   return items.filter((item) => {
     if (item.feature && !featureFlags[item.feature]) return false
@@ -47,8 +47,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
 
   const visibleSections = React.useMemo(() => {
     const featureFlags = features as unknown as Record<string, boolean>
-    return NAV_SECTIONS
-      .filter((section) => !section.builderOnly || isBuilder)
+    return NAV_SECTIONS.filter((section) => !section.builderOnly || isBuilder)
       .map((section) => ({
         ...section,
         items: filterItems(section.items, featureFlags, userRole, isBuilder),
@@ -60,12 +59,12 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
     <Sidebar collapsible="icon" variant="inset" {...props}>
       <SidebarHeader>
         {/*
-          * Once authed, the sidebar header shows the user's active
-          * organisation context (Slack / Linear / Notion convention).
-          * The product brand (`appConfig.name` + logo) still appears
-          * on public pages and the tab title — it's the platform
-          * identity. The sidebar header is the tenant identity.
-          */}
+         * Once authed, the sidebar header shows the user's active
+         * organisation context (Slack / Linear / Notion convention).
+         * The product brand (`appConfig.name` + logo) still appears
+         * on public pages and the tab title — it's the platform
+         * identity. The sidebar header is the tenant identity.
+         */}
         <OrgSwitcher />
       </SidebarHeader>
 

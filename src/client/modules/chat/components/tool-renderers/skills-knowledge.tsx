@@ -42,17 +42,12 @@ interface SearchOutput {
 
 function HitsList({ hits }: { hits: SearchHit[] }) {
   if (hits.length === 0) {
-    return (
-      <p className="text-xs text-muted-foreground italic">No matches.</p>
-    )
+    return <p className="text-xs text-muted-foreground italic">No matches.</p>
   }
   return (
     <ul className="space-y-1.5">
       {hits.map((h, i) => (
-        <li
-          key={h.id ?? h.name ?? i}
-          className="rounded-md border bg-muted/10 px-2.5 py-2"
-        >
+        <li key={h.id ?? h.name ?? i} className="rounded-md border bg-muted/10 px-2.5 py-2">
           <div className="flex items-center gap-2 text-sm font-medium">
             {h.title ?? h.name ?? '(untitled)'}
             {h.scope && (
@@ -161,7 +156,8 @@ function CopyableMarkdown({ text }: { text: string }) {
         </span>
         <div className="flex items-center gap-2">
           <span className="text-[10px] text-muted-foreground">
-            {text.length.toLocaleString()} chars · ~{Math.ceil(text.length / 4).toLocaleString()} tok
+            {text.length.toLocaleString()} chars · ~{Math.ceil(text.length / 4).toLocaleString()}{' '}
+            tok
           </span>
           <Button
             variant="ghost"
@@ -216,9 +212,7 @@ function LoadView({ output, kind }: { output: unknown; kind: 'skill' | 'knowledg
         )}
       </div>
       {(o?.summary || o?.description) && (
-        <p className="text-xs text-muted-foreground">
-          {o.summary ?? o.description}
-        </p>
+        <p className="text-xs text-muted-foreground">{o.summary ?? o.description}</p>
       )}
       {o?.tags && o.tags.length > 0 && (
         <div className="flex flex-wrap gap-1">
@@ -245,11 +239,7 @@ function LoadView({ output, kind }: { output: unknown; kind: 'skill' | 'knowledg
         </div>
       )}
       {o?.warnings && o.warnings.length > 0 && (
-        <div
-          className={cn(
-            'rounded-md border border-amber-500/50 bg-amber-500/10 p-2 text-xs',
-          )}
-        >
+        <div className={cn('rounded-md border border-amber-500/50 bg-amber-500/10 p-2 text-xs')}>
           {o.warnings.map((w, i) => (
             <p key={i}>{w}</p>
           ))}

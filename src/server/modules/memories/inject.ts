@@ -47,13 +47,7 @@ export async function loadMemoryIndex({
       type: memories.type,
     })
     .from(memories)
-    .where(
-      and(
-        eq(memories.scope, 'user'),
-        eq(memories.scopeId, userId),
-        eq(memories.isPrivate, 0),
-      ),
-    )
+    .where(and(eq(memories.scope, 'user'), eq(memories.scopeId, userId), eq(memories.isPrivate, 0)))
     .limit(50)
 
   let projectRows: typeof userRows = []
@@ -70,8 +64,8 @@ export async function loadMemoryIndex({
         and(
           eq(memories.scope, 'project'),
           eq(memories.scopeId, projectId),
-          eq(memories.isPrivate, 0),
-        ),
+          eq(memories.isPrivate, 0)
+        )
       )
       .limit(50)
   }
@@ -91,9 +85,7 @@ export function formatMemoryBlock(index: MemoryIndexBuckets): string {
 
   const renderBucket = (entries: MemoryIndexEntry[], label: string) => {
     if (entries.length === 0) return null
-    return `### ${label}\n${entries
-      .map((e) => `- ${e.name}: ${e.description}`)
-      .join('\n')}`
+    return `### ${label}\n${entries.map((e) => `- ${e.name}: ${e.description}`).join('\n')}`
   }
 
   const userSection = renderBucket(index.user, 'About the user')

@@ -150,7 +150,11 @@ const schemeOptions: SchemeOption[] = [
 // Theme generator links for custom themes
 const THEME_GENERATORS = [
   { name: 'tweakcn', url: 'https://tweakcn.com/', description: 'Modern editor with OKLch support' },
-  { name: 'shadcn/ui Themes', url: 'https://ui.shadcn.com/themes', description: 'Official hand-picked themes' },
+  {
+    name: 'shadcn/ui Themes',
+    url: 'https://ui.shadcn.com/themes',
+    description: 'Official hand-picked themes',
+  },
   { name: '10000+ Themes', url: 'https://ui.jln.dev/', description: 'Browse community themes' },
 ]
 
@@ -219,7 +223,9 @@ export function PreferencesSection() {
 
     const parsed = parseThemeCSS(customCSSInput)
     if (!parsed) {
-      setParseError('Could not parse CSS. Make sure it contains :root or .dark blocks with --variable definitions.')
+      setParseError(
+        'Could not parse CSS. Make sure it contains :root or .dark blocks with --variable definitions.'
+      )
       return
     }
 
@@ -270,9 +276,10 @@ export function PreferencesSection() {
 
   // Apply a theme envelope (from file import or a shared URL) without going
   // through the CSS paste path.
-  const applyImportedEnvelope = async (
-    envelope: { light?: Partial<CustomThemeColors>; dark?: Partial<CustomThemeColors> },
-  ) => {
+  const applyImportedEnvelope = async (envelope: {
+    light?: Partial<CustomThemeColors>
+    dark?: Partial<CustomThemeColors>
+  }) => {
     const customTheme = mergeThemeEnvelope(envelope, currentPrefs.customTheme)
     applyTheme('custom', currentMode, customTheme)
     try {
@@ -419,190 +426,192 @@ export function PreferencesSection() {
     <div className="space-y-6">
       {/* Color Scheme Selector - hidden when themePicker feature is disabled */}
       {features.themePicker && (
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            <div className="flex items-center gap-2">
-              <Palette className="h-5 w-5" />
-              Color Theme
-            </div>
-          </CardTitle>
-          <CardDescription>
-            Choose your preferred color scheme for the interface.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {schemeOptions.map((scheme) => (
-              <button
-                key={scheme.value}
-                onClick={() => handleSchemeChange(scheme.value)}
-                disabled={updatePreferences.isPending}
-                className={cn(
-                  'group relative flex flex-col items-start gap-2 rounded-lg border-2 p-4 text-left transition-all hover:bg-accent',
-                  currentScheme === scheme.value
-                    ? 'border-primary bg-accent'
-                    : 'border-muted hover:border-muted-foreground/50'
-                )}
-              >
-                {/* Color preview circles */}
-                <div className="flex gap-1.5">
-                  <div
-                    className="h-5 w-5 rounded-full ring-1 ring-border"
-                    style={{ backgroundColor: scheme.preview.primary }}
-                  />
-                  <div
-                    className="h-5 w-5 rounded-full ring-1 ring-border"
-                    style={{ backgroundColor: scheme.preview.accent }}
-                  />
-                  <div
-                    className="h-5 w-5 rounded-full ring-1 ring-border"
-                    style={{ backgroundColor: scheme.preview.background }}
-                  />
-                </div>
-
-                {/* Label and description */}
-                <div className="flex-1">
-                  <div className="font-semibold">{scheme.label}</div>
-                  <div className="text-xs text-muted-foreground">{scheme.description}</div>
-                </div>
-
-                {/* Active indicator */}
-                {currentScheme === scheme.value && (
-                  <div className="absolute right-3 top-3">
-                    <div className="h-2 w-2 rounded-full bg-primary" />
-                  </div>
-                )}
-              </button>
-            ))}
-
-            {/* Custom Theme Option */}
-            <Dialog open={customThemeDialogOpen} onOpenChange={setCustomThemeDialogOpen}>
-              <DialogTrigger asChild>
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <div className="flex items-center gap-2">
+                <Palette className="h-5 w-5" />
+                Color Theme
+              </div>
+            </CardTitle>
+            <CardDescription>Choose your preferred color scheme for the interface.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {schemeOptions.map((scheme) => (
                 <button
+                  key={scheme.value}
+                  onClick={() => handleSchemeChange(scheme.value)}
+                  disabled={updatePreferences.isPending}
                   className={cn(
                     'group relative flex flex-col items-start gap-2 rounded-lg border-2 p-4 text-left transition-all hover:bg-accent',
-                    currentScheme === 'custom'
+                    currentScheme === scheme.value
                       ? 'border-primary bg-accent'
-                      : 'border-dashed border-muted hover:border-muted-foreground/50'
+                      : 'border-muted hover:border-muted-foreground/50'
                   )}
                 >
-                  {/* Custom icon */}
-                  <div className="flex gap-1.5 items-center">
-                    <Wand2 className="h-5 w-5 text-muted-foreground" />
+                  {/* Color preview circles */}
+                  <div className="flex gap-1.5">
+                    <div
+                      className="h-5 w-5 rounded-full ring-1 ring-border"
+                      style={{ backgroundColor: scheme.preview.primary }}
+                    />
+                    <div
+                      className="h-5 w-5 rounded-full ring-1 ring-border"
+                      style={{ backgroundColor: scheme.preview.accent }}
+                    />
+                    <div
+                      className="h-5 w-5 rounded-full ring-1 ring-border"
+                      style={{ backgroundColor: scheme.preview.background }}
+                    />
                   </div>
 
                   {/* Label and description */}
                   <div className="flex-1">
-                    <div className="font-semibold">Custom</div>
-                    <div className="text-xs text-muted-foreground">
-                      {currentScheme === 'custom' ? 'Your custom theme' : 'Import from generator'}
-                    </div>
+                    <div className="font-semibold">{scheme.label}</div>
+                    <div className="text-xs text-muted-foreground">{scheme.description}</div>
                   </div>
 
                   {/* Active indicator */}
-                  {currentScheme === 'custom' && (
+                  {currentScheme === scheme.value && (
                     <div className="absolute right-3 top-3">
                       <div className="h-2 w-2 rounded-full bg-primary" />
                     </div>
                   )}
                 </button>
-              </DialogTrigger>
+              ))}
 
-              <DialogContent className="sm:max-w-[720px]">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <Wand2 className="h-5 w-5" />
-                    Custom Theme
-                  </DialogTitle>
-                  <DialogDescription>
-                    Tweak colours live, paste CSS from a generator, or import from a file.
-                  </DialogDescription>
-                </DialogHeader>
-
-                {/* Import / export / share toolbar — applies to both tabs */}
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleOpenImportPicker}
+              {/* Custom Theme Option */}
+              <Dialog open={customThemeDialogOpen} onOpenChange={setCustomThemeDialogOpen}>
+                <DialogTrigger asChild>
+                  <button
+                    className={cn(
+                      'group relative flex flex-col items-start gap-2 rounded-lg border-2 p-4 text-left transition-all hover:bg-accent',
+                      currentScheme === 'custom'
+                        ? 'border-primary bg-accent'
+                        : 'border-dashed border-muted hover:border-muted-foreground/50'
+                    )}
                   >
-                    <Upload className="h-3.5 w-3.5" />
-                    Import JSON
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleExportJSON}
-                    disabled={!hasCurrentCustomTheme}
-                  >
-                    <Download className="h-3.5 w-3.5" />
-                    Export JSON
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCopyShareLink}
-                    disabled={!hasCurrentCustomTheme}
-                  >
-                    <Link2 className="h-3.5 w-3.5" />
-                    Copy share link
-                  </Button>
-                  <input
-                    ref={importFileInputRef}
-                    type="file"
-                    accept=".json,application/json"
-                    className="hidden"
-                    onChange={handleImportFileChange}
-                  />
-                </div>
-
-                <Tabs defaultValue="visual" className="mt-2">
-                  <TabsList>
-                    <TabsTrigger value="visual">Visual editor</TabsTrigger>
-                    <TabsTrigger value="paste">Paste CSS</TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="visual" className="py-2">
-                    <ThemeVisualEditor
-                      current={currentPrefs.customTheme}
-                      baseScheme={currentScheme === 'custom' ? 'default' : currentScheme}
-                      isSaving={updatePreferences.isPending}
-                      onPersist={(next) => {
-                        updatePreferences.mutate({
-                          ...currentPrefs,
-                          theme: 'custom',
-                          customTheme: next,
-                        })
-                      }}
-                    />
-                  </TabsContent>
-
-                  <TabsContent value="paste" className="py-2 space-y-4">
-                    {/* Theme generator links */}
-                    <div className="flex flex-wrap gap-2">
-                      {THEME_GENERATORS.map((gen) => (
-                        <a
-                          key={gen.name}
-                          href={gen.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                          {gen.name}
-                        </a>
-                      ))}
+                    {/* Custom icon */}
+                    <div className="flex gap-1.5 items-center">
+                      <Wand2 className="h-5 w-5 text-muted-foreground" />
                     </div>
 
-                    <p className="text-xs text-muted-foreground">
-                      Paste CSS from a generator above. We extract every <code className="px-1 rounded bg-muted">--name</code> variable from <code className="px-1 rounded bg-muted">:root</code> (light) and <code className="px-1 rounded bg-muted">.dark</code> (dark) blocks. Example format shown as placeholder.
-                    </p>
-                    <Textarea
-                      placeholder={`:root {
+                    {/* Label and description */}
+                    <div className="flex-1">
+                      <div className="font-semibold">Custom</div>
+                      <div className="text-xs text-muted-foreground">
+                        {currentScheme === 'custom' ? 'Your custom theme' : 'Import from generator'}
+                      </div>
+                    </div>
+
+                    {/* Active indicator */}
+                    {currentScheme === 'custom' && (
+                      <div className="absolute right-3 top-3">
+                        <div className="h-2 w-2 rounded-full bg-primary" />
+                      </div>
+                    )}
+                  </button>
+                </DialogTrigger>
+
+                <DialogContent className="sm:max-w-[720px]">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Wand2 className="h-5 w-5" />
+                      Custom Theme
+                    </DialogTitle>
+                    <DialogDescription>
+                      Tweak colours live, paste CSS from a generator, or import from a file.
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  {/* Import / export / share toolbar — applies to both tabs */}
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleOpenImportPicker}
+                    >
+                      <Upload className="h-3.5 w-3.5" />
+                      Import JSON
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleExportJSON}
+                      disabled={!hasCurrentCustomTheme}
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      Export JSON
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCopyShareLink}
+                      disabled={!hasCurrentCustomTheme}
+                    >
+                      <Link2 className="h-3.5 w-3.5" />
+                      Copy share link
+                    </Button>
+                    <input
+                      ref={importFileInputRef}
+                      type="file"
+                      accept=".json,application/json"
+                      className="hidden"
+                      onChange={handleImportFileChange}
+                    />
+                  </div>
+
+                  <Tabs defaultValue="visual" className="mt-2">
+                    <TabsList>
+                      <TabsTrigger value="visual">Visual editor</TabsTrigger>
+                      <TabsTrigger value="paste">Paste CSS</TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="visual" className="py-2">
+                      <ThemeVisualEditor
+                        current={currentPrefs.customTheme}
+                        baseScheme={currentScheme === 'custom' ? 'default' : currentScheme}
+                        isSaving={updatePreferences.isPending}
+                        onPersist={(next) => {
+                          updatePreferences.mutate({
+                            ...currentPrefs,
+                            theme: 'custom',
+                            customTheme: next,
+                          })
+                        }}
+                      />
+                    </TabsContent>
+
+                    <TabsContent value="paste" className="py-2 space-y-4">
+                      {/* Theme generator links */}
+                      <div className="flex flex-wrap gap-2">
+                        {THEME_GENERATORS.map((gen) => (
+                          <a
+                            key={gen.name}
+                            href={gen.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                            {gen.name}
+                          </a>
+                        ))}
+                      </div>
+
+                      <p className="text-xs text-muted-foreground">
+                        Paste CSS from a generator above. We extract every{' '}
+                        <code className="px-1 rounded bg-muted">--name</code> variable from{' '}
+                        <code className="px-1 rounded bg-muted">:root</code> (light) and{' '}
+                        <code className="px-1 rounded bg-muted">.dark</code> (dark) blocks. Example
+                        format shown as placeholder.
+                      </p>
+                      <Textarea
+                        placeholder={`:root {
   --background: 0 0% 100%;
   --foreground: 240 10% 3.9%;
   --primary: 220 90% 56%;
@@ -613,60 +622,60 @@ export function PreferencesSection() {
   --background: 240 10% 3.9%;
   /* ... dark mode variables */
 }`}
-                      value={customCSSInput}
-                      onChange={(e) => {
-                        setCustomCSSInput(e.target.value)
-                        setParseError(null)
-                        setParseSuccess(false)
-                      }}
-                      className="font-mono text-sm min-h-[200px] max-h-[300px] resize-y"
-                    />
+                        value={customCSSInput}
+                        onChange={(e) => {
+                          setCustomCSSInput(e.target.value)
+                          setParseError(null)
+                          setParseSuccess(false)
+                        }}
+                        className="font-mono text-sm min-h-[200px] max-h-[300px] resize-y"
+                      />
 
-                    {parseError && (
-                      <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription>{parseError}</AlertDescription>
-                      </Alert>
-                    )}
+                      {parseError && (
+                        <Alert variant="destructive">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertDescription>{parseError}</AlertDescription>
+                        </Alert>
+                      )}
 
-                    {parseSuccess && (
-                      <Alert>
-                        <Check className="h-4 w-4 text-green-500" />
-                        <AlertDescription>
-                          Theme parsed successfully. Click Apply to save.
-                        </AlertDescription>
-                      </Alert>
-                    )}
+                      {parseSuccess && (
+                        <Alert>
+                          <Check className="h-4 w-4 text-green-500" />
+                          <AlertDescription>
+                            Theme parsed successfully. Click Apply to save.
+                          </AlertDescription>
+                        </Alert>
+                      )}
 
-                    <DialogFooter className="gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={handleParseCustomCSS}
-                        disabled={!customCSSInput.trim()}
-                      >
-                        Validate CSS
-                      </Button>
-                      <Button
-                        onClick={handleApplyCustomTheme}
-                        disabled={!parseSuccess || updatePreferences.isPending}
-                      >
-                        {updatePreferences.isPending ? 'Applying...' : 'Apply Theme'}
-                      </Button>
-                    </DialogFooter>
-                  </TabsContent>
-                </Tabs>
-              </DialogContent>
-            </Dialog>
-          </div>
+                      <DialogFooter className="gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={handleParseCustomCSS}
+                          disabled={!customCSSInput.trim()}
+                        >
+                          Validate CSS
+                        </Button>
+                        <Button
+                          onClick={handleApplyCustomTheme}
+                          disabled={!parseSuccess || updatePreferences.isPending}
+                        >
+                          {updatePreferences.isPending ? 'Applying...' : 'Apply Theme'}
+                        </Button>
+                      </DialogFooter>
+                    </TabsContent>
+                  </Tabs>
+                </DialogContent>
+              </Dialog>
+            </div>
 
-          {/* Show current custom theme info */}
-          {currentScheme === 'custom' && currentPrefs.customTheme && (
-            <p className="text-sm text-muted-foreground">
-              Using your custom theme. Click "Custom" above to modify.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+            {/* Show current custom theme info */}
+            {currentScheme === 'custom' && currentPrefs.customTheme && (
+              <p className="text-sm text-muted-foreground">
+                Using your custom theme. Click "Custom" above to modify.
+              </p>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {/* Mode Selector (Light/Dark/System) */}
@@ -747,9 +756,7 @@ export function PreferencesSection() {
                       <SelectItem key={tz.id} value={tz.id}>
                         <span className="flex items-center gap-2">
                           <span>{tz.label}</span>
-                          <span className="text-muted-foreground text-xs">
-                            ({tz.offset})
-                          </span>
+                          <span className="text-muted-foreground text-xs">({tz.offset})</span>
                         </span>
                       </SelectItem>
                     ))}
@@ -799,9 +806,7 @@ export function PreferencesSection() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">
               <p className="text-sm font-medium">Date format</p>
-              <p className="text-xs text-muted-foreground">
-                How dates appear in lists and forms
-              </p>
+              <p className="text-xs text-muted-foreground">How dates appear in lists and forms</p>
             </div>
             <Select
               value={currentDateFormat}
@@ -827,9 +832,7 @@ export function PreferencesSection() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">
               <p className="text-sm font-medium">Time format</p>
-              <p className="text-xs text-muted-foreground">
-                12-hour (3:00 PM) or 24-hour (15:00)
-              </p>
+              <p className="text-xs text-muted-foreground">12-hour (3:00 PM) or 24-hour (15:00)</p>
             </div>
             <div className="flex gap-2">
               {timeFormats.map((format) => (

@@ -65,7 +65,7 @@ export interface SeededFinding {
  */
 export async function seedFinding(
   api: APIRequestContext,
-  overrides: Partial<{ title: string; body: string; status: string }> = {},
+  overrides: Partial<{ title: string; body: string; status: string }> = {}
 ): Promise<SeededFinding> {
   const title = overrides.title ?? `e2e finding ${Date.now()}`
   const status = overrides.status ?? 'open'

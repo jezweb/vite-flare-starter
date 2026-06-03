@@ -121,7 +121,7 @@ export function ArtifactsPage() {
                   to={`/dashboard/chat/${a.conversationId}`}
                   className={cn(
                     'group flex items-start gap-3 rounded-lg border bg-card p-4 transition-all',
-                    'hover:border-primary/40 hover:shadow-sm',
+                    'hover:border-primary/40 hover:shadow-sm'
                   )}
                 >
                   <div className="size-10 shrink-0 rounded-md bg-muted flex items-center justify-center">
@@ -140,7 +140,9 @@ export function ArtifactsPage() {
                       </span>
                       <span className="flex items-center gap-1 truncate">
                         <MessageSquare className="size-3 shrink-0" />
-                        <span className="truncate">{a.conversationTitle ?? 'Untitled conversation'}</span>
+                        <span className="truncate">
+                          {a.conversationTitle ?? 'Untitled conversation'}
+                        </span>
                       </span>
                     </div>
                   </div>

@@ -121,15 +121,12 @@ export type StubEnv = Record<string, string | undefined>
  *
  * Mount at `/api/<providerId>` in the main server.
  */
-export function buildStubRoutes(
-  config: StubProviderConfig,
-): Hono<AuthContext> {
+export function buildStubRoutes(config: StubProviderConfig): Hono<AuthContext> {
   const app = new Hono<AuthContext>()
   const { providerId, envVars } = config
   const cookiePrefix = providerId.replace(/-/g, '_')
 
-  const isEnabled = (env: StubEnv) =>
-    !!(env[envVars.clientId] && env[envVars.clientSecret])
+  const isEnabled = (env: StubEnv) => !!(env[envVars.clientId] && env[envVars.clientSecret])
 
   const redirectUri = (env: StubEnv) =>
     new URL(`/api/${providerId}/callback`, env['BETTER_AUTH_URL']!).toString()
@@ -155,9 +152,7 @@ export function buildStubRoutes(
     if (!code || !state) return finish('error', 'Missing code or state')
 
     const cookieHeader = c.req.header('cookie') ?? ''
-    const stateMatch = cookieHeader.match(
-      new RegExp(`${cookiePrefix}_state=([^;]+)`),
-    )
+    const stateMatch = cookieHeader.match(new RegExp(`${cookiePrefix}_state=([^;]+)`))
     const userMatch = cookieHeader.match(new RegExp(`${cookiePrefix}_user=([^;]+)`))
     if (!stateMatch || !userMatch) {
       return finish('error', 'Missing session — try connecting again.')
@@ -258,7 +253,7 @@ export function buildStubRoutes(
           event: `${providerId}_callback_error`,
           userId,
           error: message,
-        }),
+        })
       )
       return finish('error', message.slice(0, 200))
     }
@@ -315,16 +310,13 @@ export function buildStubRoutes(
     const headers = new Headers({ 'Content-Type': 'application/json' })
     headers.append(
       'Set-Cookie',
-      `${cookiePrefix}_state=${encodeURIComponent(state)}; ${cookieBase}${secure}`,
+      `${cookiePrefix}_state=${encodeURIComponent(state)}; ${cookieBase}${secure}`
     )
     headers.append(
       'Set-Cookie',
-      `${cookiePrefix}_user=${encodeURIComponent(userId)}; ${cookieBase}${secure}`,
+      `${cookiePrefix}_user=${encodeURIComponent(userId)}; ${cookieBase}${secure}`
     )
-    return new Response(
-      JSON.stringify({ authorizationUrl: url.toString() }),
-      { headers },
-    )
+    return new Response(JSON.stringify({ authorizationUrl: url.toString() }), { headers })
   })
 
   app.post('/disconnect', async (c) => {
@@ -346,7 +338,7 @@ export function buildStubRoutes(
 export async function getStubAccessToken(
   config: StubProviderConfig,
   env: StubEnv,
-  userId: string,
+  userId: string
 ): Promise<string | null> {
   const db = drizzle((env as unknown as { DB: D1Database }).DB)
   // eslint-disable-next-line
@@ -391,9 +383,7 @@ export async function getStubAccessToken(
     const refreshEnc = json.refresh_token
       ? await encrypt(json.refresh_token, env['TOKEN_ENCRYPTION_KEY'])
       : undefined
-    const expiresAt = new Date(
-      Date.now() + (json.expires_in ?? 3600) * 1000,
-    ).toISOString()
+    const expiresAt = new Date(Date.now() + (json.expires_in ?? 3600) * 1000).toISOString()
     // eslint-disable-next-line
     await db
       .update(config.tokenTable)
@@ -424,7 +414,7 @@ export async function getStubAccessToken(
 function callbackPage(
   providerId: string,
   config: StubProviderConfig,
-  args: { status: 'success' | 'error'; message?: string },
+  args: { status: 'success' | 'error'; message?: string }
 ): string {
   // Use the connector id as the postMessage type so the client panel
   // (keyed by id) picks up the result.

@@ -6,9 +6,19 @@
 export const CALL_STATUSES = [
   { value: 'initiated', label: 'Initiated', color: 'secondary', description: 'Call started' },
   { value: 'in_progress', label: 'In Progress', color: 'default', description: 'Call in progress' },
-  { value: 'completed', label: 'Completed', color: 'success', description: 'Call completed successfully' },
+  {
+    value: 'completed',
+    label: 'Completed',
+    color: 'success',
+    description: 'Call completed successfully',
+  },
   { value: 'failed', label: 'Failed', color: 'destructive', description: 'Call failed' },
-  { value: 'no_answer', label: 'No Answer', color: 'warning', description: 'No answer from recipient' },
+  {
+    value: 'no_answer',
+    label: 'No Answer',
+    color: 'warning',
+    description: 'No answer from recipient',
+  },
   { value: 'busy', label: 'Busy', color: 'warning', description: 'Recipient was busy' },
 ] as const
 
@@ -35,13 +45,28 @@ export type CallSource = (typeof CALL_SOURCES)[number]['value']
 
 // Outcome types
 export const CALL_OUTCOMES = [
-  { value: 'appointment_scheduled', label: 'Appointment Scheduled', color: 'success', icon: 'calendar-check' },
+  {
+    value: 'appointment_scheduled',
+    label: 'Appointment Scheduled',
+    color: 'success',
+    icon: 'calendar-check',
+  },
   { value: 'information_provided', label: 'Information Provided', color: 'default', icon: 'info' },
-  { value: 'callback_requested', label: 'Callback Requested', color: 'warning', icon: 'phone-callback' },
+  {
+    value: 'callback_requested',
+    label: 'Callback Requested',
+    color: 'warning',
+    icon: 'phone-callback',
+  },
   { value: 'lead_qualified', label: 'Lead Qualified', color: 'success', icon: 'user-check' },
   { value: 'lead_disqualified', label: 'Lead Disqualified', color: 'secondary', icon: 'user-x' },
   { value: 'issue_resolved', label: 'Issue Resolved', color: 'success', icon: 'check-circle' },
-  { value: 'escalation_required', label: 'Escalation Required', color: 'destructive', icon: 'alert-triangle' },
+  {
+    value: 'escalation_required',
+    label: 'Escalation Required',
+    color: 'destructive',
+    icon: 'alert-triangle',
+  },
   { value: 'no_outcome', label: 'No Outcome', color: 'secondary', icon: 'minus-circle' },
   { value: 'other', label: 'Other', color: 'outline', icon: 'more-horizontal' },
 ] as const

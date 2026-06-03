@@ -33,7 +33,12 @@ export function Timeline({ title, events }: Props) {
           return (
             <div key={i} className="flex gap-3">
               <div className="flex flex-col items-center">
-                <div className={cn('size-6 rounded-full border-2 flex items-center justify-center', COLORS[status])}>
+                <div
+                  className={cn(
+                    'size-6 rounded-full border-2 flex items-center justify-center',
+                    COLORS[status]
+                  )}
+                >
                   <Icon className="size-3" />
                 </div>
                 {!isLast && <div className="w-px flex-1 bg-border mt-1" />}
@@ -41,9 +46,13 @@ export function Timeline({ title, events }: Props) {
               <div className="flex-1 min-w-0 pb-3">
                 <div className="flex items-baseline justify-between gap-2">
                   <div className="font-medium text-sm">{event.title}</div>
-                  {event.date && <div className="text-xs text-muted-foreground shrink-0">{event.date}</div>}
+                  {event.date && (
+                    <div className="text-xs text-muted-foreground shrink-0">{event.date}</div>
+                  )}
                 </div>
-                {event.description && <div className="text-xs text-muted-foreground mt-0.5">{event.description}</div>}
+                {event.description && (
+                  <div className="text-xs text-muted-foreground mt-0.5">{event.description}</div>
+                )}
               </div>
             </div>
           )

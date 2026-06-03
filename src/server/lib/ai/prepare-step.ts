@@ -24,8 +24,14 @@ interface TokenBudgetOptions {
  * Track cumulative token usage across steps and stop the agent
  * when approaching the budget limit by removing all tools.
  */
-export function tokenBudgetPrepareStep<TOOLS extends ToolSet>({ maxTotalTokens }: TokenBudgetOptions) {
-  return ({ steps }: { steps: Array<{ usage?: { inputTokens?: number; outputTokens?: number } }> }) => {
+export function tokenBudgetPrepareStep<TOOLS extends ToolSet>({
+  maxTotalTokens,
+}: TokenBudgetOptions) {
+  return ({
+    steps,
+  }: {
+    steps: Array<{ usage?: { inputTokens?: number; outputTokens?: number } }>
+  }) => {
     const totalTokens = steps.reduce((acc, step) => {
       return acc + (step.usage?.inputTokens ?? 0) + (step.usage?.outputTokens ?? 0)
     }, 0)
@@ -64,23 +70,27 @@ const UNLOCK_KEYWORDS: Record<PrivilegedTool, RegExp> = {
   gmail_reply: /\breply\b|\brespond\b|\banswer\b|\bget back\b|\bfollow up\b/i,
   gmail_delete: /\bdelete\b|\btrash\b|\barchive\b|\bremove\b/i,
   calendar_create: /\bschedule\b|\bbook\b|\bmeeting\b|\bappointment\b|\bevent\b|\bremind/i,
-  calendar_update_event: /\bmove\b|\breschedule\b|\bchange\b|\bupdate\b|\bedit\b|\bshift\b|\bpostpone\b/i,
+  calendar_update_event:
+    /\bmove\b|\breschedule\b|\bchange\b|\bupdate\b|\bedit\b|\bshift\b|\bpostpone\b/i,
   calendar_delete_event: /\bcancel\b|\bdelete\b|\bremove\b|\bscrap\b/i,
   docs_create: /\bdoc\b|\bdocument\b|\bwrite\b|\bcreate\b|\bnew\b|\bstart\b|\bdraft\b/i,
   docs_append: /\bappend\b|\badd\b|\bupdate\b|\bwrite\b|\binsert\b|\bdoc\b|\bdocument\b/i,
   sheets_append_row: /\bappend\b|\badd\b|\brow\b|\blog\b|\brecord\b|\bsheet\b|\bspreadsheet\b/i,
-  sheets_write_range: /\bwrite\b|\bupdate\b|\boverwrite\b|\bset\b|\bchange\b|\bsheet\b|\bspreadsheet\b/i,
+  sheets_write_range:
+    /\bwrite\b|\bupdate\b|\boverwrite\b|\bset\b|\bchange\b|\bsheet\b|\bspreadsheet\b/i,
   drive_create_folder: /\bfolder\b|\bcreate\b|\bnew\b|\bmake\b|\borganis|\borganiz/i,
   tasks_create: /\btask\b|\btodo\b|\bto-do\b|\badd\b|\bremind\b|\bfollow up\b/i,
   drive_delete: /\bdelete\b|\bremove\b|\btrash\b/i,
   outlook_send: /\bsend\b|\bcompose\b|\breply\b|\bforward\b|\bemail\b|\boutlook\b/i,
-  msoffice_calendar_create: /\bschedule\b|\bbook\b|\bmeeting\b|\bappointment\b|\bevent\b|\bteams\b/i,
+  msoffice_calendar_create:
+    /\bschedule\b|\bbook\b|\bmeeting\b|\bappointment\b|\bevent\b|\bteams\b/i,
   slack_post_message: /\bpost\b|\bsend\b|\bmessage\b|\bslack\b|\breply\b|\btell\b|\bnotify\b/i,
   notion_create_page: /\bcreate\b|\bnew\b|\bpage\b|\bnotion\b|\badd\b/i,
   notion_append_blocks: /\bappend\b|\badd\b|\bwrite\b|\binsert\b|\bnotion\b|\bupdate\b/i,
   jira_create_issue: /\bcreate\b|\bnew\b|\bissue\b|\bticket\b|\bbug\b|\bstory\b|\btask\b|\bjira\b/i,
   jira_add_comment: /\bcomment\b|\breply\b|\breply to\b|\bnote\b|\bjira\b/i,
-  jira_transition_issue: /\btransition\b|\bmove\b|\bclose\b|\bresolve\b|\bopen\b|\breopen\b|\bdone\b|\bstart\b/i,
+  jira_transition_issue:
+    /\btransition\b|\bmove\b|\bclose\b|\bresolve\b|\bopen\b|\breopen\b|\bdone\b|\bstart\b/i,
   confluence_create_page: /\bcreate\b|\bnew\b|\bpage\b|\bconfluence\b|\bdoc\b/i,
   fs_delete: /\bdelete\b|\bremove\b|\brm\b/i,
   fs_write: /\bwrite\b|\bcreate\b|\bsave\b|\bstore\b|\bupload\b/i,
@@ -122,7 +132,7 @@ export function computeActiveTools<TOOLS extends ToolSet>(
   allTools: TOOLS,
   messages: ModelMessage[],
   steps: Array<{ toolCalls?: ReadonlyArray<{ toolName: string }> }>,
-  options: ComputeActiveToolsOptions = {},
+  options: ComputeActiveToolsOptions = {}
 ): Array<keyof TOOLS & string> {
   const allNames = Object.keys(allTools) as Array<keyof TOOLS & string>
   const lastUser = [...messages].reverse().find((m) => m.role === 'user')
@@ -154,7 +164,7 @@ export function computeActiveTools<TOOLS extends ToolSet>(
           options.discoveredToolNames?.has(name) ||
           // Tools the agent already used successfully stay visible —
           // it can re-call them without re-searching.
-          alreadyUsed.has(name),
+          alreadyUsed.has(name)
       )
     : allNames
 

@@ -128,7 +128,10 @@ export const runJsDefinition: ToolDefinition<
   execute: async ({ code, timeout = 30 }, ctx) => {
     try {
       const sandbox = userSandbox(ctx)
-      const result = await sandbox.runCode(code, { language: 'javascript', timeout: timeout * 1000 })
+      const result = await sandbox.runCode(code, {
+        language: 'javascript',
+        timeout: timeout * 1000,
+      })
       return normalizeCodeResult(result)
     } catch (error) {
       return { error: error instanceof Error ? error.message : String(error) }

@@ -13,7 +13,13 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Sparkles, ArrowLeft } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -83,7 +89,13 @@ export function CreateProjectModal({ open, onOpenChange }: Props) {
 
 // --- Blank tab -------------------------------------------------------------
 
-function BlankTab({ onCreated, navigate }: { onCreated: () => void; navigate: (to: string) => void }) {
+function BlankTab({
+  onCreated,
+  navigate,
+}: {
+  onCreated: () => void
+  navigate: (to: string) => void
+}) {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const create = useCreateProject()
@@ -132,7 +144,9 @@ function BlankTab({ onCreated, navigate }: { onCreated: () => void; navigate: (t
         </Field>
       </FieldGroup>
       <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="ghost" onClick={onCreated}>Cancel</Button>
+        <Button type="button" variant="ghost" onClick={onCreated}>
+          Cancel
+        </Button>
         <Button type="submit" disabled={!name.trim() || create.isPending}>
           {create.isPending ? <Spinner size="sm" className="mr-1.5" /> : null}
           Create project
@@ -194,7 +208,9 @@ function AiTab({ onCreated, navigate }: { onCreated: () => void; navigate: (to: 
     return (
       <div className="space-y-4">
         <Field>
-          <FieldLabel htmlFor="ai-prompt">Describe what you want this project to help you with</FieldLabel>
+          <FieldLabel htmlFor="ai-prompt">
+            Describe what you want this project to help you with
+          </FieldLabel>
           <Textarea
             id="ai-prompt"
             value={prompt}
@@ -205,11 +221,14 @@ function AiTab({ onCreated, navigate }: { onCreated: () => void; navigate: (to: 
             autoFocus
           />
           <FieldDescription>
-            Examples: <em>"help me plan and review fortnightly newsletters"</em>, <em>"researching new suppliers for a B2B parts business"</em>
+            Examples: <em>"help me plan and review fortnightly newsletters"</em>,{' '}
+            <em>"researching new suppliers for a B2B parts business"</em>
           </FieldDescription>
         </Field>
         <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="ghost" onClick={onCreated}>Cancel</Button>
+          <Button type="button" variant="ghost" onClick={onCreated}>
+            Cancel
+          </Button>
           <Button onClick={generate} disabled={!prompt.trim() || scaffold.isPending}>
             {scaffold.isPending ? (
               <>
@@ -234,7 +253,12 @@ function AiTab({ onCreated, navigate }: { onCreated: () => void; navigate: (to: 
       <Card className="p-4 bg-muted/30">
         <FieldGroup className="gap-3">
           <Field>
-            <FieldLabel htmlFor="ai-name" className="text-xs uppercase tracking-wider text-muted-foreground">Project name</FieldLabel>
+            <FieldLabel
+              htmlFor="ai-name"
+              className="text-xs uppercase tracking-wider text-muted-foreground"
+            >
+              Project name
+            </FieldLabel>
             <Input
               id="ai-name"
               value={editName}
@@ -244,7 +268,12 @@ function AiTab({ onCreated, navigate }: { onCreated: () => void; navigate: (to: 
             />
           </Field>
           <Field>
-            <FieldLabel htmlFor="ai-description" className="text-xs uppercase tracking-wider text-muted-foreground">Description</FieldLabel>
+            <FieldLabel
+              htmlFor="ai-description"
+              className="text-xs uppercase tracking-wider text-muted-foreground"
+            >
+              Description
+            </FieldLabel>
             <Textarea
               id="ai-description"
               value={editDescription}
@@ -254,7 +283,12 @@ function AiTab({ onCreated, navigate }: { onCreated: () => void; navigate: (to: 
             />
           </Field>
           <Field>
-            <FieldLabel htmlFor="ai-systemprompt" className="text-xs uppercase tracking-wider text-muted-foreground">Instructions (system prompt)</FieldLabel>
+            <FieldLabel
+              htmlFor="ai-systemprompt"
+              className="text-xs uppercase tracking-wider text-muted-foreground"
+            >
+              Instructions (system prompt)
+            </FieldLabel>
             <Textarea
               id="ai-systemprompt"
               value={editSystemPrompt}
@@ -269,13 +303,17 @@ function AiTab({ onCreated, navigate }: { onCreated: () => void; navigate: (to: 
 
       {draft.starterMemories.length > 0 && (
         <div className="space-y-2">
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">Starter memory entries ({draft.starterMemories.length})</div>
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">
+            Starter memory entries ({draft.starterMemories.length})
+          </div>
           <div className="space-y-2">
             {draft.starterMemories.map((m, i) => (
               <div key={i} className="rounded-md border border-border p-3 text-sm">
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-medium">{m.name}</span>
-                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{m.type}</span>
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    {m.type}
+                  </span>
                 </div>
                 <div className="text-xs text-muted-foreground">{m.description}</div>
                 <div className="text-xs mt-1.5">{m.content}</div>
@@ -287,10 +325,14 @@ function AiTab({ onCreated, navigate }: { onCreated: () => void; navigate: (to: 
 
       {draft.suggestedFirstPrompts.length > 0 && (
         <div className="space-y-2">
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">Suggested first prompts</div>
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">
+            Suggested first prompts
+          </div>
           <ul className="space-y-1 text-xs">
             {draft.suggestedFirstPrompts.map((p, i) => (
-              <li key={i} className="rounded-md bg-muted/50 px-3 py-2">{p}</li>
+              <li key={i} className="rounded-md bg-muted/50 px-3 py-2">
+                {p}
+              </li>
             ))}
           </ul>
         </div>
@@ -302,7 +344,9 @@ function AiTab({ onCreated, navigate }: { onCreated: () => void; navigate: (to: 
           Back
         </Button>
         <div className="flex gap-2">
-          <Button type="button" variant="ghost" onClick={onCreated}>Cancel</Button>
+          <Button type="button" variant="ghost" onClick={onCreated}>
+            Cancel
+          </Button>
           <Button onClick={create} disabled={createFromScaffold.isPending || !editName.trim()}>
             {createFromScaffold.isPending ? <Spinner size="sm" className="mr-1.5" /> : null}
             Create project
@@ -315,7 +359,13 @@ function AiTab({ onCreated, navigate }: { onCreated: () => void; navigate: (to: 
 
 // --- Templates tab ---------------------------------------------------------
 
-function TemplateTab({ onCreated, navigate }: { onCreated: () => void; navigate: (to: string) => void }) {
+function TemplateTab({
+  onCreated,
+  navigate,
+}: {
+  onCreated: () => void
+  navigate: (to: string) => void
+}) {
   const { data, isLoading } = useProjectTemplates()
   const createFromTemplate = useCreateFromTemplate()
   const [creating, setCreating] = useState<string | null>(null)
@@ -346,7 +396,8 @@ function TemplateTab({ onCreated, navigate }: { onCreated: () => void; navigate:
   return (
     <div className="space-y-3 max-h-[60vh] overflow-y-auto">
       <p className="text-sm text-muted-foreground">
-        Pick a template to start a project pre-filled with instructions, starter memory, and suggested prompts.
+        Pick a template to start a project pre-filled with instructions, starter memory, and
+        suggested prompts.
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {data?.templates.map((t) => (
@@ -370,7 +421,10 @@ function TemplateTab({ onCreated, navigate }: { onCreated: () => void; navigate:
             <p className="text-xs text-muted-foreground mb-2">{t.description}</p>
             <div className="flex flex-wrap gap-1">
               {t.includes.map((inc, i) => (
-                <span key={i} className="text-[10px] uppercase tracking-wider bg-muted text-muted-foreground rounded-full px-2 py-0.5">
+                <span
+                  key={i}
+                  className="text-[10px] uppercase tracking-wider bg-muted text-muted-foreground rounded-full px-2 py-0.5"
+                >
                   {inc}
                 </span>
               ))}
@@ -379,7 +433,9 @@ function TemplateTab({ onCreated, navigate }: { onCreated: () => void; navigate:
         ))}
       </div>
       <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="ghost" onClick={onCreated}>Cancel</Button>
+        <Button type="button" variant="ghost" onClick={onCreated}>
+          Cancel
+        </Button>
       </div>
     </div>
   )

@@ -102,10 +102,8 @@ export const logger = {
     return {
       debug: (message: string, meta?: LogMeta) =>
         logger.debug(message, { ...requestMeta, ...meta }),
-      info: (message: string, meta?: LogMeta) =>
-        logger.info(message, { ...requestMeta, ...meta }),
-      warn: (message: string, meta?: LogMeta) =>
-        logger.warn(message, { ...requestMeta, ...meta }),
+      info: (message: string, meta?: LogMeta) => logger.info(message, { ...requestMeta, ...meta }),
+      warn: (message: string, meta?: LogMeta) => logger.warn(message, { ...requestMeta, ...meta }),
       error: (message: string, error?: Error | unknown, meta?: LogMeta) =>
         logger.error(message, error, { ...requestMeta, ...meta }),
     }
@@ -114,13 +112,7 @@ export const logger = {
   /**
    * Log API request completion with timing
    */
-  request(
-    method: string,
-    path: string,
-    status: number,
-    durationMs: number,
-    meta?: LogMeta
-  ): void {
+  request(method: string, path: string, status: number, durationMs: number, meta?: LogMeta): void {
     const level: LogLevel = status >= 500 ? 'error' : status >= 400 ? 'warn' : 'info'
 
     const entry = createEntry(level, `${method} ${path} ${status}`, {

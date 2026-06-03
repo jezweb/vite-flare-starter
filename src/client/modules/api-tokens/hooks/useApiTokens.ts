@@ -1,5 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import type { CreateApiTokenInput, ApiTokenCreated, ApiTokenListItem } from '@/shared/schemas/api-token.schema'
+import type {
+  CreateApiTokenInput,
+  ApiTokenCreated,
+  ApiTokenListItem,
+} from '@/shared/schemas/api-token.schema'
 
 /**
  * TanStack Query hooks for API tokens

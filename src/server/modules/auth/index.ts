@@ -197,16 +197,14 @@ export function createAuth(
             // multi-tenant UI has something to render from day one.
             // Idempotent — see ensurePersonalOrg for the guards.
             try {
-              const { ensurePersonalOrg } = await import(
-                '@/server/modules/organizations/seed'
-              )
+              const { ensurePersonalOrg } = await import('@/server/modules/organizations/seed')
               await ensurePersonalOrg(
                 { DB: d1 },
                 {
                   userId: newUser.id,
                   userName: newUser.name,
                   userEmail: newUser.email,
-                },
+                }
               )
             } catch (err) {
               console.error(
@@ -214,7 +212,7 @@ export function createAuth(
                   event: 'auth_user_create_personal_org_failed',
                   userId: newUser.id,
                   error: err instanceof Error ? err.message : String(err),
-                }),
+                })
               )
             }
           },
@@ -241,18 +239,14 @@ export function createAuth(
               const { setDefaultActiveOrgForSession } = await import(
                 '@/server/modules/organizations/seed'
               )
-              await setDefaultActiveOrgForSession(
-                { DB: d1 },
-                newSession.id,
-                newSession.userId,
-              )
+              await setDefaultActiveOrgForSession({ DB: d1 }, newSession.id, newSession.userId)
             } catch (err) {
               console.error(
                 JSON.stringify({
                   event: 'auth_session_set_active_org_failed',
                   sessionId: newSession.id,
                   error: err instanceof Error ? err.message : String(err),
-                }),
+                })
               )
             }
           },
@@ -315,7 +309,16 @@ export function createAuth(
       // Email change with verification — templated via sendEmail (Phase 3.1)
       changeEmail: {
         enabled: true,
-        sendChangeEmailVerification: async ({ user, newEmail, url }: { user: { id?: string; name: string; email: string }; newEmail: string; url: string; token: string }) => {
+        sendChangeEmailVerification: async ({
+          user,
+          newEmail,
+          url,
+        }: {
+          user: { id?: string; name: string; email: string }
+          newEmail: string
+          url: string
+          token: string
+        }) => {
           await sendEmail(mailEnv, {
             to: user.email, // Current email — security-sensitive confirmation
             userId: user.id,
@@ -416,7 +419,7 @@ export function createAuth(
                 invitationId: data.id,
                 email: data.email,
                 error: err instanceof Error ? err.message : String(err),
-              }),
+              })
             )
           }
         },

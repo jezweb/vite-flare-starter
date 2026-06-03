@@ -25,7 +25,9 @@ app.get('/', async (c) => {
   const userId = c.get('userId')
   const db = drizzle(c.env.DB)
 
-  const rows = await db.select().from(watchers)
+  const rows = await db
+    .select()
+    .from(watchers)
     .where(and(eq(watchers.entityType, entityType), eq(watchers.entityId, entityId)))
 
   return c.json({
@@ -58,9 +60,15 @@ app.delete(
     const userId = c.get('userId')
     const db = drizzle(c.env.DB)
 
-    await db.delete(watchers).where(
-      and(eq(watchers.entityType, entityType), eq(watchers.entityId, entityId), eq(watchers.userId, userId))
-    )
+    await db
+      .delete(watchers)
+      .where(
+        and(
+          eq(watchers.entityType, entityType),
+          eq(watchers.entityId, entityId),
+          eq(watchers.userId, userId)
+        )
+      )
     return c.json({ success: true })
   }
 )
@@ -77,10 +85,12 @@ export async function notifyWatchers(
   entityType: string,
   entityId: string,
   actorId: string,
-  message: string,
+  message: string
 ) {
   const d = drizzle(db)
-  const rows = await d.select({ userId: watchers.userId }).from(watchers)
+  const rows = await d
+    .select({ userId: watchers.userId })
+    .from(watchers)
     .where(and(eq(watchers.entityType, entityType), eq(watchers.entityId, entityId)))
 
   const watcherIds = rows.map((r) => r.userId).filter((id) => id !== actorId)

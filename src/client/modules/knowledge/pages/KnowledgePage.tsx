@@ -13,14 +13,7 @@
  */
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import {
-  BookOpen,
-  Plus,
-  Search,
-  LayoutGrid,
-  List as ListIcon,
-  AlertTriangle,
-} from 'lucide-react'
+import { BookOpen, Plus, Search, LayoutGrid, List as ListIcon, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -28,10 +21,7 @@ import { EmptyState } from '@/client/components/EmptyState'
 import { PageLoading } from '@/client/components/PageState'
 import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
-import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from '@/components/ui/toggle-group'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import {
   Item,
   ItemActions,
@@ -90,7 +80,7 @@ export function KnowledgePage() {
 
   const overBudget = useMemo(
     () => (budget.data?.total ?? 0) > ALWAYS_BUDGET_SOFT_CAP,
-    [budget.data?.total],
+    [budget.data?.total]
   )
 
   return (
@@ -118,16 +108,15 @@ export function KnowledgePage() {
           {overBudget && <AlertTriangle className="mt-0.5 size-4 shrink-0" />}
           <div>
             <strong className="font-medium">
-              {budget.data.count} always-active{' '}
-              {budget.data.count === 1 ? 'doc' : 'docs'} ·{' '}
-              ~{budget.data.total.toLocaleString()} tokens
+              {budget.data.count} always-active {budget.data.count === 1 ? 'doc' : 'docs'} · ~
+              {budget.data.total.toLocaleString()} tokens
             </strong>{' '}
             baked into every chat's system prompt.
             {overBudget && (
               <>
                 {' '}
-                Over the {ALWAYS_BUDGET_SOFT_CAP.toLocaleString()}-token soft
-                cap — switch some docs to on-demand to keep prompts lean.
+                Over the {ALWAYS_BUDGET_SOFT_CAP.toLocaleString()}-token soft cap — switch some docs
+                to on-demand to keep prompts lean.
               </>
             )}
           </div>
@@ -142,7 +131,7 @@ export function KnowledgePage() {
           title="No knowledge docs yet"
           description="Add a reference document the AI should know — schema notes, glossaries, runbooks, FAQ corpora."
           tips={[
-            'Always-active docs bake into every chat\'s system prompt',
+            "Always-active docs bake into every chat's system prompt",
             'On-demand docs surface in a catalog the agent searches',
             'Up to 100KB of markdown per doc (≈ 25K tokens)',
           ]}
@@ -165,9 +154,7 @@ export function KnowledgePage() {
             </div>
             <p className="text-sm text-muted-foreground tabular-nums">
               {filtered.length}
-              {filter.trim() && filtered.length !== all.length
-                ? ` / ${all.length}`
-                : ''}{' '}
+              {filter.trim() && filtered.length !== all.length ? ` / ${all.length}` : ''}{' '}
               {all.length === 1 ? 'doc' : 'docs'}
             </p>
             <ToggleGroup
@@ -222,9 +209,7 @@ function KnowledgeCard({ doc }: { doc: KnowledgeRow }) {
           <ItemTitle className="truncate" title={doc.title}>
             {doc.title}
           </ItemTitle>
-          <ItemDescription className="line-clamp-2">
-            {doc.summary}
-          </ItemDescription>
+          <ItemDescription className="line-clamp-2">{doc.summary}</ItemDescription>
           {doc.tags.length > 0 && (
             <div className="mt-1.5 flex flex-wrap gap-1">
               {doc.tags.slice(0, 4).map((t) => (
@@ -233,19 +218,14 @@ function KnowledgeCard({ doc }: { doc: KnowledgeRow }) {
                 </Badge>
               ))}
               {doc.tags.length > 4 && (
-                <span className="text-[10px] text-muted-foreground">
-                  +{doc.tags.length - 4}
-                </span>
+                <span className="text-[10px] text-muted-foreground">+{doc.tags.length - 4}</span>
               )}
             </div>
           )}
         </ItemContent>
       </Link>
       <ItemActions className="shrink-0 flex-col items-end gap-1.5 self-start">
-        <Badge
-          variant={MODE_VARIANT[doc.injectionMode]}
-          className="text-[10px]"
-        >
+        <Badge variant={MODE_VARIANT[doc.injectionMode]} className="text-[10px]">
           {MODE_LABEL[doc.injectionMode]}
         </Badge>
         <span className="text-[10px] text-muted-foreground tabular-nums">
@@ -270,16 +250,11 @@ function KnowledgeListRow({ doc }: { doc: KnowledgeRow }) {
               {doc.title}
             </span>
           </div>
-          <p className="line-clamp-1 text-xs text-muted-foreground">
-            {doc.summary}
-          </p>
+          <p className="line-clamp-1 text-xs text-muted-foreground">{doc.summary}</p>
         </div>
       </Link>
       <div className="flex shrink-0 items-center gap-2">
-        <Badge
-          variant={MODE_VARIANT[doc.injectionMode]}
-          className="text-[10px]"
-        >
+        <Badge variant={MODE_VARIANT[doc.injectionMode]} className="text-[10px]">
           {MODE_LABEL[doc.injectionMode]}
         </Badge>
         <span className="text-[10px] text-muted-foreground tabular-nums">

@@ -21,13 +21,7 @@
  * decision-making mid-turn.
  */
 import { z } from 'zod'
-import {
-  Bot,
-  ScanText,
-  Sparkles,
-  Cpu,
-  PiggyBank,
-} from 'lucide-react'
+import { Bot, ScanText, Sparkles, Cpu, PiggyBank } from 'lucide-react'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq, sql } from 'drizzle-orm'
 
@@ -48,16 +42,16 @@ const PersonaInputSchema = InstanceRefSchema.extend({
 type PersonaInput = z.infer<typeof PersonaInputSchema>
 
 const ModelInputSchema = InstanceRefSchema.extend({
-  modelId: z.string().min(1).max(120).describe('Full model id (provider/model). See models.flared.au.'),
+  modelId: z
+    .string()
+    .min(1)
+    .max(120)
+    .describe('Full model id (provider/model). See models.flared.au.'),
 })
 type ModelInput = z.infer<typeof ModelInputSchema>
 
 const BudgetInputSchema = InstanceRefSchema.extend({
-  dailyBudgetUsd: z
-    .number()
-    .positive()
-    .nullable()
-    .describe('USD cap or null to remove the cap.'),
+  dailyBudgetUsd: z.number().positive().nullable().describe('USD cap or null to remove the cap.'),
 })
 type BudgetInput = z.infer<typeof BudgetInputSchema>
 
@@ -97,7 +91,7 @@ const ApprovalQueuedSchema = z.union([
 type ApprovalQueuedType = z.infer<typeof ApprovalQueuedSchema>
 
 export function buildAgentManagementTools(
-  args: AdminToolFactoryArgs,
+  args: AdminToolFactoryArgs
 ): ToolDefinition<unknown, unknown>[] {
   const { requestApproval, userId, env } = args
 
@@ -105,7 +99,7 @@ export function buildAgentManagementTools(
     {
       name: 'list_agent_instances',
       description:
-        'List the user\'s agent instances (the agents that have actually run, derived from agent_runs). Each row has class, name, runs, total cost, last activity. Use to recall what already exists before proposing a state change.',
+        "List the user's agent instances (the agents that have actually run, derived from agent_runs). Each row has class, name, runs, total cost, last activity. Use to recall what already exists before proposing a state change.",
       inputSchema: z.object({}),
       outputSchema: ListSchema,
       execute: async (): Promise<ListType> => {
@@ -140,7 +134,7 @@ export function buildAgentManagementTools(
     {
       name: 'inspect_agent',
       description:
-        'Get summary stats for one agent instance. Returns runs, total cost, and last run timestamp. The instance\'s full state (persona, model, budget) is on the Agents page — this read-only tool surfaces only the activity summary that\'s safe to include in chat.',
+        "Get summary stats for one agent instance. Returns runs, total cost, and last run timestamp. The instance's full state (persona, model, budget) is on the Agents page — this read-only tool surfaces only the activity summary that's safe to include in chat.",
       inputSchema: InstanceRefSchema,
       outputSchema: InspectSchema,
       execute: async (input: InstanceRef): Promise<InspectType> => {
@@ -155,7 +149,7 @@ export function buildAgentManagementTools(
           .where(
             sql`${agentRuns.userId} = ${userId}
                 AND ${agentRuns.agentClass} = ${input.agentClass}
-                AND ${agentRuns.agentName} = ${input.agentName}`,
+                AND ${agentRuns.agentName} = ${input.agentName}`
           )
         if (!row || row.runs === 0) {
           return {
@@ -178,7 +172,7 @@ export function buildAgentManagementTools(
     {
       name: 'set_agent_persona',
       description:
-        'Propose changing one agent instance\'s persona (system prompt). Returns an approval id — the change is NOT applied until the user reviews and approves. Refuses to change AdminAgent\'s own persona (would mutate this agent mid-conversation).',
+        "Propose changing one agent instance's persona (system prompt). Returns an approval id — the change is NOT applied until the user reviews and approves. Refuses to change AdminAgent's own persona (would mutate this agent mid-conversation).",
       inputSchema: PersonaInputSchema,
       outputSchema: ApprovalQueuedSchema,
       execute: async (input: PersonaInput): Promise<ApprovalQueuedType> => {
@@ -186,7 +180,7 @@ export function buildAgentManagementTools(
           return {
             ok: false as const,
             error:
-              'Cannot change AdminAgent\'s persona via AdminAgent — would mutate this very agent mid-conversation. Edit it on the Agents page.',
+              "Cannot change AdminAgent's persona via AdminAgent — would mutate this very agent mid-conversation. Edit it on the Agents page.",
           }
         }
         try {
@@ -221,7 +215,7 @@ export function buildAgentManagementTools(
     {
       name: 'set_agent_budget',
       description:
-        'Propose changing one agent instance\'s daily USD budget cap. Pass null to remove the cap. Returns an approval id.',
+        "Propose changing one agent instance's daily USD budget cap. Pass null to remove the cap. Returns an approval id.",
       inputSchema: BudgetInputSchema,
       outputSchema: ApprovalQueuedSchema,
       execute: async (input: BudgetInput): Promise<ApprovalQueuedType> => {

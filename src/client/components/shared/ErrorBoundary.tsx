@@ -98,7 +98,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                 <AlertTriangle className="h-6 w-6 text-destructive" />
               </div>
               <CardTitle>Something went wrong</CardTitle>
-              <CardDescription>We encountered an unexpected error. Please try again.</CardDescription>
+              <CardDescription>
+                We encountered an unexpected error. Please try again.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Error details (development only) */}

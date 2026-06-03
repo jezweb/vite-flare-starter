@@ -17,9 +17,7 @@ export interface ChatState {
 }
 
 // WebSocket message types (client → agent)
-export type ClientMessage =
-  | { type: 'message'; content: string }
-  | { type: 'clear_history' }
+export type ClientMessage = { type: 'message'; content: string } | { type: 'clear_history' }
 
 // WebSocket message types (agent → client)
 export type ServerMessage =

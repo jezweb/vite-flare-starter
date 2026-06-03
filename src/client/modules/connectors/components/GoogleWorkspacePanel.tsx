@@ -9,7 +9,16 @@
  */
 import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plug, CheckCircle2, AlertCircle, Trash2, Mail, FolderOpen, CalendarDays, SlidersHorizontal } from 'lucide-react'
+import {
+  Plug,
+  CheckCircle2,
+  AlertCircle,
+  Trash2,
+  Mail,
+  FolderOpen,
+  CalendarDays,
+  SlidersHorizontal,
+} from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -47,7 +56,10 @@ const SCOPE_LABELS: Record<string, { icon: typeof Mail; label: string }> = {
   'https://www.googleapis.com/auth/gmail.send': { icon: Mail, label: 'Send Gmail' },
   'https://www.googleapis.com/auth/drive.readonly': { icon: FolderOpen, label: 'Read Drive' },
   'https://www.googleapis.com/auth/drive.file': { icon: FolderOpen, label: 'Create Drive files' },
-  'https://www.googleapis.com/auth/calendar.events': { icon: CalendarDays, label: 'Read + create calendar events' },
+  'https://www.googleapis.com/auth/calendar.events': {
+    icon: CalendarDays,
+    label: 'Read + create calendar events',
+  },
 }
 
 export function GoogleWorkspacePanel() {
@@ -249,8 +261,8 @@ export function GoogleWorkspacePanel() {
             <AlertDialogTitle>Disconnect Google Workspace?</AlertDialogTitle>
             <AlertDialogDescription>
               The AI will lose access to Gmail, Drive, Calendar, Docs, Sheets, and Tasks tools
-              {data?.email ? ` for ${data.email}` : ''}.
-              You can reconnect any time — you'll be taken back to Google to re-authorise.
+              {data?.email ? ` for ${data.email}` : ''}. You can reconnect any time — you'll be
+              taken back to Google to re-authorise.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

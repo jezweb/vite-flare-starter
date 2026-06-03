@@ -35,13 +35,7 @@ export interface AgentModel {
   /** Full model id (e.g. "anthropic/claude-sonnet-4-6"). */
   id: string
   /** Broad category for provider-specific behaviour. */
-  provider:
-    | 'workers-ai'
-    | 'openrouter'
-    | 'anthropic'
-    | 'openai'
-    | 'google'
-    | 'other'
+  provider: 'workers-ai' | 'openrouter' | 'anthropic' | 'openai' | 'google' | 'other'
   supportsVision: boolean
   supportsTools: boolean
 }

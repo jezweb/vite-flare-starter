@@ -51,7 +51,7 @@ const FsListOutput = z.union([
         name: z.string().optional(),
         size: z.number(),
         modified: z.string(),
-      }),
+      })
     ),
     count: z.number(),
     truncated: z.boolean(),
@@ -61,9 +61,13 @@ const FsListOutput = z.union([
 
 export const fsListDefinition: ToolDefinition<{ path?: string }, z.infer<typeof FsListOutput>> = {
   name: 'fs_list',
-  description: 'List files at a given path in your filesystem. Use to discover what files exist before reading.',
+  description:
+    'List files at a given path in your filesystem. Use to discover what files exist before reading.',
   inputSchema: z.object({
-    path: z.string().optional().describe('Folder path (default: root). Example: "reports/" or "" for root'),
+    path: z
+      .string()
+      .optional()
+      .describe('Folder path (default: root). Example: "reports/" or "" for root'),
   }),
   outputSchema: FsListOutput,
   isAvailable: filesAvailable,
@@ -83,9 +87,7 @@ export const fsListDefinition: ToolDefinition<{ path?: string }, z.infer<typeof 
           ? await drizzle((ctx.env as unknown as { DB: D1Database }).DB)
               .select({ key: filesTable.key, name: filesTable.name })
               .from(filesTable)
-              .where(
-                and(eq(filesTable.userId, ctx.userId), inArray(filesTable.key, r2Keys)),
-              )
+              .where(and(eq(filesTable.userId, ctx.userId), inArray(filesTable.key, r2Keys)))
               .catch(() => [])
           : []
       const nameByKey = new Map(metaRows.map((r) => [r.key, r.name]))
@@ -136,7 +138,11 @@ export const fsReadDefinition: ToolDefinition<{ path: string }, z.infer<typeof F
       if (!obj) return { path, error: 'File not found' }
 
       if (obj.size > 1024 * 1024) {
-        return { path, error: `File too large (${(obj.size / 1024 / 1024).toFixed(1)}MB). Max 1MB.`, size: obj.size }
+        return {
+          path,
+          error: `File too large (${(obj.size / 1024 / 1024).toFixed(1)}MB). Max 1MB.`,
+          size: obj.size,
+        }
       }
 
       const contentType = obj.httpMetadata?.contentType || 'text/plain'
@@ -184,7 +190,10 @@ export const fsWriteDefinition: ToolDefinition<
   inputSchema: z.object({
     path: z.string().describe('File path (e.g. "report.md", "notes/2026-04-14.md")'),
     content: z.string().describe('Text content to write'),
-    contentType: z.string().optional().describe('MIME type (default: text/plain for .txt, text/markdown for .md, etc.)'),
+    contentType: z
+      .string()
+      .optional()
+      .describe('MIME type (default: text/plain for .txt, text/markdown for .md, etc.)'),
   }),
   outputSchema: FsWriteOutput,
   isAvailable: filesAvailable,
@@ -207,7 +216,10 @@ const FsDeleteOutput = z.union([
   z.object({ path: z.string(), error: z.string() }),
 ])
 
-export const fsDeleteDefinition: ToolDefinition<{ path: string }, z.infer<typeof FsDeleteOutput>> = {
+export const fsDeleteDefinition: ToolDefinition<
+  { path: string },
+  z.infer<typeof FsDeleteOutput>
+> = {
   name: 'fs_delete',
   description: 'Delete a file from the filesystem. Cannot be undone. Requires user approval.',
   inputSchema: z.object({

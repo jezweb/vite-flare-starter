@@ -52,7 +52,7 @@ const MODE_OPTIONS: { value: InjectionMode; label: string; description: string }
   {
     value: 'always',
     label: 'Always active',
-    description: 'Body baked into every chat\'s system prompt. Spends tokens every turn.',
+    description: "Body baked into every chat's system prompt. Spends tokens every turn.",
   },
   {
     value: 'disabled',
@@ -129,7 +129,7 @@ export function KnowledgeDetailPage() {
         .split(',')
         .map((t) => t.trim())
         .filter(Boolean),
-    [tagInput],
+    [tagInput]
   )
 
   const estimatedTokens = useMemo(() => Math.ceil(body.length / 4), [body])
@@ -146,13 +146,13 @@ export function KnowledgeDetailPage() {
       body.length > 0 ||
       tagInput.trim().length > 0
     : originalSnapshot
-    ? title !== originalSnapshot.title ||
-      summary !== originalSnapshot.summary ||
-      body !== originalSnapshot.body ||
-      format !== originalSnapshot.format ||
-      injectionMode !== originalSnapshot.injectionMode ||
-      tagInput !== originalSnapshot.tags
-    : false
+      ? title !== originalSnapshot.title ||
+        summary !== originalSnapshot.summary ||
+        body !== originalSnapshot.body ||
+        format !== originalSnapshot.format ||
+        injectionMode !== originalSnapshot.injectionMode ||
+        tagInput !== originalSnapshot.tags
+      : false
 
   const canSave =
     title.trim().length > 0 &&
@@ -312,12 +312,11 @@ export function KnowledgeDetailPage() {
                   overHardCap
                     ? 'text-destructive'
                     : overSoftCap
-                    ? 'text-amber-500'
-                    : 'text-muted-foreground'
+                      ? 'text-amber-500'
+                      : 'text-muted-foreground'
                 }`}
               >
-                {body.length.toLocaleString()} chars · ~
-                {estimatedTokens.toLocaleString()} tokens
+                {body.length.toLocaleString()} chars · ~{estimatedTokens.toLocaleString()} tokens
                 {overSoftCap && ` · over ${(SOFT_CAP / 1024).toFixed(0)}KB soft cap`}
                 {overHardCap && ` · over ${(HARD_CAP / 1024).toFixed(0)}KB HARD cap`}
               </span>
@@ -367,10 +366,7 @@ export function KnowledgeDetailPage() {
 
               <div className="space-y-2">
                 <Label>Format</Label>
-                <Select
-                  value={format}
-                  onValueChange={(v) => setFormat(v as KnowledgeFormat)}
-                >
+                <Select value={format} onValueChange={(v) => setFormat(v as KnowledgeFormat)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -392,9 +388,7 @@ export function KnowledgeDetailPage() {
                   onChange={(e) => setTagInput(e.target.value)}
                   placeholder="e.g. schema, glossary, runbook"
                 />
-                <p className="text-xs text-muted-foreground">
-                  Comma-separated.
-                </p>
+                <p className="text-xs text-muted-foreground">Comma-separated.</p>
                 {tags.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {tags.map((t) => (
@@ -407,8 +401,8 @@ export function KnowledgeDetailPage() {
               </div>
 
               <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
-                <strong className="font-medium text-foreground">Scope:</strong>{' '}
-                Personal (your user). Project + org scopes coming soon.
+                <strong className="font-medium text-foreground">Scope:</strong> Personal (your
+                user). Project + org scopes coming soon.
               </div>
             </CardContent>
           </Card>

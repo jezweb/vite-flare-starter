@@ -59,7 +59,9 @@ export const activityLogs = sqliteTable(
 
     // What specifically changed (for updates)
     // Format: { fieldName: { old: value, new: value } }
-    changes: text('changes', { mode: 'json' }).$type<Record<string, { old: unknown; new: unknown }>>(),
+    changes: text('changes', { mode: 'json' }).$type<
+      Record<string, { old: unknown; new: unknown }>
+    >(),
 
     // Additional context (e.g., import source, bulk operation ID)
     metadata: text('metadata', { mode: 'json' }).$type<Record<string, unknown>>(),

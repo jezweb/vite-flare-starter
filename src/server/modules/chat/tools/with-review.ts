@@ -56,13 +56,19 @@ const WithReviewInput = z.object({
     .string()
     .min(20)
     .max(8000)
-    .describe('What the worker should produce. Plain English. Be specific about audience, format, length.'),
+    .describe(
+      'What the worker should produce. Plain English. Be specific about audience, format, length.'
+    ),
   criteria: z
     .union([
-      z.object({ skill: z.string() }).describe('Load reviewer criteria from a Skill name (e.g. "review-output").'),
+      z
+        .object({ skill: z.string() })
+        .describe('Load reviewer criteria from a Skill name (e.g. "review-output").'),
       z.object({ inline: z.string().min(20) }).describe('Inline reviewer criteria as a prompt.'),
     ])
-    .describe('Reviewer criteria — either a Skill name or inline prompt. Skills are durable; inline is for one-offs.'),
+    .describe(
+      'Reviewer criteria — either a Skill name or inline prompt. Skills are durable; inline is for one-offs.'
+    ),
   worker_model: z
     .string()
     .optional()
@@ -75,11 +81,19 @@ const WithReviewInput = z.object({
     .string()
     .optional()
     .describe('Used as the reviewer from iteration 3 onwards. Default: same as reviewer_model.'),
-  max_iters: z.number().int().min(1).max(5).optional().describe('Max worker iterations. Default 3.'),
+  max_iters: z
+    .number()
+    .int()
+    .min(1)
+    .max(5)
+    .optional()
+    .describe('Max worker iterations. Default 3.'),
   context: z
     .string()
     .optional()
-    .describe('Extra context shared with both worker and reviewer (e.g. recipient details, source material).'),
+    .describe(
+      'Extra context shared with both worker and reviewer (e.g. recipient details, source material).'
+    ),
 })
 
 const WithReviewOutput = z.union([
@@ -104,13 +118,17 @@ function getEnv(ctx: AgentContext): ReviewEnv | undefined {
 async function loadCriteriaText(
   env: ReviewEnv,
   userId: string,
-  criteria: z.infer<typeof WithReviewInput>['criteria'],
+  criteria: z.infer<typeof WithReviewInput>['criteria']
 ): Promise<{ ok: true; text: string } | { ok: false; error: string }> {
   if ('inline' in criteria) {
     return { ok: true, text: criteria.inline }
   }
   if (!env.DB) return { ok: false, error: 'DB binding required to load skill-based criteria' }
-  const skill = await loadSkill(env as { DB: D1Database; SKILLS?: R2Bucket }, criteria.skill, userId)
+  const skill = await loadSkill(
+    env as { DB: D1Database; SKILLS?: R2Bucket },
+    criteria.skill,
+    userId
+  )
   if (!skill) return { ok: false, error: `Skill "${criteria.skill}" not found` }
   return { ok: true, text: skill.body }
 }
@@ -121,10 +139,10 @@ async function runWorker(
   task: string,
   context: string | undefined,
   previousDraft: string | undefined,
-  reviewerNote: string | undefined,
+  reviewerNote: string | undefined
 ): Promise<string> {
   const systemPrompt = previousDraft
-    ? 'You are revising your previous draft based on reviewer feedback. Address the reviewer\'s specific notes. Return ONLY the revised draft — no preamble, no commentary about what you changed. CRITICAL: use the actual values from the Task (names, amounts, IDs, codes) verbatim — never substitute [PLACEHOLDER] tokens. Bracketed placeholders are a fail.'
+    ? "You are revising your previous draft based on reviewer feedback. Address the reviewer's specific notes. Return ONLY the revised draft — no preamble, no commentary about what you changed. CRITICAL: use the actual values from the Task (names, amounts, IDs, codes) verbatim — never substitute [PLACEHOLDER] tokens. Bracketed placeholders are a fail."
     : 'You are producing the requested output. Return ONLY the final draft — no preamble, no meta-commentary, no apologies. Match the format the user asked for. CRITICAL: use the actual values from the Task (names, amounts, IDs, codes) verbatim — never substitute [PLACEHOLDER] tokens. If the task says "customer Alex" and "$89.50", write "Alex" and "$89.50", not "[CUSTOMER_NAME]" and "[REFUND_AMOUNT]".'
 
   const userPromptParts = [`Task: ${task}`]
@@ -137,7 +155,7 @@ async function runWorker(
     env as Parameters<typeof runModelText>[0],
     modelId,
     systemPrompt,
-    userPromptParts.join('\n'),
+    userPromptParts.join('\n')
   )
 }
 
@@ -147,14 +165,14 @@ async function runReviewer(
   task: string,
   draft: string,
   criteriaText: string,
-  context: string | undefined,
+  context: string | undefined
 ): Promise<{ verdict: z.infer<typeof Verdict>; note: string }> {
   const systemPrompt =
-    'You are a strict reviewer. Score the worker\'s draft against the criteria, judging it relative to the original Task (which included specific details the worker was meant to use — anything in the Task is grounded, not invented). Respond with EXACTLY ONE LINE in this format and nothing else:\n' +
+    "You are a strict reviewer. Score the worker's draft against the criteria, judging it relative to the original Task (which included specific details the worker was meant to use — anything in the Task is grounded, not invented). Respond with EXACTLY ONE LINE in this format and nothing else:\n" +
     '\n' +
     '  VERDICT: APPROVE — <one-sentence reason>\n' +
     '  VERDICT: REVISE — <specific actionable change needed>\n' +
-    '  VERDICT: REJECT — <why this can\'t be fixed by revision>\n' +
+    "  VERDICT: REJECT — <why this can't be fixed by revision>\n" +
     '\n' +
     'APPROVE only if the draft cleanly meets the criteria AND uses the specific values provided in the Task (no `[PLACEHOLDER]` substitutes). REVISE for fixable issues — placeholder leakage like `[ORDER_NUMBER]` when the task gave a real order number is always REVISE. REJECT only when the draft is fundamentally wrong (e.g. answered a different question).'
 
@@ -167,7 +185,7 @@ async function runReviewer(
     env as Parameters<typeof runModelText>[0],
     modelId,
     systemPrompt,
-    userPromptParts.join('\n'),
+    userPromptParts.join('\n')
   )
   const match = text.match(VERDICT_REGEX)
   if (!match) {

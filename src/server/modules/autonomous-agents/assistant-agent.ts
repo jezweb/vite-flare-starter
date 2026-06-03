@@ -28,7 +28,11 @@
  */
 import { z } from 'zod'
 import { Mail, BookmarkPlus } from 'lucide-react'
-import { AutonomousAgent, type AutonomousAgentEnv, type AutonomousAgentState } from '@/server/lib/agents/autonomous-agent'
+import {
+  AutonomousAgent,
+  type AutonomousAgentEnv,
+  type AutonomousAgentState,
+} from '@/server/lib/agents/autonomous-agent'
 import { agentRemember, agentRecall } from '@/server/lib/agents/agent-memory'
 import { getAccessToken } from '@/server/modules/google-workspace/tokens'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
@@ -56,7 +60,8 @@ export class AssistantAgent extends AutonomousAgent<Env, AutonomousAgentState> {
     displayName: 'AI assistant',
     description:
       'A general-purpose chat agent with persistent memory + a curated tool catalog. Good default for most routines.',
-    userPurpose: 'Use for one-off chats, drafting, and quick lookups. The default for most routines.',
+    userPurpose:
+      'Use for one-off chats, drafting, and quick lookups. The default for most routines.',
     category: 'general' as const,
   }
 
@@ -83,7 +88,8 @@ export class AssistantAgent extends AutonomousAgent<Env, AutonomousAgentState> {
    */
   private requestEmailApprovalTool(): ToolDefinition<
     SendEmailPayload,
-    { ok: true; approvalId: string; status: 'pending'; summary: string } | { ok: false; error: string }
+    | { ok: true; approvalId: string; status: 'pending'; summary: string }
+    | { ok: false; error: string }
   > {
     return {
       name: 'request_email_approval',
@@ -135,13 +141,16 @@ export class AssistantAgent extends AutonomousAgent<Env, AutonomousAgentState> {
    * env + state.userId here.
    */
   private async sendEmailViaGmail(
-    payload: SendEmailPayload,
+    payload: SendEmailPayload
   ): Promise<{ ok: true; messageId: string } | { ok: false; error: string }> {
     if (!this.state.userId) {
       return { ok: false, error: 'AssistantAgent has no owner — cannot send email' }
     }
     const env = this.env as Env & { DB: D1Database }
-    const token = await getAccessToken(env as Parameters<typeof getAccessToken>[0], this.state.userId)
+    const token = await getAccessToken(
+      env as Parameters<typeof getAccessToken>[0],
+      this.state.userId
+    )
     if (!token) {
       return {
         ok: false,
@@ -232,7 +241,7 @@ export class AssistantAgent extends AutonomousAgent<Env, AutonomousAgentState> {
           event: 'agent_recall_failed',
           agentName: this.state.name,
           error: err instanceof Error ? err.message : String(err),
-        }),
+        })
       )
       return []
     }
@@ -263,14 +272,20 @@ export class AssistantAgent extends AutonomousAgent<Env, AutonomousAgentState> {
       inputSchema: z.object({
         text: z.string().min(5).max(2000),
         tags: z.array(z.string().max(40)).max(10).optional(),
-        source: z.string().max(200).optional().describe('Where this came from (URL, conversation id, etc).'),
+        source: z
+          .string()
+          .max(200)
+          .optional()
+          .describe('Where this came from (URL, conversation id, etc).'),
         importance: z
           .number()
           .int()
           .min(0)
           .max(100)
           .optional()
-          .describe('0-100. Default 50. Set 70-90 for "remember this is important" facts; <30 for routine background captures.'),
+          .describe(
+            '0-100. Default 50. Set 70-90 for "remember this is important" facts; <30 for routine background captures.'
+          ),
       }),
       outputSchema: z.union([
         z.object({ ok: z.literal(true), id: z.string() }),

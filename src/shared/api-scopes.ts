@@ -120,7 +120,10 @@ export function validateScopes(scopes: string[]): { valid: boolean; invalid: str
 /**
  * Group scopes by resource for display
  */
-export function groupScopesByResource(): Record<string, { scope: ApiScope; description: string }[]> {
+export function groupScopesByResource(): Record<
+  string,
+  { scope: ApiScope; description: string }[]
+> {
   const groups: Record<string, { scope: ApiScope; description: string }[]> = {}
 
   for (const [scope, description] of Object.entries(API_SCOPES)) {

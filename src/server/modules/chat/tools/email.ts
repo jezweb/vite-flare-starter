@@ -69,7 +69,7 @@ export const sendEmailDefinition: ToolDefinition<
       .min(1)
       .max(10000)
       .describe(
-        'Plain-text body of the email. Markdown-style line breaks are respected. HTML will be derived by wrapping paragraphs.',
+        'Plain-text body of the email. Markdown-style line breaks are respected. HTML will be derived by wrapping paragraphs.'
       ),
   }),
   outputSchema: SendEmailOutput,
@@ -98,7 +98,11 @@ export const sendEmailDefinition: ToolDefinition<
         .select({ id: emailLog.id })
         .from(emailLog)
         .where(
-          and(eq(emailLog.userId, ctx.userId), eq(emailLog.status, 'sent'), gte(emailLog.sentAt, dayAgo)),
+          and(
+            eq(emailLog.userId, ctx.userId),
+            eq(emailLog.status, 'sent'),
+            gte(emailLog.sentAt, dayAgo)
+          )
         )
         .limit(RATE_LIMIT_PER_DAY + 1)
       if (recent.length >= RATE_LIMIT_PER_DAY) {

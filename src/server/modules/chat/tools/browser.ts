@@ -33,7 +33,7 @@ const browserAvailable = (ctx: AgentContext) => {
 async function callBrowserAPI<T>(
   env: BrowserEnv,
   endpoint: string,
-  body: Record<string, unknown>,
+  body: Record<string, unknown>
 ): Promise<T> {
   const url = `https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/browser-rendering/${endpoint}`
   const response = await fetch(url, {
@@ -50,7 +50,7 @@ async function callBrowserAPI<T>(
     throw new Error(`Browser Rendering ${endpoint} failed: ${response.status} ${text}`)
   }
 
-  const data = await response.json() as { success: boolean; result?: T; errors?: unknown }
+  const data = (await response.json()) as { success: boolean; result?: T; errors?: unknown }
   if (!data.success) {
     throw new Error(`Browser Rendering ${endpoint} error: ${JSON.stringify(data.errors)}`)
   }
@@ -67,10 +67,14 @@ export const browserMarkdownDefinition: ToolDefinition<
   z.infer<typeof BrowserMarkdownOutput>
 > = {
   name: 'browser_markdown',
-  description: 'Fetch a URL and convert the page to clean markdown. Ideal for reading articles, docs, or any web content as text.',
+  description:
+    'Fetch a URL and convert the page to clean markdown. Ideal for reading articles, docs, or any web content as text.',
   inputSchema: z.object({
     url: z.string().url().describe('The URL to fetch'),
-    waitForSelector: z.string().optional().describe('CSS selector to wait for before extracting (for JS-heavy pages)'),
+    waitForSelector: z
+      .string()
+      .optional()
+      .describe('CSS selector to wait for before extracting (for JS-heavy pages)'),
   }),
   outputSchema: BrowserMarkdownOutput,
   isAvailable: browserAvailable,
@@ -116,7 +120,7 @@ export const browserExtractDefinition: ToolDefinition<
     prompt: z
       .string()
       .describe(
-        'Natural language instruction: "Extract product name, price, and availability" or "Get the article title, author, and publish date"',
+        'Natural language instruction: "Extract product name, price, and availability" or "Get the article title, author, and publish date"'
       ),
   }),
   outputSchema: BrowserExtractOutput,
@@ -164,7 +168,10 @@ export const browserScreenshotDefinition: ToolDefinition<
     'Take a screenshot of a webpage. Returns a base64 PNG image URL that can be referenced by other tools.',
   inputSchema: z.object({
     url: z.string().url().describe('The URL to screenshot'),
-    fullPage: z.boolean().optional().describe('Capture the full scrollable page (default: viewport only)'),
+    fullPage: z
+      .boolean()
+      .optional()
+      .describe('Capture the full scrollable page (default: viewport only)'),
   }),
   outputSchema: BrowserScreenshotOutput,
   isAvailable: browserAvailable,
@@ -204,9 +211,13 @@ const BrowserLinksOutput = z.union([
   z.object({ url: z.string(), error: z.string() }),
 ])
 
-export const browserLinksDefinition: ToolDefinition<{ url: string }, z.infer<typeof BrowserLinksOutput>> = {
+export const browserLinksDefinition: ToolDefinition<
+  { url: string },
+  z.infer<typeof BrowserLinksOutput>
+> = {
   name: 'browser_links',
-  description: 'Extract all links from a webpage. Useful for discovering pages to crawl or navigation structure.',
+  description:
+    'Extract all links from a webpage. Useful for discovering pages to crawl or navigation structure.',
   inputSchema: z.object({
     url: z.string().url().describe('The URL to extract links from'),
   }),
@@ -251,7 +262,8 @@ export const browserContentDefinition: ToolDefinition<
       // HTML title extraction for the interstitial detector — matches
       // <title>...</title> tag content. Plain regex is fine; we don't
       // need a full HTML parser for a single tag.
-      const titleMatch = typeof html === 'string' ? html.match(/<title[^>]*>([^<]*)<\/title>/i) : null
+      const titleMatch =
+        typeof html === 'string' ? html.match(/<title[^>]*>([^<]*)<\/title>/i) : null
       const title = titleMatch?.[1]?.trim() ?? ''
       const detection = detectInterstitial(title, typeof html === 'string' ? html : '')
       if (detection.isInterstitial) {

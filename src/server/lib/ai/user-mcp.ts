@@ -9,10 +9,7 @@
 import { createMCPClient } from '@ai-sdk/mcp'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq, and } from 'drizzle-orm'
-import {
-  userMcpConnections,
-  userMcpToolPolicies,
-} from '@/server/modules/mcp-connections/db/schema'
+import { userMcpConnections, userMcpToolPolicies } from '@/server/modules/mcp-connections/db/schema'
 import { decrypt } from '@/server/lib/crypto'
 
 export interface UserMcpResult {
@@ -35,15 +32,13 @@ export async function getUserMcpTools(
    * connection is available to any agent. See issue #50 slice 9 —
    * Connection Profiles.
    */
-  agentName?: string,
+  agentName?: string
 ): Promise<UserMcpResult> {
   const db = drizzle(env.DB)
   const allRows = await db
     .select()
     .from(userMcpConnections)
-    .where(
-      and(eq(userMcpConnections.userId, userId), eq(userMcpConnections.status, 'active')),
-    )
+    .where(and(eq(userMcpConnections.userId, userId), eq(userMcpConnections.status, 'active')))
 
   // Apply Connection-Profile allow-list. A connection with
   // allowedAgentNamesJson = null / empty array is available to all
@@ -118,11 +113,14 @@ export async function getUserMcpTools(
           event: 'user_mcp_connect_failed',
           connectionId: conn.id,
           error: err instanceof Error ? err.message : String(err),
-        }),
+        })
       )
       // Mark as error so the UI surfaces it.
       db.update(userMcpConnections)
-        .set({ status: 'error', lastError: err instanceof Error ? err.message.slice(0, 500) : String(err).slice(0, 500) })
+        .set({
+          status: 'error',
+          lastError: err instanceof Error ? err.message.slice(0, 500) : String(err).slice(0, 500),
+        })
         .where(eq(userMcpConnections.id, conn.id))
         .catch(() => {})
     }
@@ -137,7 +135,7 @@ export async function getUserMcpTools(
         } catch {
           // ignore
         }
-      }),
+      })
     )
   }
 

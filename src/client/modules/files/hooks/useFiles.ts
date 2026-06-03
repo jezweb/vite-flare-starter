@@ -139,7 +139,7 @@ export function useReindexFile() {
     mutationFn: async (id: string) => {
       return apiClient.post<{ success: boolean; status: string; chunks?: number }>(
         `/api/files/${id}/reindex`,
-        {},
+        {}
       )
     },
     onSuccess: () => {

@@ -106,7 +106,7 @@ export async function getBundledSkill(path: string): Promise<string> {
  */
 export async function getBundledSkillResource(
   skillName: string,
-  relativePath: string,
+  relativePath: string
 ): Promise<string | null> {
   const skill = (await listBundledSkills()).find((s) => s.name === skillName)
   if (!skill) return null

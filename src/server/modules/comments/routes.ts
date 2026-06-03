@@ -46,7 +46,13 @@ app.get('/', async (c) => {
     })
     .from(comments)
     .leftJoin(user, eq(comments.userId, user.id))
-    .where(and(eq(comments.entityType, entityType), eq(comments.entityId, entityId), whereNotDeleted(comments)))
+    .where(
+      and(
+        eq(comments.entityType, entityType),
+        eq(comments.entityId, entityId),
+        whereNotDeleted(comments)
+      )
+    )
     .orderBy(comments.createdAt)
 
   return c.json({ comments: rows })
@@ -55,22 +61,28 @@ app.get('/', async (c) => {
 /** POST /api/comments — create a comment */
 app.post(
   '/',
-  zValidator('json', z.object({
-    entityType: z.string(),
-    entityId: z.string(),
-    body: z.string().min(1).max(10000),
-    parentId: z.string().optional(),
-  })),
+  zValidator(
+    'json',
+    z.object({
+      entityType: z.string(),
+      entityId: z.string(),
+      body: z.string().min(1).max(10000),
+      parentId: z.string().optional(),
+    })
+  ),
   async (c) => {
     const input = c.req.valid('json')
     const userId = c.get('userId')
     const db = drizzle(c.env.DB)
 
-    const [comment] = await db.insert(comments).values({
-      ...input,
-      userId,
-      parentId: input.parentId || null,
-    }).returning()
+    const [comment] = await db
+      .insert(comments)
+      .values({
+        ...input,
+        userId,
+        parentId: input.parentId || null,
+      })
+      .returning()
 
     return c.json({ comment }, 201)
   }
@@ -86,7 +98,8 @@ app.patch(
     const { body } = c.req.valid('json')
     const db = drizzle(c.env.DB)
 
-    await db.update(comments)
+    await db
+      .update(comments)
       .set({ body, updatedAt: new Date() })
       .where(and(eq(comments.id, id), eq(comments.userId, userId)))
 
@@ -100,7 +113,8 @@ app.delete('/:id', async (c) => {
   const userId = c.get('userId')
   const db = drizzle(c.env.DB)
 
-  await db.update(comments)
+  await db
+    .update(comments)
     .set(softDeleteValues())
     .where(and(eq(comments.id, id), eq(comments.userId, userId)))
 

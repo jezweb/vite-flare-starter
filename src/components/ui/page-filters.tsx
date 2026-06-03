@@ -27,10 +27,7 @@ export function PageFilters({ className, children, ...rest }: PageFiltersProps) 
   return (
     <div
       data-slot="page-filters"
-      className={cn(
-        'flex flex-wrap items-center justify-between gap-3',
-        className,
-      )}
+      className={cn('flex flex-wrap items-center justify-between gap-3', className)}
       {...rest}
     >
       {children}
@@ -45,12 +42,7 @@ interface PageFilterTabsProps {
   className?: string
 }
 
-export function PageFilterTabs({
-  value,
-  onValueChange,
-  children,
-  className,
-}: PageFilterTabsProps) {
+export function PageFilterTabs({ value, onValueChange, children, className }: PageFilterTabsProps) {
   return (
     <Tabs value={value} onValueChange={onValueChange}>
       <TabsList className={className}>{children}</TabsList>
@@ -80,12 +72,7 @@ export function PageFilterGroup({
       {label && <span className="text-xs text-muted-foreground">{label}</span>}
       {children}
       {onClear && (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-6 px-2 text-xs"
-          onClick={onClear}
-        >
+        <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={onClear}>
           clear
         </Button>
       )}
@@ -97,12 +84,7 @@ interface PageFilterChipProps extends React.ButtonHTMLAttributes<HTMLButtonEleme
   active?: boolean
 }
 
-export function PageFilterChip({
-  active,
-  className,
-  children,
-  ...rest
-}: PageFilterChipProps) {
+export function PageFilterChip({ active, className, children, ...rest }: PageFilterChipProps) {
   return (
     <button
       data-slot="page-filter-chip"
@@ -112,7 +94,7 @@ export function PageFilterChip({
         active
           ? 'border-primary bg-primary/10 text-foreground'
           : 'border-border text-muted-foreground hover:text-foreground',
-        className,
+        className
       )}
       {...rest}
     >

@@ -18,15 +18,7 @@
  */
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  XAxis,
-  Area,
-  AreaChart,
-  YAxis,
-} from 'recharts'
+import { Bar, BarChart, CartesianGrid, XAxis, Area, AreaChart, YAxis } from 'recharts'
 import { TrendingUp, BarChart3, DollarSign } from 'lucide-react'
 
 import { apiClient } from '@/client/lib/api-client'
@@ -41,10 +33,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from '@/components/ui/chart'
-import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from '@/components/ui/toggle-group'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { formatAgentClass } from '@/shared/format/agent'
 
 type Range = '7d' | '14d' | '30d' | '90d'
@@ -87,16 +76,14 @@ export function AgentObservabilityPage() {
 
   const stats = useQuery({
     queryKey: ['agent-observability', 'stats', range],
-    queryFn: () =>
-      apiClient.get<StatsResponse>(`/api/agent-observability/stats?range=${range}`),
+    queryFn: () => apiClient.get<StatsResponse>(`/api/agent-observability/stats?range=${range}`),
     refetchInterval: 60_000,
   })
 
   // Per-tool usage stats — closes the chat-tools audit gap of "we have
   // no idea which tools actually fire". Same range filter as stats; the
   // tool-usage endpoint maps 14d → 30d under the hood.
-  const toolRange: '7d' | '30d' | '90d' =
-    range === '7d' ? '7d' : range === '90d' ? '90d' : '30d'
+  const toolRange: '7d' | '30d' | '90d' = range === '7d' ? '7d' : range === '90d' ? '90d' : '30d'
   const toolUsage = useQuery({
     queryKey: ['agent-observability', 'tool-usage', toolRange],
     queryFn: () =>
@@ -161,9 +148,7 @@ export function AgentObservabilityPage() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Total runs</p>
-                  <p className="font-mono text-2xl tabular-nums">
-                    {totalRuns.toLocaleString()}
-                  </p>
+                  <p className="font-mono text-2xl tabular-nums">{totalRuns.toLocaleString()}</p>
                 </div>
               </CardContent>
             </Card>
@@ -174,9 +159,7 @@ export function AgentObservabilityPage() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Total cost</p>
-                  <p className="font-mono text-2xl tabular-nums">
-                    ${totalCost.toFixed(4)}
-                  </p>
+                  <p className="font-mono text-2xl tabular-nums">${totalCost.toFixed(4)}</p>
                 </div>
               </CardContent>
             </Card>
@@ -202,11 +185,7 @@ export function AgentObservabilityPage() {
                       fontSize={11}
                     />
                     <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
-                    <Bar
-                      dataKey="count"
-                      fill="var(--color-count)"
-                      radius={[4, 4, 0, 0]}
-                    />
+                    <Bar dataKey="count" fill="var(--color-count)" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ChartContainer>
               </CardContent>
@@ -325,11 +304,7 @@ export function AgentObservabilityPage() {
                               {t.totalCostUsd ? `$${t.totalCostUsd.toFixed(4)}` : '—'}
                             </td>
                             <td className="py-1.5 text-right text-xs text-muted-foreground">
-                              {ageDays === null
-                                ? '—'
-                                : ageDays === 0
-                                  ? 'today'
-                                  : `${ageDays}d ago`}
+                              {ageDays === null ? '—' : ageDays === 0 ? 'today' : `${ageDays}d ago`}
                             </td>
                           </tr>
                         )

@@ -108,13 +108,13 @@ export const validPasswords = [
  * These should all fail isValid check
  */
 export const weakPasswords = [
-  'password',      // Too common, only lowercase
-  '12345678',      // Only numbers
-  'abcdefgh',      // Only lowercase
-  'ABCDEFGH',      // Only uppercase
-  'short',         // Too short
-  'Pass1!',        // Too short (6 chars)
-  'abc',           // Way too short
+  'password', // Too common, only lowercase
+  '12345678', // Only numbers
+  'abcdefgh', // Only lowercase
+  'ABCDEFGH', // Only uppercase
+  'short', // Too short
+  'Pass1!', // Too short (6 chars)
+  'abc', // Way too short
 ]
 
 /**

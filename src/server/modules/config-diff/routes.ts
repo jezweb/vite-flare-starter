@@ -31,9 +31,7 @@ app.use('*', authMiddleware)
 // other kinds gain support in `config-diff/apply.ts`. Without the
 // narrow, a user could create a proposal for an unsupported kind and
 // hit a 500 on apply with a confusing "not implemented" error.
-const createKindSchema = z.enum([
-  'skill',
-]) satisfies z.ZodType<ConfigDiffKind>
+const createKindSchema = z.enum(['skill']) satisfies z.ZodType<ConfigDiffKind>
 
 const createSchema = z.object({
   resource: z.object({
@@ -53,13 +51,10 @@ app.post('/', zValidator('json', createSchema), async (c) => {
   const before = await loadCurrentContent(
     c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket },
     input.resource,
-    userId,
+    userId
   )
   if (before === input.after) {
-    return c.json(
-      { error: 'No changes — before and after are identical.' },
-      400,
-    )
+    return c.json({ error: 'No changes — before and after are identical.' }, 400)
   }
   const proposal = await createProposal(c.env.DB, userId, {
     resource: input.resource,
@@ -102,16 +97,10 @@ app.post('/:id/apply', async (c) => {
   if (!claimed) {
     const existing = await getProposal(c.env.DB, userId, id)
     if (!existing) return c.json({ error: 'Proposal not found' }, 404)
-    return c.json(
-      { error: `Proposal already ${existing.status}.`, proposal: existing },
-      409,
-    )
+    return c.json({ error: `Proposal already ${existing.status}.`, proposal: existing }, 409)
   }
   try {
-    await applyProposal(
-      c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket },
-      claimed,
-    )
+    await applyProposal(c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket }, claimed)
   } catch (err) {
     // Apply threw after we claimed — try to revert so the user can retry.
     // If the revert ITSELF throws, we log loudly and leave the row as
@@ -129,9 +118,8 @@ app.post('/:id/apply', async (c) => {
           proposalId: id,
           userId,
           applyError,
-          revertError:
-            revertErr instanceof Error ? revertErr.message : String(revertErr),
-        }),
+          revertError: revertErr instanceof Error ? revertErr.message : String(revertErr),
+        })
       )
       return c.json(
         {
@@ -139,7 +127,7 @@ app.post('/:id/apply', async (c) => {
           applyError,
           revertFailed: true,
         },
-        500,
+        500
       )
     }
     return c.json({ error: applyError }, 500)
@@ -154,10 +142,7 @@ app.post('/:id/reject', async (c) => {
   if (!claimed) {
     const existing = await getProposal(c.env.DB, userId, id)
     if (!existing) return c.json({ error: 'Proposal not found' }, 404)
-    return c.json(
-      { error: `Proposal already ${existing.status}.`, proposal: existing },
-      409,
-    )
+    return c.json({ error: `Proposal already ${existing.status}.`, proposal: existing }, 409)
   }
   return c.json({ proposal: claimed })
 })

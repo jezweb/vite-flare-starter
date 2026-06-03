@@ -39,12 +39,7 @@ interface SectionProps extends Omit<React.HTMLAttributes<HTMLElement>, 'title'> 
 const Section = React.forwardRef<HTMLElement, SectionProps>(
   ({ className, title, description, trailing, variant = 'default', children, ...props }, ref) => {
     return (
-      <section
-        ref={ref}
-        data-slot="section"
-        className={cn('space-y-3', className)}
-        {...props}
-      >
+      <section ref={ref} data-slot="section" className={cn('space-y-3', className)} {...props}>
         {(title || description || trailing) && (
           <SectionHeader>
             <div className="min-w-0 flex-1 space-y-0.5">
@@ -57,7 +52,7 @@ const Section = React.forwardRef<HTMLElement, SectionProps>(
         {children}
       </section>
     )
-  },
+  }
 )
 Section.displayName = 'Section'
 
@@ -69,7 +64,7 @@ const SectionHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTML
       className={cn('flex items-start justify-between gap-3', className)}
       {...props}
     />
-  ),
+  )
 )
 SectionHeader.displayName = 'Section.Header'
 
@@ -84,7 +79,7 @@ const SectionTitle = React.forwardRef<
       variant === 'headline'
         ? 'text-base font-semibold tracking-tight'
         : 'text-[11px] font-semibold uppercase tracking-wider text-muted-foreground',
-      className,
+      className
     )}
     {...props}
   />

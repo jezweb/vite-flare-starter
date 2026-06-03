@@ -50,8 +50,8 @@ export function InvitationsList({ organizationId }: Props) {
       <CardHeader className="pb-2">
         <CardTitle className="text-sm">Pending invitations</CardTitle>
         <CardDescription className="text-[11px]">
-          Invitees can accept the link any time before the expiry. Email
-          delivery lands in Phase 5 — copy the link and share manually.
+          Invitees can accept the link any time before the expiry. Email delivery lands in Phase 5 —
+          copy the link and share manually.
         </CardDescription>
       </CardHeader>
       <CardContent>

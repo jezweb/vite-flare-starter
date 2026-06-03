@@ -10,8 +10,12 @@ import { user } from '@/server/modules/auth/db/schema'
 export const userMcpConnections = sqliteTable(
   'user_mcp_connections',
   {
-    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-    userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
 
     /** Catalog entry id or `custom:<uuid>` for user-added servers. */
     connectorId: text('connector_id').notNull(),
@@ -61,32 +65,40 @@ export const userMcpConnections = sqliteTable(
     personalityLabel: text('personality_label'),
     allowedAgentNamesJson: text('allowed_agent_names_json'),
 
-    createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
-    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+    createdAt: integer('created_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer('updated_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date()),
   },
   (t) => [
     index('user_mcp_connections_user_idx').on(t.userId),
     uniqueIndex('user_mcp_connections_user_connector_url_idx').on(t.userId, t.connectorId, t.url),
     index('user_mcp_connections_user_label_idx').on(t.userId, t.personalityLabel),
-  ],
+  ]
 )
 
 export const userMcpToolPolicies = sqliteTable(
   'user_mcp_tool_policies',
   {
-    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-    userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
     connectionId: text('connection_id')
       .notNull()
       .references(() => userMcpConnections.id, { onDelete: 'cascade' }),
     toolName: text('tool_name').notNull(),
     /** 'always' | 'ask' | 'never' */
     policy: text('policy').notNull(),
-    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+    updatedAt: integer('updated_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date()),
   },
-  (t) => [
-    uniqueIndex('user_mcp_tool_policies_connection_tool_idx').on(t.connectionId, t.toolName),
-  ],
+  (t) => [uniqueIndex('user_mcp_tool_policies_connection_tool_idx').on(t.connectionId, t.toolName)]
 )
 
 export type UserMcpConnection = typeof userMcpConnections.$inferSelect

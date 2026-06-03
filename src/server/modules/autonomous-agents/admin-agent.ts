@@ -75,8 +75,9 @@ export class AdminAgent extends AutonomousAgent<Env, AutonomousAgentState> {
   static readonly metadata = {
     displayName: 'Platform Admin',
     description:
-      'Configures + operates the platform on the user\'s behalf. Lives in #admin space. Every write action queues for approval.',
-    userPurpose: 'Use to configure routines, agents, and connections by chatting in plain English. Every change goes through your approval.',
+      "Configures + operates the platform on the user's behalf. Lives in #admin space. Every write action queues for approval.",
+    userPurpose:
+      'Use to configure routines, agents, and connections by chatting in plain English. Every change goes through your approval.',
     category: 'meta' as const,
   }
 
@@ -99,8 +100,7 @@ export class AdminAgent extends AutonomousAgent<Env, AutonomousAgentState> {
       return []
     }
     const args: AdminToolFactoryArgs = {
-      requestApproval: (action, payload, summary) =>
-        this.requestApproval(action, payload, summary),
+      requestApproval: (action, payload, summary) => this.requestApproval(action, payload, summary),
       userId: this.state.userId,
       env: this.env as unknown as AdminToolFactoryArgs['env'],
     }

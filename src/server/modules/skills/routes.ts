@@ -49,9 +49,7 @@ app.get('/', async (c) => {
     .where(or(eq(skills.userId, userId), eq(skills.userId, BUNDLED_USER_ID)))
 
   // Prefer the user's override when both exist for the same name.
-  const personalByName = new Map(
-    rows.filter((r) => r.userId === userId).map((r) => [r.name, r]),
-  )
+  const personalByName = new Map(rows.filter((r) => r.userId === userId).map((r) => [r.name, r]))
   const merged: typeof rows = []
   for (const r of rows) {
     if (r.userId === userId) merged.push(r)
@@ -68,10 +66,7 @@ app.get('/', async (c) => {
 /** GET /summary — list skill metadata only (for AI consumption) */
 app.get('/summary', async (c) => {
   const userId = c.get('userId')
-  const items = await listSkills(
-    c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket },
-    userId,
-  )
+  const items = await listSkills(c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket }, userId)
   return c.json({ skills: items, count: items.length })
 })
 
@@ -95,14 +90,17 @@ app.get('/:name/resources/*', async (c) => {
   const skill = await loadSkill(
     c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket },
     name,
-    userId,
+    userId
   )
   if (!skill) return c.json({ error: 'Skill not found' }, 404)
   if (!skill.resources.includes(relPath)) {
-    return c.json({
-      error: `"${relPath}" is not a listed resource of skill "${name}".`,
-      available: skill.resources,
-    }, 404)
+    return c.json(
+      {
+        error: `"${relPath}" is not a listed resource of skill "${name}".`,
+        available: skill.resources,
+      },
+      404
+    )
   }
   const content = await skill.fetchResource(relPath)
   if (content === null) {
@@ -118,7 +116,7 @@ app.get('/:name', async (c) => {
   const skill = await loadSkill(
     c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket },
     name,
-    userId,
+    userId
   )
   if (!skill) return c.json({ error: 'Skill not found' }, 404)
   return c.json({
@@ -149,7 +147,7 @@ app.post('/sync', async (c) => {
  */
 app.post('/github', async (c) => {
   const userId = c.get('userId')
-  const body = await c.req.json() as { url?: string; mode?: 'auto' | 'single' | 'directory' }
+  const body = (await c.req.json()) as { url?: string; mode?: 'auto' | 'single' | 'directory' }
   if (!body.url) return c.json({ error: 'url required' }, 400)
   const mode = body.mode ?? 'auto'
   const looksLikeRawSingle = /raw\.githubusercontent\.com\/.+\/SKILL\.md(\?.*)?$/i.test(body.url)
@@ -159,14 +157,14 @@ app.post('/github', async (c) => {
       const result = await addGitHubSkillDirectory(
         c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket },
         body.url,
-        userId,
+        userId
       )
       return c.json({ success: true, mode: 'directory', ...result })
     }
     const result = await addGitHubSkill(
       c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket },
       body.url,
-      userId,
+      userId
     )
     return c.json({ success: true, mode: 'single', ...result })
   } catch (error) {
@@ -190,7 +188,7 @@ app.post('/upload-zip', async (c) => {
     const result = await addSkillFromZip(
       c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket },
       bytes,
-      userId,
+      userId
     )
     return c.json({ success: true, ...result })
   } catch (error) {
@@ -201,7 +199,7 @@ app.post('/upload-zip', async (c) => {
 /** POST /upload — upload a SKILL.md to R2 */
 app.post('/upload', async (c) => {
   const userId = c.get('userId')
-  const body = await c.req.json() as { content?: string; overwrite?: boolean }
+  const body = (await c.req.json()) as { content?: string; overwrite?: boolean }
   if (!body.content) return c.json({ error: 'content required' }, 400)
   try {
     const result = await uploadSkillToR2(
@@ -227,7 +225,7 @@ app.post('/upload', async (c) => {
 app.patch('/:name', async (c) => {
   const userId = c.get('userId')
   const name = c.req.param('name')
-  const body = await c.req.json() as { enabled?: boolean }
+  const body = (await c.req.json()) as { enabled?: boolean }
   const enabled = body.enabled ?? true
   const db = drizzle(c.env.DB)
 
@@ -238,10 +236,7 @@ app.patch('/:name', async (c) => {
     .where(and(eq(skills.userId, userId), eq(skills.name, name)))
     .get()
   if (mine) {
-    await db
-      .update(skills)
-      .set({ enabled, updatedAt: new Date() })
-      .where(eq(skills.id, mine.id))
+    await db.update(skills).set({ enabled, updatedAt: new Date() }).where(eq(skills.id, mine.id))
     return c.json({ success: true, name, enabled })
   }
 
@@ -282,10 +277,7 @@ app.post('/:name/ai-edit', async (c) => {
     return c.json({ error: 'instruction required' }, 400)
   }
   if (body.instruction.length > 2000) {
-    return c.json(
-      { error: 'instruction too long (max 2000 characters)' },
-      400,
-    )
+    return c.json({ error: 'instruction too long (max 2000 characters)' }, 400)
   }
   const userId = c.get('userId')
   const env = c.env as unknown as { DB: D1Database; SKILLS?: R2Bucket }
@@ -315,9 +307,15 @@ RULES:
       ],
       maxOutputTokens: 4096,
     })
-    const cleaned = text.trim().replace(/^```[a-z]*\n?|\n?```$/g, '').trim()
+    const cleaned = text
+      .trim()
+      .replace(/^```[a-z]*\n?|\n?```$/g, '')
+      .trim()
     if (cleaned === before) {
-      return c.json({ error: 'The rewrite matched the original — try a different instruction.' }, 422)
+      return c.json(
+        { error: 'The rewrite matched the original — try a different instruction.' },
+        422
+      )
     }
     // Enforce: the model MUST NOT rename the skill. Enforcement happens
     // here (not in the system prompt) because models occasionally
@@ -330,7 +328,7 @@ RULES:
         {
           error: `The rewrite changed the skill name from "${name}" to "${returnedName}". Skill names must stay unchanged — try a different instruction.`,
         },
-        422,
+        422
       )
     }
     const proposal = await createProposal(c.env.DB, userId, {
@@ -344,10 +342,7 @@ RULES:
     })
     return c.json({ proposal })
   } catch (err) {
-    return c.json(
-      { error: err instanceof Error ? err.message : String(err) },
-      500,
-    )
+    return c.json({ error: err instanceof Error ? err.message : String(err) }, 500)
   }
 })
 
@@ -373,7 +368,7 @@ app.delete('/:name', async (c) => {
         error:
           'No personal override of this skill to delete. Bundled skills cannot be removed — they ship with the starter.',
       },
-      404,
+      404
     )
   }
   await db.delete(skills).where(eq(skills.id, mine.id))

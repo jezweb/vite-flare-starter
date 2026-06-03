@@ -27,15 +27,16 @@ async function getSubagentTools(role: string, ctx: AgentContext): Promise<ToolSe
   if (roleLower.includes('research') || roleLower.includes('analyst')) {
     return (await collectAvailableTools(
       [...searchDefinitions, ...browserDefinitions] as ToolDefinition<unknown, unknown>[],
-      ctx,
+      ctx
     )) as unknown as ToolSet
   }
 
-  if (roleLower.includes('code') || roleLower.includes('developer') || roleLower.includes('programmer')) {
-    return (await collectAvailableTools(
-      codeDefinitions,
-      ctx,
-    )) as unknown as ToolSet
+  if (
+    roleLower.includes('code') ||
+    roleLower.includes('developer') ||
+    roleLower.includes('programmer')
+  ) {
+    return (await collectAvailableTools(codeDefinitions, ctx)) as unknown as ToolSet
   }
 
   return {}
@@ -52,11 +53,18 @@ export const delegateDefinition: ToolDefinition<
 > = {
   name: 'delegate',
   description:
-    "Delegate a focused task to a subagent. Use for: research that needs its own context, parallel investigations, narrow specialist tasks (summarising, classifying, extracting). The subagent runs with no message history — give it everything it needs in the prompt. Researcher subagents can use search and browser tools. Coder subagents can execute code.",
+    'Delegate a focused task to a subagent. Use for: research that needs its own context, parallel investigations, narrow specialist tasks (summarising, classifying, extracting). The subagent runs with no message history — give it everything it needs in the prompt. Researcher subagents can use search and browser tools. Coder subagents can execute code.',
   inputSchema: z.object({
-    role: z.string().describe('What kind of agent (e.g. "researcher", "summariser", "code reviewer", "coder")'),
+    role: z
+      .string()
+      .describe('What kind of agent (e.g. "researcher", "summariser", "code reviewer", "coder")'),
     prompt: z.string().describe('The task — full instructions and any context the subagent needs'),
-    model: z.string().optional().describe('Override the default model. Pass any model ID from the available list (Workers AI @cf/... IDs are free, or provider/model for external models). For a fast cheap subagent, pick a Workers AI model.'),
+    model: z
+      .string()
+      .optional()
+      .describe(
+        'Override the default model. Pass any model ID from the available list (Workers AI @cf/... IDs are free, or provider/model for external models). For a fast cheap subagent, pick a Workers AI model.'
+      ),
   }),
   outputSchema: DelegateOutput,
   execute: async ({ role, prompt, model }, ctx) => {

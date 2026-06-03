@@ -55,19 +55,22 @@ export function EmptyState({
   className,
 }: EmptyStateProps) {
   return (
-    <div className={`flex flex-col items-center justify-center py-16 px-4 text-center ${className ?? ''}`}>
+    <div
+      className={`flex flex-col items-center justify-center py-16 px-4 text-center ${className ?? ''}`}
+    >
       <div className="rounded-full bg-muted p-4 mb-4">
         <Icon className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
       </div>
       <h3 className="text-lg font-medium mb-1">{title}</h3>
-      {description && (
-        <p className="text-sm text-muted-foreground max-w-sm mb-4">{description}</p>
-      )}
+      {description && <p className="text-sm text-muted-foreground max-w-sm mb-4">{description}</p>}
       {tips && tips.length > 0 && (
         <ul className="mb-6 max-w-sm space-y-1 text-left text-sm text-muted-foreground">
           {tips.slice(0, 3).map((tip) => (
             <li key={tip} className="flex gap-2">
-              <span aria-hidden="true" className="mt-1 block h-1 w-1 shrink-0 rounded-full bg-muted-foreground/60" />
+              <span
+                aria-hidden="true"
+                className="mt-1 block h-1 w-1 shrink-0 rounded-full bg-muted-foreground/60"
+              />
               <span>{tip}</span>
             </li>
           ))}
@@ -81,7 +84,10 @@ export function EmptyState({
             </Button>
           )}
           {secondaryAction && (
-            <Button onClick={secondaryAction.onClick} variant={secondaryAction.variant ?? 'outline'}>
+            <Button
+              onClick={secondaryAction.onClick}
+              variant={secondaryAction.variant ?? 'outline'}
+            >
               {secondaryAction.label}
             </Button>
           )}

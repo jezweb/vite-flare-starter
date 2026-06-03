@@ -31,10 +31,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { desc, eq } from 'drizzle-orm'
 
 import type { ToolDefinition } from '@/shared/agent'
-import {
-  getRoutine,
-  listRoutines,
-} from '@/server/modules/routines/storage'
+import { getRoutine, listRoutines } from '@/server/modules/routines/storage'
 import { routineRuns } from '@/server/modules/routines/db/schema'
 import type { AdminToolFactoryArgs } from './types'
 
@@ -50,7 +47,9 @@ const CreateRoutineInputSchema = z.object({
     .string()
     .min(1)
     .max(80)
-    .describe('Class registered in src/server/lib/agents/registry.ts. Cannot be "AdminAgent" (recursion guard).'),
+    .describe(
+      'Class registered in src/server/lib/agents/registry.ts. Cannot be "AdminAgent" (recursion guard).'
+    ),
   agentName: z.string().min(1).max(120),
   triggerKind: TriggerKindSchema.default('schedule'),
   triggerConfig: z.unknown().optional(),
@@ -104,15 +103,17 @@ const RunsResponseSchema = z.union([
   z.object({
     ok: z.literal(true),
     total: z.number(),
-    runs: z.array(z.object({
-      id: z.string(),
-      runNumber: z.number(),
-      outcome: z.string(),
-      startedAt: z.number(),
-      finishedAt: z.number().nullable(),
-      outputSummary: z.string().nullable(),
-      costUsd: z.number().nullable(),
-    })),
+    runs: z.array(
+      z.object({
+        id: z.string(),
+        runNumber: z.number(),
+        outcome: z.string(),
+        startedAt: z.number(),
+        finishedAt: z.number().nullable(),
+        outputSummary: z.string().nullable(),
+        costUsd: z.number().nullable(),
+      })
+    ),
   }),
   z.object({ ok: z.literal(false), error: z.string() }),
 ])
@@ -132,7 +133,7 @@ type ApprovalQueuedType = z.infer<typeof ApprovalQueuedSchema>
 // ─── Factory ────────────────────────────────────────────────────────
 
 export function buildRoutineAdminTools(
-  args: AdminToolFactoryArgs,
+  args: AdminToolFactoryArgs
 ): ToolDefinition<unknown, unknown>[] {
   const { requestApproval, userId, env } = args
 
@@ -323,7 +324,7 @@ export function buildRoutineAdminTools(
           const result = await requestApproval(
             'admin_delete_routine',
             { id: input.id, name: r.name },
-            summary,
+            summary
           )
           return { ok: true as const, ...result, summary }
         } catch (err) {

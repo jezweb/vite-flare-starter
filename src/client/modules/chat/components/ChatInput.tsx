@@ -20,11 +20,7 @@ interface ChatInputProps {
    * when the user activated a skill via slash-command — the caller should
    * prepend it as a system-style context block before the user's text.
    */
-  onSend: (
-    message: string,
-    files?: File[],
-    activatedSkillBody?: string,
-  ) => void
+  onSend: (message: string, files?: File[], activatedSkillBody?: string) => void
   onStop?: () => void
   isLoading?: boolean
   disabled?: boolean
@@ -62,10 +58,14 @@ export function ChatInput({
   const slashMenuOpen = features.skills && skillsAvailable && slashMatches.length > 0
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    setAttachedFiles(prev => [...prev, ...acceptedFiles].slice(0, 4)) // Max 4 images
+    setAttachedFiles((prev) => [...prev, ...acceptedFiles].slice(0, 4)) // Max 4 images
   }, [])
 
-  const { getRootProps, getInputProps, open: openFilePicker } = useDropzone({
+  const {
+    getRootProps,
+    getInputProps,
+    open: openFilePicker,
+  } = useDropzone({
     onDrop,
     accept: {
       'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp'],
@@ -77,7 +77,7 @@ export function ChatInput({
   })
 
   const removeFile = (index: number) => {
-    setAttachedFiles(prev => prev.filter((_, i) => i !== index))
+    setAttachedFiles((prev) => prev.filter((_, i) => i !== index))
   }
 
   // Auto-resize textarea
@@ -100,9 +100,10 @@ export function ChatInput({
           body: string
           resources: string[]
         }>(`/api/skills/${skill.name}`)
-        const resourceBlock = detail.resources.length > 0
-          ? `\n\n<skill_resources>\n${detail.resources.map((r) => `  <file>${r}</file>`).join('\n')}\n</skill_resources>`
-          : ''
+        const resourceBlock =
+          detail.resources.length > 0
+            ? `\n\n<skill_resources>\n${detail.resources.map((r) => `  <file>${r}</file>`).join('\n')}\n</skill_resources>`
+            : ''
         const wrapped = [
           `<skill_content name="${detail.name}" directory="${detail.directory}">`,
           detail.body,
@@ -111,7 +112,9 @@ export function ChatInput({
           'Relative paths resolve against the skill directory. Use read_skill_resource (or run_skill_script for scripts) for any listed resource.',
           resourceBlock.trim(),
           '</skill_content>',
-        ].filter(Boolean).join('\n')
+        ]
+          .filter(Boolean)
+          .join('\n')
 
         // Strip the /slash command from the input so only the user's real
         // text reaches the model. Keep anything they typed after the command.
@@ -127,7 +130,7 @@ export function ChatInput({
         setActivatingSkill(null)
       }
     },
-    [attachedFiles, onSend, slashParsed],
+    [attachedFiles, onSend, slashParsed]
   )
 
   const handleSubmit = (e: FormEvent) => {

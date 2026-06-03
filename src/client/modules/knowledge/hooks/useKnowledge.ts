@@ -37,7 +37,11 @@ export interface CreateKnowledgeBody {
 
 export type UpdateKnowledgeBody = Partial<Omit<CreateKnowledgeBody, 'scope' | 'scopeId'>>
 
-export function useKnowledgeList(scope: KnowledgeScope, scopeId: string | null | undefined, opts?: { injectionMode?: InjectionMode }) {
+export function useKnowledgeList(
+  scope: KnowledgeScope,
+  scopeId: string | null | undefined,
+  opts?: { injectionMode?: InjectionMode }
+) {
   return useQuery({
     queryKey: ['knowledge', scope, scopeId, opts?.injectionMode ?? null],
     enabled: !!scopeId,
@@ -45,7 +49,7 @@ export function useKnowledgeList(scope: KnowledgeScope, scopeId: string | null |
       const params = new URLSearchParams({ scope, scopeId: scopeId ?? '' })
       if (opts?.injectionMode) params.set('injectionMode', opts.injectionMode)
       return apiClient.get<{ knowledge: KnowledgeRow[]; count: number }>(
-        `/api/knowledge?${params.toString()}`,
+        `/api/knowledge?${params.toString()}`
       )
     },
   })

@@ -105,7 +105,7 @@ export function MicrosoftWorkspacePanel() {
     mutationFn: () =>
       apiClient.post<{ success: boolean; revokeUrl?: string }>(
         '/api/microsoft-workspace/disconnect',
-        {},
+        {}
       ),
     onSuccess: () => {
       toast.success('Microsoft 365 disconnected', {
@@ -273,9 +273,9 @@ export function MicrosoftWorkspacePanel() {
             <AlertDialogTitle>Disconnect Microsoft 365?</AlertDialogTitle>
             <AlertDialogDescription>
               The AI will lose access to Outlook, OneDrive, and calendar tools
-              {data?.email ? ` for ${data.email}` : ''}.
-              You can reconnect any time — you'll be taken back to Microsoft to re-authorise.
-              To fully revoke app consent at Microsoft, visit{' '}
+              {data?.email ? ` for ${data.email}` : ''}. You can reconnect any time — you'll be
+              taken back to Microsoft to re-authorise. To fully revoke app consent at Microsoft,
+              visit{' '}
               <a
                 href="https://myaccount.microsoft.com/consent"
                 target="_blank"

@@ -67,10 +67,7 @@ export function VirtualActivityList({
             ref={virtualizer.measureElement}
             role="listitem"
             // Divide-y look: every row except the first gets a top border.
-            className={cn(
-              'absolute left-0 right-0',
-              virtualRow.index > 0 && 'border-t',
-            )}
+            className={cn('absolute left-0 right-0', virtualRow.index > 0 && 'border-t')}
             style={{
               transform: `translateY(${virtualRow.start - virtualizer.options.scrollMargin}px)`,
             }}

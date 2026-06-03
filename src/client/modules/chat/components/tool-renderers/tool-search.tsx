@@ -49,8 +49,7 @@ export const findToolsRenderer: ToolRenderer = {
       <div className="space-y-2">
         {i?.query && (
           <div className="text-xs text-muted-foreground">
-            Searched for{' '}
-            <span className="font-mono text-foreground">{i.query}</span>
+            Searched for <span className="font-mono text-foreground">{i.query}</span>
           </div>
         )}
         {matches.length === 0 ? (

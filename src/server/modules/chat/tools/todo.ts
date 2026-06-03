@@ -75,7 +75,10 @@ const TodoAddOutput = z.union([
   z.object({ error: z.string() }),
 ])
 
-export const todoAddDefinition: ToolDefinition<{ items: string[] }, z.infer<typeof TodoAddOutput>> = {
+export const todoAddDefinition: ToolDefinition<
+  { items: string[] },
+  z.infer<typeof TodoAddOutput>
+> = {
   name: 'todo_add',
   description:
     "Add an item to the agent's task list. Use to track multi-step work — list everything you plan to do upfront, then mark each item complete as you go. The user can see the list and your progress.",
@@ -173,7 +176,8 @@ export const todoListDefinition: ToolDefinition<
   z.infer<typeof TodoListOutput>
 > = {
   name: 'todo_list',
-  description: "List the current todo items. Use to check what's been done and what's still pending.",
+  description:
+    "List the current todo items. Use to check what's been done and what's still pending.",
   inputSchema: z.object({
     status: z
       .enum(['all', 'pending', 'in_progress', 'completed', 'cancelled'])
@@ -227,7 +231,9 @@ export const todoClearDefinition: ToolDefinition<
     completed_only: z
       .boolean()
       .optional()
-      .describe('If true, only remove completed/cancelled items. If false, clear everything (default: true).'),
+      .describe(
+        'If true, only remove completed/cancelled items. If false, clear everything (default: true).'
+      ),
   }),
   outputSchema: TodoClearOutput,
   execute: async ({ completed_only = true }, ctx) => {

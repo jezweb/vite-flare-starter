@@ -69,7 +69,7 @@ export const ROUTINE_TEMPLATES: RoutineTemplate[] = [
     name: 'Morning brief',
     tagline: 'Pulls inbox + calendar each morning into a focused brief.',
     description:
-      "Each weekday morning, surveys your inbox + calendar and produces a three-paragraph daily focus brief. Runs the morning-brief skill which knows how to weigh urgency vs noise.",
+      'Each weekday morning, surveys your inbox + calendar and produces a three-paragraph daily focus brief. Runs the morning-brief skill which knows how to weigh urgency vs noise.',
     agentClass: 'AssistantAgent',
     agentNameSlug: 'morning-brief',
     baseInterval: 24 * 60 * 60,
@@ -95,7 +95,7 @@ export const ROUTINE_TEMPLATES: RoutineTemplate[] = [
     adjustMode: 'fixed',
     defaultEnabled: false,
     inputText:
-      "Run the reflect skill. Survey my recent agent_runs (last 24h) and findings (last 7 days), decide what graduates / dismisses / stays open, and file anything new you noticed today. End with a one-paragraph summary as the SessionEnd output.",
+      'Run the reflect skill. Survey my recent agent_runs (last 24h) and findings (last 7 days), decide what graduates / dismisses / stays open, and file anything new you noticed today. End with a one-paragraph summary as the SessionEnd output.',
     skillsLoaded: ['reflect'],
     toolsAllowed: [
       'record_finding',
@@ -121,7 +121,7 @@ export const ROUTINE_TEMPLATES: RoutineTemplate[] = [
     adjustMode: 'fixed',
     defaultEnabled: false,
     inputText:
-      "Run the librarian-curate skill. Survey learnings across all my agents from the last 7 days. Identify cross-cutting patterns and promote stable ones into shared knowledge entities (entityType note, [Librarian] prefix). Post one weekly digest to my Inbox. End with a 2-3 sentence SessionEnd summary.",
+      'Run the librarian-curate skill. Survey learnings across all my agents from the last 7 days. Identify cross-cutting patterns and promote stable ones into shared knowledge entities (entityType note, [Librarian] prefix). Post one weekly digest to my Inbox. End with a 2-3 sentence SessionEnd summary.',
     skillsLoaded: ['librarian-curate'],
     toolsAllowed: ['entity_list', 'entity_create', 'inbox_add'],
     sessionEndSkill: null,

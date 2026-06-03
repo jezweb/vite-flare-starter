@@ -31,7 +31,7 @@ const SessionStatsOutput = z.union([
         model: z.string(),
         count: z.number(),
         tokens: z.number().nullable(),
-      }),
+      })
     ),
     recentActivity: z.array(
       z.object({
@@ -39,7 +39,7 @@ const SessionStatsOutput = z.union([
         tokens: z.number().nullable(),
         durationMs: z.number().nullable(),
         createdAt: z.string().nullable(),
-      }),
+      })
     ),
   }),
   z.object({ error: z.string() }),
@@ -141,7 +141,7 @@ export const searchMemoriesDefinition: ToolDefinition<
         .select({ key: userMeta.key, value: userMeta.value, updatedAt: userMeta.updatedAt })
         .from(userMeta)
         .where(
-          sql`${userMeta.userId} = ${ctx.userId} AND (${userMeta.key} LIKE ${'%' + query + '%'} OR ${userMeta.value} LIKE ${'%' + query + '%'})`,
+          sql`${userMeta.userId} = ${ctx.userId} AND (${userMeta.key} LIKE ${'%' + query + '%'} OR ${userMeta.value} LIKE ${'%' + query + '%'})`
         )
         .limit(20)
 

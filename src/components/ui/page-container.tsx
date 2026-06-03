@@ -45,12 +45,7 @@ export function PageContainer({
   children,
   ...rest
 }: PageContainerProps) {
-  const width =
-    maxWidth === 'none'
-      ? ''
-      : maxWidth
-        ? `max-w-${maxWidth}`
-        : widthFor[type]
+  const width = maxWidth === 'none' ? '' : maxWidth ? `max-w-${maxWidth}` : widthFor[type]
   return (
     <div
       data-slot="page-container"

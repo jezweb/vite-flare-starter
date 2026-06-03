@@ -45,7 +45,13 @@ import { Input } from '@/components/ui/input'
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { type FileItem, useDeleteFile, useUpdateFile, formatFileSize, getFileIcon } from '../hooks/useFiles'
+import {
+  type FileItem,
+  useDeleteFile,
+  useUpdateFile,
+  formatFileSize,
+  getFileIcon,
+} from '../hooks/useFiles'
 import { toast } from 'sonner'
 
 interface FileListProps {
@@ -162,11 +168,7 @@ export function FileList({ files, isLoading, folder, onUploadClick }: FileListPr
             ? 'Try a different folder, or upload a file here.'
             : 'Drop a PDF, image, doc, or zip — uploads are private by default and can be shared via link.'
         }
-        action={
-          onUploadClick
-            ? { label: 'Upload file', onClick: onUploadClick }
-            : undefined
-        }
+        action={onUploadClick ? { label: 'Upload file', onClick: onUploadClick } : undefined}
       />
     )
   }
@@ -187,10 +189,14 @@ export function FileList({ files, isLoading, folder, onUploadClick }: FileListPr
               <div
                 className={cn(
                   'flex items-center justify-center h-10 w-10 rounded-lg',
-                  iconType === 'image' && 'bg-purple-500/10 dark:bg-purple-500/15 text-purple-600 dark:text-purple-400',
-                  iconType === 'document' && 'bg-red-500/10 dark:bg-red-500/15 text-red-600 dark:text-red-400',
-                  iconType === 'code' && 'bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400',
-                  iconType === 'archive' && 'bg-amber-500/10 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400',
+                  iconType === 'image' &&
+                    'bg-purple-500/10 dark:bg-purple-500/15 text-purple-600 dark:text-purple-400',
+                  iconType === 'document' &&
+                    'bg-red-500/10 dark:bg-red-500/15 text-red-600 dark:text-red-400',
+                  iconType === 'code' &&
+                    'bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400',
+                  iconType === 'archive' &&
+                    'bg-amber-500/10 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400',
                   iconType === 'file' && 'bg-muted text-muted-foreground'
                 )}
               >
@@ -297,7 +303,8 @@ export function FileList({ files, isLoading, folder, onUploadClick }: FileListPr
           <AlertDialogHeader>
             <AlertDialogTitle>Delete file?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete <strong>{deleteTarget?.name}</strong>. This action cannot be undone.
+              This will permanently delete <strong>{deleteTarget?.name}</strong>. This action cannot
+              be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

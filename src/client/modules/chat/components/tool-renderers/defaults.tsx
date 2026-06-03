@@ -277,5 +277,5 @@ export const defaultRenderers: ToolRenderer[] = Object.entries(DEFAULT_META).map
     match: name,
     icon: meta.icon,
     displayName: meta.displayName,
-  }),
+  })
 )

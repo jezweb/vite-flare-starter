@@ -36,12 +36,7 @@ export class AIError extends Error {
   public readonly model: ModelId | string
   public readonly cause?: Error
 
-  constructor(
-    message: string,
-    code: AIErrorCode,
-    model: ModelId | string,
-    cause?: Error
-  ) {
+  constructor(message: string, code: AIErrorCode, model: ModelId | string, cause?: Error) {
     super(message)
     this.name = 'AIError'
     this.code = code
@@ -161,11 +156,7 @@ function extractErrorMessage(error: unknown): string {
  * - 3040: Out of capacity
  * - 3007/3008: Timeout/Aborted
  */
-export function wrapError(
-  error: unknown,
-  model: ModelId | string,
-  context?: string
-): AIError {
+export function wrapError(error: unknown, model: ModelId | string, context?: string): AIError {
   if (isAIError(error)) {
     return error
   }
@@ -265,8 +256,7 @@ export async function withRetry<T>(
       lastError = wrapError(error, model, `Attempt ${attempt + 1}`)
 
       // Check if we should retry
-      const shouldRetry =
-        attempt < opts.retries && opts.retryOn.includes(lastError.code)
+      const shouldRetry = attempt < opts.retries && opts.retryOn.includes(lastError.code)
 
       if (!shouldRetry) {
         throw lastError

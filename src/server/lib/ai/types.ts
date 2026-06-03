@@ -35,7 +35,18 @@ export interface ModelConfig {
   /** Human-readable display name for UI */
   displayName: string
   /** Model provider */
-  provider: 'meta' | 'qwen' | 'google' | 'openai' | 'nous' | 'ibm' | 'mistral' | 'moonshot' | 'nvidia' | 'zhipu' | 'anthropic'
+  provider:
+    | 'meta'
+    | 'qwen'
+    | 'google'
+    | 'openai'
+    | 'nous'
+    | 'ibm'
+    | 'mistral'
+    | 'moonshot'
+    | 'nvidia'
+    | 'zhipu'
+    | 'anthropic'
   /** Maximum context window in tokens */
   contextWindow: number
   /** Whether the model outputs <think> tokens */

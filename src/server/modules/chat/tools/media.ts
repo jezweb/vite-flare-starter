@@ -6,7 +6,12 @@
  */
 import { z } from 'zod'
 import { Scissors, Image as ImageIcon, Music, Grid3x3 } from 'lucide-react'
-import { extractFrame, extractAudio, clipVideo, generateSpritesheet } from '@/server/modules/media/transform'
+import {
+  extractFrame,
+  extractAudio,
+  clipVideo,
+  generateSpritesheet,
+} from '@/server/modules/media/transform'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 
 type MediaEnv = {
@@ -75,7 +80,9 @@ export const videoClipDefinition: ToolDefinition<
         removeAudio: opts.removeAudio,
       })
       const resultBytes = await response.arrayBuffer()
-      await env.FILES!.put(scopedOutput, resultBytes, { httpMetadata: { contentType: 'video/mp4' } })
+      await env.FILES!.put(scopedOutput, resultBytes, {
+        httpMetadata: { contentType: 'video/mp4' },
+      })
       return { sourcePath, outputPath, sizeBytes: resultBytes.byteLength, duration: opts.duration }
     } catch (error) {
       return { error: error instanceof Error ? error.message : String(error) }
@@ -104,7 +111,10 @@ export const videoFrameDefinition: ToolDefinition<
   inputSchema: z.object({
     sourcePath: z.string().describe('Path to source video'),
     outputPath: z.string().describe('Path to save the extracted frame image'),
-    time: z.string().optional().describe('Timestamp to extract (e.g. "3s", "1m20s"). Default: "0s"'),
+    time: z
+      .string()
+      .optional()
+      .describe('Timestamp to extract (e.g. "3s", "1m20s"). Default: "0s"'),
     width: z.number().optional().describe('Frame width'),
     height: z.number().optional().describe('Frame height'),
   }),
@@ -117,9 +127,15 @@ export const videoFrameDefinition: ToolDefinition<
       const scopedOutput = `users/${ctx.userId}/${outputPath}`
       const object = await env.FILES!.get(scopedSource)
       if (!object) return { error: `Video not found: ${sourcePath}` }
-      const response = await extractFrame(env.MEDIA, await object.arrayBuffer(), { time, width, height })
+      const response = await extractFrame(env.MEDIA, await object.arrayBuffer(), {
+        time,
+        width,
+        height,
+      })
       const resultBytes = await response.arrayBuffer()
-      await env.FILES!.put(scopedOutput, resultBytes, { httpMetadata: { contentType: 'image/jpeg' } })
+      await env.FILES!.put(scopedOutput, resultBytes, {
+        httpMetadata: { contentType: 'image/jpeg' },
+      })
       return { sourcePath, outputPath, time: time || '0s', sizeBytes: resultBytes.byteLength }
     } catch (error) {
       return { error: error instanceof Error ? error.message : String(error) }
@@ -142,7 +158,8 @@ export const videoAudioDefinition: ToolDefinition<
   z.infer<typeof VideoAudioOutput>
 > = {
   name: 'video_audio',
-  description: 'Extract the audio track from a video as M4A. Use when the user wants just the audio from a video file.',
+  description:
+    'Extract the audio track from a video as M4A. Use when the user wants just the audio from a video file.',
   inputSchema: z.object({
     sourcePath: z.string().describe('Path to source video'),
     outputPath: z.string().describe('Path to save the extracted audio (M4A)'),
@@ -158,7 +175,9 @@ export const videoAudioDefinition: ToolDefinition<
       if (!object) return { error: `Video not found: ${sourcePath}` }
       const response = await extractAudio(env.MEDIA, await object.arrayBuffer())
       const resultBytes = await response.arrayBuffer()
-      await env.FILES!.put(scopedOutput, resultBytes, { httpMetadata: { contentType: 'audio/mp4' } })
+      await env.FILES!.put(scopedOutput, resultBytes, {
+        httpMetadata: { contentType: 'audio/mp4' },
+      })
       return { sourcePath, outputPath, sizeBytes: resultBytes.byteLength }
     } catch (error) {
       return { error: error instanceof Error ? error.message : String(error) }
@@ -203,7 +222,9 @@ export const videoSpritesheetDefinition: ToolDefinition<
         height: height || 90,
       })
       const resultBytes = await response.arrayBuffer()
-      await env.FILES!.put(scopedOutput, resultBytes, { httpMetadata: { contentType: 'image/jpeg' } })
+      await env.FILES!.put(scopedOutput, resultBytes, {
+        httpMetadata: { contentType: 'image/jpeg' },
+      })
       return { sourcePath, outputPath, sizeBytes: resultBytes.byteLength }
     } catch (error) {
       return { error: error instanceof Error ? error.message : String(error) }

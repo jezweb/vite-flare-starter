@@ -32,9 +32,7 @@ export function ToolApproval({ toolName, args, onApprove, onDeny }: Props) {
             The agent wants to execute this action. Review the details and approve or deny.
           </div>
           {Object.keys(args).length > 0 && (
-            <pre
-              className="mt-2 max-h-40 overflow-auto rounded bg-muted p-2 font-mono text-[11px] leading-relaxed whitespace-pre-wrap break-words"
-            >
+            <pre className="mt-2 max-h-40 overflow-auto rounded bg-muted p-2 font-mono text-[11px] leading-relaxed whitespace-pre-wrap break-words">
               {JSON.stringify(args, null, 2)}
             </pre>
           )}
@@ -49,13 +47,7 @@ export function ToolApproval({ toolName, args, onApprove, onDeny }: Props) {
               <Check className="size-3.5" />
               Approve
             </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={onDeny}
-              className="gap-1.5"
-            >
+            <Button type="button" size="sm" variant="outline" onClick={onDeny} className="gap-1.5">
               <X className="size-3.5" />
               Deny
             </Button>

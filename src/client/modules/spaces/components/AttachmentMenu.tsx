@@ -52,15 +52,14 @@ export function AttachmentMenu({ onAttach }: Props) {
   })
   const mcpQuery = useQuery({
     queryKey: ['mcp-connections'],
-    queryFn: () =>
-      apiClient.get<{ connections: McpConnection[] }>('/api/mcp-connections'),
+    queryFn: () => apiClient.get<{ connections: McpConnection[] }>('/api/mcp-connections'),
     enabled: view === 'mcp',
   })
   const resourcesQuery = useQuery({
     queryKey: ['mcp-resources', selectedConn],
     queryFn: () =>
       apiClient.get<{ resources: Array<{ uri: string; name?: string; description?: string }> }>(
-        `/api/mcp-connections/${selectedConn}/resources`,
+        `/api/mcp-connections/${selectedConn}/resources`
       ),
     enabled: view === 'mcp' && !!selectedConn,
   })
@@ -217,7 +216,8 @@ export function AttachmentMenu({ onAttach }: Props) {
                         </button>
                       </li>
                     ))}
-                  {(mcpQuery.data?.connections ?? []).filter((c) => c.status === 'active').length === 0 && (
+                  {(mcpQuery.data?.connections ?? []).filter((c) => c.status === 'active')
+                    .length === 0 && (
                     <li className="px-2 py-3 text-xs text-muted-foreground">
                       No active MCP connections. Add one in Settings → Connectors.
                     </li>
@@ -246,7 +246,9 @@ export function AttachmentMenu({ onAttach }: Props) {
                     >
                       <span className="truncate font-medium">{r.name ?? r.uri}</span>
                       {r.description && (
-                        <span className="line-clamp-1 text-[10px] text-muted-foreground">{r.description}</span>
+                        <span className="line-clamp-1 text-[10px] text-muted-foreground">
+                          {r.description}
+                        </span>
                       )}
                     </button>
                   </li>

@@ -46,7 +46,16 @@ export const DEFAULT_PREVIEW_ITEMS = 50
  * matters — the FIRST matching key wins, so put the more specific /
  * conventional names first.
  */
-const COLLECTION_KEYS = ['rows', 'data', 'items', 'results', 'records', 'messages', 'files', 'list'] as const
+const COLLECTION_KEYS = [
+  'rows',
+  'data',
+  'items',
+  'results',
+  'records',
+  'messages',
+  'files',
+  'list',
+] as const
 
 export interface TruncateOptions {
   /** Max serialised JSON characters allowed before truncation kicks in. */
@@ -99,9 +108,7 @@ function safeStringifyLength(value: unknown): number | null {
  * collections aren't worth truncating, and matching them produces
  * confusing metadata.
  */
-function detectCollection(
-  result: unknown,
-): { key: string; array: unknown[] } | null {
+function detectCollection(result: unknown): { key: string; array: unknown[] } | null {
   if (!result || typeof result !== 'object' || Array.isArray(result)) return null
   const obj = result as Record<string, unknown>
   for (const key of COLLECTION_KEYS) {
@@ -138,11 +145,7 @@ function fitItemsToBudget(array: unknown[], budget: number, cap: number): number
  * decides what to do next, so it has to be specific and actionable —
  * "Truncated" alone tends to make the model retry the same call.
  */
-function truncationMessage(
-  totalItems: number,
-  keptItems: number,
-  hint?: string,
-): string {
+function truncationMessage(totalItems: number, keptItems: number, hint?: string): string {
   const base = `Returned ${keptItems} of ${totalItems} items. The full result was too large for the conversation.`
   if (hint) return `${base} ${hint}`
   return `${base} If you need more, narrow the query (LIMIT/WHERE/filters) or call read_data / aggregate_data / export_data with the data_ref if one was attached.`
@@ -154,7 +157,7 @@ function truncationMessage(
  */
 export function truncateToolResult<T = unknown>(
   result: T,
-  opts: TruncateOptions = {},
+  opts: TruncateOptions = {}
 ): TruncateResult<T> {
   const maxChars = opts.maxChars ?? DEFAULT_MAX_CHARS
   const previewItems = opts.previewItems ?? DEFAULT_PREVIEW_ITEMS

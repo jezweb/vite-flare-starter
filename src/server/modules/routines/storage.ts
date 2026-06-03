@@ -108,7 +108,7 @@ export async function getRoutine(
   env: DbEnv,
   id: string,
   userId: string,
-  orgId: string | null = null,
+  orgId: string | null = null
 ): Promise<RoutineRow | null> {
   const db = drizzle(env.DB)
   const [row] = await db
@@ -122,7 +122,7 @@ export async function getRoutine(
 export async function listRoutines(
   env: DbEnv,
   userId: string,
-  orgId: string | null = null,
+  orgId: string | null = null
 ): Promise<RoutineRow[]> {
   const db = drizzle(env.DB)
   return db
@@ -137,7 +137,7 @@ export async function updateRoutine(
   id: string,
   userId: string,
   patch: Partial<CreateRoutineInput> & { effectiveInterval?: number },
-  orgId: string | null = null,
+  orgId: string | null = null
 ): Promise<RoutineRow | null> {
   const db = drizzle(env.DB)
   // Only update fields that are explicitly present in the patch.
@@ -146,10 +146,14 @@ export async function updateRoutine(
   if (patch.description !== undefined) updates['description'] = patch.description
   if (patch.enabled !== undefined) updates['enabled'] = patch.enabled
   if (patch.triggerKind !== undefined) updates['triggerKind'] = patch.triggerKind
-  if (patch.triggerConfig !== undefined) updates['triggerConfigJson'] = JSON.stringify(patch.triggerConfig)
-  if (patch.inputTemplate !== undefined) updates['inputTemplateJson'] = JSON.stringify(patch.inputTemplate)
-  if (patch.toolsAllowed !== undefined) updates['toolsAllowedJson'] = JSON.stringify(patch.toolsAllowed)
-  if (patch.skillsLoaded !== undefined) updates['skillsLoadedJson'] = JSON.stringify(patch.skillsLoaded)
+  if (patch.triggerConfig !== undefined)
+    updates['triggerConfigJson'] = JSON.stringify(patch.triggerConfig)
+  if (patch.inputTemplate !== undefined)
+    updates['inputTemplateJson'] = JSON.stringify(patch.inputTemplate)
+  if (patch.toolsAllowed !== undefined)
+    updates['toolsAllowedJson'] = JSON.stringify(patch.toolsAllowed)
+  if (patch.skillsLoaded !== undefined)
+    updates['skillsLoadedJson'] = JSON.stringify(patch.skillsLoaded)
   if (patch.hooks !== undefined) updates['hooksJson'] = JSON.stringify(patch.hooks)
   if (patch.baseInterval !== undefined) updates['baseInterval'] = patch.baseInterval
   if (patch.minInterval !== undefined) updates['minInterval'] = patch.minInterval
@@ -170,7 +174,7 @@ export async function deleteRoutine(
   env: DbEnv,
   id: string,
   userId: string,
-  orgId: string | null = null,
+  orgId: string | null = null
 ): Promise<boolean> {
   const db = drizzle(env.DB)
   const result = await db
@@ -263,7 +267,7 @@ export async function finishRoutineRun(env: DbEnv, input: FinishRunInput): Promi
 export async function getRecentRunSummaries(
   env: DbEnv,
   routineId: string,
-  limit: number = 5,
+  limit: number = 5
 ): Promise<Pick<RoutineRunRow, 'runNumber' | 'startedAt' | 'outcome' | 'outputSummary'>[]> {
   const db = drizzle(env.DB)
   const rows = await db
@@ -286,7 +290,7 @@ export async function getRecentRunSummaries(
  * template ({{recent_runs}}).
  */
 export function formatRunSummaryTail(
-  rows: Pick<RoutineRunRow, 'runNumber' | 'startedAt' | 'outcome' | 'outputSummary'>[],
+  rows: Pick<RoutineRunRow, 'runNumber' | 'startedAt' | 'outcome' | 'outputSummary'>[]
 ): string {
   if (rows.length === 0) return 'No prior runs.'
   const lines = rows
@@ -317,7 +321,10 @@ export interface AdjustCadenceInput {
   reason?: string
 }
 
-export async function adjustRoutineCadence(env: DbEnv, input: AdjustCadenceInput): Promise<{
+export async function adjustRoutineCadence(
+  env: DbEnv,
+  input: AdjustCadenceInput
+): Promise<{
   applied: boolean
   effectiveInterval: number | null
 }> {

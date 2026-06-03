@@ -6,8 +6,8 @@ import { Star, Phone, ExternalLink, MapPin } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 
 function useIsDark(): boolean {
-  const [isDark, setIsDark] = useState(() =>
-    typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
+  const [isDark, setIsDark] = useState(
+    () => typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
   )
   useEffect(() => {
     if (typeof document === 'undefined') return
@@ -82,7 +82,7 @@ function FitBounds({ points }: { points: Array<{ lat: number; lng: number }> }) 
     }
     const bounds = L.latLngBounds(points.map((p) => [p.lat, p.lng] as [number, number]))
     map.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   return null
 }
@@ -92,7 +92,10 @@ export function PlaceMap({ title, places, center, zoom }: Props) {
   const cardRefs = useRef<Array<HTMLDivElement | null>>([])
   const isDark = useIsDark()
 
-  const valid = useMemo(() => places.filter((p) => typeof p.lat === 'number' && typeof p.lng === 'number'), [places])
+  const valid = useMemo(
+    () => places.filter((p) => typeof p.lat === 'number' && typeof p.lng === 'number'),
+    [places]
+  )
 
   const defaultCenter = useMemo(() => {
     if (center) return center
@@ -102,7 +105,10 @@ export function PlaceMap({ title, places, center, zoom }: Props) {
     return { lat, lng }
   }, [center, valid])
 
-  const focus = selectedIdx !== null && valid[selectedIdx] ? { lat: valid[selectedIdx]!.lat, lng: valid[selectedIdx]!.lng } : null
+  const focus =
+    selectedIdx !== null && valid[selectedIdx]
+      ? { lat: valid[selectedIdx]!.lat, lng: valid[selectedIdx]!.lng }
+      : null
 
   if (valid.length === 0) {
     return (
@@ -168,7 +174,11 @@ export function PlaceMap({ title, places, center, zoom }: Props) {
               >
                 <div className="flex gap-3">
                   {p.photoUrl ? (
-                    <img src={p.photoUrl} alt="" className="w-14 h-14 rounded object-cover flex-shrink-0" />
+                    <img
+                      src={p.photoUrl}
+                      alt=""
+                      className="w-14 h-14 rounded object-cover flex-shrink-0"
+                    />
                   ) : (
                     <div className="w-14 h-14 rounded bg-muted flex items-center justify-center flex-shrink-0">
                       <MapPin className="w-5 h-5 text-muted-foreground" />
@@ -186,7 +196,11 @@ export function PlaceMap({ title, places, center, zoom }: Props) {
                       )}
                       {p.type && <span className="truncate min-w-0">· {p.type}</span>}
                     </div>
-                    {p.snippet && <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{p.snippet}</div>}
+                    {p.snippet && (
+                      <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                        {p.snippet}
+                      </div>
+                    )}
                     {(p.phone || p.website || p.address) && (
                       <div className="flex flex-wrap gap-2 mt-1.5 text-xs">
                         {p.phone && (

@@ -70,10 +70,22 @@ app.put('/', zValidator('json', SetSchema), async (c) => {
     if (org.role !== 'owner' && org.role !== 'admin') {
       return c.json({ error: 'Setting org credentials requires admin/owner role' }, 403)
     }
-    const result = await setServiceKey(env, { organizationId: org.organizationId }, provider, value, label !== undefined ? { label } : undefined)
+    const result = await setServiceKey(
+      env,
+      { organizationId: org.organizationId },
+      provider,
+      value,
+      label !== undefined ? { label } : undefined
+    )
     return c.json({ owner: 'org', provider, ...result })
   }
-  const result = await setServiceKey(env, { userId }, provider, value, label !== undefined ? { label } : undefined)
+  const result = await setServiceKey(
+    env,
+    { userId },
+    provider,
+    value,
+    label !== undefined ? { label } : undefined
+  )
   return c.json({ owner: 'user', provider, ...result })
 })
 
@@ -94,10 +106,20 @@ app.post('/revoke', zValidator('json', RevokeSchema), async (c) => {
     if (org.role !== 'owner' && org.role !== 'admin') {
       return c.json({ error: 'Revoking org credentials requires admin/owner role' }, 403)
     }
-    const result = await revokeServiceKey(env, { organizationId: org.organizationId }, provider, label !== undefined ? { label } : undefined)
+    const result = await revokeServiceKey(
+      env,
+      { organizationId: org.organizationId },
+      provider,
+      label !== undefined ? { label } : undefined
+    )
     return c.json({ owner: 'org', provider, ...result })
   }
-  const result = await revokeServiceKey(env, { userId }, provider, label !== undefined ? { label } : undefined)
+  const result = await revokeServiceKey(
+    env,
+    { userId },
+    provider,
+    label !== undefined ? { label } : undefined
+  )
   return c.json({ owner: 'user', provider, ...result })
 })
 

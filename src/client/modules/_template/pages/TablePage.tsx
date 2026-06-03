@@ -58,9 +58,7 @@ export function TemplateTablePage() {
       {
         accessorKey: 'name',
         header: 'Name',
-        cell: ({ row }) => (
-          <span className="font-medium">{row.original.name}</span>
-        ),
+        cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
       },
       {
         accessorKey: 'status',
@@ -70,11 +68,7 @@ export function TemplateTablePage() {
           return (
             <Badge
               variant={
-                status === 'active'
-                  ? 'default'
-                  : status === 'paused'
-                    ? 'secondary'
-                    : 'outline'
+                status === 'active' ? 'default' : status === 'paused' ? 'secondary' : 'outline'
               }
             >
               {status}
@@ -86,22 +80,18 @@ export function TemplateTablePage() {
         accessorKey: 'amount',
         header: 'Amount',
         cell: ({ row }) => (
-          <span className="font-mono tabular-nums">
-            ${row.original.amount.toLocaleString()}
-          </span>
+          <span className="font-mono tabular-nums">${row.original.amount.toLocaleString()}</span>
         ),
       },
       {
         accessorKey: 'updatedAt',
         header: 'Updated',
         cell: ({ row }) => (
-          <span className="text-muted-foreground">
-            {formatRelative(row.original.updatedAt)}
-          </span>
+          <span className="text-muted-foreground">{formatRelative(row.original.updatedAt)}</span>
         ),
       },
     ],
-    [],
+    []
   )
 
   return (

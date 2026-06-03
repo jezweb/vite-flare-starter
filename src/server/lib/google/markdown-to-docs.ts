@@ -126,12 +126,17 @@ export function parseMarkdown(markdown: string): {
         start,
         end,
         style:
-          level === 1 ? 'HEADING_1'
-          : level === 2 ? 'HEADING_2'
-          : level === 3 ? 'HEADING_3'
-          : level === 4 ? 'HEADING_4'
-          : level === 5 ? 'HEADING_5'
-          : 'HEADING_6',
+          level === 1
+            ? 'HEADING_1'
+            : level === 2
+              ? 'HEADING_2'
+              : level === 3
+                ? 'HEADING_3'
+                : level === 4
+                  ? 'HEADING_4'
+                  : level === 5
+                    ? 'HEADING_5'
+                    : 'HEADING_6',
       })
       i++
       continue
@@ -240,10 +245,7 @@ function parseInline(s: string, baseCursor: number, styles: TextStyleSpan[]): st
  * Build the full Doc-API request sequence to render `markdown` into
  * an existing document, starting at `startIndex` (1 for an empty doc).
  */
-export function markdownToDocsRequests(
-  markdown: string,
-  startIndex: number,
-): MarkdownToDocsResult {
+export function markdownToDocsRequests(markdown: string, startIndex: number): MarkdownToDocsResult {
   const parsed = parseMarkdown(markdown)
   const requests: DocsRequest[] = []
 

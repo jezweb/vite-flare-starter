@@ -5,7 +5,19 @@ import { formatRelative } from '@/client/lib/format-time'
 import { useState, useEffect, useDeferredValue, useMemo } from 'react'
 import { Link, useNavigate, useLocation, useParams, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Plus, MoreHorizontal, Pencil, Trash2, Search, ChevronRight, Star, Folder, FolderPlus, FolderX, FolderMinus } from 'lucide-react'
+import {
+  Plus,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  Search,
+  ChevronRight,
+  Star,
+  Folder,
+  FolderPlus,
+  FolderX,
+  FolderMinus,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -162,11 +174,11 @@ export function ConversationSidebar({ activeConversationId }: Props) {
   //   /dashboard/chat?projectId=X    → URL param (pre-send state)
   const onProjectPage = location.pathname.startsWith('/dashboard/projects/')
   const activeConversationProjectId = routeParams.conversationId
-    ? conversations.find((c) => c.id === routeParams.conversationId)?.projectId ?? null
+    ? (conversations.find((c) => c.id === routeParams.conversationId)?.projectId ?? null)
     : null
   const newChatProjectId = onProjectPage
-    ? routeParams.id ?? null
-    : activeConversationProjectId ?? searchParams.get('projectId')
+    ? (routeParams.id ?? null)
+    : (activeConversationProjectId ?? searchParams.get('projectId'))
 
   // Partition conversations into project buckets + ungrouped. Project buckets
   // keep starred-then-recent order (the server already sorts the list that
@@ -192,7 +204,7 @@ export function ConversationSidebar({ activeConversationId }: Props) {
     queryKey: ['conversations', 'search', deferredQuery],
     queryFn: () =>
       apiClient.get<{ results: { conversationId: string; snippet: string; role: string }[] }>(
-        `/api/conversations/search?q=${encodeURIComponent(deferredQuery)}`,
+        `/api/conversations/search?q=${encodeURIComponent(deferredQuery)}`
       ),
     enabled: deferredQuery.length >= 2,
   })
@@ -211,9 +223,7 @@ export function ConversationSidebar({ activeConversationId }: Props) {
       to={`/dashboard/chat/${conv.id}`}
       className={cn(
         'group flex items-center gap-2 rounded-md px-2.5 py-2 transition-colors',
-        conv.id === activeConversationId
-          ? 'bg-accent text-accent-foreground'
-          : 'hover:bg-muted',
+        conv.id === activeConversationId ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'
       )}
     >
       <div className="flex-1 min-w-0">
@@ -222,7 +232,10 @@ export function ConversationSidebar({ activeConversationId }: Props) {
             autoFocus
             value={renameText}
             onChange={(e) => setRenameText(e.target.value)}
-            onClick={(e) => { e.preventDefault(); e.stopPropagation() }}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault()
@@ -271,7 +284,7 @@ export function ConversationSidebar({ activeConversationId }: Props) {
               'size-6 transition-opacity',
               conv.starred
                 ? 'opacity-100 text-yellow-500 hover:text-yellow-600'
-                : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100 text-muted-foreground hover:text-foreground',
+                : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100 text-muted-foreground hover:text-foreground'
             )}
             onClick={(e) => {
               e.preventDefault()
@@ -296,9 +309,12 @@ export function ConversationSidebar({ activeConversationId }: Props) {
                   'size-6 transition-opacity',
                   openMenuId === conv.id
                     ? 'opacity-100'
-                    : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100',
+                    : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100'
                 )}
-                onClick={(e) => { e.preventDefault(); e.stopPropagation() }}
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                }}
                 title="More actions"
                 aria-label="More actions"
               >
@@ -431,7 +447,9 @@ export function ConversationSidebar({ activeConversationId }: Props) {
                   className="block rounded-md px-2.5 py-2 transition-colors hover:bg-muted"
                 >
                   <div className="text-sm truncate">{hit.snippet}</div>
-                  <div className="text-[10px] text-muted-foreground">{hit.role === 'title' ? 'Title match' : 'Message match'}</div>
+                  <div className="text-[10px] text-muted-foreground">
+                    {hit.role === 'title' ? 'Title match' : 'Message match'}
+                  </div>
                 </Link>
               ))}
             </div>
@@ -443,9 +461,7 @@ export function ConversationSidebar({ activeConversationId }: Props) {
             ))}
           </div>
         ) : conversations.length === 0 ? (
-          <div className="p-4 text-center text-xs text-muted-foreground">
-            No conversations yet
-          </div>
+          <div className="p-4 text-center text-xs text-muted-foreground">No conversations yet</div>
         ) : (
           <div className="p-1.5 space-y-2">
             {/* ── PROJECTS section ─────────────────────────────────────────
@@ -485,10 +501,7 @@ export function ConversationSidebar({ activeConversationId }: Props) {
                     aria-label={`Toggle ${group.label} group`}
                   >
                     <ChevronRight
-                      className={cn(
-                        'size-3 transition-transform',
-                        !isCollapsed && 'rotate-90',
-                      )}
+                      className={cn('size-3 transition-transform', !isCollapsed && 'rotate-90')}
                     />
                     {group.label}
                     <span className="ml-auto font-normal normal-case tracking-normal">
@@ -554,10 +567,11 @@ export function ConversationSidebar({ activeConversationId }: Props) {
                 // ON DELETE SET NULL FK — the project row goes away but the
                 // data stays.
                 const count = confirmDeleteProjectId
-                  ? byProject.get(confirmDeleteProjectId)?.length ?? 0
+                  ? (byProject.get(confirmDeleteProjectId)?.length ?? 0)
                   : 0
                 if (count === 0) return 'The project is empty. It will be removed from the sidebar.'
-                if (count === 1) return '1 conversation will return to the main list. You can re-group it later.'
+                if (count === 1)
+                  return '1 conversation will return to the main list. You can re-group it later.'
                 return `${count} conversations will return to the main list. You can re-group them later.`
               })()}
             </AlertDialogDescription>
@@ -684,7 +698,10 @@ function ProjectsSection({
                 value={newProjectName}
                 onChange={(e) => setNewProjectName(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') { e.preventDefault(); commitCreate() }
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    commitCreate()
+                  }
                   if (e.key === 'Escape') {
                     e.preventDefault()
                     setCreatingProject(false)
@@ -726,18 +743,29 @@ function ProjectsSection({
                       convention) rather than expanding inline. */}
                   <button
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); toggleGroup(projectKey) }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      toggleGroup(projectKey)
+                    }}
                     className="shrink-0 rounded p-0.5 hover:bg-muted"
                     aria-expanded={!isCollapsed}
                     aria-label={`Toggle ${project.name}`}
                   >
                     <ChevronRight
-                      className={cn('size-3 transition-transform text-muted-foreground', !isCollapsed && 'rotate-90')}
+                      className={cn(
+                        'size-3 transition-transform text-muted-foreground',
+                        !isCollapsed && 'rotate-90'
+                      )}
                     />
                   </button>
                   {isRenaming ? (
                     <div className="flex flex-1 items-center gap-1.5 min-w-0">
-                      <Folder className={cn('size-3.5 shrink-0', getProjectFillClass(project.color) ?? 'text-muted-foreground')} />
+                      <Folder
+                        className={cn(
+                          'size-3.5 shrink-0',
+                          getProjectFillClass(project.color) ?? 'text-muted-foreground'
+                        )}
+                      />
                       <Input
                         autoFocus
                         value={projectRenameText}
@@ -769,8 +797,15 @@ function ProjectsSection({
                         to={`/dashboard/projects/${project.id}`}
                         className="flex flex-1 items-center gap-1.5 min-w-0 hover:underline underline-offset-2"
                       >
-                        <Folder className={cn('size-3.5 shrink-0', getProjectFillClass(project.color) ?? 'text-muted-foreground')} />
-                        <span className="truncate font-medium" title={project.name}>{project.name}</span>
+                        <Folder
+                          className={cn(
+                            'size-3.5 shrink-0',
+                            getProjectFillClass(project.color) ?? 'text-muted-foreground'
+                          )}
+                        />
+                        <span className="truncate font-medium" title={project.name}>
+                          {project.name}
+                        </span>
                         <span className="ml-auto shrink-0 text-muted-foreground/60 tabular-nums">
                           {convs.length}
                         </span>
@@ -790,9 +825,12 @@ function ProjectsSection({
                             'size-5 shrink-0 transition-opacity',
                             openProjectMenuId === project.id
                               ? 'opacity-100'
-                              : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100',
+                              : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100'
                           )}
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation() }}
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                          }}
                           aria-label="Project actions"
                         >
                           <MoreHorizontal className="size-3" />

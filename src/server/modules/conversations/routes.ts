@@ -44,11 +44,13 @@ app.get('/search', async (c) => {
         sourceTable: 'conversation_messages',
         query,
         limit: 20,
-        select: '"conversation_messages".conversation_id, "conversation_messages".parts, "conversation_messages".role',
+        select:
+          '"conversation_messages".conversation_id, "conversation_messages".parts, "conversation_messages".role',
         // Scope to current user's conversations only
-        where: '"conversation_messages".conversation_id IN (SELECT id FROM conversations WHERE user_id = ?)',
+        where:
+          '"conversation_messages".conversation_id IN (SELECT id FROM conversations WHERE user_id = ?)',
         whereParams: [userId],
-      },
+      }
     )
 
     // Dedupe by conversation and return with snippet
@@ -74,10 +76,14 @@ app.get('/search', async (c) => {
     // FTS table may not exist yet — fall back to LIKE search on conversation titles
     const storage = createD1ChatStorage(c.env.DB)
     const all = await storage.listConversations(userId, { limit: 100 })
-    const filtered = all.filter((conv) =>
-      conv.title?.toLowerCase().includes(query.toLowerCase()),
-    )
-    return c.json({ results: filtered.map((conv) => ({ conversationId: conv.id, snippet: conv.title || '', role: 'title' })) })
+    const filtered = all.filter((conv) => conv.title?.toLowerCase().includes(query.toLowerCase()))
+    return c.json({
+      results: filtered.map((conv) => ({
+        conversationId: conv.id,
+        snippet: conv.title || '',
+        role: 'title',
+      })),
+    })
   }
 })
 
@@ -152,12 +158,15 @@ app.get('/:id/export', async (c) => {
     })
   }
 
-  return new Response(JSON.stringify({ conversationId, messages, exportedAt: new Date().toISOString() }, null, 2), {
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Content-Disposition': `attachment; filename="conversation-${conversationId.slice(0, 8)}.json"`,
-    },
-  })
+  return new Response(
+    JSON.stringify({ conversationId, messages, exportedAt: new Date().toISOString() }, null, 2),
+    {
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Content-Disposition': `attachment; filename="conversation-${conversationId.slice(0, 8)}.json"`,
+      },
+    }
+  )
 })
 
 /**
@@ -210,8 +219,18 @@ app.post('/:id/summarise', async (c) => {
     const { object } = await generateObject({
       model: workersai('@cf/moonshotai/kimi-k2.6'),
       schema: z.object({
-        title: z.string().min(1).max(60).describe('A short noun phrase naming the topic. 2-5 words. No verbs. No colons.'),
-        summary: z.string().min(1).max(120).describe('A one-sentence description of the exchange, using different words from the title.'),
+        title: z
+          .string()
+          .min(1)
+          .max(60)
+          .describe('A short noun phrase naming the topic. 2-5 words. No verbs. No colons.'),
+        summary: z
+          .string()
+          .min(1)
+          .max(120)
+          .describe(
+            'A one-sentence description of the exchange, using different words from the title.'
+          ),
       }),
       prompt: `You write sidebar labels for a chat app.
 For the conversation below, produce TWO DIFFERENT strings:
@@ -240,9 +259,8 @@ ASSISTANT: ${textOf(firstAssistant)}
     // Better to show less than to show noise.
     const normTitle = object.title.trim().toLowerCase()
     const normSummary = object.summary.trim().toLowerCase()
-    const summary = (normTitle === normSummary || normSummary.startsWith(normTitle))
-      ? null
-      : object.summary
+    const summary =
+      normTitle === normSummary || normSummary.startsWith(normTitle) ? null : object.summary
 
     await storage.updateSummary(conversationId, userId, {
       title: object.title,
@@ -314,10 +332,7 @@ app.post('/:id/compact', async (c) => {
   const transcript = messages
     .map((m) => {
       const text = (m.parts ?? [])
-        .filter(
-          (p): p is { type: 'text'; text: string } =>
-            (p as { type: string }).type === 'text',
-        )
+        .filter((p): p is { type: 'text'; text: string } => (p as { type: string }).type === 'text')
         .map((p) => stripSkill(p.text))
         .filter(Boolean)
         .join('\n')
@@ -348,7 +363,7 @@ app.post('/:id/compact', async (c) => {
       summary = result.text?.trim() || null
     } catch (err) {
       console.error(
-        JSON.stringify({ event: 'compact_haiku_failed', conversationId, error: String(err) }),
+        JSON.stringify({ event: 'compact_haiku_failed', conversationId, error: String(err) })
       )
     }
   }
@@ -369,7 +384,7 @@ app.post('/:id/compact', async (c) => {
       summary = result.text?.trim() || null
     } catch (err) {
       console.error(
-        JSON.stringify({ event: 'compact_kimi_failed', conversationId, error: String(err) }),
+        JSON.stringify({ event: 'compact_kimi_failed', conversationId, error: String(err) })
       )
     }
   }
@@ -449,7 +464,7 @@ app.patch(
     z.object({
       title: z.string().max(200).optional(),
       projectId: z.string().nullable().optional(),
-    }),
+    })
   ),
   async (c) => {
     const conversationId = c.req.param('id')
@@ -468,7 +483,7 @@ app.patch(
       await storage.updateProject(conversationId, userId, input.projectId)
     }
     return c.json({ success: true })
-  },
+  }
 )
 
 export default app

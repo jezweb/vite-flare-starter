@@ -14,7 +14,17 @@
  * filename; we render those as "Attached file" with no label.
  */
 import { useMemo, useState } from 'react'
-import { ChevronDown, ChevronRight, FileText, FileImage, FileAudio, FileVideo, FileSpreadsheet, FileCode, File as FileIcon } from 'lucide-react'
+import {
+  ChevronDown,
+  ChevronRight,
+  FileText,
+  FileImage,
+  FileAudio,
+  FileVideo,
+  FileSpreadsheet,
+  FileCode,
+  File as FileIcon,
+} from 'lucide-react'
 import { MessageResponse } from '@/components/ai-elements/message'
 import { cn } from '@/lib/utils'
 
@@ -69,7 +79,8 @@ function iconForFilename(filename?: string) {
   if (['mp3', 'wav', 'webm', 'ogg', 'm4a', 'flac'].includes(ext)) return FileAudio
   if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) return FileVideo
   if (['xls', 'xlsx', 'csv', 'tsv'].includes(ext)) return FileSpreadsheet
-  if (['json', 'xml', 'yaml', 'yml', 'html', 'css', 'js', 'ts', 'tsx', 'md'].includes(ext)) return FileCode
+  if (['json', 'xml', 'yaml', 'yml', 'html', 'css', 'js', 'ts', 'tsx', 'md'].includes(ext))
+    return FileCode
   return FileText
 }
 
@@ -103,7 +114,7 @@ export function AttachedFileBlock({ parsed, className }: Props) {
       className={cn(
         'rounded-lg border border-border bg-background/60',
         'transition-colors hover:border-border/80',
-        className,
+        className
       )}
     >
       {/* Header row — always visible, click to toggle */}
@@ -127,9 +138,7 @@ export function AttachedFileBlock({ parsed, className }: Props) {
             )}
           </div>
           {!expanded && preview && (
-            <p className="text-[11px] text-muted-foreground truncate mt-0.5">
-              {preview}
-            </p>
+            <p className="text-[11px] text-muted-foreground truncate mt-0.5">{preview}</p>
           )}
         </div>
       </button>

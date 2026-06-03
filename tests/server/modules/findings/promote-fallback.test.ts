@@ -32,7 +32,7 @@ interface FindingFields {
 function resolveBody(
   refinedBody: string | undefined,
   findingFields: FindingFields,
-  title: string,
+  title: string
 ): string {
   return (
     refinedBody ??
@@ -61,9 +61,7 @@ describe('promote-to-learning body fallback (P2-003)', () => {
   })
 
   it('falls back to title when all fields-blob keys are missing', () => {
-    expect(resolveBody(undefined, {}, 'My finding title')).toBe(
-      'My finding title',
-    )
+    expect(resolveBody(undefined, {}, 'My finding title')).toBe('My finding title')
   })
 
   it('seed-data shape (observation + recommendation, no body) does NOT 400', () => {
@@ -74,7 +72,7 @@ describe('promote-to-learning body fallback (P2-003)', () => {
         observation: 'Seeded finding 1 from agent',
         recommendation: 'Review and decide promotion vs dismissal',
       },
-      'Stuck-tickets seeded finding',
+      'Stuck-tickets seeded finding'
     )
     expect(result).toBeTruthy()
     expect(result).toBe('Seeded finding 1 from agent')

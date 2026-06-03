@@ -20,7 +20,7 @@ export function MentionPill({ kind, label, className }: Props) {
         kind === 'agent'
           ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
           : 'bg-primary/10 text-primary',
-        className,
+        className
       )}
     >
       {kind === 'agent' ? <Bot className="size-3" /> : <User className="size-3" />}

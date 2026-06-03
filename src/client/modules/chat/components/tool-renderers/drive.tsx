@@ -29,7 +29,8 @@ function iconForDriveMime(mime: string): LucideIcon {
   if (mime.includes('presentation') || mime.includes('powerpoint')) return Presentation
   if (mime.startsWith('image/')) return FileImage
   if (mime.startsWith('video/')) return FileVideo
-  if (mime.includes('document') || mime.includes('word') || mime === 'application/pdf') return FileText
+  if (mime.includes('document') || mime.includes('word') || mime === 'application/pdf')
+    return FileText
   if (mime.startsWith('text/') || mime.includes('json') || mime.includes('xml')) return FileCode
   return FileIcon
 }
@@ -62,9 +63,7 @@ export const driveGetFileRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     const Icon = iconForDriveMime(o.mimeType)
@@ -120,9 +119,7 @@ export const driveCreateFolderRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     return (
@@ -170,9 +167,7 @@ export const driveSearchRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     const files = o.files ?? []
@@ -180,14 +175,11 @@ export const driveSearchRenderer: ToolRenderer = {
       <div className="space-y-2">
         {i?.query && (
           <div className="text-xs text-muted-foreground">
-            <span className="font-medium">Query:</span>{' '}
-            <span className="font-mono">{i.query}</span>
+            <span className="font-medium">Query:</span> <span className="font-mono">{i.query}</span>
           </div>
         )}
         {files.length === 0 ? (
-          <div className="text-xs text-muted-foreground italic">
-            No files matched.
-          </div>
+          <div className="text-xs text-muted-foreground italic">No files matched.</div>
         ) : (
           <ul className="divide-y divide-border/60 -mx-2">
             {files.map((f) => {
@@ -198,9 +190,7 @@ export const driveSearchRenderer: ToolRenderer = {
                     <Icon className="size-4 text-muted-foreground" />
                   </div>
                   <div className="flex flex-col min-w-0 flex-1">
-                    <span className="text-sm font-medium truncate">
-                      {truncate(f.name, 100)}
-                    </span>
+                    <span className="text-sm font-medium truncate">{truncate(f.name, 100)}</span>
                     <span className="text-[11px] text-muted-foreground">
                       {shortMimeType(f.mimeType)} · {formatToolDate(f.modifiedTime)}
                       {f.owner && ` · ${f.owner}`}

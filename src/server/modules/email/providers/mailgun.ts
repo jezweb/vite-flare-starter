@@ -22,9 +22,7 @@ export const mailgun: EmailProviderImpl = {
 
     // Default to US region. EU users set MAILGUN_REGION=eu.
     const baseUrl =
-      env.MAILGUN_REGION === 'eu'
-        ? 'https://api.eu.mailgun.net/v3'
-        : 'https://api.mailgun.net/v3'
+      env.MAILGUN_REGION === 'eu' ? 'https://api.eu.mailgun.net/v3' : 'https://api.mailgun.net/v3'
 
     // Mailgun expects multipart/form-data OR application/x-www-form-urlencoded.
     // URL-encoded is simpler and lets us use a single fetch without the

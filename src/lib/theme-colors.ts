@@ -66,7 +66,10 @@ function hexToRGB(hex: string): RGB | null {
   const cleaned = hex.replace('#', '').trim()
   const expanded =
     cleaned.length === 3
-      ? cleaned.split('').map((c) => c + c).join('')
+      ? cleaned
+          .split('')
+          .map((c) => c + c)
+          .join('')
       : cleaned
   if (expanded.length !== 6 || !/^[0-9a-fA-F]{6}$/.test(expanded)) return null
   return {
@@ -119,17 +122,29 @@ function hslToRGB({ h, s, l }: HSL): RGB {
   let gg = 0
   let bb = 0
   if (h < 60) {
-    rr = c; gg = x; bb = 0
+    rr = c
+    gg = x
+    bb = 0
   } else if (h < 120) {
-    rr = x; gg = c; bb = 0
+    rr = x
+    gg = c
+    bb = 0
   } else if (h < 180) {
-    rr = 0; gg = c; bb = x
+    rr = 0
+    gg = c
+    bb = x
   } else if (h < 240) {
-    rr = 0; gg = x; bb = c
+    rr = 0
+    gg = x
+    bb = c
   } else if (h < 300) {
-    rr = x; gg = 0; bb = c
+    rr = x
+    gg = 0
+    bb = c
   } else {
-    rr = c; gg = 0; bb = x
+    rr = c
+    gg = 0
+    bb = x
   }
   return { r: (rr + m) * 255, g: (gg + m) * 255, b: (bb + m) * 255 }
 }

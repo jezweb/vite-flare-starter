@@ -93,11 +93,7 @@ export function SkillDetailPage() {
           </Link>
         </Button>
         {skill.isPersonal && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setDeleteOpen(true)}
-          >
+          <Button variant="outline" size="sm" onClick={() => setDeleteOpen(true)}>
             <Trash2 className="mr-1 size-3.5 text-destructive" />
             Revert to bundled
           </Button>
@@ -121,7 +117,8 @@ export function SkillDetailPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Revert "{skill.name}" to the bundled version?</AlertDialogTitle>
             <AlertDialogDescription>
-              Removes your personal override from R2. The bundled version (shipped with the starter) takes back over. Cannot be undone — but you can re-edit afterwards.
+              Removes your personal override from R2. The bundled version (shipped with the starter)
+              takes back over. Cannot be undone — but you can re-edit afterwards.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

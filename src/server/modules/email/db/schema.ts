@@ -13,7 +13,9 @@ import { user } from '@/server/modules/auth/db/schema'
 export const emailLog = sqliteTable(
   'email_log',
   {
-    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
     userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
     toAddress: text('to_address').notNull(),
     fromAddress: text('from_address').notNull(),
@@ -35,7 +37,7 @@ export const emailLog = sqliteTable(
     index('email_log_user_idx').on(table.userId, table.sentAt),
     index('email_log_status_idx').on(table.status, table.sentAt),
     index('email_log_template_idx').on(table.template, table.sentAt),
-  ],
+  ]
 )
 
 export type EmailLog = typeof emailLog.$inferSelect

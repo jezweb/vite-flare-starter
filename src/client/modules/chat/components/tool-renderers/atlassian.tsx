@@ -39,17 +39,14 @@ export const jiraSearchRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     return (
       <div className="space-y-2">
         {i?.jql && (
           <div className="text-xs text-muted-foreground">
-            <span className="font-medium">JQL:</span>{' '}
-            <span className="font-mono">{i.jql}</span>
+            <span className="font-medium">JQL:</span> <span className="font-mono">{i.jql}</span>
           </div>
         )}
         {o.issues.length === 0 ? (
@@ -73,9 +70,7 @@ export const jiraSearchRenderer: ToolRenderer = {
                 </div>
                 <div className="text-sm font-medium truncate">{it.summary}</div>
                 {it.assignee && (
-                  <div className="text-[11px] text-muted-foreground">
-                    Assignee: {it.assignee}
-                  </div>
+                  <div className="text-[11px] text-muted-foreground">Assignee: {it.assignee}</div>
                 )}
               </li>
             ))}
@@ -101,9 +96,7 @@ export const jiraGetIssueRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     return (
@@ -174,9 +167,7 @@ export const jiraCreateRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     return (
@@ -213,9 +204,7 @@ export const jiraCommentRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     return (
@@ -252,9 +241,7 @@ export const jiraTransitionRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     if ('availableTransitions' in o) {
@@ -266,9 +253,7 @@ export const jiraTransitionRenderer: ToolRenderer = {
               {t.toStatus && (
                 <span className="text-[11px] text-muted-foreground">→ {t.toStatus}</span>
               )}
-              <code className="ml-auto text-[10px] text-muted-foreground font-mono">
-                {t.id}
-              </code>
+              <code className="ml-auto text-[10px] text-muted-foreground font-mono">{t.id}</code>
             </li>
           ))}
         </ul>
@@ -297,9 +282,7 @@ export const confluenceSearchRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     if (o.pages.length === 0) {
@@ -334,9 +317,7 @@ export const confluenceGetRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     return (
@@ -366,9 +347,7 @@ export const confluenceCreateRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     return (

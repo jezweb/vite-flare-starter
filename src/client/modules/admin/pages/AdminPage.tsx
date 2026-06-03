@@ -87,12 +87,10 @@ export function AdminPage() {
             <CardTitle>Access Denied</CardTitle>
           </div>
           <CardDescription>
-            You don't have permission to access the admin panel. Only users
-            with the admin role can manage users and feature flags. If you
-            believe this is an error, ask the site administrator to grant
-            you admin access — they can do this by adding your email to
-            the <code className="font-mono text-xs">ADMIN_EMAILS</code> env
-            var on the Worker.
+            You don't have permission to access the admin panel. Only users with the admin role can
+            manage users and feature flags. If you believe this is an error, ask the site
+            administrator to grant you admin access — they can do this by adding your email to the{' '}
+            <code className="font-mono text-xs">ADMIN_EMAILS</code> env var on the Worker.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -159,9 +157,7 @@ export function AdminPage() {
           <Card>
             <CardHeader>
               <CardTitle>API Tokens</CardTitle>
-              <CardDescription>
-                Manage API tokens for programmatic access.
-              </CardDescription>
+              <CardDescription>Manage API tokens for programmatic access.</CardDescription>
             </CardHeader>
             <CardContent>
               <ApiTokensSection />

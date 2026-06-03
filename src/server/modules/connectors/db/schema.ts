@@ -15,7 +15,9 @@ import { user } from '@/server/modules/auth/db/schema'
 export const userConnectorSettings = sqliteTable(
   'user_connector_settings',
   {
-    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
     userId: text('user_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
@@ -45,11 +47,8 @@ export const userConnectorSettings = sqliteTable(
       .$defaultFn(() => new Date()),
   },
   (table) => [
-    uniqueIndex('user_connector_settings_user_connector_uidx').on(
-      table.userId,
-      table.connectorId,
-    ),
-  ],
+    uniqueIndex('user_connector_settings_user_connector_uidx').on(table.userId, table.connectorId),
+  ]
 )
 
 export type UserConnectorSetting = typeof userConnectorSettings.$inferSelect

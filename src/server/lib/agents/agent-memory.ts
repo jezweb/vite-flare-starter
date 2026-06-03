@@ -138,7 +138,7 @@ export async function agentRemember(
   env: AgentMemoryEnv,
   ownerKey: string,
   text: string,
-  opts?: { tags?: string[]; source?: string; importance?: number },
+  opts?: { tags?: string[]; source?: string; importance?: number }
 ): Promise<{ id: string }> {
   if (!env.AGENT_MEMORY) {
     throw new Error('AGENT_MEMORY binding not configured — see agent-memory.ts setup notes')
@@ -185,7 +185,7 @@ export async function agentRecall(
   env: AgentMemoryEnv,
   ownerKey: string,
   query: string,
-  opts?: { topK?: number; minScore?: number; tags?: string[] },
+  opts?: { topK?: number; minScore?: number; tags?: string[] }
 ): Promise<string[]> {
   if (!env.AGENT_MEMORY) return []
   const topK = opts?.topK ?? 5
@@ -226,7 +226,7 @@ export async function agentRecall(
  */
 export async function agentForgetAll(
   env: AgentMemoryEnv,
-  ownerKey: string,
+  ownerKey: string
 ): Promise<{ deleted: number }> {
   if (!env.AGENT_MEMORY) return { deleted: 0 }
   // Use a zero vector so the score is meaningless but every match is

@@ -140,9 +140,7 @@ export function ChatFirstRunTour() {
           </div>
           <div className="space-y-1.5">
             <h3 className="text-sm font-semibold">{current.title}</h3>
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              {current.body}
-            </p>
+            <p className="text-sm leading-relaxed text-muted-foreground">{current.body}</p>
           </div>
           <div className="flex items-center justify-end gap-2 pt-1">
             {step > 0 && (

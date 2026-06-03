@@ -23,9 +23,7 @@ export const MCP_PROTOCOL_VERSION = '2024-11-05'
 // TOOL REGISTRY TYPES
 // ============================================
 
-export type ToolCallback<T = Record<string, unknown>> = (
-  params: T
-) => Promise<MCPToolResult>
+export type ToolCallback<T = Record<string, unknown>> = (params: T) => Promise<MCPToolResult>
 
 export interface RegisteredTool {
   name: string
@@ -91,10 +89,7 @@ export function successResponse<T>(data: T): MCPToolResult {
 /**
  * Build an error MCP tool response
  */
-export function errorResponse(
-  error: string,
-  details?: Record<string, unknown>
-): MCPToolResult {
+export function errorResponse(error: string, details?: Record<string, unknown>): MCPToolResult {
   return {
     content: [
       {
@@ -119,13 +114,7 @@ export function listResponse<T>(
     query?: string
   } = {}
 ): MCPToolResult {
-  const {
-    itemKey = 'items',
-    offset = 0,
-    limit = items.length,
-    totalCount,
-    query,
-  } = options
+  const { itemKey = 'items', offset = 0, limit = items.length, totalCount, query } = options
 
   const pagination =
     totalCount !== undefined
@@ -264,11 +253,7 @@ export async function handleJsonRpcRequest(
           arguments?: Record<string, unknown>
         }
 
-        const result = await executeToolFromRegistry(
-          toolRegistry,
-          name,
-          args || {}
-        )
+        const result = await executeToolFromRegistry(toolRegistry, name, args || {})
 
         return {
           jsonrpc: '2.0',

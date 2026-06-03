@@ -190,9 +190,7 @@ export function FeaturesTabContent() {
           <Card key={category}>
             <CardHeader>
               <CardTitle className="text-lg">{info.label}</CardTitle>
-              {info.description && (
-                <CardDescription>{info.description}</CardDescription>
-              )}
+              {info.description && <CardDescription>{info.description}</CardDescription>}
             </CardHeader>
             <CardContent className="space-y-3">
               {categoryFeatures.map((feature) => (
@@ -218,9 +216,12 @@ export function FeaturesTabContent() {
             <CardTitle className="text-lg">Deploy-time flags</CardTitle>
           </div>
           <CardDescription>
-            Compiled in at build time from <code className="px-1 rounded bg-muted text-xs">VITE_FEATURE_*</code> env vars.
-            Read-only here — change them in <code className="px-1 rounded bg-muted text-xs">.dev.vars</code> (dev) or{' '}
-            <code className="px-1 rounded bg-muted text-xs">wrangler.jsonc</code> / secrets (prod) and redeploy.
+            Compiled in at build time from{' '}
+            <code className="px-1 rounded bg-muted text-xs">VITE_FEATURE_*</code> env vars.
+            Read-only here — change them in{' '}
+            <code className="px-1 rounded bg-muted text-xs">.dev.vars</code> (dev) or{' '}
+            <code className="px-1 rounded bg-muted text-xs">wrangler.jsonc</code> / secrets (prod)
+            and redeploy.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-1">
@@ -238,7 +239,9 @@ export function FeaturesTabContent() {
                 variant={enabled ? 'default' : 'outline'}
                 className={cn(
                   'gap-1 font-mono text-xs',
-                  enabled ? 'bg-green-600/10 text-green-700 border-green-600/20 hover:bg-green-600/10 dark:text-green-400' : '',
+                  enabled
+                    ? 'bg-green-600/10 text-green-700 border-green-600/20 hover:bg-green-600/10 dark:text-green-400'
+                    : ''
                 )}
               >
                 {enabled ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
@@ -258,11 +261,7 @@ export function FeaturesTabContent() {
             <p className="text-sm text-muted-foreground">
               Click "Sync Defaults" to load the default feature set.
             </p>
-            <Button
-              className="mt-4"
-              onClick={handleSync}
-              disabled={syncFeatures.isPending}
-            >
+            <Button className="mt-4" onClick={handleSync} disabled={syncFeatures.isPending}>
               {syncFeatures.isPending ? (
                 <Spinner size="md" className="mr-2" />
               ) : (

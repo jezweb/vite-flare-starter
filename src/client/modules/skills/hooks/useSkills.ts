@@ -51,20 +51,21 @@ export function useSkill(name: string | null | undefined) {
 export function useSkillsList() {
   return useQuery({
     queryKey: queryKeys.skills.list(),
-    queryFn: () => apiClient.get<{
-      skills: Array<{
-        id: string
-        userId: string
-        name: string
-        description: string
-        source: string
-        enabled: boolean
-        isPersonal: boolean
-        createdAt: string
-        updatedAt: string
-      }>
-      count: number
-    }>('/api/skills'),
+    queryFn: () =>
+      apiClient.get<{
+        skills: Array<{
+          id: string
+          userId: string
+          name: string
+          description: string
+          source: string
+          enabled: boolean
+          isPersonal: boolean
+          createdAt: string
+          updatedAt: string
+        }>
+        count: number
+      }>('/api/skills'),
   })
 }
 
@@ -72,10 +73,13 @@ export function useInstallGitHubSkill() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (url: string) =>
-      apiClient.post<{ success: boolean; name: string; description: string; mode: 'single' | 'directory'; files?: string[] }>(
-        '/api/skills/github',
-        { url },
-      ),
+      apiClient.post<{
+        success: boolean
+        name: string
+        description: string
+        mode: 'single' | 'directory'
+        files?: string[]
+      }>('/api/skills/github', { url }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.skills.all })
     },
@@ -89,12 +93,21 @@ export function useUploadSkillZip() {
       const form = new FormData()
       form.append('file', file)
       // apiClient.post sets Content-Type json by default — use fetch directly for multipart.
-      const resp = await fetch('/api/skills/upload-zip', { method: 'POST', body: form, credentials: 'include' })
+      const resp = await fetch('/api/skills/upload-zip', {
+        method: 'POST',
+        body: form,
+        credentials: 'include',
+      })
       if (!resp.ok) {
-        const err = await resp.json().catch(() => ({})) as { error?: string }
+        const err = (await resp.json().catch(() => ({}))) as { error?: string }
         throw new Error(err.error ?? `Upload failed: ${resp.status}`)
       }
-      return resp.json() as Promise<{ success: boolean; name: string; description: string; files: string[] }>
+      return resp.json() as Promise<{
+        success: boolean
+        name: string
+        description: string
+        files: string[]
+      }>
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.skills.all })
@@ -108,7 +121,7 @@ export function useUploadSkillContent() {
     mutationFn: (payload: { content: string; overwrite?: boolean }) =>
       apiClient.post<{ success: boolean; name: string; description: string; path: string }>(
         '/api/skills/upload',
-        payload,
+        payload
       ),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.skills.all }),
   })
@@ -118,10 +131,9 @@ export function useToggleSkill() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ name, enabled }: { name: string; enabled: boolean }) =>
-      apiClient.patch<{ success: boolean; name: string; enabled: boolean }>(
-        `/api/skills/${name}`,
-        { enabled },
-      ),
+      apiClient.patch<{ success: boolean; name: string; enabled: boolean }>(`/api/skills/${name}`, {
+        enabled,
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.skills.all }),
   })
 }
@@ -130,9 +142,7 @@ export function useDeleteSkill() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (name: string) =>
-      apiClient.delete<{ success: boolean; name: string; deleted: boolean }>(
-        `/api/skills/${name}`,
-      ),
+      apiClient.delete<{ success: boolean; name: string; deleted: boolean }>(`/api/skills/${name}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.skills.all }),
   })
 }
@@ -143,7 +153,7 @@ export function useSyncBundled() {
     mutationFn: () =>
       apiClient.post<{ success: boolean; added: number; updated: number; removed: number }>(
         '/api/skills/sync',
-        {},
+        {}
       ),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.skills.all }),
   })

@@ -11,7 +11,14 @@
 
 export type ProjectColor = 'blue' | 'emerald' | 'amber' | 'rose' | 'violet' | 'slate'
 
-export const PROJECT_COLORS: ProjectColor[] = ['blue', 'emerald', 'amber', 'rose', 'violet', 'slate']
+export const PROJECT_COLORS: ProjectColor[] = [
+  'blue',
+  'emerald',
+  'amber',
+  'rose',
+  'violet',
+  'slate',
+]
 
 /**
  * Tailwind class name mapping. The *fill* class is applied to the folder
@@ -21,7 +28,10 @@ export const PROJECT_COLORS: ProjectColor[] = ['blue', 'emerald', 'amber', 'rose
  * Listed as explicit literals so Tailwind's content scanner picks them up.
  * Don't switch to template-string construction — that breaks JIT.
  */
-export const PROJECT_COLOR_CLASSES: Record<ProjectColor, { fill: string; dot: string; label: string }> = {
+export const PROJECT_COLOR_CLASSES: Record<
+  ProjectColor,
+  { fill: string; dot: string; label: string }
+> = {
   blue: { fill: 'text-blue-500', dot: 'bg-blue-500', label: 'Blue' },
   emerald: { fill: 'text-emerald-500', dot: 'bg-emerald-500', label: 'Emerald' },
   amber: { fill: 'text-amber-500', dot: 'bg-amber-500', label: 'Amber' },

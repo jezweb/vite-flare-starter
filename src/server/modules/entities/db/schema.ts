@@ -23,8 +23,12 @@ import { user } from '@/server/modules/auth/db/schema'
 export const entities = sqliteTable(
   'entities',
   {
-    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-    userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
     /** Optional organisation scoping. NULL = personal entity (default).
      *  When set, the entity belongs to an org and access is gated by
      *  org membership rather than (or alongside) userId ownership.
@@ -43,8 +47,12 @@ export const entities = sqliteTable(
     assigneeId: text('assignee_id').references(() => user.id, { onDelete: 'set null' }),
     /** Type-specific fields as JSON string. */
     fields: text('fields').notNull().default('{}'),
-    createdAt: integer('created_at').notNull().$defaultFn(() => Math.floor(Date.now() / 1000)),
-    updatedAt: integer('updated_at').notNull().$defaultFn(() => Math.floor(Date.now() / 1000)),
+    createdAt: integer('created_at')
+      .notNull()
+      .$defaultFn(() => Math.floor(Date.now() / 1000)),
+    updatedAt: integer('updated_at')
+      .notNull()
+      .$defaultFn(() => Math.floor(Date.now() / 1000)),
   },
   (table) => [
     index('entities_user_id_idx').on(table.userId),
@@ -54,7 +62,7 @@ export const entities = sqliteTable(
     index('entities_assignee_idx').on(table.assigneeId),
     index('entities_updated_at_idx').on(table.updatedAt),
     index('entities_org_idx').on(table.organizationId),
-  ],
+  ]
 )
 
 export type Entity = typeof entities.$inferSelect

@@ -15,7 +15,15 @@ export interface FrontmatterValue {
   // become bullet lists; nested objects become block mappings; dates
   // are ISO-8601 strings; null/undefined are skipped to keep the
   // header clean.
-  [key: string]: string | number | boolean | string[] | Record<string, unknown> | Date | null | undefined
+  [key: string]:
+    | string
+    | number
+    | boolean
+    | string[]
+    | Record<string, unknown>
+    | Date
+    | null
+    | undefined
 }
 
 export interface MarkdownDocOptions {

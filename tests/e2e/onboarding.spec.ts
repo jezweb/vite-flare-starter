@@ -18,8 +18,7 @@ test.use({ storageState: storageStatePath('regression') })
 test('P1-006: Getting Started checklist exposes "Schedule a routine"', async ({ page }) => {
   // Reset the dismissed flag so the shelf renders. We don't care about
   // the exact prefs payload — best-effort.
-  await page
-    .request
+  await page.request
     .patch('/api/settings/preferences', {
       data: { onboarding: { dismissed: false, version: 0 } },
     })

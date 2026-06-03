@@ -50,19 +50,14 @@ export function FormSection({
     <div className="flex items-start justify-between gap-3">
       <div className="space-y-0.5">
         <h2 className="text-base font-semibold tracking-tight">{title}</h2>
-        {description && (
-          <p className="text-sm text-muted-foreground">{description}</p>
-        )}
+        {description && <p className="text-sm text-muted-foreground">{description}</p>}
       </div>
       {trailing && <div className="shrink-0">{trailing}</div>}
     </div>
   )
 
   const body = (
-    <div
-      data-slot="form-section-body"
-      className={cn('space-y-4', divided && 'mt-4 pt-4 border-t')}
-    >
+    <div data-slot="form-section-body" className={cn('space-y-4', divided && 'mt-4 pt-4 border-t')}>
       {children}
     </div>
   )

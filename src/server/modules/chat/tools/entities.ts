@@ -60,9 +60,21 @@ function serialiseRow(row: typeof entities.$inferSelect) {
 const EntityCreateInput = z.object({
   type: z.string().min(1).max(50).regex(NAME_RE).describe('e.g. "ticket", "deal", "contact"'),
   title: z.string().min(1).max(500).describe('Display title — what the user sees in lists'),
-  status: z.string().max(50).regex(NAME_RE).optional().describe('Initial state. Defaults to "open".'),
-  externalId: z.string().max(200).optional().describe('Correlation id for external systems (Stripe customer, GitHub PR)'),
-  fields: z.record(z.string(), z.unknown()).optional().describe('Type-specific fields (priority, amount, contact_email, etc)'),
+  status: z
+    .string()
+    .max(50)
+    .regex(NAME_RE)
+    .optional()
+    .describe('Initial state. Defaults to "open".'),
+  externalId: z
+    .string()
+    .max(200)
+    .optional()
+    .describe('Correlation id for external systems (Stripe customer, GitHub PR)'),
+  fields: z
+    .record(z.string(), z.unknown())
+    .optional()
+    .describe('Type-specific fields (priority, amount, contact_email, etc)'),
 })
 
 const EntityRowOutput = z.object({
@@ -85,7 +97,7 @@ export const entityCreateDefinition: ToolDefinition<
 > = {
   name: 'entity_create',
   description:
-    'Create a tracked entity (ticket, deal, contact, etc) in the user\'s entities store. Returns the created row including its id. Use when the user asks you to record something they want to track.',
+    "Create a tracked entity (ticket, deal, contact, etc) in the user's entities store. Returns the created row including its id. Use when the user asks you to record something they want to track.",
   inputSchema: EntityCreateInput,
   outputSchema: EntityCreateOutput,
   isAvailable: entitiesAvailable,
@@ -246,7 +258,7 @@ export const entitySearchDefinition: ToolDefinition<
 > = {
   name: 'entity_search',
   description:
-    'Search across ALL entity types by title / externalId substring. Use when the user mentions something by name and you don\'t know which type it is.',
+    "Search across ALL entity types by title / externalId substring. Use when the user mentions something by name and you don't know which type it is.",
   inputSchema: EntitySearchInput,
   outputSchema: EntityListOutput,
   isAvailable: entitiesAvailable,

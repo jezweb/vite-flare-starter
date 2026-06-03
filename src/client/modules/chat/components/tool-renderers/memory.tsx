@@ -48,9 +48,7 @@ const rememberRenderer: ToolRenderer = {
     return (
       <div className="space-y-2">
         {i?.text && (
-          <div className="rounded border bg-muted/30 p-2 text-xs leading-snug">
-            {i.text}
-          </div>
+          <div className="rounded border bg-muted/30 p-2 text-xs leading-snug">{i.text}</div>
         )}
         {i?.tags && i.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 text-[11px]">
@@ -66,12 +64,8 @@ const rememberRenderer: ToolRenderer = {
             Source: <span className="font-mono">{i.source}</span>
           </p>
         )}
-        {o?.error && (
-          <p className="text-[11px] text-destructive">{o.error}</p>
-        )}
-        {o?.id && (
-          <p className="text-[10px] text-muted-foreground font-mono">id: {o.id}</p>
-        )}
+        {o?.error && <p className="text-[11px] text-destructive">{o.error}</p>}
+        {o?.id && <p className="text-[10px] text-muted-foreground font-mono">id: {o.id}</p>}
       </div>
     )
   },
@@ -85,7 +79,8 @@ const recallRenderer: ToolRenderer = {
     const i = input as RecallInput | undefined
     const o = output as RecallOutput | undefined
     const count = o?.results?.length ?? 0
-    if (i?.query) return `${count} ${count === 1 ? 'result' : 'results'} for "${truncate(i.query, 30)}"`
+    if (i?.query)
+      return `${count} ${count === 1 ? 'result' : 'results'} for "${truncate(i.query, 30)}"`
     return `${count} ${count === 1 ? 'result' : 'results'}`
   },
   expanded: ({ output, input }) => {

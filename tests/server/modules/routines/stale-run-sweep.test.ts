@@ -73,7 +73,7 @@ async function reset(): Promise<void> {
   const now = Math.floor(Date.now() / 1000)
   await runSql(
     `INSERT INTO routines (id, user_id, name, agent_class, agent_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [ROUTINE_ID, 'u-test', 'Test', 'AssistantAgent', 'a', now, now],
+    [ROUTINE_ID, 'u-test', 'Test', 'AssistantAgent', 'a', now, now]
   )
 }
 
@@ -85,12 +85,14 @@ async function insertRun(opts: {
   const now = Math.floor(Date.now() / 1000)
   await runSql(
     `INSERT INTO routine_runs (id, routine_id, run_number, started_at, outcome) VALUES (?, ?, ?, ?, ?)`,
-    [opts.id, ROUTINE_ID, 1, now - opts.startedAgo, opts.outcome],
+    [opts.id, ROUTINE_ID, 1, now - opts.startedAgo, opts.outcome]
   )
 }
 
 async function getRun(id: string) {
-  return env.DB.prepare(`SELECT outcome, finished_at, output_summary FROM routine_runs WHERE id = ?`)
+  return env.DB.prepare(
+    `SELECT outcome, finished_at, output_summary FROM routine_runs WHERE id = ?`
+  )
     .bind(id)
     .first<{ outcome: string; finished_at: number | null; output_summary: string | null }>()
 }
@@ -136,9 +138,7 @@ describe('sweepStaleRoutineRuns (P2-005)', () => {
   it('mirrors the error outcome onto the parent routine row', async () => {
     await insertRun({ id: 'old-stuck-2', startedAgo: 600, outcome: 'started' })
     await sweepStaleRoutineRuns(baseEnv(), { graceSeconds: 300 })
-    const routine = await env.DB.prepare(
-      `SELECT last_outcome FROM routines WHERE id = ?`,
-    )
+    const routine = await env.DB.prepare(`SELECT last_outcome FROM routines WHERE id = ?`)
       .bind(ROUTINE_ID)
       .first<{ last_outcome: string | null }>()
     expect(routine?.last_outcome).toBe('error')

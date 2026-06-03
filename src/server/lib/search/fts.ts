@@ -41,7 +41,7 @@ export async function createFTSIndex(
     ftsTable?: string
     /** Row ID column in the source table (default: 'rowid'). */
     rowId?: string
-  },
+  }
 ): Promise<void> {
   const fts = opts.ftsTable ?? `${opts.table}_fts`
   const cols = opts.columns
@@ -96,7 +96,7 @@ export async function searchFTS<T = Record<string, unknown>>(
     whereParams?: unknown[]
     /** Columns to select from the source table (default: '*'). */
     select?: string
-  },
+  }
 ): Promise<{ results: T[]; query: string }> {
   const limit = opts.limit ?? 20
   const select = opts.select ?? `"${opts.sourceTable}".*`
@@ -113,7 +113,10 @@ export async function searchFTS<T = Record<string, unknown>>(
   `
 
   const params = [opts.query, ...(opts.whereParams ?? []), limit]
-  const { results } = await db.prepare(sql).bind(...params).all<T & { rank: number }>()
+  const { results } = await db
+    .prepare(sql)
+    .bind(...params)
+    .all<T & { rank: number }>()
 
   return { results: results ?? [], query: opts.query }
 }

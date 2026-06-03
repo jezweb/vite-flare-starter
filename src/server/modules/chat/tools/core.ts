@@ -19,14 +19,24 @@ function computeArithmetic(expr: string): number {
   let i = 0
   while (i < expr.length) {
     const ch = expr[i]!
-    if (/\s/.test(ch)) { i++; continue }
+    if (/\s/.test(ch)) {
+      i++
+      continue
+    }
     if (/[\d.]/.test(ch)) {
       let num = ''
-      while (i < expr.length && /[\d.]/.test(expr[i]!)) { num += expr[i]; i++ }
+      while (i < expr.length && /[\d.]/.test(expr[i]!)) {
+        num += expr[i]
+        i++
+      }
       tokens.push(num)
       continue
     }
-    if ('+-*/%()'.includes(ch)) { tokens.push(ch); i++; continue }
+    if ('+-*/%()'.includes(ch)) {
+      tokens.push(ch)
+      i++
+      continue
+    }
     throw new Error(`unexpected '${ch}'`)
   }
   const prec: Record<string, number> = { '+': 1, '-': 1, '*': 2, '/': 2, '%': 2 }
@@ -43,7 +53,8 @@ function computeArithmetic(expr: string): number {
       if (!ops.length) throw new Error('mismatched )')
       ops.pop()
     } else {
-      const isUnary = (t === '-' || t === '+') && (prev === '' || prev === '(' || '+-*/%'.includes(prev))
+      const isUnary =
+        (t === '-' || t === '+') && (prev === '' || prev === '(' || '+-*/%'.includes(prev))
       const op = isUnary ? (t === '-' ? 'u-' : 'u+') : t
       const p = isUnary ? 3 : (prec[t] ?? 0)
       while (ops.length && ops[ops.length - 1] !== '(' && (prec[ops[ops.length - 1]!] ?? 3) >= p) {
@@ -70,12 +81,23 @@ function computeArithmetic(expr: string): number {
       const b = stack.pop()!
       const a = stack.pop()!
       switch (t) {
-        case '+': stack.push(a + b); break
-        case '-': stack.push(a - b); break
-        case '*': stack.push(a * b); break
-        case '/': stack.push(a / b); break
-        case '%': stack.push(a % b); break
-        default: throw new Error(`unknown op ${t}`)
+        case '+':
+          stack.push(a + b)
+          break
+        case '-':
+          stack.push(a - b)
+          break
+        case '*':
+          stack.push(a * b)
+          break
+        case '/':
+          stack.push(a / b)
+          break
+        case '%':
+          stack.push(a % b)
+          break
+        default:
+          throw new Error(`unknown op ${t}`)
       }
     }
   }
@@ -175,7 +197,10 @@ export const calculateDefinition: ToolDefinition<
   ]),
   execute: async ({ expression }) => {
     if (!/^[\d\s+\-*/()%.]+$/.test(expression)) {
-      return { error: 'Expression contains invalid characters. Only numbers and basic operators (+, -, *, /, %) are allowed.' }
+      return {
+        error:
+          'Expression contains invalid characters. Only numbers and basic operators (+, -, *, /, %) are allowed.',
+      }
     }
     try {
       const result = computeArithmetic(expression)
@@ -184,7 +209,9 @@ export const calculateDefinition: ToolDefinition<
       }
       return { expression, result }
     } catch (err) {
-      return { error: `Could not compute: ${expression} (${err instanceof Error ? err.message : 'parse error'})` }
+      return {
+        error: `Could not compute: ${expression} (${err instanceof Error ? err.message : 'parse error'})`,
+      }
     }
   },
   render: {
@@ -208,7 +235,7 @@ export const doneDefinition: ToolDefinition<
 > = {
   name: 'done',
   description:
-    "Signal that you have completed the current task. Use when you have a final answer and no more tool calls are needed. Put your complete answer in the answer field.",
+    'Signal that you have completed the current task. Use when you have a final answer and no more tool calls are needed. Put your complete answer in the answer field.',
   inputSchema: z.object({
     answer: z.string().describe("Your final, complete answer to the user's request"),
   }),

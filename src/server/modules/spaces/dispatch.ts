@@ -78,7 +78,7 @@ export async function dispatchMentions(params: {
       mentionCount: mentions.length,
       agentMentionCount: agentRefs.length,
       parentMessageId,
-    }),
+    })
   )
 
   // P2-002 — when no @-mention targeted an agent, fan out to:
@@ -137,7 +137,11 @@ export async function dispatchMentions(params: {
   const replyMode = member?.replyMode ?? 'mention'
   if (replyMode === 'off') {
     console.log(
-      JSON.stringify({ event: 'space_dispatch_skipped_off', spaceId, agentName: ref.targetAgentName }),
+      JSON.stringify({
+        event: 'space_dispatch_skipped_off',
+        spaceId,
+        agentName: ref.targetAgentName,
+      })
     )
     return { replyMessageIds }
   }
@@ -154,7 +158,7 @@ export async function dispatchMentions(params: {
   const namespace = env[targetAgentClass] as DurableObjectNamespace | undefined
   if (!namespace) {
     throw new Error(
-      `dispatchMentions: no DO binding for agent class "${targetAgentClass}" — add it to wrangler.jsonc`,
+      `dispatchMentions: no DO binding for agent class "${targetAgentClass}" — add it to wrangler.jsonc`
     )
   }
   const agentName = `space:${spaceId}:${targetAgentName}`
@@ -200,7 +204,7 @@ export async function dispatchMentions(params: {
     })
   } catch (err) {
     console.error(
-      JSON.stringify({ event: 'space_dispatch_run_failed', spaceId, agentName, error: String(err) }),
+      JSON.stringify({ event: 'space_dispatch_run_failed', spaceId, agentName, error: String(err) })
     )
     throw err
   }
@@ -265,15 +269,19 @@ export async function dispatchMentions(params: {
           mentions: [parallelRef],
           inputText,
           broadcastNewMessage,
-        }),
-      ),
+        })
+      )
     )
     for (const settle of fanOut) {
       if (settle.status === 'fulfilled') {
         replyMessageIds.push(...settle.value.replyMessageIds)
       } else {
         console.error(
-          JSON.stringify({ event: 'space_dispatch_parallel_failed', spaceId, error: String(settle.reason) }),
+          JSON.stringify({
+            event: 'space_dispatch_parallel_failed',
+            spaceId,
+            error: String(settle.reason),
+          })
         )
       }
     }
@@ -325,10 +333,7 @@ async function runAlwaysAgents(params: {
     })
     .from(conversationMembers)
     .where(
-      and(
-        eq(conversationMembers.conversationId, spaceId),
-        eq(conversationMembers.kind, 'agent'),
-      ),
+      and(eq(conversationMembers.conversationId, spaceId), eq(conversationMembers.kind, 'agent'))
     )
   const candidates = candidateRows
     .filter((r) => r.replyMode === 'always')
@@ -341,7 +346,7 @@ async function runAlwaysAgents(params: {
       totalAgentMembers: candidateRows.length,
       alwaysCandidates: candidates.length,
       replyModes: candidateRows.map((r) => r.replyMode),
-    }),
+    })
   )
   if (candidates.length === 0) return
 
@@ -355,7 +360,7 @@ async function runAlwaysAgents(params: {
         agentClass,
         agentName,
         replyMode: cand.replyMode,
-      }),
+      })
     )
     const namespace = env[agentClass] as DurableObjectNamespace | undefined
     if (!namespace) {
@@ -366,12 +371,14 @@ async function runAlwaysAgents(params: {
           agentClass,
           agentName,
           envKeys: Object.keys(env).filter((k) => /Agent$/.test(k)),
-        }),
+        })
       )
       continue
     }
     const ctxMessages = await loadContextMessages(env.DB, spaceId, parentMessageId)
-    const stub = namespace.get(namespace.idFromName(`space:${spaceId}:${agentName}`)) as unknown as {
+    const stub = namespace.get(
+      namespace.idFromName(`space:${spaceId}:${agentName}`)
+    ) as unknown as {
       runOnce: (input: {
         input: string
         actingUserId: string
@@ -394,7 +401,7 @@ async function runAlwaysAgents(params: {
         agentName,
         inputLen: inputText.length,
         ctxMessages: ctxMessages.length,
-      }),
+      })
     )
     let reply: { text: string }
     try {
@@ -414,7 +421,7 @@ async function runAlwaysAgents(params: {
           agentName,
           error: String(err),
           stack: err instanceof Error ? err.stack?.slice(0, 500) : undefined,
-        }),
+        })
       )
       continue
     }
@@ -425,12 +432,11 @@ async function runAlwaysAgents(params: {
         agentClass,
         agentName,
         replyLen: reply.text?.length ?? 0,
-      }),
+      })
     )
     if (!reply.text || !reply.text.trim()) continue
     // Same auto-thread heuristic as the @-mention path.
-    const autoThread =
-      parentMessageId === null && reply.text.length > AUTO_THREAD_CHAR_THRESHOLD
+    const autoThread = parentMessageId === null && reply.text.length > AUTO_THREAD_CHAR_THRESHOLD
     const finalParentId = parentMessageId ?? (autoThread ? triggerMessageId : null)
     const replyId = crypto.randomUUID()
     const partsJson = JSON.stringify([{ type: 'text', text: reply.text }])
@@ -486,7 +492,16 @@ async function runProactiveAgents(params: {
   broadcastNewMessage: (messageId: string) => Promise<void>
   replyMessageIds: string[]
 }): Promise<void> {
-  const { env, spaceId, senderUserId, triggerMessageId, parentMessageId, inputText, broadcastNewMessage, replyMessageIds } = params
+  const {
+    env,
+    spaceId,
+    senderUserId,
+    triggerMessageId,
+    parentMessageId,
+    inputText,
+    broadcastNewMessage,
+    replyMessageIds,
+  } = params
   const PROACTIVE_CAP = 2
   if (!env.AI) return
   const d = drizzle(env.DB)
@@ -499,10 +514,7 @@ async function runProactiveAgents(params: {
     })
     .from(conversationMembers)
     .where(
-      and(
-        eq(conversationMembers.conversationId, spaceId),
-        eq(conversationMembers.kind, 'agent'),
-      ),
+      and(eq(conversationMembers.conversationId, spaceId), eq(conversationMembers.kind, 'agent'))
     )
   const candidates = candidateRows
     .filter((r) => r.replyMode === 'proactive' || r.replyMode === 'ambient')
@@ -515,7 +527,14 @@ async function runProactiveAgents(params: {
     const agentName = cand.agentName as string
     const mode = cand.replyMode as 'proactive' | 'ambient'
     const decision = await classifyTurn(env.AI, mode, agentName, inputText).catch((err) => {
-      console.error(JSON.stringify({ event: 'space_proactive_classify_failed', spaceId, agentName, error: String(err) }))
+      console.error(
+        JSON.stringify({
+          event: 'space_proactive_classify_failed',
+          spaceId,
+          agentName,
+          error: String(err),
+        })
+      )
       return { kind: 'silent' as const }
     })
 
@@ -533,7 +552,8 @@ async function runProactiveAgents(params: {
         let reactions: Record<string, string[]> = {}
         if (row.reactions) {
           try {
-            const parsed = typeof row.reactions === 'string' ? JSON.parse(row.reactions) : row.reactions
+            const parsed =
+              typeof row.reactions === 'string' ? JSON.parse(row.reactions) : row.reactions
             if (parsed && typeof parsed === 'object') reactions = parsed as Record<string, string[]>
           } catch {
             reactions = {}
@@ -549,7 +569,14 @@ async function runProactiveAgents(params: {
           .where(eq(conversationMessages.id, triggerMessageId))
         await broadcastNewMessage(triggerMessageId)
       } catch (err) {
-        console.error(JSON.stringify({ event: 'space_proactive_react_failed', spaceId, agentName, error: String(err) }))
+        console.error(
+          JSON.stringify({
+            event: 'space_proactive_react_failed',
+            spaceId,
+            agentName,
+            error: String(err),
+          })
+        )
       }
       continue
     }
@@ -558,7 +585,9 @@ async function runProactiveAgents(params: {
     const ctxMessages = await loadContextMessages(env.DB, spaceId, parentMessageId)
     const namespace = env[agentClass] as DurableObjectNamespace | undefined
     if (!namespace) continue
-    const stub = namespace.get(namespace.idFromName(`space:${spaceId}:${agentName}`)) as unknown as {
+    const stub = namespace.get(
+      namespace.idFromName(`space:${spaceId}:${agentName}`)
+    ) as unknown as {
       runOnce: (input: {
         input: string
         actingUserId: string
@@ -583,7 +612,14 @@ async function runProactiveAgents(params: {
         trigger: 'inter_agent',
       })
     } catch (err) {
-      console.error(JSON.stringify({ event: 'space_proactive_dispatch_failed', spaceId, agentName, error: String(err) }))
+      console.error(
+        JSON.stringify({
+          event: 'space_proactive_dispatch_failed',
+          spaceId,
+          agentName,
+          error: String(err),
+        })
+      )
       continue
     }
     if (!reply.text || !reply.text.trim()) continue
@@ -619,7 +655,7 @@ async function classifyTurn(
   ai: Ai,
   mode: 'proactive' | 'ambient',
   agentName: string,
-  text: string,
+  text: string
 ): Promise<{ kind: 'silent' } | { kind: 'reply' } | { kind: 'react'; emoji: string }> {
   const trimmed = text.trim()
   if (!trimmed) return { kind: 'silent' }
@@ -671,7 +707,7 @@ async function classifyTurn(
 async function loadContextMessages(
   db: D1Database,
   spaceId: string,
-  parentMessageId: string | null,
+  parentMessageId: string | null
 ): Promise<UIMessage[]> {
   const d = drizzle(db)
   let rows: Array<typeof conversationMessages.$inferSelect>
@@ -693,7 +729,10 @@ async function loadContextMessages(
       .select()
       .from(conversationMessages)
       .where(
-        and(eq(conversationMessages.conversationId, spaceId), isNull(conversationMessages.parentMessageId)),
+        and(
+          eq(conversationMessages.conversationId, spaceId),
+          isNull(conversationMessages.parentMessageId)
+        )
       )
       .orderBy(asc(conversationMessages.createdAt))
     // Cap to PHASE_1_CONTEXT_TURNS by trimming the oldest.

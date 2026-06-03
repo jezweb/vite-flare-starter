@@ -56,10 +56,7 @@ app.get('/state', requireScopes('settings:read'), async (c) => {
         .select({ count: sql<number>`count(*)` })
         .from(userMcpConnections)
         .where(eq(userMcpConnections.userId, userId)),
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(projects)
-        .where(eq(projects.userId, userId)),
+      db.select({ count: sql<number>`count(*)` }).from(projects).where(eq(projects.userId, userId)),
       db
         .select({ count: sql<number>`count(*)` })
         .from(memories)
@@ -68,10 +65,7 @@ app.get('/state', requireScopes('settings:read'), async (c) => {
         .select({ count: sql<number>`count(*)` })
         .from(conversations)
         .where(eq(conversations.userId, userId)),
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(routines)
-        .where(eq(routines.userId, userId)),
+      db.select({ count: sql<number>`count(*)` }).from(routines).where(eq(routines.userId, userId)),
     ])
 
   const connectionsCount = Number(connectionsRow[0]?.count ?? 0)

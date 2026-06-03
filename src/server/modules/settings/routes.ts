@@ -43,42 +43,47 @@ const requireSessionAuth = async (c: any, next: any) => {
  *
  * Requires: profile:write scope for API tokens
  */
-app.patch('/profile', requireScopes('profile:write'), zValidator('json', updateNameSchema), async (c) => {
-  const input = c.req.valid('json')
+app.patch(
+  '/profile',
+  requireScopes('profile:write'),
+  zValidator('json', updateNameSchema),
+  async (c) => {
+    const input = c.req.valid('json')
 
-  try {
-    // Create auth instance
-    const auth = createAuth(c.env.DB, {
-      BETTER_AUTH_SECRET: c.env.BETTER_AUTH_SECRET,
-      BETTER_AUTH_URL: c.env.BETTER_AUTH_URL,
-      GOOGLE_CLIENT_ID: c.env.GOOGLE_CLIENT_ID,
-      GOOGLE_CLIENT_SECRET: c.env.GOOGLE_CLIENT_SECRET,
-      EMAIL_API_KEY: c.env.EMAIL_API_KEY,
-      EMAIL_FROM: c.env.EMAIL_FROM,
-    })
+    try {
+      // Create auth instance
+      const auth = createAuth(c.env.DB, {
+        BETTER_AUTH_SECRET: c.env.BETTER_AUTH_SECRET,
+        BETTER_AUTH_URL: c.env.BETTER_AUTH_URL,
+        GOOGLE_CLIENT_ID: c.env.GOOGLE_CLIENT_ID,
+        GOOGLE_CLIENT_SECRET: c.env.GOOGLE_CLIENT_SECRET,
+        EMAIL_API_KEY: c.env.EMAIL_API_KEY,
+        EMAIL_FROM: c.env.EMAIL_FROM,
+      })
 
-    // Use better-auth's updateUser API
-    const result = await auth.api.updateUser({
-      body: {
-        name: input.name,
-        // image: input.image, // Can add image support later
-      },
-      headers: c.req.raw.headers,
-    })
+      // Use better-auth's updateUser API
+      const result = await auth.api.updateUser({
+        body: {
+          name: input.name,
+          // image: input.image, // Can add image support later
+        },
+        headers: c.req.raw.headers,
+      })
 
-    if (!result) {
+      if (!result) {
+        return c.json({ error: 'Failed to update profile' }, 500)
+      }
+
+      return c.json({
+        message: 'Profile updated successfully',
+        user: result,
+      })
+    } catch (error) {
+      console.error('Update profile error:', error)
       return c.json({ error: 'Failed to update profile' }, 500)
     }
-
-    return c.json({
-      message: 'Profile updated successfully',
-      user: result
-    })
-  } catch (error) {
-    console.error('Update profile error:', error)
-    return c.json({ error: 'Failed to update profile' }, 500)
   }
-})
+)
 
 /**
  * GET /api/settings/auth-providers
@@ -145,30 +150,35 @@ app.get('/preferences', requireScopes('settings:read'), async (c) => {
  *
  * Requires: settings:write scope for API tokens
  */
-app.patch('/preferences', requireScopes('settings:write'), zValidator('json', userPreferencesSchema), async (c) => {
-  const userId = c.get('userId')
-  const input = c.req.valid('json')
-  const db = drizzle(c.env.DB, { schema })
+app.patch(
+  '/preferences',
+  requireScopes('settings:write'),
+  zValidator('json', userPreferencesSchema),
+  async (c) => {
+    const userId = c.get('userId')
+    const input = c.req.valid('json')
+    const db = drizzle(c.env.DB, { schema })
 
-  try {
-    // Update user preferences
-    await db
-      .update(schema.user)
-      .set({
+    try {
+      // Update user preferences
+      await db
+        .update(schema.user)
+        .set({
+          preferences: input,
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.user.id, userId))
+
+      return c.json({
+        message: 'Preferences updated successfully',
         preferences: input,
-        updatedAt: new Date(),
       })
-      .where(eq(schema.user.id, userId))
-
-    return c.json({
-      message: 'Preferences updated successfully',
-      preferences: input,
-    })
-  } catch (error) {
-    console.error('Update preferences error:', error)
-    return c.json({ error: 'Failed to update preferences' }, 500)
+    } catch (error) {
+      console.error('Update preferences error:', error)
+      return c.json({ error: 'Failed to update preferences' }, 500)
+    }
   }
-})
+)
 
 /**
  * POST /api/settings/avatar
@@ -194,17 +204,23 @@ app.post('/avatar', requireScopes('profile:write'), async (c) => {
     }
 
     // Validate file type (from shared constants)
-    if (!AVATAR.ALLOWED_TYPES.includes(file.type as typeof AVATAR.ALLOWED_TYPES[number])) {
-      return c.json({
-        error: `Invalid file type. Allowed: ${AVATAR.ALLOWED_TYPES.join(', ')}`
-      }, 400)
+    if (!AVATAR.ALLOWED_TYPES.includes(file.type as (typeof AVATAR.ALLOWED_TYPES)[number])) {
+      return c.json(
+        {
+          error: `Invalid file type. Allowed: ${AVATAR.ALLOWED_TYPES.join(', ')}`,
+        },
+        400
+      )
     }
 
     // Validate file size (from shared constants)
     if (file.size > AVATAR.MAX_SIZE_BYTES) {
-      return c.json({
-        error: `File too large. Maximum size: ${AVATAR.MAX_SIZE_DISPLAY}`
-      }, 400)
+      return c.json(
+        {
+          error: `File too large. Maximum size: ${AVATAR.MAX_SIZE_DISPLAY}`,
+        },
+        400
+      )
     }
 
     // Convert file to ArrayBuffer
@@ -259,11 +275,7 @@ app.delete('/avatar', requireScopes('profile:write'), async (c) => {
   try {
     // Delete all possible avatar formats from R2
     const extensions = ['jpg', 'jpeg', 'png', 'webp']
-    await Promise.all(
-      extensions.map(ext =>
-        c.env.AVATARS.delete(`avatars/${userId}.${ext}`)
-      )
-    )
+    await Promise.all(extensions.map((ext) => c.env.AVATARS.delete(`avatars/${userId}.${ext}`)))
 
     // Clear user.image field
     await db
@@ -406,10 +418,7 @@ app.post('/password', requireSessionAuth, zValidator('json', changePasswordSchem
     console.error('Change password error:', error)
 
     // better-auth throws specific errors we can handle
-    if (
-      error?.message?.includes('Invalid password') ||
-      error?.message?.includes('password')
-    ) {
+    if (error?.message?.includes('Invalid password') || error?.message?.includes('password')) {
       return c.json({ error: 'Current password is incorrect' }, 401)
     }
 
@@ -471,10 +480,13 @@ app.delete('/account', requireSessionAuth, zValidator('json', deleteAccountSchem
     }
 
     if (error?.message?.includes('fresh session') || error?.message?.includes('sign in')) {
-      return c.json({
-        error: 'Please sign in again to delete your account (security requirement)',
-        requiresFreshSession: true
-      }, 403)
+      return c.json(
+        {
+          error: 'Please sign in again to delete your account (security requirement)',
+          requiresFreshSession: true,
+        },
+        403
+      )
     }
 
     return c.json({ error: 'Failed to delete account' }, 500)

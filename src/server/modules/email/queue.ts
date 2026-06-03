@@ -25,7 +25,7 @@ export interface EmailQueueEnv extends EmailEnv {
  */
 export async function queueEmail<K extends SendEmailInput>(
   env: EmailQueueEnv,
-  input: K,
+  input: K
 ): Promise<{ queued: boolean; result?: Awaited<ReturnType<typeof sendEmail>> }> {
   if (env.EMAIL_ASYNC === 'true' && env.EMAIL_QUEUE) {
     await env.EMAIL_QUEUE.send(input)
@@ -50,7 +50,7 @@ export async function queueEmail<K extends SendEmailInput>(
  */
 export async function emailQueueHandler(
   batch: MessageBatch<SendEmailInput>,
-  env: EmailEnv,
+  env: EmailEnv
 ): Promise<void> {
   for (const msg of batch.messages) {
     try {
@@ -67,7 +67,7 @@ export async function emailQueueHandler(
         JSON.stringify({
           event: 'email_queue_handler_error',
           error: err instanceof Error ? err.message : String(err),
-        }),
+        })
       )
       msg.retry({ delaySeconds: 60 })
     }

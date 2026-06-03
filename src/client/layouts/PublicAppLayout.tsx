@@ -30,11 +30,7 @@ export function PublicAppLayout({ showAuthBanner = true, isAuthenticated = false
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-2 text-lg font-semibold">
             {getLogoUrl('signIn') ? (
-              <img
-                src={getLogoUrl('signIn')}
-                alt={appConfig.name}
-                className="h-6 w-auto"
-              />
+              <img src={getLogoUrl('signIn')} alt={appConfig.name} className="h-6 w-auto" />
             ) : (
               <span>{appConfig.name}</span>
             )}

@@ -73,7 +73,13 @@ export function useUpdateUser() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: UpdateUserInput }): Promise<{ user: UserResponse }> => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string
+      data: UpdateUserInput
+    }): Promise<{ user: UserResponse }> => {
       const response = await fetch(`${API_BASE}/users/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },

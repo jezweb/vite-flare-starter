@@ -15,13 +15,12 @@ import type {
  * Small preview table — caps at 10 rows x 6 cols so a giant range
  * doesn't blow out the transcript width.
  */
-function PreviewGrid({
-  values,
-}: {
-  values: Array<Array<string | number | boolean | null>>
-}) {
+function PreviewGrid({ values }: { values: Array<Array<string | number | boolean | null>> }) {
   const rows = values.slice(0, 10)
-  const maxCols = Math.min(6, values.reduce((m, r) => Math.max(m, r.length), 0))
+  const maxCols = Math.min(
+    6,
+    values.reduce((m, r) => Math.max(m, r.length), 0)
+  )
   return (
     <div className="overflow-x-auto">
       <table className="text-[11px] border-collapse">
@@ -44,8 +43,7 @@ function PreviewGrid({
           ))}
         </tbody>
       </table>
-      {(values.length > 10 ||
-        values.reduce((m, r) => Math.max(m, r.length), 0) > maxCols) && (
+      {(values.length > 10 || values.reduce((m, r) => Math.max(m, r.length), 0) > maxCols) && (
         <div className="mt-1 text-[10px] text-muted-foreground">
           Showing first 10 rows × {maxCols} columns of {values.length} ×{' '}
           {values.reduce((m, r) => Math.max(m, r.length), 0)}.
@@ -71,9 +69,7 @@ export const sheetsListTabsRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     return (
@@ -121,9 +117,7 @@ export const sheetsReadRangeRenderer: ToolRenderer = {
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     if (o.rowCount === 0) {
@@ -153,13 +147,13 @@ export const sheetsAppendRowRenderer: ToolRenderer = {
   },
   expanded: ({ output, input }) => {
     const o = output as SheetsAppendRowOutput | undefined
-    const i = input as { rows?: Array<Array<string | number | boolean>>; range?: string } | undefined
+    const i = input as
+      | { rows?: Array<Array<string | number | boolean>>; range?: string }
+      | undefined
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     return (
@@ -195,13 +189,13 @@ export const sheetsWriteRangeRenderer: ToolRenderer = {
   },
   expanded: ({ output, input }) => {
     const o = output as SheetsWriteRangeOutput | undefined
-    const i = input as { values?: Array<Array<string | number | boolean>>; range?: string } | undefined
+    const i = input as
+      | { values?: Array<Array<string | number | boolean>>; range?: string }
+      | undefined
     if (!o) return null
     if ('error' in o) {
       return (
-        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">
-          {o.error}
-        </div>
+        <div className="rounded-md bg-destructive/10 text-destructive text-xs p-3">{o.error}</div>
       )
     }
     return (

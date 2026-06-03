@@ -19,7 +19,22 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from '@/components/ui/command'
-import { Moon, Sun, LogOut, Settings, MessagesSquare, FolderKanban, Plus, MessageSquare, Repeat, Plug, CheckSquare, Inbox, Hash, FileSearch } from 'lucide-react'
+import {
+  Moon,
+  Sun,
+  LogOut,
+  Settings,
+  MessagesSquare,
+  FolderKanban,
+  Plus,
+  MessageSquare,
+  Repeat,
+  Plug,
+  CheckSquare,
+  Inbox,
+  Hash,
+  FileSearch,
+} from 'lucide-react'
 import { useTheme } from '@/client/components/theme-provider'
 import { authClient } from '@/client/lib/auth'
 import { apiClient } from '@/client/lib/api-client'
@@ -40,7 +55,7 @@ export function CommandPalette() {
     queryKey: ['cmd-palette', 'conversations', deferredQuery],
     queryFn: () =>
       apiClient.get<{ results: { conversationId: string; snippet: string; role: string }[] }>(
-        `/api/conversations/search?q=${encodeURIComponent(deferredQuery)}`,
+        `/api/conversations/search?q=${encodeURIComponent(deferredQuery)}`
       ),
     enabled: open && deferredQuery.length >= 2,
     staleTime: 5_000,
@@ -52,7 +67,7 @@ export function CommandPalette() {
     queryKey: ['cmd-palette', 'projects', deferredQuery],
     queryFn: () =>
       apiClient.get<{ projects: { id: string; name: string; description: string | null }[] }>(
-        `/api/projects?q=${encodeURIComponent(deferredQuery)}`,
+        `/api/projects?q=${encodeURIComponent(deferredQuery)}`
       ),
     enabled: open && deferredQuery.length >= 2,
     staleTime: 5_000,
@@ -248,9 +263,7 @@ export function CommandPalette() {
                 <CommandItem
                   key={`project-${p.id}`}
                   value={`project-${p.id}-${p.name}`}
-                  onSelect={() =>
-                    runCommand(() => navigate(`/dashboard/projects/${p.id}`))
-                  }
+                  onSelect={() => runCommand(() => navigate(`/dashboard/projects/${p.id}`))}
                 >
                   <FolderKanban className="mr-2 h-4 w-4" />
                   <div className="flex-1 min-w-0">
@@ -280,9 +293,7 @@ export function CommandPalette() {
                 >
                   <MessagesSquare className="mr-2 h-4 w-4" />
                   <span className="truncate">{hit.snippet}</span>
-                  <CommandShortcut>
-                    {hit.role === 'title' ? 'title' : 'message'}
-                  </CommandShortcut>
+                  <CommandShortcut>{hit.role === 'title' ? 'title' : 'message'}</CommandShortcut>
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -293,10 +304,7 @@ export function CommandPalette() {
         {/* Navigation */}
         <CommandGroup heading="Navigation">
           {navItems.map((item) => (
-            <CommandItem
-              key={item.to}
-              onSelect={() => runCommand(() => navigate(item.to))}
-            >
+            <CommandItem key={item.to} onSelect={() => runCommand(() => navigate(item.to))}>
               {item.icon && <item.icon className="mr-2 h-4 w-4" />}
               {item.label}
             </CommandItem>

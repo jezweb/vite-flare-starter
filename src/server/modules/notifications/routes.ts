@@ -30,48 +30,53 @@ const notificationsQuerySchema = z.object({
  *
  * Requires: notifications:read scope for API tokens
  */
-app.get('/', requireScopes('notifications:read'), zValidator('query', notificationsQuerySchema), async (c) => {
-  const userId = c.get('userId')
-  const query = c.req.valid('query')
-  const db = drizzle(c.env.DB, { schema })
+app.get(
+  '/',
+  requireScopes('notifications:read'),
+  zValidator('query', notificationsQuerySchema),
+  async (c) => {
+    const userId = c.get('userId')
+    const query = c.req.valid('query')
+    const db = drizzle(c.env.DB, { schema })
 
-  const conditions = [eq(schema.userNotifications.userId, userId)]
+    const conditions = [eq(schema.userNotifications.userId, userId)]
 
-  if (query.unreadOnly) {
-    conditions.push(eq(schema.userNotifications.read, false))
-  }
+    if (query.unreadOnly) {
+      conditions.push(eq(schema.userNotifications.read, false))
+    }
 
-  const notifications = await db.query.userNotifications.findMany({
-    where: and(...conditions),
-    limit: query.limit,
-    offset: query.offset,
-    orderBy: [desc(schema.userNotifications.createdAt)],
-  })
-
-  // Parse JSON data fields
-  const enrichedNotifications = notifications.map((n) => ({
-    ...n,
-    data: n.data ? JSON.parse(n.data) : null,
-  }))
-
-  // Get unread count
-  const unreadCount = await db.query.userNotifications
-    .findMany({
-      where: and(
-        eq(schema.userNotifications.userId, userId),
-        eq(schema.userNotifications.read, false)
-      ),
-      columns: { id: true },
+    const notifications = await db.query.userNotifications.findMany({
+      where: and(...conditions),
+      limit: query.limit,
+      offset: query.offset,
+      orderBy: [desc(schema.userNotifications.createdAt)],
     })
-    .then((rows) => rows.length)
 
-  return c.json({
-    notifications: enrichedNotifications,
-    count: notifications.length,
-    unreadCount,
-    hasMore: notifications.length === query.limit,
-  })
-})
+    // Parse JSON data fields
+    const enrichedNotifications = notifications.map((n) => ({
+      ...n,
+      data: n.data ? JSON.parse(n.data) : null,
+    }))
+
+    // Get unread count
+    const unreadCount = await db.query.userNotifications
+      .findMany({
+        where: and(
+          eq(schema.userNotifications.userId, userId),
+          eq(schema.userNotifications.read, false)
+        ),
+        columns: { id: true },
+      })
+      .then((rows) => rows.length)
+
+    return c.json({
+      notifications: enrichedNotifications,
+      count: notifications.length,
+      unreadCount,
+      hasMore: notifications.length === query.limit,
+    })
+  }
+)
 
 /**
  * GET /api/notifications/unread-count
@@ -140,10 +145,7 @@ app.post('/read-all', requireScopes('notifications:write'), async (c) => {
     .update(schema.userNotifications)
     .set({ read: true })
     .where(
-      and(
-        eq(schema.userNotifications.userId, userId),
-        eq(schema.userNotifications.read, false)
-      )
+      and(eq(schema.userNotifications.userId, userId), eq(schema.userNotifications.read, false))
     )
 
   return c.json({ success: true })
@@ -173,9 +175,7 @@ app.delete('/:id', requireScopes('notifications:write'), async (c) => {
   }
 
   // Delete notification
-  await db
-    .delete(schema.userNotifications)
-    .where(eq(schema.userNotifications.id, notificationId))
+  await db.delete(schema.userNotifications).where(eq(schema.userNotifications.id, notificationId))
 
   return c.json({ success: true })
 })
@@ -193,10 +193,7 @@ app.delete('/', requireScopes('notifications:write'), async (c) => {
   await db
     .delete(schema.userNotifications)
     .where(
-      and(
-        eq(schema.userNotifications.userId, userId),
-        eq(schema.userNotifications.read, true)
-      )
+      and(eq(schema.userNotifications.userId, userId), eq(schema.userNotifications.read, true))
     )
 
   return c.json({ success: true })

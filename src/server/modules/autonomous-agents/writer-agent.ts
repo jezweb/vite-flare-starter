@@ -18,7 +18,11 @@
  * Partition: `${userId}:writer` — one Writer per user, shared across
  * all that user's research / composition flows.
  */
-import { AutonomousAgent, type AutonomousAgentEnv, type AutonomousAgentState } from '@/server/lib/agents/autonomous-agent'
+import {
+  AutonomousAgent,
+  type AutonomousAgentEnv,
+  type AutonomousAgentState,
+} from '@/server/lib/agents/autonomous-agent'
 
 interface Env extends AutonomousAgentEnv {}
 
@@ -39,7 +43,8 @@ export class WriterAgent extends AutonomousAgent<Env, AutonomousAgentState> {
     displayName: 'Writer',
     description:
       'Composes prose from a brief — emails, summaries, posts. Usually invoked by the Researcher; rarely runs solo.',
-    userPurpose: 'Use to compose emails, summaries, or posts from a short brief. Pairs well with the Researcher.',
+    userPurpose:
+      'Use to compose emails, summaries, or posts from a short brief. Pairs well with the Researcher.',
     category: 'writer' as const,
   }
 

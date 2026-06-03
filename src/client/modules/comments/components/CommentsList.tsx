@@ -47,7 +47,10 @@ export function CommentsList({ entityType, entityId, currentUserId }: Props) {
 
   const { data, isLoading } = useQuery({
     queryKey: ['comments', entityType, entityId],
-    queryFn: () => apiClient.get<{ comments: Comment[] }>(`/api/comments?entityType=${entityType}&entityId=${entityId}`),
+    queryFn: () =>
+      apiClient.get<{ comments: Comment[] }>(
+        `/api/comments?entityType=${entityType}&entityId=${entityId}`
+      ),
   })
 
   const createComment = useMutation({
@@ -106,15 +109,27 @@ export function CommentsList({ entityType, entityId, currentUserId }: Props) {
               <div className="space-y-2">
                 <Textarea value={editBody} onChange={(e) => setEditBody(e.target.value)} rows={2} />
                 <div className="flex gap-2">
-                  <Button size="sm" onClick={() => updateComment.mutate({ id: comment.id, body: editBody })}>Save</Button>
-                  <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>Cancel</Button>
+                  <Button
+                    size="sm"
+                    onClick={() => updateComment.mutate({ id: comment.id, body: editBody })}
+                  >
+                    Save
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
+                    Cancel
+                  </Button>
                 </div>
               </div>
             ) : (
               <p className="text-sm whitespace-pre-wrap">{comment.body}</p>
             )}
             <div className="mt-1 flex gap-1">
-              <Button variant="ghost" size="xs" className="gap-1" onClick={() => setReplyTo(comment.id)}>
+              <Button
+                variant="ghost"
+                size="xs"
+                className="gap-1"
+                onClick={() => setReplyTo(comment.id)}
+              >
                 <Reply className="size-3" /> Reply
               </Button>
               {isAuthor && (
@@ -123,7 +138,10 @@ export function CommentsList({ entityType, entityId, currentUserId }: Props) {
                     variant="ghost"
                     size="xs"
                     className="gap-1"
-                    onClick={() => { setEditingId(comment.id); setEditBody(comment.body) }}
+                    onClick={() => {
+                      setEditingId(comment.id)
+                      setEditBody(comment.body)
+                    }}
                   >
                     <Pencil className="size-3" /> Edit
                   </Button>
@@ -149,10 +167,23 @@ export function CommentsList({ entityType, entityId, currentUserId }: Props) {
                   autoFocus
                 />
                 <div className="flex gap-2">
-                  <Button size="sm" onClick={() => createComment.mutate({ body: newComment, parentId: comment.id })} disabled={!newComment.trim()}>
+                  <Button
+                    size="sm"
+                    onClick={() => createComment.mutate({ body: newComment, parentId: comment.id })}
+                    disabled={!newComment.trim()}
+                  >
                     Reply
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={() => { setReplyTo(null); setNewComment('') }}>Cancel</Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setReplyTo(null)
+                      setNewComment('')
+                    }}
+                  >
+                    Cancel
+                  </Button>
                 </div>
               </div>
             )}
@@ -173,7 +204,9 @@ export function CommentsList({ entityType, entityId, currentUserId }: Props) {
 
       {isLoading ? (
         <div className="space-y-3">
-          {[1, 2].map((i) => <div key={i} className="h-16 rounded bg-muted animate-pulse" />)}
+          {[1, 2].map((i) => (
+            <div key={i} className="h-16 rounded bg-muted animate-pulse" />
+          ))}
         </div>
       ) : (
         <>
@@ -188,7 +221,11 @@ export function CommentsList({ entityType, entityId, currentUserId }: Props) {
                 placeholder="Write a comment..."
                 rows={2}
               />
-              <Button size="sm" onClick={() => createComment.mutate({ body: newComment })} disabled={!newComment.trim()}>
+              <Button
+                size="sm"
+                onClick={() => createComment.mutate({ body: newComment })}
+                disabled={!newComment.trim()}
+              >
                 Comment
               </Button>
             </div>

@@ -31,7 +31,12 @@ import {
 } from '@/components/ui/select'
 import { Link } from 'react-router-dom'
 import { useCreateRoutine } from '../hooks/useRoutines'
-import { AgentPicker, SkillsPicker, SingleSkillPicker, ToolsPicker } from '../components/RoutinePickers'
+import {
+  AgentPicker,
+  SkillsPicker,
+  SingleSkillPicker,
+  ToolsPicker,
+} from '../components/RoutinePickers'
 import { useSession } from '@/client/lib/auth'
 import { useBeforeUnload } from '@/client/hooks/useBeforeUnload'
 import { deriveInstanceName } from '@/shared/format/agent'
@@ -59,7 +64,7 @@ interface NewRoutineDraft {
   instanceName: string
   instanceTouched: boolean
   intervalSeconds: number
-  adjustMode: typeof ADJUST_MODES[number]
+  adjustMode: (typeof ADJUST_MODES)[number]
   inputText: string
   skills: string[]
   tools: string[]
@@ -116,21 +121,27 @@ export function NewRoutinePage() {
   const [description, setDescription] = useState(initialDraft.current?.description ?? '')
   const [agentClass, setAgentClass] = useState(initialDraft.current?.agentClass ?? 'AssistantAgent')
   const [instanceName, setInstanceName] = useState(initialDraft.current?.instanceName ?? '')
-  const [instanceTouched, setInstanceTouched] = useState(initialDraft.current?.instanceTouched ?? false)
-  const [intervalSeconds, setIntervalSeconds] = useState<number>(initialDraft.current?.intervalSeconds ?? 60 * 60)
-  const [adjustMode, setAdjustMode] = useState<typeof ADJUST_MODES[number]>(
-    initialDraft.current?.adjustMode ?? 'suggested',
+  const [instanceTouched, setInstanceTouched] = useState(
+    initialDraft.current?.instanceTouched ?? false
+  )
+  const [intervalSeconds, setIntervalSeconds] = useState<number>(
+    initialDraft.current?.intervalSeconds ?? 60 * 60
+  )
+  const [adjustMode, setAdjustMode] = useState<(typeof ADJUST_MODES)[number]>(
+    initialDraft.current?.adjustMode ?? 'suggested'
   )
   const [inputText, setInputText] = useState(initialDraft.current?.inputText ?? '')
   const [skills, setSkills] = useState<string[]>(initialDraft.current?.skills ?? [])
   const [tools, setTools] = useState<string[]>(initialDraft.current?.tools ?? [])
-  const [sessionEndSkill, setSessionEndSkill] = useState(initialDraft.current?.sessionEndSkill ?? '')
+  const [sessionEndSkill, setSessionEndSkill] = useState(
+    initialDraft.current?.sessionEndSkill ?? ''
+  )
   const [enabled, setEnabled] = useState(initialDraft.current?.enabled ?? true)
   const [advancedOpen, setAdvancedOpen] = useState(false)
   // Track which template (if any) seeded the form. Lets us highlight
   // the picked card and show a "starting from {template}" hint.
   const [pickedTemplate, setPickedTemplate] = useState<string | null>(
-    initialDraft.current?.pickedTemplate ?? null,
+    initialDraft.current?.pickedTemplate ?? null
   )
   // If we restored from a draft, the template effect must skip — the
   // user's in-flight edits win over the URL's template default.
@@ -270,7 +281,8 @@ export function NewRoutinePage() {
     setInstanceName(deriveInstanceName(name || 'routine', userId))
   }, [name, userId, instanceTouched])
 
-  const canSubmit = name.trim().length > 0 && agentClass.trim().length > 0 && instanceName.trim().length > 0
+  const canSubmit =
+    name.trim().length > 0 && agentClass.trim().length > 0 && instanceName.trim().length > 0
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -319,8 +331,8 @@ export function NewRoutinePage() {
         </Button>
         <h1 className="text-2xl font-semibold tracking-tight">New routine</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          A routine fires an AI agent on a schedule with the skills, tools,
-          and instructions you set. Findings land in your Inbox.
+          A routine fires an AI agent on a schedule with the skills, tools, and instructions you
+          set. Findings land in your Inbox.
         </p>
       </div>
 
@@ -333,8 +345,8 @@ export function NewRoutinePage() {
             Start from a template
           </CardTitle>
           <CardDescription>
-            Or scroll down to fill the form yourself. Templates pre-fill
-            every section — you can edit anything before creating.
+            Or scroll down to fill the form yourself. Templates pre-fill every section — you can
+            edit anything before creating.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
@@ -359,11 +371,13 @@ export function NewRoutinePage() {
                   <p className="text-[11px] text-muted-foreground">{tpl.tagline}</p>
                   {/* Affordance — touch-visible at low opacity so the card
                       reads as a button on every device, brightens on hover. */}
-                  <span className={`absolute right-2 top-2 text-[10px] font-medium transition-opacity ${
-                    picked
-                      ? 'text-primary opacity-100'
-                      : 'text-muted-foreground opacity-40 group-hover:opacity-100'
-                  }`}>
+                  <span
+                    className={`absolute right-2 top-2 text-[10px] font-medium transition-opacity ${
+                      picked
+                        ? 'text-primary opacity-100'
+                        : 'text-muted-foreground opacity-40 group-hover:opacity-100'
+                    }`}
+                  >
                     {picked ? '✓ Selected' : 'Use this →'}
                   </span>
                 </button>
@@ -373,12 +387,7 @@ export function NewRoutinePage() {
           {pickedTemplate && (
             <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1">
               <span>Form pre-filled from template — edit anything below.</span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="xs"
-                onClick={startFromBlank}
-              >
+              <Button type="button" variant="ghost" size="xs" onClick={startFromBlank}>
                 Clear
               </Button>
             </div>
@@ -420,8 +429,8 @@ export function NewRoutinePage() {
           <CardHeader>
             <CardTitle className="text-base">Which AI agent runs this?</CardTitle>
             <CardDescription>
-              Each agent has a different toolkit + persona. Pick the one that
-              fits the work you're describing.
+              Each agent has a different toolkit + persona. Pick the one that fits the work you're
+              describing.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -434,8 +443,7 @@ export function NewRoutinePage() {
           <CardHeader>
             <CardTitle className="text-base">When should it run?</CardTitle>
             <CardDescription>
-              The cron sweep runs every 15 min, so intervals shorter than
-              that round up.
+              The cron sweep runs every 15 min, so intervals shorter than that round up.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -475,7 +483,10 @@ export function NewRoutinePage() {
               </div>
             </details>
             <Field id="adjustMode" label="Can the agent change its own cadence?">
-              <Select value={adjustMode} onValueChange={(v) => setAdjustMode(v as typeof ADJUST_MODES[number])}>
+              <Select
+                value={adjustMode}
+                onValueChange={(v) => setAdjustMode(v as (typeof ADJUST_MODES)[number])}
+              >
                 <SelectTrigger id="adjustMode" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
@@ -483,19 +494,25 @@ export function NewRoutinePage() {
                   <SelectItem value="suggested">
                     <span className="flex flex-col items-start gap-0.5">
                       <span>Suggested</span>
-                      <span className="text-[11px] text-muted-foreground">Agent proposes, you review changes</span>
+                      <span className="text-[11px] text-muted-foreground">
+                        Agent proposes, you review changes
+                      </span>
                     </span>
                   </SelectItem>
                   <SelectItem value="direct">
                     <span className="flex flex-col items-start gap-0.5">
                       <span>Auto-tune</span>
-                      <span className="text-[11px] text-muted-foreground">Agent applies its own changes (within bounds)</span>
+                      <span className="text-[11px] text-muted-foreground">
+                        Agent applies its own changes (within bounds)
+                      </span>
                     </span>
                   </SelectItem>
                   <SelectItem value="fixed">
                     <span className="flex flex-col items-start gap-0.5">
                       <span>Locked</span>
-                      <span className="text-[11px] text-muted-foreground">Agent has no influence — runs on the cadence you set</span>
+                      <span className="text-[11px] text-muted-foreground">
+                        Agent has no influence — runs on the cadence you set
+                      </span>
                     </span>
                   </SelectItem>
                 </SelectContent>
@@ -509,8 +526,8 @@ export function NewRoutinePage() {
           <CardHeader>
             <CardTitle className="text-base">What should the agent do each time it runs?</CardTitle>
             <CardDescription>
-              Instructions, skills (markdown procedures), and tools the agent
-              can call. All optional — leave blank for sensible defaults.
+              Instructions, skills (markdown procedures), and tools the agent can call. All optional
+              — leave blank for sensible defaults.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -524,7 +541,11 @@ export function NewRoutinePage() {
               />
             </Field>
             <Field id="skills" label="Skills">
-              <SkillsPicker value={skills} onChange={setSkills} placeholder="Add skills the agent should follow…" />
+              <SkillsPicker
+                value={skills}
+                onChange={setSkills}
+                placeholder="Add skills the agent should follow…"
+              />
               <p className="mt-1 text-[11px] text-muted-foreground">
                 Skills are markdown procedures (in /skills) — recipes the agent reads on each fire.
               </p>
@@ -564,10 +585,16 @@ export function NewRoutinePage() {
             className="w-full flex items-center justify-between p-4 text-sm font-medium hover:bg-muted/30 rounded-lg transition-colors"
           >
             <span className="flex items-center gap-1.5 text-muted-foreground">
-              {advancedOpen ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+              {advancedOpen ? (
+                <ChevronDown className="size-3.5" />
+              ) : (
+                <ChevronRight className="size-3.5" />
+              )}
               Advanced — instance ID
             </span>
-            <span className="font-mono text-[11px] text-muted-foreground truncate">{instanceName || '(auto)'}</span>
+            <span className="font-mono text-[11px] text-muted-foreground truncate">
+              {instanceName || '(auto)'}
+            </span>
           </button>
           {advancedOpen && (
             <CardContent className="pt-0 space-y-2">
@@ -583,8 +610,8 @@ export function NewRoutinePage() {
                 />
               </Field>
               <p className="text-[11px] text-muted-foreground">
-                Stable identifier for this routine's data. Auto-derived from
-                the name; only edit if you know what you're doing.
+                Stable identifier for this routine's data. Auto-derived from the name; only edit if
+                you know what you're doing.
               </p>
             </CardContent>
           )}
@@ -616,15 +643,7 @@ export function NewRoutinePage() {
   )
 }
 
-function Field({
-  id,
-  label,
-  children,
-}: {
-  id: string
-  label: string
-  children: React.ReactNode
-}) {
+function Field({ id, label, children }: { id: string; label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
       <Label htmlFor={id}>{label}</Label>

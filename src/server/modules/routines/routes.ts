@@ -142,8 +142,10 @@ app.post('/:id/fire', async (c) => {
   // Fire async — return immediately so the UI can poll runs.
   c.executionCtx.waitUntil(
     fireRoutine(c.env as unknown as { DB: D1Database; [k: string]: unknown }, r).catch((err) =>
-      console.error(JSON.stringify({ event: 'routine_manual_fire_error', routineId: r.id, error: String(err) })),
-    ),
+      console.error(
+        JSON.stringify({ event: 'routine_manual_fire_error', routineId: r.id, error: String(err) })
+      )
+    )
   )
   return c.json({ status: 'queued' }, 202)
 })

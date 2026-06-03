@@ -164,7 +164,7 @@ export function ConfigDiffCard({
   const [expanded, setExpanded] = useState(true)
   const rows = useMemo(
     () => buildDiffRows(proposal.before, proposal.after),
-    [proposal.before, proposal.after],
+    [proposal.before, proposal.after]
   )
 
   const addedCount = rows
@@ -179,29 +179,17 @@ export function ConfigDiffCard({
 
   return (
     <div
-      className={cn(
-        'rounded-lg border bg-card text-card-foreground shadow-sm',
-        className,
-      )}
+      className={cn('rounded-lg border bg-card text-card-foreground shadow-sm', className)}
       data-testid="config-diff-card"
     >
-      <div
-        className={cn(
-          'flex flex-wrap items-start gap-2 border-b p-3',
-          compact && 'p-2',
-        )}
-      >
+      <div className={cn('flex flex-wrap items-start gap-2 border-b p-3', compact && 'p-2')}>
         <Badge variant="outline" className="gap-1 font-mono text-[10px]">
           <FileDiff className="h-3 w-3" />
           {kindLabel(proposal.resource.kind)}
         </Badge>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-medium">
-            {proposal.resource.label}
-          </div>
-          <div className="mt-0.5 text-xs text-muted-foreground">
-            {proposal.summary}
-          </div>
+          <div className="truncate text-sm font-medium">{proposal.resource.label}</div>
+          <div className="mt-0.5 text-xs text-muted-foreground">{proposal.summary}</div>
         </div>
         <div className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1">
@@ -209,13 +197,8 @@ export function ConfigDiffCard({
             {creatorLabel(proposal.createdBy.type)}
           </span>
           <span className="tabular-nums">
-            <span className="text-emerald-600 dark:text-emerald-400">
-              +{addedCount}
-            </span>
-            {' '}
-            <span className="text-red-600 dark:text-red-400">
-              −{removedCount}
-            </span>
+            <span className="text-emerald-600 dark:text-emerald-400">+{addedCount}</span>{' '}
+            <span className="text-red-600 dark:text-red-400">−{removedCount}</span>
           </span>
           {proposal.status !== 'pending' ? (
             <Badge
@@ -236,11 +219,7 @@ export function ConfigDiffCard({
             className="flex w-full items-center justify-between px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted/40"
           >
             <span>Rationale</span>
-            {showReason ? (
-              <ChevronUp className="h-3 w-3" />
-            ) : (
-              <ChevronDown className="h-3 w-3" />
-            )}
+            {showReason ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
           </button>
           {showReason ? (
             <div className="prose prose-sm dark:prose-invert max-w-none px-3 pb-3 text-sm">
@@ -257,11 +236,7 @@ export function ConfigDiffCard({
           className="flex w-full items-center justify-between px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted/40"
         >
           <span>Diff</span>
-          {expanded ? (
-            <ChevronUp className="h-3 w-3" />
-          ) : (
-            <ChevronDown className="h-3 w-3" />
-          )}
+          {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
         </button>
         {expanded ? (
           <div className="max-h-96 overflow-auto bg-muted/20 font-mono text-[11px] leading-relaxed">
@@ -286,8 +261,7 @@ export function ConfigDiffCard({
                     'flex items-start gap-2 whitespace-pre-wrap break-words px-3 py-0.5',
                     row.type === 'added' &&
                       'bg-emerald-500/10 text-emerald-900 dark:text-emerald-200',
-                    row.type === 'removed' &&
-                      'bg-red-500/10 text-red-900 dark:text-red-200',
+                    row.type === 'removed' && 'bg-red-500/10 text-red-900 dark:text-red-200'
                   )}
                 >
                   <span
@@ -295,14 +269,10 @@ export function ConfigDiffCard({
                       'w-3 select-none',
                       row.type === 'added' && 'text-emerald-600 dark:text-emerald-400',
                       row.type === 'removed' && 'text-red-600 dark:text-red-400',
-                      row.type === 'context' && 'text-muted-foreground',
+                      row.type === 'context' && 'text-muted-foreground'
                     )}
                   >
-                    {row.type === 'added'
-                      ? '+'
-                      : row.type === 'removed'
-                        ? '−'
-                        : ' '}
+                    {row.type === 'added' ? '+' : row.type === 'removed' ? '−' : ' '}
                   </span>
                   <span className="flex-1">{line === '' ? ' ' : line}</span>
                 </div>
@@ -314,20 +284,11 @@ export function ConfigDiffCard({
 
       {!readOnly && isPending ? (
         <div className="flex items-center justify-end gap-2 p-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onReject?.(proposal)}
-            disabled={busy}
-          >
+          <Button variant="ghost" size="sm" onClick={() => onReject?.(proposal)} disabled={busy}>
             <X className="mr-1 h-3.5 w-3.5" />
             Reject
           </Button>
-          <Button
-            size="sm"
-            onClick={() => onApprove?.(proposal)}
-            disabled={busy}
-          >
+          <Button size="sm" onClick={() => onApprove?.(proposal)} disabled={busy}>
             <Check className="mr-1 h-3.5 w-3.5" />
             {busy ? 'Applying…' : 'Approve'}
           </Button>

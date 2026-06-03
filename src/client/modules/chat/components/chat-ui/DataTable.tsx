@@ -16,7 +16,9 @@ export function DataTable({ title, columns, rows }: Props) {
   return (
     <div className="rounded-lg border border-border overflow-hidden">
       {title && (
-        <div className="px-3 py-2 border-b border-border bg-muted/50 text-xs font-semibold">{title}</div>
+        <div className="px-3 py-2 border-b border-border bg-muted/50 text-xs font-semibold">
+          {title}
+        </div>
       )}
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
@@ -27,7 +29,11 @@ export function DataTable({ title, columns, rows }: Props) {
                   key={col.key}
                   className={cn(
                     'px-3 py-2 font-medium text-muted-foreground',
-                    col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'
+                    col.align === 'right'
+                      ? 'text-right'
+                      : col.align === 'center'
+                        ? 'text-center'
+                        : 'text-left'
                   )}
                 >
                   {col.label}
@@ -43,7 +49,11 @@ export function DataTable({ title, columns, rows }: Props) {
                     key={col.key}
                     className={cn(
                       'px-3 py-2',
-                      col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'
+                      col.align === 'right'
+                        ? 'text-right'
+                        : col.align === 'center'
+                          ? 'text-center'
+                          : 'text-left'
                     )}
                   >
                     {String(row[col.key] ?? '')}

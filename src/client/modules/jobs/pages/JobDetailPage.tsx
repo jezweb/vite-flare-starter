@@ -121,9 +121,10 @@ export function JobDetailPage() {
 
   const { job, items } = data
   const meta = JOB_BADGE[job.status]
-  const pct = job.totalItems === 0
-    ? 0
-    : Math.round(((job.completedItems + job.failedItems) / job.totalItems) * 100)
+  const pct =
+    job.totalItems === 0
+      ? 0
+      : Math.round(((job.completedItems + job.failedItems) / job.totalItems) * 100)
 
   const toggleExpand = (itemId: string) => {
     setExpanded((prev) => {
@@ -237,9 +238,7 @@ function ItemRow({
         </Badge>
         <div className="min-w-0 flex-1 truncate font-mono text-xs">{label}</div>
         {item.attempts > 1 && (
-          <span className="shrink-0 text-xs text-muted-foreground">
-            ↻ {item.attempts}
-          </span>
+          <span className="shrink-0 text-xs text-muted-foreground">↻ {item.attempts}</span>
         )}
       </button>
 

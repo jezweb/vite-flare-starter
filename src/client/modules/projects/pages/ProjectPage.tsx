@@ -105,7 +105,7 @@ export function ProjectPage() {
       if (initialMessage) params.set('q', initialMessage)
       navigate(`/dashboard/chat?${params.toString()}`)
     },
-    [id, navigate],
+    [id, navigate]
   )
 
   const handleSubmitChat = (e: React.FormEvent) => {
@@ -203,9 +203,7 @@ export function ProjectPage() {
             onClick={() => starProject.mutate({ id, starred: project.starred === 0 })}
             aria-label={project.starred ? 'Unstar project' : 'Star project'}
           >
-            <Star
-              className={cn('size-4', project.starred && 'fill-yellow-500 text-yellow-500')}
-            />
+            <Star className={cn('size-4', project.starred && 'fill-yellow-500 text-yellow-500')} />
           </Button>
           <Button variant="outline" onClick={() => setShareInfoOpen(true)}>
             <Share2 className="size-3.5 mr-1.5" />
@@ -238,9 +236,7 @@ export function ProjectPage() {
                   silent so a defaulted project doesn't read "Default model"
                   (which sounds like a placeholder). The chat page always
                   shows the actual model selector. */}
-              <span className="text-xs text-muted-foreground">
-                {project.defaultModel ?? ''}
-              </span>
+              <span className="text-xs text-muted-foreground">{project.defaultModel ?? ''}</span>
               <Button type="submit" size="sm" disabled={!chatInput.trim() || isArchived}>
                 <Plus className="size-3.5 mr-1.5" />
                 Start chat
@@ -257,9 +253,7 @@ export function ProjectPage() {
             </div>
           ) : (
             <div className="space-y-1">
-              <h2 className="text-sm font-semibold text-muted-foreground px-2 py-1">
-                Your chats
-              </h2>
+              <h2 className="text-sm font-semibold text-muted-foreground px-2 py-1">Your chats</h2>
               <ul className="space-y-1">
                 {conversations.map((c) => (
                   <li key={c.id}>
@@ -273,13 +267,9 @@ export function ProjectPage() {
                         <MessageSquare className="size-3.5 shrink-0 text-muted-foreground" />
                       )}
                       <div className="flex-1 min-w-0">
-                        <div className="truncate text-sm font-medium">
-                          {c.title || 'Untitled'}
-                        </div>
+                        <div className="truncate text-sm font-medium">{c.title || 'Untitled'}</div>
                         {c.summary && (
-                          <div className="truncate text-xs text-muted-foreground">
-                            {c.summary}
-                          </div>
+                          <div className="truncate text-xs text-muted-foreground">{c.summary}</div>
                         )}
                       </div>
                       <span className="shrink-0 text-xs text-muted-foreground">
@@ -300,9 +290,7 @@ export function ProjectPage() {
             scope="project"
             scopeId={id}
             mode={data?.project?.memoryUpdateMode ?? 'ask'}
-            onModeChange={(next) =>
-              updateProject.mutate({ id, memoryUpdateMode: next })
-            }
+            onModeChange={(next) => updateProject.mutate({ id, memoryUpdateMode: next })}
           />
 
           {/* Instructions section */}
@@ -316,7 +304,11 @@ export function ProjectPage() {
                 onClick={() => setInstructionsOpen(true)}
                 aria-label="Edit instructions"
               >
-                {project.systemPrompt ? <PencilLine className="size-3.5" /> : <Plus className="size-3.5" />}
+                {project.systemPrompt ? (
+                  <PencilLine className="size-3.5" />
+                ) : (
+                  <Plus className="size-3.5" />
+                )}
               </Button>
             </div>
             {project.systemPrompt ? (
@@ -325,9 +317,8 @@ export function ProjectPage() {
               </p>
             ) : (
               <p className="text-xs text-muted-foreground">
-                Tell the AI how it should behave in this project — tone of
-                voice, what to focus on, things to avoid. Applies to every
-                chat in here.
+                Tell the AI how it should behave in this project — tone of voice, what to focus on,
+                things to avoid. Applies to every chat in here.
               </p>
             )}
           </div>
@@ -352,7 +343,7 @@ export function ProjectPage() {
                 setInstructionsOpen(false)
               },
               onError: () => toast.error('Could not save instructions'),
-            },
+            }
           )
         }}
         isPending={updateProject.isPending}
@@ -372,7 +363,7 @@ export function ProjectPage() {
                 setEditProjectOpen(false)
               },
               onError: () => toast.error('Could not update project'),
-            },
+            }
           )
         }}
         isPending={updateProject.isPending}
@@ -438,8 +429,11 @@ function SetInstructionsModal({
           <DialogTitle>Set project instructions</DialogTitle>
           <DialogDescription>
             Provide Claude with relevant instructions and information for chats within{' '}
-            <span className="font-medium text-foreground">{projectName}</span>. This will work alongside{' '}
-            <Link to="/dashboard/settings" className="underline underline-offset-2">user preferences</Link>{' '}
+            <span className="font-medium text-foreground">{projectName}</span>. This will work
+            alongside{' '}
+            <Link to="/dashboard/settings" className="underline underline-offset-2">
+              user preferences
+            </Link>{' '}
             and the selected style in a chat.
           </DialogDescription>
         </DialogHeader>
@@ -456,7 +450,9 @@ function SetInstructionsModal({
           <span className="tabular-nums">{value.length}/8000</span>
         </div>
         <div className="flex justify-end gap-2 pt-2">
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
           <Button onClick={() => onSave(value)} disabled={isPending}>
             {isPending ? <Spinner size="sm" className="mr-1.5" /> : null}
             Save instructions
@@ -503,7 +499,9 @@ function EditProjectModal({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Edit project</DialogTitle>
-          <DialogDescription className="sr-only">Update the project name and description.</DialogDescription>
+          <DialogDescription className="sr-only">
+            Update the project name and description.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <Field>
@@ -528,7 +526,9 @@ function EditProjectModal({
             />
           </Field>
           <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
             <Button type="submit" disabled={!name.trim() || isPending}>
               {isPending ? <Spinner size="sm" className="mr-1.5" /> : null}
               Save

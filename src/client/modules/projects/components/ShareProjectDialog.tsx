@@ -42,22 +42,27 @@ export function ShareProjectDialog({ projectId, open, onClose }: Props) {
   const qc = useQueryClient()
   const { data, isLoading } = useQuery({
     queryKey: ['projects', projectId, 'members'],
-    queryFn: () =>
-      apiClient.get<{ members: MemberEntry[] }>(`/api/projects/${projectId}/members`),
+    queryFn: () => apiClient.get<{ members: MemberEntry[] }>(`/api/projects/${projectId}/members`),
     enabled: open,
   })
   const [inviteUserId, setInviteUserId] = useState('')
   const [role, setRole] = useState<'editor' | 'viewer'>('editor')
 
-  const invite = useMutation<{ ok: boolean }, Error, { userId: string; role: 'editor' | 'viewer' }>({
-    mutationFn: (body) =>
-      apiClient.post<{ ok: boolean }>(`/api/projects/${projectId}/members`, body),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['projects', projectId, 'members'] })
-      setInviteUserId('')
-    },
-  })
-  const updateRole = useMutation<{ ok: boolean }, Error, { memberId: string; role: 'editor' | 'viewer' }>({
+  const invite = useMutation<{ ok: boolean }, Error, { userId: string; role: 'editor' | 'viewer' }>(
+    {
+      mutationFn: (body) =>
+        apiClient.post<{ ok: boolean }>(`/api/projects/${projectId}/members`, body),
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: ['projects', projectId, 'members'] })
+        setInviteUserId('')
+      },
+    }
+  )
+  const updateRole = useMutation<
+    { ok: boolean },
+    Error,
+    { memberId: string; role: 'editor' | 'viewer' }
+  >({
     mutationFn: ({ memberId, role }) =>
       apiClient.patch<{ ok: boolean }>(`/api/projects/${projectId}/members/${memberId}`, { role }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['projects', projectId, 'members'] }),
@@ -142,7 +147,10 @@ export function ShareProjectDialog({ projectId, open, onClose }: Props) {
 
           <div className="rounded-md border border-border p-3">
             <Field>
-              <FieldLabel htmlFor="invite-userid" className="text-xs uppercase tracking-wider text-muted-foreground">
+              <FieldLabel
+                htmlFor="invite-userid"
+                className="text-xs uppercase tracking-wider text-muted-foreground"
+              >
                 Invite a user
               </FieldLabel>
               <FieldDescription className="text-xs">

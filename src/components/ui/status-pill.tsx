@@ -36,8 +36,7 @@ interface StatusPillProps extends React.HTMLAttributes<HTMLSpanElement> {
   asChild?: boolean
 }
 
-const neutralClasses =
-  'bg-muted text-muted-foreground border-border'
+const neutralClasses = 'bg-muted text-muted-foreground border-border'
 
 export function StatusPill({
   kind = 'neutral',
@@ -59,7 +58,7 @@ export function StatusPill({
         palette,
         size === 'default' && 'px-1.5 py-0 h-4 text-[10px] leading-none',
         size === 'lg' && 'px-2.5 py-0.5 text-xs leading-none',
-        className,
+        className
       )}
       {...rest}
     >

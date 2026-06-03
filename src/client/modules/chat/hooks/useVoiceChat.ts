@@ -34,12 +34,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-export type VoiceState =
-  | 'idle'
-  | 'listening'
-  | 'transcribing'
-  | 'speaking'
-  | 'error'
+export type VoiceState = 'idle' | 'listening' | 'transcribing' | 'speaking' | 'error'
 
 export type TtsProvider = 'aura2' | 'elevenlabs'
 
@@ -226,7 +221,7 @@ export function useVoiceChat(opts: UseVoiceChatOpts): UseVoiceChatResult {
     }
     if (!supportRef.current?.supported) {
       setError(
-        'Voice recording requires a browser that supports WebM/Opus (Chrome, Firefox, or desktop Safari). iOS Safari is not yet supported.',
+        'Voice recording requires a browser that supports WebM/Opus (Chrome, Firefox, or desktop Safari). iOS Safari is not yet supported.'
       )
       setState('error')
       return
@@ -310,11 +305,7 @@ export function useVoiceChat(opts: UseVoiceChatOpts): UseVoiceChatResult {
 
     try {
       const form = new FormData()
-      form.append(
-        'audio',
-        blob,
-        `recording.${mimeType.includes('webm') ? 'webm' : 'ogg'}`,
-      )
+      form.append('audio', blob, `recording.${mimeType.includes('webm') ? 'webm' : 'ogg'}`)
       const resp = await fetch(TRANSCRIBE_URL, {
         method: 'POST',
         body: form,

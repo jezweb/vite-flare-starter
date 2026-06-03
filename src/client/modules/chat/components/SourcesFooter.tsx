@@ -216,7 +216,7 @@ export const SourcesFooter = memo(function SourcesFooter({ parts }: SourcesFoote
               className={cn(
                 'inline-flex items-center gap-2 rounded-md border bg-muted/40 px-2 py-1 text-xs',
                 'max-w-[320px] transition-colors',
-                s.url && 'hover:bg-muted hover:border-border',
+                s.url && 'hover:bg-muted hover:border-border'
               )}
             >
               {favicon ? (
@@ -233,9 +233,7 @@ export const SourcesFooter = memo(function SourcesFooter({ parts }: SourcesFoote
                 <Icon className="size-3.5 shrink-0 text-muted-foreground" />
               )}
               <span className="truncate font-medium">{s.title}</span>
-              {s.hint && (
-                <span className="truncate text-muted-foreground">· {s.hint}</span>
-              )}
+              {s.hint && <span className="truncate text-muted-foreground">· {s.hint}</span>}
             </div>
           )
           return s.url ? (
@@ -259,13 +257,11 @@ export const SourcesFooter = memo(function SourcesFooter({ parts }: SourcesFoote
             className={cn(
               'inline-flex items-center rounded-md border border-dashed bg-muted/20 px-2 py-1 text-xs',
               'hover:bg-muted hover:border-border text-muted-foreground',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
             )}
             aria-expanded={expanded}
           >
-            {expanded
-              ? 'Show less'
-              : `+${sources.length - COLLAPSE_THRESHOLD} more`}
+            {expanded ? 'Show less' : `+${sources.length - COLLAPSE_THRESHOLD} more`}
           </button>
         )}
       </div>

@@ -21,15 +21,8 @@ export const createApiTokenSchema = z.object({
     .min(1, 'Name is required')
     .max(100, 'Name must be 100 characters or less')
     .trim(),
-  scopes: z
-    .array(scopeSchema)
-    .min(1, 'At least one scope is required')
-    .default(['profile:read']),
-  expiresAt: z
-    .number()
-    .int()
-    .positive('Expiration must be a valid timestamp')
-    .optional(),
+  scopes: z.array(scopeSchema).min(1, 'At least one scope is required').default(['profile:read']),
+  expiresAt: z.number().int().positive('Expiration must be a valid timestamp').optional(),
 })
 
 // Response schema for created token (includes the raw token, only shown once)

@@ -102,7 +102,7 @@ export class ScratchpadMcpAgent extends McpAgent<Env, ScratchpadState> {
           lastModified: this.state.lastModified,
           revision: this.state.revision,
         },
-      }),
+      })
     )
 
     this.server.registerTool(
@@ -126,7 +126,7 @@ export class ScratchpadMcpAgent extends McpAgent<Env, ScratchpadState> {
           content: [{ type: 'text' as const, text: `Scratchpad set (${text.length} chars).` }],
           structuredContent: { revision: this.state.revision },
         }
-      },
+      }
     )
 
     this.server.registerTool(
@@ -159,7 +159,7 @@ export class ScratchpadMcpAgent extends McpAgent<Env, ScratchpadState> {
             totalChars: next.length,
           },
         }
-      },
+      }
     )
 
     this.server.registerTool(
@@ -181,7 +181,7 @@ export class ScratchpadMcpAgent extends McpAgent<Env, ScratchpadState> {
           content: [{ type: 'text' as const, text: 'Scratchpad cleared.' }],
           structuredContent: { revision: this.state.revision },
         }
-      },
+      }
     )
   }
 }

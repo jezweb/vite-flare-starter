@@ -53,7 +53,7 @@ export const smtp2go: EmailProviderImpl = {
       throw new Error(
         `SMTP2Go reported ${json.data.failed} failures: ${(json.data.failures ?? [])
           .slice(0, 3)
-          .join('; ')}`,
+          .join('; ')}`
       )
     }
     return {

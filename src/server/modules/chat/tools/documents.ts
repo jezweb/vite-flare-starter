@@ -11,8 +11,15 @@
 import { z } from 'zod'
 import { FileType, FileSpreadsheet } from 'lucide-react'
 import {
-  Document, Packer, Paragraph, TextRun, HeadingLevel,
-  Table, TableRow, TableCell, WidthType,
+  Document,
+  Packer,
+  Paragraph,
+  TextRun,
+  HeadingLevel,
+  Table,
+  TableRow,
+  TableCell,
+  WidthType,
 } from 'docx'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 
@@ -21,7 +28,11 @@ function getFiles(ctx: AgentContext): R2Bucket | undefined {
 }
 
 function generateFilename(title: string, ext: string): string {
-  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-').slice(0, 50)
+  const slug = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/-+/g, '-')
+    .slice(0, 50)
   return `${slug}-${Date.now()}.${ext}`
 }
 
@@ -29,7 +40,7 @@ async function storeAndReturn(
   ctx: AgentContext,
   buffer: ArrayBuffer | Uint8Array,
   filename: string,
-  mimeType: string,
+  mimeType: string
 ): Promise<{ filename: string; sizeBytes: number; downloadUrl?: string; base64?: string }> {
   const bytes = buffer instanceof ArrayBuffer ? new Uint8Array(buffer) : buffer
   const bucket = getFiles(ctx)
@@ -37,7 +48,11 @@ async function storeAndReturn(
   if (bucket) {
     const key = `users/${ctx.userId}/documents/${filename}`
     await bucket.put(key, bytes, { httpMetadata: { contentType: mimeType } })
-    return { filename, sizeBytes: bytes.length, downloadUrl: `/api/files/download/${encodeURIComponent(key)}` }
+    return {
+      filename,
+      sizeBytes: bytes.length,
+      downloadUrl: `/api/files/download/${encodeURIComponent(key)}`,
+    }
   }
 
   const base64 = btoa(String.fromCharCode(...bytes))
@@ -59,7 +74,7 @@ const GenerateDocxInput = z.object({
         items: z.array(z.string()).optional(),
         headers: z.array(z.string()).optional(),
         rows: z.array(z.array(z.string())).optional(),
-      }),
+      })
     )
     .describe('Array of content blocks'),
 })
@@ -97,19 +112,28 @@ Content is an array of blocks:
       for (const block of content) {
         switch (block.type) {
           case 'heading':
-            children.push(new Paragraph({
-              children: [new TextRun({ text: block.text || '', bold: true })],
-              heading:
-                block.level === 1 ? HeadingLevel.HEADING_1
-                  : block.level === 2 ? HeadingLevel.HEADING_2
-                    : block.level === 3 ? HeadingLevel.HEADING_3
-                      : HeadingLevel.HEADING_4,
-            }))
+            children.push(
+              new Paragraph({
+                children: [new TextRun({ text: block.text || '', bold: true })],
+                heading:
+                  block.level === 1
+                    ? HeadingLevel.HEADING_1
+                    : block.level === 2
+                      ? HeadingLevel.HEADING_2
+                      : block.level === 3
+                        ? HeadingLevel.HEADING_3
+                        : HeadingLevel.HEADING_4,
+              })
+            )
             break
           case 'paragraph':
-            children.push(new Paragraph({
-              children: [new TextRun({ text: block.text || '', bold: block.bold, italics: block.italic })],
-            }))
+            children.push(
+              new Paragraph({
+                children: [
+                  new TextRun({ text: block.text || '', bold: block.bold, italics: block.italic }),
+                ],
+              })
+            )
             break
           case 'bullet_list':
             for (const item of block.items || []) {
@@ -119,15 +143,31 @@ Content is an array of blocks:
           case 'table':
             if (block.headers && block.rows) {
               const headerRow = new TableRow({
-                children: block.headers.map((h) => new TableCell({
-                  children: [new Paragraph({ children: [new TextRun({ text: h, bold: true })] })],
-                  width: { size: Math.floor(100 / block.headers!.length), type: WidthType.PERCENTAGE },
-                })),
+                children: block.headers.map(
+                  (h) =>
+                    new TableCell({
+                      children: [
+                        new Paragraph({ children: [new TextRun({ text: h, bold: true })] }),
+                      ],
+                      width: {
+                        size: Math.floor(100 / block.headers!.length),
+                        type: WidthType.PERCENTAGE,
+                      },
+                    })
+                ),
               })
-              const dataRows = block.rows.map((row) => new TableRow({
-                children: row.map((cell) => new TableCell({ children: [new Paragraph(cell)] })),
-              }))
-              children.push(new Table({ rows: [headerRow, ...dataRows], width: { size: 100, type: WidthType.PERCENTAGE } }))
+              const dataRows = block.rows.map(
+                (row) =>
+                  new TableRow({
+                    children: row.map((cell) => new TableCell({ children: [new Paragraph(cell)] })),
+                  })
+              )
+              children.push(
+                new Table({
+                  rows: [headerRow, ...dataRows],
+                  width: { size: 100, type: WidthType.PERCENTAGE },
+                })
+              )
             }
             break
         }
@@ -140,7 +180,7 @@ Content is an array of blocks:
         ctx,
         buffer,
         filename,
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
       )
       return { _document: true, format: 'docx', title, ...result }
     } catch (error) {

@@ -58,7 +58,7 @@ function constantTimeEqual(a: string, b: string): boolean {
 export async function verifyHmacSha256(
   secret: string,
   body: string,
-  signature: string,
+  signature: string
 ): Promise<boolean> {
   if (!secret || !signature) return false
   // Strip the `sha256=` prefix if present — GitHub and friends
@@ -70,7 +70,7 @@ export async function verifyHmacSha256(
     enc.encode(secret),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
-    ['sign'],
+    ['sign']
   )
   const signed = await crypto.subtle.sign('HMAC', key, enc.encode(body))
   return constantTimeEqual(bufferToHex(signed), expected.toLowerCase())

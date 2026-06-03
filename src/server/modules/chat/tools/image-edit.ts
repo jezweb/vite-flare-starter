@@ -39,12 +39,12 @@ const EditImageInput = z.object({
   sourceImageUrl: z
     .string()
     .describe(
-      "The image to edit. Accepts: an https URL, a `data:` URL, or an R2 key like `users/<userId>/foo.png`.",
+      'The image to edit. Accepts: an https URL, a `data:` URL, or an R2 key like `users/<userId>/foo.png`.'
     ),
   prompt: z
     .string()
     .describe(
-      "Edit instruction. Be specific about what to keep, what to change, and what to NOT change. e.g. 'Keep the house, yard, and ute. Change only the sky to a sunset with warm orange and pink clouds.'",
+      "Edit instruction. Be specific about what to keep, what to change, and what to NOT change. e.g. 'Keep the house, yard, and ute. Change only the sky to a sunset with warm orange and pink clouds.'"
     ),
   aspectRatio: z
     .enum(['1:1', '4:3', '3:4', '16:9', '9:16', '4:5', '21:9'])
@@ -54,7 +54,7 @@ const EditImageInput = z.object({
     .enum(['nano-banana-2', 'gemini-direct'])
     .optional()
     .describe(
-      "'nano-banana-2' (default, via OpenRouter) or 'gemini-direct' (direct Google AI Studio API — better multi-turn parity). Both use the same Gemini 3.1 Flash Image model.",
+      "'nano-banana-2' (default, via OpenRouter) or 'gemini-direct' (direct Google AI Studio API — better multi-turn parity). Both use the same Gemini 3.1 Flash Image model."
     ),
 })
 
@@ -91,7 +91,7 @@ function guessMimeType(url: string): string {
 
 async function resolveImage(
   env: ImageEditEnv,
-  imageUrl: string,
+  imageUrl: string
 ): Promise<{ bytes: Uint8Array; mimeType: string }> {
   if (imageUrl.startsWith('data:')) {
     const m = imageUrl.match(/^data:([^;]+);base64,(.+)$/)
@@ -122,7 +122,7 @@ export const editImageDefinition: ToolDefinition<
 > = {
   name: 'edit_image',
   description:
-    "Edit an existing image with a text instruction. Use when the user wants to modify a photo (change colors, swap subjects, change time-of-day, apply a style). Powered by Gemini 3.1 Flash Image (Nano Banana 2). Be specific about what to keep vs change. Returns a URL of the edited image saved to R2.",
+    'Edit an existing image with a text instruction. Use when the user wants to modify a photo (change colors, swap subjects, change time-of-day, apply a style). Powered by Gemini 3.1 Flash Image (Nano Banana 2). Be specific about what to keep vs change. Returns a URL of the edited image saved to R2.',
   inputSchema: EditImageInput,
   outputSchema: EditImageOutput,
   isAvailable: (ctx) => {
@@ -161,7 +161,7 @@ export const editImageDefinition: ToolDefinition<
           env.GEMINI_API_KEY!,
           input.prompt,
           resolved,
-          input.aspectRatio ? { aspectRatio: input.aspectRatio } : {},
+          input.aspectRatio ? { aspectRatio: input.aspectRatio } : {}
         )
         outBytes = result.bytes
         outMime = result.mimeType
@@ -171,7 +171,7 @@ export const editImageDefinition: ToolDefinition<
           env.OPENROUTER_API_KEY!,
           input.prompt,
           resolved,
-          input.aspectRatio,
+          input.aspectRatio
         )
         outBytes = result.bytes
         outMime = result.mimeType
@@ -215,7 +215,7 @@ async function callOpenRouterEdit(
   apiKey: string,
   prompt: string,
   source: { bytes: Uint8Array; mimeType: string },
-  aspectRatio: string | undefined,
+  aspectRatio: string | undefined
 ): Promise<{ bytes: Uint8Array; mimeType: string }> {
   const dataUrl = `data:${source.mimeType};base64,${bytesToBase64(source.bytes)}`
   const userText = aspectRatio ? `${prompt}\n\nOutput aspect ratio: ${aspectRatio}.` : prompt
@@ -264,7 +264,9 @@ async function callOpenRouterEdit(
     }
   }
   if (!imageDataUrl) {
-    throw new Error('Nano Banana 2 returned no image — possibly refused or the model misinterpreted the prompt.')
+    throw new Error(
+      'Nano Banana 2 returned no image — possibly refused or the model misinterpreted the prompt.'
+    )
   }
   const m = imageDataUrl.match(/^data:([^;]+);base64,(.+)$/)
   if (!m?.[1] || !m?.[2]) throw new Error('Edited image was not in the expected data URL format.')
@@ -274,8 +276,6 @@ async function callOpenRouterEdit(
   return { bytes, mimeType: m[1] }
 }
 
-export const imageEditDefinitions = [
-  editImageDefinition,
-] as ToolDefinition<unknown, unknown>[]
+export const imageEditDefinitions = [editImageDefinition] as ToolDefinition<unknown, unknown>[]
 
 export type EditImageOutput = z.infer<typeof EditImageOutput>

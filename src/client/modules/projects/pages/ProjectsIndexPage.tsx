@@ -93,7 +93,9 @@ export function ProjectsIndexPage() {
             />
           </div>
           <div className="flex items-center gap-1">
-            <span className="text-xs text-muted-foreground" id="projects-sort-label">Sort by</span>
+            <span className="text-xs text-muted-foreground" id="projects-sort-label">
+              Sort by
+            </span>
             {/* P4-020 — bare <select> needs an accessible name. The
                 visible "Sort by" label sits beside it but isn't a
                 <label htmlFor=>; aria-label gives screen readers the
@@ -128,7 +130,11 @@ export function ProjectsIndexPage() {
       {isLoading ? (
         <PageLoading variant="grid" count={4} />
       ) : projects.length === 0 ? (
-        <EmptyState search={search} showArchived={showArchived} onCreate={() => setCreateOpen(true)} />
+        <EmptyState
+          search={search}
+          showArchived={showArchived}
+          onCreate={() => setCreateOpen(true)}
+        />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {projects.map((p) => (
@@ -146,7 +152,15 @@ export function ProjectsIndexPage() {
   )
 }
 
-function EmptyState({ search, showArchived, onCreate }: { search: string; showArchived: boolean; onCreate: () => void }) {
+function EmptyState({
+  search,
+  showArchived,
+  onCreate,
+}: {
+  search: string
+  showArchived: boolean
+  onCreate: () => void
+}) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [loadingSample, setLoadingSample] = useState(false)
@@ -213,14 +227,16 @@ function ProjectCard({
   onStar: (starred: boolean) => void
 }) {
   const isArchived = project.archived === 1
-  const colorClass = isProjectColor(project.color) ? PROJECT_COLOR_CLASSES[project.color].fill : 'text-muted-foreground'
+  const colorClass = isProjectColor(project.color)
+    ? PROJECT_COLOR_CLASSES[project.color].fill
+    : 'text-muted-foreground'
 
   return (
     <Link
       to={`/dashboard/projects/${project.id}`}
       className={cn(
         'group block rounded-lg border bg-card p-4 transition-all hover:border-primary/40 hover:shadow-sm',
-        isArchived && 'opacity-60',
+        isArchived && 'opacity-60'
       )}
     >
       <div className="flex items-start justify-between gap-3">
@@ -247,7 +263,9 @@ function ProjectCard({
           }}
           className={cn(
             'shrink-0 rounded-md p-1 -m-1 transition-colors hover:bg-muted',
-            project.starred ? 'text-yellow-500' : 'text-muted-foreground opacity-0 group-hover:opacity-100',
+            project.starred
+              ? 'text-yellow-500'
+              : 'text-muted-foreground opacity-0 group-hover:opacity-100'
           )}
           aria-label={project.starred ? 'Unstar project' : 'Star project'}
           title={project.starred ? 'Unstar' : 'Star'}

@@ -26,19 +26,13 @@ const InputAgent = withVoiceInput(Agent)
  */
 // biome-ignore lint/suspicious/noExplicitAny: binding types cross-compile
 export class VoiceInputExample extends InputAgent<any> {
-  transcriber = new WorkersAINova3STT(
-    (this.env as unknown as { AI: Ai }).AI,
-  )
+  transcriber = new WorkersAINova3STT((this.env as unknown as { AI: Ai }).AI)
 
   async onConnect(conn: Connection, _ctx: ConnectionContext): Promise<void> {
     // One WS per session. The DO is created/loaded on first connect and
     // persists while any connection is open (plus a short idle window).
-    console.log(
-      JSON.stringify({ event: 'voice_ws_connect', sessionId: this.name }),
-    )
-    conn.send(
-      JSON.stringify({ type: 'welcome', sessionId: this.name }),
-    )
+    console.log(JSON.stringify({ event: 'voice_ws_connect', sessionId: this.name }))
+    conn.send(JSON.stringify({ type: 'welcome', sessionId: this.name }))
   }
 
   /**
@@ -57,20 +51,16 @@ export class VoiceInputExample extends InputAgent<any> {
         event: 'voice_transcript',
         sessionId: this.name,
         text: trimmed,
-      }),
+      })
     )
     // Broadcast to ALL connected clients of this DO. For a single-WS
     // session this is the same as conn.send; for multi-viewer sessions
     // everyone sees the transcript. Exclude ids via the 2nd arg to skip
     // specific connections.
-    this.broadcast(
-      JSON.stringify({ type: 'utterance', text: trimmed, ts: Date.now() }),
-    )
+    this.broadcast(JSON.stringify({ type: 'utterance', text: trimmed, ts: Date.now() }))
   }
 
   async onCallEnd(_conn: Connection): Promise<void> {
-    console.log(
-      JSON.stringify({ event: 'voice_call_end', sessionId: this.name }),
-    )
+    console.log(JSON.stringify({ event: 'voice_call_end', sessionId: this.name }))
   }
 }

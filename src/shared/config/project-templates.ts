@@ -171,7 +171,7 @@ export const PROJECT_TEMPLATES: ProjectTemplate[] = [
     emoji: '🎧',
     color: 'violet',
     systemPrompt:
-      'You help triage and respond to customer support tickets. For each ticket: classify (bug/feature/question/billing), suggest next action (reply/escalate/close), draft a response if appropriate. Tone: warm, take ownership, no blame. Always acknowledge the customer\'s frustration before solving.',
+      "You help triage and respond to customer support tickets. For each ticket: classify (bug/feature/question/billing), suggest next action (reply/escalate/close), draft a response if appropriate. Tone: warm, take ownership, no blame. Always acknowledge the customer's frustration before solving.",
     starterMemories: [
       {
         name: 'support-triage',

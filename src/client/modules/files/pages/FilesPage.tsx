@@ -28,7 +28,9 @@ export function FilesPage() {
   const [currentFolder, setCurrentFolder] = useState<string>('all')
   const [uploadOpen, setUploadOpen] = useState(false)
 
-  const { data, isLoading, refetch } = useFiles({ folder: currentFolder === 'all' ? undefined : currentFolder })
+  const { data, isLoading, refetch } = useFiles({
+    folder: currentFolder === 'all' ? undefined : currentFolder,
+  })
   const { data: foldersData } = useFolders()
 
   const folders = foldersData?.folders || ['/']

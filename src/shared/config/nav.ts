@@ -162,7 +162,12 @@ export const NAV_SECTIONS: NavSection[] = [
       { to: '/dashboard/components', label: 'Components', icon: Component },
       { to: '/dashboard/style-guide', label: 'Style guide', icon: Palette },
       { to: '/dashboard/voice-example', label: 'Voice example', icon: Mic, feature: 'voiceAgent' },
-      { to: '/dashboard/video-example', label: 'Video example', icon: Camera, feature: 'videoAgent' },
+      {
+        to: '/dashboard/video-example',
+        label: 'Video example',
+        icon: Camera,
+        feature: 'videoAgent',
+      },
       { to: '/dashboard/kanban-demo', label: 'Kanban demo', icon: Kanban, feature: 'kanbanDemo' },
     ],
   },

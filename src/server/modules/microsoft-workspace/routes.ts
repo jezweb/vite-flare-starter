@@ -70,9 +70,7 @@ app.get('/callback', async (c) => {
       // Microsoft grants a refresh_token when `offline_access` is in scope
       // (we include it by default). If it's missing something is wrong in
       // the Azure app registration.
-      console.warn(
-        JSON.stringify({ event: 'microsoft_workspace_no_refresh_token', userId }),
-      )
+      console.warn(JSON.stringify({ event: 'microsoft_workspace_no_refresh_token', userId }))
     }
 
     const accessTokenEnc = await encrypt(tokens.accessToken, env.TOKEN_ENCRYPTION_KEY)
@@ -114,7 +112,7 @@ app.get('/callback', async (c) => {
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e)
     console.error(
-      JSON.stringify({ event: 'microsoft_workspace_callback_error', userId, error: message }),
+      JSON.stringify({ event: 'microsoft_workspace_callback_error', userId, error: message })
     )
     return finish('error', message.slice(0, 200))
   }
@@ -187,10 +185,7 @@ app.post('/connect', async (c) => {
   headers.append('Set-Cookie', `msw_state=${encodeURIComponent(state)}; ${cookieBase}${secure}`)
   headers.append('Set-Cookie', `msw_user=${encodeURIComponent(userId)}; ${cookieBase}${secure}`)
 
-  return new Response(
-    JSON.stringify({ authorizationUrl: authUrl.toString() }),
-    { headers },
-  )
+  return new Response(JSON.stringify({ authorizationUrl: authUrl.toString() }), { headers })
 })
 
 /** POST /disconnect — delete D1 row. Microsoft has no central revoke endpoint. */

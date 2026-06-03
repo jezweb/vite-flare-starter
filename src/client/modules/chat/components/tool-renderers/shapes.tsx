@@ -62,12 +62,19 @@ function isImageShape(o: unknown): o is ImageShape {
   const candidate =
     (typeof r['imageUrl'] === 'string' && r['imageUrl']) ||
     (typeof r['dataUrl'] === 'string' && r['dataUrl']) ||
-    (typeof r['url'] === 'string' && /\.(png|jpe?g|gif|webp|svg|avif)(\?|$)/i.test(r['url'] as string) && r['url'])
+    (typeof r['url'] === 'string' &&
+      /\.(png|jpe?g|gif|webp|svg|avif)(\?|$)/i.test(r['url'] as string) &&
+      r['url'])
   if (!candidate) return false
   // Hard rule: must look like an image source. data: URLs starting with
   // image/, http(s) with an image extension, or an explicit imageUrl/dataUrl.
   const s = candidate as string
-  return s.startsWith('data:image/') || /\.(png|jpe?g|gif|webp|svg|avif)(\?|$)/i.test(s) || 'imageUrl' in r || 'dataUrl' in r
+  return (
+    s.startsWith('data:image/') ||
+    /\.(png|jpe?g|gif|webp|svg|avif)(\?|$)/i.test(s) ||
+    'imageUrl' in r ||
+    'dataUrl' in r
+  )
 }
 
 interface MarkdownShape {
@@ -132,15 +139,9 @@ function StdoutBlock({ output }: { output: unknown }) {
         </Badge>
         {o.language && <span className="text-[11px]">· {o.language}</span>}
       </div>
-      {stdout && (
-        <CopyableBlock label="stdout" content={stdout} variant="default" />
-      )}
-      {stderr && (
-        <CopyableBlock label="stderr" content={stderr} variant="error" />
-      )}
-      {!stdout && !stderr && (
-        <p className="text-xs text-muted-foreground italic">No output.</p>
-      )}
+      {stdout && <CopyableBlock label="stdout" content={stdout} variant="default" />}
+      {stderr && <CopyableBlock label="stderr" content={stderr} variant="error" />}
+      {!stdout && !stderr && <p className="text-xs text-muted-foreground italic">No output.</p>}
     </div>
   )
 }
@@ -180,7 +181,7 @@ function CopyableBlock({
       <pre
         className={cn(
           'max-h-72 overflow-auto whitespace-pre-wrap break-words p-2.5 font-mono text-[11px] leading-relaxed',
-          variant === 'error' && 'bg-destructive/5 text-destructive',
+          variant === 'error' && 'bg-destructive/5 text-destructive'
         )}
       >
         {content}
@@ -193,8 +194,7 @@ function CopyableBlock({
 
 function ImagePreview({ output }: { output: unknown }) {
   const o = output as ImageShape
-  const src =
-    o.dataUrl ?? o.imageUrl ?? o.url ?? null
+  const src = o.dataUrl ?? o.imageUrl ?? o.url ?? null
   if (!src) return <p className="text-xs text-muted-foreground italic">No image.</p>
 
   return (
@@ -215,9 +215,7 @@ function ImagePreview({ output }: { output: unknown }) {
           </span>
         )}
         {(o.format || o.contentType) && <span>· {o.format ?? o.contentType}</span>}
-        {o.size && (
-          <span>· {Math.round(o.size / 1024).toLocaleString()} KB</span>
-        )}
+        {o.size && <span>· {Math.round(o.size / 1024).toLocaleString()} KB</span>}
       </div>
     </div>
   )
@@ -251,7 +249,8 @@ function MarkdownBody({ output }: { output: unknown }) {
         </pre>
       </div>
       <p className="text-[10px] text-muted-foreground">
-        {body.length.toLocaleString()} characters · ~{Math.ceil(body.length / 4).toLocaleString()} tokens
+        {body.length.toLocaleString()} characters · ~{Math.ceil(body.length / 4).toLocaleString()}{' '}
+        tokens
       </p>
     </div>
   )
@@ -263,24 +262,19 @@ function TableView({ output }: { output: unknown }) {
   const o = output as TableShape
   const rows = o.rows ?? []
   if (rows.length === 0) {
-    return (
-      <p className="text-xs text-muted-foreground italic">
-        No rows returned.
-      </p>
-    )
+    return <p className="text-xs text-muted-foreground italic">No rows returned.</p>
   }
   // Derive columns from explicit `columns` if present, else union of keys
   // from the first ~5 rows so we don't iterate the whole result for huge
   // datasets.
   const explicit = o.columns
   const columnKeys: string[] = explicit
-    ? explicit.map((c) => (typeof c === 'string' ? c : c.key ?? c.name ?? ''))
-        .filter(Boolean)
-    : Array.from(
-        new Set(rows.slice(0, 5).flatMap((r) => Object.keys(r))),
-      )
+    ? explicit.map((c) => (typeof c === 'string' ? c : (c.key ?? c.name ?? ''))).filter(Boolean)
+    : Array.from(new Set(rows.slice(0, 5).flatMap((r) => Object.keys(r))))
   const columnLabels: string[] = explicit
-    ? explicit.map((c, i) => (typeof c === 'string' ? c : c.label ?? c.name ?? c.key ?? columnKeys[i] ?? ''))
+    ? explicit.map((c, i) =>
+        typeof c === 'string' ? c : (c.label ?? c.name ?? c.key ?? columnKeys[i] ?? '')
+      )
     : columnKeys
   const displayedRows = rows.slice(0, 50)
   const truncated = rows.length > 50
@@ -309,7 +303,11 @@ function TableView({ output }: { output: unknown }) {
             {displayedRows.map((row, i) => (
               <tr key={i} className="hover:bg-muted/20">
                 {columnKeys.map((key, j) => (
-                  <td key={j} className="px-2 py-1.5 align-top max-w-[260px] truncate" title={cellText(row[key])}>
+                  <td
+                    key={j}
+                    className="px-2 py-1.5 align-top max-w-[260px] truncate"
+                    title={cellText(row[key])}
+                  >
                     {cellText(row[key])}
                   </td>
                 ))}

@@ -75,7 +75,7 @@ export function usePasteUpload({
         onPasteRef.current(files)
       }
     },
-    [accept, maxFiles, maxFileSize],
+    [accept, maxFiles, maxFileSize]
   )
 
   useEffect(() => {

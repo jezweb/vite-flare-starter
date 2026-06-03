@@ -97,7 +97,7 @@ app.post('/extract', async (c) => {
     if (!text || !schemaName || !extractSchemas[schemaName]) {
       return c.json(
         { error: 'Required: text (string) and schema (summary | entities | sentiment)' },
-        400,
+        400
       )
     }
     if (text.length > 100_000) {
@@ -126,7 +126,7 @@ app.post('/extract', async (c) => {
     console.error('Extract error:', error)
     return c.json(
       { success: false, error: error instanceof Error ? error.message : 'Extraction failed' },
-      500,
+      500
     )
   }
 })
@@ -145,7 +145,7 @@ app.post('/stream-extract', async (c) => {
     if (!text || !schemaName || !extractSchemas[schemaName]) {
       return c.json(
         { error: 'Required: text (string) and schema (summary | entities | sentiment)' },
-        400,
+        400
       )
     }
     if (text.length > 100_000) {
@@ -167,7 +167,7 @@ app.post('/stream-extract', async (c) => {
     console.error('Stream extract error:', error)
     return c.json(
       { success: false, error: error instanceof Error ? error.message : 'Extraction failed' },
-      500,
+      500
     )
   }
 })
@@ -209,8 +209,17 @@ app.get('/catalog', async (c) => {
 })
 
 function categoriseTool(name: string): string {
-  if (name.startsWith('gmail_') || name.startsWith('google_workspace_') || name === 'show_link' || name === 'show_image') {
-    return name.startsWith('gmail_') ? 'Gmail' : name.startsWith('google_') ? 'Google Workspace' : 'UI'
+  if (
+    name.startsWith('gmail_') ||
+    name.startsWith('google_workspace_') ||
+    name === 'show_link' ||
+    name === 'show_image'
+  ) {
+    return name.startsWith('gmail_')
+      ? 'Gmail'
+      : name.startsWith('google_')
+        ? 'Google Workspace'
+        : 'UI'
   }
   if (name.startsWith('drive_') || name.includes('drive')) return 'Google Drive'
   if (name.startsWith('calendar_')) return 'Google Calendar'
@@ -220,9 +229,24 @@ function categoriseTool(name: string): string {
   if (name.startsWith('microsoft_')) return 'Microsoft 365'
   if (name.startsWith('image_') || name.includes('image')) return 'Images'
   if (name.startsWith('media_') || name.includes('video')) return 'Media'
-  if (name.startsWith('inbox_') || name === 'notify' || name === 'space_send' || name === 'webhook_post' || name === 'approval_queue') return 'Channels'
-  if (name === 'find_tools' || name === 'load_skill' || name === 'recall' || name === 'remember' || name === 'done') return 'Core'
-  if (name === 'web_search' || name.includes('search') || name.includes('browse')) return 'Search & web'
+  if (
+    name.startsWith('inbox_') ||
+    name === 'notify' ||
+    name === 'space_send' ||
+    name === 'webhook_post' ||
+    name === 'approval_queue'
+  )
+    return 'Channels'
+  if (
+    name === 'find_tools' ||
+    name === 'load_skill' ||
+    name === 'recall' ||
+    name === 'remember' ||
+    name === 'done'
+  )
+    return 'Core'
+  if (name === 'web_search' || name.includes('search') || name.includes('browse'))
+    return 'Search & web'
   return 'Other'
 }
 

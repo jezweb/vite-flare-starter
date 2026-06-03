@@ -7,10 +7,7 @@
  */
 import { drizzle } from 'drizzle-orm/d1'
 import { and, eq, lte, sql } from 'drizzle-orm'
-import {
-  conversationMessages,
-  conversations,
-} from '@/server/modules/conversations/db/schema'
+import { conversationMessages, conversations } from '@/server/modules/conversations/db/schema'
 
 const TTL_SECONDS = 24 * 60 * 60
 const ROWS_PER_TICK = 50
@@ -29,7 +26,8 @@ export async function sweepHistoryDisabledSpaces(db: D1Database): Promise<number
     if (row.disabledAt == null) continue
     // Only delete messages older than the disabledAt + TTL — preserves
     // recent activity from the moment history was turned off.
-    const oldEnoughBefore = (row.disabledAt as number) > cutoff ? row.disabledAt as number : cutoff
+    const oldEnoughBefore =
+      (row.disabledAt as number) > cutoff ? (row.disabledAt as number) : cutoff
     // SQLite doesn't return affected-row count from drizzle directly;
     // we re-query the count beforehand. Bounded.
     const candidates = await d
@@ -38,19 +36,17 @@ export async function sweepHistoryDisabledSpaces(db: D1Database): Promise<number
       .where(
         and(
           eq(conversationMessages.conversationId, row.id),
-          lte(conversationMessages.createdAt, new Date(oldEnoughBefore * 1000)),
-        ),
+          lte(conversationMessages.createdAt, new Date(oldEnoughBefore * 1000))
+        )
       )
       .limit(ROWS_PER_TICK)
     if (candidates.length === 0) continue
-    await d
-      .delete(conversationMessages)
-      .where(
-        sql`${conversationMessages.id} IN (${sql.join(
-          candidates.map((c) => sql`${c.id}`),
-          sql`,`,
-        )})`,
-      )
+    await d.delete(conversationMessages).where(
+      sql`${conversationMessages.id} IN (${sql.join(
+        candidates.map((c) => sql`${c.id}`),
+        sql`,`
+      )})`
+    )
     totalRemoved += candidates.length
     if (totalRemoved >= ROWS_PER_TICK) break
   }

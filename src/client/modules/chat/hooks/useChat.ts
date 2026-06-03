@@ -23,10 +23,7 @@
  */
 import { useAgent } from 'agents/react'
 import { useAgentChat } from '@cloudflare/ai-chat/react'
-import {
-  lastAssistantMessageIsCompleteWithApprovalResponses,
-  type UIMessage,
-} from 'ai'
+import { lastAssistantMessageIsCompleteWithApprovalResponses, type UIMessage } from 'ai'
 import { useRef, useEffect } from 'react'
 import { type MessageMetadata } from '@/shared/schemas/chat.schema'
 
@@ -66,7 +63,10 @@ interface ChatOptions {
   initialMessages?: Message[]
   /** Client-side tool handlers — execute tools in the browser without server round-trip. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onToolCall?: (params: { toolCall: any; addToolOutput: (output: { toolCallId: string; output: unknown }) => void }) => void | Promise<void>
+  onToolCall?: (params: {
+    toolCall: any
+    addToolOutput: (output: { toolCallId: string; output: unknown }) => void
+  }) => void | Promise<void>
   /**
    * Called after the assistant's response finishes streaming. Fork users
    * typically use this to invalidate the conversations sidebar query so
@@ -84,7 +84,8 @@ function buildInstanceName(userId: string, conversationId: string): string {
 }
 
 export function useChat(options: ChatOptions) {
-  const { userId, model, conversationId, projectId, initialMessages, onToolCall, onFinish } = options
+  const { userId, model, conversationId, projectId, initialMessages, onToolCall, onFinish } =
+    options
 
   // Static name used by useAgent. The agent SDK normalises class names
   // to kebab-case for routing — `ChatAgent` → `/agents/chat-agent/...`.
@@ -101,11 +102,17 @@ export function useChat(options: ChatOptions) {
   // body() per send, so we always pick up the current values.
   const modelRef = useRef(model)
   const projectIdRef = useRef(projectId)
-  useEffect(() => { modelRef.current = model }, [model])
-  useEffect(() => { projectIdRef.current = projectId }, [projectId])
+  useEffect(() => {
+    modelRef.current = model
+  }, [model])
+  useEffect(() => {
+    projectIdRef.current = projectId
+  }, [projectId])
 
   const onFinishRef = useRef(onFinish)
-  useEffect(() => { onFinishRef.current = onFinish }, [onFinish])
+  useEffect(() => {
+    onFinishRef.current = onFinish
+  }, [onFinish])
 
   // Seed messages bridge legacy D1 conversations into the DO. The SDK
   // only calls `getInitialMessages` when the DO's SQLite is empty, so a
@@ -114,9 +121,7 @@ export function useChat(options: ChatOptions) {
   // closure (not a mount-time ref) means navigating between conversations
   // picks up the right seed for each.
   const hasSeed = !!(initialMessages && initialMessages.length > 0)
-  const getInitialMessages = hasSeed
-    ? async () => initialMessages!
-    : undefined
+  const getInitialMessages = hasSeed ? async () => initialMessages! : undefined
 
   // useAgentChat extends AI SDK's useChat. The function-form `body` is
   // evaluated per send via `bodyOptionRef.current` in the SDK's

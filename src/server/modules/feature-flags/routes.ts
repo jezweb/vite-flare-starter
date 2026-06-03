@@ -250,54 +250,50 @@ adminApp.post('/sync', async (c) => {
 })
 
 // PUT /api/admin/feature-flags/:key - Create or update a feature (full update)
-adminApp.put(
-  '/:key',
-  zValidator('json', upsertFeatureSchema.omit({ key: true })),
-  async (c) => {
-    const db = drizzle(c.env.DB, { schema })
-    const userId = c.get('userId')
-    const key = c.req.param('key')
-    const input = c.req.valid('json')
+adminApp.put('/:key', zValidator('json', upsertFeatureSchema.omit({ key: true })), async (c) => {
+  const db = drizzle(c.env.DB, { schema })
+  const userId = c.get('userId')
+  const key = c.req.param('key')
+  const input = c.req.valid('json')
 
-    const now = new Date()
+  const now = new Date()
 
-    // Check if exists
-    const existing = await db.query.featureFlags.findFirst({
-      where: eq(schema.featureFlags.key, key),
-    })
+  // Check if exists
+  const existing = await db.query.featureFlags.findFirst({
+    where: eq(schema.featureFlags.key, key),
+  })
 
-    if (existing) {
-      // Update
-      const updated = await db
-        .update(schema.featureFlags)
-        .set({
-          ...input,
-          updatedBy: userId,
-          updatedAt: now,
-        })
-        .where(eq(schema.featureFlags.key, key))
-        .returning()
-        .get()
+  if (existing) {
+    // Update
+    const updated = await db
+      .update(schema.featureFlags)
+      .set({
+        ...input,
+        updatedBy: userId,
+        updatedAt: now,
+      })
+      .where(eq(schema.featureFlags.key, key))
+      .returning()
+      .get()
 
-      return c.json({ feature: updated })
-    } else {
-      // Create
-      const created = await db
-        .insert(schema.featureFlags)
-        .values({
-          key,
-          ...input,
-          updatedBy: userId,
-          createdAt: now,
-          updatedAt: now,
-        })
-        .returning()
-        .get()
+    return c.json({ feature: updated })
+  } else {
+    // Create
+    const created = await db
+      .insert(schema.featureFlags)
+      .values({
+        key,
+        ...input,
+        updatedBy: userId,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning()
+      .get()
 
-      return c.json({ feature: created }, 201)
-    }
+    return c.json({ feature: created }, 201)
   }
-)
+})
 
 // DELETE /api/admin/feature-flags/:key - Delete a feature
 adminApp.delete('/:key', async (c) => {

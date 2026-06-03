@@ -38,10 +38,7 @@ export function SearchInput({
   ...rest
 }: SearchInputProps) {
   const iconSize = size === 'sm' ? 'size-3.5' : 'size-4'
-  const inputClass =
-    size === 'sm'
-      ? 'h-7 pl-7 pr-7 text-xs'
-      : 'pl-9 pr-9'
+  const inputClass = size === 'sm' ? 'h-7 pl-7 pr-7 text-xs' : 'pl-9 pr-9'
 
   return (
     <div data-slot="search-input" className={cn('relative', className)}>
@@ -50,7 +47,7 @@ export function SearchInput({
         className={cn(
           'absolute top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none',
           iconSize,
-          size === 'sm' ? 'left-2.5' : 'left-3',
+          size === 'sm' ? 'left-2.5' : 'left-3'
         )}
       />
       <Input
@@ -69,7 +66,7 @@ export function SearchInput({
           className={cn(
             'absolute top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors',
             iconSize,
-            size === 'sm' ? 'right-2.5' : 'right-3',
+            size === 'sm' ? 'right-2.5' : 'right-3'
           )}
         >
           <X />

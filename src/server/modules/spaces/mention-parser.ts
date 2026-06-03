@@ -51,7 +51,7 @@ const HANDLE_PATTERN = /(^|[\s,.;:!?])@([A-Za-z0-9_-]{1,32})\b/g
 export async function parseMentions(
   db: D1Database,
   conversationId: string,
-  parts: unknown[],
+  parts: unknown[]
 ): Promise<MentionRef[]> {
   const handles = new Set<string>()
   const partList = Array.isArray(parts) ? (parts as PartLike[]) : []
@@ -134,7 +134,9 @@ export async function parseMentions(
     }
     if (explicitAgentName) {
       const member = members.find(
-        (m) => m.kind === 'agent' && (m.agentName ?? '').toLowerCase() === explicitAgentName.toLowerCase(),
+        (m) =>
+          m.kind === 'agent' &&
+          (m.agentName ?? '').toLowerCase() === explicitAgentName.toLowerCase()
       )
       if (member && !refs.some((r) => r.targetAgentName === explicitAgentName)) {
         refs.push({

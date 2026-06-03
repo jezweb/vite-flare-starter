@@ -42,13 +42,13 @@ const StartBatchTaskInput = z.object({
     .min(10)
     .max(2000)
     .describe(
-      'What to do for every item. Plain English. Example: "Extract the invoice number, total, and due date as JSON."',
+      'What to do for every item. Plain English. Example: "Extract the invoice number, total, and due date as JSON."'
     ),
   task_kind: z
     .enum(['extract', 'transform', 'classify', 'summarise', 'free'])
     .default('free')
     .describe(
-      'Loose category — extract: pull structured data; transform: rewrite; classify: tag/route; summarise: condense; free: anything else.',
+      'Loose category — extract: pull structured data; transform: rewrite; classify: tag/route; summarise: condense; free: anything else.'
     ),
   items: z
     .array(
@@ -58,19 +58,19 @@ const StartBatchTaskInput = z.object({
           .string()
           .min(1)
           .describe(
-            'For r2_file: filename or UUID from the user\'s files. For url: full URL. For text: inline body.',
+            "For r2_file: filename or UUID from the user's files. For url: full URL. For text: inline body."
           ),
         label: z.string().max(200).optional(),
-      }),
+      })
     )
     .min(1)
     .max(500)
-    .describe('Items to process. 1-500 at a time. Use the user\'s attached files when relevant.'),
+    .describe("Items to process. 1-500 at a time. Use the user's attached files when relevant."),
   model: z
     .string()
     .optional()
     .describe(
-      'Override the per-item model (default: anthropic/claude-sonnet-4.6). Use cheaper models for high-volume simple tasks.',
+      'Override the per-item model (default: anthropic/claude-sonnet-4.6). Use cheaper models for high-volume simple tasks.'
     ),
 })
 
@@ -108,7 +108,7 @@ const isAvailable = (ctx: AgentContext) => !!getEnv(ctx)
 async function resolveR2Keys(
   db: D1Database,
   userId: string,
-  refs: string[],
+  refs: string[]
 ): Promise<Map<string, { key: string; label?: string }>> {
   const out = new Map<string, { key: string; label?: string }>()
   if (refs.length === 0) return out
@@ -122,9 +122,9 @@ async function resolveR2Keys(
         or(
           inArray(filesTable.id, refs),
           inArray(filesTable.name, refs),
-          inArray(filesTable.key, refs),
-        ),
-      ),
+          inArray(filesTable.key, refs)
+        )
+      )
     )
     .catch(() => [] as { id: string; name: string; key: string }[])
 
@@ -148,7 +148,7 @@ export const startBatchTaskDefinition: ToolDefinition<
 > = {
   name: 'start_batch_task',
   description:
-    "Run an AI task across many items in parallel — a durable batch / fan-out / swarm job. Use when the user wants the SAME operation applied to a list of files, URLs, or text snippets — e.g. \"for each of these 50 PDFs, extract the invoice number\", \"summarise each of these articles\", \"classify these 100 support tickets\". Returns a job id immediately; the user watches progress at /dashboard/jobs/:id.\n\nTriggers: phrases like \"for each\", \"do this for all of\", \"batch process\", \"swarm\", \"parallel\", \"in bulk\". Don't use for one-off operations on a single item.\n\nDefaults to Sonnet 4.6 per item. For 6+ items the user is asked to approve before the job starts.",
+    'Run an AI task across many items in parallel — a durable batch / fan-out / swarm job. Use when the user wants the SAME operation applied to a list of files, URLs, or text snippets — e.g. "for each of these 50 PDFs, extract the invoice number", "summarise each of these articles", "classify these 100 support tickets". Returns a job id immediately; the user watches progress at /dashboard/jobs/:id.\n\nTriggers: phrases like "for each", "do this for all of", "batch process", "swarm", "parallel", "in bulk". Don\'t use for one-off operations on a single item.\n\nDefaults to Sonnet 4.6 per item. For 6+ items the user is asked to approve before the job starts.',
   inputSchema: StartBatchTaskInput,
   outputSchema: StartBatchTaskOutput,
   isAvailable,
@@ -225,6 +225,4 @@ export const startBatchTaskDefinition: ToolDefinition<
   },
 }
 
-export const batchTaskDefinitions = [
-  startBatchTaskDefinition,
-] as ToolDefinition<unknown, unknown>[]
+export const batchTaskDefinitions = [startBatchTaskDefinition] as ToolDefinition<unknown, unknown>[]

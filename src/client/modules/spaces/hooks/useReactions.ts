@@ -20,7 +20,7 @@ export function useReactToMessage() {
     mutationFn: ({ messageId, emoji, action }) =>
       apiClient.post<{ ok: boolean; reactions: Record<string, string[]> }>(
         `/api/messages/${messageId}/reactions`,
-        { emoji, action },
+        { emoji, action }
       ),
     onSuccess: (data, vars) => {
       // Sync the reactions JSON across every cached space-messages bucket.
@@ -29,7 +29,7 @@ export function useReactToMessage() {
         if (!value || !Array.isArray(value.messages)) continue
         const next = {
           messages: value.messages.map((m) =>
-            m.id === vars.messageId ? { ...m, reactions: data.reactions } : m,
+            m.id === vars.messageId ? { ...m, reactions: data.reactions } : m
           ),
         }
         qc.setQueryData(key, next)

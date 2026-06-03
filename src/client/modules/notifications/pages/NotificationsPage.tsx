@@ -135,10 +135,7 @@ export function NotificationsPage() {
         <ListRowGroup>
           {notifications.map((n) => (
             <li key={n.id}>
-              <NotificationRow
-                notification={n}
-                onMarkRead={() => markAsRead.mutate(n.id)}
-              />
+              <NotificationRow notification={n} onMarkRead={() => markAsRead.mutate(n.id)} />
             </li>
           ))}
         </ListRowGroup>

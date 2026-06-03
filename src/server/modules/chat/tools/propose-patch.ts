@@ -18,25 +18,23 @@ import { createProposal } from '@/server/modules/config-diff/storage'
 import { loadCurrentContent } from '@/server/modules/config-diff/apply'
 
 const ProposePatchInput = z.object({
-  kind: z.enum(['skill']).describe(
-    'The kind of resource to edit. Only "skill" is supported today.',
-  ),
+  kind: z
+    .enum(['skill'])
+    .describe('The kind of resource to edit. Only "skill" is supported today.'),
   id: z
     .string()
     .min(1)
     .describe(
-      'Stable identifier for the resource. For skill: the skill name (without the leading slash).',
+      'Stable identifier for the resource. For skill: the skill name (without the leading slash).'
     ),
   label: z
     .string()
     .optional()
-    .describe(
-      'Optional human-friendly label shown on the diff card. Defaults to the id.',
-    ),
+    .describe('Optional human-friendly label shown on the diff card. Defaults to the id.'),
   after: z
     .string()
     .describe(
-      'Full new content of the resource. For skill: the complete SKILL.md (frontmatter + body). Do not wrap in code fences.',
+      'Full new content of the resource. For skill: the complete SKILL.md (frontmatter + body). Do not wrap in code fences.'
     ),
   summary: z
     .string()
@@ -48,7 +46,7 @@ const ProposePatchInput = z.object({
     .optional()
     .nullable()
     .describe(
-      'Longer rationale (markdown supported). Shown in the rationale section of the diff card.',
+      'Longer rationale (markdown supported). Shown in the rationale section of the diff card.'
     ),
 })
 
@@ -72,18 +70,22 @@ export const proposePatchDefinition: ToolDefinition<
   needsApproval: false, // the proposal itself isn't the action — the user's Approve click is
   execute: async (input, ctx) => {
     const env = ctx.env as unknown as { DB: D1Database; SKILLS?: R2Bucket }
-    const before = await loadCurrentContent(env, {
-      kind: input.kind,
-      id: input.id,
-    }, ctx.userId)
+    const before = await loadCurrentContent(
+      env,
+      {
+        kind: input.kind,
+        id: input.id,
+      },
+      ctx.userId
+    )
     if (!before) {
       throw new Error(
-        `No current content found for ${input.kind} "${input.id}". Check the resource exists before proposing a patch.`,
+        `No current content found for ${input.kind} "${input.id}". Check the resource exists before proposing a patch.`
       )
     }
     if (before === input.after) {
       throw new Error(
-        'The proposed `after` is identical to the current content — no change to review.',
+        'The proposed `after` is identical to the current content — no change to review.'
       )
     }
     const proposal = await createProposal(env.DB, ctx.userId, {

@@ -27,7 +27,7 @@ export function SearchInSpacePane({ spaceId, users, open, onClose }: Props) {
     queryKey: ['spaces', spaceId, 'search', debounced],
     queryFn: () =>
       apiClient.get<{ results: SpaceMessage[] }>(
-        `/api/spaces/${spaceId}/messages/search?q=${encodeURIComponent(debounced)}`,
+        `/api/spaces/${spaceId}/messages/search?q=${encodeURIComponent(debounced)}`
       ),
     enabled: !!spaceId && debounced.length >= 2,
   })

@@ -17,10 +17,7 @@ import {
 } from '@/components/ui/sheet'
 import { Spinner } from '@/components/ui/spinner'
 import { apiClient } from '@/client/lib/api-client'
-import {
-  ApprovalCard,
-  type Approval,
-} from '@/client/modules/approvals/components/ApprovalCard'
+import { ApprovalCard, type Approval } from '@/client/modules/approvals/components/ApprovalCard'
 
 interface Props {
   approvalId: string | null
@@ -40,9 +37,7 @@ export function ApprovalSheet({ approvalId, open, onClose }: Props) {
       <SheetContent side="right" className="flex flex-col gap-0 p-0 sm:max-w-xl">
         <SheetHeader className="border-b">
           <SheetTitle>Review approval</SheetTitle>
-          <SheetDescription>
-            Approve, reject, or edit before the AI acts.
-          </SheetDescription>
+          <SheetDescription>Approve, reject, or edit before the AI acts.</SheetDescription>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto p-4">

@@ -6,15 +6,28 @@
  *
  * Falls back to OpenAI Whisper/TTS if Workers AI fails and OPENAI_API_KEY is set.
  */
-import { experimental_generateSpeech as generateSpeech, experimental_transcribe as transcribe } from 'ai'
+import {
+  experimental_generateSpeech as generateSpeech,
+  experimental_transcribe as transcribe,
+} from 'ai'
 import { z } from 'zod'
 import { createWorkersAI } from 'workers-ai-provider'
 import { Mic, Volume2 } from 'lucide-react'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 
 const SPEAKERS = [
-  'angus', 'asteria', 'arcas', 'athena', 'helios', 'hera',
-  'luna', 'orion', 'orpheus', 'perseus', 'stella', 'zeus',
+  'angus',
+  'asteria',
+  'arcas',
+  'athena',
+  'helios',
+  'hera',
+  'luna',
+  'orion',
+  'orpheus',
+  'perseus',
+  'stella',
+  'zeus',
 ] as const
 
 function getAudioEnv(ctx: AgentContext): { AI: Ai; OPENAI_API_KEY?: string } {
@@ -40,7 +53,9 @@ export const transcribeAudioDefinition: ToolDefinition<
   description:
     'Convert audio to text (speech-to-text). Use when the user provides an audio recording or wants you to listen to something. Pass audio as a base64 data URL.',
   inputSchema: z.object({
-    audioDataUrl: z.string().describe('Audio file as data URL (data:audio/webm;base64,...). Max 10MB.'),
+    audioDataUrl: z
+      .string()
+      .describe('Audio file as data URL (data:audio/webm;base64,...). Max 10MB.'),
   }),
   outputSchema: TranscribeAudioOutput,
   execute: async ({ audioDataUrl }, ctx) => {
@@ -49,7 +64,9 @@ export const transcribeAudioDefinition: ToolDefinition<
     try {
       const match = audioDataUrl.match(/^data:([^;]+);base64,(.+)$/)
       if (!match) {
-        return { error: 'Invalid audio data URL. Expected format: data:audio/<type>;base64,<content>' }
+        return {
+          error: 'Invalid audio data URL. Expected format: data:audio/<type>;base64,<content>',
+        }
       }
       const [, , base64 = ''] = match
       const binary = atob(base64)
@@ -104,7 +121,7 @@ const SpeakTextOutput = z.union([
 ])
 
 export const speakTextDefinition: ToolDefinition<
-  { text: string; speaker?: typeof SPEAKERS[number] },
+  { text: string; speaker?: (typeof SPEAKERS)[number] },
   z.infer<typeof SpeakTextOutput>
 > = {
   name: 'speak_text',
@@ -112,7 +129,12 @@ export const speakTextDefinition: ToolDefinition<
     'Convert text to speech audio (text-to-speech). Returns an audio data URL the user can play. Choose a speaker voice that fits the content.',
   inputSchema: z.object({
     text: z.string().max(2000).describe('Text to convert to speech (max 2000 chars)'),
-    speaker: z.enum(SPEAKERS).optional().describe('Voice: luna (default, neutral female), orion (male), athena (warm female), zeus (deep male)'),
+    speaker: z
+      .enum(SPEAKERS)
+      .optional()
+      .describe(
+        'Voice: luna (default, neutral female), orion (male), athena (warm female), zeus (deep male)'
+      ),
   }),
   outputSchema: SpeakTextOutput,
   execute: async ({ text, speaker = 'luna' }, ctx) => {
@@ -159,7 +181,7 @@ export const speakTextDefinition: ToolDefinition<
   render: { icon: Volume2, displayName: 'Text to Speech' },
 }
 
-export const audioDefinitions = [
-  transcribeAudioDefinition,
-  speakTextDefinition,
-] as ToolDefinition<unknown, unknown>[]
+export const audioDefinitions = [transcribeAudioDefinition, speakTextDefinition] as ToolDefinition<
+  unknown,
+  unknown
+>[]

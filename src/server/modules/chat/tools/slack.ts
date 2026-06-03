@@ -61,7 +61,7 @@ function userHasSlack(): (ctx: AgentContext) => Promise<boolean> {
 }
 
 async function requireSlackToken(
-  ctx: AgentContext,
+  ctx: AgentContext
 ): Promise<{ token: string } | { error: string }> {
   const env = slackEnv(ctx)
   const db = drizzle(env.DB)
@@ -84,7 +84,7 @@ async function requireSlackToken(
 async function slackCall<T>(
   token: string,
   method: string,
-  params: Record<string, string | number | undefined>,
+  params: Record<string, string | number | undefined>
 ): Promise<{ ok: true; data: T } | { ok: false; error: string }> {
   const body = new URLSearchParams()
   for (const [k, v] of Object.entries(params)) {
@@ -113,7 +113,10 @@ async function slackCall<T>(
 // ─── SEARCH MESSAGES ────────────────────────────────────────────────────
 
 const SearchMessagesInput = z.object({
-  query: z.string().min(1).describe('Full-text search query (Slack operators like `from:@alice` supported).'),
+  query: z
+    .string()
+    .min(1)
+    .describe('Full-text search query (Slack operators like `from:@alice` supported).'),
   count: z.number().int().min(1).max(50).default(20).optional(),
 })
 
@@ -126,7 +129,7 @@ const SearchMessagesOutput = z.union([
         text: z.string(),
         ts: z.string(),
         permalink: z.string().optional(),
-      }),
+      })
     ),
     count: z.number(),
   }),
@@ -189,7 +192,7 @@ const ListChannelsOutput = z.union([
         isPrivate: z.boolean(),
         numMembers: z.number().optional(),
         topic: z.string().optional(),
-      }),
+      })
     ),
     count: z.number(),
   }),
@@ -202,7 +205,7 @@ export const slackListChannelsDefinition: ToolDefinition<
 > = {
   name: 'slack_list_channels',
   description:
-    "List Slack channels the user is in. Returns id, name, privacy, member count. Use slack_get_channel_history afterwards to read messages.",
+    'List Slack channels the user is in. Returns id, name, privacy, member count. Use slack_get_channel_history afterwards to read messages.',
   inputSchema: ListChannelsInput,
   outputSchema: ListChannelsOutput,
   isAvailable: userHasSlack(),
@@ -250,7 +253,7 @@ const GetChannelHistoryOutput = z.union([
         ts: z.string(),
         threadTs: z.string().optional(),
         replyCount: z.number().optional(),
-      }),
+      })
     ),
     count: z.number(),
   }),
@@ -263,7 +266,7 @@ export const slackGetChannelHistoryDefinition: ToolDefinition<
 > = {
   name: 'slack_get_channel_history',
   description:
-    "Read recent messages from a Slack channel. User ids are resolved to names in a single batched users.info call.",
+    'Read recent messages from a Slack channel. User ids are resolved to names in a single batched users.info call.',
   inputSchema: GetChannelHistoryInput,
   outputSchema: GetChannelHistoryOutput,
   isAvailable: userHasSlack(),
@@ -294,7 +297,7 @@ export const slackGetChannelHistoryDefinition: ToolDefinition<
           const p = u.data.user?.profile
           nameByUser[uid] = p?.display_name || p?.real_name || uid
         }
-      }),
+      })
     )
 
     return {
@@ -370,14 +373,9 @@ export const slackGetUserDefinition: ToolDefinition<
 // ─── POST MESSAGE (destructive) ────────────────────────────────────────
 
 const PostMessageInput = z.object({
-  channelId: z
-    .string()
-    .describe('Channel id OR a member dm id (C0…, G0…, D0…). Not a #name.'),
+  channelId: z.string().describe('Channel id OR a member dm id (C0…, G0…, D0…). Not a #name.'),
   text: z.string().min(1).describe('Message body (Slack markdown supported).'),
-  threadTs: z
-    .string()
-    .optional()
-    .describe('If replying in a thread, the parent message ts.'),
+  threadTs: z.string().optional().describe('If replying in a thread, the parent message ts.'),
 })
 
 const PostMessageOutput = z.union([

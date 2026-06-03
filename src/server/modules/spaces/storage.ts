@@ -12,7 +12,11 @@ import {
   conversationMessages,
   conversations,
 } from '@/server/modules/conversations/db/schema'
-import type { ReplyMode, MemberRole, NotificationLevel } from '@/server/modules/conversations/db/schema'
+import type {
+  ReplyMode,
+  MemberRole,
+  NotificationLevel,
+} from '@/server/modules/conversations/db/schema'
 
 export interface SpaceSummary {
   id: string
@@ -85,8 +89,8 @@ export async function listSpacesForUser(db: D1Database, userId: string): Promise
       and(
         eq(conversationMembers.userId, userId),
         eq(conversationMembers.kind, 'user'),
-        eq(conversations.kind, 'space'),
-      ),
+        eq(conversations.kind, 'space')
+      )
     )
     .orderBy(desc(conversationMembers.pinnedToSidebar), desc(conversations.updatedAt))
 
@@ -139,7 +143,11 @@ export async function listMembers(db: D1Database, conversationId: string): Promi
     .select()
     .from(conversationMembers)
     .where(eq(conversationMembers.conversationId, conversationId))
-    .orderBy(asc(conversationMembers.kind), asc(conversationMembers.role), asc(conversationMembers.joinedAt))
+    .orderBy(
+      asc(conversationMembers.kind),
+      asc(conversationMembers.role),
+      asc(conversationMembers.joinedAt)
+    )
   return rows.map((r) => ({
     id: r.id,
     kind: r.kind as 'user' | 'agent',
@@ -159,7 +167,7 @@ export async function listMembers(db: D1Database, conversationId: string): Promi
 export async function listMessages(
   db: D1Database,
   conversationId: string,
-  opts: { limit?: number; before?: string; threadParentId?: string | null } = {},
+  opts: { limit?: number; before?: string; threadParentId?: string | null } = {}
 ): Promise<MessageRow[]> {
   const d = drizzle(db)
   const limit = Math.min(Math.max(opts.limit ?? 50, 1), 200)

@@ -147,7 +147,8 @@ const BlockSchema = z.object({
 app.put('/:slug/blocks/:name', zValidator('json', BlockSchema), async (c) => {
   const slug = c.req.param('slug')
   const name = c.req.param('name')
-  if (!validSlug(slug) || !validSlug(name)) return c.json({ error: 'Invalid slug or block name' }, 400)
+  if (!validSlug(slug) || !validSlug(name))
+    return c.json({ error: 'Invalid slug or block name' }, 400)
   const userId = c.get('userId')
   const env = c.env as unknown as AssistantEnv
   if (!env.AssistantAgent) return c.json({ error: 'AssistantAgent binding not configured' }, 503)
@@ -161,7 +162,8 @@ app.put('/:slug/blocks/:name', zValidator('json', BlockSchema), async (c) => {
 app.delete('/:slug/blocks/:name', async (c) => {
   const slug = c.req.param('slug')
   const name = c.req.param('name')
-  if (!validSlug(slug) || !validSlug(name)) return c.json({ error: 'Invalid slug or block name' }, 400)
+  if (!validSlug(slug) || !validSlug(name))
+    return c.json({ error: 'Invalid slug or block name' }, 400)
   const userId = c.get('userId')
   const env = c.env as unknown as AssistantEnv
   if (!env.AssistantAgent) return c.json({ error: 'AssistantAgent binding not configured' }, 503)
@@ -179,7 +181,10 @@ const ScheduleSchema = z.object({
     .number()
     .int()
     .refine((t) => t > Date.now() + 1000, 'fireAt must be at least 1 second in the future')
-    .refine((t) => t < Date.now() + 365 * 24 * 60 * 60 * 1000, 'fireAt cannot be more than 1 year out'),
+    .refine(
+      (t) => t < Date.now() + 365 * 24 * 60 * 60 * 1000,
+      'fireAt cannot be more than 1 year out'
+    ),
   input: z.string().min(1).max(10_000).optional(),
   model: z.string().optional(),
 })
@@ -245,12 +250,24 @@ app.post('/researcher/:slug', zValidator('json', ResearchInputSchema), async (c)
 // sweeper-agent.ts for the pattern.
 
 const SweeperConfigureSchema = z.object({
-  entityType: z.string().min(1).max(50).regex(/^[a-zA-Z0-9_-]+$/),
+  entityType: z
+    .string()
+    .min(1)
+    .max(50)
+    .regex(/^[a-zA-Z0-9_-]+$/),
   staleAfterDays: z.number().int().min(1).max(365).optional(),
   maxPerSweep: z.number().int().min(1).max(100).optional(),
-  intervalSeconds: z.number().int().min(60).max(86400 * 7).optional(),
+  intervalSeconds: z
+    .number()
+    .int()
+    .min(60)
+    .max(86400 * 7)
+    .optional(),
   actionDescription: z.string().min(10).max(2000),
-  statusFilter: z.array(z.string().regex(/^[a-zA-Z0-9_-]+$/)).max(10).optional(),
+  statusFilter: z
+    .array(z.string().regex(/^[a-zA-Z0-9_-]+$/))
+    .max(10)
+    .optional(),
 })
 
 app.post('/sweepers/:slug', zValidator('json', SweeperConfigureSchema), async (c) => {

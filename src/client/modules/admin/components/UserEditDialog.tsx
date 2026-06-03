@@ -107,13 +107,14 @@ export function UserEditDialog({ user, open, onOpenChange }: UserEditDialogProps
       <SheetContent side="right" className="flex flex-col gap-0 p-0 sm:max-w-md">
         <SheetHeader className="border-b">
           <SheetTitle>Edit User</SheetTitle>
-          <SheetDescription>
-            Update user information and role.
-          </SheetDescription>
+          <SheetDescription>Update user information and role.</SheetDescription>
         </SheetHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex flex-1 flex-col gap-4 overflow-y-auto p-4"
+          >
             <FormField
               control={form.control}
               name="name"
@@ -174,11 +175,7 @@ export function UserEditDialog({ user, open, onOpenChange }: UserEditDialogProps
             />
 
             <SheetFooter className="mt-auto flex-row gap-2 border-t">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
               <Button type="submit" disabled={updateUser.isPending}>

@@ -83,7 +83,7 @@ async function fetchOAuthMetadata(metadataUrl: string): Promise<ProbeResult> {
 export async function registerOAuthClient(
   registrationEndpoint: string,
   redirectUri: string,
-  clientName = 'Vite Flare Starter',
+  clientName = 'Vite Flare Starter'
 ): Promise<{ clientId: string; clientSecret?: string } | null> {
   try {
     const resp = await fetch(registrationEndpoint, {

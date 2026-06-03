@@ -58,7 +58,7 @@ app.get('/:id/members', async (c) => {
     .where(eq(projectMembers.projectId, id))
   // Join member user info in a single follow-up query.
   const userIds = Array.from(
-    new Set([proj.ownerId, ...memberRows.map((m) => m.userId).filter(Boolean)]),
+    new Set([proj.ownerId, ...memberRows.map((m) => m.userId).filter(Boolean)])
   )
   const userInfo = await d
     .select({
@@ -81,7 +81,7 @@ app.get('/:id/members', async (c) => {
   }
   const members = memberRows.map((m) => ({
     ...m,
-    user: m.userId ? userMap.get(m.userId) ?? null : null,
+    user: m.userId ? (userMap.get(m.userId) ?? null) : null,
   }))
   return c.json({ members: [ownerEntry, ...members] })
 })
@@ -152,7 +152,11 @@ app.delete('/:id/members/:memberId', async (c) => {
 
 // ─── Helpers ──────────────────────────────────────────────────────
 
-export async function isProjectOwner(db: D1Database, projectId: string, userId: string): Promise<boolean> {
+export async function isProjectOwner(
+  db: D1Database,
+  projectId: string,
+  userId: string
+): Promise<boolean> {
   const [row] = await drizzle(db)
     .select({ id: projects.id })
     .from(projects)
@@ -161,7 +165,11 @@ export async function isProjectOwner(db: D1Database, projectId: string, userId: 
   return !!row
 }
 
-export async function isProjectMember(db: D1Database, projectId: string, userId: string): Promise<boolean> {
+export async function isProjectMember(
+  db: D1Database,
+  projectId: string,
+  userId: string
+): Promise<boolean> {
   if (await isProjectOwner(db, projectId, userId)) return true
   const [row] = await drizzle(db)
     .select({ id: projectMembers.id })

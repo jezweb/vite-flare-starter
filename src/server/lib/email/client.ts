@@ -336,7 +336,10 @@ export function createEmailClientFromEnv(env: EmailEnv): EmailClient {
  *   { to: 'user@example.com', subject: 'Hi', html: '...' }
  * )
  */
-export async function sendEmail(config: EmailClientConfig, options: SendOptions): Promise<SendResult> {
+export async function sendEmail(
+  config: EmailClientConfig,
+  options: SendOptions
+): Promise<SendResult> {
   const client = createEmailClient(config)
   return client.send(options)
 }

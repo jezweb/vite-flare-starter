@@ -42,8 +42,8 @@ app.get('/voices', (c) => {
     elevenlabs: {
       available: elevenLabsAvailable,
       // Voice list is account-scoped; we expose only the env-default id.
-      defaultVoiceId: (c.env as unknown as { ELEVENLABS_VOICE_ID?: string })
-        .ELEVENLABS_VOICE_ID ?? null,
+      defaultVoiceId:
+        (c.env as unknown as { ELEVENLABS_VOICE_ID?: string }).ELEVENLABS_VOICE_ID ?? null,
     },
   })
 })
@@ -59,7 +59,10 @@ app.post('/transcribe', async (c) => {
   try {
     form = await c.req.formData()
   } catch (err) {
-    return c.json({ error: `Bad multipart body: ${err instanceof Error ? err.message : String(err)}` }, 400)
+    return c.json(
+      { error: `Bad multipart body: ${err instanceof Error ? err.message : String(err)}` },
+      400
+    )
   }
   const file = form.get('audio')
   if (!file || typeof file === 'string') {
@@ -88,13 +91,16 @@ app.post('/transcribe', async (c) => {
   try {
     const ai = (c.env as unknown as { AI: Ai }).AI
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = (await ai.run('@cf/deepgram/nova-3' as any, {
-      audio: {
-        body: formResp.body,
-        contentType: formResp.headers.get('content-type'),
-      },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any)) as unknown
+    const result = (await ai.run(
+      '@cf/deepgram/nova-3' as any,
+      {
+        audio: {
+          body: formResp.body,
+          contentType: formResp.headers.get('content-type'),
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any
+    )) as unknown
     const text = extractTranscript(result)
     if (!text) {
       return c.json({ error: 'No speech detected', text: '' }, 200)

@@ -34,13 +34,7 @@ interface TimeProps extends Omit<React.TimeHTMLAttributes<HTMLTimeElement>, 'dat
   safe?: boolean
 }
 
-export function Time({
-  value,
-  display = 'relative',
-  safe,
-  className,
-  ...rest
-}: TimeProps) {
+export function Time({ value, display = 'relative', safe, className, ...rest }: TimeProps) {
   const useSafe = safe ?? display === 'relative'
   if (value == null) {
     if (useSafe) {

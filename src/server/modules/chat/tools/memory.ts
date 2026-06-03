@@ -32,7 +32,9 @@ export const rememberDefinition: ToolDefinition<
   inputSchema: z.object({
     key: z
       .string()
-      .describe('Short identifier for this memory (e.g. "pet.name", "preferences.theme", "projects.current")'),
+      .describe(
+        'Short identifier for this memory (e.g. "pet.name", "preferences.theme", "projects.current")'
+      ),
     value: z.string().describe('The fact to remember (will be JSON-stringified if complex)'),
     description: z.string().optional().describe('Why this was saved (helps future searches)'),
   }),
@@ -63,7 +65,9 @@ export const rememberDefinition: ToolDefinition<
           .where(eq(userMeta.id, existing.id))
         return { key, value, action: 'updated' as const }
       }
-      await db.insert(userMeta).values({ userId: ctx.userId, key, value: valueJson, updatedAt: now })
+      await db
+        .insert(userMeta)
+        .values({ userId: ctx.userId, key, value: valueJson, updatedAt: now })
       return { key, value, action: 'created' as const }
     } catch (error) {
       return { error: error instanceof Error ? error.message : String(error) }
@@ -83,13 +87,15 @@ export const rememberDefinition: ToolDefinition<
 
 const RecallOutput = z.union([
   z.object({ key: z.string(), found: z.literal(false) }),
-  z.object({
-    key: z.string(),
-    found: z.literal(true),
-    value: z.unknown().optional(),
-    description: z.string().optional(),
-    updatedAt: z.unknown().optional(),
-  }).passthrough(),
+  z
+    .object({
+      key: z.string(),
+      found: z.literal(true),
+      value: z.unknown().optional(),
+      description: z.string().optional(),
+      updatedAt: z.unknown().optional(),
+    })
+    .passthrough(),
   z.object({ key: z.string(), error: z.string() }),
 ])
 
@@ -192,9 +198,7 @@ export const forgetDefinition: ToolDefinition<
   execute: async ({ key }, ctx) => {
     try {
       const db = drizzle(getDB(ctx))
-      await db
-        .delete(userMeta)
-        .where(and(eq(userMeta.userId, ctx.userId), eq(userMeta.key, key)))
+      await db.delete(userMeta).where(and(eq(userMeta.userId, ctx.userId), eq(userMeta.key, key)))
       return { key, deleted: true }
     } catch (error) {
       return { key, error: error instanceof Error ? error.message : String(error) }

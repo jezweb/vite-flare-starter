@@ -33,10 +33,14 @@ export type AgentRunTrigger = 'rest' | 'schedule' | 'webhook' | 'inter_agent'
 export const agentRuns = sqliteTable(
   'agent_runs',
   {
-    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
     agentClass: text('agent_class').notNull(),
     agentName: text('agent_name').notNull(),
-    userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
     trigger: text('trigger').$type<AgentRunTrigger>().notNull().default('rest'),
     /** Truncated input text (first ~500 chars). Helps debug why the
      *  agent decided to do what it did. */
@@ -54,7 +58,9 @@ export const agentRuns = sqliteTable(
     steps: integer('steps').notNull().default(0),
     /** Comma-separated tool names called this run (bounded, ~500 chars). */
     toolsCalled: text('tools_called'),
-    createdAt: integer('created_at').notNull().$defaultFn(() => Math.floor(Date.now() / 1000)),
+    createdAt: integer('created_at')
+      .notNull()
+      .$defaultFn(() => Math.floor(Date.now() / 1000)),
   },
   (table) => [
     index('agent_runs_user_id_idx').on(table.userId),
@@ -62,5 +68,5 @@ export const agentRuns = sqliteTable(
     index('agent_runs_user_class_idx').on(table.userId, table.agentClass),
     index('agent_runs_started_at_idx').on(table.startedAt),
     index('agent_runs_outcome_idx').on(table.outcome),
-  ],
+  ]
 )

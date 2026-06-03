@@ -69,7 +69,10 @@ function parseFrontmatter(yaml: string): Record<string, unknown> {
 
     // Inline array: [a, b, c]
     if (value && value.startsWith('[') && value.endsWith(']')) {
-      result[key] = value.slice(1, -1).split(',').map((s) => s.trim().replace(/^["']|["']$/g, ''))
+      result[key] = value
+        .slice(1, -1)
+        .split(',')
+        .map((s) => s.trim().replace(/^["']|["']$/g, ''))
       continue
     }
 
@@ -78,7 +81,11 @@ function parseFrontmatter(yaml: string): Record<string, unknown> {
       const items: string[] = []
       while (i + 1 < lines.length && lines[i + 1]?.trim().startsWith('- ')) {
         i++
-        const item = lines[i]?.trim().slice(2).trim().replace(/^["']|["']$/g, '')
+        const item = lines[i]
+          ?.trim()
+          .slice(2)
+          .trim()
+          .replace(/^["']|["']$/g, '')
         if (item) items.push(item)
       }
       result[key] = items
@@ -162,16 +169,22 @@ export function parseSkill(content: string, opts: { expectedName?: string } = {}
   }
 
   if (!/^[a-z0-9-]+$/.test(fm['name'])) {
-    warnings.push(`Skill name "${fm['name']}" contains characters outside a-z0-9-; some clients may reject it.`)
+    warnings.push(
+      `Skill name "${fm['name']}" contains characters outside a-z0-9-; some clients may reject it.`
+    )
   }
   if (fm['name'].length > 64) {
     warnings.push(`Skill name "${fm['name']}" exceeds 64 characters.`)
   }
   if (opts.expectedName && fm['name'] !== opts.expectedName) {
-    warnings.push(`Skill name "${fm['name']}" does not match parent directory "${opts.expectedName}".`)
+    warnings.push(
+      `Skill name "${fm['name']}" does not match parent directory "${opts.expectedName}".`
+    )
   }
   if ((fm['description'] as string).length > 1024) {
-    warnings.push(`Skill description exceeds 1024 characters (${(fm['description'] as string).length}).`)
+    warnings.push(
+      `Skill description exceeds 1024 characters (${(fm['description'] as string).length}).`
+    )
   }
 
   return {

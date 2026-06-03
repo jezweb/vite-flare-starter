@@ -22,13 +22,11 @@ export interface AdminToolFactoryArgs {
   requestApproval: (
     action: string,
     payload: unknown,
-    summary?: string,
+    summary?: string
   ) => Promise<{ approvalId: string; status: 'pending' }>
   userId: string
   env: AdminToolEnv
 }
 
 /** Factory shape returned by every admin-tool family. */
-export type AdminToolFactory = (
-  args: AdminToolFactoryArgs,
-) => ToolDefinition<unknown, unknown>[]
+export type AdminToolFactory = (args: AdminToolFactoryArgs) => ToolDefinition<unknown, unknown>[]

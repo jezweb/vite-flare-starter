@@ -1,14 +1,14 @@
-import { Loader2Icon } from "lucide-react"
+import { Loader2Icon } from 'lucide-react'
 
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils'
 
 type SpinnerSize = 'xs' | 'sm' | 'md' | 'lg'
 
 const sizeClasses: Record<SpinnerSize, string> = {
-  xs: 'size-3',     // inside compact rows
-  sm: 'size-3.5',   // inside buttons + most metadata strips (default)
-  md: 'size-4',     // page-level body loaders
-  lg: 'size-5',     // page-blocking / hero
+  xs: 'size-3', // inside compact rows
+  sm: 'size-3.5', // inside buttons + most metadata strips (default)
+  md: 'size-4', // page-level body loaders
+  lg: 'size-5', // page-blocking / hero
 }
 
 interface SpinnerProps extends React.ComponentProps<'svg'> {

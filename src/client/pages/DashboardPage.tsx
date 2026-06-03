@@ -65,7 +65,10 @@ interface Approval {
   status: 'pending' | 'approved' | 'rejected' | 'executed' | 'failed'
   createdAt: number
 }
-interface ApprovalsList { total: number; approvals: Approval[] }
+interface ApprovalsList {
+  total: number
+  approvals: Approval[]
+}
 
 interface AgentRun {
   id: string
@@ -78,7 +81,10 @@ interface AgentRun {
   costUsd: number | null
   errorMessage: string | null
 }
-interface RunsList { total: number; runs: AgentRun[] }
+interface RunsList {
+  total: number
+  runs: AgentRun[]
+}
 
 export function DashboardPage() {
   const { data: session } = useSession()
@@ -247,7 +253,9 @@ function RecentRunsPanel({ runs, loading }: { runs?: RunsList; loading: boolean 
         )}
         {!loading && runs && runs.total > 0 && (
           <ul className="space-y-1.5">
-            {runs.runs.map((r) => <RunRow key={r.id} run={r} />)}
+            {runs.runs.map((r) => (
+              <RunRow key={r.id} run={r} />
+            ))}
           </ul>
         )}
       </CardContent>
@@ -258,18 +266,20 @@ function RecentRunsPanel({ runs, loading }: { runs?: RunsList; loading: boolean 
 function RunRow({ run }: { run: AgentRun }) {
   const { data: agentCatalog } = useAgentCatalog()
   const agentRegistry = new Map((agentCatalog?.agents ?? []).map((a) => [a.className, a]))
-  const Icon = run.outcome === 'ok'
-    ? CheckCircle2
-    : run.outcome === 'error'
-    ? XCircle
-    : run.outcome === 'budget_exceeded'
-    ? AlertTriangle
-    : Clock
-  const colour = run.outcome === 'ok'
-    ? 'text-emerald-600'
-    : run.outcome === 'error' || run.outcome === 'budget_exceeded'
-    ? 'text-destructive'
-    : 'text-muted-foreground'
+  const Icon =
+    run.outcome === 'ok'
+      ? CheckCircle2
+      : run.outcome === 'error'
+        ? XCircle
+        : run.outcome === 'budget_exceeded'
+          ? AlertTriangle
+          : Clock
+  const colour =
+    run.outcome === 'ok'
+      ? 'text-emerald-600'
+      : run.outcome === 'error' || run.outcome === 'budget_exceeded'
+        ? 'text-destructive'
+        : 'text-muted-foreground'
   const triggerLabel = formatTrigger(run.trigger)
   const showTrigger = triggerLabel !== 'via another agent'
   return (
@@ -279,11 +289,11 @@ function RunRow({ run }: { run: AgentRun }) {
         className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted/40 transition-colors"
       >
         <Icon className={cn('size-3.5 shrink-0', colour)} />
-        <span className="text-xs truncate flex-1">{formatAgentClass(run.agentClass, agentRegistry)}</span>
+        <span className="text-xs truncate flex-1">
+          {formatAgentClass(run.agentClass, agentRegistry)}
+        </span>
         {showTrigger && (
-          <span className="text-[11px] text-muted-foreground hidden xl:inline">
-            {triggerLabel}
-          </span>
+          <span className="text-[11px] text-muted-foreground hidden xl:inline">{triggerLabel}</span>
         )}
         <span className="text-[11px] text-muted-foreground tabular-nums">
           <Time value={run.startedAt} display="relative" />
@@ -332,20 +342,23 @@ const QUICK_ACTIONS: QuickActionCard[] = [
     // with `?new=1`. Routines has a dedicated /new route.
     to: '/dashboard/projects?new=1',
     label: 'New project',
-    description: 'A long-running workspace for ongoing work — chats, files, memory, instructions all in one place.',
+    description:
+      'A long-running workspace for ongoing work — chats, files, memory, instructions all in one place.',
     icon: FolderKanban,
   },
   {
     to: '/dashboard/spaces?new=1',
     label: 'New space',
-    description: 'Multi-participant room — you + teammates + AI agents. Use @mentions to direct work.',
+    description:
+      'Multi-participant room — you + teammates + AI agents. Use @mentions to direct work.',
     icon: Users,
     feature: 'spaces',
   },
   {
     to: '/dashboard/routines/new',
     label: 'Schedule a routine',
-    description: 'Recurring AI work — fire on a cadence to scan, summarise, or react. Findings land in your Inbox.',
+    description:
+      'Recurring AI work — fire on a cadence to scan, summarise, or react. Findings land in your Inbox.',
     icon: Repeat,
   },
 ]
@@ -373,9 +386,7 @@ function QuickActions() {
                 {action.label}
                 <ArrowRight className="size-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
               </div>
-              <p className="text-xs text-muted-foreground line-clamp-3">
-                {action.description}
-              </p>
+              <p className="text-xs text-muted-foreground line-clamp-3">{action.description}</p>
             </Link>
           )
         })}
@@ -407,11 +418,26 @@ interface ChecklistItem {
 }
 
 const CHECKLIST_ITEMS: ChecklistItem[] = [
-  { id: 'connect', label: 'Connect a workspace (Google or Microsoft)', icon: Plug, to: '/dashboard/connections' },
+  {
+    id: 'connect',
+    label: 'Connect a workspace (Google or Microsoft)',
+    icon: Plug,
+    to: '/dashboard/connections',
+  },
   { id: 'project', label: 'Create your first project', icon: FileText, to: '/dashboard/projects' },
-  { id: 'memory', label: 'Save a memory the AI should remember', icon: Brain, to: '/dashboard/settings?tab=memory' },
+  {
+    id: 'memory',
+    label: 'Save a memory the AI should remember',
+    icon: Brain,
+    to: '/dashboard/settings?tab=memory',
+  },
   { id: 'chat', label: 'Send a message in chat', icon: MessageSquare, to: '/dashboard/chat' },
-  { id: 'skill', label: 'Try a skill (type /skill-name in chat)', icon: Sparkles, to: '/dashboard/skills' },
+  {
+    id: 'skill',
+    label: 'Try a skill (type /skill-name in chat)',
+    icon: Sparkles,
+    to: '/dashboard/skills',
+  },
   { id: 'routine', label: 'Schedule your first routine', icon: Repeat, to: '/dashboard/routines' },
 ]
 
@@ -439,7 +465,9 @@ function OnboardingChecklist() {
     // hides locally for this session and reappears on next load (which
     // is fine — better than blocking the UI on a network round-trip).
     try {
-      const prefsResp = await apiClient.get<{ preferences: Record<string, unknown> }>('/api/settings/preferences')
+      const prefsResp = await apiClient.get<{ preferences: Record<string, unknown> }>(
+        '/api/settings/preferences'
+      )
       await apiClient.patch('/api/settings/preferences', {
         ...prefsResp.preferences,
         onboarding: { version: state.data?.version ?? 1, dismissed: true },
@@ -477,7 +505,7 @@ function OnboardingChecklist() {
                 to={item.to}
                 className={cn(
                   'group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted/40',
-                  done && 'text-muted-foreground',
+                  done && 'text-muted-foreground'
                 )}
               >
                 {done ? (
@@ -486,11 +514,16 @@ function OnboardingChecklist() {
                   <span className="inline-block size-4 shrink-0 rounded-full border border-border" />
                 )}
                 <item.icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-                <span className={cn('flex-1', done && 'line-through decoration-muted-foreground/50')}>
+                <span
+                  className={cn('flex-1', done && 'line-through decoration-muted-foreground/50')}
+                >
                   {item.label}
                 </span>
                 {!done && (
-                  <ArrowRight className="size-3.5 shrink-0 text-muted-foreground/50 transition-colors group-hover:text-foreground" aria-hidden />
+                  <ArrowRight
+                    className="size-3.5 shrink-0 text-muted-foreground/50 transition-colors group-hover:text-foreground"
+                    aria-hidden
+                  />
                 )}
               </Link>
             </li>
@@ -524,54 +557,94 @@ function CapabilityTour() {
           <CapabilityCard
             icon={Brain}
             title="AI SDK v6"
-            items={['ToolLoopAgent pattern', 'Multi-provider factory', 'Streaming + reasoning', 'Conversation persistence']}
+            items={[
+              'ToolLoopAgent pattern',
+              'Multi-provider factory',
+              'Streaming + reasoning',
+              'Conversation persistence',
+            ]}
             to="/dashboard/chat"
             ctaLabel="Open AI Chat"
           />
           <CapabilityCard
             icon={Wrench}
             title="60+ Agent Tools"
-            items={['Browser, search, memory, files', 'Code execution, delegation', 'Scheduling, audio, UI tools', 'Skills system (14 bundled)']}
+            items={[
+              'Browser, search, memory, files',
+              'Code execution, delegation',
+              'Scheduling, audio, UI tools',
+              'Skills system (14 bundled)',
+            ]}
             to="/dashboard/chat"
             ctaLabel="Try the tools"
           />
           <CapabilityCard
             icon={Image}
             title="Image Processing"
-            items={['Resize, crop, format convert', 'AI background removal', 'AI face detection', 'Image generation (FLUX/GPT)']}
+            items={[
+              'Resize, crop, format convert',
+              'AI background removal',
+              'AI face detection',
+              'Image generation (FLUX/GPT)',
+            ]}
             to="/dashboard/chat"
             ctaLabel="Open AI Chat"
           />
           <CapabilityCard
             icon={Video}
             title="Video Processing"
-            items={['Clip and resize', 'Frame extraction', 'Audio extraction', 'Spritesheet generation']}
+            items={[
+              'Clip and resize',
+              'Frame extraction',
+              'Audio extraction',
+              'Spritesheet generation',
+            ]}
             to="/dashboard/chat"
             ctaLabel="Open AI Chat"
           />
           <CapabilityCard
             icon={Search}
             title="Semantic Search"
-            items={['AI SDK embeddings', 'Vectorize-ready', 'Cosine similarity', 'In-memory fallback']}
+            items={[
+              'AI SDK embeddings',
+              'Vectorize-ready',
+              'Cosine similarity',
+              'In-memory fallback',
+            ]}
             to="/dashboard/chat"
             ctaLabel="Open AI Chat"
           />
           <CapabilityCard
             icon={FileText}
             title="Business Modules"
-            items={['Comments, tags, watchers', 'Favourites, recent views', 'Soft delete + trash', 'CSV import/export']}
+            items={[
+              'Comments, tags, watchers',
+              'Favourites, recent views',
+              'Soft delete + trash',
+              'CSV import/export',
+            ]}
           />
           <CapabilityCard
             icon={Shield}
             title="Auth + Admin"
-            items={['Google OAuth + email/password', 'Role-based access', 'API tokens with scopes', 'Session management']}
+            items={[
+              'Google OAuth + email/password',
+              'Role-based access',
+              'API tokens with scopes',
+              'Session management',
+            ]}
             to="/dashboard/settings"
             ctaLabel="Open settings"
           />
           <CapabilityCard
             icon={Settings}
             title="UI Library"
-            items={['59 shadcn/ui components', 'Milkdown markdown editor', 'DataTable (TanStack Table)', 'Dark/light + 8 themes']}
+            items={[
+              '59 shadcn/ui components',
+              'Milkdown markdown editor',
+              'DataTable (TanStack Table)',
+              'Dark/light + 8 themes',
+            ]}
             to="/dashboard/components"
             ctaLabel="Browse components"
           />

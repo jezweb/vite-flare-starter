@@ -304,7 +304,7 @@ export function getProvider(id: string): ConnectorProvider | undefined {
  */
 export function isProviderConfigured(
   env: Record<string, string | undefined>,
-  providerId: string,
+  providerId: string
 ): boolean {
   const provider = getProvider(providerId)
   if (!provider) return false

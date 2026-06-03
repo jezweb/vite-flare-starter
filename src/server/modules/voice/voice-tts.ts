@@ -39,7 +39,7 @@ const DEFAULT_ELEVENLABS_VOICE = '21m00Tcm4TlvDq8ikWAM' // Rachel — ElevenLabs
 export async function synthesizeSpeech(
   env: TtsEnv,
   text: string,
-  opts: SynthesizeOpts = {},
+  opts: SynthesizeOpts = {}
 ): Promise<SynthesizeResult> {
   const trimmed = text.trim()
   if (!trimmed) throw new Error('TTS input text is empty')
@@ -91,12 +91,15 @@ export async function synthesizeSpeech(
     ? rawSpeaker
     : DEFAULT_AURA_SPEAKER
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const result = (await env.AI.run('@cf/deepgram/aura-2-en' as any, {
-    text: trimmed,
-    speaker,
-    encoding: 'mp3',
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } as any)) as { audio?: ArrayBuffer } | ArrayBuffer | ReadableStream
+  const result = (await env.AI.run(
+    '@cf/deepgram/aura-2-en' as any,
+    {
+      text: trimmed,
+      speaker,
+      encoding: 'mp3',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+  )) as { audio?: ArrayBuffer } | ArrayBuffer | ReadableStream
 
   // The binding's response shape varies — sometimes { audio: ArrayBuffer },
   // sometimes a raw ArrayBuffer, sometimes a ReadableStream of mp3 bytes.
@@ -124,13 +127,46 @@ export async function synthesizeSpeech(
 
 /** Valid Aura 2 speakers per Cloudflare docs / workers-ai-gotchas. */
 export const AURA2_SPEAKERS = [
-  'amalthea', 'andromeda', 'apollo', 'arcas', 'aries', 'asteria',
-  'athena', 'atlas', 'aurora', 'callista', 'cora', 'cordelia',
-  'delia', 'draco', 'electra', 'harmonia', 'helena', 'hera',
-  'hermes', 'hyperion', 'iris', 'janus', 'juno', 'jupiter',
-  'luna', 'mars', 'minerva', 'neptune', 'odysseus', 'ophelia',
-  'orion', 'orpheus', 'pandora', 'phoebe', 'pluto', 'saturn',
-  'thalia', 'theia', 'vesta', 'zeus',
+  'amalthea',
+  'andromeda',
+  'apollo',
+  'arcas',
+  'aries',
+  'asteria',
+  'athena',
+  'atlas',
+  'aurora',
+  'callista',
+  'cora',
+  'cordelia',
+  'delia',
+  'draco',
+  'electra',
+  'harmonia',
+  'helena',
+  'hera',
+  'hermes',
+  'hyperion',
+  'iris',
+  'janus',
+  'juno',
+  'jupiter',
+  'luna',
+  'mars',
+  'minerva',
+  'neptune',
+  'odysseus',
+  'ophelia',
+  'orion',
+  'orpheus',
+  'pandora',
+  'phoebe',
+  'pluto',
+  'saturn',
+  'thalia',
+  'theia',
+  'vesta',
+  'zeus',
 ] as const
 
 export type Aura2Speaker = (typeof AURA2_SPEAKERS)[number]

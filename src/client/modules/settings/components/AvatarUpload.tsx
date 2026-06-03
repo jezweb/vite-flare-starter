@@ -20,11 +20,12 @@ export function AvatarUpload({ onAvatarChange }: AvatarUploadProps) {
   const [error, setError] = useState<string | null>(null)
 
   // Get user initials for avatar fallback
-  const userInitials = session?.user?.name
-    ?.split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase() || 'U'
+  const userInitials =
+    session?.user?.name
+      ?.split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase() || 'U'
 
   const currentAvatarUrl = session?.user?.image
 
@@ -121,10 +122,7 @@ export function AvatarUpload({ onAvatarChange }: AvatarUploadProps) {
       {/* Avatar Preview */}
       <div className="flex items-center gap-4">
         <Avatar className="h-24 w-24">
-          <AvatarImage
-            src={currentAvatarUrl || undefined}
-            alt={session?.user?.name || 'User'}
-          />
+          <AvatarImage src={currentAvatarUrl || undefined} alt={session?.user?.name || 'User'} />
           <AvatarFallback className="text-2xl">{userInitials}</AvatarFallback>
         </Avatar>
 
@@ -199,8 +197,8 @@ export function AvatarUpload({ onAvatarChange }: AvatarUploadProps) {
 
       {/* Info */}
       <div className="text-xs text-muted-foreground">
-        Accepted formats: JPEG, PNG, WebP. Maximum size: 5MB. Images will be automatically
-        resized to 512x512px.
+        Accepted formats: JPEG, PNG, WebP. Maximum size: 5MB. Images will be automatically resized
+        to 512x512px.
       </div>
     </div>
   )

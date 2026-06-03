@@ -94,7 +94,7 @@ describe('Settings Schemas', () => {
       })
       expect(result.success).toBe(false)
       if (!result.success) {
-        const issue = result.error.issues.find(i => i.path.includes('currentPassword'))
+        const issue = result.error.issues.find((i) => i.path.includes('currentPassword'))
         expect(issue?.message).toContain('required')
       }
     })
@@ -107,7 +107,7 @@ describe('Settings Schemas', () => {
       })
       expect(result.success).toBe(false)
       if (!result.success) {
-        const issue = result.error.issues.find(i => i.path.includes('newPassword'))
+        const issue = result.error.issues.find((i) => i.path.includes('newPassword'))
         expect(issue?.message).toContain('8 characters')
       }
     })
@@ -120,7 +120,7 @@ describe('Settings Schemas', () => {
       })
       expect(result.success).toBe(false)
       if (!result.success) {
-        const issue = result.error.issues.find(i => i.path.includes('confirmPassword'))
+        const issue = result.error.issues.find((i) => i.path.includes('confirmPassword'))
         expect(issue?.message).toContain('match')
       }
     })
@@ -134,7 +134,7 @@ describe('Settings Schemas', () => {
       })
       expect(result.success).toBe(false)
       if (!result.success) {
-        const issue = result.error.issues.find(i => i.path.includes('newPassword'))
+        const issue = result.error.issues.find((i) => i.path.includes('newPassword'))
         expect(issue?.message).toContain('128 characters')
       }
     })

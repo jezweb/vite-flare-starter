@@ -110,10 +110,12 @@ async function clearTables(): Promise<void> {
 
 async function insertUser(timezone: string | null): Promise<void> {
   const prefs = JSON.stringify({ theme: 'default', mode: 'system', timezone })
-  await runSql(
-    `INSERT INTO user (id, name, email, preferences) VALUES (?, ?, ?, ?)`,
-    [USER_ID, 'Test User', `${USER_ID}@test.local`, prefs],
-  )
+  await runSql(`INSERT INTO user (id, name, email, preferences) VALUES (?, ?, ?, ?)`, [
+    USER_ID,
+    'Test User',
+    `${USER_ID}@test.local`,
+    prefs,
+  ])
 }
 
 async function insertRoutine(opts: {
@@ -142,23 +144,19 @@ async function insertRoutine(opts: {
       now,
       now,
       lastRunAt,
-    ],
+    ]
   )
 }
 
 async function countRuns(routineId: string): Promise<number> {
-  const result = await env.DB.prepare(
-    `SELECT COUNT(*) as c FROM routine_runs WHERE routine_id = ?`,
-  )
+  const result = await env.DB.prepare(`SELECT COUNT(*) as c FROM routine_runs WHERE routine_id = ?`)
     .bind(routineId)
     .first<{ c: number }>()
   return result?.c ?? 0
 }
 
 async function getLastRunAt(routineId: string): Promise<number | null> {
-  const result = await env.DB.prepare(
-    `SELECT last_run_at FROM routines WHERE id = ?`,
-  )
+  const result = await env.DB.prepare(`SELECT last_run_at FROM routines WHERE id = ?`)
     .bind(routineId)
     .first<{ last_run_at: number | null }>()
   return result?.last_run_at ?? null
@@ -184,7 +182,7 @@ describe('processDueRoutines — local-hour cadence gate (goanna slice 6)', () =
     const lastRunAtBefore = await getLastRunAt(routineId)
 
     const result = await processDueRoutines(
-      env as unknown as { DB: D1Database; [k: string]: unknown },
+      env as unknown as { DB: D1Database; [k: string]: unknown }
     )
 
     expect(result.considered).toBe(1)
@@ -202,9 +200,7 @@ describe('processDueRoutines — local-hour cadence gate (goanna slice 6)', () =
     const routineId = 'routine-fire-match'
     await insertRoutine({ id: routineId, localFireHour: currentHour })
 
-    await processDueRoutines(
-      env as unknown as { DB: D1Database; [k: string]: unknown },
-    )
+    await processDueRoutines(env as unknown as { DB: D1Database; [k: string]: unknown })
 
     // The routine "fires" — fireRoutine creates a run row even when the
     // DO binding is missing (it records outcome=error and returns).
@@ -218,9 +214,7 @@ describe('processDueRoutines — local-hour cadence gate (goanna slice 6)', () =
     const routineId = 'routine-no-gate'
     await insertRoutine({ id: routineId, localFireHour: null })
 
-    await processDueRoutines(
-      env as unknown as { DB: D1Database; [k: string]: unknown },
-    )
+    await processDueRoutines(env as unknown as { DB: D1Database; [k: string]: unknown })
 
     // Same reasoning as above — what matters is "did NOT skip due to gate".
     expect(await countRuns(routineId)).toBe(1)

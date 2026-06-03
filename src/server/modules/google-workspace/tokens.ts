@@ -54,7 +54,7 @@ export function redirectUri(env: GoogleWorkspaceEnv): string {
  */
 export async function getAccessToken(
   env: GoogleWorkspaceEnv,
-  userId: string,
+  userId: string
 ): Promise<string | null> {
   const db = drizzle(env.DB)
   const [row] = await db
@@ -127,7 +127,7 @@ export async function getAccessToken(
       })
       .where(eq(googleWorkspaceTokens.userId, userId))
     console.error(
-      JSON.stringify({ event: 'google_workspace_refresh_failed', userId, error: message }),
+      JSON.stringify({ event: 'google_workspace_refresh_failed', userId, error: message })
     )
     return null
   }
@@ -139,7 +139,7 @@ export async function getAccessToken(
  */
 export async function exchangeAuthCode(
   env: GoogleWorkspaceEnv,
-  code: string,
+  code: string
 ): Promise<{
   accessToken: string
   refreshToken: string | null
@@ -222,7 +222,7 @@ export async function revokeAndDelete(env: GoogleWorkspaceEnv, userId: string): 
           event: 'google_workspace_revoke_failed',
           userId,
           error: err instanceof Error ? err.message : String(err),
-        }),
+        })
       )
     }
   }

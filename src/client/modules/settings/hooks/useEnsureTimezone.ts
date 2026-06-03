@@ -45,7 +45,7 @@ export function useEnsureTimezone(): void {
           // mount re-attempts. Within this session we still don't loop.
           hasAttempted.current = false
         },
-      },
+      }
     )
   }, [preferences, isLoading, updatePreferences])
 }

@@ -74,19 +74,19 @@ const AnalyzeImageInput = z.object({
   imageUrl: z
     .string()
     .describe(
-      "Source image. Accepts: an https URL, a `data:` URL, or an R2 key like `users/<userId>/foo.png` (relative to the FILES bucket).",
+      'Source image. Accepts: an https URL, a `data:` URL, or an R2 key like `users/<userId>/foo.png` (relative to the FILES bucket).'
     ),
   mode: z
     .enum(['caption', 'summary', 'extract'])
     .default('summary')
     .describe(
-      "'caption' = 1-2 sentence text. 'summary' = structured JSON. 'extract' = custom JSON shape per `instruction`.",
+      "'caption' = 1-2 sentence text. 'summary' = structured JSON. 'extract' = custom JSON shape per `instruction`."
     ),
   instruction: z
     .string()
     .optional()
     .describe(
-      "Required for mode='extract'. Plain-language instruction describing what JSON to return. Optional for 'caption' and 'summary' (acts as a focus hint).",
+      "Required for mode='extract'. Plain-language instruction describing what JSON to return. Optional for 'caption' and 'summary' (acts as a focus hint)."
     ),
   model: ModelEnum.optional(),
 })
@@ -109,7 +109,7 @@ const SummaryShape = z.object({
         name: z.string(),
         type: z.string().optional(),
         confidence: z.string().optional(),
-      }),
+      })
     )
     .optional(),
   location_hint: z
@@ -175,7 +175,7 @@ function guessMimeType(url: string): string {
  */
 async function resolveImage(
   env: ImageAnalyzeEnv,
-  imageUrl: string,
+  imageUrl: string
 ): Promise<{ bytes: Uint8Array; mimeType: string }> {
   if (imageUrl.startsWith('data:')) {
     const m = imageUrl.match(/^data:([^;]+);base64,(.+)$/)
@@ -255,9 +255,7 @@ function extractJsonBlock(raw: string): string {
 interface ChatMessages {
   messages: Array<{
     role: string
-    content:
-      | string
-      | Array<{ type: string; text?: string; image_url?: { url: string } }>
+    content: string | Array<{ type: string; text?: string; image_url?: { url: string } }>
   }>
 }
 
@@ -267,7 +265,7 @@ async function runVisionModel(
   systemPrompt: string | undefined,
   userPrompt: string,
   bytes: Uint8Array,
-  mimeType: string,
+  mimeType: string
 ): Promise<{ text: string; latencyMs: number }> {
   const start = Date.now()
   const dataUrl = `data:${mimeType};base64,${bytesToBase64(bytes)}`
@@ -281,10 +279,13 @@ async function runVisionModel(
     ],
   })
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const result = (await env.AI.run(modelId as any, {
-    messages,
-    max_tokens: 16_384,
-  } as any)) as unknown
+  const result = (await env.AI.run(
+    modelId as any,
+    {
+      messages,
+      max_tokens: 16_384,
+    } as any
+  )) as unknown
   return { text: coerceToString(result), latencyMs: Date.now() - start }
 }
 
@@ -306,8 +307,7 @@ export const analyzeImageDefinition: ToolDefinition<
 
     if (mode === 'extract' && !input.instruction) {
       return {
-        error:
-          "mode='extract' requires `instruction` describing what JSON to return.",
+        error: "mode='extract' requires `instruction` describing what JSON to return.",
       }
     }
 
@@ -331,9 +331,12 @@ export const analyzeImageDefinition: ToolDefinition<
           undefined,
           userPrompt,
           resolved.bytes,
-          resolved.mimeType,
+          resolved.mimeType
         )
-        const caption = text.trim().replace(/^```[a-z]*\n?|\n?```$/g, '').trim()
+        const caption = text
+          .trim()
+          .replace(/^```[a-z]*\n?|\n?```$/g, '')
+          .trim()
         return { mode: 'caption' as const, model, caption, latencyMs }
       }
 
@@ -347,7 +350,7 @@ export const analyzeImageDefinition: ToolDefinition<
           SUMMARY_SYSTEM,
           userPrompt,
           resolved.bytes,
-          resolved.mimeType,
+          resolved.mimeType
         )
         const json = extractJsonBlock(text)
         let parsed: unknown
@@ -361,7 +364,7 @@ export const analyzeImageDefinition: ToolDefinition<
             SUMMARY_SYSTEM + '\n\nReturn JSON only. No markdown fences. No commentary.',
             userPrompt,
             resolved.bytes,
-            resolved.mimeType,
+            resolved.mimeType
           )
           try {
             parsed = JSON.parse(extractJsonBlock(retry.text))
@@ -375,9 +378,7 @@ export const analyzeImageDefinition: ToolDefinition<
         return {
           mode: 'summary' as const,
           model,
-          summary: validated.success
-            ? validated.data
-            : (parsed as z.infer<typeof SummaryShape>),
+          summary: validated.success ? validated.data : (parsed as z.infer<typeof SummaryShape>),
           latencyMs,
         }
       }
@@ -391,7 +392,7 @@ export const analyzeImageDefinition: ToolDefinition<
         systemPrompt,
         userPrompt,
         resolved.bytes,
-        resolved.mimeType,
+        resolved.mimeType
       )
       const json = extractJsonBlock(text)
       let parsed: unknown
@@ -412,8 +413,9 @@ export const analyzeImageDefinition: ToolDefinition<
   render: { icon: Eye, displayName: 'Analyze Image' },
 }
 
-export const imageAnalyzeDefinitions = [
-  analyzeImageDefinition,
-] as ToolDefinition<unknown, unknown>[]
+export const imageAnalyzeDefinitions = [analyzeImageDefinition] as ToolDefinition<
+  unknown,
+  unknown
+>[]
 
 export type AnalyzeImageOutput = z.infer<typeof AnalyzeImageOutput>

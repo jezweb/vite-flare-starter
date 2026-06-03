@@ -27,15 +27,17 @@ interface Props {
 }
 
 function MilkdownEditorInner({ value, className, minHeight = '200px' }: Props) {
-  useEditor((root) =>
-    Editor.make()
-      .config((ctx) => {
-        ctx.set(rootCtx, root)
-        if (value) ctx.set(defaultValueCtx, value)
-      })
-      .use(commonmark)
-      .use(gfm),
-    [])
+  useEditor(
+    (root) =>
+      Editor.make()
+        .config((ctx) => {
+          ctx.set(rootCtx, root)
+          if (value) ctx.set(defaultValueCtx, value)
+        })
+        .use(commonmark)
+        .use(gfm),
+    []
+  )
 
   return (
     <div
@@ -44,7 +46,7 @@ function MilkdownEditorInner({ value, className, minHeight = '200px' }: Props) {
         'prose prose-sm dark:prose-invert max-w-none',
         '[&_.milkdown]:outline-none [&_.milkdown]:px-3 [&_.milkdown]:py-2',
         '[&_.milkdown_.ProseMirror]:outline-none',
-        className,
+        className
       )}
       style={{ minHeight }}
     >

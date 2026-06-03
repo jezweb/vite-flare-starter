@@ -89,7 +89,7 @@ export class ReminderAgent extends Agent<Env, ReminderState> {
    */
   async scheduleReminder(
     when: number,
-    payload: ReminderPayload,
+    payload: ReminderPayload
   ): Promise<{ scheduleId: string; fireAt: number }> {
     if (this.state.userId !== payload.userId) {
       this.setState({ userId: payload.userId })

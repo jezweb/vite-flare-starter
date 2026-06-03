@@ -58,9 +58,9 @@ export function TagInput({
 
   // Filter suggestions based on input value
   const filteredSuggestions = suggestions
-    .filter((suggestion) =>
-      suggestion.toLowerCase().includes(inputValue.toLowerCase()) &&
-      !value.includes(suggestion)
+    .filter(
+      (suggestion) =>
+        suggestion.toLowerCase().includes(inputValue.toLowerCase()) && !value.includes(suggestion)
     )
     .slice(0, 5) // Limit to 5 suggestions
 
@@ -110,7 +110,8 @@ export function TagInput({
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node
       const clickedOutsideInput = inputRef.current && !inputRef.current.contains(target)
-      const clickedOutsideSuggestions = suggestionsRef.current && !suggestionsRef.current.contains(target)
+      const clickedOutsideSuggestions =
+        suggestionsRef.current && !suggestionsRef.current.contains(target)
 
       if (clickedOutsideInput && clickedOutsideSuggestions) {
         setShowSuggestions(false)
@@ -127,11 +128,7 @@ export function TagInput({
       {value.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {value.map((tag) => (
-            <Badge
-              key={tag}
-              variant="secondary"
-              className="gap-1 pr-1 pl-3"
-            >
+            <Badge key={tag} variant="secondary" className="gap-1 pr-1 pl-3">
               <span>{tag}</span>
               <button
                 type="button"
@@ -160,12 +157,7 @@ export function TagInput({
             className="flex-1 placeholder:opacity-50"
           />
           {inputValue.trim() && (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => addTag(inputValue)}
-            >
+            <Button type="button" size="sm" variant="outline" onClick={() => addTag(inputValue)}>
               <Plus className="h-4 w-4" />
             </Button>
           )}

@@ -27,9 +27,7 @@ interface Snapshot {
   models: (CatalogueModel & { source?: 'openrouter' | 'workers-ai' })[]
 }
 
-const CATALOGUE = new Map(
-  (snapshot as Snapshot).models.map((m) => [m.id, m] as const),
-)
+const CATALOGUE = new Map((snapshot as Snapshot).models.map((m) => [m.id, m] as const))
 
 /** Convert a CatalogueModel (from flared.au) into our ModelConfig shape. */
 /**
@@ -143,7 +141,7 @@ export function getToolCapableModels(): ModelConfig[] {
 }
 
 export function getRecommendedModel(
-  useCase: 'general' | 'fast' | 'reasoning' | 'vision' | 'tools',
+  useCase: 'general' | 'fast' | 'reasoning' | 'vision' | 'tools'
 ): ModelId {
   switch (useCase) {
     case 'general':

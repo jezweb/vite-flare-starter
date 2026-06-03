@@ -175,9 +175,7 @@ export function createStreamTransformer(): TransformStream<Uint8Array, Uint8Arra
         const data = line.slice(6)
 
         if (data === '[DONE]') {
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ type: 'done' })}\n\n`)
-          )
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'done' })}\n\n`))
           continue
         }
 
@@ -190,9 +188,7 @@ export function createStreamTransformer(): TransformStream<Uint8Array, Uint8Arra
               type: 'text',
               data: content,
             }
-            controller.enqueue(
-              encoder.encode(`data: ${JSON.stringify(internalChunk)}\n\n`)
-            )
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(internalChunk)}\n\n`))
           }
 
           // Include usage in done event if available
@@ -205,9 +201,7 @@ export function createStreamTransformer(): TransformStream<Uint8Array, Uint8Arra
                 totalTokens: parsed.usage.total_tokens,
               },
             }
-            controller.enqueue(
-              encoder.encode(`data: ${JSON.stringify(doneChunk)}\n\n`)
-            )
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(doneChunk)}\n\n`))
           }
         } catch {
           // Ignore parse errors
@@ -223,9 +217,7 @@ export function createStreamTransformer(): TransformStream<Uint8Array, Uint8Arra
           if (!line.startsWith('data: ')) continue
           const data = line.slice(6)
           if (data === '[DONE]') {
-            controller.enqueue(
-              encoder.encode(`data: ${JSON.stringify({ type: 'done' })}\n\n`)
-            )
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'done' })}\n\n`))
           }
         }
       }

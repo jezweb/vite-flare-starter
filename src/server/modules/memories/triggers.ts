@@ -42,7 +42,7 @@ interface ReactiveInput {
  *   - belongs to the same scope (project or personal)
  */
 export async function triggerPriorConversationMemoryExtraction(
-  input: ReactiveInput,
+  input: ReactiveInput
 ): Promise<void> {
   const { env, userId, currentConversationId, projectId } = input
   const d = drizzle(env.DB)
@@ -53,9 +53,7 @@ export async function triggerPriorConversationMemoryExtraction(
       eq(conversations.userId, userId),
       ne(conversations.id, currentConversationId),
       isNull(conversations.memoryProcessedAt),
-      projectId
-        ? eq(conversations.projectId, projectId)
-        : isNull(conversations.projectId),
+      projectId ? eq(conversations.projectId, projectId) : isNull(conversations.projectId)
     )
     const [prior] = await d
       .select({ id: conversations.id })
@@ -66,10 +64,12 @@ export async function triggerPriorConversationMemoryExtraction(
     if (!prior) return
     await runExtraction(env, prior.id, userId)
   } catch (err) {
-    console.warn(JSON.stringify({
-      event: 'memory_reactive_trigger_error',
-      error: err instanceof Error ? err.message : String(err),
-    }))
+    console.warn(
+      JSON.stringify({
+        event: 'memory_reactive_trigger_error',
+        error: err instanceof Error ? err.message : String(err),
+      })
+    )
   }
 }
 
@@ -85,7 +85,7 @@ export async function triggerPriorConversationMemoryExtraction(
  */
 export async function sweepIdleConversationsForMemory(
   env: { DB: D1Database; AI: Ai },
-  opts?: { maxPerTick?: number },
+  opts?: { maxPerTick?: number }
 ): Promise<{ processed: number; errors: number }> {
   const max = opts?.maxPerTick ?? 5
   const d = drizzle(env.DB)
@@ -103,8 +103,8 @@ export async function sweepIdleConversationsForMemory(
         isNull(conversations.memoryProcessedAt),
         lt(conversations.updatedAt, cutoff),
         // Only process conversations with at least 3 messages
-        sql`(SELECT COUNT(*) FROM conversation_messages WHERE conversation_id = ${conversations.id}) >= 3`,
-      ),
+        sql`(SELECT COUNT(*) FROM conversation_messages WHERE conversation_id = ${conversations.id}) >= 3`
+      )
     )
     .orderBy(asc(conversations.updatedAt))
     .limit(max)
@@ -117,11 +117,13 @@ export async function sweepIdleConversationsForMemory(
       processed += 1
     } catch (err) {
       errors += 1
-      console.warn(JSON.stringify({
-        event: 'memory_sweep_error',
-        conversationId: row.id,
-        error: err instanceof Error ? err.message : String(err),
-      }))
+      console.warn(
+        JSON.stringify({
+          event: 'memory_sweep_error',
+          conversationId: row.id,
+          error: err instanceof Error ? err.message : String(err),
+        })
+      )
     }
   }
   return { processed, errors }
@@ -132,7 +134,7 @@ export async function sweepIdleConversationsForMemory(
 async function runExtraction(
   env: { DB: D1Database; AI: Ai },
   conversationId: string,
-  userId: string,
+  userId: string
 ): Promise<void> {
   const d = drizzle(env.DB)
 
@@ -152,11 +154,13 @@ async function runExtraction(
         .set({ memoryProcessedAt: new Date() })
         .where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)))
     } else {
-      console.log(JSON.stringify({
-        event: 'memory_extraction_skipped',
-        conversationId,
-        reason: job.error,
-      }))
+      console.log(
+        JSON.stringify({
+          event: 'memory_extraction_skipped',
+          conversationId,
+          reason: job.error,
+        })
+      )
     }
     return
   }
@@ -175,9 +179,11 @@ async function runExtraction(
     allowTitleReplace,
   })
 
-  console.log(JSON.stringify({
-    event: 'memory_extraction_applied',
-    conversationId,
-    ...summary,
-  }))
+  console.log(
+    JSON.stringify({
+      event: 'memory_extraction_applied',
+      conversationId,
+      ...summary,
+    })
+  )
 }

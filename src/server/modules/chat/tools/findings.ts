@@ -90,18 +90,14 @@ const RecordFindingInput = z.object({
     .min(10)
     .max(4000)
     .describe(
-      'The observation. 1-3 paragraphs. Lead with the pattern; add context only if non-obvious. Markdown ok.',
+      'The observation. 1-3 paragraphs. Lead with the pattern; add context only if non-obvious. Markdown ok.'
     ),
   category: z
     .string()
     .max(50)
     .optional()
     .describe('Optional grouping (e.g. "ux", "perf", "auth", "data")'),
-  tags: z
-    .array(z.string().max(40))
-    .max(10)
-    .optional()
-    .describe('Free-form tags for filtering'),
+  tags: z.array(z.string().max(40)).max(10).optional().describe('Free-form tags for filtering'),
 })
 
 const FindingRowOutput = z.object({
@@ -117,10 +113,7 @@ const FindingRowOutput = z.object({
   createdAt: z.number(),
 })
 
-const RecordFindingOutput = z.union([
-  FindingRowOutput,
-  z.object({ error: z.string() }),
-])
+const RecordFindingOutput = z.union([FindingRowOutput, z.object({ error: z.string() })])
 
 export const recordFindingDefinition: ToolDefinition<
   z.infer<typeof RecordFindingInput>,
@@ -182,7 +175,7 @@ const PromoteFindingInput = z.object({
     .max(4000)
     .optional()
     .describe(
-      'Optional rewritten / distilled version of the body for the learning. Defaults to the finding\'s body verbatim.',
+      "Optional rewritten / distilled version of the body for the learning. Defaults to the finding's body verbatim."
     ),
 })
 
@@ -214,8 +207,8 @@ export const promoteFindingDefinition: ToolDefinition<
         and(
           eq(entities.id, findingId),
           eq(entities.userId, ctx.userId),
-          eq(entities.type, 'finding'),
-        ),
+          eq(entities.type, 'finding')
+        )
       )
       .limit(1)
     if (!finding) return { error: `Finding ${findingId} not found` }
@@ -279,7 +272,7 @@ export const dismissFindingDefinition: ToolDefinition<
 > = {
   name: 'dismiss_finding',
   description:
-    'Mark a finding as dismissed (no longer relevant, won\'t fix, false positive, etc). Keeps the row for audit; reflect skill archives dismissed findings older than 30 days. Use when a finding turned out not to be a real pattern.',
+    "Mark a finding as dismissed (no longer relevant, won't fix, false positive, etc). Keeps the row for audit; reflect skill archives dismissed findings older than 30 days. Use when a finding turned out not to be a real pattern.",
   inputSchema: DismissFindingInput,
   outputSchema: DismissFindingOutput,
   isAvailable: findingsAvailable,
@@ -292,8 +285,8 @@ export const dismissFindingDefinition: ToolDefinition<
         and(
           eq(entities.id, findingId),
           eq(entities.userId, ctx.userId),
-          eq(entities.type, 'finding'),
-        ),
+          eq(entities.type, 'finding')
+        )
       )
       .limit(1)
     if (!finding) return { error: `Finding ${findingId} not found` }
@@ -326,18 +319,14 @@ export const dismissFindingDefinition: ToolDefinition<
 export async function bumpFindingRecurrence(
   db: D1Database,
   userId: string,
-  findingId: string,
+  findingId: string
 ): Promise<number | null> {
   const drizz = drizzle(db)
   const [row] = await drizz
     .select()
     .from(entities)
     .where(
-      and(
-        eq(entities.id, findingId),
-        eq(entities.userId, userId),
-        eq(entities.type, 'finding'),
-      ),
+      and(eq(entities.id, findingId), eq(entities.userId, userId), eq(entities.type, 'finding'))
     )
     .limit(1)
   if (!row) return null

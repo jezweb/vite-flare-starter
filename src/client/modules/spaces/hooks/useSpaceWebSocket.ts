@@ -79,7 +79,7 @@ export function useSpaceWebSocket(spaceId: string | undefined) {
                 return { messages: next }
               }
               return { messages: [...prev.messages, msg] }
-            },
+            }
           )
           // Also bump the parent message's threadCount in the top-level
           // cache when this is a thread reply.
@@ -91,11 +91,15 @@ export function useSpaceWebSocket(spaceId: string | undefined) {
                 return {
                   messages: prev.messages.map((m) =>
                     m.id === msg.parentMessageId
-                      ? { ...m, threadCount: (m.threadCount ?? 0) + 1, lastThreadAt: Math.floor(Date.now() / 1000) }
-                      : m,
+                      ? {
+                          ...m,
+                          threadCount: (m.threadCount ?? 0) + 1,
+                          lastThreadAt: Math.floor(Date.now() / 1000),
+                        }
+                      : m
                   ),
                 }
-              },
+              }
             )
           }
         } else if (data.type === 'message_deleted') {
@@ -103,12 +107,14 @@ export function useSpaceWebSocket(spaceId: string | undefined) {
           // any open thread. Also strip thread replies whose parent is
           // the deleted message (cascade is server-side via FK, but
           // this keeps the UI in sync without a refetch).
-          const queries = qc.getQueriesData<{ messages: SpaceMessage[] }>({ queryKey: ['spaces', spaceId, 'messages'] })
+          const queries = qc.getQueriesData<{ messages: SpaceMessage[] }>({
+            queryKey: ['spaces', spaceId, 'messages'],
+          })
           for (const [key, value] of queries) {
             if (!value || !Array.isArray(value.messages)) continue
             qc.setQueryData(key, {
               messages: value.messages.filter(
-                (m) => m.id !== data.messageId && m.parentMessageId !== data.messageId,
+                (m) => m.id !== data.messageId && m.parentMessageId !== data.messageId
               ),
             })
           }
@@ -117,7 +123,7 @@ export function useSpaceWebSocket(spaceId: string | undefined) {
         /* ignore non-JSON frames */
       }
     },
-    [qc, spaceId],
+    [qc, spaceId]
   )
 
   const agent = useAgent({

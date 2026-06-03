@@ -16,7 +16,9 @@ app.use('*', authMiddleware)
 app.get('/', async (c) => {
   const userId = c.get('userId')
   const db = drizzle(c.env.DB)
-  const rows = await db.select().from(favourites)
+  const rows = await db
+    .select()
+    .from(favourites)
     .where(eq(favourites.userId, userId))
     .orderBy(favourites.position)
   return c.json({ favourites: rows })
@@ -43,9 +45,15 @@ app.delete(
     const { entityType, entityId } = c.req.valid('json')
     const userId = c.get('userId')
     const db = drizzle(c.env.DB)
-    await db.delete(favourites).where(
-      and(eq(favourites.userId, userId), eq(favourites.entityType, entityType), eq(favourites.entityId, entityId))
-    )
+    await db
+      .delete(favourites)
+      .where(
+        and(
+          eq(favourites.userId, userId),
+          eq(favourites.entityType, entityType),
+          eq(favourites.entityId, entityId)
+        )
+      )
     return c.json({ success: true })
   }
 )

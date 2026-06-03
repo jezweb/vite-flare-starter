@@ -17,9 +17,7 @@ import type {
 
 export type D1 = Parameters<typeof drizzle>[0]
 
-function rowToProposal(
-  row: typeof configDiffProposals.$inferSelect,
-): ConfigDiffProposal {
+function rowToProposal(row: typeof configDiffProposals.$inferSelect): ConfigDiffProposal {
   return {
     id: row.id,
     userId: row.userId,
@@ -47,7 +45,7 @@ function rowToProposal(
 export async function createProposal(
   d1: D1,
   userId: string,
-  input: CreateProposalInput,
+  input: CreateProposalInput
 ): Promise<ConfigDiffProposal> {
   const db = drizzle(d1)
   const id = crypto.randomUUID()
@@ -76,15 +74,13 @@ export async function createProposal(
 export async function getProposal(
   d1: D1,
   userId: string,
-  id: string,
+  id: string
 ): Promise<ConfigDiffProposal | null> {
   const db = drizzle(d1)
   const rows = await db
     .select()
     .from(configDiffProposals)
-    .where(
-      and(eq(configDiffProposals.id, id), eq(configDiffProposals.userId, userId)),
-    )
+    .where(and(eq(configDiffProposals.id, id), eq(configDiffProposals.userId, userId)))
     .limit(1)
   return rows[0] ? rowToProposal(rows[0]) : null
 }
@@ -93,7 +89,7 @@ export async function listProposalsForResource(
   d1: D1,
   userId: string,
   resource: Pick<ConfigDiffResource, 'kind' | 'id'>,
-  limit = 50,
+  limit = 50
 ): Promise<ConfigDiffProposal[]> {
   const db = drizzle(d1)
   const rows = await db
@@ -103,8 +99,8 @@ export async function listProposalsForResource(
       and(
         eq(configDiffProposals.userId, userId),
         eq(configDiffProposals.resourceKind, resource.kind),
-        eq(configDiffProposals.resourceId, resource.id),
-      ),
+        eq(configDiffProposals.resourceId, resource.id)
+      )
     )
     .orderBy(desc(configDiffProposals.createdAt))
     .limit(limit)
@@ -115,15 +111,13 @@ export async function markProposal(
   d1: D1,
   userId: string,
   id: string,
-  status: Exclude<ConfigDiffStatus, 'pending'>,
+  status: Exclude<ConfigDiffStatus, 'pending'>
 ): Promise<ConfigDiffProposal | null> {
   const db = drizzle(d1)
   const [row] = await db
     .update(configDiffProposals)
     .set({ status, resolvedAt: new Date() })
-    .where(
-      and(eq(configDiffProposals.id, id), eq(configDiffProposals.userId, userId)),
-    )
+    .where(and(eq(configDiffProposals.id, id), eq(configDiffProposals.userId, userId)))
     .returning()
   return row ? rowToProposal(row) : null
 }
@@ -142,7 +136,7 @@ export async function claimProposal(
   d1: D1,
   userId: string,
   id: string,
-  targetStatus: Exclude<ConfigDiffStatus, 'pending'>,
+  targetStatus: Exclude<ConfigDiffStatus, 'pending'>
 ): Promise<ConfigDiffProposal | null> {
   const db = drizzle(d1)
   const [row] = await db
@@ -152,24 +146,18 @@ export async function claimProposal(
       and(
         eq(configDiffProposals.id, id),
         eq(configDiffProposals.userId, userId),
-        eq(configDiffProposals.status, 'pending'),
-      ),
+        eq(configDiffProposals.status, 'pending')
+      )
     )
     .returning()
   return row ? rowToProposal(row) : null
 }
 
 /** Revert an accidental claim (e.g. apply handler threw after claim). */
-export async function revertProposalToPending(
-  d1: D1,
-  userId: string,
-  id: string,
-): Promise<void> {
+export async function revertProposalToPending(d1: D1, userId: string, id: string): Promise<void> {
   const db = drizzle(d1)
   await db
     .update(configDiffProposals)
     .set({ status: 'pending', resolvedAt: null })
-    .where(
-      and(eq(configDiffProposals.id, id), eq(configDiffProposals.userId, userId)),
-    )
+    .where(and(eq(configDiffProposals.id, id), eq(configDiffProposals.userId, userId)))
 }

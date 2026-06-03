@@ -98,7 +98,9 @@ const ALL_CONVERTIBLE = new Set([
 ])
 
 export function isConvertible(mimeType: string): boolean {
-  return ALL_CONVERTIBLE.has(mimeType) || mimeType.startsWith('image/') || mimeType.startsWith('text/')
+  return (
+    ALL_CONVERTIBLE.has(mimeType) || mimeType.startsWith('image/') || mimeType.startsWith('text/')
+  )
 }
 
 /**
@@ -111,7 +113,7 @@ export async function convertToMarkdown(
   env: DocumentEnv,
   data: ArrayBuffer | Uint8Array,
   mimeType: string,
-  options?: ConvertOptions,
+  options?: ConvertOptions
 ): Promise<string> {
   // Plain text — pass through
   if (mimeType.startsWith('text/') || mimeType === 'application/json') {
@@ -121,25 +123,31 @@ export async function convertToMarkdown(
   // Try Cloudflare's built-in converter (free, handles PDF + office + images)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const ai = env.AI as any
-  if (!options?.forceVision && TOMARKDOWN_TYPES.has(mimeType) && typeof ai?.toMarkdown === 'function') {
+  if (
+    !options?.forceVision &&
+    TOMARKDOWN_TYPES.has(mimeType) &&
+    typeof ai?.toMarkdown === 'function'
+  ) {
     try {
-      const result = await ai.toMarkdown([
+      const result = (await ai.toMarkdown([
         {
           name: options?.filename || `file.${mimeType.split('/')[1]}`,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           blob: new Blob([data as any], { type: mimeType }),
         },
-      ]) as { name: string; data: string }[]
+      ])) as { name: string; data: string }[]
       if (result?.[0]?.data) {
         return result[0].data
       }
     } catch (err) {
-      console.warn(JSON.stringify({
-        event: 'toMarkdown_failed',
-        mimeType,
-        filename: options?.filename,
-        error: err instanceof Error ? err.message : String(err),
-      }))
+      console.warn(
+        JSON.stringify({
+          event: 'toMarkdown_failed',
+          mimeType,
+          filename: options?.filename,
+          error: err instanceof Error ? err.message : String(err),
+        })
+      )
       // For non-image binaries (docx, xlsx, pdf) vision fallback can't read the
       // actual content — it'll hallucinate from ZIP/PDF headers. Return a clear
       // error instead of producing plausible-but-wrong output.
@@ -164,14 +172,15 @@ async function extractWithVision(
   env: DocumentEnv,
   data: ArrayBuffer | Uint8Array,
   mimeType: string,
-  options?: ConvertOptions,
+  options?: ConvertOptions
 ): Promise<string> {
   const modelId = options?.model || DEFAULT_VISION_MODEL
   const model = resolveModel(env as Parameters<typeof resolveModel>[0], modelId)
 
-  const prompt = options?.prompt ||
+  const prompt =
+    options?.prompt ||
     `Extract all text content from this ${options?.filename || 'document'} and convert it to well-formatted markdown. ` +
-    'Preserve headings, lists, tables, and structure. If there are images, describe them briefly.'
+      'Preserve headings, lists, tables, and structure. If there are images, describe them briefly.'
 
   const bytes = data instanceof Uint8Array ? data : new Uint8Array(data)
   const base64 = btoa(String.fromCharCode(...bytes))
