@@ -34,7 +34,7 @@ export const WORKERS_AI_MODELS = [
  */
 export const OPENROUTER_MODELS = [
   // Anthropic
-  'anthropic/claude-opus-4.6',
+  'anthropic/claude-opus-4.8', // 1M ctx; $5/$25 per Mtok (4.6 retired from catalogue 2026-05)
   'anthropic/claude-sonnet-4.6',
   'anthropic/claude-haiku-4.5',
 
@@ -58,7 +58,7 @@ export const OPENROUTER_MODELS = [
   'mistralai/mistral-large-2512',
 
   // xAI
-  'x-ai/grok-4.1-fast',
+  'x-ai/grok-4.20', // 2M ctx; $1.25/$2.50 per Mtok — same price as grok-4.3, double the context
 
   // Z.AI
   'z-ai/glm-5',
