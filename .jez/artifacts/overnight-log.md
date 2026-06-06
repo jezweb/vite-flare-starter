@@ -60,6 +60,9 @@ Pick the next AVAILABLE task in ID order. Mark it in-progress in your iteration 
 
 *(Append entries here. Newest at top.)*
 
+### Bail — 2026-06-06T02:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
 ### Bail — 2026-06-06T01:02Z
 Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
 
@@ -129,8 +132,7 @@ Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
 ### Bail — 2026-06-05T03:01Z
 Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
 
-### Bail — 2026-06-05T02:02Z
-Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+### Bail — 2026-06-05T02:02ZBailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
 
 ### Bail — 2026-06-05T01:02Z
 Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
