@@ -63,6 +63,201 @@ Pick the next AVAILABLE task in ID order. Mark it in-progress in your iteration 
 ### Bail — 2026-06-07T21:02Z
 Bailed — past 2am local (UTC 21:01 > 16:00) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
 
+### Bail — 2026-06-07T20:02Z
+Bailed — past 2am local (UTC 20:02 > 16:00) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-07T19:02Z
+Bailed — past 2am local (UTC 19:02 > 16:00) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-07T18:02Z
+Bailed — past 2am local (UTC 18:02 > 16:00) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-07T17:02Z
+Bailed — past 2am local (UTC 17:02 > 16:00) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-07T16:02Z
+Bailed — past 2am local (UTC 16:02 > 16:00) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-07T15:03Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-07T14:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-07T13:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-07T12:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-07T11:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-07T10:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-07T09:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-07T08:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-07T07:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-07T06:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-07T05:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-07T04:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-07T03:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-07T02:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-06T23:02Z
+Bailed — past 2am local (UTC 23:02 > 16:00) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-06T22:02Z
+Bailed — past 2am local (UTC 22:02 > 16:00) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-06T21:03Z
+Bailed — past 2am local (UTC 21:03 > 16:00) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-06T20:02Z
+Bailed — past 2am local (UTC 20:02 > 16:00) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-06T19:02Z
+Bailed — past 2am local (UTC 19:02 > 16:00) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-06T18:02Z
+Bailed — past 2am local (UTC 18:01 > 16:00) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-06T17:02Z
+Bailed — past 2am local (UTC 17:02 > 16:00) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-06T16:02Z
+Bailed — past 2am local (UTC 16:02 > 16:00) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-06T15:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-06T14:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-06T13:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-06T12:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-06T11:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-06T10:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-06T09:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-06T08:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-06T07:03Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-06T06:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-06T05:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-06T04:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-06T03:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-06T02:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-06T01:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-06T00:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-05T23:02Z
+Bailed — past 2am local (UTC 23:02 > 16:00) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-05T22:01Z
+Bailed — past 2am local (UTC 22:01 > 16:00) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-05T21:01Z
+Bailed — past 2am local (UTC 21:01 > 16:00) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-05T20:04Z
+Bailed — past 2am local (UTC 20:04 > 16:00) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-05T19:04Z
+Bailed — past 2am local (UTC 19:04 > 16:00) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-05T18:04Z
+Bailed — past 2am local (UTC 18:04 > 16:00) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-05T17:01Z
+Bailed — past 2am local (UTC 17:01 > 16:00) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-05T16:01Z
+Bailed — past 2am local (UTC 16:01 > 16:00) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-05T15:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-05T14:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-05T13:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-05T12:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-05T11:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-05T10:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-05T09:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-05T08:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-05T07:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-05T06:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-05T05:01Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-05T04:01Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-05T03:01Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
+### Bail — 2026-06-05T02:02Z
+Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
 ### Bail — 2026-06-05T01:02Z
 Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
 
