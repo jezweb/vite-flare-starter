@@ -2,7 +2,7 @@ import { createMiddleware } from 'hono/factory'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq } from 'drizzle-orm'
 import type { Env } from '../index'
-import { createAuth } from '../modules/auth'
+import { createAuthFromEnv } from '../modules/auth'
 import * as schema from '@/server/db/schema'
 import type { ApiTokenScope } from '@/shared/config/scopes'
 
@@ -204,14 +204,7 @@ export const authMiddleware = createMiddleware<AuthContext>(async (c, next) => {
     }
 
     // Fall back to session authentication (cookies)
-    const auth = createAuth(c.env.DB, {
-      BETTER_AUTH_SECRET: c.env.BETTER_AUTH_SECRET,
-      BETTER_AUTH_URL: c.env.BETTER_AUTH_URL,
-      GOOGLE_CLIENT_ID: c.env.GOOGLE_CLIENT_ID,
-      GOOGLE_CLIENT_SECRET: c.env.GOOGLE_CLIENT_SECRET,
-      EMAIL_API_KEY: c.env.EMAIL_API_KEY,
-      EMAIL_FROM: c.env.EMAIL_FROM,
-    })
+    const auth = createAuthFromEnv(c.env.DB, c.env as unknown as Record<string, unknown>)
 
     // Get session from better-auth using the raw request
     const session = await auth.api.getSession({
