@@ -101,6 +101,9 @@ export function SignUpPage() {
       await authClient.signIn.social({
         provider: 'google',
         callbackURL: '/dashboard',
+        // Route server-side failures to the sign-in page, which reads ?error=
+        // and renders it (issue #69). The landing page would swallow it.
+        errorCallbackURL: '/sign-in',
       })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to sign up with Google')

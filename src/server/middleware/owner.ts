@@ -36,7 +36,7 @@
 import { createMiddleware } from 'hono/factory'
 import { getCookie, setCookie } from 'hono/cookie'
 import type { Env } from '../index'
-import { createAuth } from '../modules/auth'
+import { createAuthFromEnv } from '../modules/auth'
 
 /** Cookie name. Prefix with your app's token prefix or change to
  *  whatever signals "this is our session" to your CDN logs. */
@@ -60,10 +60,7 @@ export const ownerMiddleware = createMiddleware<OwnerContext>(async (c, next) =>
   // catching keeps the guest path working in that case.
   let userId: string | undefined
   try {
-    const auth = createAuth(c.env.DB, {
-      BETTER_AUTH_SECRET: c.env.BETTER_AUTH_SECRET,
-      BETTER_AUTH_URL: c.env.BETTER_AUTH_URL,
-    })
+    const auth = createAuthFromEnv(c.env.DB, c.env as unknown as Record<string, unknown>)
     const session = await auth.api.getSession({ headers: c.req.raw.headers })
     if (session?.user?.id) userId = session.user.id
   } catch {

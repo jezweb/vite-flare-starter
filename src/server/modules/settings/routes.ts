@@ -3,7 +3,7 @@ import { zValidator } from '@hono/zod-validator'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq } from 'drizzle-orm'
 import { authMiddleware, requireScopes, type AuthContext } from '@/server/middleware/auth'
-import { createAuth } from '@/server/modules/auth'
+import { createAuthFromEnv } from '@/server/modules/auth'
 import * as schema from '@/server/db/schema'
 import {
   updateNameSchema,
@@ -52,14 +52,7 @@ app.patch(
 
     try {
       // Create auth instance
-      const auth = createAuth(c.env.DB, {
-        BETTER_AUTH_SECRET: c.env.BETTER_AUTH_SECRET,
-        BETTER_AUTH_URL: c.env.BETTER_AUTH_URL,
-        GOOGLE_CLIENT_ID: c.env.GOOGLE_CLIENT_ID,
-        GOOGLE_CLIENT_SECRET: c.env.GOOGLE_CLIENT_SECRET,
-        EMAIL_API_KEY: c.env.EMAIL_API_KEY,
-        EMAIL_FROM: c.env.EMAIL_FROM,
-      })
+      const auth = createAuthFromEnv(c.env.DB, c.env as unknown as Record<string, unknown>)
 
       // Use better-auth's updateUser API
       const result = await auth.api.updateUser({
@@ -311,14 +304,7 @@ app.post('/email', requireSessionAuth, zValidator('json', changeEmailSchema), as
 
   try {
     // Create auth instance
-    const auth = createAuth(c.env.DB, {
-      BETTER_AUTH_SECRET: c.env.BETTER_AUTH_SECRET,
-      BETTER_AUTH_URL: c.env.BETTER_AUTH_URL,
-      GOOGLE_CLIENT_ID: c.env.GOOGLE_CLIENT_ID,
-      GOOGLE_CLIENT_SECRET: c.env.GOOGLE_CLIENT_SECRET,
-      EMAIL_API_KEY: c.env.EMAIL_API_KEY,
-      EMAIL_FROM: c.env.EMAIL_FROM,
-    })
+    const auth = createAuthFromEnv(c.env.DB, c.env as unknown as Record<string, unknown>)
 
     // Use better-auth's changeEmail API
     // This triggers sendChangeEmailVerification callback
@@ -391,12 +377,7 @@ app.post('/password', requireSessionAuth, zValidator('json', changePasswordSchem
 
     // Use better-auth's changePassword API
     // This handles password verification and hashing using the correct salt:hash format
-    const auth = createAuth(c.env.DB, {
-      BETTER_AUTH_SECRET: c.env.BETTER_AUTH_SECRET,
-      BETTER_AUTH_URL: c.env.BETTER_AUTH_URL,
-      GOOGLE_CLIENT_ID: c.env.GOOGLE_CLIENT_ID,
-      GOOGLE_CLIENT_SECRET: c.env.GOOGLE_CLIENT_SECRET,
-    })
+    const auth = createAuthFromEnv(c.env.DB, c.env as unknown as Record<string, unknown>)
 
     const result = await auth.api.changePassword({
       body: {
@@ -443,14 +424,7 @@ app.delete('/account', requireSessionAuth, zValidator('json', deleteAccountSchem
 
   try {
     // Create auth instance
-    const auth = createAuth(c.env.DB, {
-      BETTER_AUTH_SECRET: c.env.BETTER_AUTH_SECRET,
-      BETTER_AUTH_URL: c.env.BETTER_AUTH_URL,
-      GOOGLE_CLIENT_ID: c.env.GOOGLE_CLIENT_ID,
-      GOOGLE_CLIENT_SECRET: c.env.GOOGLE_CLIENT_SECRET,
-      EMAIL_API_KEY: c.env.EMAIL_API_KEY,
-      EMAIL_FROM: c.env.EMAIL_FROM,
-    })
+    const auth = createAuthFromEnv(c.env.DB, c.env as unknown as Record<string, unknown>)
 
     // For email/password users: require password verification
     // For OAuth users: will require email verification

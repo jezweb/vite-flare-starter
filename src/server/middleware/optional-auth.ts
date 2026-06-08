@@ -18,7 +18,7 @@
  */
 import { createMiddleware } from 'hono/factory'
 import type { Env } from '../index'
-import { createAuth } from '../modules/auth'
+import { createAuthFromEnv } from '../modules/auth'
 
 export type OptionalAuthContext = {
   Bindings: Env
@@ -37,13 +37,7 @@ export type OptionalAuthContext = {
 
 export const optionalAuthMiddleware = createMiddleware<OptionalAuthContext>(async (c, next) => {
   try {
-    const auth = createAuth(c.env.DB, {
-      BETTER_AUTH_SECRET: c.env.BETTER_AUTH_SECRET,
-      BETTER_AUTH_URL: c.env.BETTER_AUTH_URL,
-      GOOGLE_CLIENT_ID: c.env.GOOGLE_CLIENT_ID,
-      GOOGLE_CLIENT_SECRET: c.env.GOOGLE_CLIENT_SECRET,
-      TRUSTED_ORIGINS: c.env.TRUSTED_ORIGINS,
-    })
+    const auth = createAuthFromEnv(c.env.DB, c.env as unknown as Record<string, unknown>)
 
     const session = await auth.api.getSession({ headers: c.req.raw.headers })
 

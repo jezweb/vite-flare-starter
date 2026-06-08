@@ -53,7 +53,19 @@ export function SignInPage() {
   const nextUrl = useMemo(() => resolveNextUrl(searchParams.get('next')), [searchParams])
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  // Seed from ?error= so server-side OAuth failures are visible (issue #69).
+  // better-auth appends ?error=<code> to errorCallbackURL when a social
+  // sign-in is rejected server-side (e.g. a user.create.before allowlist
+  // gate). Without reading it, blocked sign-ins look like "nothing happened".
+  const initialError = useMemo(() => {
+    const code = searchParams.get('error')
+    if (!code) return ''
+    if (code === 'unable_to_create_user')
+      return "This account isn't authorised. Sign in with an approved account, or ask the administrator to add your email."
+    if (code === 'access_denied') return 'Sign-in was cancelled.'
+    return 'Sign-in failed. Please try again.'
+  }, [searchParams])
+  const [error, setError] = useState(initialError)
   const [loading, setLoading] = useState(false)
 
   // Auth config state
@@ -118,6 +130,9 @@ export function SignInPage() {
       await authClient.signIn.social({
         provider: 'google',
         callbackURL: nextUrl,
+        // Land server-side failures on a page that reads ?error= (issue #69).
+        // Default would bounce to the landing page where the error is invisible.
+        errorCallbackURL: '/sign-in',
       })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to sign in with Google')

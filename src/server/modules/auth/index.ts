@@ -40,9 +40,17 @@ function parseTrustedOrigins(envValue?: string): string[] {
  * Uses D1 binding directly (better-auth auto-detects D1 since v1.5).
  */
 /**
- * Helper — convenience wrapper so call sites can pass `c.env` directly
- * instead of building a typed env object. Keeps call sites short and
- * means adding a new auth-relevant env var only touches one file.
+ * THE auth constructor for application code. Pass `c.env` (or the Worker
+ * `env`) directly: `createAuthFromEnv(c.env.DB, c.env as unknown as Record<string, unknown>)`.
+ *
+ * Why this is the only call site you should use: this forwarder maps EVERY
+ * auth-relevant env var onto `createAuth`. Hand-building a partial env object
+ * inline (the old pattern) drifts the moment a new var is added here — the
+ * inline site silently omits it. That bug shipped to a fork: the OAuth handler
+ * hand-built an env object missing the signup-allowlist vars, so the gate
+ * fail-closed and blocked every real Google sign-in while test-auth (which
+ * used this forwarder) worked. One constructor = one place to add a var = no
+ * drift. See issue #71.
  */
 export function createAuthFromEnv(d1: D1Database, env: Record<string, unknown>) {
   return createAuth(d1, {
@@ -63,6 +71,12 @@ export function createAuthFromEnv(d1: D1Database, env: Record<string, unknown>) 
   })
 }
 
+/**
+ * @internal Low-level constructor with a fully-typed env object. Prefer
+ * {@link createAuthFromEnv} in application code — it forwards every env var
+ * and prevents the partial-object drift documented in issue #71. This stays
+ * exported only because the forwarder builds on it.
+ */
 export function createAuth(
   d1: D1Database,
   env: {
@@ -353,7 +367,31 @@ export function createAuth(
         // After deletion: cleanup related data
         afterDelete: async (user) => {
           console.log(`Account deleted: ${user.id} (${user.email})`)
-          // Add cleanup logic for your app's data here
+
+          // Sweep orphaned organizations (issue #70). The org plugin auto-creates
+          // a personal org per user, but better-auth's `organization` table has no
+          // FK to user — on delete, `member` rows cascade away while the org row
+          // survives as a zero-member orphan. The NOT EXISTS guard only removes
+          // orgs whose last member just went; shared orgs with remaining members
+          // are untouched. Harmless no-op if the org plugin isn't in use.
+          try {
+            await d1
+              .prepare(
+                `DELETE FROM organization
+                 WHERE NOT EXISTS (SELECT 1 FROM member m WHERE m.organizationId = organization.id)`
+              )
+              .run()
+          } catch (err) {
+            console.error(
+              JSON.stringify({
+                event: 'auth_afterdelete_org_cleanup_failed',
+                userId: user.id,
+                error: err instanceof Error ? err.message : String(err),
+              })
+            )
+          }
+
+          // Add further cleanup for your app's data here:
           // - Remove from mailing lists
           // - Delete stored files (R2)
           // - Clear caches (KV)
