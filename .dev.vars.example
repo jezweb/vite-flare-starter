@@ -66,6 +66,24 @@ APP_NAME=Vite Flare Starter
 NODE_ENV=development
 
 # ============================================
+# Chat Agent Tuning - OPTIONAL
+# ============================================
+# Tool-loop step cap. The default (12) suits multi-tool / RAG flows
+# (find_tools → search → re-search → synthesise). Lower only if you want
+# to bound cost on a single-tool agent; too low and the agent runs out of
+# steps before writing a reply (tools complete, no answer). See issue #73.
+# CHAT_MAX_STEPS=12
+
+# Scope the agent's tool catalogue per fork (issue #74). A smaller catalogue
+# noticeably improves the free Workers AI default models — they stop wandering
+# into irrelevant tools. Entries are comma-separated; each matches a tool name
+# exactly, or as a prefix when ending in '*'. Set at most one.
+#   Allowlist (agent sees ONLY these):
+# CHAT_TOOLS_INCLUDE=core_*,knowledge_*,web_search,entity_*
+#   Denylist (drop these from the full catalogue):
+# CHAT_TOOLS_EXCLUDE=slack_*,notion_*,atlassian_*,image_*,media_*
+
+# ============================================
 # Feature Flags
 # ============================================
 # Control which features are shown in the application.

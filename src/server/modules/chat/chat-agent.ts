@@ -971,14 +971,29 @@ export class ChatAgent extends AIChatAgent<Env> {
     const messagesWithPreamble = dynamicPreamble
       ? [{ role: 'system' as const, content: dynamicPreamble }, ...prunedMessages]
       : prunedMessages
+    // Step cap: the starter's own multi-tool patterns (RAG via find_tools →
+    // search → re-search, delegate, with_review, research sub-agents) routinely
+    // chain 5+ tool calls, exhausting a cap of 5 before the agent ever gets a
+    // step to write the final answer — tools complete, no reply (#73). 12 is
+    // comfortable for RAG + a synthesis step. Override per fork via CHAT_MAX_STEPS.
+    const maxStepsRaw = Number((this.env as unknown as Record<string, unknown>)['CHAT_MAX_STEPS'])
+    const maxSteps = Number.isFinite(maxStepsRaw) && maxStepsRaw > 0 ? maxStepsRaw : 12
+    // Reasoning models spend maxOutputTokens on hidden thinking before any
+    // visible answer, so the per-model default (often 16K) truncates or empties
+    // the reply. Floor reasoning models at 32K (#73; see llm-patterns rule).
+    const maxOutputTokens = modelConfig?.isReasoning
+      ? Math.max(modelConfig.defaultMaxTokens ?? 16384, 32768)
+      : (modelConfig?.defaultMaxTokens ?? 16384)
     const result = streamText({
       abortSignal: options?.abortSignal,
       model,
       system: finalInstructions,
       messages: messagesWithPreamble,
       tools,
-      stopWhen: modelConfig?.supportsTools ? [stepCountIs(5), hasToolCall('done')] : stepCountIs(1),
-      maxOutputTokens: modelConfig?.defaultMaxTokens ?? 16384,
+      stopWhen: modelConfig?.supportsTools
+        ? [stepCountIs(maxSteps), hasToolCall('done')]
+        : stepCountIs(1),
+      maxOutputTokens,
       providerOptions,
       prepareStep: prepareStep as any,
       // Single-retry repair logs the parse failure and returns null,
