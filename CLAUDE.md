@@ -601,6 +601,20 @@ fresh-fork auth issues are environmental, not code.
   used" badge so returning users skip straight to their preferred
   provider. Pure UX nicety — cookie-only, no DB migration.
 
+### Tenancy mode (per-user vs shared)
+
+Rows are scoped to their creator (`userId`) by default. A single-tenant /
+small-team fork can flip the whole app to **shared** scoping with
+`VITE_TENANCY_MODE=shared` — colleagues then see and act on the same records.
+
+Use the `scopeUser(table.userId, userId)` helper
+(`src/server/lib/tenancy.ts`) anywhere you'd write `eq(table.userId, userId)`,
+in reads **and** write guards — it returns the condition in per-user mode and
+`undefined` (no filter) in shared mode, so the two never drift. Filter it out
+of `and(...)` arrays with `isCondition`. The `entities` module is the
+fully-converted reference; extend the helper to your own domain modules. Rows
+still record their creator either way. Pairs with the allowlist auth gate.
+
 ### Test-auth (headless agent login)
 
 When `TEST_AUTH_TOKEN` is set as a wrangler secret, better-auth's

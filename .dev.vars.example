@@ -65,6 +65,14 @@ APP_NAME=Vite Flare Starter
 # Node environment (development | production)
 NODE_ENV=development
 
+# Tenancy mode (issue #80). Default per-user: every row scoped to its creator.
+# Set to "shared" for a single-tenant / small-team fork (one business, a few
+# trusted logins behind the allowlist) where colleagues should see and act on
+# the SAME records. Honoured wherever a module uses the scopeUser() helper —
+# the entities module is the fully-converted reference. Build-time flag (it's a
+# deploy-time decision per fork, not a runtime toggle).
+# VITE_TENANCY_MODE=shared
+
 # ============================================
 # Chat Agent Tuning - OPTIONAL
 # ============================================
