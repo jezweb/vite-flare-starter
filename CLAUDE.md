@@ -246,6 +246,33 @@ only for confirmations and quick decisions. Reference:
 3. Add a nav item in `src/shared/config/nav.ts`
 4. Feature-flag it if it's optional
 
+### App-level layout: the `AppShell` primitive
+
+All three layouts (`DashboardLayout`, `PublicLayout`, `PublicAppLayout`) are
+thin compositions of one primitive: `src/components/ui/app-shell.tsx`. Don't
+fork a whole layout file to change shape — compose `AppShell` differently:
+
+```tsx
+<AppShell
+  sidebar={<AppSidebar />}        // omit → stacked mode (header/main/footer column)
+  header={<SiteHeader />}
+  footer={<AppFooter />}
+  banner={<EmailVerificationBanner />}   // between header and main
+  overlays={<><CommandPalette /><KeyboardShortcuts /></>}  // invisible mounts
+  contentMaxWidth="full"          // narrow | medium | wide | full
+  contentPadding                  // p-4 md:p-6 wrapper (default on)
+>
+  <Outlet />
+</AppShell>
+```
+
+- **Sidebar present** → shadcn `SidebarProvider` + responsive collapse + fixed
+  full-height shell (main scrolls internally). Right-hand rail: pass
+  `<AppSidebar side="right" />` (side is owned by the sidebar element).
+- **No sidebar** → plain `min-h-screen` flex column, natural page flow.
+- Per-area shapes (`/admin` vs `/portal`): compose a different `AppShell` per
+  route group. Per-page width: set `contentMaxWidth` on that route's layout.
+
 ### UI components available
 
 | Component | File | What it does |
