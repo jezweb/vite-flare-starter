@@ -1104,12 +1104,16 @@ export class ChatAgent extends AIChatAgent<Env> {
           const db = drizzle(this.env.DB)
           const inputTokens = usage.inputTokens ?? 0
           const outputTokens = usage.outputTokens ?? 0
+          // reasoningTokens is a SUBSET of outputTokens — record it so the
+          // thinking-vs-answer budget split is visible (#75).
+          const reasoningTokens = usage.reasoningTokens ?? 0
           await db.insert(aiUsageLogs).values({
             userId,
             model: modelId,
             promptTokens: inputTokens,
             completionTokens: outputTokens,
             totalTokens: inputTokens + outputTokens,
+            reasoningTokens,
             durationMs: Date.now() - startTime,
             costUsd: costFor(modelId, inputTokens, outputTokens),
           })

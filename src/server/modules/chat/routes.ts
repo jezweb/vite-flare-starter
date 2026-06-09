@@ -42,6 +42,9 @@ app.get('/usage', async (c) => {
       totalTokens: sql<number>`coalesce(sum(${aiUsageLogs.totalTokens}), 0)`,
       totalPromptTokens: sql<number>`coalesce(sum(${aiUsageLogs.promptTokens}), 0)`,
       totalCompletionTokens: sql<number>`coalesce(sum(${aiUsageLogs.completionTokens}), 0)`,
+      // Reasoning tokens (subset of completion) — shows how much of the output
+      // budget went to thinking vs the visible answer (#75).
+      totalReasoningTokens: sql<number>`coalesce(sum(${aiUsageLogs.reasoningTokens}), 0)`,
     })
     .from(aiUsageLogs)
     .where(eq(aiUsageLogs.userId, userId))
