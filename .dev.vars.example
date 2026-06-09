@@ -74,6 +74,14 @@ NODE_ENV=development
 # steps before writing a reply (tools complete, no answer). See issue #73.
 # CHAT_MAX_STEPS=12
 
+# Thinking / reasoning control for the chat agent. Workers AI reasoning models
+# (the default Kimi K2.6) think by default — they now have a real token budget
+# and the reasoning surfaces in the chat UI's Reasoning accordion. Set to "off"
+# to disable thinking (sends Kimi's chat_template_kwargs.thinking=false through
+# the workers-ai-provider) — useful for forks doing tool-heavy / structured
+# work where reasoning models run away (see the llm-patterns rule). Default: on.
+# CHAT_REASONING=off
+
 # Scope the agent's tool catalogue per fork (issue #74). A smaller catalogue
 # noticeably improves the free Workers AI default models — they stop wandering
 # into irrelevant tools. Entries are comma-separated; each matches a tool name

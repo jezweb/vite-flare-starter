@@ -891,14 +891,35 @@ export class ChatAgent extends AIChatAgent<Env> {
       finalInstructions += `\n\n## Local business answers\n\nWhen the user asks for local businesses, shops, wreckers, venues, or any places with a location, follow this flow:\n1. Call the places search tool (prefer \`places_search\` when available) with a specific query that includes the suburb/city.\n2. Pass the returned places (top 3-8) to the \`show_map\` tool — include name, lat, lng, address, phone, website, rating, reviewCount, type.\n3. Write a short 1-2 sentence intro above the map ("Best bet first: X specialises in Y"). Do not repeat every business in prose — the map cards already show it.`
     }
 
-    // ─── 15. Provider options (Anthropic prompt caching) ────────────
+    // ─── 15. Provider options (prompt caching + deliberate thinking) ─
+    // Anthropic: ephemeral prompt caching.
+    // Workers AI reasoning models (e.g. the default Kimi K2.6): thinking is
+    // ON by default — with a real token budget (see models.ts WORKERS_AI
+    // fallback + the reasoning flag override) it completes fine and surfaces
+    // in the UI's Reasoning accordion. Forks that hit the structured-task
+    // runaway the llm-patterns rule warns about can disable it with
+    // CHAT_REASONING=off, which sends Kimi's `chat_template_kwargs.thinking`
+    // flag through the workers-ai-provider passthrough.
     const isAnthropic = modelId.includes('anthropic/') || modelId.startsWith('claude-')
+    const isWorkersAI = modelId.startsWith('@cf/') || modelId.startsWith('@hf/')
+    const reasoningEnv = String(
+      (this.env as unknown as Record<string, unknown>)['CHAT_REASONING'] ?? ''
+    ).toLowerCase()
+    const reasoningOff = reasoningEnv === 'off' || reasoningEnv === 'false'
+    // Branches are extracted to named consts so each infers its own clean
+    // shape — a ternary over two object literals cross-pollinates
+    // `'workers-ai'?: undefined` onto the Anthropic branch, which violates the
+    // SDK's Record<string, JSONObject> index signature.
+    const anthropicOpts = {
+      openrouter: { cache_control: { type: 'ephemeral' } },
+      anthropic: { cacheControl: { type: 'ephemeral' } },
+    }
+    const workersaiThinkingOff = { 'workers-ai': { chat_template_kwargs: { thinking: false } } }
     const providerOptions = isAnthropic
-      ? {
-          openrouter: { cache_control: { type: 'ephemeral' as const } },
-          anthropic: { cacheControl: { type: 'ephemeral' as const } },
-        }
-      : undefined
+      ? anthropicOpts
+      : isWorkersAI && reasoningOff && modelConfig?.isReasoning
+        ? workersaiThinkingOff
+        : undefined
 
     // ─── 16. prepareStep — token budget + tool gating ───────────────
     const budgetCheck = tokenBudgetPrepareStep({ maxTotalTokens: 50000 })
