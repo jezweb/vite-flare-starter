@@ -287,6 +287,8 @@ fork a whole layout file to change shape — compose `AppShell` differently:
 | **Voice Dictation Button** | `client/modules/chat/components/VoiceDictationButton.tsx` | Streaming STT — iPhone-style live transcript in chat input |
 | **Paste Upload** | `client/hooks/usePasteUpload.ts` | Cmd+V file/image handler |
 | **ConfigDiffCard** | `client/components/ConfigDiffCard.tsx` | Shared approval card with line diff (used by skills editor + propose_patch chat tool) |
+| **MarkdownField** | `client/components/MarkdownField.tsx` | Preview/edit toggle + rich copy (formatted paste) + .md/.txt export for user markdown. Read-only when no `onChange`. |
+| **CopyButton (rich)** | `components/ui/copy-button.tsx` | Pass `html=` for formatted clipboard copy (writes text/html + text/plain). `useCopy().copyRich()` for the hook form. |
 
 ### Choosing a layout for a list page
 
