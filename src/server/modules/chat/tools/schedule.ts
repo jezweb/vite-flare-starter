@@ -76,8 +76,8 @@ function nextCronRun(cronExpr: string, after: Date = new Date()): Date {
   const [minSpec, hourSpec] = parts
 
   // Simple case: fixed time daily (most common for agent tasks)
-  const minute = minSpec === '*' ? 0 : parseInt(minSpec!, 10)
-  const hour = hourSpec === '*' ? 0 : parseInt(hourSpec!, 10)
+  const minute = minSpec === '*' ? 0 : Number.parseInt(minSpec!, 10)
+  const hour = hourSpec === '*' ? 0 : Number.parseInt(hourSpec!, 10)
 
   const next = new Date(after)
   next.setMinutes(minute, 0, 0)
@@ -305,8 +305,13 @@ export async function processDueJobs(
       // Import AI SDK dynamically to avoid circular deps
       const { generateText } = await import('ai')
       const { resolveModel } = await import('@/server/lib/ai/providers')
+      const { resolveModelRole } = await import('@/server/lib/ai/roles')
 
-      const model = resolveModel(env as never, '@cf/moonshotai/kimi-k2.6')
+      // Reasoner role (#87): executing a task / following a skill is
+      // open-ended work — keep thinking on. Forks retune with
+      // MODEL_ROLE_REASONER.
+      const role = resolveModelRole(env as unknown as Record<string, unknown>, 'reasoner')
+      const model = resolveModel(env as never, role.modelId)
 
       let systemPrompt = `You are executing a scheduled task named "${job.name}".`
       if (job.skillName) {

@@ -171,22 +171,6 @@ export function getToolCapableModels(): ModelConfig[] {
   return Object.values(MODEL_REGISTRY).filter((m) => m.supportsTools)
 }
 
-export function getRecommendedModel(
-  useCase: 'general' | 'fast' | 'reasoning' | 'vision' | 'tools'
-): ModelId {
-  switch (useCase) {
-    case 'general':
-    case 'tools':
-      return '@cf/moonshotai/kimi-k2.6'
-    case 'fast':
-      return '@cf/zai-org/glm-4.7-flash'
-    case 'reasoning':
-      return '@cf/qwen/qwq-32b'
-    case 'vision':
-      return '@cf/google/gemma-4-26b-a4b-it'
-  }
-}
-
 export function listModels(): ModelConfig[] {
   return Object.values(MODEL_REGISTRY)
 }

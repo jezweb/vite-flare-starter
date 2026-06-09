@@ -462,6 +462,17 @@ One `OPENROUTER_API_KEY` unlocks everything non-Workers-AI. Direct-provider
 SDKs (`@ai-sdk/anthropic`, `@ai-sdk/openai`, `@ai-sdk/google`) remain as
 fallbacks if you prefer native routing.
 
+**Model roles** (`server/lib/ai/roles.ts`, #87): internal AI calls pick a
+model by *job*, not a hardcoded id. `resolveModelRole(env, 'composer'|'reasoner')`
+returns `{ modelId, thinkingOff }`. **composer** = templated / bounded-structured
+work (chat titles, conversation summaries, `/extract`) with thinking forced
+off so a reasoning model can't burn a capped output budget thinking and return
+empty content; **reasoner** = open-ended work (scheduled tasks) with thinking
+on. Retune per fork with `MODEL_ROLE_COMPOSER` / `MODEL_ROLE_REASONER`. Call
+sites pass `thinkingOffProviderOptions(role)` (AI SDK) or
+`thinkingOffRunOptions(role)` (raw `env.AI.run`). Interactive chat keeps using
+the user-selected model + `CHAT_REASONING`.
+
 **Chat module features:** streaming, tool calling, reasoning, vision,
 structured output, token usage + per-tool telemetry, message editing,
 conversation search (FTS5), export (JSON/Markdown), regenerate,

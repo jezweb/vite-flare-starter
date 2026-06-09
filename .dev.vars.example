@@ -107,6 +107,23 @@ NODE_ENV=development
 # work where reasoning models run away (see the llm-patterns rule). Default: on.
 # CHAT_REASONING=off
 
+# Model roles (issue #87) — pick the model for each *job* without editing code.
+# Two roles, both defaulting to the free Workers AI default (Kimi K2.6):
+#   composer — templated / bounded-structured calls (chat titles, conversation
+#              summaries, /extract). Thinking is forced OFF for this role so a
+#              reasoning model can't burn the (often capped) output budget
+#              thinking and return empty content.
+#   reasoner — open-ended work (scheduled tasks following a skill). Thinking on.
+# The Kimi default works well for both — leave these unset unless you have a
+# reason to swap. CAVEAT: some composer call sites use AI SDK structured output
+# (generateObject / Output.object via workers-ai-provider), and not every model
+# handles that — the gpt-oss family, for instance, returns empty there (verified
+# 2026-06-10; see ~/.claude/rules/workers-ai-gotchas.md). If you override
+# composer, pick a model proven on structured output (e.g. Kimi, nemotron) or
+# you'll break /extract + conversation titles.
+# MODEL_ROLE_COMPOSER=@cf/moonshotai/kimi-k2.6
+# MODEL_ROLE_REASONER=@cf/moonshotai/kimi-k2.6
+
 # Scope the agent's tool catalogue per fork (issue #74). A smaller catalogue
 # noticeably improves the free Workers AI default models — they stop wandering
 # into irrelevant tools. Entries are comma-separated; each matches a tool name

@@ -8,7 +8,7 @@ import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { generateObject } from 'ai'
-import { createWorkersAI } from 'workers-ai-provider'
+import { resolveModel, resolveModelRole, thinkingOffProviderOptions } from '@/server/lib/ai'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import { createD1ChatStorage } from './storage'
 import { searchFTS } from '@/server/lib/search'
@@ -215,9 +215,12 @@ app.post('/:id/summarise', async (c) => {
       .slice(0, 1500)
 
   try {
-    const workersai = createWorkersAI({ binding: c.env.AI })
+    // Title/summary is a composer task (#87) — thinking off so the bounded
+    // structured output isn't starved by the default reasoning model.
+    const role = resolveModelRole(c.env as unknown as Record<string, unknown>, 'composer')
     const { object } = await generateObject({
-      model: workersai('@cf/moonshotai/kimi-k2.6'),
+      model: resolveModel(c.env, role.modelId),
+      providerOptions: thinkingOffProviderOptions(role),
       schema: z.object({
         title: z
           .string()
@@ -368,13 +371,15 @@ app.post('/:id/compact', async (c) => {
     }
   }
   if (!summary) {
-    // Workers AI fallback. Kimi K2.6 handles long input fine and is
-    // free, so this is the right default when no OpenRouter key.
+    // Composer-role fallback (#87) — free default model with thinking off so
+    // the recap isn't starved. Handles long input fine; right when no
+    // OpenRouter key is set.
     try {
       const { generateText } = await import('ai')
-      const workersai = createWorkersAI({ binding: c.env.AI })
+      const role = resolveModelRole(c.env as unknown as Record<string, unknown>, 'composer')
       const result = await generateText({
-        model: workersai('@cf/moonshotai/kimi-k2.6'),
+        model: resolveModel(c.env, role.modelId),
+        providerOptions: thinkingOffProviderOptions(role),
         prompt:
           'Summarise this conversation transcript into a dense 5-8 sentence recap. Include: what the user is working on, key facts (names, numbers, decisions), what was done, and any open threads.\n\nTRANSCRIPT:\n---\n' +
           transcript +
@@ -412,7 +417,7 @@ app.post('/:id/compact', async (c) => {
             type: 'text',
             text:
               `**Continued from a previous conversation.** Here's a recap of what we covered:\n\n${summary}\n\n` +
-              `_Ask anything to pick up from here._`,
+              '_Ask anything to pick up from here._',
           },
         ],
       },

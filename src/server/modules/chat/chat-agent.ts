@@ -31,6 +31,7 @@ import {
 } from '@cloudflare/ai-chat'
 import {
   streamText,
+  generateText,
   convertToModelMessages,
   pruneMessages,
   smoothStream,
@@ -58,7 +59,12 @@ import {
   type SearchableTool,
 } from '@/server/lib/ai/tool-search'
 import { toAiSdkTool } from '@/server/lib/ai/tool-adapter'
-import { resolveModelForUser } from '@/server/lib/ai/providers'
+import { resolveModelForUser, resolveModel } from '@/server/lib/ai/providers'
+import {
+  resolveModelRole,
+  thinkingOffProviderOptions,
+  WORKERS_AI_THINKING_OFF,
+} from '@/server/lib/ai/roles'
 import { costFor } from '@/server/lib/ai/cost'
 import { buildModel } from '@/server/lib/ai/middleware'
 import { buildCacheableSystemPrompt } from '@/server/lib/ai/context'
@@ -171,8 +177,12 @@ async function autoTitleConversation(
         ?.text?.slice(0, 500) ?? ''
     if (!userText || !assistantText) return
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result: any = await (env.AI as any).run('@cf/moonshotai/kimi-k2.6', {
+    // Composer role (#87): a bounded, templated task. Thinking-off is
+    // essential here — with the 40-token cap a reasoning model would spend
+    // the whole budget thinking and return an empty title.
+    const role = resolveModelRole(env as unknown as Record<string, unknown>, 'composer')
+    const result = await generateText({
+      model: resolveModel(env as never, role.modelId),
       messages: [
         {
           role: 'system',
@@ -181,9 +191,10 @@ async function autoTitleConversation(
         },
         { role: 'user', content: `USER: ${userText}\n\nASSISTANT: ${assistantText}\n\nTitle:` },
       ],
-      max_tokens: 40,
+      maxOutputTokens: 40,
+      providerOptions: thinkingOffProviderOptions(role),
     })
-    const raw = (result?.response || result?.text || '').toString().trim()
+    const raw = (result.text || '').toString().trim()
     const title = raw
       .replace(/^["'`]|["'`]$/g, '')
       .replace(/[.!?]+$/, '')
@@ -914,11 +925,10 @@ export class ChatAgent extends AIChatAgent<Env> {
       openrouter: { cache_control: { type: 'ephemeral' } },
       anthropic: { cacheControl: { type: 'ephemeral' } },
     }
-    const workersaiThinkingOff = { 'workers-ai': { chat_template_kwargs: { thinking: false } } }
     const providerOptions = isAnthropic
       ? anthropicOpts
       : isWorkersAI && reasoningOff && modelConfig?.isReasoning
-        ? workersaiThinkingOff
+        ? WORKERS_AI_THINKING_OFF
         : undefined
 
     // ─── 16. prepareStep — token budget + tool gating ───────────────
