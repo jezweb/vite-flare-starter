@@ -1088,7 +1088,7 @@ export class ChatAgent extends AIChatAgent<Env> {
           )
         }
       },
-      onFinish: async ({ usage }) => {
+      onFinish: async ({ usage, reasoningText }) => {
         // Clean up MCP connections (env + per-user).
         if (mcpCleanup) {
           try {
@@ -1105,8 +1105,19 @@ export class ChatAgent extends AIChatAgent<Env> {
           const inputTokens = usage.inputTokens ?? 0
           const outputTokens = usage.outputTokens ?? 0
           // reasoningTokens is a SUBSET of outputTokens — record it so the
-          // thinking-vs-answer budget split is visible (#75).
-          const reasoningTokens = usage.reasoningTokens ?? 0
+          // thinking-vs-answer budget split is visible (#75). Many providers
+          // (notably the Workers AI binding for Kimi) stream the reasoning TEXT
+          // but never report a reasoning-token count — it's bundled into
+          // completionTokens. Fall back to a length estimate (~4 chars/token)
+          // so the default model's thinking size is still measurable; the
+          // provider-reported value wins whenever it's present.
+          const reportedReasoning = usage.reasoningTokens ?? 0
+          const reasoningTokens =
+            reportedReasoning > 0
+              ? reportedReasoning
+              : reasoningText
+                ? Math.round(reasoningText.length / 4)
+                : 0
           await db.insert(aiUsageLogs).values({
             userId,
             model: modelId,
