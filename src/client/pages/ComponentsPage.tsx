@@ -89,6 +89,7 @@ import {
 import { DatePicker } from '@/components/ui/date-picker'
 import { AudioRecorder } from '@/client/components/AudioRecorder'
 import { EmptyState } from '@/client/components/EmptyState'
+import { MarkdownField } from '@/client/components/MarkdownField'
 import { toast } from 'sonner'
 import { AlertCircle, Check, Info, MoreHorizontal, Terminal, Inbox, PanelRight } from 'lucide-react'
 
@@ -708,6 +709,36 @@ export function ComponentsPage() {
 
           <Card>
             <CardHeader>
+              <CardTitle>Markdown Field</CardTitle>
+              <CardDescription>
+                Preview/edit toggle, rich copy (formatted paste into Outlook / Docs), and .md/.txt
+                export. Read-only when no onChange is passed.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <Label className="text-xs text-muted-foreground mb-2 block">
+                  Editable (onChange provided)
+                </Label>
+                <MarkdownFieldDemo />
+              </div>
+              <Separator />
+              <div>
+                <Label className="text-xs text-muted-foreground mb-2 block">
+                  Read-only (preview + copy + export, no Edit toggle)
+                </Label>
+                <MarkdownField
+                  value={
+                    '## Release notes\n\n- Shipped **rich copy**\n- Added `<MarkdownField>`\n\nPaste this into a doc to see the formatting survive.'
+                  }
+                  exportName="release-notes"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <CardTitle>Separator</CardTitle>
               <CardDescription>Visual divider between content sections</CardDescription>
             </CardHeader>
@@ -728,6 +759,14 @@ export function ComponentsPage() {
       </Tabs>
     </PageContainer>
   )
+}
+
+/** Demo wrapper for the editable MarkdownField — holds the draft state. */
+function MarkdownFieldDemo() {
+  const [draft, setDraft] = useState(
+    '# Meeting notes\n\nDiscussed the **Q3 roadmap**:\n\n1. Ship the inbox\n2. Wire up _routines_\n3. Audit the [docs](https://example.com)\n\n> Toggle **Edit** to see the raw markdown.'
+  )
+  return <MarkdownField value={draft} onChange={setDraft} exportName="meeting-notes" />
 }
 
 /**
