@@ -34,4 +34,31 @@ describe('signup allowlist gate (#88)', () => {
   it('blocks an email with no domain when the gate is active', () => {
     expect(isSignupAllowed('garbage', { ALLOWED_AUTH_DOMAINS: 'acme.com' })).toBe(false)
   })
+
+  describe('test-domain bypass (#91)', () => {
+    it('allows *@test.<x>.local when TEST_AUTH_TOKEN is set, even behind an active allowlist', () => {
+      const cfg = { ALLOWED_AUTH_DOMAINS: 'acme.com', TEST_AUTH_TOKEN: 'secret' }
+      expect(isSignupAllowed('alice@test.vite-flare.local', cfg)).toBe(true)
+      // Real domains still gated as normal.
+      expect(isSignupAllowed('eve@evil.com', cfg)).toBe(false)
+    })
+
+    it('bypasses even AUTH_ALLOWLIST=true fail-closed mode', () => {
+      expect(
+        isSignupAllowed('bot@test.anything.local', { AUTH_ALLOWLIST: 'true', TEST_AUTH_TOKEN: 'x' })
+      ).toBe(true)
+    })
+
+    it('does NOT bypass without TEST_AUTH_TOKEN (no token → no widening)', () => {
+      expect(
+        isSignupAllowed('alice@test.vite-flare.local', { ALLOWED_AUTH_DOMAINS: 'acme.com' })
+      ).toBe(false)
+    })
+
+    it('only bypasses the strict test pattern, not lookalikes', () => {
+      const cfg = { ALLOWED_AUTH_DOMAINS: 'acme.com', TEST_AUTH_TOKEN: 'secret' }
+      expect(isSignupAllowed('alice@test.acme.com', cfg)).toBe(false) // not .local
+      expect(isSignupAllowed('alice@nottest.foo.local', cfg)).toBe(false) // not test.*
+    })
+  })
 })

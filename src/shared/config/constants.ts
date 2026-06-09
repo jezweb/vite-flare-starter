@@ -99,6 +99,21 @@ export const CACHE = {
 } as const
 
 /**
+ * Test-auth email pattern (security primitive).
+ *
+ * Headless agents mint sessions only for emails matching this shape, so
+ * the test-auth endpoints can never take over a real account. Two call
+ * sites depend on it and MUST agree, so it lives here as one source of
+ * truth: (1) the /api/test-auth/cookies validator, (2) the signup
+ * allowlist gate, which bypasses these emails when TEST_AUTH_TOKEN is set
+ * so headless tests work even behind an active allowlist (#88, #91).
+ *
+ * `.local` TLD is reserved and unroutable, so these addresses can never
+ * receive mail or correspond to a real inbox.
+ */
+export const TEST_EMAIL_PATTERN = /^[a-z0-9._-]+@test\.[a-z0-9.-]+\.local$/i
+
+/**
  * Application Version
  * Read from package.json at build time via Vite. In Node contexts
  * (drizzle-kit generating migrations) the global isn't defined, so

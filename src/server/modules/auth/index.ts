@@ -2,7 +2,7 @@ import { betterAuth } from 'better-auth'
 import { organization } from 'better-auth/plugins/organization'
 import { testUtils, lastLoginMethod } from 'better-auth/plugins'
 import type { D1Database } from '@cloudflare/workers-types'
-import { SESSION } from '@/shared/config/constants'
+import { SESSION, TEST_EMAIL_PATTERN } from '@/shared/config/constants'
 import { logActivity } from '@/server/modules/activity/log'
 import { sendEmail, type EmailEnv } from '@/server/modules/email/service'
 
@@ -67,8 +67,20 @@ function parseTrustedOrigins(envValue?: string): string[] {
  */
 export function isSignupAllowed(
   email: string,
-  cfg: { ALLOWED_AUTH_EMAILS?: string; ALLOWED_AUTH_DOMAINS?: string; AUTH_ALLOWLIST?: string }
+  cfg: {
+    ALLOWED_AUTH_EMAILS?: string
+    ALLOWED_AUTH_DOMAINS?: string
+    AUTH_ALLOWLIST?: string
+    TEST_AUTH_TOKEN?: string
+  }
 ): boolean {
+  const lower = email.toLowerCase().trim()
+  // Test-domain bypass (#91): when headless test-auth is enabled, its
+  // *@test.<x>.local users must be creatable regardless of the allowlist —
+  // otherwise minting a test session behind an active allowlist null-derefs.
+  // Gated on TEST_AUTH_TOKEN so this never widens signup in production
+  // (no token → no bypass → the .local addresses fall through to the gate).
+  if (cfg.TEST_AUTH_TOKEN && TEST_EMAIL_PATTERN.test(lower)) return true
   const split = (raw?: string) =>
     (raw ?? '')
       .split(',')
@@ -79,7 +91,6 @@ export function isSignupAllowed(
   const forced = String(cfg.AUTH_ALLOWLIST ?? '').toLowerCase() === 'true'
   const active = forced || emails.size > 0 || domains.size > 0
   if (!active) return true // gate off → open signup (public-starter default)
-  const lower = email.toLowerCase().trim()
   if (emails.has(lower)) return true
   const domain = lower.split('@')[1]
   return !!domain && domains.has(domain)
