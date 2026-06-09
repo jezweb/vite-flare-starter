@@ -52,6 +52,39 @@ function parseTrustedOrigins(envValue?: string): string[] {
  * used this forwarder) worked. One constructor = one place to add a var = no
  * drift. See issue #71.
  */
+/**
+ * Signup allowlist gate (issue #88). Pure + exported for testing.
+ *
+ * The gate is ACTIVE when either list is non-empty OR AUTH_ALLOWLIST='true'.
+ * When inactive (the public-starter default) it allows everyone — so a fresh
+ * fork's Google sign-in keeps working untouched. When active, only emails
+ * matching the explicit list or an allowed domain may create an account;
+ * AUTH_ALLOWLIST='true' with empty lists fails closed (rejects all) so a
+ * client deploy that forgot to populate the lists blocks rather than opens.
+ *
+ * Fires on user CREATION only (wired into databaseHooks.user.create.before),
+ * so existing users are never affected.
+ */
+export function isSignupAllowed(
+  email: string,
+  cfg: { ALLOWED_AUTH_EMAILS?: string; ALLOWED_AUTH_DOMAINS?: string; AUTH_ALLOWLIST?: string }
+): boolean {
+  const split = (raw?: string) =>
+    (raw ?? '')
+      .split(',')
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean)
+  const emails = new Set(split(cfg.ALLOWED_AUTH_EMAILS))
+  const domains = new Set(split(cfg.ALLOWED_AUTH_DOMAINS).map((d) => d.replace(/^@/, '')))
+  const forced = String(cfg.AUTH_ALLOWLIST ?? '').toLowerCase() === 'true'
+  const active = forced || emails.size > 0 || domains.size > 0
+  if (!active) return true // gate off → open signup (public-starter default)
+  const lower = email.toLowerCase().trim()
+  if (emails.has(lower)) return true
+  const domain = lower.split('@')[1]
+  return !!domain && domains.has(domain)
+}
+
 export function createAuthFromEnv(d1: D1Database, env: Record<string, unknown>) {
   return createAuth(d1, {
     BETTER_AUTH_SECRET: String(env['BETTER_AUTH_SECRET'] ?? ''),
@@ -66,6 +99,9 @@ export function createAuthFromEnv(d1: D1Database, env: Record<string, unknown>) 
     ENABLE_EMAIL_SIGNUP: env['ENABLE_EMAIL_SIGNUP'] as string | undefined,
     TRUSTED_ORIGINS: env['TRUSTED_ORIGINS'] as string | undefined,
     TEST_AUTH_TOKEN: env['TEST_AUTH_TOKEN'] as string | undefined,
+    ALLOWED_AUTH_EMAILS: env['ALLOWED_AUTH_EMAILS'] as string | undefined,
+    ALLOWED_AUTH_DOMAINS: env['ALLOWED_AUTH_DOMAINS'] as string | undefined,
+    AUTH_ALLOWLIST: env['AUTH_ALLOWLIST'] as string | undefined,
     EMAIL: env['EMAIL'],
     SEND_EMAIL: env['SEND_EMAIL'],
   })
@@ -91,6 +127,21 @@ export function createAuth(
     ENABLE_EMAIL_LOGIN?: string // Set to 'true' to enable email/password (default: disabled)
     ENABLE_EMAIL_SIGNUP?: string // Set to 'true' to allow signups (requires ENABLE_EMAIL_LOGIN)
     TRUSTED_ORIGINS?: string
+    /**
+     * Signup allowlist (issue #88) — single-tenant / invite-only gate. Both
+     * comma-separated. The gate activates when either list is set OR
+     * AUTH_ALLOWLIST='true'; when active, only matching emails can create an
+     * account. Fires on user CREATION only, so existing users are never locked
+     * out. Unset (and AUTH_ALLOWLIST off) → open signup (public-starter default).
+     */
+    ALLOWED_AUTH_EMAILS?: string // e.g. "alice@acme.com,bob@acme.com"
+    ALLOWED_AUTH_DOMAINS?: string // e.g. "acme.com,jezweb.net"
+    /**
+     * Force the allowlist gate on even with empty lists → fail closed (reject
+     * everyone). For client deploys where forgetting to populate the lists
+     * should block, not open, signup.
+     */
+    AUTH_ALLOWLIST?: string
     /**
      * When set, loads better-auth's testUtils plugin so headless agents
      * (Playwright, audit sub-agents) can mint real session cookies via
@@ -198,6 +249,18 @@ export function createAuth(
     databaseHooks: {
       user: {
         create: {
+          // Signup allowlist gate (issue #88) — runs before the DB write.
+          // Returning false blocks creation (better-auth surfaces it as
+          // unable_to_create_user, which the sign-in page renders via ?error=,
+          // see #69). Inactive by default → allows everyone.
+          before: async (newUser) => {
+            const email = typeof newUser.email === 'string' ? newUser.email : ''
+            if (!isSignupAllowed(email, env)) {
+              console.warn(JSON.stringify({ event: 'auth_signup_blocked', email }))
+              return false
+            }
+            return { data: newUser }
+          },
           after: async (newUser) => {
             await logActivity(d1, {
               userId: newUser.id,

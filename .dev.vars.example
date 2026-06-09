@@ -47,6 +47,23 @@ GOOGLE_CLIENT_SECRET=your-client-secret
 # ENABLE_EMAIL_SIGNUP=true
 
 # ============================================
+# Signup Allowlist - OPTIONAL (issue #88)
+# ============================================
+# Invite-only / single-tenant gate. The gate ACTIVATES when either list below
+# is set (or AUTH_ALLOWLIST=true); only matching emails can then create an
+# account. Fires on account CREATION only — existing users are never locked out.
+# Unset (default) → open signup, so a fresh public fork is unaffected.
+# Blocked sign-ins surface as "This account isn't authorised" on the sign-in
+# page (see issue #69). Pairs with VITE_TENANCY_MODE=shared for a turnkey
+# single-tenant deployment.
+#
+# ⚠️  For a client deploy you almost always want at least ALLOWED_AUTH_DOMAINS —
+#     an unset allowlist means anyone with a Google account can sign up.
+# ALLOWED_AUTH_EMAILS=alice@acme.com,bob@acme.com
+# ALLOWED_AUTH_DOMAINS=acme.com,jezweb.net
+# AUTH_ALLOWLIST=true   # force the gate on even with empty lists → fail closed
+
+# ============================================
 # Email Configuration - OPTIONAL
 # ============================================
 # Only needed for email verification or password reset
