@@ -179,6 +179,8 @@ pnpm dev
 
 Open [http://localhost:5173](http://localhost:5173) and sign in.
 
+**Going to production?** See [GOING-LIVE.md](GOING-LIVE.md): creating the remote D1 + R2, running migrations, setting secrets, the better-auth / Google-OAuth URL gotcha that wastes an afternoon, deploy, and your own domain.
+
 ---
 
 ## Agent toolkit
