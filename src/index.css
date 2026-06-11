@@ -430,19 +430,44 @@
 }
 
 /* ── Walkabout tour spotlight ──────────────────────────────────────────────
-   The halo the guided tour scrolls down the page (see modules/walkabout).
-   Uses shadcn semantic tokens; pulses primary↔ring so it reads in light + dark.
-   Respects reduced-motion. */
-.tour-spotlight {
-  outline: 3px solid var(--color-primary);
-  outline-offset: 4px;
-  border-radius: 0.75rem;
-  animation: tour-pulse 1.6s ease-in-out infinite;
+   When the narration reaches a section, a ring DRAWS itself clockwise around it
+   (conic-gradient revealed by an animated sweep angle — "a cover revealing it"),
+   then a soft glow breathes (3s). The ring hugs the INSIDE edge so overflow-hidden
+   cards don't clip it. NEVER colour-pulse the outline — alternating colours read
+   as the image blinking during narration (Jez, watching the recorded tour). Steady
+   primary ring + breathing box-shadow glow instead. shadcn tokens; reduced-motion safe. */
+@property --tour-sweep {
+  syntax: '<percentage>';
+  initial-value: 0%;
+  inherits: false;
 }
-@keyframes tour-pulse {
-  0%, 100% { outline-color: var(--color-primary); }
-  50% { outline-color: var(--color-ring); }
+.tour-spotlight {
+  position: relative;
+  animation: tour-breathe 3s ease-in-out 0.9s infinite;
+}
+.tour-spotlight::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 0.75rem;
+  padding: 3px;
+  background: conic-gradient(var(--color-primary) var(--tour-sweep), transparent 0);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: tour-draw 0.9s ease-out forwards;
+}
+@keyframes tour-draw {
+  from { --tour-sweep: 0%; }
+  to { --tour-sweep: 100%; }
+}
+@keyframes tour-breathe {
+  0%, 100% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--color-primary) 10%, transparent); }
+  50% { box-shadow: 0 0 0 12px color-mix(in srgb, var(--color-primary) 28%, transparent); }
 }
 @media (prefers-reduced-motion: reduce) {
   .tour-spotlight { animation: none; }
+  .tour-spotlight::after { animation: none; --tour-sweep: 100%; }
 }
