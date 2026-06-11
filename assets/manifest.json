@@ -4,7 +4,9 @@
   "hero": {
     "video": "assets/videos/full-tour.mp4",
     "duration_s": 182,
-    "caption": "The full guided tour \u2014 13 modules end to end, narration-synced moving spotlight. Homepage hero / README top / YouTube."
+    "caption": "The full guided tour \u2014 13 modules end to end, narration-synced moving spotlight. Homepage hero / README top / YouTube.",
+    "url": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/full-tour.mp4",
+    "url_mobile": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/full-tour-mobile.mp4"
   },
   "og_image": "assets/stills/og-image.png",
   "modules": [
@@ -18,7 +20,8 @@
       "hero_clip": {
         "start_s": 2.94,
         "dur_s": 24.48
-      }
+      },
+      "video_url": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/module-home.mp4"
     },
     {
       "name": "chat",
@@ -30,7 +33,8 @@
       "hero_clip": {
         "start_s": 27.57,
         "dur_s": 14.53
-      }
+      },
+      "video_url": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/module-chat.mp4"
     },
     {
       "name": "skills",
@@ -42,7 +46,8 @@
       "hero_clip": {
         "start_s": 42.25,
         "dur_s": 14.63
-      }
+      },
+      "video_url": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/module-skills.mp4"
     },
     {
       "name": "knowledge",
@@ -54,7 +59,8 @@
       "hero_clip": {
         "start_s": 57.03,
         "dur_s": 10.37
-      }
+      },
+      "video_url": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/module-knowledge.mp4"
     },
     {
       "name": "inbox",
@@ -66,7 +72,8 @@
       "hero_clip": {
         "start_s": 67.55,
         "dur_s": 14.7
-      }
+      },
+      "video_url": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/module-inbox.mp4"
     },
     {
       "name": "projects",
@@ -78,7 +85,8 @@
       "hero_clip": {
         "start_s": 82.4,
         "dur_s": 12.86
-      }
+      },
+      "video_url": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/module-projects.mp4"
     },
     {
       "name": "routines",
@@ -90,7 +98,8 @@
       "hero_clip": {
         "start_s": 95.41,
         "dur_s": 13.44
-      }
+      },
+      "video_url": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/module-routines.mp4"
     },
     {
       "name": "agents",
@@ -102,7 +111,8 @@
       "hero_clip": {
         "start_s": 109.0,
         "dur_s": 12.39
-      }
+      },
+      "video_url": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/module-agents.mp4"
     },
     {
       "name": "activity",
@@ -114,7 +124,8 @@
       "hero_clip": {
         "start_s": 121.55,
         "dur_s": 10.84
-      }
+      },
+      "video_url": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/module-activity.mp4"
     },
     {
       "name": "connections",
@@ -126,7 +137,8 @@
       "hero_clip": {
         "start_s": 132.53,
         "dur_s": 15.08
-      }
+      },
+      "video_url": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/module-connections.mp4"
     },
     {
       "name": "files",
@@ -138,7 +150,8 @@
       "hero_clip": {
         "start_s": 147.77,
         "dur_s": 10.75
-      }
+      },
+      "video_url": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/module-files.mp4"
     },
     {
       "name": "organizations",
@@ -150,7 +163,8 @@
       "hero_clip": {
         "start_s": 158.67,
         "dur_s": 9.81
-      }
+      },
+      "video_url": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/module-organizations.mp4"
     },
     {
       "name": "settings",
@@ -162,7 +176,9 @@
       "hero_clip": {
         "start_s": 168.63,
         "dur_s": 12.9
-      }
+      },
+      "video_url": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/module-settings.mp4"
     }
-  ]
+  ],
+  "public_base": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev"
 }

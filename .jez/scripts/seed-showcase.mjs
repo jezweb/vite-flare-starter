@@ -136,6 +136,31 @@ console.log(`  ${MEMORIES.length} memories`)
 console.log('seeding example routines…')
 await post('/api/routines/seed-examples', {})
 
+console.log('inviting demo org members…')
+try {
+  const orgRes = await fetch(`${URL_BASE}/api/auth/organization/get-full-organization`, {
+    headers: { Cookie: COOKIE },
+  })
+  const org = await orgRes.json()
+  const orgId = (org.data || org)?.id
+  if (orgId) {
+    // better-auth requires an Origin header (CSRF guard) on these writes.
+    for (const [email, role] of [
+      ['dana@northwind.example', 'member'],
+      ['marcus@meridian.example', 'admin'],
+      ['lena@globex.example', 'member'],
+    ]) {
+      await fetch(`${URL_BASE}/api/auth/organization/invite-member`, {
+        method: 'POST',
+        headers: { Cookie: COOKIE, Origin: URL_BASE, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, role, organizationId: orgId }),
+      })
+    }
+  }
+} catch (e) {
+  console.warn('  ! org invites:', String(e).slice(0, 100))
+}
+
 // ── 2b. files (multipart) ──────────────────────────────────────────────────
 console.log('uploading demo files…')
 const tmp = (name, content) => {

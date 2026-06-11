@@ -12,9 +12,9 @@
 
 ### Take the guided tour
 
-The starter ships **Walkabout** — it demos itself. Below is the home dashboard with the narration-synced moving spotlight; the full **[3-minute narrated tour](https://vite-flare-starter.webfonts.workers.dev)** walks all 13 modules end to end (sign in and it offers the tour, or hit the Guide button bottom-right).
+The starter ships **Walkabout** — it demos itself. Below is the home dashboard with the narration-synced moving spotlight. **▶ [Watch the full 3-minute narrated tour](https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/full-tour.mp4)** (with sound) — it walks all 13 modules end to end. Or sign in to the [live demo](https://vite-flare-starter.webfonts.workers.dev) and it offers the tour itself.
 
-![Home — the workspace dashboard with the moving spotlight drawing around each section as the voice describes it](./assets/gifs/home.gif)
+[![Home — the workspace dashboard with the moving spotlight drawing around each section as the voice describes it. Click to watch the full narrated tour.](./assets/gifs/home.gif)](https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/full-tour.mp4)
 
 Every module, with real seeded data — no mockups:
 
@@ -27,7 +27,7 @@ Every module, with real seeded data — no mockups:
 | ![Agents](./assets/gifs/agents.gif) | ![Activity](./assets/gifs/activity.gif) |
 | **Agents** — self-describing stateful agents with memory, tools, and an approval queue. | **Activity** — the audit trail; every action with stats by type. |
 
-More GIFs, the per-module shorts, clean stills, and the asset manifest live in [`assets/`](./assets/). Regenerate the whole set after any change: `node .jez/scripts/record-tour.mjs` → `slice-modules.mjs` → `make-gifs.mjs` (stale demos are a choice).
+More GIFs, the 13 per-module shorts, clean stills, a **9:16 vertical cut** (for Shorts/Reels), and the asset manifest live in [`assets/`](./assets/) — the videos are hosted on R2 (`manifest.json` has the URLs). Regenerate the whole set after any change: `seed-showcase.mjs` → `record-tour.mjs` → `slice-modules.mjs` → `make-gifs.mjs` → `shoot-stills.mjs` (stale demos are a choice).
 
 ### Spaces — multi-user, multi-agent rooms
 

@@ -40,11 +40,16 @@ const OUT_DIR = path.join(ROOT, '.jez/videos')
 const FRAMES_DIR = path.join(OUT_DIR, 'frames-tmp')
 fs.rmSync(FRAMES_DIR, { recursive: true, force: true })
 fs.mkdirSync(FRAMES_DIR, { recursive: true })
-const MP4 = path.join(OUT_DIR, 'tour-demo.mp4')
+const MP4 = path.join(OUT_DIR, process.env.WALKABOUT_OUT || 'tour-demo.mp4')
 
 const BASE = process.env.WALKABOUT_URL || 'http://localhost:5173'
 const AUTH_STATE = process.env.WALKABOUT_AUTH_STATE || path.join(ROOT, '.jez/auth-state.json')
 const STEPS = Number(process.env.WALKABOUT_STEPS || 5)
+// Viewport: desktop 1440x900 by default; set WALKABOUT_VIEWPORT=390x844 (+ optional
+// WALKABOUT_MOBILE=1) for a 9:16 phone cut (Shorts/Reels).
+const [VW, VH] = (process.env.WALKABOUT_VIEWPORT || '1440x900').split('x').map(Number)
+const MOBILE = process.env.WALKABOUT_MOBILE === '1'
+const DSF = Number(process.env.WALKABOUT_DSF || (MOBILE ? 2 : 1))
 
 if (!fs.existsSync(AUTH_STATE)) {
   console.error(`No auth state at ${AUTH_STATE}. See the header of this file for how to make one.`)
@@ -66,7 +71,10 @@ const browser = await chromium.launch({
   args: ['--autoplay-policy=no-user-gesture-required'],
 })
 const context = await browser.newContext({
-  viewport: { width: 1440, height: 900 },
+  viewport: { width: VW, height: VH },
+  deviceScaleFactor: DSF,
+  isMobile: MOBILE,
+  hasTouch: MOBILE,
   storageState: AUTH_STATE,
 })
 
@@ -96,8 +104,8 @@ cdp.on('Page.screencastFrame', (ev) => {
 })
 await cdp.send('Page.startScreencast', {
   format: 'png',
-  maxWidth: 1440,
-  maxHeight: 900,
+  maxWidth: VW * DSF,
+  maxHeight: VH * DSF,
   everyNthFrame: 1,
 })
 
