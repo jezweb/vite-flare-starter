@@ -13,10 +13,12 @@ far (FieldProof, HR Helper, RightCover) is a fork of this family — building it
 here makes future forks flip a flag, and upgrades the canonical templates to
 shadcn-native. The shipped sample tour IS the starter's own walkthrough.
 
-Skill + deep reference:
-- `~/.claude/skills/walkabout/SKILL.md` + `templates/` (FieldProof working files)
-- `~/Documents/.jez/knowledge/guided-voice-tour-pattern.md` (rationale, gotchas, adopters)
-- Public repo: github.com/jezweb/walkabout
+Skill + deep reference (consolidated to ONE folder 2026-06-11):
+- `~/Documents/walkabout/` — the single source of truth (public repo github.com/jezweb/walkabout)
+  - `skill/SKILL.md` (workflow/phases), `templates/` (FieldProof worked files),
+    `docs/pattern.md` (rationale, every gotcha, the Adopters list — add new adopters HERE, commit, push)
+- `~/Documents/.jez/knowledge/guided-voice-tour-pattern.md` is now just a pointer + private breadcrumbs
+- Deploy the skill to a machine: `cp -R ~/Documents/walkabout/skill ~/.claude/skills/walkabout` + restart
 
 ## Starter integration points (verified 2026-06-11)
 
@@ -67,8 +69,16 @@ halo CSS appended to src/index.css
 3. **Recorders** — adapt the two .mjs for better-auth (storageState default; test-auth optional).
    Gate: frame-extract a recorded mp4.
 
-## Feed back to the skill when done
+## Feed back to the skill (all into `~/Documents/walkabout/`, then commit + push)
 
-- shadcn-native Tour.tsx/Assist.tsx → update `~/.claude/skills/walkabout/templates/` + public repo
-- `onStepPage` prefix-match → bake into template Tour.tsx (knowledge doc says it should)
-- Add vite-flare-starter to the Adopters list (4th) — note "now a shipped module, not a transplant"
+- Add vite-flare-starter to `docs/pattern.md` Adopters list (5th — Zoomtrail is 4th).
+  Note: first to ship Walkabout as a MODULE, not a transplant; shadcn-native Tour.tsx +
+  `onStepPage` prefix-match proven live on the self-redirecting /dashboard/chat step;
+  Guide reuses the #87 composer role + global rate limiter; recorders use storageState/
+  test-auth; feature-aware steps. Wart: chat step mints an empty conversation per run.
+- `onStepPage` prefix-match → template `Tour.tsx` still exact-match; doc says it should adopt it.
+- storageState/URL/STEPS recorder params → templates still API-key + hardcoded fieldproof.au.
+- Deterministic Audio-mock test (Zoomtrail's reusable harness) → the right way to unit-test
+  the starter module's spotlight-moves + auto-advance without real playback.
+- DONE this session (synced from Jez's parallel edits): halo = conic-draw + breathing glow
+  (no colour-pulse); record-tour.mjs = lossless CDP screencast (no recordVideo shimmer).
