@@ -1,0 +1,5 @@
+[
+  { "name": "home-spotlight", "src": "assets/videos/full-tour.mp4", "start": 2, "dur": 8, "width": 820, "fps": 15 },
+  { "name": "chat", "src": "assets/videos/full-tour.mp4", "start": 28, "dur": 6, "width": 820, "fps": 15 },
+  { "name": "skills", "src": "assets/videos/full-tour.mp4", "start": 42, "dur": 6, "width": 820, "fps": 15 }
+]
