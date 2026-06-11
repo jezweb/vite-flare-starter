@@ -88,6 +88,9 @@ export const RATE_LIMITS = {
 
   /** AI-Sparkle skill rewrites per hour (one OPENROUTER_API_KEY call each) */
   SKILL_AI_EDIT: 20,
+
+  /** Walkabout Guide questions per hour (one AI call each) */
+  WALKABOUT_ASK: 40,
 } as const
 
 /**

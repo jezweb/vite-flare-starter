@@ -20,6 +20,7 @@ import { SiteHeader } from '@/components/site-header'
 import { CommandPalette } from '@/client/components/CommandPalette'
 import { KeyboardShortcuts } from '@/client/components/KeyboardShortcuts'
 import { EmailVerificationBanner } from '@/client/components/EmailVerificationBanner'
+import { WalkaboutOverlay } from '@/client/modules/walkabout/components/WalkaboutOverlay'
 import { NAV_SECTIONS } from '@/shared/config/nav'
 import { appConfig } from '@/shared/config/app'
 import { useEnsureTimezone } from '@/client/modules/settings/hooks/useEnsureTimezone'
@@ -85,6 +86,7 @@ export function DashboardLayout() {
           <KeyboardShortcuts />
           <DocumentTitleSync />
           <TimezoneAutoDetect />
+          <WalkaboutOverlay />
         </>
       }
     >

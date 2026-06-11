@@ -53,6 +53,11 @@ const ENDPOINT_LIMITS: Record<string, RateLimitConfig> = {
     key: 'EXTRACT',
     windowMs: 60 * 60 * 1000,
   },
+  // Walkabout Guide: 40 questions per hour (one AI call each)
+  'POST:/api/walkabout/ask': {
+    key: 'WALKABOUT_ASK',
+    windowMs: 60 * 60 * 1000,
+  },
 }
 
 /**

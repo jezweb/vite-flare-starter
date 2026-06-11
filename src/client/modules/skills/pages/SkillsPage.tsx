@@ -166,7 +166,7 @@ export function SkillsPage() {
       ) : (
         <>
           {/* Toolbar — search + count + view toggle */}
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3" data-tour="skills-list">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input

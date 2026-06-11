@@ -101,6 +101,9 @@ const ApprovalsPage = lazy(() =>
 const InboxPage = lazy(() =>
   import('./modules/inbox/pages/InboxPage').then((m) => ({ default: m.InboxPage }))
 )
+const QuestionsPage = lazy(() =>
+  import('./modules/walkabout/pages/QuestionsPage').then((m) => ({ default: m.QuestionsPage }))
+)
 const JobsPage = lazy(() =>
   import('./modules/jobs/pages/JobsPage').then((m) => ({ default: m.JobsPage }))
 )
@@ -332,6 +335,7 @@ function App() {
                   <Route path="admin-chat" element={<AdminAgentPage />} />
                   <Route path="agents" element={<AgentsPage />} />
                   <Route path="inbox" element={<InboxPage />} />
+                  <Route path="questions" element={<QuestionsPage />} />
                   <Route path="jobs" element={<JobsPage />} />
                   <Route path="jobs/:id" element={<JobDetailPage />} />
                   <Route path="findings" element={<FindingsPage />} />

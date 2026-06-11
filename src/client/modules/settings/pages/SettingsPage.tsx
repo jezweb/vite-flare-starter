@@ -65,7 +65,10 @@ export function SettingsPage() {
       <Tabs value={tab} onValueChange={handleTabChange} className="hidden w-full sm:block">
         {/* lg+: vertical sidebar nav next to content. md: horizontal tabs at top. */}
         <div className="flex flex-col gap-6 lg:flex-row">
-          <TabsList className="h-auto w-full flex-wrap justify-start gap-1 bg-transparent p-0 lg:w-48 lg:flex-col lg:items-stretch lg:gap-0.5 lg:bg-muted/30 lg:p-1">
+          <TabsList
+            data-tour="settings-tabs"
+            className="h-auto w-full flex-wrap justify-start gap-1 bg-transparent p-0 lg:w-48 lg:flex-col lg:items-stretch lg:gap-0.5 lg:bg-muted/30 lg:p-1"
+          >
             {tabOptions.map((opt) => (
               <TabsTrigger
                 key={opt.value}

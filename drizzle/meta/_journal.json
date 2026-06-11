@@ -330,6 +330,13 @@
       "when": 1781001249416,
       "tag": "20260609103409_add_reasoning_tokens",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "6",
+      "when": 1781146034898,
+      "tag": "20260611024714_walkabout_questions",
+      "breakpoints": true
     }
   ]
 }

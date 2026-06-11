@@ -57,6 +57,7 @@ import entitiesRoutes from './modules/entities/routes'
 import findingsRoutes, { learningsApp as learningsRoutes } from './modules/findings/routes'
 import organizationsRoutes from './modules/organizations/routes'
 import credentialsRoutes from './modules/credentials/routes'
+import walkaboutRoutes from './modules/walkabout/routes'
 import spacesRoutes from './modules/spaces/routes'
 import adminAgentRoutes from './modules/admin-tools/routes'
 import agentInstancesRoutes from './modules/agent-instances/routes'
@@ -328,6 +329,7 @@ app.route('/api/findings', findingsRoutes)
 app.route('/api/learnings', learningsRoutes)
 app.route('/api/organizations', organizationsRoutes)
 app.route('/api/credentials', credentialsRoutes)
+app.route('/api/walkabout', walkaboutRoutes)
 app.route('/api/webhooks', webhookRoutes)
 app.route('/api/user-meta', userMetaRoutes)
 app.route('/api/skills', skillsRoutes)
