@@ -37,11 +37,11 @@ SCRIPTS: dict[str, list[tuple[str | None, str]]] = {
          "Welcome! This is your Home — the first thing you see when you sign in. "
          "It greets you and gives you a snapshot of what's on."),
         ('[data-tour="home-panels"]',
-         "These two panels show what needs you — anything waiting on a yes or no "
-         "— and your most recent activity, so you pick up where you left off."),
+         "These panels show what needs you — anything waiting on a yes or no — "
+         "and what your agents have been up to, so you pick up where you left off."),
         ('[data-tour="home-actions"]',
-         "And the quick actions drop you straight into the common jobs. "
-         "Everything else lives in the sidebar on the left."),
+         "Quick actions drop you straight into the common jobs. Everything else "
+         "lives in the sidebar on the left — let's take a look."),
     ],
     'step-2': [
         ('[data-tour="chat-input"]',
@@ -51,20 +51,63 @@ SCRIPTS: dict[str, list[tuple[str | None, str]]] = {
     ],
     'step-3': [
         ('[data-tour="skills-list"]',
-         "Skills are how you teach the agent. Each one is a short markdown file "
-         "describing a procedure — the agent loads it only when it's relevant. "
-         "Edit one and the AI Sparkle button rewrites it for you, with a diff to "
-         "approve before it saves."),
+         "Skills are how you teach the agent. Each one's a short markdown file "
+         "describing a procedure the agent loads only when it's relevant. Edit one "
+         "and the AI Sparkle button rewrites it for you, with a diff to approve."),
     ],
     'step-4': [
-        ('[data-tour="inbox-list"]',
-         "The Inbox is your one place to pay attention. Things the agent noticed, "
-         "and anything it wants you to approve, all in one list — most important "
-         "first. Approvals open right here, no jumping around."),
+        ('[data-tour="knowledge-list"]',
+         "Knowledge is your long-form reference — docs the agent can search or bake "
+         "into every prompt. It sits between small memories and step-by-step skills."),
     ],
     'step-5': [
+        ('[data-tour="inbox-list"]',
+         "The Inbox is your one place to pay attention. Things the agent noticed, "
+         "and anything it wants you to approve, all in one list, most important first. "
+         "Approvals open right here, no jumping around."),
+    ],
+    'step-6': [
+        ('[data-tour="projects-list"]',
+         "Projects organise the work. Group your conversations and give each project "
+         "its own memory, system prompt, and default model — so the agent shows up "
+         "already knowing the context."),
+    ],
+    'step-7': [
+        ('[data-tour="routines-list"]',
+         "Routines are recurring agents. Fire one on a schedule with a tools "
+         "allow-list and loaded skills, and its findings flow to the channels you "
+         "pick — the inbox, a notification, or an approval queue."),
+    ],
+    'step-8': [
+        ('[data-tour="agents-list"]',
+         "These are the agents the app ships with — each one self-describing. "
+         "They're stateful: a persona with memory, tools, and a human-in-the-loop "
+         "approval queue for anything that matters."),
+    ],
+    'step-9': [
+        ('[data-tour="activity-list"]',
+         "Activity is the audit trail — every action on the account, with stats by "
+         "type and a full history. Nothing your agents do is a black box."),
+    ],
+    'step-10': [
+        ('[data-tour="connections-list"]',
+         "Connections plug in your tools — Gmail, Drive, Notion, Slack and more, "
+         "over the open MCP standard. Each connection is labelled and allow-listed "
+         "per agent, so work and personal accounts stay separate."),
+    ],
+    'step-11': [
+        ('[data-tour="files-list"]',
+         "Files is your document store — upload to the cloud, scope to a project, "
+         "preview inline. The agent can read them, and the meter tracks your storage."),
+    ],
+    'step-12': [
+        ('[data-tour="org-members"]',
+         "And it's multi-tenant from day one. Invite your team, manage roles, and "
+         "switch between your personal space and shared organisations."),
+    ],
+    'step-13': [
         ('[data-tour="settings-tabs"]',
-         "And Settings is where you make it yours — your profile, theme, sessions, "
+         "Last stop — Settings, where you make it yours: profile, theme, sessions, "
          "and a full export of your data. That's the tour! Have a click around — "
          "everything you're seeing is yours to explore."),
     ],

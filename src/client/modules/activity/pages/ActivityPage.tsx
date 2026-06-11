@@ -206,10 +206,12 @@ export function ActivityPage() {
 
   return (
     <PageContainer type="queue">
-      <PageHeader
-        title="Activity"
-        subtitle="Every action on your account — sign-ins, items created, updated, archived — with timestamps."
-      />
+      <div data-tour="activity-list">
+        <PageHeader
+          title="Activity"
+          subtitle="Every action on your account — sign-ins, items created, updated, archived — with timestamps."
+        />
+      </div>
 
       <StatGrid
         items={[

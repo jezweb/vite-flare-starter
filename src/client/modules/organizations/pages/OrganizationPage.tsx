@@ -88,35 +88,37 @@ export function OrganizationPage() {
 
   return (
     <PageContainer type="form">
-      <PageHeader
-        title={tab === 'members' ? 'Members' : 'Organisation settings'}
-        subtitle={
-          tab === 'members'
-            ? `Invite teammates and manage their roles in ${active.organizationName}.`
-            : `Identity, branding, and policies for ${active.organizationName}.`
-        }
-        docTitle="Organisation"
-        help={
-          <HelpDisclosure>
-            <KeyValueList>
-              <KeyValueRow label="Org name" value={active.organizationName} />
-              <KeyValueRow label="Slug" value={active.organizationSlug} mono />
-              <KeyValueRow
-                label="Your role"
-                value={<span className="capitalize">{active.role}</span>}
-              />
-            </KeyValueList>
-          </HelpDisclosure>
-        }
-        trailing={
-          tab === 'members' ? (
-            <Button size="sm" className="gap-1.5" onClick={() => setInviteOpen(true)}>
-              <UserPlus className="size-3.5" />
-              Invite member
-            </Button>
-          ) : undefined
-        }
-      />
+      <div data-tour="org-members">
+        <PageHeader
+          title={tab === 'members' ? 'Members' : 'Organisation settings'}
+          subtitle={
+            tab === 'members'
+              ? `Invite teammates and manage their roles in ${active.organizationName}.`
+              : `Identity, branding, and policies for ${active.organizationName}.`
+          }
+          docTitle="Organisation"
+          help={
+            <HelpDisclosure>
+              <KeyValueList>
+                <KeyValueRow label="Org name" value={active.organizationName} />
+                <KeyValueRow label="Slug" value={active.organizationSlug} mono />
+                <KeyValueRow
+                  label="Your role"
+                  value={<span className="capitalize">{active.role}</span>}
+                />
+              </KeyValueList>
+            </HelpDisclosure>
+          }
+          trailing={
+            tab === 'members' ? (
+              <Button size="sm" className="gap-1.5" onClick={() => setInviteOpen(true)}>
+                <UserPlus className="size-3.5" />
+                Invite member
+              </Button>
+            ) : undefined
+          }
+        />
+      </div>
 
       <PageFilters>
         <PageFilterTabs value={tab} onValueChange={(v) => setTab(v as Tab)}>

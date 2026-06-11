@@ -126,32 +126,34 @@ export function ConnectorsPage() {
 
   return (
     <PageContainer type="catalog">
-      <PageHeader
-        title="Connections"
-        subtitle="Connect Gmail, Calendar, Drive, Notion, Slack, GitHub, Linear, Stripe, and more so your AI can read and act on them for you. Most take 30 seconds — sign in with the provider, click Approve."
-        help={
-          <HelpDisclosure>
-            <p className="text-muted-foreground max-w-xl">
-              Want to connect something not in the list? Paste a connection URL — public, your own
-              service, or community-hosted. Sign-in via the provider or a token; tokens are
-              encrypted at rest. Built on the open Model Context Protocol (MCP) standard, so any
-              MCP-compatible server URL works.
-            </p>
-          </HelpDisclosure>
-        }
-        trailing={
-          <>
-            <Button onClick={() => setBrowseOpen(true)}>
-              <Search className="mr-2 h-4 w-4" />
-              Add an integration
-            </Button>
-            <Button variant="outline" onClick={() => setCustomOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Connect by URL
-            </Button>
-          </>
-        }
-      />
+      <div data-tour="connections-list">
+        <PageHeader
+          title="Connections"
+          subtitle="Connect Gmail, Calendar, Drive, Notion, Slack, GitHub, Linear, Stripe, and more so your AI can read and act on them for you. Most take 30 seconds — sign in with the provider, click Approve."
+          help={
+            <HelpDisclosure>
+              <p className="text-muted-foreground max-w-xl">
+                Want to connect something not in the list? Paste a connection URL — public, your own
+                service, or community-hosted. Sign-in via the provider or a token; tokens are
+                encrypted at rest. Built on the open Model Context Protocol (MCP) standard, so any
+                MCP-compatible server URL works.
+              </p>
+            </HelpDisclosure>
+          }
+          trailing={
+            <>
+              <Button onClick={() => setBrowseOpen(true)}>
+                <Search className="mr-2 h-4 w-4" />
+                Add an integration
+              </Button>
+              <Button variant="outline" onClick={() => setCustomOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Connect by URL
+              </Button>
+            </>
+          }
+        />
+      </div>
 
       {/* Native integrations — first-class connections that aren't MCP.
           Each panel self-hides if its provider isn't configured. */}

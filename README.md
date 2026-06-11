@@ -10,6 +10,25 @@
 
 ## See it in action
 
+### Take the guided tour
+
+The starter ships **Walkabout** — it demos itself. Below is the home dashboard with the narration-synced moving spotlight; the full **[3-minute narrated tour](https://vite-flare-starter.webfonts.workers.dev)** walks all 13 modules end to end (sign in and it offers the tour, or hit the Guide button bottom-right).
+
+![Home — the workspace dashboard with the moving spotlight drawing around each section as the voice describes it](./assets/gifs/home.gif)
+
+Every module, with real seeded data — no mockups:
+
+| | |
+|---|---|
+| ![AI Chat](./assets/gifs/chat.gif) | ![Skills](./assets/gifs/skills.gif) |
+| **AI Chat** — streaming answers, tool calls, skills + memory, rich inline output. | **Skills** — markdown procedures the agent loads on demand; AI-Sparkle rewrites with a diff to approve. |
+| ![Inbox](./assets/gifs/inbox.gif) | ![Routines](./assets/gifs/routines.gif) |
+| **Inbox** — findings + approvals in one attention surface; approvals open inline. | **Routines** — recurring agents on a schedule; findings flow to the channels you pick. |
+| ![Agents](./assets/gifs/agents.gif) | ![Activity](./assets/gifs/activity.gif) |
+| **Agents** — self-describing stateful agents with memory, tools, and an approval queue. | **Activity** — the audit trail; every action with stats by type. |
+
+More GIFs, the per-module shorts, clean stills, and the asset manifest live in [`assets/`](./assets/). Regenerate the whole set after any change: `node .jez/scripts/record-tour.mjs` → `slice-modules.mjs` → `make-gifs.mjs` (stale demos are a choice).
+
 ### Spaces — multi-user, multi-agent rooms
 
 ![Spaces in action — @-mentioned an agent, it auto-threaded a long reply, hover bar shows quick reactions + emoji picker + thread + more menu](./docs/gifs/spaces-mention-flow-900.gif)
