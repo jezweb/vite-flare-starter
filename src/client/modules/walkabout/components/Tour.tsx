@@ -230,6 +230,7 @@ export function Tour({
   // not look like wandering), any OTHER page holds the tour; play resumes
   // where it left off, back on the step's page. Prefix-match so a step's own
   // redirect / a detail drill-down still counts as "on the page".
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `i` is an intentional re-run trigger (see note below), not read in the body
   useEffect(() => {
     if (onStepPage(location.pathname, step.path)) {
       arrivedRef.current = true
@@ -242,7 +243,11 @@ export function Tour({
     }
     audioRef.current?.pause()
     setPaused(true)
-  }, [location.pathname, step.path, paused])
+    // `i` must be a dep too: if two consecutive steps share a path (a fork that
+    // puts steps on one route), without it this effect never re-runs to re-mark
+    // arrival after the narrate effect reset arrivedRef — wander-pause goes
+    // silently dead on the second step (Zoomtrail's tabs lesson, router version).
+  }, [i, location.pathname, step.path, paused])
 
   const wandered = !onStepPage(location.pathname, step.path)
   const last = i === TOUR_STEPS.length - 1
