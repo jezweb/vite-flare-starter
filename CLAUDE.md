@@ -630,6 +630,10 @@ still record their creator either way. Pairs with the allowlist auth gate.
 
 ### Test-auth (headless agent login)
 
+**Never reassign real user data to a test user** — every user-scoped table
+cascade-deletes, so the next test-auth cleanup wipes the real rows. Clone
+rows or use a real OAuth login instead. Full rule: `docs/test-auth-cascade-delete.md`.
+
 When `TEST_AUTH_TOKEN` is set as a wrangler secret, better-auth's
 `testUtils()` plugin loads and `/api/test-auth/*` exposes a thin HTTP
 wrapper for headless agents. Without the env var, the plugin isn't
