@@ -67,3 +67,7 @@ SESSION.md
 .jez/audit-state/
 .jez/**/*.{mov,mp4,webm}
 worker-configuration.d.ts
+
+# Walkabout recorder (live session cookie + rendered videos)
+.jez/auth-state.json
+.jez/videos/
