@@ -881,5 +881,8 @@ Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
 ### Bail — 2026-06-15T11:05Z
 Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
 
+### Bail — 2026-06-15T17:04Z
+Bailed — past 2am local (UTC 17:04 > 16:00) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
+
 ### Bail — 2026-06-15T10:05Z
 Bailed — no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
