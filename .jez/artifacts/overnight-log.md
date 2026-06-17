@@ -60,6 +60,9 @@ Pick the next AVAILABLE task in ID order. Mark it in-progress in your iteration 
 
 *(Append entries here. Newest at top.)*
 
+### Bail — 2026-06-17T20:05Z
+Bailed — past 2am local (UTC 20:05 > 16:00) and no tasks left. Git repo was in diverged state (local main had unrelated history from prior force-push); fixed by resetting local main to origin/main after git config repair.
+
 ### Bail — 2026-06-17T19:04Z
 Bailed — past 2am local (UTC 19:04 > 16:00) and no tasks left (all candidate tasks are DONE, SKIP, or BLOCKED).
 
