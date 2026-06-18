@@ -3,7 +3,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { eq, ne, and, desc, isNull } from 'drizzle-orm'
 import { UAParser } from 'ua-parser-js'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
-import { createAuth } from '@/server/modules/auth'
+import { createAuthFromEnv } from '@/server/modules/auth'
 import * as schema from '@/server/db/schema'
 
 const app = new Hono<AuthContext>()
@@ -19,14 +19,7 @@ app.use('/*', authMiddleware)
  * object and use its session id instead — reliable on any deployment.
  */
 async function getCurrentSessionId(c: any): Promise<string | null> {
-  const auth = createAuth(c.env.DB, {
-    BETTER_AUTH_SECRET: c.env.BETTER_AUTH_SECRET,
-    BETTER_AUTH_URL: c.env.BETTER_AUTH_URL,
-    GOOGLE_CLIENT_ID: c.env.GOOGLE_CLIENT_ID,
-    GOOGLE_CLIENT_SECRET: c.env.GOOGLE_CLIENT_SECRET,
-    EMAIL_API_KEY: c.env.EMAIL_API_KEY,
-    EMAIL_FROM: c.env.EMAIL_FROM,
-  })
+  const auth = createAuthFromEnv(c.env.DB, c.env as unknown as Record<string, unknown>)
   const session = await auth.api.getSession({ headers: c.req.raw.headers })
   return session?.session?.id ?? null
 }

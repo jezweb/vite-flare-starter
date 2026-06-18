@@ -49,10 +49,19 @@ export {
   resolveModelId,
   getModel,
   isReasoningModel,
-  getRecommendedModel,
   listModels,
   getToolCapableModels,
 } from './models'
+
+// Model roles (#87) — composer vs reasoner, with thinking-off for composer.
+export {
+  resolveModelRole,
+  thinkingOffProviderOptions,
+  thinkingOffRunOptions,
+  MODEL_ROLES,
+  WORKERS_AI_THINKING_OFF,
+} from './roles'
+export type { ModelRole, ResolvedRole } from './roles'
 
 // Types
 export type {

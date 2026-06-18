@@ -34,7 +34,7 @@ import {
   conversationMessages,
   conversations,
 } from '@/server/modules/conversations/db/schema'
-import { createAuth } from '@/server/modules/auth'
+import { createAuthFromEnv } from '@/server/modules/auth'
 
 interface SpaceConnectionState {
   userId: string
@@ -193,14 +193,7 @@ export class SpaceAgent extends Agent<any, Record<string, never>> {
     ctx: ConnectionContext
   ): Promise<string | null> {
     try {
-      const auth = createAuth(env.DB, {
-        BETTER_AUTH_SECRET: env.BETTER_AUTH_SECRET,
-        BETTER_AUTH_URL: env.BETTER_AUTH_URL,
-        GOOGLE_CLIENT_ID: env.GOOGLE_CLIENT_ID,
-        GOOGLE_CLIENT_SECRET: env.GOOGLE_CLIENT_SECRET,
-        EMAIL_API_KEY: env.EMAIL_API_KEY,
-        EMAIL_FROM: env.EMAIL_FROM,
-      })
+      const auth = createAuthFromEnv(env.DB, env as unknown as Record<string, unknown>)
       const session = await auth.api.getSession({ headers: ctx.request.headers })
       return session?.user?.id ?? null
     } catch (err) {

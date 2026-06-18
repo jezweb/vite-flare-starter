@@ -79,6 +79,16 @@ export const features = {
   connectors: isEnabled('VITE_FEATURE_CONNECTORS'),
 
   /**
+   * Walkabout — the app demos itself. A guided voice tour that walks the real
+   * pages with a narration-synced moving spotlight, plus the Guide (ask-the-app
+   * AI grounded in a hand-written app guide, every question logged). Default ON
+   * so a fresh fork ships its own walkthrough; rewrite the steps + knowledge for
+   * your product. See src/client/modules/walkabout + src/server/modules/walkabout
+   * and the `walkabout` skill. Demo-video recorders live in .jez/scripts.
+   */
+  walkabout: isEnabled('VITE_FEATURE_WALKABOUT'),
+
+  /**
    * Voice agent example page (@cloudflare/voice + agents SDK).
    * Default OFF — opt-in by setting VITE_FEATURE_VOICE_AGENT=true.
    * This demo shows the pattern; not every fork needs a voice UI.

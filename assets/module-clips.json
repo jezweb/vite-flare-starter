@@ -1,0 +1,80 @@
+[
+  {
+    "name": "home",
+    "src": "assets/videos/full-tour.mp4",
+    "start": 2.94,
+    "dur": 24.48
+  },
+  {
+    "name": "chat",
+    "src": "assets/videos/full-tour.mp4",
+    "start": 27.57,
+    "dur": 14.53
+  },
+  {
+    "name": "skills",
+    "src": "assets/videos/full-tour.mp4",
+    "start": 42.25,
+    "dur": 14.63
+  },
+  {
+    "name": "knowledge",
+    "src": "assets/videos/full-tour.mp4",
+    "start": 57.03,
+    "dur": 10.37
+  },
+  {
+    "name": "inbox",
+    "src": "assets/videos/full-tour.mp4",
+    "start": 67.55,
+    "dur": 14.7
+  },
+  {
+    "name": "projects",
+    "src": "assets/videos/full-tour.mp4",
+    "start": 82.4,
+    "dur": 12.86
+  },
+  {
+    "name": "routines",
+    "src": "assets/videos/full-tour.mp4",
+    "start": 95.41,
+    "dur": 13.44
+  },
+  {
+    "name": "agents",
+    "src": "assets/videos/full-tour.mp4",
+    "start": 109.0,
+    "dur": 12.39
+  },
+  {
+    "name": "activity",
+    "src": "assets/videos/full-tour.mp4",
+    "start": 121.55,
+    "dur": 10.84
+  },
+  {
+    "name": "connections",
+    "src": "assets/videos/full-tour.mp4",
+    "start": 132.53,
+    "dur": 15.08
+  },
+  {
+    "name": "files",
+    "src": "assets/videos/full-tour.mp4",
+    "start": 147.77,
+    "dur": 10.75
+  },
+  {
+    "name": "organizations",
+    "src": "assets/videos/full-tour.mp4",
+    "start": 158.67,
+    "dur": 9.81
+  },
+  {
+    "name": "settings",
+    "src": "assets/videos/full-tour.mp4",
+    "start": 168.63,
+    "dur": 12.9
+  }
+]

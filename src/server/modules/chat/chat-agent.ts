@@ -31,6 +31,7 @@ import {
 } from '@cloudflare/ai-chat'
 import {
   streamText,
+  generateText,
   convertToModelMessages,
   pruneMessages,
   smoothStream,
@@ -58,7 +59,12 @@ import {
   type SearchableTool,
 } from '@/server/lib/ai/tool-search'
 import { toAiSdkTool } from '@/server/lib/ai/tool-adapter'
-import { resolveModelForUser } from '@/server/lib/ai/providers'
+import { resolveModelForUser, resolveModel } from '@/server/lib/ai/providers'
+import {
+  resolveModelRole,
+  thinkingOffProviderOptions,
+  WORKERS_AI_THINKING_OFF,
+} from '@/server/lib/ai/roles'
 import { costFor } from '@/server/lib/ai/cost'
 import { buildModel } from '@/server/lib/ai/middleware'
 import { buildCacheableSystemPrompt } from '@/server/lib/ai/context'
@@ -171,8 +177,12 @@ async function autoTitleConversation(
         ?.text?.slice(0, 500) ?? ''
     if (!userText || !assistantText) return
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result: any = await (env.AI as any).run('@cf/moonshotai/kimi-k2.6', {
+    // Composer role (#87): a bounded, templated task. Thinking-off is
+    // essential here — with the 40-token cap a reasoning model would spend
+    // the whole budget thinking and return an empty title.
+    const role = resolveModelRole(env as unknown as Record<string, unknown>, 'composer')
+    const result = await generateText({
+      model: resolveModel(env as never, role.modelId),
       messages: [
         {
           role: 'system',
@@ -181,9 +191,10 @@ async function autoTitleConversation(
         },
         { role: 'user', content: `USER: ${userText}\n\nASSISTANT: ${assistantText}\n\nTitle:` },
       ],
-      max_tokens: 40,
+      maxOutputTokens: 40,
+      providerOptions: thinkingOffProviderOptions(role),
     })
-    const raw = (result?.response || result?.text || '').toString().trim()
+    const raw = (result.text || '').toString().trim()
     const title = raw
       .replace(/^["'`]|["'`]$/g, '')
       .replace(/[.!?]+$/, '')
@@ -891,14 +902,34 @@ export class ChatAgent extends AIChatAgent<Env> {
       finalInstructions += `\n\n## Local business answers\n\nWhen the user asks for local businesses, shops, wreckers, venues, or any places with a location, follow this flow:\n1. Call the places search tool (prefer \`places_search\` when available) with a specific query that includes the suburb/city.\n2. Pass the returned places (top 3-8) to the \`show_map\` tool — include name, lat, lng, address, phone, website, rating, reviewCount, type.\n3. Write a short 1-2 sentence intro above the map ("Best bet first: X specialises in Y"). Do not repeat every business in prose — the map cards already show it.`
     }
 
-    // ─── 15. Provider options (Anthropic prompt caching) ────────────
+    // ─── 15. Provider options (prompt caching + deliberate thinking) ─
+    // Anthropic: ephemeral prompt caching.
+    // Workers AI reasoning models (e.g. the default Kimi K2.6): thinking is
+    // ON by default — with a real token budget (see models.ts WORKERS_AI
+    // fallback + the reasoning flag override) it completes fine and surfaces
+    // in the UI's Reasoning accordion. Forks that hit the structured-task
+    // runaway the llm-patterns rule warns about can disable it with
+    // CHAT_REASONING=off, which sends Kimi's `chat_template_kwargs.thinking`
+    // flag through the workers-ai-provider passthrough.
     const isAnthropic = modelId.includes('anthropic/') || modelId.startsWith('claude-')
+    const isWorkersAI = modelId.startsWith('@cf/') || modelId.startsWith('@hf/')
+    const reasoningEnv = String(
+      (this.env as unknown as Record<string, unknown>)['CHAT_REASONING'] ?? ''
+    ).toLowerCase()
+    const reasoningOff = reasoningEnv === 'off' || reasoningEnv === 'false'
+    // Branches are extracted to named consts so each infers its own clean
+    // shape — a ternary over two object literals cross-pollinates
+    // `'workers-ai'?: undefined` onto the Anthropic branch, which violates the
+    // SDK's Record<string, JSONObject> index signature.
+    const anthropicOpts = {
+      openrouter: { cache_control: { type: 'ephemeral' } },
+      anthropic: { cacheControl: { type: 'ephemeral' } },
+    }
     const providerOptions = isAnthropic
-      ? {
-          openrouter: { cache_control: { type: 'ephemeral' as const } },
-          anthropic: { cacheControl: { type: 'ephemeral' as const } },
-        }
-      : undefined
+      ? anthropicOpts
+      : isWorkersAI && reasoningOff && modelConfig?.isReasoning
+        ? WORKERS_AI_THINKING_OFF
+        : undefined
 
     // ─── 16. prepareStep — token budget + tool gating ───────────────
     const budgetCheck = tokenBudgetPrepareStep({ maxTotalTokens: 50000 })
@@ -971,14 +1002,29 @@ export class ChatAgent extends AIChatAgent<Env> {
     const messagesWithPreamble = dynamicPreamble
       ? [{ role: 'system' as const, content: dynamicPreamble }, ...prunedMessages]
       : prunedMessages
+    // Step cap: the starter's own multi-tool patterns (RAG via find_tools →
+    // search → re-search, delegate, with_review, research sub-agents) routinely
+    // chain 5+ tool calls, exhausting a cap of 5 before the agent ever gets a
+    // step to write the final answer — tools complete, no reply (#73). 12 is
+    // comfortable for RAG + a synthesis step. Override per fork via CHAT_MAX_STEPS.
+    const maxStepsRaw = Number((this.env as unknown as Record<string, unknown>)['CHAT_MAX_STEPS'])
+    const maxSteps = Number.isFinite(maxStepsRaw) && maxStepsRaw > 0 ? maxStepsRaw : 12
+    // Reasoning models spend maxOutputTokens on hidden thinking before any
+    // visible answer, so the per-model default (often 16K) truncates or empties
+    // the reply. Floor reasoning models at 32K (#73; see llm-patterns rule).
+    const maxOutputTokens = modelConfig?.isReasoning
+      ? Math.max(modelConfig.defaultMaxTokens ?? 16384, 32768)
+      : (modelConfig?.defaultMaxTokens ?? 16384)
     const result = streamText({
       abortSignal: options?.abortSignal,
       model,
       system: finalInstructions,
       messages: messagesWithPreamble,
       tools,
-      stopWhen: modelConfig?.supportsTools ? [stepCountIs(5), hasToolCall('done')] : stepCountIs(1),
-      maxOutputTokens: modelConfig?.defaultMaxTokens ?? 16384,
+      stopWhen: modelConfig?.supportsTools
+        ? [stepCountIs(maxSteps), hasToolCall('done')]
+        : stepCountIs(1),
+      maxOutputTokens,
       providerOptions,
       prepareStep: prepareStep as any,
       // Single-retry repair logs the parse failure and returns null,
@@ -1052,7 +1098,7 @@ export class ChatAgent extends AIChatAgent<Env> {
           )
         }
       },
-      onFinish: async ({ usage }) => {
+      onFinish: async ({ usage, reasoningText }) => {
         // Clean up MCP connections (env + per-user).
         if (mcpCleanup) {
           try {
@@ -1068,12 +1114,27 @@ export class ChatAgent extends AIChatAgent<Env> {
           const db = drizzle(this.env.DB)
           const inputTokens = usage.inputTokens ?? 0
           const outputTokens = usage.outputTokens ?? 0
+          // reasoningTokens is a SUBSET of outputTokens — record it so the
+          // thinking-vs-answer budget split is visible (#75). Many providers
+          // (notably the Workers AI binding for Kimi) stream the reasoning TEXT
+          // but never report a reasoning-token count — it's bundled into
+          // completionTokens. Fall back to a length estimate (~4 chars/token)
+          // so the default model's thinking size is still measurable; the
+          // provider-reported value wins whenever it's present.
+          const reportedReasoning = usage.reasoningTokens ?? 0
+          const reasoningTokens =
+            reportedReasoning > 0
+              ? reportedReasoning
+              : reasoningText
+                ? Math.round(reasoningText.length / 4)
+                : 0
           await db.insert(aiUsageLogs).values({
             userId,
             model: modelId,
             promptTokens: inputTokens,
             completionTokens: outputTokens,
             totalTokens: inputTokens + outputTokens,
+            reasoningTokens,
             durationMs: Date.now() - startTime,
             costUsd: costFor(modelId, inputTokens, outputTokens),
           })

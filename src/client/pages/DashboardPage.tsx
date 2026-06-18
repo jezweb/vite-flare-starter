@@ -110,16 +110,20 @@ export function DashboardPage() {
 
   return (
     <PageContainer type="hub">
-      <PageHeader title={greeting} subtitle={subtitle} docTitle="Home" />
+      <div data-tour="home-welcome">
+        <PageHeader title={greeting} subtitle={subtitle} docTitle="Home" />
+      </div>
 
       <OnboardingChecklist />
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2" data-tour="home-panels">
         <NeedsYouPanel approvals={approvals.data} loading={approvals.isLoading} />
         <RecentRunsPanel runs={runs.data} loading={runs.isLoading} />
       </div>
 
-      <QuickActions />
+      <div data-tour="home-actions">
+        <QuickActions />
+      </div>
 
       {/* CapabilityTour is fork-author content (what this starter ships
           with). Visible only in Builder mode so a returning user doesn't

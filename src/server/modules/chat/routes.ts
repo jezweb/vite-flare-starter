@@ -17,7 +17,7 @@ import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
 import { desc, eq, sql } from 'drizzle-orm'
 import { authMiddleware, requireScopes, type AuthContext } from '@/server/middleware/auth'
-import { resolveModel } from '@/server/lib/ai'
+import { resolveModel, resolveModelRole, thinkingOffProviderOptions } from '@/server/lib/ai'
 import { aiUsageLogs } from './db/schema'
 
 const app = new Hono<AuthContext>()
@@ -42,6 +42,9 @@ app.get('/usage', async (c) => {
       totalTokens: sql<number>`coalesce(sum(${aiUsageLogs.totalTokens}), 0)`,
       totalPromptTokens: sql<number>`coalesce(sum(${aiUsageLogs.promptTokens}), 0)`,
       totalCompletionTokens: sql<number>`coalesce(sum(${aiUsageLogs.completionTokens}), 0)`,
+      // Reasoning tokens (subset of completion) — shows how much of the output
+      // budget went to thinking vs the visible answer (#75).
+      totalReasoningTokens: sql<number>`coalesce(sum(${aiUsageLogs.reasoningTokens}), 0)`,
     })
     .from(aiUsageLogs)
     .where(eq(aiUsageLogs.userId, userId))
@@ -104,22 +107,25 @@ app.post('/extract', async (c) => {
       return c.json({ error: 'Text too long (max 100,000 characters)' }, 400)
     }
 
-    // Tool-capable model for structured output. Workers AI Kimi K2.6 is
-    // the free default; forks can swap if their priorities differ.
-    const modelId = '@cf/moonshotai/kimi-k2.6'
+    // Structured extraction is a composer task (#87) — bounded + templated.
+    // The role resolves to a fast model with thinking off (the default Kimi
+    // would otherwise burn output budget thinking before the JSON). Forks
+    // retune with MODEL_ROLE_COMPOSER.
+    const role = resolveModelRole(c.env as unknown as Record<string, unknown>, 'composer')
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const schema = extractSchemas[schemaName] as any
     const { output } = await generateText({
-      model: resolveModel(c.env, modelId),
+      model: resolveModel(c.env, role.modelId),
       output: Output.object({ schema }),
       prompt: `Extract the following from this text:\n\n${text}`,
+      providerOptions: thinkingOffProviderOptions(role),
     })
 
     return c.json({
       success: true,
       schema: schemaName,
-      model: modelId,
+      model: role.modelId,
       data: output,
     })
   } catch (error) {
@@ -152,14 +158,16 @@ app.post('/stream-extract', async (c) => {
       return c.json({ error: 'Text too long (max 100,000 characters)' }, 400)
     }
 
-    const modelId = '@cf/moonshotai/kimi-k2.6'
+    // Composer role (#87) — same rationale as /extract.
+    const role = resolveModelRole(c.env as unknown as Record<string, unknown>, 'composer')
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const schema = extractSchemas[schemaName] as any
     const result = streamObject({
-      model: resolveModel(c.env, modelId),
+      model: resolveModel(c.env, role.modelId),
       schema,
       prompt: `Extract the following from this text:\n\n${text}`,
+      providerOptions: thinkingOffProviderOptions(role),
     })
 
     return result.toTextStreamResponse()

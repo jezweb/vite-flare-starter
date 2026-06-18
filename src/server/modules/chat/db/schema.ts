@@ -14,6 +14,15 @@ export const aiUsageLogs = sqliteTable(
     promptTokens: integer('prompt_tokens').notNull().default(0),
     completionTokens: integer('completion_tokens').notNull().default(0),
     totalTokens: integer('total_tokens').notNull().default(0),
+    /** Reasoning/thinking tokens — a SUBSET of completionTokens, not additive
+     *  (#75). For reasoning models the model spends part of its output budget
+     *  thinking before the visible answer; this exposes how much, so you can
+     *  see when thinking is eating the budget (the truncation class behind the
+     *  Kimi limit fixes). Provider-reported where available; for providers that
+     *  stream reasoning text but omit the count (notably the Workers AI binding
+     *  for Kimi), it's ESTIMATED from the reasoning text length (~4 chars/tok).
+     *  0 for non-reasoning models / turns with no thinking. */
+    reasoningTokens: integer('reasoning_tokens').notNull().default(0),
     finishReason: text('finish_reason'),
     durationMs: integer('duration_ms'),
     /** Estimated USD cost of this turn — input_tokens × inputPrice/M

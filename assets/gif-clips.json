@@ -1,0 +1,106 @@
+[
+  {
+    "name": "home",
+    "src": "assets/videos/module-home.mp4",
+    "start": 0.2,
+    "dur": 8,
+    "width": 800,
+    "fps": 15
+  },
+  {
+    "name": "chat",
+    "src": "assets/videos/module-chat.mp4",
+    "start": 0.2,
+    "dur": 5.5,
+    "width": 800,
+    "fps": 15
+  },
+  {
+    "name": "skills",
+    "src": "assets/videos/module-skills.mp4",
+    "start": 0.2,
+    "dur": 5.5,
+    "width": 800,
+    "fps": 15
+  },
+  {
+    "name": "knowledge",
+    "src": "assets/videos/module-knowledge.mp4",
+    "start": 0.2,
+    "dur": 5.5,
+    "width": 800,
+    "fps": 15
+  },
+  {
+    "name": "inbox",
+    "src": "assets/videos/module-inbox.mp4",
+    "start": 0.2,
+    "dur": 5.5,
+    "width": 800,
+    "fps": 15
+  },
+  {
+    "name": "projects",
+    "src": "assets/videos/module-projects.mp4",
+    "start": 0.2,
+    "dur": 5.5,
+    "width": 800,
+    "fps": 15
+  },
+  {
+    "name": "routines",
+    "src": "assets/videos/module-routines.mp4",
+    "start": 0.2,
+    "dur": 5.5,
+    "width": 800,
+    "fps": 15
+  },
+  {
+    "name": "agents",
+    "src": "assets/videos/module-agents.mp4",
+    "start": 0.2,
+    "dur": 5.5,
+    "width": 800,
+    "fps": 15
+  },
+  {
+    "name": "activity",
+    "src": "assets/videos/module-activity.mp4",
+    "start": 0.2,
+    "dur": 5.5,
+    "width": 800,
+    "fps": 15
+  },
+  {
+    "name": "connections",
+    "src": "assets/videos/module-connections.mp4",
+    "start": 0.2,
+    "dur": 5.5,
+    "width": 800,
+    "fps": 15
+  },
+  {
+    "name": "files",
+    "src": "assets/videos/module-files.mp4",
+    "start": 0.2,
+    "dur": 5.5,
+    "width": 800,
+    "fps": 15
+  },
+  {
+    "name": "organizations",
+    "src": "assets/videos/module-organizations.mp4",
+    "start": 0.2,
+    "dur": 5.5,
+    "width": 800,
+    "fps": 15
+  },
+  {
+    "name": "settings",
+    "src": "assets/videos/module-settings.mp4",
+    "start": 0.2,
+    "dur": 5.5,
+    "width": 800,
+    "fps": 15
+  }
+]

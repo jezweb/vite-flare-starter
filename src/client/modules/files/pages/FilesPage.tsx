@@ -41,35 +41,37 @@ export function FilesPage() {
 
   return (
     <PageContainer type="queue">
-      <PageHeader
-        title="Files"
-        subtitle="PDFs, images, docs and more — your AI can read them and use them in answers."
-        trailing={
-          <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Upload
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
-              <DialogHeader>
-                <DialogTitle>Upload files</DialogTitle>
-                <DialogDescription>
-                  Drag and drop files or click to browse. Max 10MB per file.
-                </DialogDescription>
-              </DialogHeader>
-              <FileUploader
-                folder={currentFolder === 'all' ? '/' : currentFolder}
-                onUploadComplete={() => {
-                  refetch()
-                  setUploadOpen(false)
-                }}
-              />
-            </DialogContent>
-          </Dialog>
-        }
-      />
+      <div data-tour="files-list">
+        <PageHeader
+          title="Files"
+          subtitle="PDFs, images, docs and more — your AI can read them and use them in answers."
+          trailing={
+            <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Upload
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>Upload files</DialogTitle>
+                  <DialogDescription>
+                    Drag and drop files or click to browse. Max 10MB per file.
+                  </DialogDescription>
+                </DialogHeader>
+                <FileUploader
+                  folder={currentFolder === 'all' ? '/' : currentFolder}
+                  onUploadComplete={() => {
+                    refetch()
+                    setUploadOpen(false)
+                  }}
+                />
+              </DialogContent>
+            </Dialog>
+          }
+        />
+      </div>
 
       <StatGrid
         items={[

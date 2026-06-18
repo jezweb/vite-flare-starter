@@ -246,6 +246,33 @@ only for confirmations and quick decisions. Reference:
 3. Add a nav item in `src/shared/config/nav.ts`
 4. Feature-flag it if it's optional
 
+### App-level layout: the `AppShell` primitive
+
+All three layouts (`DashboardLayout`, `PublicLayout`, `PublicAppLayout`) are
+thin compositions of one primitive: `src/components/ui/app-shell.tsx`. Don't
+fork a whole layout file to change shape — compose `AppShell` differently:
+
+```tsx
+<AppShell
+  sidebar={<AppSidebar />}        // omit → stacked mode (header/main/footer column)
+  header={<SiteHeader />}
+  footer={<AppFooter />}
+  banner={<EmailVerificationBanner />}   // between header and main
+  overlays={<><CommandPalette /><KeyboardShortcuts /></>}  // invisible mounts
+  contentMaxWidth="full"          // narrow | medium | wide | full
+  contentPadding                  // p-4 md:p-6 wrapper (default on)
+>
+  <Outlet />
+</AppShell>
+```
+
+- **Sidebar present** → shadcn `SidebarProvider` + responsive collapse + fixed
+  full-height shell (main scrolls internally). Right-hand rail: pass
+  `<AppSidebar side="right" />` (side is owned by the sidebar element).
+- **No sidebar** → plain `min-h-screen` flex column, natural page flow.
+- Per-area shapes (`/admin` vs `/portal`): compose a different `AppShell` per
+  route group. Per-page width: set `contentMaxWidth` on that route's layout.
+
 ### UI components available
 
 | Component | File | What it does |
@@ -260,6 +287,8 @@ only for confirmations and quick decisions. Reference:
 | **Voice Dictation Button** | `client/modules/chat/components/VoiceDictationButton.tsx` | Streaming STT — iPhone-style live transcript in chat input |
 | **Paste Upload** | `client/hooks/usePasteUpload.ts` | Cmd+V file/image handler |
 | **ConfigDiffCard** | `client/components/ConfigDiffCard.tsx` | Shared approval card with line diff (used by skills editor + propose_patch chat tool) |
+| **MarkdownField** | `client/components/MarkdownField.tsx` | Preview/edit toggle + rich copy (formatted paste) + .md/.txt export for user markdown. Read-only when no `onChange`. |
+| **CopyButton (rich)** | `components/ui/copy-button.tsx` | Pass `html=` for formatted clipboard copy (writes text/html + text/plain). `useCopy().copyRich()` for the hook form. |
 
 ### Choosing a layout for a list page
 
@@ -433,6 +462,17 @@ One `OPENROUTER_API_KEY` unlocks everything non-Workers-AI. Direct-provider
 SDKs (`@ai-sdk/anthropic`, `@ai-sdk/openai`, `@ai-sdk/google`) remain as
 fallbacks if you prefer native routing.
 
+**Model roles** (`server/lib/ai/roles.ts`, #87): internal AI calls pick a
+model by *job*, not a hardcoded id. `resolveModelRole(env, 'composer'|'reasoner')`
+returns `{ modelId, thinkingOff }`. **composer** = templated / bounded-structured
+work (chat titles, conversation summaries, `/extract`) with thinking forced
+off so a reasoning model can't burn a capped output budget thinking and return
+empty content; **reasoner** = open-ended work (scheduled tasks) with thinking
+on. Retune per fork with `MODEL_ROLE_COMPOSER` / `MODEL_ROLE_REASONER`. Call
+sites pass `thinkingOffProviderOptions(role)` (AI SDK) or
+`thinkingOffRunOptions(role)` (raw `env.AI.run`). Interactive chat keeps using
+the user-selected model + `CHAT_REASONING`.
+
 **Chat module features:** streaming, tool calling, reasoning, vision,
 structured output, token usage + per-tool telemetry, message editing,
 conversation search (FTS5), export (JSON/Markdown), regenerate,
@@ -574,7 +614,25 @@ fresh-fork auth issues are environmental, not code.
   used" badge so returning users skip straight to their preferred
   provider. Pure UX nicety — cookie-only, no DB migration.
 
+### Tenancy mode (per-user vs shared)
+
+Rows are scoped to their creator (`userId`) by default. A single-tenant /
+small-team fork can flip the whole app to **shared** scoping with
+`VITE_TENANCY_MODE=shared` — colleagues then see and act on the same records.
+
+Use the `scopeUser(table.userId, userId)` helper
+(`src/server/lib/tenancy.ts`) anywhere you'd write `eq(table.userId, userId)`,
+in reads **and** write guards — it returns the condition in per-user mode and
+`undefined` (no filter) in shared mode, so the two never drift. Filter it out
+of `and(...)` arrays with `isCondition`. The `entities` module is the
+fully-converted reference; extend the helper to your own domain modules. Rows
+still record their creator either way. Pairs with the allowlist auth gate.
+
 ### Test-auth (headless agent login)
+
+**Never reassign real user data to a test user** — every user-scoped table
+cascade-deletes, so the next test-auth cleanup wipes the real rows. Clone
+rows or use a real OAuth login instead. Full rule: `docs/test-auth-cascade-delete.md`.
 
 When `TEST_AUTH_TOKEN` is set as a wrangler secret, better-auth's
 `testUtils()` plugin loads and `/api/test-auth/*` exposes a thin HTTP

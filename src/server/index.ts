@@ -4,7 +4,7 @@ import { logger } from 'hono/logger'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import type { D1Database } from '@cloudflare/workers-types'
-import { createAuth } from './modules/auth'
+import { createAuthFromEnv } from './modules/auth'
 import settingsRoutes from './modules/settings/routes'
 import onboardingRoutes from './modules/onboarding/routes'
 import sessionsRoutes from './modules/settings/sessions'
@@ -57,6 +57,7 @@ import entitiesRoutes from './modules/entities/routes'
 import findingsRoutes, { learningsApp as learningsRoutes } from './modules/findings/routes'
 import organizationsRoutes from './modules/organizations/routes'
 import credentialsRoutes from './modules/credentials/routes'
+import walkaboutRoutes from './modules/walkabout/routes'
 import spacesRoutes from './modules/spaces/routes'
 import adminAgentRoutes from './modules/admin-tools/routes'
 import agentInstancesRoutes from './modules/agent-instances/routes'
@@ -253,17 +254,7 @@ app.get('/api/auth/config', async (c) => {
 
 // Auth routes (better-auth handles all /api/auth/* routes)
 app.all('/api/auth/*', async (c) => {
-  const auth = createAuth(c.env.DB, {
-    BETTER_AUTH_SECRET: c.env.BETTER_AUTH_SECRET,
-    BETTER_AUTH_URL: c.env.BETTER_AUTH_URL,
-    GOOGLE_CLIENT_ID: c.env.GOOGLE_CLIENT_ID,
-    GOOGLE_CLIENT_SECRET: c.env.GOOGLE_CLIENT_SECRET,
-    EMAIL_API_KEY: c.env.EMAIL_API_KEY,
-    EMAIL_FROM: c.env.EMAIL_FROM,
-    ENABLE_EMAIL_LOGIN: c.env.ENABLE_EMAIL_LOGIN,
-    ENABLE_EMAIL_SIGNUP: c.env.ENABLE_EMAIL_SIGNUP,
-    TRUSTED_ORIGINS: c.env.TRUSTED_ORIGINS,
-  })
+  const auth = createAuthFromEnv(c.env.DB, c.env as unknown as Record<string, unknown>)
   return auth.handler(c.req.raw)
 })
 
@@ -338,6 +329,7 @@ app.route('/api/findings', findingsRoutes)
 app.route('/api/learnings', learningsRoutes)
 app.route('/api/organizations', organizationsRoutes)
 app.route('/api/credentials', credentialsRoutes)
+app.route('/api/walkabout', walkaboutRoutes)
 app.route('/api/webhooks', webhookRoutes)
 app.route('/api/user-meta', userMetaRoutes)
 app.route('/api/skills', skillsRoutes)
@@ -513,17 +505,7 @@ type RequestSession = {
 
 async function getRequestSession(env: Env, headers: Headers): Promise<RequestSession | null> {
   try {
-    const auth = createAuth(env.DB, {
-      BETTER_AUTH_SECRET: env.BETTER_AUTH_SECRET,
-      BETTER_AUTH_URL: env.BETTER_AUTH_URL,
-      GOOGLE_CLIENT_ID: env.GOOGLE_CLIENT_ID,
-      GOOGLE_CLIENT_SECRET: env.GOOGLE_CLIENT_SECRET,
-      EMAIL_API_KEY: env.EMAIL_API_KEY,
-      EMAIL_FROM: env.EMAIL_FROM,
-      ENABLE_EMAIL_LOGIN: env.ENABLE_EMAIL_LOGIN,
-      ENABLE_EMAIL_SIGNUP: env.ENABLE_EMAIL_SIGNUP,
-      TRUSTED_ORIGINS: env.TRUSTED_ORIGINS,
-    })
+    const auth = createAuthFromEnv(env.DB, env as unknown as Record<string, unknown>)
     const session = await auth.api.getSession({ headers })
     const userId = session?.user?.id
     if (!userId) return null

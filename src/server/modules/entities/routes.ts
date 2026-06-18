@@ -23,6 +23,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { and, desc, eq, isNull, like, or, sql } from 'drizzle-orm'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import { getActiveOrg } from '@/server/modules/organizations/helpers'
+import { scopeUser, isCondition } from '@/server/lib/tenancy'
 import { entities } from './db/schema'
 
 /**
@@ -62,9 +63,8 @@ app.get('/', zValidator('query', ListSchema), async (c) => {
   const { type, status, assignee, q, limit = 100 } = c.req.valid('query')
   const db = drizzle(c.env.DB)
   const orgClause = orgScopeWhere(orgId)
-  const conditions = orgClause
-    ? [eq(entities.userId, userId), orgClause]
-    : [eq(entities.userId, userId)]
+  // scopeUser() drops the userId filter in shared-tenancy mode (#80).
+  const conditions = [scopeUser(entities.userId, userId), orgClause].filter(isCondition)
   if (type) conditions.push(eq(entities.type, type))
   if (status) conditions.push(eq(entities.status, status))
   if (assignee) conditions.push(eq(entities.assigneeId, assignee))
@@ -198,7 +198,12 @@ app.delete('/:id', async (c) => {
   // We pre-check so the response can be a clean 404.
   const existing = await loadOwned(c.env.DB, userId, id, orgId)
   if (!existing) return c.json({ error: 'Not found' }, 404)
-  await db.delete(entities).where(and(eq(entities.id, id), eq(entities.userId, userId)))
+  // Write guard mirrors the read scope — in shared mode scopeUser() is
+  // undefined so the delete matches on id alone (any tenant member can delete).
+  const delConditions = [eq(entities.id, id), scopeUser(entities.userId, userId)].filter(
+    isCondition
+  )
+  await db.delete(entities).where(and(...delConditions))
   return c.json({ success: true, id })
 })
 
@@ -212,9 +217,11 @@ app.get('/stats/by-type/:type', async (c) => {
   if (!NAME_RE.test(type)) return c.json({ error: 'Invalid type' }, 400)
   const db = drizzle(c.env.DB)
   const orgClause = orgScopeWhere(orgId)
-  const conditions = orgClause
-    ? [eq(entities.userId, userId), eq(entities.type, type), orgClause]
-    : [eq(entities.userId, userId), eq(entities.type, type)]
+  const conditions = [
+    scopeUser(entities.userId, userId),
+    eq(entities.type, type),
+    orgClause,
+  ].filter(isCondition)
   const rows = await db
     .select({
       status: entities.status,
@@ -236,9 +243,11 @@ async function loadOwned(
 ) {
   const db = drizzle(dbBinding)
   const orgClause = orgScopeWhere(orgId)
-  const conditions = orgClause
-    ? [eq(entities.id, id), eq(entities.userId, userId), orgClause]
-    : [eq(entities.id, id), eq(entities.userId, userId)]
+  // loadOwned guards reads for GET/:id, and the pre-checks for PATCH + DELETE,
+  // so converting it here makes update + delete inherit shared scoping too.
+  const conditions = [eq(entities.id, id), scopeUser(entities.userId, userId), orgClause].filter(
+    isCondition
+  )
   const [row] = await db
     .select()
     .from(entities)

@@ -1,0 +1,1 @@
+ALTER TABLE `ai_usage_logs` ADD `reasoning_tokens` integer DEFAULT 0 NOT NULL;

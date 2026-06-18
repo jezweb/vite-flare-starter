@@ -88,6 +88,9 @@ export const RATE_LIMITS = {
 
   /** AI-Sparkle skill rewrites per hour (one OPENROUTER_API_KEY call each) */
   SKILL_AI_EDIT: 20,
+
+  /** Walkabout Guide questions per hour (one AI call each) */
+  WALKABOUT_ASK: 40,
 } as const
 
 /**
@@ -97,6 +100,21 @@ export const CACHE = {
   /** Stale time for user preferences queries (default: 5 minutes) */
   PREFERENCES_STALE_TIME: 5 * 60 * 1000,
 } as const
+
+/**
+ * Test-auth email pattern (security primitive).
+ *
+ * Headless agents mint sessions only for emails matching this shape, so
+ * the test-auth endpoints can never take over a real account. Two call
+ * sites depend on it and MUST agree, so it lives here as one source of
+ * truth: (1) the /api/test-auth/cookies validator, (2) the signup
+ * allowlist gate, which bypasses these emails when TEST_AUTH_TOKEN is set
+ * so headless tests work even behind an active allowlist (#88, #91).
+ *
+ * `.local` TLD is reserved and unroutable, so these addresses can never
+ * receive mail or correspond to a real inbox.
+ */
+export const TEST_EMAIL_PATTERN = /^[a-z0-9._-]+@test\.[a-z0-9.-]+\.local$/i
 
 /**
  * Application Version

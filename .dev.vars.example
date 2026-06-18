@@ -47,6 +47,23 @@ GOOGLE_CLIENT_SECRET=your-client-secret
 # ENABLE_EMAIL_SIGNUP=true
 
 # ============================================
+# Signup Allowlist - OPTIONAL (issue #88)
+# ============================================
+# Invite-only / single-tenant gate. The gate ACTIVATES when either list below
+# is set (or AUTH_ALLOWLIST=true); only matching emails can then create an
+# account. Fires on account CREATION only — existing users are never locked out.
+# Unset (default) → open signup, so a fresh public fork is unaffected.
+# Blocked sign-ins surface as "This account isn't authorised" on the sign-in
+# page (see issue #69). Pairs with VITE_TENANCY_MODE=shared for a turnkey
+# single-tenant deployment.
+#
+# ⚠️  For a client deploy you almost always want at least ALLOWED_AUTH_DOMAINS —
+#     an unset allowlist means anyone with a Google account can sign up.
+# ALLOWED_AUTH_EMAILS=alice@acme.com,bob@acme.com
+# ALLOWED_AUTH_DOMAINS=acme.com,jezweb.net
+# AUTH_ALLOWLIST=true   # force the gate on even with empty lists → fail closed
+
+# ============================================
 # Email Configuration - OPTIONAL
 # ============================================
 # Only needed for email verification or password reset
@@ -64,6 +81,57 @@ APP_NAME=Vite Flare Starter
 
 # Node environment (development | production)
 NODE_ENV=development
+
+# Tenancy mode (issue #80). Default per-user: every row scoped to its creator.
+# Set to "shared" for a single-tenant / small-team fork (one business, a few
+# trusted logins behind the allowlist) where colleagues should see and act on
+# the SAME records. Honoured wherever a module uses the scopeUser() helper —
+# the entities module is the fully-converted reference. Build-time flag (it's a
+# deploy-time decision per fork, not a runtime toggle).
+# VITE_TENANCY_MODE=shared
+
+# ============================================
+# Chat Agent Tuning - OPTIONAL
+# ============================================
+# Tool-loop step cap. The default (12) suits multi-tool / RAG flows
+# (find_tools → search → re-search → synthesise). Lower only if you want
+# to bound cost on a single-tool agent; too low and the agent runs out of
+# steps before writing a reply (tools complete, no answer). See issue #73.
+# CHAT_MAX_STEPS=12
+
+# Thinking / reasoning control for the chat agent. Workers AI reasoning models
+# (the default Kimi K2.6) think by default — they now have a real token budget
+# and the reasoning surfaces in the chat UI's Reasoning accordion. Set to "off"
+# to disable thinking (sends Kimi's chat_template_kwargs.thinking=false through
+# the workers-ai-provider) — useful for forks doing tool-heavy / structured
+# work where reasoning models run away (see the llm-patterns rule). Default: on.
+# CHAT_REASONING=off
+
+# Model roles (issue #87) — pick the model for each *job* without editing code.
+# Two roles, both defaulting to the free Workers AI default (Kimi K2.6):
+#   composer — templated / bounded-structured calls (chat titles, conversation
+#              summaries, /extract). Thinking is forced OFF for this role so a
+#              reasoning model can't burn the (often capped) output budget
+#              thinking and return empty content.
+#   reasoner — open-ended work (scheduled tasks following a skill). Thinking on.
+# The Kimi default works well for both — leave these unset unless you have a
+# reason to swap. CAVEAT: some composer call sites use AI SDK structured output
+# (generateObject / Output.object via workers-ai-provider), and not every model
+# handles that — the gpt-oss family, for instance, returns empty there (verified
+# 2026-06-10; see ~/.claude/rules/workers-ai-gotchas.md). If you override
+# composer, pick a model proven on structured output (e.g. Kimi, nemotron) or
+# you'll break /extract + conversation titles.
+# MODEL_ROLE_COMPOSER=@cf/moonshotai/kimi-k2.6
+# MODEL_ROLE_REASONER=@cf/moonshotai/kimi-k2.6
+
+# Scope the agent's tool catalogue per fork (issue #74). A smaller catalogue
+# noticeably improves the free Workers AI default models — they stop wandering
+# into irrelevant tools. Entries are comma-separated; each matches a tool name
+# exactly, or as a prefix when ending in '*'. Set at most one.
+#   Allowlist (agent sees ONLY these):
+# CHAT_TOOLS_INCLUDE=core_*,knowledge_*,web_search,entity_*
+#   Denylist (drop these from the full catalogue):
+# CHAT_TOOLS_EXCLUDE=slack_*,notion_*,atlassian_*,image_*,media_*
 
 # ============================================
 # Feature Flags

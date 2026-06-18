@@ -1,0 +1,184 @@
+{
+  "generated": "2026-06-11",
+  "source": "Walkabout 13-step hero tour, recorded against the seeded showcase account (Helios analytics).",
+  "hero": {
+    "video": "assets/videos/full-tour.mp4",
+    "duration_s": 182,
+    "caption": "The full guided tour \u2014 13 modules end to end, narration-synced moving spotlight. Homepage hero / README top / YouTube.",
+    "url": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/full-tour.mp4",
+    "url_mobile": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/full-tour-mobile.mp4"
+  },
+  "og_image": "assets/stills/og-image.png",
+  "modules": [
+    {
+      "name": "home",
+      "title": "Home",
+      "blurb": "Your workspace at a glance \u2014 what needs you, and what your agents have been doing.",
+      "video": "assets/videos/module-home.mp4",
+      "gif": "assets/gifs/home.gif",
+      "still": "assets/stills/home.png",
+      "hero_clip": {
+        "start_s": 2.94,
+        "dur_s": 24.48
+      },
+      "video_url": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/module-home.mp4"
+    },
+    {
+      "name": "chat",
+      "title": "AI Chat",
+      "blurb": "The flagship surface: streaming answers, tool calls, skills + memory, rich inline output.",
+      "video": "assets/videos/module-chat.mp4",
+      "gif": "assets/gifs/chat.gif",
+      "still": "assets/stills/chat.png",
+      "hero_clip": {
+        "start_s": 27.57,
+        "dur_s": 14.53
+      },
+      "video_url": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/module-chat.mp4"
+    },
+    {
+      "name": "skills",
+      "title": "Skills",
+      "blurb": "Teach the agent procedures in markdown; the AI-Sparkle button rewrites them with a diff to approve.",
+      "video": "assets/videos/module-skills.mp4",
+      "gif": "assets/gifs/skills.gif",
+      "still": "assets/stills/skills.png",
+      "hero_clip": {
+        "start_s": 42.25,
+        "dur_s": 14.63
+      },
+      "video_url": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/module-skills.mp4"
+    },
+    {
+      "name": "knowledge",
+      "title": "Knowledge",
+      "blurb": "Long-form reference the agent can search or bake into every prompt.",
+      "video": "assets/videos/module-knowledge.mp4",
+      "gif": "assets/gifs/knowledge.gif",
+      "still": "assets/stills/knowledge.png",
+      "hero_clip": {
+        "start_s": 57.03,
+        "dur_s": 10.37
+      },
+      "video_url": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/module-knowledge.mp4"
+    },
+    {
+      "name": "inbox",
+      "title": "Inbox",
+      "blurb": "Findings the agent surfaced and actions it wants approved, in one attention surface; approvals open inline.",
+      "video": "assets/videos/module-inbox.mp4",
+      "gif": "assets/gifs/inbox.gif",
+      "still": "assets/stills/inbox.png",
+      "hero_clip": {
+        "start_s": 67.55,
+        "dur_s": 14.7
+      },
+      "video_url": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/module-inbox.mp4"
+    },
+    {
+      "name": "projects",
+      "title": "Projects",
+      "blurb": "Group work with per-project memory, system prompt, and default model.",
+      "video": "assets/videos/module-projects.mp4",
+      "gif": "assets/gifs/projects.gif",
+      "still": "assets/stills/projects.png",
+      "hero_clip": {
+        "start_s": 82.4,
+        "dur_s": 12.86
+      },
+      "video_url": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/module-projects.mp4"
+    },
+    {
+      "name": "routines",
+      "title": "Routines",
+      "blurb": "Recurring agents on a schedule; findings flow to the channels you pick.",
+      "video": "assets/videos/module-routines.mp4",
+      "gif": "assets/gifs/routines.gif",
+      "still": "assets/stills/routines.png",
+      "hero_clip": {
+        "start_s": 95.41,
+        "dur_s": 13.44
+      },
+      "video_url": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/module-routines.mp4"
+    },
+    {
+      "name": "agents",
+      "title": "Agents",
+      "blurb": "Self-describing stateful agents \u2014 persona, memory, tools, and a human-in-the-loop approval queue.",
+      "video": "assets/videos/module-agents.mp4",
+      "gif": "assets/gifs/agents.gif",
+      "still": "assets/stills/agents.png",
+      "hero_clip": {
+        "start_s": 109.0,
+        "dur_s": 12.39
+      },
+      "video_url": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/module-agents.mp4"
+    },
+    {
+      "name": "activity",
+      "title": "Activity",
+      "blurb": "The audit trail \u2014 every action on the account, with stats by type.",
+      "video": "assets/videos/module-activity.mp4",
+      "gif": "assets/gifs/activity.gif",
+      "still": "assets/stills/activity.png",
+      "hero_clip": {
+        "start_s": 121.55,
+        "dur_s": 10.84
+      },
+      "video_url": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/module-activity.mp4"
+    },
+    {
+      "name": "connections",
+      "title": "Connections",
+      "blurb": "Per-user OAuth to external MCP servers, labelled and allow-listed per agent.",
+      "video": "assets/videos/module-connections.mp4",
+      "gif": "assets/gifs/connections.gif",
+      "still": "assets/stills/connections.png",
+      "hero_clip": {
+        "start_s": 132.53,
+        "dur_s": 15.08
+      },
+      "video_url": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/module-connections.mp4"
+    },
+    {
+      "name": "files",
+      "title": "Files",
+      "blurb": "Upload to R2, scope to a project, preview inline \u2014 and the agent can read them.",
+      "video": "assets/videos/module-files.mp4",
+      "gif": "assets/gifs/files.gif",
+      "still": "assets/stills/files.png",
+      "hero_clip": {
+        "start_s": 147.77,
+        "dur_s": 10.75
+      },
+      "video_url": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/module-files.mp4"
+    },
+    {
+      "name": "organizations",
+      "title": "Organizations",
+      "blurb": "Multi-tenant from day one \u2014 invite members, manage roles, switch between spaces.",
+      "video": "assets/videos/module-organizations.mp4",
+      "gif": "assets/gifs/organizations.gif",
+      "still": "assets/stills/organizations.png",
+      "hero_clip": {
+        "start_s": 158.67,
+        "dur_s": 9.81
+      },
+      "video_url": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/module-organizations.mp4"
+    },
+    {
+      "name": "settings",
+      "title": "Settings",
+      "blurb": "Profile, preferences, theme, sessions, and a full data export.",
+      "video": "assets/videos/module-settings.mp4",
+      "gif": "assets/gifs/settings.gif",
+      "still": "assets/stills/settings.png",
+      "hero_clip": {
+        "start_s": 168.63,
+        "dur_s": 12.9
+      },
+      "video_url": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/module-settings.mp4"
+    }
+  ],
+  "public_base": "https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev"
+}

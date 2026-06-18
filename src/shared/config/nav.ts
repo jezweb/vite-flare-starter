@@ -42,6 +42,7 @@ import {
   Kanban,
   Layers,
   BookOpen,
+  Compass,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -148,6 +149,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { to: '/dashboard/files', label: 'Files', icon: FolderOpen, feature: 'files' },
       { to: '/dashboard/artifacts', label: 'Artifacts', icon: Sparkles, feature: 'chat' },
       { to: '/dashboard/extract', label: 'Extract', icon: Sparkles, feature: 'chat' },
+      { to: '/dashboard/questions', label: 'Guide questions', icon: Compass, feature: 'walkabout' },
     ],
   },
   {

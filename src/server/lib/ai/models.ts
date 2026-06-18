@@ -46,6 +46,34 @@ function costTierFor(priceIn: number, isFree: boolean): ModelConfig['costTier'] 
   return 'high'
 }
 
+/**
+ * Output-token fallback when the catalogue reports `max_output: null`.
+ * EVERY Workers AI (`@cf/`) entry in the flared.au feed reports null, so they
+ * all hit this. 16384 was too tight — on a reasoning model the hidden thinking
+ * eats the budget and the visible answer truncates or comes back empty (the
+ * Kimi `reasoning_content`-only failure in coerce.ts). The curated Workers AI
+ * set are all large-context flagships that comfortably emit 32K, so floor them
+ * higher; non-Workers-AI models with a null max keep the conservative default.
+ */
+const WORKERS_AI_FALLBACK_MAX_TOKENS = 32768
+const GENERIC_FALLBACK_MAX_TOKENS = 16384
+
+/**
+ * Stale-catalogue corrections. The flared.au / Workers AI capability feed is
+ * occasionally wrong for `@cf/` models — same class as the stale `vision`
+ * flags noted in the workers-ai-gotchas rule. Patch the curated set here so
+ * the registry reflects reality. Applied LAST, so it wins over the catalogue.
+ *
+ * `@cf/moonshotai/kimi-k2.6` (our default) ships with `reasoning: false` and
+ * `max_output: null` despite being a thinking model with a 262K context — so
+ * without this it was treated as non-reasoning AND capped at 16384, which is
+ * exactly why the default chat felt limited. See the dep-review investigation
+ * 2026-06-09.
+ */
+const MODEL_OVERRIDES: Record<string, Partial<ModelConfig>> = {
+  '@cf/moonshotai/kimi-k2.6': { isReasoning: true, defaultMaxTokens: 32768 },
+}
+
 function fromCatalogue(m: CatalogueModel & { source?: 'openrouter' | 'workers-ai' }): ModelConfig {
   const caps = m.capabilities
   const priceIn = m.pricing?.input ?? 0
@@ -61,7 +89,9 @@ function fromCatalogue(m: CatalogueModel & { source?: 'openrouter' | 'workers-ai
     supportsTools: caps?.tools ?? true,
     supportsVision: caps?.vision ?? m.modality?.includes('image') ?? false,
     supportsPdf: caps?.pdf ?? false,
-    defaultMaxTokens: m.max_output ?? 16384,
+    defaultMaxTokens:
+      m.max_output ??
+      (m.source === 'workers-ai' ? WORKERS_AI_FALLBACK_MAX_TOKENS : GENERIC_FALLBACK_MAX_TOKENS),
     description:
       `${m.short_name ?? m.name ?? m.id} — ${ctxK}K ctx` +
       (isFree ? ', free via Workers AI' : priceIn > 0 ? `, $${priceIn}/M in` : ''),
@@ -76,7 +106,7 @@ export const MODEL_REGISTRY: Record<string, ModelConfig> = (() => {
   for (const id of ENABLED_MODEL_IDS) {
     const cat = CATALOGUE.get(id)
     if (cat) {
-      out[id] = fromCatalogue(cat)
+      out[id] = { ...fromCatalogue(cat), ...MODEL_OVERRIDES[id] }
     } else {
       // Enabled but missing from both catalogues — show a stub so the
       // selector still works. Run `pnpm models:refresh` to pick up new models.
@@ -97,6 +127,7 @@ export const MODEL_REGISTRY: Record<string, ModelConfig> = (() => {
         // free since the only models that hit this path are pre-release or
         // experimental entries added before the catalogue refresh.
         costTier: id.startsWith('@cf/') || id.startsWith('@hf/') ? 'free' : 'low',
+        ...MODEL_OVERRIDES[id],
       }
     }
   }
@@ -138,22 +169,6 @@ export function isReasoningModel(modelId: ModelId): boolean {
 
 export function getToolCapableModels(): ModelConfig[] {
   return Object.values(MODEL_REGISTRY).filter((m) => m.supportsTools)
-}
-
-export function getRecommendedModel(
-  useCase: 'general' | 'fast' | 'reasoning' | 'vision' | 'tools'
-): ModelId {
-  switch (useCase) {
-    case 'general':
-    case 'tools':
-      return '@cf/moonshotai/kimi-k2.6'
-    case 'fast':
-      return '@cf/zai-org/glm-4.7-flash'
-    case 'reasoning':
-      return '@cf/qwen/qwq-32b'
-    case 'vision':
-      return '@cf/google/gemma-4-26b-a4b-it'
-  }
 }
 
 export function listModels(): ModelConfig[] {

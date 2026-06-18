@@ -281,6 +281,7 @@ export function InboxPage() {
         subtitle="Things your AI noticed, plus anything waiting on a yes / no. Most-important first."
       />
 
+      <div data-tour="inbox-list">
       <PageFilters>
         <PageFilterTabs value={status} onValueChange={(v) => setStatus(v as Status)}>
           <TabsTrigger value="undecided">Undecided</TabsTrigger>
@@ -302,6 +303,7 @@ export function InboxPage() {
           ))}
         </PageFilterGroup>
       </PageFilters>
+      </div>
 
       {isLoading && <PageLoading variant="list" count={5} />}
 

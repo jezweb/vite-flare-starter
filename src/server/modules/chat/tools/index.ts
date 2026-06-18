@@ -107,6 +107,16 @@ export async function buildChatTools(
     ...withReviewDefinitions,
   ]
 
+  // Fork-level catalogue scoping (#74). A focused fork (e.g. an HR advisor)
+  // wants the agent to see only a relevant subset — a large catalogue actively
+  // degrades the free Workers AI models the starter defaults to (they wander
+  // into irrelevant tools). Set via env, no shared-file edit:
+  //   CHAT_TOOLS_INCLUDE="core_*,knowledge_*,web_search"  → allowlist (only these)
+  //   CHAT_TOOLS_EXCLUDE="slack_*,notion_*,image_*"        → denylist (drop these)
+  // Entries match a tool name exactly, or as a prefix when ending in '*'.
+  // Include is applied first (when set), then exclude.
+  const scoped = scopeToolsByEnv(allDefinitions, ctx.env as Record<string, unknown>)
+
   // Per-user connector filter — keeps connector tools the user has
   // opted into, passes built-in tools through untouched. Preserves
   // current behaviour when the user has no settings rows (defaults
@@ -115,9 +125,43 @@ export async function buildChatTools(
     ctx.env as unknown as ConnectorSettingsEnv,
     ctx.userId
   )
-  const filtered = filterToolsByUserSettings(allDefinitions, allowed)
+  const filtered = filterToolsByUserSettings(scoped, allowed)
 
   return await collectAvailableTools(filtered, ctx)
+}
+
+/**
+ * Apply the optional CHAT_TOOLS_INCLUDE / CHAT_TOOLS_EXCLUDE env allow/deny
+ * lists to the tool catalogue. Each comma-separated entry matches a tool name
+ * exactly, or as a prefix when it ends in '*' (e.g. `gmail_*`). No env set →
+ * returns the list unchanged (current behaviour).
+ */
+function scopeToolsByEnv(
+  definitions: ToolDefinition<unknown, unknown>[],
+  env: Record<string, unknown>
+): ToolDefinition<unknown, unknown>[] {
+  const parse = (raw: unknown): string[] =>
+    typeof raw === 'string'
+      ? raw
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : []
+  const include = parse(env['CHAT_TOOLS_INCLUDE'])
+  const exclude = parse(env['CHAT_TOOLS_EXCLUDE'])
+  if (include.length === 0 && exclude.length === 0) return definitions
+
+  const matches = (name: string, pattern: string): boolean =>
+    pattern.endsWith('*') ? name.startsWith(pattern.slice(0, -1)) : name === pattern
+
+  let result = definitions
+  if (include.length > 0) {
+    result = result.filter((d) => include.some((p) => matches(d.name, p)))
+  }
+  if (exclude.length > 0) {
+    result = result.filter((d) => !exclude.some((p) => matches(d.name, p)))
+  }
+  return result
 }
 
 // Legacy re-exports for anything that still imports the old names.

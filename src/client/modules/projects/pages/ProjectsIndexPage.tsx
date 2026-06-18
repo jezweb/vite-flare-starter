@@ -60,16 +60,18 @@ export function ProjectsIndexPage() {
 
   return (
     <PageContainer type="index">
-      <PageHeader
-        title="Projects"
-        subtitle="Long-running spaces for your work — chats, files, notes, and memory all in one place. Share with teammates as needed."
-        trailing={
-          <Button onClick={() => setCreateOpen(true)}>
-            <Plus className="size-4 mr-1.5" />
-            New project
-          </Button>
-        }
-      />
+      <div data-tour="projects-list">
+        <PageHeader
+          title="Projects"
+          subtitle="Long-running spaces for your work — chats, files, notes, and memory all in one place. Share with teammates as needed."
+          trailing={
+            <Button onClick={() => setCreateOpen(true)}>
+              <Plus className="size-4 mr-1.5" />
+              New project
+            </Button>
+          }
+        />
+      </div>
 
       {/* Search + sort row */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">

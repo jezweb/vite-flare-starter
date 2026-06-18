@@ -40,24 +40,26 @@ export function AgentsPage() {
 
   return (
     <PageContainer type="catalog">
-      <PageHeader
-        title="Agents"
-        subtitle="Your AI agents — the per-user assistants you chat with, hand off work to, or schedule. Each has its own persona, memory, and budget. Click a card to edit it."
-        trailing={
-          <>
-            <Button onClick={() => setNewAgentOpen(true)}>
-              <Plus className="mr-1.5 size-4" />
-              New agent
-            </Button>
-            <Button asChild variant="outline">
-              <Link to="/dashboard/admin-chat">
-                <Sparkles className="mr-1.5 size-4" />
-                Admin chat
-              </Link>
-            </Button>
-          </>
-        }
-      />
+      <div data-tour="agents-list">
+        <PageHeader
+          title="Agents"
+          subtitle="Your AI agents — the per-user assistants you chat with, hand off work to, or schedule. Each has its own persona, memory, and budget. Click a card to edit it."
+          trailing={
+            <>
+              <Button onClick={() => setNewAgentOpen(true)}>
+                <Plus className="mr-1.5 size-4" />
+                New agent
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/dashboard/admin-chat">
+                  <Sparkles className="mr-1.5 size-4" />
+                  Admin chat
+                </Link>
+              </Button>
+            </>
+          }
+        />
+      </div>
 
       <details className="rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
         <summary className="cursor-pointer font-medium text-foreground">

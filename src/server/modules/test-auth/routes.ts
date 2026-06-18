@@ -18,9 +18,12 @@
  *      secret. Wrong header → 401.
  *   3. Email is allowlisted to `*@test.<anything>.local` so the endpoint
  *      can never mint a session for a real user account.
- *   4. Allowlist bypass for the test domain happens here too (the
- *      databaseHooks.user.create.before in createAuth would otherwise
- *      reject the test user signup).
+ *   4. Allowlist bypass for the test domain (#91): the signup gate
+ *      (isSignupAllowed) lets *@test.<x>.local through whenever
+ *      TEST_AUTH_TOKEN is set, so minting a test session works even when
+ *      a fork runs an active ALLOWED_AUTH_* allowlist that excludes the
+ *      test domain. Without that, databaseHooks.user.create.before would
+ *      reject the test signup and this route would 403.
  *
  * Usage from a test agent:
  *   curl -X POST $URL/api/test-auth/cookies \
@@ -76,6 +79,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { eq, like } from 'drizzle-orm'
 import { user as userTable } from '@/server/modules/auth/db/schema'
 import { createAuthFromEnv } from '@/server/modules/auth'
+import { TEST_EMAIL_PATTERN } from '@/shared/config/constants'
 
 interface TestAuthEnv {
   DB: D1Database
@@ -85,8 +89,9 @@ interface TestAuthEnv {
 
 const app = new Hono<{ Bindings: TestAuthEnv }>()
 
-/** Test emails MUST match this — prevents accidental real-user takeover. */
-const TEST_EMAIL_PATTERN = /^[a-z0-9._-]+@test\.[a-z0-9.-]+\.local$/i
+// Test-email allowlist pattern is the shared security primitive in
+// @/shared/config/constants — the signup gate's test-domain bypass (#91)
+// depends on the same shape, so both import it rather than re-declaring.
 
 /** Constant-time string compare to avoid timing-side-channel leaks. */
 function safeEqual(a: string, b: string): boolean {
@@ -151,6 +156,22 @@ app.post('/cookies', zValidator('json', cookiesBody), async (c) => {
       emailVerified: true,
     })
     const saved = await test.saveUser(stub)
+    // Defence-in-depth (#91): the signup gate bypasses test emails when
+    // TEST_AUTH_TOKEN is set, so this should always succeed. But if a fork
+    // blocks creation some other way, saveUser returns null — return an
+    // actionable 403 instead of null-derefing on `.id`.
+    if (!saved?.id) {
+      console.warn(JSON.stringify({ event: 'test_auth_create_blocked', email }))
+      return c.json(
+        {
+          error:
+            'Test-user creation was blocked (likely the signup allowlist). ' +
+            'Set TEST_AUTH_TOKEN so the *@test.<x>.local bypass applies, ' +
+            'or add the test domain to ALLOWED_AUTH_EMAILS/ALLOWED_AUTH_DOMAINS.',
+        },
+        403
+      )
+    }
     userId = saved.id
   }
 
