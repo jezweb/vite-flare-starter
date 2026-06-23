@@ -535,21 +535,64 @@ function parseAgentRoute(pathname: string): { agentName: string; instanceName: s
   }
 }
 
+/**
+ * Per-agent-class access policy for the /agents/* Durable Object surface.
+ *
+ * FAIL CLOSED: any agent class not listed here is denied (403). When a fork
+ * adds a new agent, it must consciously declare how access is proven — the
+ * default is "no one but the owner", not "anyone authenticated". This is the
+ * whole point: a missing entry can never silently expose a tenant's DO.
+ *
+ * Policies:
+ *   - 'owner-chat'  instance name is `user-<userId>-conv-<id>` (ChatAgent)
+ *   - 'owner-colon' instance name is `<userId>[:...]` — owner is the segment
+ *     before the first ':'. Used by every AutonomousAgent (assistant, admin,
+ *     researcher, writer, sweeper, reminder) and the voice/video example DOs.
+ *   - 'do-enforced' access is not owner-scoped (e.g. a Space shared by many
+ *     members); the DO MUST verify access itself in onConnect. Only assign this
+ *     to a class whose DO actually performs that check (SpaceAgent.onConnect).
+ */
+type AgentAccessPolicy = 'owner-chat' | 'owner-colon' | 'do-enforced'
+
+const AGENT_ACCESS_POLICY: Record<string, AgentAccessPolicy> = {
+  'chat-agent': 'owner-chat',
+  'assistant-agent': 'owner-colon',
+  'researcher-agent': 'owner-colon',
+  'writer-agent': 'owner-colon',
+  'sweeper-agent': 'owner-colon',
+  'admin-agent': 'owner-colon',
+  'reminder-agent': 'owner-colon',
+  'voice-input-example': 'owner-colon',
+  'video-input-example': 'owner-colon',
+  // SpaceAgent is shared across a Space's members; SpaceAgent.onConnect
+  // enforces membership, so the route gate only requires authentication.
+  'space-agent': 'do-enforced',
+}
+
 function validateAgentAccess(pathname: string, session: RequestSession): Response | null {
   const route = parseAgentRoute(pathname)
   if (!route) return null
 
-  if (route.agentName === 'chat-agent') {
-    const match = route.instanceName.match(/^user-([^-].*?)-conv-(.+)$/)
-    const routeUserId = match?.[1]
-    if (!routeUserId) {
-      return jsonResponse({ error: 'Invalid chat agent instance name' }, 400)
-    }
-    if (routeUserId !== session.userId) {
-      return jsonResponse({ error: 'Forbidden' }, 403)
-    }
+  const policy = AGENT_ACCESS_POLICY[route.agentName]
+  // Fail closed: unknown agent class → deny. Previously every class except
+  // chat-agent fell through to "allow", so any logged-in user could reach
+  // another tenant's assistant/admin/researcher DO over /agents/*.
+  if (!policy) return jsonResponse({ error: 'Forbidden' }, 403)
+
+  if (policy === 'do-enforced') return null
+
+  if (policy === 'owner-chat') {
+    const routeUserId = route.instanceName.match(/^user-([^-].*?)-conv-(.+)$/)?.[1]
+    if (!routeUserId) return jsonResponse({ error: 'Invalid chat agent instance name' }, 400)
+    if (routeUserId !== session.userId) return jsonResponse({ error: 'Forbidden' }, 403)
+    return null
   }
 
+  // owner-colon: the instance name must be owned by the caller — owner is the
+  // segment before the first ':' (AutonomousAgent convention `<userId>:<slug>`),
+  // or the whole name when there is no ':' (a bare `<userId>` instance).
+  const owner = route.instanceName.split(':')[0]
+  if (!owner || owner !== session.userId) return jsonResponse({ error: 'Forbidden' }, 403)
   return null
 }
 
