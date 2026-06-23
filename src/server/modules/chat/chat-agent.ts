@@ -488,6 +488,25 @@ export class ChatAgent extends AIChatAgent<Env> {
     const { userId, conversationId } = this.resolveSession()
     const startTime = Date.now()
 
+    // SECURITY: the /agents route gate validates the userId in the instance
+    // name but NOT the conversationId. Refuse if this conversation already
+    // exists under a different owner — otherwise an attacker connecting as
+    // `user-<self>-conv-<someone-elses-conv-id>` would operate on the victim's
+    // conversation (write messages into the D1 projection, seed themselves as
+    // an owner-member). For a brand-new conversationId there is no row yet, so
+    // legitimate first turns pass through.
+    const ownerRow = await this.env.DB.prepare(
+      'SELECT user_id FROM conversations WHERE id = ?'
+    )
+      .bind(conversationId)
+      .first<{ user_id: string }>()
+    if (ownerRow && ownerRow.user_id !== userId) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
     const rateLimit = consumeRateLimit({
       key: 'CHAT',
       windowMs: 60 * 60 * 1000,
