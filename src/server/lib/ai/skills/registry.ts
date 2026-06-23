@@ -12,6 +12,7 @@
  * system prompt by default. Full body is loaded via load_skill tool on demand.
  */
 import { drizzle } from 'drizzle-orm/d1'
+import { isAllowedGitHubUrl } from '@/server/lib/ssrf'
 import { and, eq, or } from 'drizzle-orm'
 import { BUNDLED_USER_ID, skills } from '@/server/modules/skills/db/schema'
 import { parseSkill, type ParsedSkill } from './loader'
@@ -380,6 +381,11 @@ export async function addGitHubSkill(
   url: string,
   userId: string = BUNDLED_USER_ID
 ): Promise<{ name: string; description: string }> {
+  // SSRF guard: only fetch GitHub-hosted skill URLs, never an arbitrary
+  // user-supplied host (which could target internal services / metadata).
+  if (!isAllowedGitHubUrl(url)) {
+    throw new Error('Skill URL must be a GitHub URL (github.com / raw.githubusercontent.com)')
+  }
   const response = await fetch(url)
   if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.status}`)
   const content = await response.text()

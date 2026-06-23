@@ -13,6 +13,8 @@
  * so the user can paste a token manually without us blocking.
  */
 
+import { isSafePublicUrl } from '@/server/lib/ssrf'
+
 export interface ProbeResult {
   authType: 'oauth' | 'bearer' | 'none'
   authorizationEndpoint?: string
@@ -23,6 +25,12 @@ export interface ProbeResult {
 }
 
 export async function probeMcpServer(url: string): Promise<ProbeResult> {
+  // SSRF guard: never probe a private/internal/metadata target from a
+  // user-supplied URL. Degrade to manual-bearer so the UI still lets the
+  // user paste a token, but we don't fetch the internal address.
+  if (!isSafePublicUrl(url)) {
+    return { authType: 'bearer', error: 'URL not allowed (must be a public https host)' }
+  }
   try {
     const resp = await fetch(url, {
       method: 'GET',

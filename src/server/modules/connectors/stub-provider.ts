@@ -16,6 +16,7 @@
  * file is the factory that makes that cheap.
  */
 import type { D1Database } from '@cloudflare/workers-types'
+import { escapeHtml } from '@/server/lib/escape-html'
 import { Hono } from 'hono'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq } from 'drizzle-orm'
@@ -422,7 +423,7 @@ function callbackPage(
   const body =
     args.status === 'success'
       ? `<h1 style="font:600 20px system-ui">${providerLabel} connected!</h1><p style="color:#555;font:14px system-ui">You can close this tab.</p>`
-      : `<h1 style="font:600 20px system-ui;color:#b91c1c">Connection failed</h1><p style="color:#555;font:14px system-ui">${args.message ?? ''}</p>`
+      : `<h1 style="font:600 20px system-ui;color:#b91c1c">Connection failed</h1><p style="color:#555;font:14px system-ui">${escapeHtml(args.message ?? '')}</p>`
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${providerLabel}</title></head>
 <body style="font-family:system-ui;padding:32px;max-width:480px;margin:48px auto;text-align:center">
 ${body}
