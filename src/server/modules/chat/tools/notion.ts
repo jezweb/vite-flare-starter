@@ -20,6 +20,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { eq } from 'drizzle-orm'
 import { Database, FileText, Plus, Search, StickyNote } from 'lucide-react'
 import { notionTokens } from '@/server/modules/notion/db/schema'
+import { decrypt } from '@/server/lib/crypto'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 
 const NOTION_API = 'https://api.notion.com/v1'
@@ -32,6 +33,7 @@ interface NotionEnv {
   DB: D1Database
   NOTION_CLIENT_ID?: string
   NOTION_CLIENT_SECRET?: string
+  TOKEN_ENCRYPTION_KEY?: string
 }
 
 function notionEnvOf(ctx: AgentContext): NotionEnv {
@@ -73,7 +75,10 @@ async function requireNotionToken(
     }
   }
   if (row.status !== 'active') return { error: RECONNECT_HINT }
-  return { token: row.accessToken }
+  // Stored AES-GCM encrypted — decrypt before sending as Bearer.
+  const token = await decrypt(row.accessToken, env.TOKEN_ENCRYPTION_KEY)
+  if (!token) return { error: RECONNECT_HINT }
+  return { token }
 }
 
 async function notionCall<T>(

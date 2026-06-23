@@ -79,15 +79,18 @@ export interface ImageInfo {
 // Cloudflare Images binding type
 interface ImagesBinding {
   input(stream: ReadableStream): ImagePipeline
+  // info() is a method on the binding (takes the stream), not on the pipeline.
+  info(stream: ReadableStream): Promise<ImageInfo>
 }
 
 interface ImagePipeline {
   transform(options: Record<string, unknown>): ImagePipeline
   draw(overlay: ImagePipeline, options?: Record<string, unknown>): ImagePipeline
-  output(options: { format: string; quality?: number; anim?: boolean }): {
-    response(): Promise<Response>
-  }
-  info(): Promise<ImageInfo>
+  // output() returns a Promise of the output object — must be awaited before
+  // calling .response().
+  output(options: { format: string; quality?: number; anim?: boolean }): Promise<{
+    response(): Response
+  }>
 }
 
 /**
@@ -147,7 +150,8 @@ export async function transformImage(
   if (typeof options.quality === 'number') outputOpts['quality'] = options.quality
   if (options.anim !== undefined) outputOpts['anim'] = options.anim
 
-  return pipeline.output(outputOpts).response()
+  const out = await pipeline.output(outputOpts)
+  return out.response()
 }
 
 /**
@@ -169,7 +173,7 @@ export async function getImageInfo(
           },
         })
 
-  return images.input(stream).info()
+  return images.info(stream)
 }
 
 /**
@@ -203,5 +207,6 @@ export async function overlayImage(
   const overlay = images.input(toStream(overlayImageData))
 
   const format = `image/${outputOptions.format || 'webp'}`
-  return base.draw(overlay, position).output({ format, quality: outputOptions.quality }).response()
+  const out = await base.draw(overlay, position).output({ format, quality: outputOptions.quality })
+  return out.response()
 }

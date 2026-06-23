@@ -188,10 +188,19 @@ export async function fireRoutine(
       steps: number
       hookSummary?: string | null
     }>
+    setOwner?: (userId: string) => Promise<void>
     setToolsAllowed?: (names: string[] | null) => Promise<void>
     setSkillsLoaded?: (names: string[] | null) => Promise<void>
     setHooks?: (hooks: Record<string, string> | null) => Promise<void>
   }
+
+  // Establish the owner identity FIRST. Without setOwner the agent runs with
+  // state.userId = null: tools execute with userId '', MCP/BYOK are skipped,
+  // requestApproval throws, and findings are written with an empty userId so
+  // they never appear in the owner's inbox. Every other invocation path
+  // (autonomous-agents routes, spaces dispatch) calls setOwner before runOnce;
+  // the scheduler omitted it. Best-effort like the other setters.
+  await applyConfig(routine.id, () => stub.setOwner?.(routine.userId))
 
   // Apply tools allowlist + skills + hooks for this fire (slice 2 + 4
   // contracts). Each is a "best-effort" call — older agent classes that

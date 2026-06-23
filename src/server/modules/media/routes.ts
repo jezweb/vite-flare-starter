@@ -16,6 +16,7 @@ import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
+import { isOwnedR2Key } from '@/server/lib/r2-keys'
 import {
   transformVideo,
   extractFrame,
@@ -172,8 +173,11 @@ app.post('/audio', async (c) => {
  */
 app.get('/r2/*', async (c) => {
   try {
-    const key = c.req.path.replace('/api/media/r2/', '')
+    const userId = c.get('userId')
+    const key = decodeURIComponent(c.req.path.replace('/api/media/r2/', ''))
     if (!c.env.FILES) return c.json({ error: 'FILES R2 bucket not configured' }, 501)
+    // Ownership gate: key is caller-supplied — block cross-tenant reads (IDOR).
+    if (!isOwnedR2Key(key, userId)) return c.json({ error: 'Access denied' }, 403)
 
     const object = await c.env.FILES.get(key)
     if (!object) return c.json({ error: 'Video not found' }, 404)
@@ -185,7 +189,7 @@ app.get('/r2/*', async (c) => {
       return new Response(object.body, {
         headers: {
           'Content-Type': object.httpMetadata?.contentType || 'video/mp4',
-          'Cache-Control': 'public, max-age=86400',
+          'Cache-Control': 'private, max-age=3600',
         },
       })
     }
@@ -209,7 +213,7 @@ app.get('/r2/*', async (c) => {
     )
 
     const headers = new Headers(response.headers)
-    headers.set('Cache-Control', 'public, max-age=86400')
+    headers.set('Cache-Control', 'private, max-age=3600')
     return new Response(response.body, { headers })
   } catch (error) {
     return c.json({ error: error instanceof Error ? error.message : 'Transform failed' }, 500)

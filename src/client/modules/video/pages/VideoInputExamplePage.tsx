@@ -22,6 +22,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { useSession } from '@/client/lib/auth'
 
 interface Caption {
   text: string
@@ -34,7 +35,12 @@ const JPEG_QUALITY = 0.8
 const FRAME_MAX_WIDTH = 640
 
 export function VideoInputExamplePage() {
-  const [sessionId] = useState(() => crypto.randomUUID())
+  // Instance name namespaced with the user id (`<userId>:<sessionId>`) so the
+  // /agents/* access gate can verify ownership — see the voice example.
+  const { data: session } = useSession()
+  const userId = session?.user?.id
+  const [rawSessionId] = useState(() => crypto.randomUUID())
+  const sessionId = userId ? `${userId}:${rawSessionId}` : rawSessionId
   const [isActive, setIsActive] = useState(false)
   const [captions, setCaptions] = useState<Caption[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -162,7 +168,7 @@ export function VideoInputExamplePage() {
           just <code className="px-1 py-0.5 rounded bg-muted font-mono text-sm">getUserMedia</code>,{' '}
           <code className="px-1 py-0.5 rounded bg-muted font-mono text-sm">&lt;canvas&gt;</code>,
           and the <code className="px-1 py-0.5 rounded bg-muted font-mono text-sm">agents</code> SDK
-          WebSocket. Session id <code className="font-mono text-xs">{sessionId.slice(0, 8)}</code>.
+          WebSocket. Session id <code className="font-mono text-xs">{rawSessionId.slice(0, 8)}</code>.
         </p>
       </div>
 

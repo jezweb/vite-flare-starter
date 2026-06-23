@@ -13,6 +13,7 @@
  */
 import { generateText } from 'ai'
 import { resolveModel } from './providers'
+import { bytesToBase64 } from '@/server/lib/base64'
 
 interface DocumentEnv {
   AI: Ai
@@ -183,7 +184,7 @@ async function extractWithVision(
       'Preserve headings, lists, tables, and structure. If there are images, describe them briefly.'
 
   const bytes = data instanceof Uint8Array ? data : new Uint8Array(data)
-  const base64 = btoa(String.fromCharCode(...bytes))
+  const base64 = bytesToBase64(bytes)
   const dataUrl = `data:${mimeType};base64,${base64}`
 
   try {

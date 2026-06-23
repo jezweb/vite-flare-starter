@@ -16,6 +16,8 @@
 import { z } from 'zod'
 import { Eye } from 'lucide-react'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
+import { isOwnedR2Key } from '@/server/lib/r2-keys'
+import { isSafePublicUrl } from '@/server/lib/ssrf'
 
 type ImageAnalyzeEnv = {
   AI: Ai
@@ -175,7 +177,8 @@ function guessMimeType(url: string): string {
  */
 async function resolveImage(
   env: ImageAnalyzeEnv,
-  imageUrl: string
+  imageUrl: string,
+  userId: string
 ): Promise<{ bytes: Uint8Array; mimeType: string }> {
   if (imageUrl.startsWith('data:')) {
     const m = imageUrl.match(/^data:([^;]+);base64,(.+)$/)
@@ -187,6 +190,7 @@ async function resolveImage(
     return { bytes, mimeType }
   }
   if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    if (!isSafePublicUrl(imageUrl)) throw new Error('Image URL not allowed')
     const resp = await fetch(imageUrl)
     if (!resp.ok) throw new Error(`Image fetch failed: ${resp.status}`)
     const mimeType = resp.headers.get('content-type') ?? guessMimeType(imageUrl)
@@ -195,6 +199,8 @@ async function resolveImage(
   }
   // Treat as R2 key
   if (!env.FILES) throw new Error('FILES R2 bucket not bound — cannot resolve R2 keys.')
+  // Ownership gate: key comes from tool input — block cross-tenant R2 reads.
+  if (!isOwnedR2Key(imageUrl, userId)) throw new Error('Access denied: R2 key not owned by you')
   const obj = await env.FILES.get(imageUrl)
   if (!obj) throw new Error(`Image not found in R2: ${imageUrl}`)
   const buf = await obj.arrayBuffer()
@@ -313,7 +319,7 @@ export const analyzeImageDefinition: ToolDefinition<
 
     let resolved: { bytes: Uint8Array; mimeType: string }
     try {
-      resolved = await resolveImage(env, input.imageUrl)
+      resolved = await resolveImage(env, input.imageUrl, ctx.userId)
     } catch (err) {
       return {
         error: `Could not resolve image: ${err instanceof Error ? err.message : String(err)}`,

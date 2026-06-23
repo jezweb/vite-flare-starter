@@ -21,6 +21,7 @@ import {
   Ticket,
 } from 'lucide-react'
 import { atlassianTokens } from '@/server/modules/atlassian/db/schema'
+import { decrypt } from '@/server/lib/crypto'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 
 const ATLASSIAN_API = 'https://api.atlassian.com'
@@ -31,6 +32,7 @@ interface AtlassianEnv {
   DB: D1Database
   ATLASSIAN_CLIENT_ID?: string
   ATLASSIAN_CLIENT_SECRET?: string
+  TOKEN_ENCRYPTION_KEY?: string
 }
 
 function aEnv(ctx: AgentContext): AtlassianEnv {
@@ -84,7 +86,11 @@ async function requireAtlassianAuth(
       error: 'Atlassian cloud site was not captured during connect. Ask the user to reconnect.',
     }
   }
-  return { token: row.accessToken, cloudId: row.cloudId }
+  // Tokens are stored AES-GCM encrypted (stub-provider callback). Decrypt
+  // before use — sending the ciphertext as a Bearer token authenticates nothing.
+  const token = await decrypt(row.accessToken, env.TOKEN_ENCRYPTION_KEY)
+  if (!token) return { error: RECONNECT_HINT }
+  return { token, cloudId: row.cloudId }
 }
 
 async function atlassianCall<T>(

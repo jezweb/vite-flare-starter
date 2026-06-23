@@ -9,6 +9,7 @@
 import { z } from 'zod'
 import { FileText, Database, Camera, Link2, Code } from 'lucide-react'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
+import { bytesToBase64 } from '@/server/lib/base64'
 import {
   detectInterstitial,
   interstitialError,
@@ -191,7 +192,7 @@ export const browserScreenshotDefinition: ToolDefinition<
       })
       if (!response.ok) throw new Error(`HTTP ${response.status}`)
       const buffer = await response.arrayBuffer()
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)))
+      const base64 = bytesToBase64(new Uint8Array(buffer))
       return { url, imageDataUrl: `data:image/png;base64,${base64}`, sizeBytes: buffer.byteLength }
     } catch (error) {
       return { url, error: error instanceof Error ? error.message : String(error) }

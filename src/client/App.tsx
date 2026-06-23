@@ -47,6 +47,9 @@ const SettingsPage = lazy(() =>
 const AdminPage = lazy(() =>
   import('./modules/admin/pages/AdminPage').then((m) => ({ default: m.AdminPage }))
 )
+const AccessLogPage = lazy(() =>
+  import('./modules/admin/pages/AccessLogPage').then((m) => ({ default: m.AccessLogPage }))
+)
 const ChatPage = lazy(() =>
   import('./modules/chat/pages/ChatPage').then((m) => ({ default: m.ChatPage }))
 )
@@ -289,6 +292,7 @@ function App() {
 
                   {/* Admin panel - users, features, tokens */}
                   <Route path="admin" element={<AdminPage />} />
+                  <Route path="admin/access-log" element={<AccessLogPage />} />
 
                   {/* AI Chat — split into a redirect at /chat and the real page
                 at /chat/:conversationId. The redirect mints a UUID upfront

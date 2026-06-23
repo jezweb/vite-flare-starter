@@ -16,6 +16,7 @@ import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
+import { isOwnedR2Key } from '@/server/lib/r2-keys'
 import { transformImage, getImageInfo, type TransformOptions } from './transform'
 
 // Extend env with IMAGES binding
@@ -200,8 +201,12 @@ app.post(
  */
 app.get('/r2/*', async (c) => {
   try {
-    const key = c.req.path.replace('/api/images/r2/', '')
+    const userId = c.get('userId')
+    const key = decodeURIComponent(c.req.path.replace('/api/images/r2/', ''))
     if (!c.env.FILES) return c.json({ error: 'FILES R2 bucket not configured' }, 501)
+    // Ownership gate: the key is caller-supplied — without this any logged-in
+    // user could read another tenant's image by guessing the R2 key (IDOR).
+    if (!isOwnedR2Key(key, userId)) return c.json({ error: 'Access denied' }, 403)
 
     const object = await c.env.FILES.get(key)
     if (!object) return c.json({ error: 'Image not found' }, 404)
@@ -214,7 +219,7 @@ app.get('/r2/*', async (c) => {
       return new Response(object.body, {
         headers: {
           'Content-Type': object.httpMetadata?.contentType || 'image/jpeg',
-          'Cache-Control': 'public, max-age=86400',
+          'Cache-Control': 'private, max-age=3600',
         },
       })
     }
@@ -248,7 +253,7 @@ app.get('/r2/*', async (c) => {
 
     // Add cache headers
     const headers = new Headers(response.headers)
-    headers.set('Cache-Control', 'public, max-age=86400')
+    headers.set('Cache-Control', 'private, max-age=3600')
 
     return new Response(response.body, { headers })
   } catch (error) {

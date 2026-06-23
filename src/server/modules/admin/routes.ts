@@ -7,7 +7,8 @@
 
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
-import { eq, like, or, desc, asc, count, and, gt, isNotNull } from 'drizzle-orm'
+import { z } from 'zod'
+import { eq, like, or, desc, asc, count, and, gt, gte, lte, inArray, isNotNull } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { authMiddleware } from '@/server/middleware/auth'
 import { adminMiddleware, type AdminContext } from '@/server/middleware/admin'
@@ -89,6 +90,64 @@ const adminRoutes = new Hono<AdminContext>()
 // Apply auth and admin middleware to all protected routes
 adminRoutes.use('*', authMiddleware)
 adminRoutes.use('*', adminMiddleware)
+
+/**
+ * GET /access-log — cross-user access log for app owners/admins.
+ *
+ * Every module records user actions via logActivity() into activity_logs
+ * (action, entity, IP, user-agent, field-level changes, timestamp). The
+ * per-user /api/activity routes only show the caller's own rows; this admin
+ * surface lets an owner answer "what has any user done in this app?".
+ *
+ * Filters: userId, action, entityType, from/to (epoch ms). Paginated.
+ * Each row is enriched with the actor's email/name for display.
+ */
+const accessLogQuerySchema = z.object({
+  userId: z.string().optional(),
+  action: z.string().optional(),
+  entityType: z.string().optional(),
+  from: z.coerce.number().optional(),
+  to: z.coerce.number().optional(),
+  limit: z.coerce.number().min(1).max(200).default(100),
+  offset: z.coerce.number().min(0).default(0),
+})
+
+adminRoutes.get('/access-log', zValidator('query', accessLogQuerySchema), async (c) => {
+  const q = c.req.valid('query')
+  const db = drizzle(c.env.DB, { schema })
+
+  const conditions = []
+  if (q.userId) conditions.push(eq(schema.activityLogs.userId, q.userId))
+  if (q.action) conditions.push(eq(schema.activityLogs.action, q.action as never))
+  if (q.entityType) conditions.push(eq(schema.activityLogs.entityType, q.entityType))
+  if (q.from !== undefined) conditions.push(gte(schema.activityLogs.createdAt, new Date(q.from)))
+  if (q.to !== undefined) conditions.push(lte(schema.activityLogs.createdAt, new Date(q.to)))
+
+  const rows = await db.query.activityLogs.findMany({
+    where: conditions.length ? and(...conditions) : undefined,
+    limit: q.limit,
+    offset: q.offset,
+    orderBy: [desc(schema.activityLogs.createdAt)],
+  })
+
+  // Enrich with actor identity for display.
+  const userIds = [...new Set(rows.map((r) => r.userId))]
+  const userMap = new Map<string, { name: string | null; email: string }>()
+  if (userIds.length > 0) {
+    const users = await db.query.user.findMany({
+      where: inArray(schema.user.id, userIds),
+      columns: { id: true, name: true, email: true },
+    })
+    users.forEach((u) => userMap.set(u.id, { name: u.name, email: u.email }))
+  }
+
+  return c.json({
+    entries: rows.map((r) => ({ ...r, actor: userMap.get(r.userId) ?? null })),
+    limit: q.limit,
+    offset: q.offset,
+    count: rows.length,
+  })
+})
 
 /**
  * GET /stats - Get admin dashboard statistics

@@ -49,14 +49,6 @@ async function verifySignature(
     return false
   }
 
-  const signature =
-    headers.get('x-webhook-signature') ||
-    headers.get('x-hub-signature-256')?.replace('sha256=', '') ||
-    headers.get('stripe-signature')
-
-  if (!signature) return false
-
-  // HMAC-SHA256 verification
   const encoder = new TextEncoder()
   const key = await crypto.subtle.importKey(
     'raw',
@@ -65,12 +57,49 @@ async function verifySignature(
     false,
     ['sign']
   )
+
+  // Stripe uses a distinct scheme: the `Stripe-Signature` header is
+  // `t=<timestamp>,v1=<sig>` and the HMAC is computed over `<timestamp>.<body>`,
+  // NOT over the body alone. Treating the header as a plain HMAC made Stripe
+  // verification always fail. Parse and verify it correctly.
+  const stripeSig = headers.get('stripe-signature')
+  if (stripeSig) {
+    const parts = new Map(
+      stripeSig.split(',').map((kv) => {
+        const i = kv.indexOf('=')
+        return [kv.slice(0, i).trim(), kv.slice(i + 1).trim()] as [string, string]
+      })
+    )
+    const t = parts.get('t')
+    const v1 = parts.get('v1')
+    if (!t || !v1) return false
+    const mac = await crypto.subtle.sign('HMAC', key, encoder.encode(`${t}.${body}`))
+    return timingSafeEqualHex(toHex(mac), v1)
+  }
+
+  // Generic / GitHub: HMAC over the raw body.
+  const signature =
+    headers.get('x-webhook-signature') ||
+    headers.get('x-hub-signature-256')?.replace('sha256=', '')
+  if (!signature) return false
   const mac = await crypto.subtle.sign('HMAC', key, encoder.encode(body))
-  const expected = Array.from(new Uint8Array(mac))
+  // Constant-time compare — `===` leaks how many leading chars matched, letting
+  // an attacker forge a valid signature byte-by-byte (timing oracle).
+  return timingSafeEqualHex(toHex(mac), signature)
+}
+
+function toHex(buf: ArrayBuffer): string {
+  return Array.from(new Uint8Array(buf))
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('')
+}
 
-  return expected === signature
+/** Constant-time comparison of two hex strings. */
+function timingSafeEqualHex(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  let diff = 0
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  return diff === 0
 }
 
 /**

@@ -28,6 +28,8 @@ import { memories, MEMORY_SCOPES, MEMORY_TYPES } from './db/schema'
 import { projects } from '@/server/modules/projects/db/schema'
 import { conversations } from '@/server/modules/conversations/db/schema'
 import { user } from '@/server/modules/auth/db/schema'
+import { getOrgRole } from '@/server/modules/organizations/helpers'
+import type { D1Database } from '@cloudflare/workers-types'
 import { extractMemoryFromConversation } from './extract-job'
 import { applyExtractionResult } from './apply-updates'
 
@@ -48,22 +50,24 @@ const listQuerySchema = z.object({
  * - org scope: deferred — return true for now (Phase 5 will enforce)
  */
 async function checkScopeAccess(
-  db: ReturnType<typeof drizzle>,
+  d1: D1Database,
   userId: string,
   scope: 'project' | 'user' | 'org',
   scopeId: string
 ): Promise<boolean> {
   if (scope === 'user') return scopeId === userId
   if (scope === 'project') {
-    const [project] = await db
+    const [project] = await drizzle(d1)
       .select({ id: projects.id })
       .from(projects)
       .where(and(eq(projects.id, scopeId), eq(projects.userId, userId)))
       .limit(1)
     return !!project
   }
-  // org — deferred to Phase 5; allow for now
-  return true
+  // org — caller must be a member of the organization. Previously deferred
+  // ("Phase 5") and returned true, which let any authenticated user read/write
+  // any org's memories by passing scope=org&scopeId=<any org id>.
+  return (await getOrgRole(d1, userId, scopeId)) !== null
 }
 
 /** GET /api/memories?scope=...&scopeId=... — list memories for a scope */
@@ -72,7 +76,7 @@ app.get('/', zValidator('query', listQuerySchema), async (c) => {
   const { scope, scopeId, type, includePrivate } = c.req.valid('query')
   const d = drizzle(c.env.DB)
 
-  const allowed = await checkScopeAccess(d, userId, scope, scopeId)
+  const allowed = await checkScopeAccess(c.env.DB, userId, scope, scopeId)
   if (!allowed) return c.json({ error: 'Forbidden' }, 403)
 
   const conditions = [eq(memories.scope, scope), eq(memories.scopeId, scopeId)]
@@ -135,7 +139,7 @@ app.get('/:id', async (c) => {
   if (!m) return c.json({ error: 'Memory not found' }, 404)
 
   const allowed = await checkScopeAccess(
-    d,
+    c.env.DB,
     userId,
     m.scope as 'project' | 'user' | 'org',
     m.scopeId
@@ -167,7 +171,7 @@ app.post('/', zValidator('json', createSchema), async (c) => {
   const input = c.req.valid('json')
   const d = drizzle(c.env.DB)
 
-  const allowed = await checkScopeAccess(d, userId, input.scope, input.scopeId)
+  const allowed = await checkScopeAccess(c.env.DB, userId, input.scope, input.scopeId)
   if (!allowed) return c.json({ error: 'Forbidden' }, 403)
 
   const id = crypto.randomUUID()
@@ -207,7 +211,7 @@ app.patch('/:id', zValidator('json', updateSchema), async (c) => {
   if (!existing) return c.json({ error: 'Memory not found' }, 404)
 
   const allowed = await checkScopeAccess(
-    d,
+    c.env.DB,
     userId,
     existing.scope as 'project' | 'user' | 'org',
     existing.scopeId
@@ -235,7 +239,7 @@ app.delete('/:id', async (c) => {
   if (!existing) return c.json({ error: 'Memory not found' }, 404)
 
   const allowed = await checkScopeAccess(
-    d,
+    c.env.DB,
     userId,
     existing.scope as 'project' | 'user' | 'org',
     existing.scopeId

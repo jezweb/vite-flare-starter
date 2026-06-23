@@ -19,12 +19,17 @@ import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { useSession } from '@/client/lib/auth'
 
 export function VoiceInputExamplePage() {
-  // One DO instance per session. In a real app, bind this to something
-  // stable (session id from a POST, user id, room id, etc.) rather than
-  // generating on mount.
-  const [sessionId] = useState(() => crypto.randomUUID())
+  // One DO instance per session. The instance name is namespaced with the
+  // user id (`<userId>:<sessionId>`) so the /agents/* access gate can verify
+  // ownership — without the prefix any logged-in user could open this DO by
+  // guessing the session id.
+  const { data: session } = useSession()
+  const userId = session?.user?.id
+  const [rawSessionId] = useState(() => crypto.randomUUID())
+  const sessionId = userId ? `${userId}:${rawSessionId}` : rawSessionId
 
   const {
     transcript,
@@ -70,7 +75,7 @@ export function VoiceInputExamplePage() {
           Reference scaffold for the{' '}
           <code className="px-1 py-0.5 rounded bg-muted font-mono text-sm">@cloudflare/voice</code>{' '}
           + <code className="px-1 py-0.5 rounded bg-muted font-mono text-sm">agents</code> SDK
-          pattern. Session id <code className="font-mono text-xs">{sessionId.slice(0, 8)}</code>.
+          pattern. Session id <code className="font-mono text-xs">{rawSessionId.slice(0, 8)}</code>.
         </p>
       </div>
 
@@ -157,7 +162,7 @@ export function VoiceInputExamplePage() {
             <li>
               Browser opens a WebSocket to{' '}
               <code className="font-mono text-xs">
-                /agents/voice-input-example/{sessionId.slice(0, 8)}…
+                /agents/voice-input-example/{rawSessionId.slice(0, 8)}…
               </code>
             </li>
             <li>

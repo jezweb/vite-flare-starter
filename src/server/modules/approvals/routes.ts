@@ -153,7 +153,10 @@ app.post('/:id/approve', zValidator('json', ApproveSchema), async (c) => {
         alwaysAllow && rawPayload && typeof rawPayload === 'object'
           ? { ...(rawPayload as Record<string, unknown>), alwaysAllow: true }
           : rawPayload
-      const result = await executeApprovedMemoryUpdate(c.env.DB, payload)
+      // row.userId is the approval's authoritative owner (loadOwned scoped it
+      // to the caller) — pass it so the memory write can't be redirected via a
+      // payload-edited userId.
+      const result = await executeApprovedMemoryUpdate(c.env.DB, payload, row.userId)
       if (!result.ok) {
         await markFailed(db, id, result.error ?? 'memory apply failed')
         return c.json({ success: false, status: 'failed', error: result.error }, 500)

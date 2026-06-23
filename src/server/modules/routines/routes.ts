@@ -30,7 +30,20 @@ import {
 } from './storage'
 import { fireRoutine } from './scheduler'
 import { ROUTINE_TEMPLATES, resolveAgentName } from '@/shared/config/routine-templates'
+import { getAgentMetadata } from '@/server/lib/agents/registry'
 import { routineRuns } from './db/schema'
+
+/**
+ * Force an agent instance name to be owned by `userId` (`<userId>:<slug>`),
+ * stripping any caller-supplied owner prefix. A routine fires server-side and
+ * the scheduler addresses the DO by this name + calls setOwner(routine.userId);
+ * without this, a user could set agentName to `<victimId>:slug` and have the
+ * cron fire collide with / overwrite the owner of another tenant's agent DO.
+ */
+function ownerScopedAgentName(userId: string, agentName: string): string {
+  const slug = agentName.includes(':') ? agentName.slice(agentName.indexOf(':') + 1) : agentName
+  return `${userId}:${slug}`
+}
 
 const TriggerKindSchema = z.enum(['schedule', 'webhook', 'event', 'manual'])
 const AdjustModeSchema = z.enum(['direct', 'suggested', 'fixed'])
@@ -78,13 +91,18 @@ app.post('/', zValidator('json', CreateSchema), async (c) => {
   const activeOrg = await getActiveOrg(c)
   const orgId = activeOrg?.organizationId ?? null
   const body = c.req.valid('json')
+  // Only allow targeting a registered agent class — never an arbitrary DO
+  // binding name (e.g. ScratchpadMcpAgent, ChatAgent) the user shouldn't drive.
+  if (!getAgentMetadata(body['agentClass'])) {
+    return c.json({ error: `Unknown agent class: ${body['agentClass']}` }, 400)
+  }
   const created = await createRoutine(c.env, {
     userId,
     organizationId: orgId,
     name: body['name'],
     ...(body['description'] !== undefined ? { description: body['description'] } : {}),
     agentClass: body['agentClass'],
-    agentName: body['agentName'],
+    agentName: ownerScopedAgentName(userId, body['agentName']),
     triggerKind: body['triggerKind'],
     ...(body['triggerConfig'] !== undefined ? { triggerConfig: body['triggerConfig'] } : {}),
     ...(body['inputTemplate'] !== undefined ? { inputTemplate: body['inputTemplate'] } : {}),
@@ -116,6 +134,13 @@ app.patch('/:id', zValidator('json', PatchSchema), async (c) => {
   const activeOrg = await getActiveOrg(c)
   const orgId = activeOrg?.organizationId ?? null
   const patch = c.req.valid('json')
+  // Same guards as create — a PATCH can change agentClass/agentName too.
+  if (patch['agentClass'] !== undefined && !getAgentMetadata(patch['agentClass'])) {
+    return c.json({ error: `Unknown agent class: ${patch['agentClass']}` }, 400)
+  }
+  if (patch['agentName'] !== undefined) {
+    patch['agentName'] = ownerScopedAgentName(userId, patch['agentName'])
+  }
   const updated = await updateRoutine(c.env, c.req.param('id'), userId, patch, orgId)
   if (!updated) return c.json({ error: 'Not found' }, 404)
   return c.json(updated)

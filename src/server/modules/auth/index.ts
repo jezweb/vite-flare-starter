@@ -62,8 +62,9 @@ function parseTrustedOrigins(envValue?: string): string[] {
  * AUTH_ALLOWLIST='true' with empty lists fails closed (rejects all) so a
  * client deploy that forgot to populate the lists blocks rather than opens.
  *
- * Fires on user CREATION only (wired into databaseHooks.user.create.before),
- * so existing users are never affected.
+ * Wired into BOTH databaseHooks.user.create.before (gates NEW signups) and
+ * databaseHooks.session.create.before (gates EVERY login, so an account that
+ * predates an activated allowlist is locked out on its next sign-in too).
  */
 export function isSignupAllowed(
   email: string,
@@ -308,6 +309,37 @@ export function createAuth(
       },
       session: {
         create: {
+          // Re-check the allowlist on EVERY login. user.create.before only
+          // guards NEW users; this guards EXISTING ones — an account that
+          // predates the allowlist (or was created while the gate was off)
+          // must not keep signing in once the gate is active. This is the
+          // load-bearing half: turning on ALLOWED_AUTH_* now actually locks
+          // out an unauthorised account that already exists. (Audit playbook
+          // audit-vite-flare-starter-auth-allowlist 2026-06-23.)
+          before: async (newSession) => {
+            try {
+              const row = (await d1
+                .prepare('SELECT email FROM user WHERE id = ?')
+                .bind(newSession.userId)
+                .first()) as { email?: string } | null
+              const email = typeof row?.email === 'string' ? row.email : ''
+              if (email && !isSignupAllowed(email, env)) {
+                console.warn(JSON.stringify({ event: 'auth_login_blocked', email }))
+                return false
+              }
+            } catch (err) {
+              // Fail OPEN on a lookup error rather than lock everyone out on a
+              // transient D1 blip — new intruders are already blocked at
+              // user.create.before; this hook only catches pre-existing ones.
+              console.error(
+                JSON.stringify({
+                  event: 'auth_login_gate_error',
+                  error: err instanceof Error ? err.message : String(err),
+                })
+              )
+            }
+            return { data: newSession }
+          },
           after: async (newSession) => {
             await logActivity(d1, {
               userId: newSession.userId,
@@ -358,10 +390,16 @@ export function createAuth(
     },
 
     // Social providers (Google OAuth)
-    // NOTE: Google OAuth is always enabled when credentials exist
-    // Domain restrictions are handled at Google Cloud Console level:
-    // - OAuth consent screen → User type = "Internal" restricts to your Workspace domain only
-    // - This allows existing users to login AND restricts new signups to your domain
+    // NOTE: Google OAuth is always enabled when credentials exist.
+    //
+    // ACCESS CONTROL IS IN CODE, NOT just the consent screen. The previous
+    // "handled at Google Cloud Console level" note was a trap: a consent
+    // screen set to External (required whenever any user is on a non-Workspace
+    // domain) lets ANY Google account sign in. The real gate is the
+    // ALLOWED_AUTH_EMAILS / ALLOWED_AUTH_DOMAINS / AUTH_ALLOWLIST allowlist,
+    // enforced by isSignupAllowed() in BOTH databaseHooks.user.create.before
+    // (new users) and databaseHooks.session.create.before (existing users).
+    // The consent screen is defence in depth, never the only gate.
     socialProviders: {
       google: {
         clientId: env.GOOGLE_CLIENT_ID || '',
