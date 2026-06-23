@@ -45,9 +45,25 @@ echo "production" | npx wrangler secret put SENTRY_ENVIRONMENT
 echo "your-gateway-id" | npx wrangler secret put AI_GATEWAY_ID
 echo "your-token" | npx wrangler secret put CF_AIG_TOKEN
 
-# Optional: Admin auto-promotion
+# Optional: Admin auto-promotion (admin promote requires a VERIFIED email)
 echo "admin@yourcompany.com,cto@yourcompany.com" | npx wrangler secret put ADMIN_EMAILS
+
+# Sign-in allowlist — gate WHO can sign in (incl. Google OAuth), enforced in code.
+# Private/team apps: set a domain (and/or explicit emails). Public apps: leave unset.
+# The Google consent screen is NOT sufficient — an "External" app lets any Google
+# account in. See docs/SECURITY.md.
+echo "yourcompany.com" | npx wrangler secret put ALLOWED_AUTH_DOMAINS
+# echo "alice@x.com,bob@x.com" | npx wrangler secret put ALLOWED_AUTH_EMAILS
+# echo "true" | npx wrangler secret put AUTH_ALLOWLIST   # fail closed with empty lists
+
+# Required if using OAuth connectors (Gmail/Slack/Notion/Atlassian/MCP) — used for
+# connector token encryption AND signed OAuth-redirect cookies.
+echo "$(openssl rand -hex 32)" | npx wrangler secret put TOKEN_ENCRYPTION_KEY
 ```
+
+> **Before going live, walk `docs/SECURITY.md` § "Pre-deploy checklist".** It
+> covers the allowlist decision, R2/tenancy scoping, the agent access gate, and
+> the connector token/cookie protections.
 
 ### 3. Database Migration
 
