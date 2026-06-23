@@ -26,7 +26,7 @@
     //  - /api/*    — Hono REST routes
     //  - /agents/* — Durable Object agents SDK WebSocket routing (`routeAgentRequest`)
     //                Remove this entry if you're not using any DO agents.
-    "run_worker_first": ["/api/*", "/agents/*"]
+    "run_worker_first": ["/api/*", "/agents/*", "/mcp/*"]
   },
 
   // Cloudflare Bindings
