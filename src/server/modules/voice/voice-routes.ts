@@ -22,6 +22,7 @@ import { Hono } from 'hono'
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
+import { consumeRateLimit } from '@/server/middleware/rate-limit'
 import {
   AURA2_SPEAKERS,
   synthesizeSpeech,
@@ -55,6 +56,18 @@ app.get('/voices', (c) => {
  * recorded `Blob` from MediaRecorder under that key.
  */
 app.post('/transcribe', async (c) => {
+  const rl = consumeRateLimit({
+    key: 'VOICE',
+    windowMs: 60 * 60 * 1000,
+    identifier: c.get('userId'),
+    routeKey: 'POST:/api/voice/transcribe',
+  })
+  if (!rl.allowed) {
+    return c.json(
+      { error: 'Voice rate limit exceeded — try again later.', retryAfterSeconds: rl.retryAfterSeconds },
+      429
+    )
+  }
   let form: FormData
   try {
     form = await c.req.formData()
@@ -135,6 +148,18 @@ const ttsBodySchema = z.object({
  * with X-TTS-Provider header so the client knows which provider answered.
  */
 app.post('/tts', zValidator('json', ttsBodySchema), async (c) => {
+  const rl = consumeRateLimit({
+    key: 'VOICE',
+    windowMs: 60 * 60 * 1000,
+    identifier: c.get('userId'),
+    routeKey: 'POST:/api/voice/tts',
+  })
+  if (!rl.allowed) {
+    return c.json(
+      { error: 'Voice rate limit exceeded — try again later.', retryAfterSeconds: rl.retryAfterSeconds },
+      429
+    )
+  }
   const { text, speaker, provider } = c.req.valid('json')
   const env = c.env as unknown as TtsEnv
   try {

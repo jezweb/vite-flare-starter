@@ -56,21 +56,26 @@ export const adminMiddleware = createMiddleware<AdminContext>(async (c, next) =>
   // Get current user role from database
   const dbUser = await db.query.user.findFirst({
     where: eq(schema.user.id, userId),
-    columns: { role: true },
+    columns: { role: true, emailVerified: true },
   })
 
   const currentRole = dbUser?.role || 'user'
 
-  // Auto-promote if email matches and not already admin
-  if (isAdminEmail && currentRole !== 'admin') {
+  // Auto-promote if email matches AND the email is verified, and not already
+  // admin. The emailVerified gate blocks an unverified email/password account
+  // registered with an ADMIN_EMAILS address from claiming admin (OAuth/Google
+  // sets emailVerified, so the normal admin sign-in path is unaffected).
+  if (isAdminEmail && dbUser?.emailVerified && currentRole !== 'admin') {
     await db
       .update(schema.user)
       .set({ role: 'admin', updatedAt: new Date() })
       .where(eq(schema.user.id, userId))
   }
 
-  // Check authorization - user must be admin by email or DB role
-  const isAdmin = isAdminEmail || currentRole === 'admin'
+  // Check authorization - admin by (verified) email or existing DB role.
+  // isAdminEmail alone is NOT enough: an unverified email/password account
+  // registered with an ADMIN_EMAILS address must not get admin access.
+  const isAdmin = (isAdminEmail && !!dbUser?.emailVerified) || currentRole === 'admin'
 
   if (!isAdmin) {
     return c.json({ error: 'Forbidden - Admin access required' }, 403)

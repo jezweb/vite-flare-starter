@@ -86,6 +86,9 @@ export const RATE_LIMITS = {
   /** Structured extraction requests per hour */
   EXTRACT: 30,
 
+  /** Voice transcribe + TTS requests per hour (3rd-party spend protection) */
+  VOICE: 60,
+
   /** AI-Sparkle skill rewrites per hour (one OPENROUTER_API_KEY call each) */
   SKILL_AI_EDIT: 20,
 
