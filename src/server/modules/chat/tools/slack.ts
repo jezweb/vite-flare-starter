@@ -20,6 +20,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { eq } from 'drizzle-orm'
 import { MessageSquare, Hash, User, Send, Search } from 'lucide-react'
 import { slackTokens } from '@/server/modules/slack/db/schema'
+import { decrypt } from '@/server/lib/crypto'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 
 const SLACK_API = 'https://slack.com/api'
@@ -31,6 +32,7 @@ interface SlackEnv {
   DB: D1Database
   SLACK_CLIENT_ID?: string
   SLACK_CLIENT_SECRET?: string
+  TOKEN_ENCRYPTION_KEY?: string
 }
 
 function slackEnv(ctx: AgentContext): SlackEnv {
@@ -77,7 +79,10 @@ async function requireSlackToken(
     }
   }
   if (row.status !== 'active') return { error: RECONNECT_HINT }
-  return { token: row.accessToken }
+  // Stored AES-GCM encrypted — decrypt before sending as Bearer.
+  const token = await decrypt(row.accessToken, env.TOKEN_ENCRYPTION_KEY)
+  if (!token) return { error: RECONNECT_HINT }
+  return { token }
 }
 
 /** Shared form-body helper — Slack accepts URL-encoded POST. */
