@@ -13,7 +13,7 @@ import { and, eq } from 'drizzle-orm'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import { userMcpConnections, userMcpToolPolicies } from './db/schema'
 import { probeMcpServer, registerOAuthClient } from './probe'
-import { encrypt, decrypt, generatePkcePair, randomToken } from '@/server/lib/crypto'
+import { encrypt, decrypt, generatePkcePair, signValue, verifyValue } from '@/server/lib/crypto'
 import { MCP_CATALOG, findCatalogEntry } from '@/shared/config/connector-catalog'
 
 const app = new Hono<AuthContext>()
@@ -50,6 +50,12 @@ app.get('/callback', async (c) => {
   }
   const pkceVerifier = decodeURIComponent(pkceMatch[1]!)
   const connectionId = decodeURIComponent(connectionMatch[1]!)
+  // Verify the OAuth state binds to this connection (HMAC-signed connectionId).
+  // Previously state was accepted without any check.
+  const stateConnId = await verifyValue(state, c.env.BETTER_AUTH_SECRET)
+  if (!stateConnId || stateConnId !== connectionId) {
+    return c.html(callbackPage({ status: 'error', message: 'Invalid OAuth state — try connecting again.' }))
+  }
 
   const db = drizzle(c.env.DB)
   const [conn] = await db
@@ -277,7 +283,9 @@ app.post('/connect', zValidator('json', connectSchema), async (c) => {
   }
 
   const { verifier, challenge } = await generatePkcePair()
-  const state = randomToken()
+  // State is the HMAC-signed connectionId so the callback can verify it binds
+  // to a connect THIS server issued (the callback previously trusted any state).
+  const state = await signValue(connectionId, c.env.BETTER_AUTH_SECRET)
 
   const row = {
     id: connectionId,
@@ -378,7 +386,7 @@ app.post('/:id/authorize', async (c) => {
 
   const redirectUri = new URL('/api/mcp-connections/callback', c.env.BETTER_AUTH_URL).toString()
   const { verifier, challenge } = await generatePkcePair()
-  const state = randomToken()
+  const state = await signValue(id, c.env.BETTER_AUTH_SECRET)
 
   const authUrl = new URL(conn.authorizationEndpoint)
   authUrl.searchParams.set('response_type', 'code')

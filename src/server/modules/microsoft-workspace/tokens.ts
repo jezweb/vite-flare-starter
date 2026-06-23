@@ -71,6 +71,7 @@ export interface MicrosoftWorkspaceEnv {
    */
   MICROSOFT_WORKSPACE_TENANT?: string
   BETTER_AUTH_URL?: string
+  BETTER_AUTH_SECRET?: string
   TOKEN_ENCRYPTION_KEY?: string
 }
 

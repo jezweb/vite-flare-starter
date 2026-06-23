@@ -16,7 +16,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { eq } from 'drizzle-orm'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import { microsoftWorkspaceTokens } from './db/schema'
-import { encrypt, randomToken } from '@/server/lib/crypto'
+import { encrypt, randomToken, signValue, verifyValue } from '@/server/lib/crypto'
 import {
   exchangeAuthCode,
   isMicrosoftWorkspaceEnabled,
@@ -58,8 +58,10 @@ app.get('/callback', async (c) => {
   if (!stateMatch || !userMatch) return finish('error', 'Missing session — try connecting again.')
   if (decodeURIComponent(stateMatch[1]!) !== state) return finish('error', 'State mismatch')
 
-  const userId = decodeURIComponent(userMatch[1]!)
   const env = c.env as unknown as MicrosoftWorkspaceEnv
+  // Verify the HMAC-signed msw_user cookie before trusting it (token-row hijack).
+  const userId = await verifyValue(decodeURIComponent(userMatch[1]!), env.BETTER_AUTH_SECRET)
+  if (!userId) return finish('error', 'Invalid session — try connecting again.')
 
   if (!isMicrosoftWorkspaceEnabled(env)) {
     return finish('error', 'Microsoft Workspace is not configured on this server')
@@ -184,7 +186,10 @@ app.post('/connect', async (c) => {
   const secure = env.BETTER_AUTH_URL?.startsWith('https://') ? '; Secure' : ''
   const headers = new Headers({ 'Content-Type': 'application/json' })
   headers.append('Set-Cookie', `msw_state=${encodeURIComponent(state)}; ${cookieBase}${secure}`)
-  headers.append('Set-Cookie', `msw_user=${encodeURIComponent(userId)}; ${cookieBase}${secure}`)
+  headers.append(
+    'Set-Cookie',
+    `msw_user=${encodeURIComponent(await signValue(userId, env.BETTER_AUTH_SECRET))}; ${cookieBase}${secure}`
+  )
 
   return new Response(JSON.stringify({ authorizationUrl: authUrl.toString() }), { headers })
 })

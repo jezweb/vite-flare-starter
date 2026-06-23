@@ -23,7 +23,7 @@ import { eq } from 'drizzle-orm'
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
 import { user } from '@/server/modules/auth/db/schema'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
-import { encrypt, decrypt, randomToken } from '@/server/lib/crypto'
+import { encrypt, decrypt, randomToken, signValue, verifyValue } from '@/server/lib/crypto'
 
 /**
  * Creates a per-provider token table definition. Pass a unique physical
@@ -161,7 +161,13 @@ export function buildStubRoutes(config: StubProviderConfig): Hono<AuthContext> {
     if (decodeURIComponent(stateMatch[1]!) !== state) {
       return finish('error', 'State mismatch')
     }
-    const userId = decodeURIComponent(userMatch[1]!)
+    // Verify the HMAC-signed user cookie before trusting it — without this an
+    // authed attacker who knows a victim's userId could write their provider
+    // (slack/notion/atlassian) tokens under the victim's row (token-row hijack).
+    const userId = await verifyValue(decodeURIComponent(userMatch[1]!), env['BETTER_AUTH_SECRET'])
+    if (!userId) {
+      return finish('error', 'Invalid session — try connecting again.')
+    }
 
     if (!isEnabled(env)) {
       return finish('error', `${providerId} is not configured on this server`)
@@ -315,7 +321,7 @@ export function buildStubRoutes(config: StubProviderConfig): Hono<AuthContext> {
     )
     headers.append(
       'Set-Cookie',
-      `${cookiePrefix}_user=${encodeURIComponent(userId)}; ${cookieBase}${secure}`
+      `${cookiePrefix}_user=${encodeURIComponent(await signValue(userId, env['BETTER_AUTH_SECRET']))}; ${cookieBase}${secure}`
     )
     return new Response(JSON.stringify({ authorizationUrl: url.toString() }), { headers })
   })
