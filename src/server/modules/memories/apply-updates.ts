@@ -264,7 +264,8 @@ async function loadProjectMode(
  */
 export async function executeApprovedMemoryUpdate(
   db: D1Database,
-  payload: unknown
+  payload: unknown,
+  ownerUserId: string
 ): Promise<{ ok: boolean; error?: string }> {
   const d = drizzle(db)
   if (!payload || typeof payload !== 'object') return { ok: false, error: 'invalid payload' }
@@ -273,10 +274,25 @@ export async function executeApprovedMemoryUpdate(
   const conversationId =
     typeof p['conversationId'] === 'string' ? (p['conversationId'] as string) : ''
   const projectId = typeof p['projectId'] === 'string' ? (p['projectId'] as string) : null
-  const userId = typeof p['userId'] === 'string' ? (p['userId'] as string) : ''
+  // SECURITY: the acting user is the approval's authoritative owner, NOT a
+  // field read from the (user-editable) payload. Trusting payload.userId let a
+  // user edit a queued approval to write/delete memories in another user's scope.
+  const userId = ownerUserId
   const alwaysAllow = p['alwaysAllow'] === true
 
   if (!update || !userId || !conversationId) return { ok: false, error: 'missing fields' }
+
+  // SECURITY: project-scoped updates must target a project the owner owns —
+  // otherwise an edited payload could aim projectId at another user's project.
+  if (update.scope === 'project') {
+    if (!projectId) return { ok: false, error: 'no scope id' }
+    const [proj] = await d
+      .select({ id: projects.id })
+      .from(projects)
+      .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
+      .limit(1)
+    if (!proj) return { ok: false, error: 'forbidden scope' }
+  }
 
   // Apply the update — same logic as auto path.
   if (update.action === 'remove') {
