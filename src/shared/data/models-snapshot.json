@@ -1,16 +1,16 @@
 {
-  "updated": "2026-06-04T04:13:16.005Z",
-  "total": 136,
+  "updated": "2026-06-25T21:07:58.796Z",
+  "total": 137,
   "sources": {
     "openrouter": {
       "url": "https://models.flared.au/json",
-      "updated": "2026-06-04T04:13:15.995Z",
-      "count": 112
+      "updated": "2026-06-25T21:07:58.257Z",
+      "count": 111
     },
     "workersai": {
       "url": "https://ai.flared.au/json",
-      "updated": "2026-06-04T04:13:13.051Z",
-      "count": 58
+      "updated": "2026-06-25T21:07:58.816Z",
+      "count": 60
     }
   },
   "models": [
@@ -200,6 +200,43 @@
       "flagship": false
     },
     {
+      "id": "anthropic/claude-fable-5",
+      "name": "Anthropic: Claude Fable 5",
+      "short_name": "Claude Fable 5",
+      "source": "openrouter",
+      "provider": "anthropic",
+      "api_id": "claude-fable-5",
+      "env_var": "ANTHROPIC_API_KEY",
+      "context_length": 1000000,
+      "max_output": 128000,
+      "pricing": {
+        "input": 10,
+        "output": 50
+      },
+      "modality": "text+image+file->text",
+      "category": "text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": true,
+        "audio_in": false,
+        "video_in": false,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "reasoning",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://api.anthropic.com/v1/messages",
+        "curl": "curl https://api.anthropic.com/v1/messages \\\n  -H \"x-api-key: $ANTHROPIC_API_KEY\" \\\n  -H \"anthropic-version: 2023-06-01\" \\\n  -H \"content-type: application/json\" \\\n  -d '{\"model\":\"claude-fable-5\",\"max_tokens\":1024,\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
+      "released": "2026-06-09",
+      "knowledge_cutoff": null,
+      "sunset_date": null,
+      "flagship": false
+    },
+    {
       "id": "anthropic/claude-opus-4.8",
       "name": "Anthropic: Claude Opus 4.8",
       "short_name": "Claude Opus 4.8",
@@ -272,43 +309,6 @@
       "knowledge_cutoff": "2025-03",
       "sunset_date": null,
       "flagship": false
-    },
-    {
-      "id": "arcee-ai/maestro-reasoning",
-      "name": "Arcee AI: Maestro Reasoning",
-      "short_name": "Maestro Reasoning",
-      "source": "openrouter",
-      "provider": "arcee-ai",
-      "api_id": null,
-      "env_var": "OPENROUTER_API_KEY",
-      "context_length": 131072,
-      "max_output": 32000,
-      "pricing": {
-        "input": 0.9,
-        "output": 3.3
-      },
-      "modality": "text->text",
-      "category": "text",
-      "capabilities": {
-        "tools": false,
-        "vision": false,
-        "pdf": false,
-        "audio_in": false,
-        "video_in": false,
-        "reasoning": false,
-        "structured_outputs": false,
-        "streaming": true
-      },
-      "tier": "flagship",
-      "example": {
-        "via": "openrouter",
-        "endpoint": "https://openrouter.ai/api/v1/chat/completions",
-        "curl": "curl https://openrouter.ai/api/v1/chat/completions \\\n  -H \"Authorization: Bearer $OPENROUTER_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"arcee-ai/maestro-reasoning\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
-      },
-      "released": "2025-05-05",
-      "knowledge_cutoff": "2025-03-31",
-      "sunset_date": null,
-      "flagship": true
     },
     {
       "id": "arcee-ai/virtuoso-large",
@@ -393,10 +393,10 @@
       "api_id": null,
       "env_var": "OPENROUTER_API_KEY",
       "context_length": 262144,
-      "max_output": 262144,
+      "max_output": 80000,
       "pricing": {
-        "input": 0.22,
-        "output": 0.85
+        "input": 0.25,
+        "output": 0.8
       },
       "modality": "text->text",
       "category": "text",
@@ -407,7 +407,7 @@
         "audio_in": false,
         "video_in": false,
         "reasoning": true,
-        "structured_outputs": true,
+        "structured_outputs": false,
         "streaming": true
       },
       "tier": "reasoning",
@@ -494,43 +494,6 @@
       "knowledge_cutoff": null,
       "sunset_date": null,
       "flagship": true
-    },
-    {
-      "id": "bytedance-seed/seed-2.0-lite",
-      "name": "ByteDance Seed: Seed-2.0-Lite",
-      "short_name": "Seed-2.0-Lite",
-      "source": "openrouter",
-      "provider": "bytedance-seed",
-      "api_id": null,
-      "env_var": "OPENROUTER_API_KEY",
-      "context_length": 262144,
-      "max_output": 131072,
-      "pricing": {
-        "input": 0.25,
-        "output": 2
-      },
-      "modality": "text+image+video->text",
-      "category": "text",
-      "capabilities": {
-        "tools": true,
-        "vision": true,
-        "pdf": false,
-        "audio_in": false,
-        "video_in": true,
-        "reasoning": true,
-        "structured_outputs": true,
-        "streaming": true
-      },
-      "tier": "reasoning",
-      "example": {
-        "via": "openrouter",
-        "endpoint": "https://openrouter.ai/api/v1/chat/completions",
-        "curl": "curl https://openrouter.ai/api/v1/chat/completions \\\n  -H \"Authorization: Bearer $OPENROUTER_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"bytedance-seed/seed-2.0-lite\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
-      },
-      "released": "2026-03-10",
-      "knowledge_cutoff": null,
-      "sunset_date": null,
-      "flagship": false
     },
     {
       "id": "deepseek/deepseek-r1",
@@ -652,10 +615,10 @@
       "api_id": "deepseek-v4-flash",
       "env_var": "DEEPSEEK_API_KEY",
       "context_length": 1048576,
-      "max_output": 131072,
+      "max_output": 65536,
       "pricing": {
-        "input": 0.0983,
-        "output": 0.1966
+        "input": 0.09,
+        "output": 0.18
       },
       "modality": "text->text",
       "category": "text",
@@ -726,7 +689,7 @@
       "api_id": "gemini-3-flash-preview",
       "env_var": "GEMINI_API_KEY",
       "context_length": 1048576,
-      "max_output": 65536,
+      "max_output": 65535,
       "pricing": {
         "input": 0.5,
         "output": 3
@@ -837,10 +800,10 @@
       "api_id": "gemma-4-31b-it",
       "env_var": "GEMINI_API_KEY",
       "context_length": 262144,
-      "max_output": 16384,
+      "max_output": 262144,
       "pricing": {
         "input": 0.12,
-        "output": 0.37
+        "output": 0.35
       },
       "modality": "text+image+video->text",
       "category": "text",
@@ -913,8 +876,8 @@
       "context_length": 131072,
       "max_output": 16384,
       "pricing": {
-        "input": 0.245,
-        "output": 0.245
+        "input": 0.345,
+        "output": 0.345
       },
       "modality": "text+image->text",
       "category": "text",
@@ -1049,43 +1012,6 @@
       "knowledge_cutoff": null,
       "sunset_date": null,
       "flagship": true
-    },
-    {
-      "id": "minimax/minimax-m2.7",
-      "name": "MiniMax: MiniMax M2.7",
-      "short_name": "MiniMax M2.7",
-      "source": "openrouter",
-      "provider": "minimax",
-      "api_id": null,
-      "env_var": "OPENROUTER_API_KEY",
-      "context_length": 204800,
-      "max_output": 131072,
-      "pricing": {
-        "input": 0.279,
-        "output": 1.2
-      },
-      "modality": "text->text",
-      "category": "text",
-      "capabilities": {
-        "tools": true,
-        "vision": false,
-        "pdf": false,
-        "audio_in": false,
-        "video_in": false,
-        "reasoning": true,
-        "structured_outputs": true,
-        "streaming": true
-      },
-      "tier": "reasoning",
-      "example": {
-        "via": "openrouter",
-        "endpoint": "https://openrouter.ai/api/v1/chat/completions",
-        "curl": "curl https://openrouter.ai/api/v1/chat/completions \\\n  -H \"Authorization: Bearer $OPENROUTER_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"minimax/minimax-m2.7\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
-      },
-      "released": "2026-03-18",
-      "knowledge_cutoff": null,
-      "sunset_date": null,
-      "flagship": false
     },
     {
       "id": "mistralai/mistral-medium-3-5",
@@ -1246,8 +1172,8 @@
       "context_length": 262144,
       "max_output": 262144,
       "pricing": {
-        "input": 0.684,
-        "output": 3.42
+        "input": 0.66,
+        "output": 3.41
       },
       "modality": "text+image->text",
       "category": "text",
@@ -1310,18 +1236,55 @@
       "flagship": true
     },
     {
-      "id": "nvidia/nemotron-3-super-120b-a12b",
-      "name": "NVIDIA: Nemotron 3 Super",
-      "short_name": "Nemotron 3 Super",
+      "id": "moonshotai/kimi-k2.7-code",
+      "name": "MoonshotAI: Kimi K2.7 Code",
+      "short_name": "Kimi K2.7 Code",
+      "source": "openrouter",
+      "provider": "moonshotai",
+      "api_id": null,
+      "env_var": "OPENROUTER_API_KEY",
+      "context_length": 262144,
+      "max_output": 16384,
+      "pricing": {
+        "input": 0.74,
+        "output": 3.5
+      },
+      "modality": "text+image->text",
+      "category": "text",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": false,
+        "audio_in": false,
+        "video_in": false,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "reasoning",
+      "example": {
+        "via": "openrouter",
+        "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+        "curl": "curl https://openrouter.ai/api/v1/chat/completions \\\n  -H \"Authorization: Bearer $OPENROUTER_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"moonshotai/kimi-k2.7-code\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
+      "released": "2026-06-12",
+      "knowledge_cutoff": null,
+      "sunset_date": null,
+      "flagship": false
+    },
+    {
+      "id": "nvidia/nemotron-3-ultra-550b-a55b",
+      "name": "NVIDIA: Nemotron 3 Ultra",
+      "short_name": "Nemotron 3 Ultra",
       "source": "openrouter",
       "provider": "nvidia",
       "api_id": null,
       "env_var": "OPENROUTER_API_KEY",
       "context_length": 1000000,
-      "max_output": null,
+      "max_output": 16384,
       "pricing": {
-        "input": 0.09,
-        "output": 0.45
+        "input": 0.5,
+        "output": 2.2
       },
       "modality": "text->text",
       "category": "text",
@@ -1339,9 +1302,9 @@
       "example": {
         "via": "openrouter",
         "endpoint": "https://openrouter.ai/api/v1/chat/completions",
-        "curl": "curl https://openrouter.ai/api/v1/chat/completions \\\n  -H \"Authorization: Bearer $OPENROUTER_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"nvidia/nemotron-3-super-120b-a12b\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+        "curl": "curl https://openrouter.ai/api/v1/chat/completions \\\n  -H \"Authorization: Bearer $OPENROUTER_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"nvidia/nemotron-3-ultra-550b-a55b\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
       },
-      "released": "2026-03-11",
+      "released": "2026-06-04",
       "knowledge_cutoff": null,
       "sunset_date": null,
       "flagship": false
@@ -1532,43 +1495,6 @@
       "flagship": false
     },
     {
-      "id": "openai/gpt-5.4-nano",
-      "name": "OpenAI: GPT-5.4 Nano",
-      "short_name": "GPT-5.4 Nano",
-      "source": "openrouter",
-      "provider": "openai",
-      "api_id": "gpt-5.4-nano",
-      "env_var": "OPENAI_API_KEY",
-      "context_length": 400000,
-      "max_output": 128000,
-      "pricing": {
-        "input": 0.2,
-        "output": 1.25
-      },
-      "modality": "text+image+file->text",
-      "category": "text",
-      "capabilities": {
-        "tools": true,
-        "vision": true,
-        "pdf": true,
-        "audio_in": false,
-        "video_in": false,
-        "reasoning": true,
-        "structured_outputs": true,
-        "streaming": true
-      },
-      "tier": "reasoning",
-      "example": {
-        "via": "direct",
-        "endpoint": "https://api.openai.com/v1/chat/completions",
-        "curl": "curl https://api.openai.com/v1/chat/completions \\\n  -H \"Authorization: Bearer $OPENAI_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"gpt-5.4-nano\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
-      },
-      "released": "2026-03-17",
-      "knowledge_cutoff": "2025-08-31",
-      "sunset_date": null,
-      "flagship": false
-    },
-    {
       "id": "qwen/qwen3.7-max",
       "name": "Qwen: Qwen3.7 Max",
       "short_name": "Qwen3.7 Max",
@@ -1616,8 +1542,8 @@
       "context_length": 1000000,
       "max_output": 65536,
       "pricing": {
-        "input": 0.4,
-        "output": 1.6
+        "input": 0.32,
+        "output": 1.28
       },
       "modality": "text+image->text",
       "category": "text",
@@ -1801,8 +1727,8 @@
       "context_length": 262144,
       "max_output": 262140,
       "pricing": {
-        "input": 0.29,
-        "output": 3.2
+        "input": 0.2885,
+        "output": 3.17
       },
       "modality": "text+image+video->text",
       "category": "text",
@@ -1836,7 +1762,7 @@
       "api_id": "qwen3.6-35b-a3b",
       "env_var": "DASHSCOPE_API_KEY",
       "context_length": 262144,
-      "max_output": 262140,
+      "max_output": 262144,
       "pricing": {
         "input": 0.14,
         "output": 1
@@ -1860,43 +1786,6 @@
         "curl": "curl https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions \\\n  -H \"Authorization: Bearer $DASHSCOPE_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"qwen3.6-35b-a3b\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
       },
       "released": "2026-04-27",
-      "knowledge_cutoff": null,
-      "sunset_date": null,
-      "flagship": false
-    },
-    {
-      "id": "qwen/qwen3.5-9b",
-      "name": "Qwen: Qwen3.5-9B",
-      "short_name": "Qwen3.5-9B",
-      "source": "openrouter",
-      "provider": "qwen",
-      "api_id": "qwen3.5-9b",
-      "env_var": "DASHSCOPE_API_KEY",
-      "context_length": 262144,
-      "max_output": 81920,
-      "pricing": {
-        "input": 0.04,
-        "output": 0.15
-      },
-      "modality": "text+image+video->text",
-      "category": "text",
-      "capabilities": {
-        "tools": true,
-        "vision": true,
-        "pdf": false,
-        "audio_in": false,
-        "video_in": true,
-        "reasoning": true,
-        "structured_outputs": true,
-        "streaming": true
-      },
-      "tier": "reasoning",
-      "example": {
-        "via": "direct",
-        "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
-        "curl": "curl https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions \\\n  -H \"Authorization: Bearer $DASHSCOPE_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"qwen3.5-9b\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
-      },
-      "released": "2026-03-10",
       "knowledge_cutoff": null,
       "sunset_date": null,
       "flagship": false
@@ -1952,12 +1841,12 @@
         "input": 1.25,
         "output": 2.5
       },
-      "modality": "text+image->text",
+      "modality": "text+image+file->text",
       "category": "text",
       "capabilities": {
         "tools": true,
         "vision": true,
-        "pdf": false,
+        "pdf": true,
         "audio_in": false,
         "video_in": false,
         "reasoning": true,
@@ -1986,8 +1875,8 @@
       "context_length": 2000000,
       "max_output": null,
       "pricing": {
-        "input": 2,
-        "output": 6
+        "input": 1.25,
+        "output": 2.5
       },
       "modality": "text+image+file->text",
       "category": "text",
@@ -2132,9 +2021,9 @@
       "api_id": null,
       "env_var": "OPENROUTER_API_KEY",
       "context_length": 1048576,
-      "max_output": 131072,
+      "max_output": null,
       "pricing": {
-        "input": 0.14,
+        "input": 0.105,
         "output": 0.28
       },
       "modality": "text+image+audio+video->text",
@@ -2268,44 +2157,7 @@
       },
       "released": "2026-04-01",
       "knowledge_cutoff": null,
-      "sunset_date": null,
-      "flagship": false
-    },
-    {
-      "id": "z-ai/glm-5-turbo",
-      "name": "Z.ai: GLM 5 Turbo",
-      "short_name": "GLM 5 Turbo",
-      "source": "openrouter",
-      "provider": "z-ai",
-      "api_id": null,
-      "env_var": "OPENROUTER_API_KEY",
-      "context_length": 202752,
-      "max_output": 131072,
-      "pricing": {
-        "input": 1.2,
-        "output": 4
-      },
-      "modality": "text->text",
-      "category": "text",
-      "capabilities": {
-        "tools": true,
-        "vision": false,
-        "pdf": false,
-        "audio_in": false,
-        "video_in": false,
-        "reasoning": true,
-        "structured_outputs": true,
-        "streaming": true
-      },
-      "tier": "reasoning",
-      "example": {
-        "via": "openrouter",
-        "endpoint": "https://openrouter.ai/api/v1/chat/completions",
-        "curl": "curl https://openrouter.ai/api/v1/chat/completions \\\n  -H \"Authorization: Bearer $OPENROUTER_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"z-ai/glm-5-turbo\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
-      },
-      "released": "2026-03-15",
-      "knowledge_cutoff": null,
-      "sunset_date": null,
+      "sunset_date": "2098-12-31",
       "flagship": false
     },
     {
@@ -2341,6 +2193,43 @@
         "curl": "curl https://openrouter.ai/api/v1/chat/completions \\\n  -H \"Authorization: Bearer $OPENROUTER_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"z-ai/glm-5.1\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
       },
       "released": "2026-04-07",
+      "knowledge_cutoff": null,
+      "sunset_date": null,
+      "flagship": false
+    },
+    {
+      "id": "z-ai/glm-5.2",
+      "name": "Z.ai: GLM 5.2",
+      "short_name": "GLM 5.2",
+      "source": "openrouter",
+      "provider": "z-ai",
+      "api_id": null,
+      "env_var": "OPENROUTER_API_KEY",
+      "context_length": 1048576,
+      "max_output": 32768,
+      "pricing": {
+        "input": 0.95,
+        "output": 3
+      },
+      "modality": "text->text",
+      "category": "text",
+      "capabilities": {
+        "tools": true,
+        "vision": false,
+        "pdf": false,
+        "audio_in": false,
+        "video_in": false,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "reasoning",
+      "example": {
+        "via": "openrouter",
+        "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+        "curl": "curl https://openrouter.ai/api/v1/chat/completions \\\n  -H \"Authorization: Bearer $OPENROUTER_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"model\":\"z-ai/glm-5.2\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'"
+      },
+      "released": "2026-06-16",
       "knowledge_cutoff": null,
       "sunset_date": null,
       "flagship": false
@@ -2391,7 +2280,7 @@
       "api_id": "gemini-3.1-flash-image-preview",
       "env_var": "GEMINI_API_KEY",
       "context_length": 131072,
-      "max_output": 65536,
+      "max_output": 32768,
       "pricing": {
         "input": 0.5,
         "output": 3
@@ -2418,6 +2307,80 @@
       "knowledge_cutoff": null,
       "sunset_date": null,
       "flagship": true
+    },
+    {
+      "id": "google/gemini-3-pro-image",
+      "name": "Google: Nano Banana Pro (Gemini 3 Pro Image)",
+      "short_name": "Nano Banana Pro (Gemini 3 Pro Image)",
+      "source": "openrouter",
+      "provider": "google",
+      "api_id": "gemini-3-pro-image",
+      "env_var": "GEMINI_API_KEY",
+      "context_length": 65536,
+      "max_output": 32768,
+      "pricing": {
+        "input": 2,
+        "output": 12
+      },
+      "modality": "text+image->text+image",
+      "category": "image",
+      "capabilities": {
+        "tools": true,
+        "vision": true,
+        "pdf": false,
+        "audio_in": false,
+        "video_in": false,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "reasoning",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image:generateContent",
+        "curl": "curl \"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image:generateContent?key=$GEMINI_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"contents\":[{\"parts\":[{\"text\":\"Hello\"}]}]}'"
+      },
+      "released": "2026-06-18",
+      "knowledge_cutoff": null,
+      "sunset_date": null,
+      "flagship": false
+    },
+    {
+      "id": "google/gemini-3.1-flash-image",
+      "name": "Google: Nano Banana 2 (Gemini 3.1 Flash Image)",
+      "short_name": "Nano Banana 2 (Gemini 3.1 Flash Image)",
+      "source": "openrouter",
+      "provider": "google",
+      "api_id": "gemini-3.1-flash-image",
+      "env_var": "GEMINI_API_KEY",
+      "context_length": 131072,
+      "max_output": 32768,
+      "pricing": {
+        "input": 0.5,
+        "output": 3
+      },
+      "modality": "text+image->text+image",
+      "category": "image",
+      "capabilities": {
+        "tools": false,
+        "vision": true,
+        "pdf": false,
+        "audio_in": false,
+        "video_in": false,
+        "reasoning": true,
+        "structured_outputs": true,
+        "streaming": true
+      },
+      "tier": "reasoning",
+      "example": {
+        "via": "direct",
+        "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent",
+        "curl": "curl \"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=$GEMINI_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"contents\":[{\"parts\":[{\"text\":\"Hello\"}]}]}'"
+      },
+      "released": "2026-06-18",
+      "knowledge_cutoff": null,
+      "sunset_date": null,
+      "flagship": false
     },
     {
       "id": "openai/gpt-5-image",
@@ -4559,6 +4522,31 @@
       "source": "workers-ai"
     },
     {
+      "id": "@cf/moonshotai/kimi-k2.7-code",
+      "short_name": "Kimi K2.7 Code",
+      "provider": "moonshotai",
+      "task": "text-generation",
+      "params": null,
+      "context_length": 262144,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": true,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "flagship",
+      "description": "Kimi K2.7 is a frontier-scale open-source 1T parameter model with a 262.1k context window, multi-turn tool calling, vision inputs, and structured outputs for agentic workloads.",
+      "docs_url": null,
+      "licence_url": "https://huggingface.co/moonshotai/Kimi-K2.7-Code/blob/main/LICENSE",
+      "flagship": true,
+      "created_at": "2026-06-12 11:45:20.582",
+      "source": "workers-ai"
+    },
+    {
       "id": "@cf/moonshotai/kimi-k2.6",
       "short_name": "Kimi K2.6",
       "provider": "moonshotai",
@@ -4575,11 +4563,11 @@
         "streaming": true,
         "lora": false
       },
-      "tier": "flagship",
+      "tier": "balanced",
       "description": "Kimi K2.6 is a frontier-scale open-source 1T parameter model with a 262.1k context window, multi-turn tool calling, vision inputs, and structured outputs for agentic workloads.",
       "docs_url": null,
       "licence_url": "https://huggingface.co/moonshotai/Kimi-K2.6/blob/main/LICENSE",
-      "flagship": true,
+      "flagship": false,
       "created_at": "2026-04-20 01:40:35.001",
       "source": "workers-ai"
     },
@@ -4734,6 +4722,31 @@
       "source": "workers-ai"
     },
     {
+      "id": "@cf/zai-org/glm-5.2",
+      "short_name": "GLM 5.2",
+      "provider": "zai-org",
+      "task": "text-generation",
+      "params": null,
+      "context_length": 262144,
+      "max_input": null,
+      "max_output": null,
+      "pricing": null,
+      "capabilities": {
+        "tools": true,
+        "vision": false,
+        "reasoning": false,
+        "streaming": true,
+        "lora": false
+      },
+      "tier": "flagship",
+      "description": "Z.ai's flagship agentic coding model",
+      "docs_url": null,
+      "licence_url": null,
+      "flagship": true,
+      "created_at": "2026-06-15 09:51:05.921",
+      "source": "workers-ai"
+    },
+    {
       "id": "@cf/zai-org/glm-4.7-flash",
       "short_name": "GLM 4.7 Flash",
       "provider": "zai-org",
@@ -4750,11 +4763,11 @@
         "streaming": true,
         "lora": false
       },
-      "tier": "flagship",
+      "tier": "balanced",
       "description": "GLM-4.7-Flash is a fast and efficient multilingual text generation model with a 131,072 token context window. Optimized for dialogue, instruction-following, and multi-turn tool calling across 100+ languages.",
       "docs_url": null,
       "licence_url": null,
-      "flagship": true,
+      "flagship": false,
       "created_at": "2026-01-28 16:04:39.346",
       "source": "workers-ai"
     }
