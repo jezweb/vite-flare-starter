@@ -37,10 +37,12 @@ GOOGLE_CLIENT_SECRET=your-client-secret
 # ENABLE_EMAIL_SIGNUP=true  → Also allow new email signups (requires ENABLE_EMAIL_LOGIN)
 #
 # The UI automatically adapts based on these settings via /api/auth/config
-# Google OAuth is NOT affected (use Google Cloud domain restriction instead)
-# To restrict Google OAuth: Set OAuth consent screen "User type" to "Internal"
 #
-# See CLAUDE.md "Auth Method Control" section for full documentation.
+# Restricting WHO can sign in (incl. Google OAuth) is done IN CODE via the
+# allowlist below — NOT only the Google consent screen. A consent screen set to
+# "External" (required whenever any user is on a non-Workspace domain) lets ANY
+# Google account sign in; the consent screen is defence-in-depth, not the gate.
+# See CLAUDE.md "Auth" section and docs/SECURITY.md.
 
 # Uncomment to enable email/password authentication:
 # ENABLE_EMAIL_LOGIN=true
@@ -49,10 +51,13 @@ GOOGLE_CLIENT_SECRET=your-client-secret
 # ============================================
 # Signup Allowlist - OPTIONAL (issue #88)
 # ============================================
-# Invite-only / single-tenant gate. The gate ACTIVATES when either list below
-# is set (or AUTH_ALLOWLIST=true); only matching emails can then create an
-# account. Fires on account CREATION only — existing users are never locked out.
-# Unset (default) → open signup, so a fresh public fork is unaffected.
+# Invite-only / single-tenant gate, enforced in code (src/server/modules/auth/
+# index.ts, isSignupAllowed). The gate ACTIVATES when either list below is set
+# (or AUTH_ALLOWLIST=true); only matching emails can then sign in. Enforced on
+# BOTH account creation (user.create.before) AND every login (session.create.
+# before) — so removing an operator (or a row predating the gate) locks them out
+# on next sign-in too. Unset (default) → open signup, so a fresh public fork is
+# unaffected.
 # Blocked sign-ins surface as "This account isn't authorised" on the sign-in
 # page (see issue #69). Pairs with VITE_TENANCY_MODE=shared for a turnkey
 # single-tenant deployment.

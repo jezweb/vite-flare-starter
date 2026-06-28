@@ -68,6 +68,8 @@ VITE_FEATURE_ACTIVITY=false
 | **knowledge** | Long-form indexed reference docs per scope (user/project/org). FTS5-indexed, two injection modes (`always` bakes body into every prompt, `on_demand` exposes catalog the agent searches via `knowledge_search` + `load_knowledge`). Server-side cap at 50K total always-active tokens. Sits between `memories` (small structured facts) and `skills` (procedures). | `server/modules/knowledge/`, `client/modules/knowledge/`, `server/modules/chat/chat-agent.ts` (section 8c) |
 | **voice mode** | Push-to-talk + auto-TTS wrapper around the chat agent. Aura 2 default + ElevenLabs opt-in. iOS Safari unlock via primed audio element, AbortController + 25s timeout, race-safe via session counter. Distinct from VoiceDictationButton (which streams STT into the input field via DO+WS). | `server/modules/voice/`, `client/modules/chat/components/VoiceModeButton.tsx`, `client/modules/chat/hooks/useVoiceChat.ts` |
 | **tool-renderer shape tier** | Generic tool-output viewers matched by output shape rather than tool name — auto-upgrades ~30 long-tail tools to rich UX with zero per-tool client code. Shapes: stdout/image/markdown/table. Registered after bespoke renderers, before defaults. `pnpm tool-coverage` audits the registry. | `client/modules/chat/components/tool-renderers/shapes.tsx`, `scripts/tool-coverage.mjs` |
+| **access log** | Cross-user activity log for app owners — `GET /api/admin/access-log` (auth+admin gated) over the existing `activity_logs` table, filterable by user/action/entity/date, actor-email enriched. Per-user `/api/activity` shows only your own rows; this answers "what has any user done in this app?". | `server/modules/admin/routes.ts` (access-log route), `client/modules/admin/pages/AccessLogPage.tsx` |
+| **security primitives** | Single-source-of-truth guards reused across modules: `scopeUser`/`getOrgRole` (tenancy), `isOwnedR2Key` (R2 ownership), `signValue`/`verifyValue` (signed OAuth-redirect cookies + mcp state), `isSafePublicUrl`/`isAllowedGitHubUrl` (SSRF), `escapeHtml` (reflected-XSS), `bytesToBase64` (large-file safe), fail-closed `AGENT_ACCESS_POLICY` (DO access). Full model: `docs/SECURITY.md`. | `server/lib/{tenancy,r2-keys,crypto,ssrf,escape-html,base64}.ts`, `server/index.ts` |
 | **brains-trust pattern** | After non-trivial builds, run a multi-reviewer review via 2-4 frontier models (GPT-5.5 + Opus 4.7 + DeepSeek v4 Pro/Flash) — cross-validated criticals fixed before commit; cross-validated highs before deploy. ~$0.46-$0.81/round. Codified in `~/.claude/CLAUDE.md`. Audit artefacts saved to `.jez/audits/<date>-brains-trust-<topic>.md`. | (process; see `.jez/audits/2026-05-07-tool-ui-and-connectors-brains-trust.md` for a worked example) |
 
 ---
@@ -110,6 +112,7 @@ reference lives in `docs/`, loaded only when you need it.
 | Want to… | Read |
 |---|---|
 | **Onboard fresh** (humans OR AI sessions) — fastest orientation | [`docs/ONBOARDING.md`](./docs/ONBOARDING.md) |
+| **Secure a deployment** — access-control model + pre-deploy checklist | [`docs/SECURITY.md`](./docs/SECURITY.md) |
 | **Build a specific product** (email triage, CRM, Jira, support, docs) | [`docs/AGENT_PLAYBOOKS.md`](./docs/AGENT_PLAYBOOKS.md) |
 | **Architectural rationale** — why the starter looks like this, what we adopted from other frameworks | [`docs/PLATFORM_OBSERVATIONS.md`](./docs/PLATFORM_OBSERVATIONS.md) |
 | Build a CRUD feature, table, hook | [`docs/PATTERNS.md`](./docs/PATTERNS.md) |
@@ -605,9 +608,21 @@ fresh-fork auth issues are environmental, not code.
 
 - **OAuth-only by default** — set `ENABLE_EMAIL_LOGIN=true` for
   email/password.
-- Google OAuth with optional domain restriction via Google Cloud Console.
+- **Who can sign in is gated IN CODE, not just the Google consent screen.**
+  Set `ALLOWED_AUTH_EMAILS` / `ALLOWED_AUTH_DOMAINS` (or `AUTH_ALLOWLIST=true`
+  to fail closed) — enforced by `isSignupAllowed` in BOTH
+  `databaseHooks.user.create.before` (new signups) AND `session.create.before`
+  (every login, so a removed operator is locked out on next sign-in). Unset →
+  open signup (public-starter default). The consent screen is defence-in-depth;
+  an "External" app otherwise lets any Google account in. See `docs/SECURITY.md`.
 - Session management: 7-day expiry, revoke on password change.
-- Admin role via `ADMIN_EMAILS` env var.
+- Admin role via `ADMIN_EMAILS` env var — auto-promote requires a **verified**
+  email (an unverified email/password account on an admin address can't claim admin).
+- **OAuth connectors sign their state cookies.** The connecting `userId` carried
+  through a provider redirect (`gws_user`/`msw_user`/`<prefix>_user`) is
+  HMAC-signed (`signValue`/`verifyValue`, `src/server/lib/crypto.ts`) and verified
+  in the callback, so an attacker can't substitute a victim's id to hijack their
+  token row. `mcp-connections` binds OAuth `state = signValue(connectionId)`.
 - **last-login-method** — better-auth plugin drops a
   `better-auth.last_used_login_method` cookie after each successful
   sign-in. The login page reads it client-side and surfaces a "Last
@@ -708,4 +723,4 @@ pnpm type-check             # Type check
 
 ---
 
-**Created:** 2025-11-29 · **Updated:** 2026-05-04 · **Author:** Jeremy Dawes (Jezweb)
+**Created:** 2025-11-29 · **Updated:** 2026-06-23 (security review: allowlist, signed connector cookies, access log, tenancy/R2 guards — see `docs/SECURITY.md`) · **Author:** Jeremy Dawes (Jezweb)
