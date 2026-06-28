@@ -83,3 +83,48 @@ export async function generatePkcePair(): Promise<{ verifier: string; challenge:
 export function randomToken(lengthBytes = 32): string {
   return toBase64Url(crypto.getRandomValues(new Uint8Array(lengthBytes)))
 }
+
+/**
+ * Sign a value with HMAC-SHA256 → `${value}.${sig}`. Use for integrity-checking
+ * a value carried through an untrusted round-trip (e.g. a userId or connectionId
+ * in an OAuth-redirect cookie or `state` param). The value is NOT encrypted —
+ * it's readable — only tamper-evident. Secret is BETTER_AUTH_SECRET.
+ */
+export async function signValue(value: string, secret: string | undefined): Promise<string> {
+  if (!secret) throw new Error('BETTER_AUTH_SECRET not set — cannot sign value')
+  const enc = new TextEncoder()
+  const key = await crypto.subtle.importKey(
+    'raw',
+    enc.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  )
+  const mac = await crypto.subtle.sign('HMAC', key, enc.encode(value))
+  return `${value}.${toBase64Url(new Uint8Array(mac))}`
+}
+
+/**
+ * Verify a `signValue()` output and return the original value, or null if the
+ * signature is missing/invalid. Constant-time comparison. Reject null before
+ * trusting the value.
+ */
+export async function verifyValue(
+  signed: string | undefined | null,
+  secret: string | undefined
+): Promise<string | null> {
+  if (!signed || !secret) return null
+  const dot = signed.lastIndexOf('.')
+  if (dot <= 0) return null
+  const value = signed.slice(0, dot)
+  let expected: string
+  try {
+    expected = await signValue(value, secret)
+  } catch {
+    return null
+  }
+  if (expected.length !== signed.length) return null
+  let diff = 0
+  for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ signed.charCodeAt(i)
+  return diff === 0 ? value : null
+}

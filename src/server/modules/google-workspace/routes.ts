@@ -12,7 +12,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { eq } from 'drizzle-orm'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import { googleWorkspaceTokens } from './db/schema'
-import { encrypt, randomToken } from '@/server/lib/crypto'
+import { encrypt, randomToken, signValue, verifyValue } from '@/server/lib/crypto'
 import {
   exchangeAuthCode,
   isGoogleWorkspaceEnabled,
@@ -53,8 +53,12 @@ app.get('/callback', async (c) => {
   if (!stateMatch || !userMatch) return finish('error', 'Missing session — try connecting again.')
   if (decodeURIComponent(stateMatch[1]!) !== state) return finish('error', 'State mismatch')
 
-  const userId = decodeURIComponent(userMatch[1]!)
   const env = c.env as unknown as GoogleWorkspaceEnv
+  // Verify the HMAC-signed gws_user cookie — without this an authed attacker
+  // who knows a victim's userId could substitute it and write their Google
+  // tokens under the victim's row (token-row hijack).
+  const userId = await verifyValue(decodeURIComponent(userMatch[1]!), env.BETTER_AUTH_SECRET)
+  if (!userId) return finish('error', 'Invalid session — try connecting again.')
 
   if (!isGoogleWorkspaceEnabled(env)) {
     return finish('error', 'Google Workspace is not configured on this server')
@@ -181,7 +185,10 @@ app.post('/connect', async (c) => {
   const secure = env.BETTER_AUTH_URL?.startsWith('https://') ? '; Secure' : ''
   const headers = new Headers({ 'Content-Type': 'application/json' })
   headers.append('Set-Cookie', `gws_state=${encodeURIComponent(state)}; ${cookieBase}${secure}`)
-  headers.append('Set-Cookie', `gws_user=${encodeURIComponent(userId)}; ${cookieBase}${secure}`)
+  headers.append(
+    'Set-Cookie',
+    `gws_user=${encodeURIComponent(await signValue(userId, env.BETTER_AUTH_SECRET))}; ${cookieBase}${secure}`
+  )
 
   return new Response(JSON.stringify({ authorizationUrl: authUrl.toString() }), { headers })
 })
