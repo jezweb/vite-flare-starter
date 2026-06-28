@@ -35,9 +35,9 @@ export const securityHeaders = createMiddleware<{ Bindings: Env }>(async (c, nex
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline'", // unsafe-inline for Vite HMR in dev
       "style-src 'self' 'unsafe-inline'", // inline styles from components
-      "img-src 'self' data: https:", // Allow https images
+      "img-src 'self' data: https: blob:", // https images + canvas/blob URLs (video frame capture)
       "font-src 'self' data:",
-      "connect-src 'self' https://accounts.google.com", // Google OAuth
+      "connect-src 'self' https://accounts.google.com wss:", // Google OAuth + agent WebSockets
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",

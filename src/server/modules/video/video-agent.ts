@@ -81,10 +81,15 @@ export class VideoInputExample extends Agent<any> {
 
     if (data.type !== 'frame') return
 
+    // Rate-limit per OWNER, not per DO instance name. The instance name is
+    // `<userId>:<sessionId>` (client picks sessionId), so keying on this.name
+    // let a user cycle sessionIds for unlimited fresh buckets. Key on the
+    // userId prefix instead.
+    const ownerId = this.name.split(':')[0] || this.name
     const rateLimit = consumeRateLimit({
       key: 'CHAT',
       windowMs: 60 * 60 * 1000,
-      identifier: this.name,
+      identifier: ownerId,
       routeKey: 'WS:VideoInputExample:frame',
     })
     if (!rateLimit.allowed) {
@@ -103,18 +108,22 @@ export class VideoInputExample extends Agent<any> {
       return
     }
 
+    // Model allowlist: this is a free-tier vision demo. A client-supplied
+    // model was passed straight to resolveModel, which routes paid prefixes
+    // (anthropic/, openrouter/, gpt-*) to the operator's keys — a credit-drain
+    // vector over the WebSocket. Only allow Workers AI (@cf/ / @hf/) models;
+    // anything else falls back to the default.
+    const requested = typeof data.model === 'string' ? data.model : ''
+    const safeModel =
+      requested.startsWith('@cf/') || requested.startsWith('@hf/') ? requested : this.defaultModel
     const start = Date.now()
     try {
-      const caption = await this.captionFrame(
-        data.image,
-        data.prompt,
-        data.model ?? this.defaultModel
-      )
+      const caption = await this.captionFrame(data.image, data.prompt, safeModel)
       this.broadcast(
         JSON.stringify({
           type: 'caption',
           text: caption,
-          model: data.model ?? this.defaultModel,
+          model: safeModel,
           durationMs: Date.now() - start,
           ts: Date.now(),
         })
