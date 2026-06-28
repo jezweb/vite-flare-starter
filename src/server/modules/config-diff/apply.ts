@@ -6,6 +6,7 @@
  * Everything else (storage, UI, chat tool) is generic.
  */
 import { uploadSkillToR2 } from '@/server/lib/ai/skills/registry'
+import { parseSkill } from '@/server/lib/ai/skills/loader'
 import type { ConfigDiffProposal, ConfigDiffResource } from '@/shared/config/diff-proposal'
 
 export interface ApplyEnv {
@@ -63,6 +64,17 @@ export async function applyProposal(env: ApplyEnv, proposal: ConfigDiffProposal)
       if (!env.SKILLS) {
         throw new Error(
           'SKILLS R2 bucket not configured — cannot persist skill edits. Add the binding in wrangler.jsonc.'
+        )
+      }
+      // Guard against a resource-id mixup: uploadSkillToR2 keys by the
+      // frontmatter `name` of the new content, but this proposal targets
+      // resource.id. If an edit (or AI rewrite) changed the name, applying it
+      // would write to a DIFFERENT skill key — silently overwriting another
+      // skill or orphaning this one. Refuse a name change here.
+      const parsed = parseSkill(proposal.after)
+      if (parsed.frontmatter.name !== proposal.resource.id) {
+        throw new Error(
+          `Skill name mismatch: this change targets "${proposal.resource.id}" but the content declares "${parsed.frontmatter.name}". Renaming a skill through a diff isn't supported — keep the frontmatter name unchanged.`
         )
       }
       // uploadSkillToR2 writes to `${userId}/${name}/SKILL.md` and

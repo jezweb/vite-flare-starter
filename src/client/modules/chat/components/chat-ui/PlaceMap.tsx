@@ -213,7 +213,7 @@ export function PlaceMap({ title, places, center, zoom }: Props) {
                             {p.phone}
                           </a>
                         )}
-                        {p.website && (
+                        {p.website && /^https?:\/\//i.test(p.website) && (
                           <a
                             href={p.website}
                             target="_blank"

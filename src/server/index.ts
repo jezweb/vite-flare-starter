@@ -471,7 +471,10 @@ app.onError((err, c) => {
   // Return error response with request ID for support correlation
   return c.json(
     {
-      error: c.env.NODE_ENV === 'production' ? 'Internal Server Error' : err.message,
+      // Fail safe: only expose the raw message when explicitly in development.
+      // NODE_ENV is usually UNSET on Workers, so `=== 'production'` leaked
+      // internal errors by default. Default (unset/anything else) → generic.
+      error: c.env.NODE_ENV === 'development' ? err.message : 'Internal Server Error',
       requestId,
     },
     500

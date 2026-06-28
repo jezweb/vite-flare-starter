@@ -131,16 +131,20 @@ export async function startItem(db: D1Database, itemId: string): Promise<void> {
 export async function completeItem(db: D1Database, itemId: string, result: string): Promise<void> {
   const d = drizzle(db)
   const [row] = await d.select().from(batchItems).where(eq(batchItems.id, itemId)).limit(1)
-  if (!row) return
+  if (!row || row.status === 'completed') return // idempotent: already counted
+  const wasFailed = row.status === 'failed'
   await d
     .update(batchItems)
     .set({ status: 'completed', result, completedAt: new Date() })
     .where(eq(batchItems.id, itemId))
-  // Bump parent counts atomically.
+  // Bump parent counts on the state TRANSITION only. A Workflow retry re-runs
+  // this handler; counting unconditionally double-counts. If the item had
+  // previously failed (retry now succeeds), also undo that failed tally.
   await d
     .update(batchJobs)
     .set({
       completedItems: sql`${batchJobs.completedItems} + 1`,
+      ...(wasFailed ? { failedItems: sql`MAX(${batchJobs.failedItems} - 1, 0)` } : {}),
       updatedAt: new Date(),
     })
     .where(eq(batchJobs.id, row.jobId))
@@ -150,6 +154,13 @@ export async function failItem(db: D1Database, itemId: string, error: string): P
   const d = drizzle(db)
   const [row] = await d.select().from(batchItems).where(eq(batchItems.id, itemId)).limit(1)
   if (!row) return
+  if (row.status === 'failed') {
+    // Already counted as failed — a Workflow retry re-entered this handler.
+    // Refresh the error message but do NOT increment failedItems again.
+    await d.update(batchItems).set({ error }).where(eq(batchItems.id, itemId))
+    return
+  }
+  const wasCompleted = row.status === 'completed'
   await d
     .update(batchItems)
     .set({ status: 'failed', error, completedAt: new Date() })
@@ -158,6 +169,7 @@ export async function failItem(db: D1Database, itemId: string, error: string): P
     .update(batchJobs)
     .set({
       failedItems: sql`${batchJobs.failedItems} + 1`,
+      ...(wasCompleted ? { completedItems: sql`MAX(${batchJobs.completedItems} - 1, 0)` } : {}),
       updatedAt: new Date(),
     })
     .where(eq(batchJobs.id, row.jobId))
