@@ -12,6 +12,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { eq, and } from 'drizzle-orm'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import { watchers } from './db/schema'
+import { canAccessEntity } from '@/server/lib/entity-access'
 
 const app = new Hono<AuthContext>()
 app.use('*', authMiddleware)
@@ -23,6 +24,10 @@ app.get('/', async (c) => {
   if (!entityType || !entityId) return c.json({ error: 'entityType and entityId required' }, 400)
 
   const userId = c.get('userId')
+  // Gate: don't reveal who watches an entity the caller can't access (IDOR).
+  if (!(await canAccessEntity(c.env, entityType, entityId, userId))) {
+    return c.json({ error: 'Not found' }, 404)
+  }
   const db = drizzle(c.env.DB)
 
   const rows = await db
@@ -44,6 +49,10 @@ app.post(
   async (c) => {
     const { entityType, entityId } = c.req.valid('json')
     const userId = c.get('userId')
+    // Gate: can't subscribe to (and get notified about) an inaccessible entity.
+    if (!(await canAccessEntity(c.env, entityType, entityId, userId))) {
+      return c.json({ error: 'Not found' }, 404)
+    }
     const db = drizzle(c.env.DB)
 
     await db.insert(watchers).values({ entityType, entityId, userId }).onConflictDoNothing()

@@ -52,6 +52,20 @@ so the two never drift. Org-scoped data is gated by membership via `getOrgRole()
 Never take a tenancy scope (`orgId`/`projectId`/`userId`) from a client query param;
 derive it from the session.
 
+### Polymorphic entities (comments, watchers, …)
+
+Features that attach to **any** entity by a client-supplied `entityType + entityId`
+pair can't use `scopeUser` (the row they're reading isn't the entity itself). They
+gate through `canAccessEntity(env, entityType, entityId, userId)`
+(`src/server/lib/entity-access.ts`) — the single oracle that resolves an entity's
+owner. It mirrors the `scopeUser` contract (per-user → owner match; shared → allow)
+and fails closed on unknown types or missing rows. The starter registers resolvers
+for `conversation`, `file`, and an entities-table fallback covering every
+`entities`-module type. **A fork that adds an entity type its comments/watchers
+attach to must `registerEntityType`/`registerEntityFallback` for it** — otherwise
+the gate denies (secure default). Without this oracle, any authed user reads/writes
+another tenant's comment threads and watch lists by id (polymorphic IDOR).
+
 ## 4. R2 object ownership
 
 R2 objects are stored under user-scoped key prefixes (`users/<userId>/…`). Any route

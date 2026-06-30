@@ -13,6 +13,7 @@ import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import { comments } from './db/schema'
 import { user } from '@/server/modules/auth/db/schema'
 import { whereNotDeleted, softDeleteValues } from '@/server/lib/soft-delete'
+import { canAccessEntity } from '@/server/lib/entity-access'
 
 const app = new Hono<AuthContext>()
 app.use('*', authMiddleware)
@@ -29,6 +30,12 @@ app.get('/', async (c) => {
   const entityType = c.req.query('entityType')
   const entityId = c.req.query('entityId')
   if (!entityType || !entityId) return c.json({ error: 'entityType and entityId required' }, 400)
+
+  // Gate: only list comments on an entity the caller can access. Without this
+  // any authed user could read any entity's comment thread by its id (IDOR).
+  if (!(await canAccessEntity(c.env, entityType, entityId, c.get('userId')))) {
+    return c.json({ error: 'Not found' }, 404)
+  }
 
   const db = drizzle(c.env.DB)
   const rows = await db
@@ -73,6 +80,12 @@ app.post(
   async (c) => {
     const input = c.req.valid('json')
     const userId = c.get('userId')
+
+    // Gate: only comment on an entity the caller can access (IDOR-write guard).
+    if (!(await canAccessEntity(c.env, input.entityType, input.entityId, userId))) {
+      return c.json({ error: 'Not found' }, 404)
+    }
+
     const db = drizzle(c.env.DB)
 
     const [comment] = await db
