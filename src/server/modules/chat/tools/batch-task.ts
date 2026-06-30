@@ -26,6 +26,7 @@ import { and, eq, inArray, or } from 'drizzle-orm'
 import { files as filesTable } from '@/server/modules/files/db/schema'
 import { createJob } from '@/server/modules/batch-tasks/storage'
 import { batchJobs } from '@/server/modules/batch-tasks/db/schema'
+import { isOwnedR2Key } from '@/server/lib/r2-keys'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 import type { BatchWorkflowParams } from '@/server/modules/batch-tasks/workflows/process-batch'
 
@@ -135,9 +136,16 @@ async function resolveR2Keys(
 
   for (const ref of refs) {
     const row = byId.get(ref) ?? byName.get(ref) ?? byKey.get(ref)
-    // Last resort: assume the agent already passed a bare R2 key. The
-    // Workflow will surface "R2 object not found" if that's wrong.
-    out.set(ref, row ? { key: row.key, label: row.name } : { key: ref })
+    if (row) {
+      out.set(ref, { key: row.key, label: row.name })
+    } else if (isOwnedR2Key(ref, userId)) {
+      // The agent passed a bare R2 key that belongs to this user — accept it.
+      // isOwnedR2Key gates this so a crafted key under another user's prefix
+      // can't be loaded by the batch Workflow (cross-user R2 read).
+      out.set(ref, { key: ref })
+    }
+    // else: unknown ref, or a bare key owned by someone else — left
+    // unresolved so the caller rejects the job rather than reading it.
   }
   return out
 }
@@ -163,14 +171,30 @@ export const startBatchTaskDefinition: ToolDefinition<
     const r2Refs = input.items.filter((it) => it.ref_kind === 'r2_file').map((it) => it.ref_value)
     const resolved = await resolveR2Keys(env.DB, ctx.userId, r2Refs)
 
+    // Fail closed on any r2_file ref that didn't resolve to a file the caller
+    // owns (unknown ref, or a bare key under another user's prefix). Rejecting
+    // up front beats silently passing a foreign key to the Workflow.
+    const unresolved = [
+      ...new Set(
+        input.items
+          .filter((it) => it.ref_kind === 'r2_file' && !resolved.has(it.ref_value))
+          .map((it) => it.ref_value)
+      ),
+    ]
+    if (unresolved.length > 0) {
+      const shown = unresolved.slice(0, 10).join(', ')
+      const more = unresolved.length > 10 ? ` (+${unresolved.length - 10} more)` : ''
+      return {
+        ok: false as const,
+        error: `These file references don't match any of your files: ${shown}${more}. Pass a filename, the file's id, or an R2 key you own.`,
+      }
+    }
+
     const items = input.items.map((it) => {
       if (it.ref_kind !== 'r2_file') {
         return { ref_kind: it.ref_kind, ref_value: it.ref_value, label: it.label }
       }
-      const r = resolved.get(it.ref_value)
-      if (!r) {
-        return { ref_kind: it.ref_kind as 'r2_file', ref_value: it.ref_value, label: it.label }
-      }
+      const r = resolved.get(it.ref_value)!
       return { ref_kind: 'r2_file' as const, ref_value: r.key, label: it.label ?? r.label }
     })
 
