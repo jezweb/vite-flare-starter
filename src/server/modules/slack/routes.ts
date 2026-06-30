@@ -30,11 +30,14 @@ export default buildStubRoutes({
     clientId: 'SLACK_CLIENT_ID',
     clientSecret: 'SLACK_CLIENT_SECRET',
   },
-  // Slack uses authorize v2 + oauth.v2.access for the exchange. Scopes
-  // live on `user_scope` for Sign in with Slack; `scope` is for bot.
-  // We request BOTH so the app is installed AND we get a user token.
+  // Slack uses authorize v2 + oauth.v2.access for the exchange. The scopes
+  // below are USER-token scopes, so they go on `user_scope` (not `scope`,
+  // which requests a bot token). oauth.v2.access then returns the user bearer
+  // at `authed_user.access_token`; the top-level `access_token` is the bot
+  // token, which we don't want — extractToken pulls the user bearer.
   authorizeEndpoint: 'https://slack.com/oauth/v2/authorize',
   tokenEndpoint: 'https://slack.com/api/oauth.v2.access',
+  scopeParam: 'user_scope',
   scopes: [
     'search:read',
     'channels:history',
@@ -43,6 +46,20 @@ export default buildStubRoutes({
     'users:read',
     'chat:write',
   ],
+  extractToken: (raw) => {
+    const j = raw as {
+      ok?: boolean
+      error?: string
+      authed_user?: { access_token?: string; scope?: string }
+    }
+    if (!j.ok || !j.authed_user?.access_token) {
+      throw new Error(`Slack OAuth failed: ${j.error ?? 'no user token in response'}`)
+    }
+    return {
+      access_token: j.authed_user.access_token,
+      ...(j.authed_user.scope ? { scope: j.authed_user.scope } : {}),
+    }
+  },
   fetchAccountInfo: async (token) => {
     // auth.test returns team + user info so we can show "Connected as <user> @ <team>".
     try {
