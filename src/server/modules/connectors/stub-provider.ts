@@ -103,6 +103,27 @@ export interface StubProviderConfig {
   includeRedirectUriInTokenExchange?: boolean
   /** Extra params to include on the authorize URL (e.g. Notion's `owner=user`). */
   extraAuthParams?: Record<string, string>
+  /**
+   * Query-param name carrying the requested scopes on the authorize URL.
+   * Default `'scope'`. Slack's OAuth v2 puts USER-token scopes on
+   * `user_scope` (`scope` is for bot-token scopes), so it overrides this so
+   * the install returns a user token we can act as.
+   */
+  scopeParam?: string
+  /**
+   * Map a provider's token-exchange response into the standard
+   * `{ access_token, refresh_token?, expires_in?, scope? }` shape. Default:
+   * read those fields off the top level. Slack returns the user bearer at
+   * `authed_user.access_token` (top-level `access_token` is the BOT token),
+   * so it overrides this to avoid storing the wrong token. Throw to surface a
+   * provider-reported error (e.g. Slack `{ ok: false }`).
+   */
+  extractToken?: (raw: unknown) => {
+    access_token: string
+    refresh_token?: string
+    expires_in?: number
+    scope?: string
+  }
 }
 
 /** Generic env shape for stub providers. DB is read as the standard D1
@@ -195,7 +216,11 @@ export function buildStubRoutes(config: StubProviderConfig): Hono<AuthContext> {
         const errText = await resp.text()
         throw new Error(`Token exchange failed: ${resp.status} ${errText.slice(0, 200)}`)
       }
-      const json = (await resp.json()) as {
+      const raw = await resp.json()
+      // extractToken lets a provider with a non-standard response shape
+      // (Slack: user bearer at authed_user.access_token) map into the
+      // standard token bag before we store it. Default reads top-level fields.
+      const json = (config.extractToken ? config.extractToken(raw) : raw) as {
         access_token: string
         refresh_token?: string
         expires_in?: number
@@ -304,7 +329,8 @@ export function buildStubRoutes(config: StubProviderConfig): Hono<AuthContext> {
     url.searchParams.set('client_id', env[envVars.clientId]!)
     url.searchParams.set('redirect_uri', redirectUri(env))
     url.searchParams.set('response_type', 'code')
-    url.searchParams.set('scope', config.scopes.join(' '))
+    // Slack carries user-token scopes on `user_scope`, not `scope`.
+    url.searchParams.set(config.scopeParam ?? 'scope', config.scopes.join(' '))
     url.searchParams.set('state', state)
     if (config.extraAuthParams) {
       for (const [k, v] of Object.entries(config.extraAuthParams)) {

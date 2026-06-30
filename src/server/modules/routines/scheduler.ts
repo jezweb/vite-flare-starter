@@ -23,8 +23,9 @@
  * timers (e.g. inside a single run, schedule a follow-up step).
  */
 import { drizzle } from 'drizzle-orm/d1'
-import { and, asc, eq, isNull, lt, lte, or, sql } from 'drizzle-orm'
+import { and, asc, eq, gte, isNull, lt, lte, or, sql } from 'drizzle-orm'
 import { routines, routineRuns, type RoutineOutcome } from './db/schema'
+import { agentRuns } from '@/server/modules/agent-observability/db/schema'
 import {
   startRoutineRun,
   finishRoutineRun,
@@ -110,6 +111,27 @@ export async function processDueRoutines(
             timezone: tz,
             currentHour,
             wantedHour: r.localFireHour,
+          })
+        )
+        continue
+      }
+    }
+
+    // Daily budget gate. dailyBudgetUsd caps how much this routine's agent
+    // may spend per UTC day; the authoritative cost lives in agent_runs.
+    // When today's spend has reached the cap we skip the fire (leaving
+    // lastRunAt untouched so it's reconsidered next tick — and naturally
+    // unblocks after UTC midnight). One cheap SUM per over-budget routine.
+    if (r.dailyBudgetUsd != null && r.dailyBudgetUsd > 0) {
+      const spent = await spentTodayUsd(db, r.agentClass, r.agentName)
+      if (spent >= r.dailyBudgetUsd) {
+        console.log(
+          JSON.stringify({
+            event: 'routine_skipped_budget',
+            routineId: r.id,
+            userId: r.userId,
+            spentUsd: spent,
+            dailyBudgetUsd: r.dailyBudgetUsd,
           })
         )
         continue
@@ -271,6 +293,32 @@ export async function fireRoutine(
       })
     )
   }
+}
+
+/**
+ * Sum a routine agent's USD spend since UTC midnight today, from the
+ * authoritative agent_runs telemetry. A routine targets a specific
+ * (agentClass, agentName) instance, so summing those rows is the routine's
+ * daily spend. Returns 0 when nothing has run yet.
+ */
+async function spentTodayUsd(
+  db: ReturnType<typeof drizzle>,
+  agentClass: string,
+  agentName: string
+): Promise<number> {
+  const now = Math.floor(Date.now() / 1000)
+  const startOfDay = now - (now % 86400) // epoch days align to UTC midnight
+  const [row] = await db
+    .select({ total: sql<number>`COALESCE(SUM(${agentRuns.costUsd}), 0)` })
+    .from(agentRuns)
+    .where(
+      and(
+        eq(agentRuns.agentClass, agentClass),
+        eq(agentRuns.agentName, agentName),
+        gte(agentRuns.startedAt, startOfDay)
+      )
+    )
+  return row?.total ?? 0
 }
 
 // ─── Stale-run watchdog (P2-005) ───────────────────────────────────

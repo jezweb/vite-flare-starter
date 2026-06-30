@@ -358,8 +358,11 @@ adminRoutes.patch('/users/:id', zValidator('json', updateUserSchema), async (c) 
     return c.json({ error: 'User not found' }, 404)
   }
 
-  // Prevent modifying other admins
-  if (isAdminEmail(existingUser.email, c.env.ADMIN_EMAILS)) {
+  // Prevent modifying other admins — by env allowlist OR by DB role. The
+  // DB-role check matters once anyone is promoted through the panel: without
+  // it, one admin could demote/rename/re-email another admin who isn't in
+  // ADMIN_EMAILS (admin-vs-admin escalation / lockout).
+  if (isAdminEmail(existingUser.email, c.env.ADMIN_EMAILS) || existingUser.role === 'admin') {
     return c.json({ error: 'Cannot modify another admin user' }, 403)
   }
 
@@ -423,8 +426,9 @@ adminRoutes.delete('/users/:id', async (c) => {
     return c.json({ error: 'User not found' }, 404)
   }
 
-  // Prevent deleting other admins
-  if (isAdminEmail(user.email, c.env.ADMIN_EMAILS)) {
+  // Prevent deleting other admins — by env allowlist OR by DB role (same
+  // admin-vs-admin protection as the PATCH guard above).
+  if (isAdminEmail(user.email, c.env.ADMIN_EMAILS) || user.role === 'admin') {
     return c.json({ error: 'Cannot delete another admin user' }, 403)
   }
 
