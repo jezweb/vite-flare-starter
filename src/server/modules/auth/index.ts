@@ -97,6 +97,30 @@ export function isSignupAllowed(
   return !!domain && domains.has(domain)
 }
 
+/**
+ * Is an allowlist actually configured? When false the app accepts any signup
+ * (public-starter default), so error paths in the login gate may fail OPEN
+ * without widening access. When true the gate is load-bearing, so those same
+ * error paths must fail CLOSED — a transient D1 error must not re-admit a
+ * pre-existing account the operator has since removed from the allowlist.
+ */
+export function isAllowlistActive(cfg: {
+  ALLOWED_AUTH_EMAILS?: string
+  ALLOWED_AUTH_DOMAINS?: string
+  AUTH_ALLOWLIST?: string
+}): boolean {
+  const has = (raw?: string) =>
+    (raw ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean).length > 0
+  return (
+    String(cfg.AUTH_ALLOWLIST ?? '').toLowerCase() === 'true' ||
+    has(cfg.ALLOWED_AUTH_EMAILS) ||
+    has(cfg.ALLOWED_AUTH_DOMAINS)
+  )
+}
+
 export function createAuthFromEnv(d1: D1Database, env: Record<string, unknown>) {
   return createAuth(d1, {
     BETTER_AUTH_SECRET: String(env['BETTER_AUTH_SECRET'] ?? ''),
@@ -323,20 +347,26 @@ export function createAuth(
                 .bind(newSession.userId)
                 .first()) as { email?: string } | null
               const email = typeof row?.email === 'string' ? row.email : ''
-              if (email && !isSignupAllowed(email, env)) {
+              // When the allowlist is active, fail CLOSED on both a disallowed
+              // AND an unresolvable email — an existing-but-now-disallowed
+              // account (or one whose email row can't be read) must not log in.
+              // When the gate is off, isAllowlistActive is false and we never
+              // block here (public-signup forks).
+              if (isAllowlistActive(env) && (!email || !isSignupAllowed(email, env))) {
                 console.warn(JSON.stringify({ event: 'auth_login_blocked', email }))
                 return false
               }
             } catch (err) {
-              // Fail OPEN on a lookup error rather than lock everyone out on a
-              // transient D1 blip — new intruders are already blocked at
-              // user.create.before; this hook only catches pre-existing ones.
               console.error(
                 JSON.stringify({
                   event: 'auth_login_gate_error',
                   error: err instanceof Error ? err.message : String(err),
                 })
               )
+              // Fail CLOSED when an allowlist is active (a transient D1 error
+              // must not re-admit a removed account); fail OPEN when no
+              // allowlist is configured, so a blip can't lock out a public fork.
+              if (isAllowlistActive(env)) return false
             }
             return { data: newSession }
           },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isSignupAllowed } from '@/server/modules/auth'
+import { isSignupAllowed, isAllowlistActive } from '@/server/modules/auth'
 
 describe('signup allowlist gate (#88)', () => {
   it('is inactive by default → allows everyone (public-starter default)', () => {
@@ -59,6 +59,19 @@ describe('signup allowlist gate (#88)', () => {
       const cfg = { ALLOWED_AUTH_DOMAINS: 'acme.com', TEST_AUTH_TOKEN: 'secret' }
       expect(isSignupAllowed('alice@test.acme.com', cfg)).toBe(false) // not .local
       expect(isSignupAllowed('alice@nottest.foo.local', cfg)).toBe(false) // not test.*
+    })
+  })
+
+  // Drives the login-gate fail-open-vs-closed decision (session.create.before).
+  describe('isAllowlistActive (login-gate fail mode)', () => {
+    it('is false when no allowlist is configured → error paths fail OPEN', () => {
+      expect(isAllowlistActive({})).toBe(false)
+      expect(isAllowlistActive({ ALLOWED_AUTH_EMAILS: '', ALLOWED_AUTH_DOMAINS: '  ' })).toBe(false)
+    })
+    it('is true when any allowlist mechanism is set → error paths fail CLOSED', () => {
+      expect(isAllowlistActive({ ALLOWED_AUTH_EMAILS: 'a@b.com' })).toBe(true)
+      expect(isAllowlistActive({ ALLOWED_AUTH_DOMAINS: 'acme.com' })).toBe(true)
+      expect(isAllowlistActive({ AUTH_ALLOWLIST: 'true' })).toBe(true)
     })
   })
 })

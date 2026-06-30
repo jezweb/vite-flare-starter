@@ -40,8 +40,19 @@ import { routineRuns } from './db/schema'
  * without this, a user could set agentName to `<victimId>:slug` and have the
  * cron fire collide with / overwrite the owner of another tenant's agent DO.
  */
-function ownerScopedAgentName(userId: string, agentName: string): string {
+/** Agent-instance slug charset — kebab/snake identifiers only. Keeps DO
+ *  instance names clean and rejects malformed input early. */
+const AGENT_SLUG_RE = /^[A-Za-z0-9_-]{1,64}$/
+
+/**
+ * Returns the owner-namespaced DO instance name, or null if the slug is
+ * malformed. Cross-tenant targeting is already impossible — the slug is always
+ * re-prefixed with the CALLER's userId — but we still validate the slug so
+ * DO instance names stay well-formed (defense-in-depth; #95 follow-up).
+ */
+function ownerScopedAgentName(userId: string, agentName: string): string | null {
   const slug = agentName.includes(':') ? agentName.slice(agentName.indexOf(':') + 1) : agentName
+  if (!AGENT_SLUG_RE.test(slug)) return null
   return `${userId}:${slug}`
 }
 
@@ -96,13 +107,17 @@ app.post('/', zValidator('json', CreateSchema), async (c) => {
   if (!getAgentMetadata(body['agentClass'])) {
     return c.json({ error: `Unknown agent class: ${body['agentClass']}` }, 400)
   }
+  const scopedName = ownerScopedAgentName(userId, body['agentName'])
+  if (!scopedName) {
+    return c.json({ error: 'Invalid agentName — use letters, numbers, _ or - (max 64)' }, 400)
+  }
   const created = await createRoutine(c.env, {
     userId,
     organizationId: orgId,
     name: body['name'],
     ...(body['description'] !== undefined ? { description: body['description'] } : {}),
     agentClass: body['agentClass'],
-    agentName: ownerScopedAgentName(userId, body['agentName']),
+    agentName: scopedName,
     triggerKind: body['triggerKind'],
     ...(body['triggerConfig'] !== undefined ? { triggerConfig: body['triggerConfig'] } : {}),
     ...(body['inputTemplate'] !== undefined ? { inputTemplate: body['inputTemplate'] } : {}),
@@ -139,7 +154,11 @@ app.patch('/:id', zValidator('json', PatchSchema), async (c) => {
     return c.json({ error: `Unknown agent class: ${patch['agentClass']}` }, 400)
   }
   if (patch['agentName'] !== undefined) {
-    patch['agentName'] = ownerScopedAgentName(userId, patch['agentName'])
+    const scopedName = ownerScopedAgentName(userId, patch['agentName'])
+    if (!scopedName) {
+      return c.json({ error: 'Invalid agentName — use letters, numbers, _ or - (max 64)' }, 400)
+    }
+    patch['agentName'] = scopedName
   }
   const updated = await updateRoutine(c.env, c.req.param('id'), userId, patch, orgId)
   if (!updated) return c.json({ error: 'Not found' }, 404)
