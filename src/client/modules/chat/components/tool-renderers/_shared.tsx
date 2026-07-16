@@ -151,7 +151,7 @@ export function ToolCard({
           )}
         />
       </CollapsibleTrigger>
-      <CollapsibleContent className="space-y-3 px-4 pb-4 pt-1 text-sm outline-none data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:slide-in-from-top-2">
+      <CollapsibleContent className="space-y-3 px-4 pb-4 pt-1 text-sm outline-none transition-all duration-150 data-starting-style:opacity-0 data-starting-style:-translate-y-2 data-ending-style:opacity-0">
         {children ?? <FallbackToolBody input={input} output={output} errorText={errorText} />}
       </CollapsibleContent>
     </Collapsible>

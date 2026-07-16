@@ -131,26 +131,27 @@ function CollapsibleSection({
   return (
     <SidebarGroup>
       <Collapsible open={effectiveOpen} onOpenChange={setOpen}>
-        <CollapsibleTrigger asChild>
-          {/*
-           * Render as a real <button> so the trigger is keyboard-focusable
-           * out of the box (tabIndex=0, Enter/Space activate). asChild on
-           * SidebarGroupLabel produces a div that's invisible to Tab.
-           * Reuses the SidebarGroupLabel styling via the same class string.
-           */}
-          <button
-            type="button"
-            aria-expanded={effectiveOpen}
-            className="flex h-8 w-full shrink-0 items-center rounded-md px-2 text-xs font-medium text-sidebar-foreground/80 ring-sidebar-ring outline-hidden transition-[margin,opacity,colors] duration-200 ease-linear hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0 [&>svg]:size-4 [&>svg]:shrink-0"
-          >
-            <span>{label}</span>
-            <ChevronDown
-              className={`ml-auto size-3.5 transition-transform ${
-                effectiveOpen ? 'rotate-0' : '-rotate-90'
-              }`}
-              aria-hidden="true"
+        {/*
+         * Render as a real <button> so the trigger is keyboard-focusable
+         * out of the box (tabIndex=0, Enter/Space activate). render on
+         * SidebarGroupLabel would produce a div that's invisible to Tab.
+         * Reuses the SidebarGroupLabel styling via the same class string.
+         */}
+        <CollapsibleTrigger
+          render={
+            <button
+              type="button"
+              className="flex h-8 w-full shrink-0 items-center rounded-md px-2 text-xs font-medium text-sidebar-foreground/80 ring-sidebar-ring outline-hidden transition-[margin,opacity,colors] duration-200 ease-linear hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0 [&>svg]:size-4 [&>svg]:shrink-0"
             />
-          </button>
+          }
+        >
+          <span>{label}</span>
+          <ChevronDown
+            className={`ml-auto size-3.5 transition-transform ${
+              effectiveOpen ? 'rotate-0' : '-rotate-90'
+            }`}
+            aria-hidden="true"
+          />
         </CollapsibleTrigger>
         <CollapsibleContent>
           <SidebarGroupContent>{children}</SidebarGroupContent>
