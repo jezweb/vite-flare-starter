@@ -21,6 +21,7 @@ export const WORKERS_AI_MODELS = [
   '@cf/moonshotai/kimi-k2.6', // 262K ctx, tools, flagship
   '@cf/google/gemma-4-26b-a4b-it', // 256K ctx, tools, flagship — also multimodal (vision)
   '@cf/zai-org/glm-4.7-flash', // 131K ctx, tools, flagship
+  '@cf/zai-org/glm-5.2', // 262K ctx, tools + reasoning, flagship — Z.ai agentic coding. Reasoner-role candidate (MODEL_ROLE_REASONER)
   '@cf/qwen/qwq-32b', // reasoning flagship
   '@cf/openai/gpt-oss-120b', // 128K ctx, tools, flagship — OpenAI open-weights
   '@cf/openai/gpt-oss-20b', // 128K ctx, tools, flagship — smaller GPT-OSS

@@ -72,6 +72,11 @@ const GENERIC_FALLBACK_MAX_TOKENS = 16384
  */
 const MODEL_OVERRIDES: Record<string, Partial<ModelConfig>> = {
   '@cf/moonshotai/kimi-k2.6': { isReasoning: true, defaultMaxTokens: 32768 },
+  // Same stale-feed class: the workers-ai feed reports `reasoning: false` for
+  // GLM-5.2, but it's a thinking model (reasoning + function calling — see the
+  // workers-ai-provider chat_template_kwargs docs, which list the GLM family
+  // as reasoning-capable). Verified against live catalogue 2026-07-16.
+  '@cf/zai-org/glm-5.2': { isReasoning: true },
 }
 
 function fromCatalogue(m: CatalogueModel & { source?: 'openrouter' | 'workers-ai' }): ModelConfig {

@@ -379,7 +379,7 @@ function MessageBody({
             (p) => p.type === 'reasoning' && !!(p as { text?: string }).text?.trim()
           ).length
           const reasoningLabel = computeReasoningLabel(reasoningIndex, totalReasoning)
-          // Some reasoning models (e.g. Kimi K2.5 via workers-ai-provider)
+          // Some reasoning models (e.g. Kimi K2.6 via workers-ai-provider)
           // bake their FINAL answer into their reasoning stream and never
           // emit a separate text part. Detect that case — completed
           // assistant message, this is the trailing content, and no text

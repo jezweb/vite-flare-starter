@@ -37,7 +37,7 @@ export const conversations = sqliteTable(
     title: text('title'),
     /**
      * One-line sidebar summary (~120 chars). Generated after the first
-     * assistant response by a cheap model (Kimi K2.5 via Workers AI) so the
+     * assistant response by a cheap model (the composer role — free Workers AI) so the
      * conversation list shows "what this was about" instead of just a
      * truncated first message.
      */

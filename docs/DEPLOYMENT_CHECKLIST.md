@@ -44,6 +44,9 @@ echo "production" | npx wrangler secret put SENTRY_ENVIRONMENT
 # Optional: AI Gateway
 echo "your-gateway-id" | npx wrangler secret put AI_GATEWAY_ID
 echo "your-token" | npx wrangler secret put CF_AIG_TOKEN
+# Optional: also set the account id to proxy OpenRouter through the gateway
+# (request logging/caching, same OpenRouter key pays — zero billing change)
+echo "your-account-id" | npx wrangler secret put AI_GATEWAY_ACCOUNT_ID
 
 # Optional: Admin auto-promotion (admin promote requires a VERIFIED email)
 echo "admin@yourcompany.com,cto@yourcompany.com" | npx wrangler secret put ADMIN_EMAILS
