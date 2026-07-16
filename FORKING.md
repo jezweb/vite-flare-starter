@@ -45,6 +45,8 @@ Before starting:
 > `rm -rf .git` cuts you off from upstream forever — you lose every
 > bug fix, security patch, and improvement that ships to the starter.
 > A fork keeps you connected so `git pull upstream main` is a one-liner.
+> Before pulling a major release, read [`UPGRADING.md`](./UPGRADING.md) —
+> it lists exactly what can break fork code, with the codemods to fix it.
 >
 > If you can't create a fork (e.g. the user explicitly says "I just want
 > a snapshot"), then a detached clone is fine — but verify the intent
