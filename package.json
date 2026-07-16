@@ -165,6 +165,7 @@
     "@cloudflare/workers-types": "^4.20260603.1",
     "@hono/zod-validator": "^0.8.0",
     "@playwright/test": "^1.60.0",
+    "@tailwindcss/typography": "^0.5.20",
     "@types/leaflet": "^1.9.21",
     "@types/node": "^25.9.1",
     "@types/react": "^19.2.16",
