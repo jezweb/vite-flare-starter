@@ -48,6 +48,9 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Banner } from '@/components/ui/banner'
+import { Meter } from '@/components/ui/meter'
+import { ClipboardText } from '@/components/ui/clipboard-text'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
@@ -467,6 +470,31 @@ export function ComponentsPage() {
                 <AlertTitle>Error</AlertTitle>
                 <AlertDescription>Your session has expired. Please log in again.</AlertDescription>
               </Alert>
+              <div className="space-y-3 pt-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Banner — page-level notice (edge-to-edge chrome, not content)
+                </p>
+                <Banner variant="warning" title="Sandbox mode" action={<Button size="sm" variant="outline">Upgrade</Button>}>
+                  Emails are logged, not sent. Upgrade to enable delivery.
+                </Banner>
+                <Banner variant="info" onDismiss={() => {}}>
+                  A new version of this app is available.
+                </Banner>
+              </div>
+              <div className="space-y-3 pt-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Meter — measured value in a known range (quota idiom)
+                </p>
+                <Meter label="Storage" value={6.2} max={10} format={(v) => `${v} GB`} />
+                <Meter label="API requests" value={9700} max={10000} format={(v) => v.toLocaleString()} />
+              </div>
+              <div className="space-y-3 pt-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  ClipboardText — copyable value, optional masking
+                </p>
+                <ClipboardText label="Webhook URL" value="https://example.workers.dev/api/webhooks/agents/inbound" />
+                <ClipboardText label="API token" value="vfs_demo_2kX9mQp7vRw4tYz8" masked />
+              </div>
             </CardContent>
           </Card>
 
