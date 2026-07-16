@@ -219,18 +219,21 @@ export function RowShell({
 
   return (
     <ContextMenu>
-      <ContextMenuTrigger asChild>
-        <ListRow
-          ref={rowRef}
-          state={state}
-          interactive
-          className={cn(
-            isSelected && 'bg-primary/10 hover:bg-primary/15',
-            isFocused && 'ring-2 ring-ring/50 ring-inset'
-          )}
-          onClick={handleClick}
-          onMouseEnter={onFocusChange}
-        >
+      <ContextMenuTrigger
+        render={
+          <ListRow
+            ref={rowRef}
+            state={state}
+            interactive
+            className={cn(
+              isSelected && 'bg-primary/10 hover:bg-primary/15',
+              isFocused && 'ring-2 ring-ring/50 ring-inset'
+            )}
+            onClick={handleClick}
+            onMouseEnter={onFocusChange}
+          />
+        }
+      >
           {/* a11y: the row used to have role="button" + tabIndex={0} alongside a
               focusable Review Link inside, which axe flags as nested-interactive.
               The row stays clickable via pointer (handleClick still fires); for
@@ -259,29 +262,28 @@ export function RowShell({
             {meta}
           </ListRowBody>
           <ListRowTrailing>{trailing}</ListRowTrailing>
-        </ListRow>
       </ContextMenuTrigger>
       <ContextMenuContent>
         {row.source === 'inbox' && (
-          <ContextMenuItem onSelect={() => toggleRead.mutate()}>
+          <ContextMenuItem onClick={() => toggleRead.mutate()}>
             {isUnread ? 'Mark read' : 'Mark unread'}
           </ContextMenuItem>
         )}
-        <ContextMenuItem onSelect={() => onToggleSelect()}>
+        <ContextMenuItem onClick={() => onToggleSelect()}>
           {isSelected ? 'Deselect' : 'Select'}
         </ContextMenuItem>
         {isApproval && (
-          <ContextMenuItem onSelect={() => onOpenApproval(row.id)}>Review approval</ContextMenuItem>
+          <ContextMenuItem onClick={() => onOpenApproval(row.id)}>Review approval</ContextMenuItem>
         )}
         {extraMenuItems}
         <ContextMenuSeparator />
-        <ContextMenuItem onSelect={copyId}>Copy row ID</ContextMenuItem>
+        <ContextMenuItem onClick={copyId}>Copy row ID</ContextMenuItem>
         {row.source === 'inbox' && (
           <>
             <ContextMenuSeparator />
             <ContextMenuItem
               variant="destructive"
-              onSelect={() => archive.mutate()}
+              onClick={() => archive.mutate()}
               disabled={archive.isPending}
             >
               Archive
