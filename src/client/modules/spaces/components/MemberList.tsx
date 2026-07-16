@@ -6,7 +6,7 @@
  * not WS clients — they exist as long as the space exists).
  */
 import { useMemo } from 'react'
-import { Bot, User, Pin } from 'lucide-react'
+import { Robot, User, PushPin } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import type { SpaceMember, SpaceUserInfo } from '../hooks/useSpaces'
 
@@ -70,7 +70,7 @@ export function MemberList({ members, users, online }: Props) {
                       <div className="truncate text-[10px] text-muted-foreground">{user.email}</div>
                     ) : null}
                   </div>
-                  {m.pinnedToSidebar ? <Pin className="size-3 text-amber-500" /> : null}
+                  {m.pinnedToSidebar ? <PushPin className="size-3 text-amber-500" /> : null}
                 </li>
               )
             })}
@@ -90,7 +90,7 @@ export function MemberList({ members, users, online }: Props) {
                 className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-accent"
               >
                 <span className="relative inline-flex size-7 items-center justify-center rounded-full bg-emerald-500/15 text-xs">
-                  <Bot className="size-3.5 text-emerald-700 dark:text-emerald-300" />
+                  <Robot className="size-3.5 text-emerald-700 dark:text-emerald-300" />
                   <span
                     className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full bg-emerald-500 ring-2 ring-background"
                     title="Always online"

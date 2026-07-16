@@ -4,7 +4,7 @@
  * A ToolRenderer describes how a single agent tool appears in the chat
  * transcript. Each renderer provides:
  *  - `match`: which tool name(s) this handles
- *  - `icon`: lucide icon (defaults to WrenchIcon)
+ *  - `icon`: Phosphor icon (defaults to WrenchIcon)
  *  - `displayName`: pretty title (defaults to snake_case → "Title Case")
  *  - `summary(output, input)`: one-line compact label next to the pill
  *    status — e.g. "3 emails", "1 result". Keep it short.
@@ -20,15 +20,8 @@
  */
 import type { ReactNode } from 'react'
 import { useState } from 'react'
-import type { LucideIcon } from 'lucide-react'
-import {
-  WrenchIcon,
-  ChevronDownIcon,
-  CheckCircleIcon,
-  CircleIcon,
-  ClockIcon,
-  XCircleIcon,
-} from 'lucide-react'
+import type { Icon } from '@phosphor-icons/react'
+import { WrenchIcon, CaretDownIcon, CheckCircleIcon, CircleIcon, ClockIcon, XCircleIcon } from '@phosphor-icons/react'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
@@ -50,7 +43,7 @@ export interface ToolRenderer {
    */
   match: string | string[] | ((toolName: string, output: unknown) => boolean)
   /** Override the default Wrench icon. */
-  icon?: LucideIcon
+  icon?: Icon
   /** Override the default auto-generated display name. */
   displayName?: string | ((toolName: string) => string)
   /** Compact summary shown beside the pill status (e.g. "3 results"). */
@@ -119,7 +112,7 @@ export function ToolCard({
 }: {
   name: string
   state: ToolState
-  icon?: LucideIcon
+  icon?: Icon
   summary?: string | null
   input?: unknown
   output?: unknown
@@ -144,7 +137,7 @@ export function ToolCard({
           </Badge>
           {summary && <span className="text-xs text-muted-foreground truncate">· {summary}</span>}
         </div>
-        <ChevronDownIcon
+        <CaretDownIcon
           className={cn(
             'size-4 text-muted-foreground shrink-0 transition-transform',
             open && 'rotate-180'

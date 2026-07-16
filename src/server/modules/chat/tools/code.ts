@@ -6,7 +6,7 @@
  * plan required). @see https://developers.cloudflare.com/sandbox/
  */
 import { z } from 'zod'
-import { Terminal, FileCode2 } from 'lucide-react'
+import { Terminal, FileCode } from '@phosphor-icons/react'
 import { getSandbox, type ExecutionResult, type ExecResult } from '@cloudflare/sandbox'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 
@@ -83,7 +83,7 @@ export const runPythonDefinition: ToolDefinition<
       return { error: error instanceof Error ? error.message : String(error) }
     }
   },
-  render: { icon: FileCode2, displayName: 'Run Python' },
+  render: { icon: FileCode, displayName: 'Run Python' },
 }
 
 export const runShellDefinition: ToolDefinition<
@@ -137,7 +137,7 @@ export const runJsDefinition: ToolDefinition<
       return { error: error instanceof Error ? error.message : String(error) }
     }
   },
-  render: { icon: FileCode2, displayName: 'Run JavaScript' },
+  render: { icon: FileCode, displayName: 'Run JavaScript' },
 }
 
 export const codeDefinitions = [

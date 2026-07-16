@@ -5,7 +5,7 @@
  * can't read or write outside their scope. Requires the FILES R2 bucket.
  */
 import { z } from 'zod'
-import { FolderTree, FileCheck, FilePlus, FileX } from 'lucide-react'
+import { TreeStructure, FileText, FilePlus, FileX } from '@phosphor-icons/react'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq, inArray, and } from 'drizzle-orm'
 import { files as filesTable } from '@/server/modules/files/db/schema'
@@ -103,7 +103,7 @@ export const fsListDefinition: ToolDefinition<{ path?: string }, z.infer<typeof 
       return { path, error: error instanceof Error ? error.message : String(error) }
     }
   },
-  render: { icon: FolderTree, displayName: 'List Files' },
+  render: { icon: TreeStructure, displayName: 'List Files' },
 }
 
 const FsReadOutput = z.union([
@@ -167,7 +167,7 @@ export const fsReadDefinition: ToolDefinition<{ path: string }, z.infer<typeof F
       return { path, error: error instanceof Error ? error.message : String(error) }
     }
   },
-  render: { icon: FileCheck, displayName: 'Read File' },
+  render: { icon: FileText, displayName: 'Read File' },
 }
 
 const FsWriteOutput = z.union([

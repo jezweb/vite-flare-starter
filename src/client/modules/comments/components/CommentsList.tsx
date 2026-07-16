@@ -17,7 +17,7 @@ import { IdentityRow } from '@/components/ui/identity-row'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Time } from '@/components/ui/time'
-import { MessageSquare, Reply, Trash2, Pencil } from 'lucide-react'
+import { Chat, ArrowBendUpLeft, Trash, Pencil } from '@phosphor-icons/react'
 
 interface Comment {
   id: string
@@ -130,7 +130,7 @@ export function CommentsList({ entityType, entityId, currentUserId }: Props) {
                 className="gap-1"
                 onClick={() => setReplyTo(comment.id)}
               >
-                <Reply className="size-3" /> Reply
+                <ArrowBendUpLeft className="size-3" /> Reply
               </Button>
               {isAuthor && (
                 <>
@@ -151,7 +151,7 @@ export function CommentsList({ entityType, entityId, currentUserId }: Props) {
                     className="gap-1 text-destructive"
                     onClick={() => deleteComment.mutate(comment.id)}
                   >
-                    <Trash2 className="size-3" /> Delete
+                    <Trash className="size-3" /> Delete
                   </Button>
                 </>
               )}
@@ -198,7 +198,7 @@ export function CommentsList({ entityType, entityId, currentUserId }: Props) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 text-sm font-medium">
-        <MessageSquare className="size-4" />
+        <Chat className="size-4" />
         {allComments.length} comment{allComments.length !== 1 ? 's' : ''}
       </div>
 

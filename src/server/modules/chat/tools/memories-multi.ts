@@ -21,7 +21,7 @@
 import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq, and, like, or } from 'drizzle-orm'
-import { BookOpen, Brain, Search, PencilLine, Trash2 } from 'lucide-react'
+import { BookOpen, Brain, MagnifyingGlass, PencilLine, Trash } from '@phosphor-icons/react'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 import { memories, MEMORY_SCOPES, MEMORY_TYPES } from '@/server/modules/memories/db/schema'
 
@@ -129,7 +129,7 @@ export const memorySearchDefinition: ToolDefinition<
     return { results: rows }
   },
   render: {
-    icon: Search,
+    icon: MagnifyingGlass,
     displayName: 'Memory search',
     summary: (output) =>
       `Found ${(output as { results?: unknown[] }).results?.length ?? 0} memory ${(output as { results?: unknown[] }).results?.length === 1 ? 'entry' : 'entries'}`,
@@ -303,7 +303,7 @@ export const memoryRemoveDefinition: ToolDefinition<
     return { success: true }
   },
   render: {
-    icon: Trash2,
+    icon: Trash,
     displayName: 'Remove memory',
     summary: (output) => {
       const o = output as { error?: string }

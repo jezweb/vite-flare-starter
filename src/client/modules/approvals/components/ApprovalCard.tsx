@@ -17,16 +17,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { formatDistanceToNow } from 'date-fns'
-import {
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
-  Clock,
-  ChevronRight,
-  Brain,
-  ArrowUpRight,
-  Lock,
-} from 'lucide-react'
+import { CheckCircle, XCircle, WarningCircle, Clock, CaretRight, Brain, ArrowUpRight, Lock } from '@phosphor-icons/react'
 
 import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
@@ -211,7 +202,7 @@ export function ApprovalCard({
 
             <details className="group pt-1">
               <summary className="inline-flex cursor-pointer select-none items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground">
-                <ChevronRight className="size-3 transition-transform group-open:rotate-90" />
+                <CaretRight className="size-3 transition-transform group-open:rotate-90" />
                 Add a note (optional)
               </summary>
               <div className="mt-1.5">
@@ -229,7 +220,7 @@ export function ApprovalCard({
 
         <details className="group">
           <summary className="inline-flex cursor-pointer select-none items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-            <ChevronRight className="size-3 transition-transform group-open:rotate-90" />
+            <CaretRight className="size-3 transition-transform group-open:rotate-90" />
             Technical details
           </summary>
           <div className="mt-2 space-y-2 rounded-md border bg-muted/20 p-3">
@@ -381,10 +372,10 @@ function StatusBadge({ status }: { status: Status }) {
     }
   > = {
     pending: { label: 'Pending', icon: Clock, kind: 'warning' },
-    approved: { label: 'Approved', icon: CheckCircle2, kind: 'info' },
-    executed: { label: 'Done', icon: CheckCircle2, kind: 'success' },
+    approved: { label: 'Approved', icon: CheckCircle, kind: 'info' },
+    executed: { label: 'Done', icon: CheckCircle, kind: 'success' },
     rejected: { label: 'Rejected', icon: XCircle, kind: 'neutral' },
-    failed: { label: 'Failed', icon: AlertCircle, kind: 'danger' },
+    failed: { label: 'Failed', icon: WarningCircle, kind: 'danger' },
   }
   const { label, icon: Icon, kind } = config[status]
   return <StatusPill kind={kind} label={label} icon={<Icon />} />

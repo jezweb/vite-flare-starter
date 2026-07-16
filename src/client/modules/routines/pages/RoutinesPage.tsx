@@ -7,19 +7,7 @@
  */
 import { Link } from 'react-router-dom'
 import { formatDistanceToNow } from 'date-fns'
-import {
-  Activity,
-  CheckCircle2,
-  Clock,
-  Loader2,
-  Plus,
-  Repeat,
-  XCircle,
-  AlertTriangle,
-  Webhook,
-  Hand,
-  Zap,
-} from 'lucide-react'
+import { Pulse, CheckCircle, Clock, CircleNotch, Plus, Repeat, XCircle, Warning, PlugsConnected, Hand, Lightning } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { Switch } from '@/components/ui/switch'
@@ -160,7 +148,7 @@ function RoutineRow({
             </span>
             <span>·</span>
             <span className="inline-flex items-center gap-1">
-              <Activity className="size-3" />
+              <Pulse className="size-3" />
               last run {lastRun}
             </span>
             {routine.lastOutcome && (
@@ -186,9 +174,9 @@ function RoutineRow({
 function TriggerIcon({ kind }: { kind: Routine['triggerKind'] }) {
   switch (kind) {
     case 'webhook':
-      return <Webhook className="size-4 text-purple-500" />
+      return <PlugsConnected className="size-4 text-purple-500" />
     case 'event':
-      return <Zap className="size-4 text-amber-500" />
+      return <Lightning className="size-4 text-amber-500" />
     case 'manual':
       return <Hand className="size-4 text-muted-foreground" />
     case 'schedule':
@@ -199,10 +187,10 @@ function TriggerIcon({ kind }: { kind: Routine['triggerKind'] }) {
 
 function OutcomeBadge({ outcome }: { outcome: NonNullable<Routine['lastOutcome']> }) {
   const styleMap = {
-    ok: { icon: CheckCircle2, cls: 'text-emerald-600' },
+    ok: { icon: CheckCircle, cls: 'text-emerald-600' },
     error: { icon: XCircle, cls: 'text-destructive' },
-    budget_exceeded: { icon: AlertTriangle, cls: 'text-destructive' },
-    started: { icon: Loader2, cls: 'text-muted-foreground' },
+    budget_exceeded: { icon: Warning, cls: 'text-destructive' },
+    started: { icon: CircleNotch, cls: 'text-muted-foreground' },
   } as const
   const { icon: Icon, cls } = styleMap[outcome]
   return (

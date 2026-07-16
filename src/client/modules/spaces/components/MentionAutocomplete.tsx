@@ -9,7 +9,7 @@
  * so the calling textarea can insert a real pill rather than text.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Bot, User } from 'lucide-react'
+import { Robot, User } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import type { SpaceMember, SpaceUserInfo } from '../hooks/useSpaces'
 
@@ -152,7 +152,7 @@ export function MentionAutocomplete({ members, users, query, onPick, onCancel }:
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => onPick(item)}
           >
-            <Bot className="size-3.5 text-emerald-600" />
+            <Robot className="size-3.5 text-emerald-600" />
             <span className="flex-1 truncate">{item.label}</span>
           </button>
         )

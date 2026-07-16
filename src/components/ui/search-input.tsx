@@ -14,7 +14,7 @@
  * for filter rows / sidebars where vertical space is tight.
  */
 import * as React from 'react'
-import { Search, X } from 'lucide-react'
+import { MagnifyingGlass, X } from '@phosphor-icons/react'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 
@@ -42,7 +42,7 @@ export function SearchInput({
 
   return (
     <div data-slot="search-input" className={cn('relative', className)}>
-      <Search
+      <MagnifyingGlass
         aria-hidden="true"
         className={cn(
           'absolute top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none',

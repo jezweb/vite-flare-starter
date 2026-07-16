@@ -3,7 +3,7 @@
  * note, fire forward.
  */
 import { useState } from 'react'
-import { Forward } from 'lucide-react'
+import { ArrowBendUpRight } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import {
   Dialog,
@@ -87,7 +87,7 @@ export function ForwardMessageDialog({ message, open, onClose }: Props) {
             Cancel
           </Button>
           <Button onClick={submit} disabled={!target || forward.isPending}>
-            {forward.isPending ? <Spinner size="md" /> : <Forward className="size-4 mr-1" />}
+            {forward.isPending ? <Spinner size="md" /> : <ArrowBendUpRight className="size-4 mr-1" />}
             Forward
           </Button>
         </div>

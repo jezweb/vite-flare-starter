@@ -1,4 +1,4 @@
-import { Info, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react'
+import { Info, CheckCircle, Warning, XCircle } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { STATUS_SOFT_BG } from '@/client/lib/status-colors'
 
@@ -8,7 +8,7 @@ interface Props {
   message: string
 }
 
-const ICONS = { info: Info, success: CheckCircle2, warning: AlertTriangle, error: XCircle }
+const ICONS = { info: Info, success: CheckCircle, warning: Warning, error: XCircle }
 const STYLES = {
   info: STATUS_SOFT_BG.info,
   success: STATUS_SOFT_BG.success,

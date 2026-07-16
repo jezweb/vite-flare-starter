@@ -9,7 +9,7 @@
  * Renders as a compact list of matched tool names + descriptions
  * instead of the raw JSON dump.
  */
-import { Search } from 'lucide-react'
+import { MagnifyingGlass } from '@phosphor-icons/react'
 import type { ToolRenderer } from './_shared'
 
 interface FindToolsInput {
@@ -32,7 +32,7 @@ function toFindToolsOutput(value: unknown): FindToolsOutput | null {
 
 export const findToolsRenderer: ToolRenderer = {
   match: 'find_tools',
-  icon: Search,
+  icon: MagnifyingGlass,
   displayName: 'Find tools',
   summary: (output, input) => {
     const out = toFindToolsOutput(output)

@@ -19,7 +19,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Bar, BarChart, CartesianGrid, XAxis, Area, AreaChart, YAxis } from 'recharts'
-import { TrendingUp, BarChart3, DollarSign } from 'lucide-react'
+import { TrendUp, ChartBar, CurrencyDollar } from '@phosphor-icons/react'
 
 import { apiClient } from '@/client/lib/api-client'
 import { PageContainer } from '@/components/ui/page-container'
@@ -128,7 +128,7 @@ export function AgentObservabilityPage() {
         </div>
       ) : totalRuns === 0 ? (
         <EmptyState
-          icon={BarChart3}
+          icon={ChartBar}
           title="No agent runs yet"
           description="Agents log a row to agent_runs every time they run. Trigger an agent (REST, schedule, webhook, or inter-agent) and stats land here."
           tips={[
@@ -143,7 +143,7 @@ export function AgentObservabilityPage() {
             <Card>
               <CardContent className="flex items-center gap-3 p-4">
                 <div className="flex size-10 items-center justify-center rounded-md bg-primary/10 text-primary">
-                  <TrendingUp className="size-5" />
+                  <TrendUp className="size-5" />
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Total runs</p>
@@ -154,7 +154,7 @@ export function AgentObservabilityPage() {
             <Card>
               <CardContent className="flex items-center gap-3 p-4">
                 <div className="flex size-10 items-center justify-center rounded-md bg-primary/10 text-primary">
-                  <DollarSign className="size-5" />
+                  <CurrencyDollar className="size-5" />
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Total cost</p>
@@ -249,7 +249,7 @@ export function AgentObservabilityPage() {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span className="flex items-center gap-2">
-                  <BarChart3 className="size-4" />
+                  <ChartBar className="size-4" />
                   Tool usage
                 </span>
                 <span className="text-xs font-normal text-muted-foreground">

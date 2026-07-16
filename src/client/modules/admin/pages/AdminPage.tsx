@@ -19,7 +19,7 @@ import { FeaturesTabContent } from '../components/FeaturesTabContent'
 import { EmailLogsTabContent } from '../components/EmailLogsTabContent'
 import { ToolErrorsTabContent } from '../components/ToolErrorsTabContent'
 import { ApiTokensSection } from '@/client/modules/settings/components/ApiTokensSection'
-import { Shield, Users, Flag, Key, ArrowLeft, Mail, AlertCircle } from 'lucide-react'
+import { Shield, Users, Flag, Key, ArrowLeft, EnvelopeSimple, WarningCircle } from '@phosphor-icons/react'
 
 const TABS = ['users', 'features', 'tokens', 'emails', 'tool-errors'] as const
 type TabValue = (typeof TABS)[number]
@@ -132,11 +132,11 @@ export function AdminPage() {
             API Tokens
           </TabsTrigger>
           <TabsTrigger value="emails" className="gap-2">
-            <Mail className="h-4 w-4" />
+            <EnvelopeSimple className="h-4 w-4" />
             Emails
           </TabsTrigger>
           <TabsTrigger value="tool-errors" className="gap-2">
-            <AlertCircle className="h-4 w-4" />
+            <WarningCircle className="h-4 w-4" />
             Tool errors
           </TabsTrigger>
         </TabsList>

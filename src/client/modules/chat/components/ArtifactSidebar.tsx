@@ -9,21 +9,7 @@
  * file with the right extension (.html / .svg / .mmd / original filename).
  */
 import { useMemo, useCallback, useState } from 'react'
-import {
-  FileText,
-  FileCode,
-  FileImage,
-  FileAudio,
-  FileVideo,
-  FileSpreadsheet,
-  FileArchive,
-  File as FileIcon,
-  Download,
-  X,
-  Maximize2,
-  FolderPlus,
-  Check,
-} from 'lucide-react'
+import { FileText, FileCode, FileImage, FileAudio, FileVideo, FileXls, FileArchive, File as FileIcon, Download, X, ArrowsOutSimple, FolderPlus, Check } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -105,7 +91,7 @@ function iconForMime(mediaType?: string) {
   if (mediaType.startsWith('video/')) return FileVideo
   if (mediaType === 'application/pdf') return FileText
   if (mediaType.includes('spreadsheet') || mediaType.includes('excel') || mediaType === 'text/csv')
-    return FileSpreadsheet
+    return FileXls
   if (mediaType.includes('wordprocessingml') || mediaType === 'application/msword') return FileText
   if (
     mediaType.startsWith('text/') ||
@@ -338,7 +324,7 @@ export function ArtifactSidebar({ messages, onClose, scrollRoot: _scrollRoot }: 
                       title="Open in lightbox"
                       aria-label={`Open ${a.title} in lightbox`}
                     >
-                      <Maximize2 className="size-3.5" />
+                      <ArrowsOutSimple className="size-3.5" />
                     </button>
                     <button
                       type="button"

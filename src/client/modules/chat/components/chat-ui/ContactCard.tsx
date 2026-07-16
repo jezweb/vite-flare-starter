@@ -1,4 +1,4 @@
-import { Phone, Mail, MapPin, User } from 'lucide-react'
+import { Phone, EnvelopeSimple, MapPin, User } from '@phosphor-icons/react'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 
 interface Props {
@@ -41,7 +41,7 @@ export function ContactCard({ name, title, phone, email, address, image }: Props
                 href={`mailto:${email}`}
                 className="flex items-center gap-1.5 text-foreground hover:text-primary"
               >
-                <Mail className="size-3" /> {email}
+                <EnvelopeSimple className="size-3" /> {email}
               </a>
             )}
             {address && (

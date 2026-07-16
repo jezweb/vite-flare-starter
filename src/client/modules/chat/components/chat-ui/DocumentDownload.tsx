@@ -4,7 +4,7 @@
  * Detects { _document: true, format, title, filename, base64|downloadUrl }
  * and shows a styled download card with file type icon.
  */
-import { FileText, FileSpreadsheet, Table2, Download } from 'lucide-react'
+import { FileText, FileXls, Table, Download } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 
 interface DocumentData {
@@ -36,13 +36,13 @@ const FORMAT_META: Record<
     mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   },
   xlsx: {
-    icon: FileSpreadsheet,
+    icon: FileXls,
     label: 'Excel Spreadsheet',
     color: 'text-green-600 dark:text-green-400',
     mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   },
   csv: {
-    icon: Table2,
+    icon: Table,
     label: 'CSV File',
     color: 'text-amber-600 dark:text-amber-400',
     mime: 'text/csv',

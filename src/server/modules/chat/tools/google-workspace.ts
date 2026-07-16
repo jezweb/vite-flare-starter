@@ -11,33 +11,7 @@
 import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq } from 'drizzle-orm'
-import {
-  Mail,
-  MailCheck,
-  MailOpen,
-  MailQuestion,
-  Reply,
-  Tags,
-  FolderOpen,
-  FolderPlus,
-  Calendar,
-  CalendarPlus,
-  CalendarSearch,
-  CalendarClock,
-  CalendarCheck,
-  CalendarX,
-  FileText,
-  FileSearch,
-  FilePlus,
-  FilePen,
-  FileDown,
-  FileType,
-  Sheet,
-  Table2,
-  Rows4,
-  ListTodo,
-  ListPlus,
-} from 'lucide-react'
+import { EnvelopeSimple, EnvelopeOpen, ArrowBendUpLeft, Tag, FolderOpen, FolderPlus, Calendar, CalendarPlus, CalendarDots, CalendarCheck, CalendarX, FileText, FileMagnifyingGlass, FilePlus, NotePencil, FileArrowDown, File, Table, Rows, ListChecks, ListPlus } from '@phosphor-icons/react'
 import { googleWorkspaceTokens } from '@/server/modules/google-workspace/db/schema'
 import {
   getAccessToken,
@@ -224,7 +198,7 @@ export const gmailSearchDefinition: ToolDefinition<GmailSearchInput, GmailSearch
     }
   },
   render: {
-    icon: Mail,
+    icon: EnvelopeSimple,
     displayName: 'Gmail Search',
     summary: (output) => {
       if ('error' in output) return 'failed'
@@ -286,7 +260,7 @@ export const gmailSendDefinition: ToolDefinition<GmailSendInput, GmailSendOutput
     return { ok: true as const, messageId: json.id, to, subject }
   },
   render: {
-    icon: MailCheck,
+    icon: EnvelopeOpen,
     displayName: 'Gmail Send',
     summary: (output) => {
       if ('error' in output) return 'failed'
@@ -647,7 +621,7 @@ export const gmailGetMessageDefinition: ToolDefinition<
     }
   },
   render: {
-    icon: MailOpen,
+    icon: EnvelopeOpen,
     displayName: 'Gmail — Read',
     summary: (output) => {
       if ('error' in output) return 'failed'
@@ -709,7 +683,7 @@ export const gmailListLabelsDefinition: ToolDefinition<
     return { count: labels.length, labels }
   },
   render: {
-    icon: Tags,
+    icon: Tag,
     displayName: 'Gmail — Labels',
     summary: (output) => {
       if ('error' in output) return 'failed'
@@ -786,7 +760,7 @@ export const gmailDraftDefinition: ToolDefinition<GmailDraftInput, GmailDraftOut
     }
   },
   render: {
-    icon: MailQuestion,
+    icon: EnvelopeSimple,
     displayName: 'Gmail — Draft',
     summary: (output) => {
       if ('error' in output) return 'failed'
@@ -911,7 +885,7 @@ export const gmailReplyDefinition: ToolDefinition<GmailReplyInput, GmailReplyOut
     return { ok: true as const, messageId: json.id, threadId: json.threadId, to }
   },
   render: {
-    icon: Reply,
+    icon: ArrowBendUpLeft,
     displayName: 'Gmail — Reply',
     summary: (output) => {
       if ('error' in output) return 'failed'
@@ -1064,7 +1038,7 @@ export const calendarListEventsDefinition: ToolDefinition<
     }
   },
   render: {
-    icon: CalendarSearch,
+    icon: Calendar,
     displayName: 'Calendar — List',
     summary: (output) => {
       if ('error' in output) return 'failed'
@@ -1313,7 +1287,7 @@ export const calendarFindFreeSlotDefinition: ToolDefinition<
     }
   },
   render: {
-    icon: CalendarClock,
+    icon: CalendarDots,
     displayName: 'Calendar — Free Slots',
     summary: (output) => {
       if ('error' in output) return 'failed'
@@ -1576,7 +1550,7 @@ export const docsSearchDefinition: ToolDefinition<DocsSearchInput, DocsSearchOut
     }
   },
   render: {
-    icon: FileSearch,
+    icon: FileMagnifyingGlass,
     displayName: 'Docs — Search',
     summary: (output) => {
       if ('error' in output) return 'failed'
@@ -1771,7 +1745,7 @@ export const docsAppendDefinition: ToolDefinition<DocsAppendInput, DocsAppendOut
     return { ok: true as const, docId, charsAppended: content.length }
   },
   render: {
-    icon: FilePen,
+    icon: NotePencil,
     displayName: 'Docs — Append',
     summary: (output) => {
       if ('error' in output) return 'failed'
@@ -1904,7 +1878,7 @@ export const docsCreateFromMarkdownDefinition: ToolDefinition<
     }
   },
   render: {
-    icon: FileType,
+    icon: File,
     displayName: 'Docs — From Markdown',
     summary: (output) => {
       if ('error' in output) return 'failed'
@@ -1984,7 +1958,7 @@ export const sheetsListTabsDefinition: ToolDefinition<SheetsListTabsInput, Sheet
     }
   },
   render: {
-    icon: Sheet,
+    icon: Table,
     displayName: 'Sheets — Tabs',
     summary: (output) => {
       if ('error' in output) return 'failed'
@@ -2048,7 +2022,7 @@ export const sheetsReadRangeDefinition: ToolDefinition<
     return { range: json.range ?? range, rowCount, columnCount, values }
   },
   render: {
-    icon: Table2,
+    icon: Table,
     displayName: 'Sheets — Read',
     summary: (output) => {
       if ('error' in output) return 'failed'
@@ -2130,7 +2104,7 @@ export const sheetsAppendRowDefinition: ToolDefinition<
     }
   },
   render: {
-    icon: Rows4,
+    icon: Rows,
     displayName: 'Sheets — Append',
     summary: (output) => {
       if ('error' in output) return 'failed'
@@ -2205,7 +2179,7 @@ export const sheetsWriteRangeDefinition: ToolDefinition<
     }
   },
   render: {
-    icon: Table2,
+    icon: Table,
     displayName: 'Sheets — Write',
     summary: (output) => {
       if ('error' in output) return 'failed'
@@ -2339,7 +2313,7 @@ export const driveGetFileDefinition: ToolDefinition<DriveGetFileInput, DriveGetF
     }
   },
   render: {
-    icon: FileDown,
+    icon: FileArrowDown,
     displayName: 'Drive — Get File',
     summary: (output) => {
       if ('error' in output) return 'failed'
@@ -2486,7 +2460,7 @@ export const tasksListDefinition: ToolDefinition<TasksListInput, TasksListOutput
     return listTasksWithToken(auth.token, taskListId, showCompleted, maxResults)
   },
   render: {
-    icon: ListTodo,
+    icon: ListChecks,
     displayName: 'Tasks — List',
     summary: (output) => {
       if ('error' in output) return 'failed'

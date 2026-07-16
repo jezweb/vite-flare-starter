@@ -8,7 +8,7 @@
  */
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Layers, Clock, CheckCircle2, AlertCircle, XCircle, Loader2 } from 'lucide-react'
+import { Stack, Clock, CheckCircle, WarningCircle, XCircle, CircleNotch } from '@phosphor-icons/react'
 import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
 import { PageLoading } from '@/client/components/PageState'
@@ -34,13 +34,13 @@ const STATUS_BADGE: Record<
   {
     label: string
     variant: 'default' | 'secondary' | 'destructive' | 'outline'
-    Icon: typeof Layers
+    Icon: typeof Stack
   }
 > = {
   queued: { label: 'Queued', variant: 'outline', Icon: Clock },
-  running: { label: 'Running', variant: 'default', Icon: Loader2 },
-  completed: { label: 'Completed', variant: 'secondary', Icon: CheckCircle2 },
-  failed: { label: 'Failed', variant: 'destructive', Icon: AlertCircle },
+  running: { label: 'Running', variant: 'default', Icon: CircleNotch },
+  completed: { label: 'Completed', variant: 'secondary', Icon: CheckCircle },
+  failed: { label: 'Failed', variant: 'destructive', Icon: WarningCircle },
   cancelled: { label: 'Cancelled', variant: 'outline', Icon: XCircle },
 }
 
@@ -68,7 +68,7 @@ export function JobsPage() {
 
       {jobs.length === 0 ? (
         <EmptyState
-          icon={Layers}
+          icon={Stack}
           title="No jobs yet"
           description={
             'Ask the AI in chat to "do this task for each of these files" — when there are 6+ items the chat will use a batch job to process them in parallel.'

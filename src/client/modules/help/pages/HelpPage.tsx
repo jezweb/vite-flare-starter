@@ -8,7 +8,7 @@
  */
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight } from '@phosphor-icons/react'
 import { GLOSSARY_ENTRIES, type GlossaryEntry } from '@/shared/config/glossary'
 import { features } from '@/shared/config/features'
 import { PageContainer } from '@/components/ui/page-container'

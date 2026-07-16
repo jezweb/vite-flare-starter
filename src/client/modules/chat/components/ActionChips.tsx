@@ -7,7 +7,7 @@
  * input (preferred — user can edit) or send it immediately.
  */
 import { useState } from 'react'
-import { X } from 'lucide-react'
+import { X } from '@phosphor-icons/react'
 import { CHAT_CHIPS, type ChatChip } from '@/shared/config/chat-chips'
 import { cn } from '@/lib/utils'
 

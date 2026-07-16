@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, RefreshCw } from 'lucide-react'
+import { Plus, ArrowsClockwise } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -106,7 +106,7 @@ export function FilesPage() {
                 </SelectContent>
               </Select>
               <Button variant="outline" size="icon" onClick={() => refetch()}>
-                <RefreshCw className="h-4 w-4" />
+                <ArrowsClockwise className="h-4 w-4" />
               </Button>
             </div>
           </div>

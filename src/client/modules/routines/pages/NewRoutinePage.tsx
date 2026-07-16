@@ -15,7 +15,7 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, ChevronDown, ChevronRight, Sparkles } from 'lucide-react'
+import { ArrowLeft, CaretDown, CaretRight, Sparkle } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -344,7 +344,7 @@ export function NewRoutinePage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <Sparkles className="size-4 text-primary" />
+            <Sparkle className="size-4 text-primary" />
             Start from a template
           </CardTitle>
           <CardDescription>
@@ -589,9 +589,9 @@ export function NewRoutinePage() {
           >
             <span className="flex items-center gap-1.5 text-muted-foreground">
               {advancedOpen ? (
-                <ChevronDown className="size-3.5" />
+                <CaretDown className="size-3.5" />
               ) : (
-                <ChevronRight className="size-3.5" />
+                <CaretRight className="size-3.5" />
               )}
               Advanced — instance ID
             </span>

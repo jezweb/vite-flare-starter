@@ -23,7 +23,7 @@
  *     Chrome/Firefox" tooltip on iOS Safari rather than crashing.
  */
 import { useEffect, useRef } from 'react'
-import { Mic, MicOff, Loader2, Volume2 } from 'lucide-react'
+import { Microphone, MicrophoneSlash, CircleNotch, SpeakerHigh } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -162,14 +162,14 @@ export function VoiceModeButton({
   const showSpinner = state === 'transcribing'
   const Icon =
     recordingUnsupported && enabled
-      ? MicOff
+      ? MicrophoneSlash
       : !enabled
-        ? MicOff
+        ? MicrophoneSlash
         : showSpinner
-          ? Loader2
+          ? CircleNotch
           : isSpeaking
-            ? Volume2
-            : Mic
+            ? SpeakerHigh
+            : Microphone
 
   const ariaLabel = recordingUnsupported
     ? 'Voice mode unsupported on this browser'

@@ -91,7 +91,7 @@ import { AudioRecorder } from '@/client/components/AudioRecorder'
 import { EmptyState } from '@/client/components/EmptyState'
 import { MarkdownField } from '@/client/components/MarkdownField'
 import { toast } from 'sonner'
-import { AlertCircle, Check, Info, MoreHorizontal, Terminal, Inbox, PanelRight } from 'lucide-react'
+import { WarningCircle, Check, Info, DotsThree, Terminal, Tray, SidebarSimple } from '@phosphor-icons/react'
 
 /**
  * Components showcase page
@@ -463,7 +463,7 @@ export function ComponentsPage() {
                 </AlertDescription>
               </Alert>
               <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
+                <WarningCircle className="h-4 w-4" />
                 <AlertTitle>Error</AlertTitle>
                 <AlertDescription>Your session has expired. Please log in again.</AlertDescription>
               </Alert>
@@ -577,7 +577,7 @@ export function ComponentsPage() {
             <CardContent>
               <DropdownMenu>
                 <DropdownMenuTrigger render={<Button variant="outline" />}>
-                  <MoreHorizontal className="h-4 w-4" />
+                  <DotsThree className="h-4 w-4" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
@@ -603,7 +603,7 @@ export function ComponentsPage() {
                 <SheetTrigger
                   render={
                     <Button variant="outline">
-                      <PanelRight className="mr-2 h-4 w-4" />
+                      <SidebarSimple className="mr-2 h-4 w-4" />
                       Open Sheet
                     </Button>
                   }
@@ -697,7 +697,7 @@ export function ComponentsPage() {
             </CardHeader>
             <CardContent>
               <EmptyState
-                icon={Inbox}
+                icon={Tray}
                 title="No items yet"
                 description="Get started by creating your first item."
                 action={{ label: 'Create item', onClick: () => alert('Create clicked') }}

@@ -4,7 +4,7 @@
  * Types are imported from the server module via `import type` — Vite
  * tree-shakes the server-only code and the runtime bundle stays small.
  */
-import { Hash, Lock, MessageSquare, Search, Send, User } from 'lucide-react'
+import { Hash, Lock, Chat, MagnifyingGlass, PaperPlaneTilt, User } from '@phosphor-icons/react'
 import type { ToolRenderer } from './_shared'
 import { truncate, formatToolDate } from './_shared'
 import type {
@@ -25,7 +25,7 @@ function tsToDate(ts: string | undefined): string {
 
 export const slackSearchMessagesRenderer: ToolRenderer = {
   match: 'slack_search_messages',
-  icon: Search,
+  icon: MagnifyingGlass,
   displayName: 'Slack Search',
   summary: (output) => {
     const o = output as SlackSearchMessagesOutput | undefined
@@ -133,7 +133,7 @@ export const slackListChannelsRenderer: ToolRenderer = {
 
 export const slackGetChannelHistoryRenderer: ToolRenderer = {
   match: 'slack_get_channel_history',
-  icon: MessageSquare,
+  icon: Chat,
   displayName: 'Slack History',
   summary: (output) => {
     const o = output as SlackGetChannelHistoryOutput | undefined
@@ -220,7 +220,7 @@ export const slackGetUserRenderer: ToolRenderer = {
 
 export const slackPostMessageRenderer: ToolRenderer = {
   match: 'slack_post_message',
-  icon: Send,
+  icon: PaperPlaneTilt,
   displayName: 'Slack Post',
   summary: (output) => {
     const o = output as SlackPostMessageOutput | undefined

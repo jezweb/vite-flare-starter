@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { authClient, useSession } from '@/client/lib/auth'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Mail, X, CheckCircle } from 'lucide-react'
+import { EnvelopeSimple, X, CheckCircle } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 
 export function EmailVerificationBanner() {
@@ -56,7 +56,7 @@ export function EmailVerificationBanner() {
 
   return (
     <Alert className="rounded-none border-x-0 border-t-0 bg-amber-500/10 dark:bg-amber-500/15 border-amber-500/20 dark:border-amber-500/30">
-      <Mail className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+      <EnvelopeSimple className="h-4 w-4 text-amber-600 dark:text-amber-400" />
       <AlertDescription className="flex items-center justify-between flex-wrap gap-2">
         <span className="text-amber-700 dark:text-amber-300">
           Please verify your email address to access all features.

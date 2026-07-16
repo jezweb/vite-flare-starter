@@ -13,7 +13,7 @@
  */
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Inbox } from 'lucide-react'
+import { Tray } from '@phosphor-icons/react'
 
 import { Badge } from '@/components/ui/badge'
 import { TabsTrigger } from '@/components/ui/tabs'
@@ -79,7 +79,7 @@ export function ApprovalsPage() {
 
       {!isLoading && data && data.total === 0 && (
         <EmptyState
-          icon={Inbox}
+          icon={Tray}
           title={filter === 'pending' ? 'No pending approvals' : 'No approvals yet'}
           description={
             filter === 'pending'

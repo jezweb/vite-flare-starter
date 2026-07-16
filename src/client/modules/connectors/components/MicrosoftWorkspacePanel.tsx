@@ -13,18 +13,7 @@
  */
 import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import {
-  Plug,
-  CheckCircle2,
-  AlertCircle,
-  Trash2,
-  Mail,
-  MailCheck,
-  FolderOpen,
-  FilePlus,
-  CalendarDays,
-  SlidersHorizontal,
-} from 'lucide-react'
+import { Plug, CheckCircle, WarningCircle, Trash, EnvelopeSimple, EnvelopeOpen, FolderOpen, FilePlus, Calendar, SlidersHorizontal } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -56,12 +45,12 @@ interface StatusResponse {
 
 // Human labels for the Microsoft Graph permission scopes we request.
 // openid / profile / offline_access are implied — not surfaced.
-const SCOPE_LABELS: Record<string, { icon: typeof Mail; label: string }> = {
-  'Mail.Read': { icon: Mail, label: 'Read Outlook mail' },
-  'Mail.Send': { icon: MailCheck, label: 'Send Outlook mail' },
+const SCOPE_LABELS: Record<string, { icon: typeof EnvelopeSimple; label: string }> = {
+  'Mail.Read': { icon: EnvelopeSimple, label: 'Read Outlook mail' },
+  'Mail.Send': { icon: EnvelopeOpen, label: 'Send Outlook mail' },
   'Files.Read': { icon: FolderOpen, label: 'Read OneDrive' },
   'Files.ReadWrite': { icon: FilePlus, label: 'Write OneDrive' },
-  'Calendars.ReadWrite': { icon: CalendarDays, label: 'Read + write calendar' },
+  'Calendars.ReadWrite': { icon: Calendar, label: 'Read + write calendar' },
 }
 
 export function MicrosoftWorkspacePanel() {
@@ -146,10 +135,10 @@ export function MicrosoftWorkspacePanel() {
             <div className="flex items-center gap-2 flex-wrap">
               <p className="font-semibold">Microsoft 365</p>
               {connected && !isError && (
-                <StatusPill kind="success" label="Connected" icon={<CheckCircle2 />} />
+                <StatusPill kind="success" label="Connected" icon={<CheckCircle />} />
               )}
               {isError && (
-                <StatusPill kind="danger" label="Reconnect needed" icon={<AlertCircle />} />
+                <StatusPill kind="danger" label="Reconnect needed" icon={<WarningCircle />} />
               )}
             </div>
             {connected ? (
@@ -234,7 +223,7 @@ export function MicrosoftWorkspacePanel() {
                   className="text-destructive hover:text-destructive"
                   aria-label="Disconnect Microsoft 365"
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
+                  <Trash className="h-3.5 w-3.5" />
                 </Button>
               </>
             ) : (

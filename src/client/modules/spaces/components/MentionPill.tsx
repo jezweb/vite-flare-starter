@@ -3,7 +3,7 @@
  *
  * Renders inside message body wherever a mention part appears.
  */
-import { Bot, User } from 'lucide-react'
+import { Robot, User } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 
 interface Props {
@@ -23,7 +23,7 @@ export function MentionPill({ kind, label, className }: Props) {
         className
       )}
     >
-      {kind === 'agent' ? <Bot className="size-3" /> : <User className="size-3" />}
+      {kind === 'agent' ? <Robot className="size-3" /> : <User className="size-3" />}
       <span>{label}</span>
     </span>
   )

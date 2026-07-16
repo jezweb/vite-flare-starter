@@ -7,7 +7,7 @@
  * @see https://developers.cloudflare.com/browser-rendering/rest-api/
  */
 import { z } from 'zod'
-import { FileText, Database, Camera, Link2, Code } from 'lucide-react'
+import { FileText, Database, Camera, LinkSimple, Code } from '@phosphor-icons/react'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 import { bytesToBase64 } from '@/server/lib/base64'
 import {
@@ -235,7 +235,7 @@ export const browserLinksDefinition: ToolDefinition<
       return { url, error: error instanceof Error ? error.message : String(error) }
     }
   },
-  render: { icon: Link2, displayName: 'Browser Links' },
+  render: { icon: LinkSimple, displayName: 'Browser Links' },
 }
 
 const BrowserContentOutput = z.union([

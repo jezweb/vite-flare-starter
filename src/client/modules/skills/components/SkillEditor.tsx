@@ -28,7 +28,7 @@ import { toast } from 'sonner'
 const MarkdownCodeEditor = lazy(() =>
   import('./MarkdownCodeEditor').then((m) => ({ default: m.MarkdownCodeEditor }))
 )
-import { Check, Eye, History, PencilLine, Save, Sparkles } from 'lucide-react'
+import { Check, Eye, ClockCounterClockwise, PencilLine, FloppyDisk, Sparkle } from '@phosphor-icons/react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
@@ -266,7 +266,7 @@ export function SkillEditor({ name }: SkillEditorProps) {
             <PopoverTrigger
               render={
                 <Button variant="outline" size="sm">
-                  <Sparkles className="mr-1 h-3.5 w-3.5" />
+                  <Sparkle className="mr-1 h-3.5 w-3.5" />
                   AI Sparkle
                 </Button>
               }
@@ -305,7 +305,7 @@ export function SkillEditor({ name }: SkillEditorProps) {
           </Popover>
           {isDirty ? (
             <Button size="sm" onClick={submitSave} disabled={createProposal.isPending}>
-              <Save className="mr-1 h-3.5 w-3.5" />
+              <FloppyDisk className="mr-1 h-3.5 w-3.5" />
               {createProposal.isPending ? 'Preparing…' : 'Save changes'}
             </Button>
           ) : (
@@ -324,7 +324,7 @@ export function SkillEditor({ name }: SkillEditorProps) {
             Edit
           </TabsTrigger>
           <TabsTrigger value="history">
-            <History className="mr-1 h-3.5 w-3.5" />
+            <ClockCounterClockwise className="mr-1 h-3.5 w-3.5" />
             History
             {history.data?.count ? (
               <Badge variant="secondary" className="ml-1 text-[10px]">

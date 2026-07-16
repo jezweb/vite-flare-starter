@@ -20,7 +20,7 @@
  * See docs/VISION_AND_IMAGE_EDITING.md.
  */
 import { z } from 'zod'
-import { Wand2 } from 'lucide-react'
+import { MagicWand } from '@phosphor-icons/react'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 import { callGeminiImage, NANO_BANANA_2_DIRECT_LABEL } from '@/server/lib/gemini-image'
 import { isOwnedR2Key } from '@/server/lib/r2-keys'
@@ -210,7 +210,7 @@ export const editImageDefinition: ToolDefinition<
       }
     }
   },
-  render: { icon: Wand2, displayName: 'Edit Image' },
+  render: { icon: MagicWand, displayName: 'Edit Image' },
 }
 
 /**

@@ -6,7 +6,7 @@
  */
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Search, X } from 'lucide-react'
+import { MagnifyingGlass, X } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { apiClient } from '@/client/lib/api-client'
 import { Input } from '@/components/ui/input'
@@ -37,7 +37,7 @@ export function SearchInSpacePane({ spaceId, users, open, onClose }: Props) {
   return (
     <aside className="flex w-96 shrink-0 flex-col border-l border-border bg-background">
       <div className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2">
-        <Search className="size-4 text-muted-foreground" />
+        <MagnifyingGlass className="size-4 text-muted-foreground" />
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}

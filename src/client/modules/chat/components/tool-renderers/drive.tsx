@@ -1,20 +1,8 @@
 /**
  * Google Drive tool renderers — drive_search.
  */
-import {
-  FolderOpen,
-  FolderPlus,
-  FileText,
-  FileSpreadsheet,
-  FileImage,
-  FileVideo,
-  FileCode,
-  FileDown,
-  Presentation,
-  File as FileIcon,
-  ExternalLink,
-} from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { FolderOpen, FolderPlus, FileText, FileXls, FileImage, FileVideo, FileCode, FileArrowDown, Presentation, File as FileIcon, ArrowSquareOut } from '@phosphor-icons/react'
+import type { Icon } from '@phosphor-icons/react'
 import type { ToolRenderer } from './_shared'
 import { formatToolDate, truncate } from './_shared'
 import type {
@@ -23,9 +11,9 @@ import type {
   DriveCreateFolderOutput,
 } from '@/server/modules/chat/tools/google-workspace'
 
-function iconForDriveMime(mime: string): LucideIcon {
+function iconForDriveMime(mime: string): Icon {
   if (mime.includes('folder')) return FolderOpen
-  if (mime.includes('spreadsheet') || mime.includes('excel')) return FileSpreadsheet
+  if (mime.includes('spreadsheet') || mime.includes('excel')) return FileXls
   if (mime.includes('presentation') || mime.includes('powerpoint')) return Presentation
   if (mime.startsWith('image/')) return FileImage
   if (mime.startsWith('video/')) return FileVideo
@@ -49,7 +37,7 @@ function shortMimeType(mime: string): string {
 
 export const driveGetFileRenderer: ToolRenderer = {
   match: 'drive_get_file',
-  icon: FileDown,
+  icon: FileArrowDown,
   displayName: 'Drive — Get File',
   summary: (output) => {
     const o = output as DriveGetFileOutput | undefined
@@ -94,7 +82,7 @@ export const driveGetFileRenderer: ToolRenderer = {
             className="inline-flex items-center gap-1 text-foreground hover:underline"
           >
             Open in Drive
-            <ExternalLink className="size-3" />
+            <ArrowSquareOut className="size-3" />
           </a>
         )}
       </div>
@@ -141,7 +129,7 @@ export const driveCreateFolderRenderer: ToolRenderer = {
             className="inline-flex items-center gap-1 text-foreground hover:underline"
           >
             Open in Drive
-            <ExternalLink className="size-3" />
+            <ArrowSquareOut className="size-3" />
           </a>
         )}
       </div>
@@ -196,7 +184,7 @@ export const driveSearchRenderer: ToolRenderer = {
                       {f.owner && ` · ${f.owner}`}
                     </span>
                   </div>
-                  {f.url && <ExternalLink className="size-3.5 text-muted-foreground shrink-0" />}
+                  {f.url && <ArrowSquareOut className="size-3.5 text-muted-foreground shrink-0" />}
                 </>
               )
               return (

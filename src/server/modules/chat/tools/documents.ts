@@ -9,7 +9,7 @@
  * generate CSV (which Excel opens natively).
  */
 import { z } from 'zod'
-import { FileType, FileSpreadsheet } from 'lucide-react'
+import { File, FileXls } from '@phosphor-icons/react'
 import {
   Document,
   Packer,
@@ -188,7 +188,7 @@ Content is an array of blocks:
     }
   },
   render: {
-    icon: FileType,
+    icon: File,
     displayName: 'Generate DOCX',
     summary: (output) => {
       const o = output as { title?: string; sizeBytes?: number; error?: string }
@@ -252,7 +252,7 @@ export const generateCsvDefinition: ToolDefinition<
     }
   },
   render: {
-    icon: FileSpreadsheet,
+    icon: FileXls,
     displayName: 'Generate CSV',
     summary: (output) => {
       const o = output as { title?: string; rowCount?: number; error?: string }

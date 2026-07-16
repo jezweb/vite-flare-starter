@@ -5,19 +5,7 @@ import { formatRelative } from '@/client/lib/format-time'
 import { useState, useEffect, useDeferredValue, useMemo } from 'react'
 import { Link, useNavigate, useLocation, useParams, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import {
-  Plus,
-  MoreHorizontal,
-  Pencil,
-  Trash2,
-  Search,
-  ChevronRight,
-  Star,
-  Folder,
-  FolderPlus,
-  FolderX,
-  FolderMinus,
-} from 'lucide-react'
+import { Plus, DotsThree, Pencil, Trash, MagnifyingGlass, CaretRight, Star, Folder, FolderPlus, FolderMinus } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -295,7 +283,7 @@ export function ConversationSidebar({ activeConversationId }: Props) {
             aria-label={conv.starred ? 'Remove star' : 'Star conversation'}
             aria-pressed={!!conv.starred}
           >
-            <Star className={cn('size-3.5', conv.starred && 'fill-current')} />
+            <Star weight={conv.starred ? 'fill' : 'regular'} className="size-3.5" />
           </Button>
           <DropdownMenu
             open={openMenuId === conv.id}
@@ -321,7 +309,7 @@ export function ConversationSidebar({ activeConversationId }: Props) {
                 />
               }
             >
-              <MoreHorizontal className="size-3.5" />
+              <DotsThree className="size-3.5" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" onClick={(e) => e.preventDefault()}>
               <DropdownMenuItem
@@ -384,7 +372,7 @@ export function ConversationSidebar({ activeConversationId }: Props) {
                 }}
                 className="text-destructive focus:text-destructive"
               >
-                <Trash2 className="mr-2 size-3.5" />
+                <Trash className="mr-2 size-3.5" />
                 Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -418,7 +406,7 @@ export function ConversationSidebar({ activeConversationId }: Props) {
       {/* Search */}
       <div className="px-2 pt-2">
         <div className="relative">
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/50" />
+          <MagnifyingGlass className="absolute left-2 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/50" />
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -502,7 +490,7 @@ export function ConversationSidebar({ activeConversationId }: Props) {
                     aria-expanded={!isCollapsed}
                     aria-label={`Toggle ${group.label} group`}
                   >
-                    <ChevronRight
+                    <CaretRight
                       className={cn('size-3 transition-transform', !isCollapsed && 'rotate-90')}
                     />
                     {group.label}
@@ -670,7 +658,7 @@ function ProjectsSection({
           className="flex flex-1 items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60 hover:text-muted-foreground transition-colors"
           aria-expanded={!sectionCollapsed}
         >
-          <ChevronRight
+          <CaretRight
             className={cn('size-3 transition-transform', !sectionCollapsed && 'rotate-90')}
           />
           Projects
@@ -753,7 +741,7 @@ function ProjectsSection({
                     aria-expanded={!isCollapsed}
                     aria-label={`Toggle ${project.name}`}
                   >
-                    <ChevronRight
+                    <CaretRight
                       className={cn(
                         'size-3 transition-transform text-muted-foreground',
                         !isCollapsed && 'rotate-90'
@@ -838,7 +826,7 @@ function ProjectsSection({
                           />
                         }
                       >
-                        <MoreHorizontal className="size-3" />
+                        <DotsThree className="size-3" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
@@ -859,7 +847,7 @@ function ProjectsSection({
                           }}
                           className="text-destructive focus:text-destructive"
                         >
-                          <FolderX className="mr-2 size-3.5" />
+                          <FolderMinus className="mr-2 size-3.5" />
                           Delete project
                         </DropdownMenuItem>
                       </DropdownMenuContent>

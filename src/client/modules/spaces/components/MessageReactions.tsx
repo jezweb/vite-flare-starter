@@ -7,7 +7,7 @@
  * click toggles the reaction.
  */
 import { lazy, Suspense, useMemo, useState } from 'react'
-import { Smile } from 'lucide-react'
+import { Smiley } from '@phosphor-icons/react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 import { useReactToMessage } from '../hooks/useReactions'
@@ -101,7 +101,7 @@ function PickerButton({ onPick, compact }: { onPick: (emoji: string) => void; co
         )}
         aria-label="Pick a reaction"
       >
-        <Smile className={compact ? 'size-3' : 'size-3.5'} />
+        <Smiley className={compact ? 'size-3' : 'size-3.5'} />
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="end">
         <Suspense

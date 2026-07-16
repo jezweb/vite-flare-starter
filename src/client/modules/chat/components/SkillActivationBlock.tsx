@@ -8,7 +8,7 @@
  * the text as-is so nothing ever disappears.
  */
 import { useState } from 'react'
-import { ChevronDown, ChevronRight, Zap } from 'lucide-react'
+import { CaretDown, CaretRight, Lightning } from '@phosphor-icons/react'
 import { MessageResponse } from '@/components/ai-elements/message'
 import { cn } from '@/lib/utils'
 
@@ -63,9 +63,9 @@ export function SkillActivationBlock({
         aria-expanded={expanded}
         aria-label={expanded ? 'Hide skill instructions' : 'Show skill instructions'}
       >
-        <Zap className="size-3" />
+        <Lightning className="size-3" />
         <span className="font-mono">/{skillName}</span>
-        {expanded ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
+        {expanded ? <CaretDown className="size-3" /> : <CaretRight className="size-3" />}
       </button>
 
       {expanded && (

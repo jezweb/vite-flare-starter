@@ -1,18 +1,7 @@
 /**
  * Calendar tool renderers — calendar_upcoming, calendar_create.
  */
-import {
-  Calendar,
-  CalendarPlus,
-  CalendarSearch,
-  CalendarClock,
-  CalendarCheck,
-  CalendarX,
-  Video,
-  MapPin,
-  Users,
-  ExternalLink,
-} from 'lucide-react'
+import { Calendar, CalendarPlus, CalendarDots, CalendarCheck, CalendarX, Video, MapPin, Users, ArrowSquareOut } from '@phosphor-icons/react'
 import type { ToolRenderer } from './_shared'
 import { truncate } from './_shared'
 import type {
@@ -177,7 +166,7 @@ function CalendarEventRow({
 
 export const calendarListEventsRenderer: ToolRenderer = {
   match: 'calendar_list_events',
-  icon: CalendarSearch,
+  icon: Calendar,
   displayName: 'Calendar — List',
   summary: (output) => {
     const o = output as CalendarListEventsOutput | undefined
@@ -292,7 +281,7 @@ export const calendarGetEventRenderer: ToolRenderer = {
             className="inline-flex items-center gap-1 text-foreground hover:underline"
           >
             Open in Google Calendar
-            <ExternalLink className="size-3" />
+            <ArrowSquareOut className="size-3" />
           </a>
         )}
       </div>
@@ -302,7 +291,7 @@ export const calendarGetEventRenderer: ToolRenderer = {
 
 export const calendarFindFreeSlotRenderer: ToolRenderer = {
   match: 'calendar_find_free_slot',
-  icon: CalendarClock,
+  icon: CalendarDots,
   displayName: 'Calendar — Free Slots',
   summary: (output) => {
     const o = output as CalendarFindFreeSlotOutput | undefined
@@ -337,7 +326,7 @@ export const calendarFindFreeSlotRenderer: ToolRenderer = {
               key={idx}
               className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2 text-xs"
             >
-              <CalendarClock className="size-3.5 text-muted-foreground shrink-0" />
+              <CalendarDots className="size-3.5 text-muted-foreground shrink-0" />
               <span className="font-medium">{formatEventTime(s.start, s.end)}</span>
             </li>
           ))}
@@ -408,7 +397,7 @@ export const calendarUpdateEventRenderer: ToolRenderer = {
             className="inline-flex items-center gap-1 text-foreground hover:underline"
           >
             Open in Google Calendar
-            <ExternalLink className="size-3" />
+            <ArrowSquareOut className="size-3" />
           </a>
         )}
       </div>
@@ -504,7 +493,7 @@ export const calendarCreateRenderer: ToolRenderer = {
             className="inline-flex items-center gap-1 text-foreground hover:underline"
           >
             Open in Google Calendar
-            <ExternalLink className="size-3" />
+            <ArrowSquareOut className="size-3" />
           </a>
         )}
       </div>

@@ -28,7 +28,7 @@ import {
   DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { Mail, Check, X, Clock, SendHorizonal } from 'lucide-react'
+import { EnvelopeSimple, Check, X, Clock, PaperPlaneRight } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { formatDistanceToNow, format } from 'date-fns'
 import { toast } from 'sonner'
@@ -96,7 +96,7 @@ export function EmailLogsTabContent() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <Mail className="h-5 w-5" />
+                <EnvelopeSimple className="h-5 w-5" />
                 Email logs
               </CardTitle>
               <CardDescription>
@@ -155,7 +155,7 @@ export function EmailLogsTabContent() {
             </div>
           ) : !data || data.rows.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
-              <Mail className="h-8 w-8" />
+              <EnvelopeSimple className="h-8 w-8" />
               <p className="text-sm">No emails match these filters.</p>
             </div>
           ) : (
@@ -273,7 +273,7 @@ function TestSendDialog({ onSent }: { onSent: () => void }) {
       <DialogTrigger
         render={
           <Button variant="outline" size="sm">
-            <SendHorizonal className="mr-2 h-4 w-4" />
+            <PaperPlaneRight className="mr-2 h-4 w-4" />
             Send test
           </Button>
         }

@@ -11,15 +11,7 @@
 import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq } from 'drizzle-orm'
-import {
-  CheckSquare,
-  FileText,
-  MessageSquarePlus,
-  MoveRight,
-  Plus,
-  Search,
-  Ticket,
-} from 'lucide-react'
+import { CheckSquare, FileText, ChatText, ArrowRight, Plus, MagnifyingGlass, Ticket } from '@phosphor-icons/react'
 import { atlassianTokens } from '@/server/modules/atlassian/db/schema'
 import { decrypt } from '@/server/lib/crypto'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
@@ -464,7 +456,7 @@ export const jiraSearchIssuesDefinition: ToolDefinition<
     }))
     return { issues, count: issues.length, total: res.data.total }
   },
-  render: { icon: Search, displayName: 'Jira — Search' },
+  render: { icon: MagnifyingGlass, displayName: 'Jira — Search' },
 }
 
 // ─── JIRA: GET ISSUE ──────────────────────────────────────────────────
@@ -621,7 +613,7 @@ export const jiraAddCommentDefinition: ToolDefinition<
     if (!res.ok) return { error: res.error }
     return { commented: true as const, id: res.data.id }
   },
-  render: { icon: MessageSquarePlus, displayName: 'Jira — Comment' },
+  render: { icon: ChatText, displayName: 'Jira — Comment' },
 }
 
 // ─── JIRA: TRANSITION ISSUE (destructive) ─────────────────────────────
@@ -679,7 +671,7 @@ export const jiraTransitionIssueDefinition: ToolDefinition<
     if (!res.ok) return { error: res.error }
     return { transitioned: true as const, transitionId }
   },
-  render: { icon: MoveRight, displayName: 'Jira — Transition' },
+  render: { icon: ArrowRight, displayName: 'Jira — Transition' },
 }
 
 // ─── CONFLUENCE: SEARCH ───────────────────────────────────────────────
@@ -736,7 +728,7 @@ export const confluenceSearchDefinition: ToolDefinition<
     }))
     return { pages, count: pages.length }
   },
-  render: { icon: Search, displayName: 'Confluence — Search' },
+  render: { icon: MagnifyingGlass, displayName: 'Confluence — Search' },
 }
 
 // ─── CONFLUENCE: GET PAGE ─────────────────────────────────────────────

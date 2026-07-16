@@ -20,17 +20,7 @@ import { useState, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import {
-  Lightbulb,
-  BookOpen,
-  Trash2,
-  ChevronDown,
-  ChevronRight,
-  Clock,
-  ArrowUpRight,
-  Sparkles,
-  RotateCcw,
-} from 'lucide-react'
+import { Lightbulb, BookOpen, Trash, CaretDown, CaretRight, Clock, ArrowUpRight, Sparkle, ArrowCounterClockwise } from '@phosphor-icons/react'
 import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
 import {
@@ -309,9 +299,9 @@ export function FindingsPage() {
                   >
                     <div className="mt-0.5">
                       {isOpen ? (
-                        <ChevronDown className="size-4 text-muted-foreground" />
+                        <CaretDown className="size-4 text-muted-foreground" />
                       ) : (
-                        <ChevronRight className="size-4 text-muted-foreground" />
+                        <CaretRight className="size-4 text-muted-foreground" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -391,7 +381,7 @@ export function FindingsPage() {
                               onClick={() => promoteMutation.mutate(item.id)}
                               disabled={promoteMutation.isPending}
                             >
-                              <Sparkles className="size-3.5" />
+                              <Sparkle className="size-3.5" />
                               Promote to learning
                             </Button>
                             <Button
@@ -400,7 +390,7 @@ export function FindingsPage() {
                               onClick={() => dismissMutation.mutate(item)}
                               disabled={dismissMutation.isPending}
                             >
-                              <Trash2 className="size-3.5" />
+                              <Trash className="size-3.5" />
                               Dismiss
                             </Button>
                           </div>
@@ -427,7 +417,7 @@ export function FindingsPage() {
                             }
                             disabled={reopenMutation.isPending}
                           >
-                            <RotateCcw className="size-3.5" />
+                            <ArrowCounterClockwise className="size-3.5" />
                             Reopen
                           </Button>
                         </div>

@@ -7,7 +7,7 @@
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { SidebarTrigger } from '@/components/ui/sidebar'
-import { Moon, Sun, Search } from 'lucide-react'
+import { Moon, Sun, MagnifyingGlass } from '@phosphor-icons/react'
 import { useTheme, useResolvedMode } from '@/client/components/theme-provider'
 import { useSession } from '@/client/lib/auth'
 import { usePreferences, useUpdatePreferences } from '@/client/modules/settings/hooks/useSettings'
@@ -95,7 +95,7 @@ function CommandPaletteHint() {
         aria-label="Open command palette"
         title="Search commands and conversations"
       >
-        <Search className="h-3.5 w-3.5" />
+        <MagnifyingGlass className="h-3.5 w-3.5" />
         <span>Search</span>
         <kbd className="rounded border bg-background px-1 font-mono text-[10px] font-medium text-muted-foreground">
           {isMac ? '⌘' : 'Ctrl'} K
@@ -110,7 +110,7 @@ function CommandPaletteHint() {
         aria-label="Open command palette"
         title="Search"
       >
-        <Search className="h-5 w-5" />
+        <MagnifyingGlass className="h-5 w-5" />
       </Button>
     </>
   )

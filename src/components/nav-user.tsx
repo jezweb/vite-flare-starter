@@ -24,7 +24,7 @@ import {
 import { useSession, authClient } from '@/client/lib/auth'
 import { useAdminStatus } from '@/client/modules/admin/hooks/useAdminStatus'
 import { useBuilderMode } from '@/client/lib/builder-mode'
-import { CircleHelp, LogOut, MoreVertical, Settings, Shield, Sparkles, Wrench } from 'lucide-react'
+import { Question, SignOut, DotsThreeVertical, GearSix, Shield, Sparkle, Wrench } from '@phosphor-icons/react'
 
 export function NavUser() {
   const { data: session } = useSession()
@@ -70,7 +70,7 @@ export function NavUser() {
                   {session?.user?.email}
                 </span>
               </div>
-              <MoreVertical className="ml-auto size-4" />
+              <DotsThreeVertical className="ml-auto size-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-(--anchor-width) min-w-56 rounded-lg"
@@ -98,15 +98,15 @@ export function NavUser() {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem onClick={() => navigate('/dashboard/settings?tab=profile')}>
-                <Settings className="mr-2 h-4 w-4" />
+                <GearSix className="mr-2 h-4 w-4" />
                 Settings
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate('/dashboard/artifacts')}>
-                <Sparkles className="mr-2 h-4 w-4" />
+                <Sparkle className="mr-2 h-4 w-4" />
                 My artifacts
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate('/dashboard/help')}>
-                <CircleHelp className="mr-2 h-4 w-4" />
+                <Question className="mr-2 h-4 w-4" />
                 Help
               </DropdownMenuItem>
             </DropdownMenuGroup>
@@ -129,7 +129,7 @@ export function NavUser() {
             )}
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut}>
-              <LogOut className="mr-2 h-4 w-4" />
+              <SignOut className="mr-2 h-4 w-4" />
               Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>

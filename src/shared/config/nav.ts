@@ -18,40 +18,16 @@
  * @see src/shared/config/features.ts for feature flag definitions
  * @see src/client/lib/builder-mode.tsx for the Builder Mode toggle
  */
-import type { LucideIcon } from 'lucide-react'
-import {
-  Home,
-  MessageSquare,
-  Sparkles,
-  Activity,
-  FolderOpen,
-  Zap,
-  Plug,
-  Mic,
-  Camera,
-  FolderKanban,
-  Users,
-  Inbox,
-  Lightbulb,
-  Repeat,
-  Component,
-  Palette,
-  BarChart3,
-  ShieldCheck,
-  Bot,
-  Kanban,
-  Layers,
-  BookOpen,
-  Compass,
-} from 'lucide-react'
+import type { Icon } from '@phosphor-icons/react'
+import { House, Chat, Sparkle, Pulse, FolderOpen, Lightning, Plug, Microphone, Camera, Kanban, Users, Tray, Lightbulb, Repeat, PuzzlePiece, Palette, ChartBar, ShieldCheck, Robot, Stack, BookOpen, Compass } from '@phosphor-icons/react'
 
 export interface NavItem {
   /** Route path */
   to: string
   /** Display label */
   label: string
-  /** Lucide icon component */
-  icon: LucideIcon
+  /** Phosphor icon component */
+  icon: Icon
   /** Only show if this feature flag is true (from features config) */
   feature?: string
   /** Minimum role required. Omit = visible to all roles. */
@@ -110,12 +86,12 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     label: 'Work',
     items: [
-      { to: '/dashboard', label: 'Home', icon: Home },
-      { to: '/dashboard/chat', label: 'AI Chat', icon: MessageSquare, feature: 'chat' },
-      { to: '/dashboard/inbox', label: 'Inbox', icon: Inbox },
-      { to: '/dashboard/jobs', label: 'Batch jobs', icon: Layers, feature: 'batchTasks' },
+      { to: '/dashboard', label: 'Home', icon: House },
+      { to: '/dashboard/chat', label: 'AI Chat', icon: Chat, feature: 'chat' },
+      { to: '/dashboard/inbox', label: 'Inbox', icon: Tray },
+      { to: '/dashboard/jobs', label: 'Batch jobs', icon: Stack, feature: 'batchTasks' },
       { to: '/dashboard/findings', label: 'Findings', icon: Lightbulb, feature: 'findings' },
-      { to: '/dashboard/projects', label: 'Projects', icon: FolderKanban },
+      { to: '/dashboard/projects', label: 'Projects', icon: Kanban },
       { to: '/dashboard/spaces', label: 'Spaces', icon: Users, feature: 'spaces' },
       { to: '/dashboard/routines', label: 'Routines', icon: Repeat },
     ],
@@ -127,9 +103,9 @@ export const NAV_SECTIONS: NavSection[] = [
     defaultCollapsed: true,
     items: [
       { to: '/dashboard/connections', label: 'Connections', icon: Plug, feature: 'connectors' },
-      { to: '/dashboard/skills', label: 'Skills', icon: Zap, feature: 'skills' },
+      { to: '/dashboard/skills', label: 'Skills', icon: Lightning, feature: 'skills' },
       { to: '/dashboard/knowledge', label: 'Knowledge', icon: BookOpen, feature: 'knowledge' },
-      { to: '/dashboard/agents', label: 'Agents', icon: Bot },
+      { to: '/dashboard/agents', label: 'Agents', icon: Robot },
       { to: '/dashboard/admin-chat', label: 'Admin chat', icon: ShieldCheck },
     ],
   },
@@ -144,8 +120,8 @@ export const NAV_SECTIONS: NavSection[] = [
     label: 'Insights',
     defaultCollapsed: true,
     items: [
-      { to: '/dashboard/agent-observability', label: 'Observability', icon: BarChart3 },
-      { to: '/dashboard/activity', label: 'Activity', icon: Activity, feature: 'activity' },
+      { to: '/dashboard/agent-observability', label: 'Observability', icon: ChartBar },
+      { to: '/dashboard/activity', label: 'Activity', icon: Pulse, feature: 'activity' },
       {
         to: '/dashboard/admin/access-log',
         label: 'Access log',
@@ -153,8 +129,8 @@ export const NAV_SECTIONS: NavSection[] = [
         minRole: 'admin',
       },
       { to: '/dashboard/files', label: 'Files', icon: FolderOpen, feature: 'files' },
-      { to: '/dashboard/artifacts', label: 'Artifacts', icon: Sparkles, feature: 'chat' },
-      { to: '/dashboard/extract', label: 'Extract', icon: Sparkles, feature: 'chat' },
+      { to: '/dashboard/artifacts', label: 'Artifacts', icon: Sparkle, feature: 'chat' },
+      { to: '/dashboard/extract', label: 'Extract', icon: Sparkle, feature: 'chat' },
       { to: '/dashboard/questions', label: 'Guide questions', icon: Compass, feature: 'walkabout' },
     ],
   },
@@ -167,9 +143,9 @@ export const NAV_SECTIONS: NavSection[] = [
     defaultCollapsed: true,
     builderOnly: true,
     items: [
-      { to: '/dashboard/components', label: 'Components', icon: Component },
+      { to: '/dashboard/components', label: 'Components', icon: PuzzlePiece },
       { to: '/dashboard/style-guide', label: 'Style guide', icon: Palette },
-      { to: '/dashboard/voice-example', label: 'Voice example', icon: Mic, feature: 'voiceAgent' },
+      { to: '/dashboard/voice-example', label: 'Voice example', icon: Microphone, feature: 'voiceAgent' },
       {
         to: '/dashboard/video-example',
         label: 'Video example',

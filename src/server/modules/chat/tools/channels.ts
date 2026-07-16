@@ -37,7 +37,7 @@
 import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
 import { and, eq } from 'drizzle-orm'
-import { CheckSquare, Bell, Send, Webhook, Inbox } from 'lucide-react'
+import { CheckSquare, Bell, PaperPlaneTilt, PlugsConnected, Tray } from '@phosphor-icons/react'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 import { pendingApprovals } from '@/server/modules/approvals/db/schema'
 import { userNotifications } from '@/server/modules/notifications/db/schema'
@@ -131,7 +131,7 @@ export const inboxAdd: ToolDefinition<
     return { id }
   },
   render: {
-    icon: Inbox,
+    icon: Tray,
     displayName: 'Add to Inbox',
     // The agent passes the human-readable summary as input; show that
     // as the tool-call summary instead of an opaque UUID prefix. The
@@ -331,7 +331,7 @@ export const spaceSend: ToolDefinition<
     return { messageId }
   },
   render: {
-    icon: Send,
+    icon: PaperPlaneTilt,
     displayName: 'Post to space',
     summary: (out) => `posted (${out.messageId.slice(0, 8)}…)`,
   },
@@ -379,7 +379,7 @@ export const webhookPost: ToolDefinition<
     }
   },
   render: {
-    icon: Webhook,
+    icon: PlugsConnected,
     displayName: 'POST webhook',
     summary: (out) => `${out.status}`,
   },

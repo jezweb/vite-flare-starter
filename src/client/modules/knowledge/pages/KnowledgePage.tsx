@@ -13,7 +13,7 @@
  */
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { BookOpen, Plus, Search, LayoutGrid, List as ListIcon, AlertTriangle } from 'lucide-react'
+import { BookOpen, Plus, MagnifyingGlass, SquaresFour, List as ListIcon, Warning } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -105,7 +105,7 @@ export function KnowledgePage() {
               : 'border-border bg-muted/30 text-muted-foreground'
           }`}
         >
-          {overBudget && <AlertTriangle className="mt-0.5 size-4 shrink-0" />}
+          {overBudget && <Warning className="mt-0.5 size-4 shrink-0" />}
           <div>
             <strong className="font-medium">
               {budget.data.count} always-active {budget.data.count === 1 ? 'doc' : 'docs'} · ~
@@ -144,7 +144,7 @@ export function KnowledgePage() {
         <>
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative flex-1 min-w-[200px]">
-              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <MagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
@@ -165,7 +165,7 @@ export function KnowledgePage() {
               aria-label="Layout view"
             >
               <ToggleGroupItem value="cards" aria-label="Card view">
-                <LayoutGrid className="size-4" />
+                <SquaresFour className="size-4" />
               </ToggleGroupItem>
               <ToggleGroupItem value="list" aria-label="List view">
                 <ListIcon className="size-4" />

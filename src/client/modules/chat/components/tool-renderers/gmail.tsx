@@ -6,7 +6,7 @@
  * tree-shakes the server-only code; only the type survives into the
  * client bundle.
  */
-import { Mail, MailCheck, MailOpen, MailQuestion, Reply, Tags, Paperclip } from 'lucide-react'
+import { EnvelopeSimple, EnvelopeOpen, ArrowBendUpLeft, Tag, Paperclip } from '@phosphor-icons/react'
 import type { ToolRenderer } from './_shared'
 import { truncate, formatToolDate, parseFromHeader } from './_shared'
 import type {
@@ -20,7 +20,7 @@ import type {
 
 export const gmailSearchRenderer: ToolRenderer = {
   match: 'gmail_search',
-  icon: Mail,
+  icon: EnvelopeSimple,
   displayName: 'Gmail Search',
   summary: (output) => {
     const o = output as GmailSearchOutput | undefined
@@ -88,7 +88,7 @@ export const gmailSearchRenderer: ToolRenderer = {
 
 export const gmailGetMessageRenderer: ToolRenderer = {
   match: 'gmail_get_message',
-  icon: MailOpen,
+  icon: EnvelopeOpen,
   displayName: 'Gmail — Read',
   summary: (output) => {
     const o = output as GmailGetMessageOutput | undefined
@@ -153,7 +153,7 @@ export const gmailGetMessageRenderer: ToolRenderer = {
 
 export const gmailListLabelsRenderer: ToolRenderer = {
   match: 'gmail_list_labels',
-  icon: Tags,
+  icon: Tag,
   displayName: 'Gmail — Labels',
   summary: (output) => {
     const o = output as GmailListLabelsOutput | undefined
@@ -210,7 +210,7 @@ export const gmailListLabelsRenderer: ToolRenderer = {
 
 export const gmailDraftRenderer: ToolRenderer = {
   match: 'gmail_draft',
-  icon: MailQuestion,
+  icon: EnvelopeSimple,
   displayName: 'Gmail — Draft',
   summary: (output) => {
     const o = output as GmailDraftOutput | undefined
@@ -267,7 +267,7 @@ export const gmailDraftRenderer: ToolRenderer = {
 
 export const gmailReplyRenderer: ToolRenderer = {
   match: 'gmail_reply',
-  icon: Reply,
+  icon: ArrowBendUpLeft,
   displayName: 'Gmail — Reply',
   summary: (output) => {
     const o = output as GmailReplyOutput | undefined
@@ -314,7 +314,7 @@ function formatBytes(n: number): string {
 
 export const gmailSendRenderer: ToolRenderer = {
   match: 'gmail_send',
-  icon: MailCheck,
+  icon: EnvelopeOpen,
   displayName: 'Gmail Send',
   summary: (output) => {
     const o = output as GmailSendOutput | undefined

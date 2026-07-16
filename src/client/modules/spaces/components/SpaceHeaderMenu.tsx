@@ -15,19 +15,7 @@
  */
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  MoreHorizontal,
-  Pin,
-  PinOff,
-  BellOff,
-  Bell,
-  Link as LinkIcon,
-  Check,
-  LogOut,
-  Trash2,
-  Settings,
-  Users,
-} from 'lucide-react'
+import { DotsThree, PushPin, PushPinSlash, BellSlash, Bell, Link as LinkIcon, Check, SignOut, Trash, GearSix, Users } from '@phosphor-icons/react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -94,7 +82,7 @@ export function SpaceHeaderMenu({ space }: Props) {
             />
           }
         >
-          <MoreHorizontal className="size-4" />
+          <DotsThree className="size-4" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuItem onClick={() => setSettingsOpen('members')}>
@@ -102,7 +90,7 @@ export function SpaceHeaderMenu({ space }: Props) {
             Manage members
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setSettingsOpen('general')}>
-            <Settings className="size-4" />
+            <GearSix className="size-4" />
             Space settings
           </DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -115,7 +103,7 @@ export function SpaceHeaderMenu({ space }: Props) {
             Mark as read
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => updateMembership.mutate({ pinnedToSidebar: !isPinned })}>
-            {isPinned ? <PinOff className="size-4" /> : <Pin className="size-4" />}
+            {isPinned ? <PushPinSlash className="size-4" /> : <PushPin className="size-4" />}
             {isPinned ? 'Unpin from sidebar' : 'Pin to sidebar'}
           </DropdownMenuItem>
           <DropdownMenuItem
@@ -128,7 +116,7 @@ export function SpaceHeaderMenu({ space }: Props) {
             {notificationLevel === 'muted' ? (
               <Bell className="size-4" />
             ) : (
-              <BellOff className="size-4" />
+              <BellSlash className="size-4" />
             )}
             {notificationLevel === 'muted' ? 'Unmute' : 'Mute notifications'}
           </DropdownMenuItem>
@@ -137,7 +125,7 @@ export function SpaceHeaderMenu({ space }: Props) {
             onClick={() => setConfirmLeave(true)}
             className="text-destructive focus:text-destructive"
           >
-            <LogOut className="size-4" />
+            <SignOut className="size-4" />
             Leave space
           </DropdownMenuItem>
           {isOwner && (
@@ -145,7 +133,7 @@ export function SpaceHeaderMenu({ space }: Props) {
               onClick={() => setConfirmDelete(true)}
               className="text-destructive focus:text-destructive"
             >
-              <Trash2 className="size-4" />
+              <Trash className="size-4" />
               Delete space
             </DropdownMenuItem>
           )}

@@ -7,7 +7,7 @@
  * textarea can show (`@research`) so the user keeps WYSIWYG.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Send, X } from 'lucide-react'
+import { PaperPlaneTilt, X } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -208,7 +208,7 @@ export function MessageInput({ members, users, placeholder, busy, onSend, thread
           className="min-h-[44px] flex-1 resize-none"
         />
         <Button onClick={send} disabled={!value.trim() || busy} size="sm">
-          {busy ? <Spinner size="md" /> : <Send className="size-4" />}
+          {busy ? <Spinner size="md" /> : <PaperPlaneTilt className="size-4" />}
           <span className="ml-1.5 hidden sm:inline">{threadParentId ? 'Reply' : 'Send'}</span>
         </Button>
       </div>

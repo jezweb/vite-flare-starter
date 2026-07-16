@@ -8,7 +8,7 @@
  * Shape mirrors the spaces SpaceSettingsModal (Sheet for edit-in-place).
  */
 import { useEffect, useState } from 'react'
-import { Bot, AlertTriangle } from 'lucide-react'
+import { Robot, Warning } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 
 import {
@@ -106,7 +106,7 @@ export function AgentEditSheet({ agentClass, agentName, open, onClose }: Props) 
       <SheetContent side="right" className="flex flex-col gap-0 p-0 sm:max-w-xl">
         <SheetHeader className="border-b">
           <SheetTitle className="flex items-center gap-2">
-            <Bot className="size-4 text-primary" />
+            <Robot className="size-4 text-primary" />
             <span title={`${agentClass} · ${agentName}`}>{friendlyClass}</span>
             {showSlug && (
               <span className="font-mono text-sm text-muted-foreground">/{agentName}</span>
@@ -124,7 +124,7 @@ export function AgentEditSheet({ agentClass, agentName, open, onClose }: Props) 
             </div>
           ) : error ? (
             <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
-              <AlertTriangle className="size-4 shrink-0 mt-0.5" />
+              <Warning className="size-4 shrink-0 mt-0.5" />
               <span>{(error as Error).message}</span>
             </div>
           ) : (

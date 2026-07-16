@@ -18,15 +18,7 @@
 import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq } from 'drizzle-orm'
-import {
-  Mail,
-  MailOpen,
-  MailCheck,
-  FolderOpen,
-  FileDown,
-  CalendarSearch,
-  CalendarPlus,
-} from 'lucide-react'
+import { EnvelopeSimple, EnvelopeOpen, FolderOpen, FileArrowDown, Calendar, CalendarPlus } from '@phosphor-icons/react'
 import { microsoftWorkspaceTokens } from '@/server/modules/microsoft-workspace/db/schema'
 import {
   getAccessToken,
@@ -190,7 +182,7 @@ export const outlookSearchDefinition: ToolDefinition<
     }))
     return { messages, count: messages.length }
   },
-  render: { icon: Mail, displayName: 'Outlook — Search' },
+  render: { icon: EnvelopeSimple, displayName: 'Outlook — Search' },
 }
 
 // ─── OUTLOOK — GET MESSAGE ─────────────────────────────────────────────
@@ -257,7 +249,7 @@ export const outlookGetMessageDefinition: ToolDefinition<
       webLink: m.webLink,
     }
   },
-  render: { icon: MailOpen, displayName: 'Outlook — Read' },
+  render: { icon: EnvelopeOpen, displayName: 'Outlook — Read' },
 }
 
 // ─── OUTLOOK — SEND ────────────────────────────────────────────────────
@@ -316,7 +308,7 @@ export const outlookSendDefinition: ToolDefinition<
     }
     return { sent: true, queued: resp.status === 202 }
   },
-  render: { icon: MailCheck, displayName: 'Outlook — Send' },
+  render: { icon: EnvelopeOpen, displayName: 'Outlook — Send' },
 }
 
 // ─── ONEDRIVE — SEARCH ─────────────────────────────────────────────────
@@ -459,7 +451,7 @@ export const onedriveGetFileDefinition: ToolDefinition<
       downloadUrl: f['@microsoft.graph.downloadUrl'],
     }
   },
-  render: { icon: FileDown, displayName: 'OneDrive — Get File' },
+  render: { icon: FileArrowDown, displayName: 'OneDrive — Get File' },
 }
 
 // ─── MS CALENDAR — LIST ────────────────────────────────────────────────
@@ -542,7 +534,7 @@ export const msCalendarListDefinition: ToolDefinition<
     }))
     return { events, count: events.length }
   },
-  render: { icon: CalendarSearch, displayName: 'MS Calendar — List' },
+  render: { icon: Calendar, displayName: 'MS Calendar — List' },
 }
 
 // ─── MS CALENDAR — CREATE ──────────────────────────────────────────────

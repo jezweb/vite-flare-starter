@@ -14,7 +14,7 @@
  */
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Sparkles, Check, ShieldCheck } from 'lucide-react'
+import { Sparkle, Check, ShieldCheck } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -88,7 +88,7 @@ export function ChatPreferencesSection() {
     <Card>
       <CardHeader>
         <div className="flex items-center gap-2">
-          <Sparkles className="size-4 text-primary" />
+          <Sparkle className="size-4 text-primary" />
           <CardTitle>Chat preferences</CardTitle>
         </div>
         <CardDescription>

@@ -1,5 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
-import { AlertTriangle, RefreshCw, ArrowLeft } from 'lucide-react'
+import { Warning, ArrowsClockwise, ArrowLeft } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -95,7 +95,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           <Card className="w-full max-w-md">
             <CardHeader className="text-center">
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
-                <AlertTriangle className="h-6 w-6 text-destructive" />
+                <Warning className="h-6 w-6 text-destructive" />
               </div>
               <CardTitle>Something went wrong</CardTitle>
               <CardDescription>
@@ -113,12 +113,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               <div className="flex flex-col gap-2">
                 {canRetry ? (
                   <Button onClick={this.handleRetry} className="w-full">
-                    <RefreshCw className="mr-2 h-4 w-4" />
+                    <ArrowsClockwise className="mr-2 h-4 w-4" />
                     Try Again ({this.maxRetries - retryCount} attempts left)
                   </Button>
                 ) : (
                   <Button onClick={this.handleRefresh} className="w-full">
-                    <RefreshCw className="mr-2 h-4 w-4" />
+                    <ArrowsClockwise className="mr-2 h-4 w-4" />
                     Refresh Page
                   </Button>
                 )}

@@ -15,7 +15,7 @@ import { ProtectedRoute } from './components/shared/ProtectedRoute'
 import { PublicOnlyRoute } from './components/shared/PublicOnlyRoute'
 import { ThemeURLHandler } from './components/ThemeURLHandler'
 import { BuilderModeProvider } from './lib/builder-mode'
-import { Mic, Camera, Kanban } from 'lucide-react'
+import { Microphone, Camera, Kanban } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { features } from '@/shared/config/features'
 import { EmptyState } from './components/EmptyState'
@@ -194,7 +194,7 @@ function FeatureGatedPage({
   children,
 }: {
   enabled: boolean
-  icon: typeof Mic
+  icon: typeof Microphone
   title: string
   description: string
   envVar: string
@@ -372,7 +372,7 @@ function App() {
                     element={
                       <FeatureGatedPage
                         enabled={features.voiceAgent}
-                        icon={Mic}
+                        icon={Microphone}
                         title="Voice agent is opt-in"
                         description="The voice example streams microphone audio to a Durable Object for live transcription. It ships disabled by default — turn it on with a feature flag."
                         envVar="VITE_FEATURE_VOICE_AGENT"

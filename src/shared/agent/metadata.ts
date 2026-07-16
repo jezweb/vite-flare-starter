@@ -50,7 +50,7 @@ export interface AgentMetadata {
   userPurpose?: string
   /** Grouping for the picker UI. Pickers may render category sections. */
   category: AgentCategory
-  /** Optional Lucide icon name (resolved client-side) — defaults vary
+  /** Optional Phosphor icon name (resolved client-side) — defaults vary
    *  by category if omitted. */
   icon?: string
 }

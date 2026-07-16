@@ -14,7 +14,7 @@
  *   - 'extract' — pass a free-form `instruction` and get matching JSON
  */
 import { z } from 'zod'
-import { Eye } from 'lucide-react'
+import { Eye } from '@phosphor-icons/react'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 import { isOwnedR2Key } from '@/server/lib/r2-keys'
 import { isSafePublicUrl } from '@/server/lib/ssrf'

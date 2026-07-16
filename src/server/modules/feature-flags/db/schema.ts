@@ -43,7 +43,7 @@ export const featureFlags = sqliteTable(
     enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
 
     // UI hints (for reference in admin)
-    icon: text('icon'), // Lucide icon name: "CheckSquare"
+    icon: text('icon'), // Phosphor icon name: "CheckSquare"
     menuPath: text('menuPath'), // Dashboard path: "/dashboard/tasks"
 
     // Ordering for admin UI

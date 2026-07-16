@@ -52,7 +52,7 @@ export const offerChoicesDefinition = uiTool(
             icon: z
               .string()
               .optional()
-              .describe("Optional Lucide icon name (e.g. 'phone', 'mail', 'calendar')"),
+              .describe("Optional Phosphor icon name (e.g. 'phone', 'mail', 'calendar')"),
           }),
         ])
       )
@@ -176,7 +176,7 @@ export const showMetricCardsDefinition = uiTool(
           value: z.string().describe('Value (number or formatted string)'),
           trend: z.string().optional().describe("Trend text (e.g. '+12% vs last month')"),
           trendDirection: z.enum(['up', 'down', 'neutral']).optional(),
-          icon: z.string().optional().describe('Lucide icon name'),
+          icon: z.string().optional().describe('Phosphor icon name'),
         })
       )
       .describe('Array of metric cards'),

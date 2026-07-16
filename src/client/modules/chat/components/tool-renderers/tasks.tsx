@@ -1,7 +1,7 @@
 /**
  * Google Tasks tool renderers — tasks_list, tasks_create.
  */
-import { ListTodo, ListPlus, Circle, CheckCircle2 } from 'lucide-react'
+import { ListChecks, ListPlus, Circle, CheckCircle } from '@phosphor-icons/react'
 import type { ToolRenderer } from './_shared'
 import { truncate } from './_shared'
 import type {
@@ -25,7 +25,7 @@ function formatDue(iso?: string): string {
 
 export const tasksListRenderer: ToolRenderer = {
   match: 'tasks_list',
-  icon: ListTodo,
+  icon: ListChecks,
   displayName: 'Tasks — List',
   summary: (output) => {
     const o = output as TasksListOutput | undefined
@@ -49,7 +49,7 @@ export const tasksListRenderer: ToolRenderer = {
       <ul className="space-y-1 text-xs">
         {o.tasks.map((t) => {
           const done = t.status === 'completed'
-          const Icon = done ? CheckCircle2 : Circle
+          const Icon = done ? CheckCircle : Circle
           return (
             <li
               key={t.id}

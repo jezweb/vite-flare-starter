@@ -7,7 +7,7 @@
  * Configure via SEARCH_PROVIDER env var + provider-specific API key.
  */
 import { z } from 'zod'
-import { Globe } from 'lucide-react'
+import { Globe } from '@phosphor-icons/react'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 
 interface SearchEnv {

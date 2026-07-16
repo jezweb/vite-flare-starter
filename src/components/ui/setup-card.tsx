@@ -17,12 +17,12 @@
 import * as React from 'react'
 import { mergeProps } from '@base-ui/react/merge-props'
 import { useRender } from '@base-ui/react/use-render'
-import { CheckCircle2, ChevronRight } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { CheckCircle, CaretRight } from '@phosphor-icons/react'
+import type { Icon } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 
 interface SetupCardProps extends Omit<useRender.ComponentProps<'div'>, 'title'> {
-  icon: LucideIcon
+  icon: Icon
   title: React.ReactNode
   description?: React.ReactNode
   state?: 'default' | 'active' | 'completed'
@@ -46,7 +46,7 @@ export function SetupCard({
           state === 'completed' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted text-foreground'
         )}
       >
-        {state === 'completed' ? <CheckCircle2 className="size-4" /> : <Icon className="size-4" />}
+        {state === 'completed' ? <CheckCircle className="size-4" /> : <Icon className="size-4" />}
       </div>
       <div className="min-w-0 flex-1">
         <p
@@ -62,7 +62,7 @@ export function SetupCard({
         )}
       </div>
       {render && state !== 'completed' && (
-        <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover/setup:translate-x-0.5" />
+        <CaretRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover/setup:translate-x-0.5" />
       )}
       {/* Children render on the right when not rendered-as-link — useful for badges. */}
       {!render && children && <div className="shrink-0 flex items-center gap-2">{children}</div>}

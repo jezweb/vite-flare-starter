@@ -6,7 +6,7 @@
  * Reachable from the Guide widget's footer ("Question log") and the sidebar.
  */
 import { useQuery } from '@tanstack/react-query'
-import { MessageCircleQuestion } from 'lucide-react'
+import { ChatCircleDots } from '@phosphor-icons/react'
 import { apiClient } from '@/client/lib/api-client'
 import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
@@ -52,7 +52,7 @@ export function QuestionsPage() {
         <ListSkeleton />
       ) : questions.length === 0 ? (
         <EmptyState
-          icon={MessageCircleQuestion}
+          icon={ChatCircleDots}
           title="No questions yet"
           description="When someone asks the Guide (the help button, bottom-right) a question, it lands here with the answer given."
         />

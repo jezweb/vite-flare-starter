@@ -18,35 +18,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { useSession } from '@/client/lib/auth'
-import {
-  Shield,
-  Zap,
-  ArrowRight,
-  Palette,
-  Database,
-  Users,
-  Key,
-  Bot,
-  Flag,
-  Activity,
-  Bell,
-  ShieldCheck,
-  MessageSquare,
-  FolderKanban,
-  Sparkles,
-  Pin,
-  Hash,
-  CheckSquare,
-  Plug,
-  Mic,
-  Camera,
-  Search,
-  FileText,
-  Eye,
-  Workflow,
-  GitBranch,
-  Lock,
-} from 'lucide-react'
+import { Shield, Lightning, ArrowRight, Palette, Database, Users, Key, Robot, Flag, Pulse, Bell, ShieldCheck, Chat, Kanban, Sparkle, PushPin, Hash, CheckSquare, Plug, Microphone, Camera, MagnifyingGlass, FileText, Eye, FlowArrow, GitBranch, Lock } from '@phosphor-icons/react'
 import { appConfig } from '@/shared/config/app'
 
 /**
@@ -58,7 +30,7 @@ import { appConfig } from '@/shared/config/app'
  * See src/shared/config/app.ts for all branding options
  */
 
-// Lucide removed brand icons in v1.0 — inline SVG for GitHub
+// Phosphor's GithubLogo exists, but keep the inline SVG for exact brand mark
 function GithubIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -92,7 +64,7 @@ const primarySurfaces = [
     ],
   },
   {
-    icon: FolderKanban,
+    icon: Kanban,
     title: 'Projects',
     description:
       'Long-lived workspaces grouping conversations, files, instructions, and memory. Shareable with editors and viewers — a private project becomes a team room with one invite.',
@@ -105,7 +77,7 @@ const primarySurfaces = [
     ],
   },
   {
-    icon: MessageSquare,
+    icon: Chat,
     title: 'AI Chat',
     description:
       'AI SDK v6 ToolLoopAgent — 95+ tools across Gmail, Calendar, Drive, Sheets, browser automation, web search, places, code execution, audio, and the rest.',
@@ -118,7 +90,7 @@ const primarySurfaces = [
     ],
   },
   {
-    icon: Bot,
+    icon: Robot,
     title: 'Autonomous Agents',
     description:
       'Stateful AI agents living in Durable Objects. Persona + memory blocks + tool catalog + scheduled triggers + webhook ingestion + full observability.',
@@ -139,7 +111,7 @@ const primarySurfaces = [
  */
 const features = [
   {
-    icon: Zap,
+    icon: Lightning,
     title: 'Skills System',
     description:
       'Claude Agent Skills compatible. 14 bundled skills + R2 + GitHub sources, AI-sparkle rewrite, diff approval.',
@@ -157,24 +129,24 @@ const features = [
       'Human-in-the-loop for agent actions. Memory updates, sends, posts — review before execute.',
   },
   {
-    icon: Activity,
+    icon: Pulse,
     title: 'Agent Observability',
     description:
       '`agent_runs` audit table — cost, tokens, duration, steps per agent invocation. Stuck-run detection.',
   },
   {
-    icon: Search,
+    icon: MagnifyingGlass,
     title: 'FTS5 Search',
     description:
       'Universal search across conversations, spaces, messages. Cross-space + in-space scoped queries.',
   },
   {
-    icon: Pin,
+    icon: PushPin,
     title: 'Pin / Star / Forward',
     description: "Per-space pinned shelf, personal stars, forward to any space you're a member of.",
   },
   {
-    icon: Mic,
+    icon: Microphone,
     title: 'Voice Agent',
     description:
       'Cloudflare Voice SDK — withVoiceInput mixin streams audio + Workers AI Deepgram Nova 3 transcription.',
@@ -233,7 +205,7 @@ const features = [
       'Per-user model keys (Anthropic, OpenAI, Google, OpenRouter). Service credentials encrypted at rest.',
   },
   {
-    icon: Workflow,
+    icon: FlowArrow,
     title: 'Cron + Background',
     description:
       'Memory sweep, history-disabled cleanup, due-job processor. Existing 15-min cron has 5 sweep tasks already.',
@@ -257,7 +229,7 @@ const features = [
       'Server-side error reporting hooks + audit trail with pagination, filters, entity history.',
   },
   {
-    icon: Sparkles,
+    icon: Sparkle,
     title: 'Card-format Bot Messages',
     description:
       'Agents emit metadata.cardFormat for daily digests / reports — UI renders structured cards instead of text.',
@@ -277,22 +249,22 @@ const features = [
  */
 const spacesScenes: Array<{ icon: typeof Hash; title: string; body: string }> = [
   {
-    icon: Bot,
+    icon: Robot,
     title: 'Agents reply when called',
     body: '@-mention @research and they answer. Stay quiet otherwise. Per-agent reply modes (mention / proactive / ambient / always / off) so each room sets its own vibe.',
   },
   {
-    icon: MessageSquare,
+    icon: Chat,
     title: 'Threads keep the timeline glanceable',
     body: 'Long agent replies auto-thread. Replies inside a thread stay there. The thread pane has a per-thread bell so you can mute noisy ones.',
   },
   {
-    icon: Sparkles,
+    icon: Sparkle,
     title: 'Reactions are first-class',
     body: "👍 ✅ ❤️ quick-bar plus the full emoji-mart picker. Bots react with the same emojis humans do. Classifier-driven `ambient` agents react silently when there's signal.",
   },
   {
-    icon: Pin,
+    icon: PushPin,
     title: 'Pin · Star · Quote · Forward',
     body: "Pin to space (collective), star (personal bookmark), quote-in-reply with a chip preview, forward a message to any other space you're in.",
   },

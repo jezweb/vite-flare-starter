@@ -14,7 +14,7 @@
  */
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Trash2 } from 'lucide-react'
+import { ArrowLeft, Trash } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -32,7 +32,7 @@ import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
 import { PageLoading } from '@/client/components/PageState'
 import { EmptyState } from '@/client/components/EmptyState'
-import { Zap } from 'lucide-react'
+import { Lightning } from '@phosphor-icons/react'
 
 import { useSkillsList, useDeleteSkill } from '../hooks/useSkills'
 import { SkillEditor } from '../components/SkillEditor'
@@ -69,7 +69,7 @@ export function SkillDetailPage() {
           }
         />
         <EmptyState
-          icon={Zap}
+          icon={Lightning}
           title="Skill not found"
           description="The skill may have been deleted or renamed. Head back to the skills list to find what's available."
           action={{
@@ -90,7 +90,7 @@ export function SkillDetailPage() {
         </Button>
         {skill.isPersonal && (
           <Button variant="outline" size="sm" onClick={() => setDeleteOpen(true)}>
-            <Trash2 className="mr-1 size-3.5 text-destructive" />
+            <Trash className="mr-1 size-3.5 text-destructive" />
             Revert to bundled
           </Button>
         )}

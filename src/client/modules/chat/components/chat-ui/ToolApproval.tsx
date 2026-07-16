@@ -7,7 +7,7 @@
  * + the `sendAutomaticallyWhen` callback wired in `useChat.ts` which
  * re-submits the conversation once the approval is recorded.
  */
-import { ShieldAlert, Check, X } from 'lucide-react'
+import { ShieldWarning, Check, X } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 
 interface Props {
@@ -24,7 +24,7 @@ export function ToolApproval({ toolName, args, onApprove, onDeny }: Props) {
     <div className="my-2 rounded-lg border border-amber-500/30 dark:border-amber-500/40 bg-amber-500/5 dark:bg-amber-500/10 p-3">
       <div className="flex items-start gap-3">
         <div className="rounded-md bg-amber-500/10 dark:bg-amber-500/15 p-2 shrink-0">
-          <ShieldAlert className="size-4 text-amber-600 dark:text-amber-400" />
+          <ShieldWarning className="size-4 text-amber-600 dark:text-amber-400" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-sm font-medium">Approval required: {friendlyName}</div>

@@ -33,7 +33,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import type { ChatStatus, FileUIPart, SourceDocumentUIPart } from 'ai'
-import { CornerDownLeftIcon, ImageIcon, Monitor, PlusIcon, SquareIcon, XIcon } from 'lucide-react'
+import { ArrowElbowDownLeftIcon, ImageIcon, Monitor, PlusIcon, SquareIcon, XIcon } from '@phosphor-icons/react'
 import { nanoid } from 'nanoid'
 import type {
   ChangeEvent,
@@ -1120,7 +1120,7 @@ export const PromptInputSubmit = ({
 }: PromptInputSubmitProps) => {
   const isGenerating = status === 'submitted' || status === 'streaming'
 
-  let Icon = <CornerDownLeftIcon className="size-4" />
+  let Icon = <ArrowElbowDownLeftIcon className="size-4" />
 
   if (status === 'submitted') {
     Icon = <Spinner />

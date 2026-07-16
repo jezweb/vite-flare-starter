@@ -7,7 +7,7 @@
  */
 import { useEffect, useState, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Plus, Pin, Users, Bot, Hash, Sparkles } from 'lucide-react'
+import { Plus, PushPin, Users, Robot, Hash, Sparkle } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { useSpacesList, type SpaceSummary } from '../hooks/useSpaces'
 import { CreateSpaceModal } from '../components/CreateSpaceModal'
@@ -38,7 +38,7 @@ function SpaceCard({ s }: { s: SpaceSummary }) {
           <Hash className="size-4 shrink-0 text-muted-foreground" />
           <h3 className="truncate text-sm font-medium">{s.title || 'Untitled space'}</h3>
         </div>
-        {s.pinnedToSidebar ? <Pin className="size-3.5 shrink-0 text-amber-500" /> : null}
+        {s.pinnedToSidebar ? <PushPin className="size-3.5 shrink-0 text-amber-500" /> : null}
       </div>
       <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
         <span className="flex items-center gap-1">
@@ -46,7 +46,7 @@ function SpaceCard({ s }: { s: SpaceSummary }) {
           {s.memberCount}
         </span>
         <span className="flex items-center gap-1">
-          <Bot className="size-3" />
+          <Robot className="size-3" />
           {s.agentCount}
         </span>
         <span>•</span>
@@ -108,7 +108,7 @@ export function SpacesIndexPage() {
         <PageLoading variant="list" count={4} />
       ) : spaces.length === 0 ? (
         <SharedEmptyState
-          icon={Sparkles}
+          icon={Sparkle}
           title="Spaces are multiplayer rooms."
           description="Bring your team and your AI agents into one place. Use @mentions to ask agents to help; they reply when called and stay quiet otherwise."
           action={{ label: 'New space', onClick: () => setCreateOpen(true) }}

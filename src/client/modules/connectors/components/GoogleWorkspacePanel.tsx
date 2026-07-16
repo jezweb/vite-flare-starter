@@ -9,16 +9,7 @@
  */
 import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import {
-  Plug,
-  CheckCircle2,
-  AlertCircle,
-  Trash2,
-  Mail,
-  FolderOpen,
-  CalendarDays,
-  SlidersHorizontal,
-} from 'lucide-react'
+import { Plug, CheckCircle, WarningCircle, Trash, EnvelopeSimple, FolderOpen, Calendar, SlidersHorizontal } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -51,13 +42,13 @@ interface StatusResponse {
 // Human-readable labels for the scope list shown on the card. Only the
 // display-relevant scopes are listed — openid / email / profile are
 // implied for any Google OAuth and don't need to be surfaced.
-const SCOPE_LABELS: Record<string, { icon: typeof Mail; label: string }> = {
-  'https://www.googleapis.com/auth/gmail.readonly': { icon: Mail, label: 'Read Gmail' },
-  'https://www.googleapis.com/auth/gmail.send': { icon: Mail, label: 'Send Gmail' },
+const SCOPE_LABELS: Record<string, { icon: typeof EnvelopeSimple; label: string }> = {
+  'https://www.googleapis.com/auth/gmail.readonly': { icon: EnvelopeSimple, label: 'Read Gmail' },
+  'https://www.googleapis.com/auth/gmail.send': { icon: EnvelopeSimple, label: 'Send Gmail' },
   'https://www.googleapis.com/auth/drive.readonly': { icon: FolderOpen, label: 'Read Drive' },
   'https://www.googleapis.com/auth/drive.file': { icon: FolderOpen, label: 'Create Drive files' },
   'https://www.googleapis.com/auth/calendar.events': {
-    icon: CalendarDays,
+    icon: Calendar,
     label: 'Read + create calendar events',
   },
 }
@@ -130,10 +121,10 @@ export function GoogleWorkspacePanel() {
             <div className="flex items-center gap-2 flex-wrap">
               <p className="font-semibold">Google Workspace</p>
               {connected && !isError && (
-                <StatusPill kind="success" label="Connected" icon={<CheckCircle2 />} />
+                <StatusPill kind="success" label="Connected" icon={<CheckCircle />} />
               )}
               {isError && (
-                <StatusPill kind="danger" label="Reconnect needed" icon={<AlertCircle />} />
+                <StatusPill kind="danger" label="Reconnect needed" icon={<WarningCircle />} />
               )}
             </div>
             {connected ? (
@@ -222,7 +213,7 @@ export function GoogleWorkspacePanel() {
                   className="text-destructive hover:text-destructive"
                   aria-label="Disconnect Google Workspace"
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
+                  <Trash className="h-3.5 w-3.5" />
                 </Button>
               </>
             ) : (

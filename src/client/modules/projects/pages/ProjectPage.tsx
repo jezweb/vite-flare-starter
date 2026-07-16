@@ -13,18 +13,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import {
-  ArrowLeft,
-  Plus,
-  Star,
-  Share2,
-  MoreVertical,
-  Archive,
-  Trash2,
-  Edit3,
-  MessageSquare,
-  PencilLine,
-} from 'lucide-react'
+import { ArrowLeft, Plus, Star, ShareNetwork, DotsThreeVertical, Archive, Trash, PencilSimple, Chat, PencilLine } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -177,11 +166,11 @@ export function ProjectPage() {
             <DropdownMenuTrigger
               render={<Button variant="ghost" size="icon" aria-label="Project options" />}
             >
-              <MoreVertical className="size-4" />
+              <DotsThreeVertical className="size-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => setEditProjectOpen(true)}>
-                <Edit3 className="size-3.5 mr-2" />
+                <PencilSimple className="size-3.5 mr-2" />
                 Edit project
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -195,7 +184,7 @@ export function ProjectPage() {
                 className="text-destructive focus:text-destructive"
                 onClick={() => setDeleteConfirmOpen(true)}
               >
-                <Trash2 className="size-3.5 mr-2" />
+                <Trash className="size-3.5 mr-2" />
                 Delete project
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -206,10 +195,10 @@ export function ProjectPage() {
             onClick={() => starProject.mutate({ id, starred: project.starred === 0 })}
             aria-label={project.starred ? 'Unstar project' : 'Star project'}
           >
-            <Star className={cn('size-4', project.starred && 'fill-yellow-500 text-yellow-500')} />
+            <Star weight={project.starred ? 'fill' : 'regular'} className={cn('size-4', project.starred && 'text-yellow-500')} />
           </Button>
           <Button variant="outline" onClick={() => setShareInfoOpen(true)}>
-            <Share2 className="size-3.5 mr-1.5" />
+            <ShareNetwork className="size-3.5 mr-1.5" />
             Share
           </Button>
         </div>
@@ -265,9 +254,9 @@ export function ProjectPage() {
                       className="group flex items-center gap-3 rounded-md px-3 py-2.5 transition-colors hover:bg-muted"
                     >
                       {c.starred ? (
-                        <Star className="size-3.5 shrink-0 fill-yellow-500 text-yellow-500" />
+                        <Star weight="fill" className="size-3.5 shrink-0 text-yellow-500" />
                       ) : (
-                        <MessageSquare className="size-3.5 shrink-0 text-muted-foreground" />
+                        <Chat className="size-3.5 shrink-0 text-muted-foreground" />
                       )}
                       <div className="flex-1 min-w-0">
                         <div className="truncate text-sm font-medium">{c.title || 'Untitled'}</div>

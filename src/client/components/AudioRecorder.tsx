@@ -32,7 +32,7 @@
  * />
  */
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { Mic, Square } from 'lucide-react'
+import { Microphone, Square } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { cn } from '@/lib/utils'
@@ -245,7 +245,7 @@ export function AudioRecorder({
         ) : isRecording ? (
           <Square className="size-3" />
         ) : (
-          <Mic className="size-4" />
+          <Microphone className="size-4" />
         )}
       </Button>
     )
@@ -266,7 +266,7 @@ export function AudioRecorder({
         ) : isRecording ? (
           <Square className="size-3" />
         ) : (
-          <Mic className="size-4" />
+          <Microphone className="size-4" />
         )}
         {isRecording ? 'Stop' : 'Record'}
       </Button>

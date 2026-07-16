@@ -1,4 +1,4 @@
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { TrendUp, TrendDown, Minus } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 
 interface Metric {
@@ -13,7 +13,7 @@ interface Props {
   metrics: Metric[]
 }
 
-const TREND_ICONS = { up: TrendingUp, down: TrendingDown, neutral: Minus }
+const TREND_ICONS = { up: TrendUp, down: TrendDown, neutral: Minus }
 const TREND_COLORS = {
   up: 'text-green-600 dark:text-green-400',
   down: 'text-destructive',

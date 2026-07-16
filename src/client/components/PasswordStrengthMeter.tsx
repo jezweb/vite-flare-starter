@@ -5,7 +5,7 @@
  */
 
 import { useMemo } from 'react'
-import { Check, X } from 'lucide-react'
+import { Check, X } from '@phosphor-icons/react'
 import {
   checkPasswordStrength,
   getPasswordRequirements,

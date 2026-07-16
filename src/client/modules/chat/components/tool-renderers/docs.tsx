@@ -1,7 +1,7 @@
 /**
  * Google Docs tool renderers — docs_search, docs_get, docs_create, docs_append.
  */
-import { FileText, FileSearch, FilePlus, FilePen, ExternalLink } from 'lucide-react'
+import { FileText, FileMagnifyingGlass, FilePlus, NotePencil, ArrowSquareOut } from '@phosphor-icons/react'
 import type { ToolRenderer } from './_shared'
 import { truncate } from './_shared'
 import type {
@@ -20,7 +20,7 @@ function formatModified(iso?: string): string {
 
 export const docsSearchRenderer: ToolRenderer = {
   match: 'docs_search',
-  icon: FileSearch,
+  icon: FileMagnifyingGlass,
   displayName: 'Docs — Search',
   summary: (output) => {
     const o = output as DocsSearchOutput | undefined
@@ -113,7 +113,7 @@ export const docsGetRenderer: ToolRenderer = {
           className="inline-flex items-center gap-1 text-foreground hover:underline"
         >
           Open in Google Docs
-          <ExternalLink className="size-3" />
+          <ArrowSquareOut className="size-3" />
         </a>
       </div>
     )
@@ -156,7 +156,7 @@ export const docsCreateRenderer: ToolRenderer = {
             className="inline-flex items-center gap-1 text-foreground hover:underline"
           >
             Open in Google Docs
-            <ExternalLink className="size-3" />
+            <ArrowSquareOut className="size-3" />
           </a>
         )}
       </div>
@@ -166,7 +166,7 @@ export const docsCreateRenderer: ToolRenderer = {
 
 export const docsAppendRenderer: ToolRenderer = {
   match: 'docs_append',
-  icon: FilePen,
+  icon: NotePencil,
   displayName: 'Docs — Append',
   summary: (output) => {
     const o = output as DocsAppendOutput | undefined
@@ -199,7 +199,7 @@ export const docsAppendRenderer: ToolRenderer = {
           className="inline-flex items-center gap-1 text-foreground hover:underline"
         >
           Open in Google Docs
-          <ExternalLink className="size-3" />
+          <ArrowSquareOut className="size-3" />
         </a>
       </div>
     )

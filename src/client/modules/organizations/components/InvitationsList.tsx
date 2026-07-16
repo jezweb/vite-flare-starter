@@ -5,7 +5,7 @@
  * Hidden entirely when there are no pending invitations.
  */
 import { toast } from 'sonner'
-import { X } from 'lucide-react'
+import { X } from '@phosphor-icons/react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'

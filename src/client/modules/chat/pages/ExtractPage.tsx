@@ -11,7 +11,7 @@
  */
 import { useCallback, useRef, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { Sparkles, Copy, Check, Eraser, Wand2 } from 'lucide-react'
+import { Sparkle, Copy, Check, Eraser, MagicWand } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { useCopy } from '@/client/lib/use-copy'
 import { Button } from '@/components/ui/button'
@@ -204,12 +204,12 @@ export function ExtractPage() {
               </>
             ) : (
               <>
-                <Sparkles className="mr-2 h-4 w-4" /> Extract
+                <Sparkle className="mr-2 h-4 w-4" /> Extract
               </>
             )}
           </Button>
           <Button type="button" variant="outline" onClick={handleLoadExample}>
-            <Wand2 className="mr-2 h-4 w-4" />
+            <MagicWand className="mr-2 h-4 w-4" />
             Load example
           </Button>
           <Button

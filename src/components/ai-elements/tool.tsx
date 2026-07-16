@@ -4,14 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { cn } from '@/lib/utils'
 import type { DynamicToolUIPart, ToolUIPart } from 'ai'
-import {
-  CheckCircleIcon,
-  ChevronDownIcon,
-  CircleIcon,
-  ClockIcon,
-  WrenchIcon,
-  XCircleIcon,
-} from 'lucide-react'
+import { CheckCircleIcon, CaretDownIcon, CircleIcon, ClockIcon, WrenchIcon, XCircleIcon } from '@phosphor-icons/react'
 import type { ComponentProps, ReactNode } from 'react'
 import { isValidElement } from 'react'
 
@@ -87,7 +80,7 @@ export const ToolHeader = ({
         <span className="font-medium text-sm">{title ?? derivedName}</span>
         {getStatusBadge(state)}
       </div>
-      <ChevronDownIcon className="size-4 text-muted-foreground transition-transform group-data-panel-open:rotate-180" />
+      <CaretDownIcon className="size-4 text-muted-foreground transition-transform group-data-panel-open:rotate-180" />
     </CollapsibleTrigger>
   )
 }

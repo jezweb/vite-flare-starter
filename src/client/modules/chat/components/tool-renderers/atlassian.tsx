@@ -1,15 +1,7 @@
 /**
  * Atlassian tool renderers — Jira + Confluence.
  */
-import {
-  CheckSquare,
-  FileText,
-  MessageSquarePlus,
-  MoveRight,
-  Plus,
-  Search,
-  Ticket,
-} from 'lucide-react'
+import { CheckSquare, FileText, ChatText, ArrowRight, Plus, MagnifyingGlass, Ticket } from '@phosphor-icons/react'
 import type { ToolRenderer } from './_shared'
 import { truncate, formatToolDate } from './_shared'
 import type {
@@ -25,7 +17,7 @@ import type {
 
 export const jiraSearchRenderer: ToolRenderer = {
   match: 'jira_search_issues',
-  icon: Search,
+  icon: MagnifyingGlass,
   displayName: 'Jira Search',
   summary: (output) => {
     const o = output as JiraSearchOutput | undefined
@@ -190,7 +182,7 @@ export const jiraCreateRenderer: ToolRenderer = {
 
 export const jiraCommentRenderer: ToolRenderer = {
   match: 'jira_add_comment',
-  icon: MessageSquarePlus,
+  icon: ChatText,
   displayName: 'Jira Comment',
   summary: (output) => {
     const o = output as JiraCommentOutput | undefined
@@ -224,7 +216,7 @@ export const jiraCommentRenderer: ToolRenderer = {
 
 export const jiraTransitionRenderer: ToolRenderer = {
   match: 'jira_transition_issue',
-  icon: MoveRight,
+  icon: ArrowRight,
   displayName: 'Jira Transition',
   summary: (output) => {
     const o = output as JiraTransitionOutput | undefined
@@ -269,7 +261,7 @@ export const jiraTransitionRenderer: ToolRenderer = {
 
 export const confluenceSearchRenderer: ToolRenderer = {
   match: 'confluence_search',
-  icon: Search,
+  icon: MagnifyingGlass,
   displayName: 'Confluence Search',
   summary: (output) => {
     const o = output as ConfluenceSearchOutput | undefined

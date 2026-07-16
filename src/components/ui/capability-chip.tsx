@@ -18,11 +18,11 @@
  *   </Link>
  */
 import * as React from 'react'
-import type { LucideIcon } from 'lucide-react'
+import type { Icon } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 
 interface CapabilityChipProps extends React.HTMLAttributes<HTMLElement> {
-  icon?: LucideIcon
+  icon?: Icon
   label: React.ReactNode
   state?: 'active' | 'inactive' | 'count'
 }

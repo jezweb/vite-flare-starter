@@ -32,7 +32,7 @@ import {
   type ColumnDef,
   type SortingState,
 } from '@tanstack/react-table'
-import { ArrowDown, ArrowUp, ChevronsUpDown } from 'lucide-react'
+import { ArrowDown, ArrowUp, CaretUpDown } from '@phosphor-icons/react'
 
 import {
   Table,
@@ -114,7 +114,7 @@ export function DataTable<TData, TValue>({
                           ) : sorted === 'desc' ? (
                             <ArrowDown className="ml-1 size-3.5" />
                           ) : (
-                            <ChevronsUpDown className="ml-1 size-3.5 opacity-50" />
+                            <CaretUpDown className="ml-1 size-3.5 opacity-50" />
                           )}
                         </Button>
                       ) : (

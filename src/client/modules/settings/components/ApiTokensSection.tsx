@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
-import { Key, Trash2, Plus, ExternalLink } from 'lucide-react'
+import { Key, Trash, Plus, ArrowSquareOut } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { CopyButton } from '@/components/ui/copy-button'
 import {
@@ -107,7 +107,7 @@ function TokenRow({ token, onDeleteClick, isDeleting, anyPending }: TokenRowProp
           disabled={isDeleting || anyPending}
           className="text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors"
         >
-          {isDeleting ? <Spinner size="md" /> : <Trash2 className="h-4 w-4" />}
+          {isDeleting ? <Spinner size="md" /> : <Trash className="h-4 w-4" />}
         </Button>
       </TableCell>
     </TableRow>
@@ -434,7 +434,7 @@ export function ApiTokensSection() {
               rel="noopener noreferrer"
               className="inline-flex items-center text-sm text-primary hover:underline"
             >
-              <ExternalLink className="h-4 w-4 mr-1" />
+              <ArrowSquareOut className="h-4 w-4 mr-1" />
               ElevenLabs Server Tools Documentation
             </a>
           </div>

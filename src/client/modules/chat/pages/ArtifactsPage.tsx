@@ -13,7 +13,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Sparkles, Search, MessageSquare, Code2, Image as ImageIcon, GitBranch } from 'lucide-react'
+import { Sparkle, MagnifyingGlass, Chat, CodeSimple, Image as ImageIcon, GitBranch } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { Input } from '@/components/ui/input'
 import { apiClient } from '@/client/lib/api-client'
@@ -41,8 +41,8 @@ function timeAgo(dateStr: string | null): string {
   return new Date(dateStr).toLocaleDateString()
 }
 
-const TYPE_ICONS: Record<string, typeof Code2> = {
-  html: Code2,
+const TYPE_ICONS: Record<string, typeof CodeSimple> = {
+  html: CodeSimple,
   svg: ImageIcon,
   mermaid: GitBranch,
 }
@@ -74,7 +74,7 @@ export function ArtifactsPage() {
     <div className="max-w-4xl mx-auto space-y-6 py-4">
       <div>
         <h1 className="text-3xl font-semibold tracking-tight flex items-center gap-2">
-          <Sparkles className="size-6 text-primary" />
+          <Sparkle className="size-6 text-primary" />
           My artifacts
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
@@ -84,7 +84,7 @@ export function ArtifactsPage() {
 
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
+          <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -114,7 +114,7 @@ export function ArtifactsPage() {
       ) : (
         <ul className="space-y-2">
           {artifacts.map((a) => {
-            const Icon = TYPE_ICONS[a.type] ?? Code2
+            const Icon = TYPE_ICONS[a.type] ?? CodeSimple
             return (
               <li key={`${a.messageId}-${a.artifactId}`}>
                 <Link
@@ -139,7 +139,7 @@ export function ArtifactsPage() {
                         {TYPE_LABELS[a.type] ?? a.type}
                       </span>
                       <span className="flex items-center gap-1 truncate">
-                        <MessageSquare className="size-3 shrink-0" />
+                        <Chat className="size-3 shrink-0" />
                         <span className="truncate">
                           {a.conversationTitle ?? 'Untitled conversation'}
                         </span>
@@ -167,7 +167,7 @@ function EmptyState({ search, typeFilter }: { search: string; typeFilter: string
   }
   return (
     <SharedEmptyState
-      icon={Sparkles}
+      icon={Sparkle}
       title="No artifacts yet"
       description="The AI can build interactive HTML pages, SVG illustrations, and Mermaid diagrams right inside a chat."
       tips={[

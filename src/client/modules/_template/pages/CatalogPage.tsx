@@ -14,7 +14,7 @@
  * For "structured rows that benefit from sort + filter + pagination, 50+
  * items", copy `TablePage.tsx` instead — uses shadcn Data Table.
  */
-import { Plus, FileText, LayoutGrid, List as ListIcon } from 'lucide-react'
+import { Plus, FileText, SquaresFour, List as ListIcon } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
@@ -42,7 +42,7 @@ import {
   ListRowTrailing,
 } from '@/components/ui/list-row'
 import { useViewPreference } from '@/client/lib/use-view-preference'
-import { ChevronRight } from 'lucide-react'
+import { CaretRight } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 
 // Replace with your real hook in hooks/useThings.ts
@@ -111,7 +111,7 @@ export function TemplateCatalogPage() {
               aria-label="Layout view"
             >
               <ToggleGroupItem value="cards" aria-label="Card view">
-                <LayoutGrid className="size-4" />
+                <SquaresFour className="size-4" />
               </ToggleGroupItem>
               <ToggleGroupItem value="list" aria-label="List view">
                 <ListIcon className="size-4" />
@@ -167,7 +167,7 @@ export function TemplateCatalogPage() {
                       </ListRowMeta>
                     </ListRowBody>
                     <ListRowTrailing>
-                      <ChevronRight className="size-3.5 text-muted-foreground/50 transition-colors group-hover/list-row:text-foreground" />
+                      <CaretRight className="size-3.5 text-muted-foreground/50 transition-colors group-hover/list-row:text-foreground" />
                     </ListRowTrailing>
                   </ListRow>
                 </li>

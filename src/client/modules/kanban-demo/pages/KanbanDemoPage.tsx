@@ -10,7 +10,7 @@
  * rendering all in one place.
  */
 import * as React from 'react'
-import { Kanban as KanbanIcon } from 'lucide-react'
+import { Kanban as KanbanIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'

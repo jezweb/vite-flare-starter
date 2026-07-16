@@ -18,7 +18,7 @@
  * defaults give icon+name to everything left over.
  */
 import { useState } from 'react'
-import { Copy, Check, Terminal, ImageIcon, FileText, Table } from 'lucide-react'
+import { Copy, Check, Terminal, ImageIcon, FileText, Table } from '@phosphor-icons/react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'

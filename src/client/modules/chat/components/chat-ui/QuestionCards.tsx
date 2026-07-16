@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Check } from 'lucide-react'
+import { Check } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 
 interface Option {

@@ -16,7 +16,7 @@
 import { type ReactElement } from 'react'
 
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card'
-import { Folder, MessageSquare } from 'lucide-react'
+import { Folder, Chat } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 
 import { useProject } from '../hooks/useProjects'
@@ -88,7 +88,7 @@ function ProjectHoverPreview({ projectId }: { projectId: string }) {
 
       <div className="flex items-center gap-3 border-t pt-2 text-[11px] text-muted-foreground">
         <span className="flex items-center gap-1">
-          <MessageSquare className="size-3" />
+          <Chat className="size-3" />
           {data.conversations.length} {data.conversations.length === 1 ? 'chat' : 'chats'}
         </span>
         {project.updatedAt && <span>Updated {formatRelative(project.updatedAt)}</span>}

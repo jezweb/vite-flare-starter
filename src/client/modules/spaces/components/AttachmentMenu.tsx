@@ -12,7 +12,7 @@
  * context (Phase 2: agent-side tool to dereference them).
  */
 import { useState } from 'react'
-import { Plus, Paperclip, FolderKanban, Plug } from 'lucide-react'
+import { Plus, Paperclip, Kanban, Plug } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useQuery } from '@tanstack/react-query'
@@ -124,7 +124,7 @@ export function AttachmentMenu({ onAttach }: Props) {
                 onClick={() => setView('project')}
                 className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent"
               >
-                <FolderKanban className="size-4 text-muted-foreground" />
+                <Kanban className="size-4 text-muted-foreground" />
                 <span className="flex-1">Reference a project</span>
               </button>
             </li>
@@ -170,7 +170,7 @@ export function AttachmentMenu({ onAttach }: Props) {
                       }}
                       className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent"
                     >
-                      <FolderKanban className="size-3.5 text-muted-foreground" />
+                      <Kanban className="size-3.5 text-muted-foreground" />
                       <span className="flex-1 truncate">{p.name}</span>
                     </button>
                   </li>

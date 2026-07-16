@@ -21,7 +21,7 @@ import {
   useMarkAsRead,
   useMarkAllAsRead,
 } from '@/client/hooks/useNotifications'
-import { Bell, Check, CheckCheck, Info, AlertTriangle, AlertCircle } from 'lucide-react'
+import { Bell, Check, Checks, Info, Warning, WarningCircle } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
@@ -32,9 +32,9 @@ import { formatDistanceToNow } from 'date-fns'
 function getNotificationIcon(type: string) {
   switch (type) {
     case 'warning':
-      return <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+      return <Warning className="h-4 w-4 text-amber-600 dark:text-amber-400" />
     case 'error':
-      return <AlertCircle className="h-4 w-4 text-destructive" />
+      return <WarningCircle className="h-4 w-4 text-destructive" />
     case 'success':
       return <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
     default:
@@ -97,7 +97,7 @@ export function NotificationBell() {
               {markAllAsRead.isPending ? (
                 <Spinner size="xs" className="mr-1" />
               ) : (
-                <CheckCheck className="mr-1 h-3 w-3" />
+                <Checks className="mr-1 h-3 w-3" />
               )}
               Mark all read
             </Button>

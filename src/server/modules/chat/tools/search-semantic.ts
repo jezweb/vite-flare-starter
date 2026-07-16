@@ -8,7 +8,7 @@
 import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq } from 'drizzle-orm'
-import { Sparkles, Database } from 'lucide-react'
+import { Sparkle, Database } from '@phosphor-icons/react'
 import { embedText, embedBatch, findSimilar } from '@/server/lib/ai/embeddings'
 import { userMeta } from '@/server/modules/user-meta/db/schema'
 import type { ProviderEnv } from '@/server/lib/ai/providers'
@@ -127,7 +127,7 @@ export const semanticSearchDefinition: ToolDefinition<
       return { query, error: error instanceof Error ? error.message : String(error) }
     }
   },
-  render: { icon: Sparkles, displayName: 'Semantic Search' },
+  render: { icon: Sparkle, displayName: 'Semantic Search' },
 }
 
 const VectorizeContentOutput = z.union([

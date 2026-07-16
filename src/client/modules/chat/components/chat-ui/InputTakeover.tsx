@@ -9,7 +9,7 @@
  * number keys for quick selection.
  */
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { X, ChevronRight, ChevronLeft, Check, ArrowUp, Pencil, Circle } from 'lucide-react'
+import { X, CaretRight, CaretLeft, Check, ArrowUp, Pencil, Circle } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -90,8 +90,8 @@ function TakeoverHeader({
       <div className="flex items-center gap-1 shrink-0">
         {progress && progress.total > 1 && (
           <span className="text-[11px] text-muted-foreground tabular-nums mr-1">
-            <ChevronLeft className="inline h-3 w-3 -mt-px" /> {progress.current} of {progress.total}{' '}
-            <ChevronRight className="inline h-3 w-3 -mt-px" />
+            <CaretLeft className="inline h-3 w-3 -mt-px" /> {progress.current} of {progress.total}{' '}
+            <CaretRight className="inline h-3 w-3 -mt-px" />
           </span>
         )}
         <Button
@@ -319,9 +319,10 @@ function QuestionTakeover({ element, onSubmit, onDismiss }: Props) {
                 </div>
               ) : (
                 <Circle
+                  weight={isFocused ? 'duotone' : 'regular'}
                   className={cn(
                     'h-5 w-5 shrink-0 transition-colors',
-                    isFocused ? 'text-primary fill-primary/20' : 'text-muted-foreground/30'
+                    isFocused ? 'text-primary' : 'text-muted-foreground/30'
                   )}
                 />
               )}
@@ -330,7 +331,7 @@ function QuestionTakeover({ element, onSubmit, onDismiss }: Props) {
                 <span className="text-xs text-muted-foreground">{opt.description}</span>
               )}
               {isFocused && !isMulti && (
-                <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                <CaretRight className="h-4 w-4 text-muted-foreground shrink-0" />
               )}
             </button>
           )

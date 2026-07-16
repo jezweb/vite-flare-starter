@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { XIcon } from 'lucide-react'
+import { XIcon } from '@phosphor-icons/react'
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog'
 
 import { cn } from '@/lib/utils'

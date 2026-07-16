@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { formatDistanceToNow } from 'date-fns'
-import { Monitor, Smartphone, Tablet, Globe, Shield, LogOut, CheckCircle } from 'lucide-react'
+import { Monitor, DeviceMobile, DeviceTablet, Globe, Shield, SignOut, CheckCircle } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { toast } from 'sonner'
 import { useSessions, useRevokeSession, useRevokeAllSessions } from '../hooks/useSessions'
@@ -26,10 +26,10 @@ import {
 function getDeviceIcon(device: string) {
   const deviceLower = device.toLowerCase()
   if (deviceLower.includes('mobile') || deviceLower.includes('phone')) {
-    return <Smartphone className="h-5 w-5" />
+    return <DeviceMobile className="h-5 w-5" />
   }
   if (deviceLower.includes('tablet') || deviceLower.includes('ipad')) {
-    return <Tablet className="h-5 w-5" />
+    return <DeviceTablet className="h-5 w-5" />
   }
   return <Monitor className="h-5 w-5" />
 }
@@ -168,7 +168,7 @@ export function SessionsSection() {
                   <Spinner size="md" />
                 ) : (
                   <>
-                    <LogOut className="h-4 w-4 mr-1" />
+                    <SignOut className="h-4 w-4 mr-1" />
                     Revoke
                   </>
                 )}
@@ -197,7 +197,7 @@ export function SessionsSection() {
               <AlertDialogTrigger
                 render={
                   <Button variant="destructive">
-                    <LogOut className="h-4 w-4 mr-2" />
+                    <SignOut className="h-4 w-4 mr-2" />
                     Log Out of All Other Sessions
                   </Button>
                 }

@@ -95,49 +95,7 @@ import {
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
-import {
-  AlertCircle,
-  CheckCircle2,
-  Info,
-  AlertTriangle,
-  Settings,
-  User,
-  LogOut,
-  Home,
-  Mail,
-  FileText,
-  Image,
-  Download,
-  Upload,
-  Search,
-  Star,
-  Heart,
-  Share2,
-  Trash,
-  Edit,
-  Plus,
-  Minus,
-  X,
-  Check,
-  ChevronRight,
-  CalendarIcon,
-  Bold,
-  Italic,
-  Underline,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  ArrowRight,
-  Clock,
-  Phone,
-  Users,
-  Building2,
-  Target,
-  ListTodo,
-  Sun,
-  Moon,
-  Monitor,
-} from 'lucide-react'
+import { WarningCircle, CheckCircle, Info, Warning, GearSix, User, SignOut, House, EnvelopeSimple, FileText, Image, Download, Upload, MagnifyingGlass, Star, Heart, ShareNetwork, Trash, NotePencil, Plus, Minus, X, Check, CaretRight, CalendarIcon, TextB, TextItalic, TextUnderline, TextAlignLeft, TextAlignCenter, TextAlignRight, ArrowRight, Clock, Phone, Users, Buildings, Target, ListChecks, Sun, Moon, Monitor } from '@phosphor-icons/react'
 
 /**
  * Style Guide Page
@@ -415,7 +373,7 @@ export function StyleGuidePage() {
             <Button size="default">Default</Button>
             <Button size="lg">Large</Button>
             <Button size="icon">
-              <Settings className="h-4 w-4" />
+              <GearSix className="h-4 w-4" />
             </Button>
           </CardContent>
         </Card>
@@ -665,7 +623,7 @@ export function StyleGuidePage() {
                 {comboboxValue
                   ? ['active', 'pending', 'inactive'].find((status) => status === comboboxValue)
                   : 'Select status...'}
-                <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                <MagnifyingGlass className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </PopoverTrigger>
               <PopoverContent className="w-full max-w-md p-0">
                 <Command>
@@ -741,24 +699,24 @@ export function StyleGuidePage() {
                 pressed={togglePressed}
                 onPressedChange={setTogglePressed}
               >
-                <Italic className="h-4 w-4" />
+                <TextItalic className="h-4 w-4" />
               </Toggle>
               <Toggle aria-label="Toggle bold">
-                <Bold className="h-4 w-4" />
+                <TextB className="h-4 w-4" />
               </Toggle>
               <Toggle aria-label="Toggle underline">
-                <Underline className="h-4 w-4" />
+                <TextUnderline className="h-4 w-4" />
               </Toggle>
               <Toggle aria-label="Toggle disabled" disabled>
-                <Bold className="h-4 w-4" />
+                <TextB className="h-4 w-4" />
               </Toggle>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <Toggle variant="outline" aria-label="Toggle italic">
-                <Italic className="h-4 w-4" />
+                <TextItalic className="h-4 w-4" />
               </Toggle>
               <Toggle variant="outline" aria-label="Toggle bold">
-                <Bold className="h-4 w-4" />
+                <TextB className="h-4 w-4" />
               </Toggle>
             </div>
             <p className="text-xs text-muted-foreground">
@@ -781,13 +739,13 @@ export function StyleGuidePage() {
                 onValueChange={([value]) => value && setToggleGroupValue(value)}
               >
                 <ToggleGroupItem value="left" aria-label="Align left">
-                  <AlignLeft className="h-4 w-4" />
+                  <TextAlignLeft className="h-4 w-4" />
                 </ToggleGroupItem>
                 <ToggleGroupItem value="center" aria-label="Align center">
-                  <AlignCenter className="h-4 w-4" />
+                  <TextAlignCenter className="h-4 w-4" />
                 </ToggleGroupItem>
                 <ToggleGroupItem value="right" aria-label="Align right">
-                  <AlignRight className="h-4 w-4" />
+                  <TextAlignRight className="h-4 w-4" />
                 </ToggleGroupItem>
               </ToggleGroup>
             </div>
@@ -795,13 +753,13 @@ export function StyleGuidePage() {
               <Label>Text Formatting (Multiple Select)</Label>
               <ToggleGroup multiple>
                 <ToggleGroupItem value="bold" aria-label="Toggle bold">
-                  <Bold className="h-4 w-4" />
+                  <TextB className="h-4 w-4" />
                 </ToggleGroupItem>
                 <ToggleGroupItem value="italic" aria-label="Toggle italic">
-                  <Italic className="h-4 w-4" />
+                  <TextItalic className="h-4 w-4" />
                 </ToggleGroupItem>
                 <ToggleGroupItem value="underline" aria-label="Toggle underline">
-                  <Underline className="h-4 w-4" />
+                  <TextUnderline className="h-4 w-4" />
                 </ToggleGroupItem>
               </ToggleGroup>
             </div>
@@ -1013,21 +971,21 @@ export function StyleGuidePage() {
               </div>
             </Alert>
             <Alert>
-              <CheckCircle2 className="h-4 w-4" />
+              <CheckCircle className="h-4 w-4" />
               <div className="ml-2">
                 <h5 className="font-medium">Success Alert</h5>
                 <p className="text-sm">Your action was completed successfully.</p>
               </div>
             </Alert>
             <Alert>
-              <AlertTriangle className="h-4 w-4" />
+              <Warning className="h-4 w-4" />
               <div className="ml-2">
                 <h5 className="font-medium">Warning Alert</h5>
                 <p className="text-sm">Please review this warning message.</p>
               </div>
             </Alert>
             <Alert>
-              <AlertCircle className="h-4 w-4" />
+              <WarningCircle className="h-4 w-4" />
               <div className="ml-2">
                 <h5 className="font-medium">Error Alert</h5>
                 <p className="text-sm">An error occurred while processing your request.</p>
@@ -1170,12 +1128,12 @@ export function StyleGuidePage() {
                   <span>Profile</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
+                  <GearSix className="mr-2 h-4 w-4" />
                   <span>Settings</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
-                  <LogOut className="mr-2 h-4 w-4" />
+                  <SignOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -1271,7 +1229,7 @@ export function StyleGuidePage() {
             <Empty>
               <EmptyHeader>
                 <EmptyMedia variant="icon">
-                  <ListTodo className="h-8 w-8" />
+                  <ListChecks className="h-8 w-8" />
                 </EmptyMedia>
                 <EmptyTitle>No items found</EmptyTitle>
                 <EmptyDescription>Get started by creating your first item.</EmptyDescription>
@@ -1457,17 +1415,17 @@ export function StyleGuidePage() {
         <Card>
           <CardHeader>
             <CardTitle>Icons Library</CardTitle>
-            <CardDescription>Common Lucide icons used in this project</CardDescription>
+            <CardDescription>Common Phosphor icons used in this project</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-4 md:grid-cols-8 gap-4">
               <div className="flex flex-col items-center gap-2 p-2 rounded hover:bg-muted">
-                <Home className="h-6 w-6" />
-                <span className="text-xs">Home</span>
+                <House className="h-6 w-6" />
+                <span className="text-xs">House</span>
               </div>
               <div className="flex flex-col items-center gap-2 p-2 rounded hover:bg-muted">
-                <Settings className="h-6 w-6" />
-                <span className="text-xs">Settings</span>
+                <GearSix className="h-6 w-6" />
+                <span className="text-xs">GearSix</span>
               </div>
               <div className="flex flex-col items-center gap-2 p-2 rounded hover:bg-muted">
                 <User className="h-6 w-6" />
@@ -1478,8 +1436,8 @@ export function StyleGuidePage() {
                 <span className="text-xs">Users</span>
               </div>
               <div className="flex flex-col items-center gap-2 p-2 rounded hover:bg-muted">
-                <Mail className="h-6 w-6" />
-                <span className="text-xs">Mail</span>
+                <EnvelopeSimple className="h-6 w-6" />
+                <span className="text-xs">EnvelopeSimple</span>
               </div>
               <div className="flex flex-col items-center gap-2 p-2 rounded hover:bg-muted">
                 <Phone className="h-6 w-6" />
@@ -1487,19 +1445,19 @@ export function StyleGuidePage() {
               </div>
               <div className="flex flex-col items-center gap-2 p-2 rounded hover:bg-muted">
                 <CalendarIcon className="h-6 w-6" />
-                <span className="text-xs">Calendar</span>
+                <span className="text-xs">CalendarIcon</span>
               </div>
               <div className="flex flex-col items-center gap-2 p-2 rounded hover:bg-muted">
                 <Clock className="h-6 w-6" />
                 <span className="text-xs">Clock</span>
               </div>
               <div className="flex flex-col items-center gap-2 p-2 rounded hover:bg-muted">
-                <Search className="h-6 w-6" />
-                <span className="text-xs">Search</span>
+                <MagnifyingGlass className="h-6 w-6" />
+                <span className="text-xs">MagnifyingGlass</span>
               </div>
               <div className="flex flex-col items-center gap-2 p-2 rounded hover:bg-muted">
-                <Edit className="h-6 w-6" />
-                <span className="text-xs">Edit</span>
+                <NotePencil className="h-6 w-6" />
+                <span className="text-xs">NotePencil</span>
               </div>
               <div className="flex flex-col items-center gap-2 p-2 rounded hover:bg-muted">
                 <Trash className="h-6 w-6" />
@@ -1530,8 +1488,8 @@ export function StyleGuidePage() {
                 <span className="text-xs">Heart</span>
               </div>
               <div className="flex flex-col items-center gap-2 p-2 rounded hover:bg-muted">
-                <Share2 className="h-6 w-6" />
-                <span className="text-xs">Share2</span>
+                <ShareNetwork className="h-6 w-6" />
+                <span className="text-xs">ShareNetwork</span>
               </div>
               <div className="flex flex-col items-center gap-2 p-2 rounded hover:bg-muted">
                 <Download className="h-6 w-6" />
@@ -1550,32 +1508,32 @@ export function StyleGuidePage() {
                 <span className="text-xs">Image</span>
               </div>
               <div className="flex flex-col items-center gap-2 p-2 rounded hover:bg-muted">
-                <Building2 className="h-6 w-6" />
-                <span className="text-xs">Building2</span>
+                <Buildings className="h-6 w-6" />
+                <span className="text-xs">Buildings</span>
               </div>
               <div className="flex flex-col items-center gap-2 p-2 rounded hover:bg-muted">
                 <Target className="h-6 w-6" />
                 <span className="text-xs">Target</span>
               </div>
               <div className="flex flex-col items-center gap-2 p-2 rounded hover:bg-muted">
-                <ChevronRight className="h-6 w-6" />
-                <span className="text-xs">ChevronRight</span>
+                <CaretRight className="h-6 w-6" />
+                <span className="text-xs">CaretRight</span>
               </div>
               <div className="flex flex-col items-center gap-2 p-2 rounded hover:bg-muted">
                 <ArrowRight className="h-6 w-6" />
                 <span className="text-xs">ArrowRight</span>
               </div>
               <div className="flex flex-col items-center gap-2 p-2 rounded hover:bg-muted">
-                <AlertCircle className="h-6 w-6" />
-                <span className="text-xs">AlertCircle</span>
+                <WarningCircle className="h-6 w-6" />
+                <span className="text-xs">WarningCircle</span>
               </div>
               <div className="flex flex-col items-center gap-2 p-2 rounded hover:bg-muted">
-                <CheckCircle2 className="h-6 w-6" />
-                <span className="text-xs">CheckCircle2</span>
+                <CheckCircle className="h-6 w-6" />
+                <span className="text-xs">CheckCircle</span>
               </div>
             </div>
             <p className="text-xs text-muted-foreground mt-4">
-              AI Usage: Import from 'lucide-react'. Always provide className="h-4 w-4" (or h-5/h-6
+              AI Usage: Import from '@phosphor-icons/react'. Always provide className="h-4 w-4" (or h-5/h-6
               for larger)
             </p>
           </CardContent>

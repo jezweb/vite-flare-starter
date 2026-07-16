@@ -16,7 +16,7 @@
 import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
 import { and, desc, eq, like, or } from 'drizzle-orm'
-import { Database, FilePlus, FilePen, ListChecks, FileSearch } from 'lucide-react'
+import { Database, FilePlus, NotePencil, ListChecks, FileMagnifyingGlass } from '@phosphor-icons/react'
 import { entities } from '@/server/modules/entities/db/schema'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 
@@ -171,7 +171,7 @@ export const entityUpdateDefinition: ToolDefinition<
     if (!row) return { error: 'Update succeeded but row vanished' }
     return serialiseRow(row)
   },
-  render: { icon: FilePen, displayName: 'Update Entity' },
+  render: { icon: NotePencil, displayName: 'Update Entity' },
 }
 
 // ─── entity_get ──────────────────────────────────────────────────
@@ -278,7 +278,7 @@ export const entitySearchDefinition: ToolDefinition<
       entities: rows.map(serialiseRow),
     }
   },
-  render: { icon: FileSearch, displayName: 'Search Entities' },
+  render: { icon: FileMagnifyingGlass, displayName: 'Search Entities' },
 }
 
 export const entityDefinitions = [

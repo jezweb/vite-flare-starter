@@ -10,7 +10,7 @@
  */
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { ChevronDown } from 'lucide-react'
+import { CaretDown } from '@phosphor-icons/react'
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -148,7 +148,7 @@ function CollapsibleSection({
           }
         >
           <span>{label}</span>
-          <ChevronDown
+          <CaretDown
             className={`ml-auto size-3.5 transition-transform ${
               effectiveOpen ? 'rotate-0' : '-rotate-90'
             }`}

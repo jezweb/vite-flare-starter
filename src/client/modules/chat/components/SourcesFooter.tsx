@@ -13,7 +13,7 @@
  * every tool card.
  */
 import { memo, useMemo, useState } from 'react'
-import { Globe, Mail, FileText, MapPin, type LucideIcon } from 'lucide-react'
+import { Globe, EnvelopeSimple, FileText, MapPin, type Icon } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 
 interface Source {
@@ -30,9 +30,9 @@ interface SourcesFooterProps {
   parts: any[]
 }
 
-const KIND_ICON: Record<Source['kind'], LucideIcon> = {
+const KIND_ICON: Record<Source['kind'], Icon> = {
   web: Globe,
-  gmail: Mail,
+  gmail: EnvelopeSimple,
   drive: FileText,
   places: MapPin,
   document: FileText,

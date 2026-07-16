@@ -15,20 +15,11 @@
  */
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import {
-  Upload,
-  Code2 as GithubIcon,
-  RefreshCw,
-  MoreHorizontal,
-  LayoutGrid,
-  List as ListIcon,
-  Sparkles,
-  Search,
-} from 'lucide-react'
+import { Upload, CodeSimple as GithubIcon, ArrowsClockwise, DotsThree, SquaresFour, List as ListIcon, Sparkle, MagnifyingGlass } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/client/components/EmptyState'
 import { PageLoading } from '@/client/components/PageState'
-import { Zap } from 'lucide-react'
+import { Lightning } from '@phosphor-icons/react'
 import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
 import {
@@ -130,14 +121,14 @@ export function SkillsPage() {
               <DropdownMenuTrigger
                 render={<Button variant="outline" size="icon" aria-label="More skill actions" />}
               >
-                <MoreHorizontal className="size-4" />
+                <DotsThree className="size-4" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => setInstallOpen(true)}>
                   <GithubIcon className="mr-2 size-4" /> Install from GitHub
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => sync.mutate()} disabled={sync.isPending}>
-                  <RefreshCw className={`mr-2 size-4 ${sync.isPending ? 'animate-spin' : ''}`} />
+                  <ArrowsClockwise className={`mr-2 size-4 ${sync.isPending ? 'animate-spin' : ''}`} />
                   Refresh starter skills
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -150,7 +141,7 @@ export function SkillsPage() {
         <PageLoading variant="grid" count={6} />
       ) : skills.length === 0 ? (
         <EmptyState
-          icon={Zap}
+          icon={Lightning}
           title="No skills yet"
           description="Skills are reusable agent procedures the AI can invoke during chat."
           tips={[
@@ -168,7 +159,7 @@ export function SkillsPage() {
           {/* Toolbar — search + count + view toggle */}
           <div className="flex flex-wrap items-center gap-3" data-tour="skills-list">
             <div className="relative flex-1 min-w-[200px]">
-              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <MagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
@@ -189,7 +180,7 @@ export function SkillsPage() {
               aria-label="Layout view"
             >
               <ToggleGroupItem value="cards" aria-label="Card view">
-                <LayoutGrid className="size-4" />
+                <SquaresFour className="size-4" />
               </ToggleGroupItem>
               <ToggleGroupItem value="list" aria-label="List view">
                 <ListIcon className="size-4" />
@@ -378,7 +369,7 @@ function SkillCard({ skill: s, to, onToggle }: SkillRowProps) {
         className="flex min-w-0 flex-1 items-start gap-3 rounded-md text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
       >
         <ItemMedia variant="icon">
-          <Sparkles className="size-4" />
+          <Sparkle className="size-4" />
         </ItemMedia>
         <ItemContent>
           <ItemTitle className="flex-wrap">
@@ -423,7 +414,7 @@ function SkillListRow({ skill: s, to, onToggle }: SkillRowProps) {
         to={to}
         className="flex min-w-0 flex-1 items-start gap-3 rounded-md text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
       >
-        <Sparkles className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+        <Sparkle className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-1.5">
             <span className="truncate text-sm font-medium" title={formatSkillName(s.name)}>

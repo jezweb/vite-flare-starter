@@ -29,7 +29,7 @@ type Kind = StatusKind | 'neutral'
 interface StatusPillProps extends useRender.ComponentProps<'span'> {
   kind?: Kind
   label: React.ReactNode
-  /** Optional Lucide icon component or inline SVG. */
+  /** Optional Phosphor icon component or inline SVG. */
   icon?: React.ReactNode
   /** `default` — text-[10px], inline metadata. `lg` — text-xs, page-level chips. */
   size?: 'default' | 'lg'

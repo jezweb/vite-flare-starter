@@ -1,6 +1,6 @@
 import { useState, FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { Mail, ArrowLeft, CheckCircle } from 'lucide-react'
+import { EnvelopeSimple, ArrowLeft, CheckCircle } from '@phosphor-icons/react'
 import { authClient } from '@/client/lib/auth'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -71,7 +71,7 @@ export function ForgotPasswordPage() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <div className="flex items-center gap-2 mb-2">
-            <Mail className="h-5 w-5 text-primary" />
+            <EnvelopeSimple className="h-5 w-5 text-primary" />
             <CardTitle>Forgot password?</CardTitle>
           </div>
           <CardDescription>

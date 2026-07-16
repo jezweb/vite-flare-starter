@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
-import { Shield, AlertTriangle, ExternalLink } from 'lucide-react'
+import { Shield, Warning, ArrowSquareOut } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { useNavigate } from 'react-router-dom'
 import { useChangePassword, useDeleteAccount } from '../hooks/useSettings'
@@ -217,7 +217,7 @@ export function SecuritySection() {
                 }
               >
                 Open {OAUTH_PROVIDER_LABEL[primaryProvider] ?? primaryProvider} security
-                <ExternalLink className="ml-1 h-3.5 w-3.5" />
+                <ArrowSquareOut className="ml-1 h-3.5 w-3.5" />
               </Button>
             )}
           </CardContent>
@@ -228,7 +228,7 @@ export function SecuritySection() {
       <Card className="border-destructive">
         <CardHeader>
           <div className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-destructive" />
+            <Warning className="h-5 w-5 text-destructive" />
             <CardTitle className="text-destructive">Danger Zone</CardTitle>
           </div>
           <CardDescription>Permanently delete your account and all associated data</CardDescription>

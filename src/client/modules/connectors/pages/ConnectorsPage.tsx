@@ -8,10 +8,23 @@
  */
 import { useState, useEffect, useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { Plug, Plus, Search, Trash2, ExternalLink, AlertCircle } from 'lucide-react'
+import {
+  Plug,
+  Plus,
+  MagnifyingGlass,
+  Trash,
+  ArrowSquareOut,
+  WarningCircle,
+  ChatCircle,
+  BookOpenText,
+  GithubLogo,
+  GitBranch,
+  CreditCard,
+  GridNine,
+  Buildings,
+} from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
-import * as LucideIcons from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import type { Icon } from '@phosphor-icons/react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -57,9 +70,25 @@ import { HelpDisclosure } from '@/components/ui/help-disclosure'
 import { StatusPill } from '@/components/ui/status-pill'
 import { features } from '@/shared/config/features'
 
-function resolveIcon(name: string): LucideIcon {
-  const icons = LucideIcons as unknown as Record<string, LucideIcon>
-  return icons[name] ?? Plug
+/**
+ * Explicit icon map for connector-catalog entries — a dynamic lookup over
+ * `import * as PhosphorIcons` defeats tree-shaking and pulls the whole icon
+ * library into the bundle. Add entries here when adding catalog connectors
+ * (see `shared/config/connector-catalog.ts` icon fields).
+ */
+const CATALOG_ICONS: Record<string, Icon> = {
+  Plug,
+  ChatCircle,
+  BookOpenText,
+  GithubLogo,
+  GitBranch,
+  CreditCard,
+  GridNine,
+  Buildings,
+}
+
+function resolveIcon(name: string): Icon {
+  return CATALOG_ICONS[name] ?? Plug
 }
 
 export function ConnectorsPage() {
@@ -143,7 +172,7 @@ export function ConnectorsPage() {
           trailing={
             <>
               <Button onClick={() => setBrowseOpen(true)}>
-                <Search className="mr-2 h-4 w-4" />
+                <MagnifyingGlass className="mr-2 h-4 w-4" />
                 Add an integration
               </Button>
               <Button variant="outline" onClick={() => setCustomOpen(true)}>
@@ -321,7 +350,7 @@ function ConnectionCard({
             disabled={disconnect.isPending}
             aria-label={`Disconnect ${connection.displayName}`}
           >
-            <Trash2 className="h-3.5 w-3.5" />
+            <Trash className="h-3.5 w-3.5" />
           </Button>
         </div>
       </CardContent>
@@ -637,7 +666,7 @@ function CustomConnectorDialog({
               )}
               {probe.data.error && (
                 <p className="text-destructive flex items-start gap-1">
-                  <AlertCircle className="h-3 w-3 mt-0.5" />
+                  <WarningCircle className="h-3 w-3 mt-0.5" />
                   {probe.data.error}
                 </p>
               )}
@@ -645,7 +674,7 @@ function CustomConnectorDialog({
           )}
 
           <p className="text-xs text-muted-foreground flex items-start gap-1">
-            <AlertCircle className="h-3 w-3 mt-0.5 shrink-0" />
+            <WarningCircle className="h-3 w-3 mt-0.5 shrink-0" />
             Only connect apps you trust — the AI may use any tool the app provides.
           </p>
         </div>
@@ -663,7 +692,7 @@ function CustomConnectorDialog({
               <Spinner size="md" />
             ) : (
               <>
-                <ExternalLink className="mr-2 h-4 w-4" />
+                <ArrowSquareOut className="mr-2 h-4 w-4" />
                 Connect
               </>
             )}

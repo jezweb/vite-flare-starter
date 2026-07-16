@@ -10,7 +10,7 @@ import { type ReactNode, useMemo } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { formatDistanceToNow } from 'date-fns'
 import { toast } from 'sonner'
-import { Clock, AlertTriangle } from 'lucide-react'
+import { Clock, Warning } from '@phosphor-icons/react'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -122,7 +122,7 @@ export function StandardMeta({
         <>
           <span>·</span>
           <span className="inline-flex items-center gap-1 shrink-0">
-            {row.dueAt * 1000 < Date.now() && <AlertTriangle className="size-3 text-amber-500" />}
+            {row.dueAt * 1000 < Date.now() && <Warning className="size-3 text-amber-500" />}
             <Clock className="size-3" />
             due {formatDistanceToNow(new Date(row.dueAt * 1000), { addSuffix: true })}
           </span>

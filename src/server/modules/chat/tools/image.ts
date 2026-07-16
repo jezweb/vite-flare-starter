@@ -22,7 +22,7 @@
 import { generateImage, type ImageModel } from 'ai'
 import { z } from 'zod'
 import { createWorkersAI } from 'workers-ai-provider'
-import { ImageIcon } from 'lucide-react'
+import { ImageIcon } from '@phosphor-icons/react'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 import { callGeminiImage, NANO_BANANA_2_DIRECT_LABEL } from '@/server/lib/gemini-image'
 

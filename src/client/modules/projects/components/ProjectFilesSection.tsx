@@ -8,7 +8,7 @@
  */
 import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Trash2, FileText, FileImage, File as FileIcon } from 'lucide-react'
+import { Plus, Trash, FileText, FileImage, File as FileIcon } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { apiClient } from '@/client/lib/api-client'
@@ -188,7 +188,7 @@ export function ProjectFilesSection({ projectId }: { projectId: string }) {
                   aria-label={`Delete ${f.name}`}
                   title="Delete"
                 >
-                  <Trash2 className="size-3" />
+                  <Trash className="size-3" />
                 </button>
               </li>
             )

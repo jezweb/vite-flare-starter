@@ -17,16 +17,7 @@
  * cap instead of a flat refusal.
  */
 import { z } from 'zod'
-import {
-  CalendarPlus,
-  CalendarSearch,
-  CalendarClock,
-  Pencil,
-  Pause,
-  Play,
-  Trash2,
-  ListChecks,
-} from 'lucide-react'
+import { CalendarPlus, Calendar, CalendarDots, Pencil, Pause, Play, Trash, ListChecks } from '@phosphor-icons/react'
 import { drizzle } from 'drizzle-orm/d1'
 import { desc, eq } from 'drizzle-orm'
 
@@ -164,7 +155,7 @@ export function buildRoutineAdminTools(
           })),
         }
       },
-      render: { icon: CalendarSearch, displayName: 'List routines' },
+      render: { icon: Calendar, displayName: 'List routines' },
     } as ToolDefinition<unknown, unknown>,
 
     {
@@ -178,7 +169,7 @@ export function buildRoutineAdminTools(
         if (!r) return { ok: false as const, error: `Routine ${input.id} not found` }
         return { ok: true as const, routine: r }
       },
-      render: { icon: CalendarClock, displayName: 'Inspect routine' },
+      render: { icon: CalendarDots, displayName: 'Inspect routine' },
     } as ToolDefinition<unknown, unknown>,
 
     {
@@ -331,7 +322,7 @@ export function buildRoutineAdminTools(
           return { ok: false as const, error: err instanceof Error ? err.message : String(err) }
         }
       },
-      render: { icon: Trash2, displayName: 'Propose delete' },
+      render: { icon: Trash, displayName: 'Propose delete' },
     } as ToolDefinition<unknown, unknown>,
   ]
 

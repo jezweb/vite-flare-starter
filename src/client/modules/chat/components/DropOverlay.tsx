@@ -7,7 +7,7 @@
  * handler does the actual file capture, so this component is purely visual.
  */
 import { useEffect, useState } from 'react'
-import { Upload } from 'lucide-react'
+import { Upload } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 
 export function DropOverlay({ disabled = false }: { disabled?: boolean }) {

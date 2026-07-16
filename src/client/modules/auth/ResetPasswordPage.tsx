@@ -1,6 +1,6 @@
 import { useState, FormEvent, useEffect } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
-import { Lock, CheckCircle, XCircle } from 'lucide-react'
+import { Lock, CheckCircle, XCircle } from '@phosphor-icons/react'
 import { authClient } from '@/client/lib/auth'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'

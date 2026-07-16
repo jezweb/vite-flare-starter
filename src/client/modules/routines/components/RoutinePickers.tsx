@@ -6,7 +6,7 @@
  * type a class name / skill id / tool id from memory.
  */
 import { useMemo, useState } from 'react'
-import { Check, ChevronsUpDown, Search } from 'lucide-react'
+import { Check, CaretUpDown, MagnifyingGlass } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -63,7 +63,7 @@ export function AgentPicker({ value, onChange }: AgentPickerProps) {
         ) : (
           <span className="text-muted-foreground">Pick an agent…</span>
         )}
-        <ChevronsUpDown className="size-4 text-muted-foreground" />
+        <CaretUpDown className="size-4 text-muted-foreground" />
       </PopoverTrigger>
       <PopoverContent className="w-[var(--anchor-width)] p-0" align="start">
         <ul className="max-h-80 overflow-auto p-1">
@@ -168,12 +168,12 @@ export function SkillsPicker({ value, onChange, placeholder = 'Pick skills…' }
               {value.length} skill{value.length === 1 ? '' : 's'} selected
             </span>
           )}
-          <ChevronsUpDown className="size-4 text-muted-foreground" />
+          <CaretUpDown className="size-4 text-muted-foreground" />
         </PopoverTrigger>
         <PopoverContent className="w-[var(--anchor-width)] p-0" align="start">
           <div className="border-b p-2">
             <div className="relative">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+              <MagnifyingGlass className="absolute left-2 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
               <Input
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
@@ -277,7 +277,7 @@ export function SingleSkillPicker({ value, onChange }: SingleSkillPickerProps) {
         ) : (
           <span className="text-muted-foreground">None — skip this hook</span>
         )}
-        <ChevronsUpDown className="size-4 text-muted-foreground" />
+        <CaretUpDown className="size-4 text-muted-foreground" />
       </PopoverTrigger>
       <PopoverContent className="w-[var(--anchor-width)] p-0" align="start">
         <ul className="max-h-80 overflow-auto p-1">
@@ -391,12 +391,12 @@ export function ToolsPicker({ value, onChange }: ToolsPickerProps) {
               {value.length} tool{value.length === 1 ? '' : 's'} allowed
             </span>
           )}
-          <ChevronsUpDown className="size-4 text-muted-foreground" />
+          <CaretUpDown className="size-4 text-muted-foreground" />
         </PopoverTrigger>
         <PopoverContent className="w-[var(--anchor-width)] max-w-2xl p-0" align="start">
           <div className="border-b p-2">
             <div className="relative">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+              <MagnifyingGlass className="absolute left-2 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
               <Input
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}

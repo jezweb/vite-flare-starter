@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { ChevronDownIcon } from 'lucide-react'
+import { CaretDownIcon } from '@phosphor-icons/react'
 
 import { cn } from '@/lib/utils'
 
@@ -24,7 +24,7 @@ function NativeSelect({
         )}
         {...props}
       />
-      <ChevronDownIcon
+      <CaretDownIcon
         className="pointer-events-none absolute top-1/2 right-3.5 size-4 -translate-y-1/2 text-muted-foreground opacity-50 select-none"
         aria-hidden="true"
         data-slot="native-select-icon"

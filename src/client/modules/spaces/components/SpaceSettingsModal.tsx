@@ -7,7 +7,7 @@
  */
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { UserPlus, Bot, Trash2, LogOut, Ban } from 'lucide-react'
+import { UserPlus, Robot, Trash, SignOut, Prohibit } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import {
   Sheet,
@@ -196,7 +196,7 @@ export function SpaceSettingsModal({ spaceId, open, initialTab, onClose }: Props
                               title={isBlocked ? 'Unblock member' : 'Block member'}
                               aria-label={isBlocked ? 'Unblock member' : 'Block member'}
                             >
-                              <Ban className="size-3.5" />
+                              <Prohibit className="size-3.5" />
                             </button>
                           )}
                         </li>
@@ -214,7 +214,7 @@ export function SpaceSettingsModal({ spaceId, open, initialTab, onClose }: Props
                         key={m.id}
                         className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-accent"
                       >
-                        <Bot className="size-3.5 text-emerald-600" />
+                        <Robot className="size-3.5 text-emerald-600" />
                         <span className="font-medium">@{m.agentName}</span>
                         <span className="ml-auto text-xs text-muted-foreground">
                           {m.replyMode ?? 'mention'}
@@ -311,7 +311,7 @@ export function SpaceSettingsModal({ spaceId, open, initialTab, onClose }: Props
                   navigate('/dashboard/spaces')
                 }}
               >
-                <LogOut className="size-4 mr-2" />
+                <SignOut className="size-4 mr-2" />
                 Leave space
               </Button>
               {isOwner && (
@@ -328,7 +328,7 @@ export function SpaceSettingsModal({ spaceId, open, initialTab, onClose }: Props
                     navigate('/dashboard/spaces')
                   }}
                 >
-                  <Trash2 className="size-4 mr-2" />
+                  <Trash className="size-4 mr-2" />
                   Delete space
                 </Button>
               )}

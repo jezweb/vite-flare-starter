@@ -8,7 +8,7 @@ import { useSession } from '@/client/lib/auth'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { MemorySection as ProjectMemorySection } from '@/client/modules/projects/components/MemorySection'
 import { apiClient } from '@/client/lib/api-client'
-import { Brain } from 'lucide-react'
+import { Brain } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { toast } from 'sonner'
 

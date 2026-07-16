@@ -53,7 +53,7 @@ export interface CatalogEntry {
   name: string
   description: string
   category: ConnectorCategory
-  /** Lucide icon name (rendered via ICON_MAP on the client) */
+  /** Phosphor icon name (resolved dynamically on the client) */
   icon: string
   url: string
   transport: 'http' | 'sse'
@@ -83,7 +83,7 @@ export const MCP_CATALOG: CatalogEntry[] = [
     name: 'Slack',
     description: 'Read channels, post messages, search history, manage files.',
     category: 'communication',
-    icon: 'MessageCircle',
+    icon: 'ChatCircle',
     url: 'https://server.smithery.ai/@modelcontextprotocol/slack/mcp',
     transport: 'http',
     prefersOAuth: true,
@@ -102,7 +102,7 @@ export const MCP_CATALOG: CatalogEntry[] = [
     name: 'Notion',
     description: 'Search pages and databases, create new pages, append content.',
     category: 'productivity',
-    icon: 'BookText',
+    icon: 'BookOpenText',
     url: 'https://server.smithery.ai/@makenotion/notion/mcp',
     transport: 'http',
     prefersOAuth: true,
@@ -123,7 +123,7 @@ export const MCP_CATALOG: CatalogEntry[] = [
     name: 'GitHub',
     description: 'Browse repositories, search code, manage issues and pull requests.',
     category: 'developer',
-    icon: 'Github',
+    icon: 'GithubLogo',
     url: 'https://server.smithery.ai/@modelcontextprotocol/github/mcp',
     transport: 'http',
     prefersOAuth: true,
@@ -184,7 +184,7 @@ export const MCP_CATALOG: CatalogEntry[] = [
     name: 'Airtable',
     description: 'Search bases and tables, read records, create + update rows.',
     category: 'productivity',
-    icon: 'Grid3x3',
+    icon: 'GridNine',
     url: 'https://server.smithery.ai/@airtable/airtable/mcp',
     transport: 'http',
     prefersOAuth: true,
@@ -205,7 +205,7 @@ export const MCP_CATALOG: CatalogEntry[] = [
     name: 'Australian Business Register',
     description: 'Lookup ABN, ACN, or business names from the public ABR.',
     category: 'example',
-    icon: 'Building2',
+    icon: 'Buildings',
     url: 'https://australian-business.mcpserver.au/mcp',
     transport: 'http',
     prefersOAuth: false,

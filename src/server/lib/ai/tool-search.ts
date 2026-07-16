@@ -26,7 +26,7 @@
  * where the savings are marginal.
  */
 import { z } from 'zod'
-import { Search } from 'lucide-react'
+import { MagnifyingGlass } from '@phosphor-icons/react'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 
 /**
@@ -158,7 +158,7 @@ export function buildFindToolsTool(
         truncated: scored.length > limit,
       }
     },
-    render: { icon: Search, displayName: 'Find Tools' },
+    render: { icon: MagnifyingGlass, displayName: 'Find Tools' },
   }
 }
 
@@ -221,7 +221,7 @@ export function buildListToolsTool(
         truncated: offset + slice.length < sorted.length,
       }
     },
-    render: { icon: Search, displayName: 'List Tools' },
+    render: { icon: MagnifyingGlass, displayName: 'List Tools' },
   }
 }
 

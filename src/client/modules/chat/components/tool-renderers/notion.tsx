@@ -2,7 +2,7 @@
  * Notion tool renderers — search, get_page, get_database, query_database,
  * create_page, append_blocks.
  */
-import { BookOpen, Database, FileText, Plus, Search, StickyNote } from 'lucide-react'
+import { BookOpen, Database, FileText, Plus, MagnifyingGlass, Note } from '@phosphor-icons/react'
 import type { ToolRenderer } from './_shared'
 import { truncate, formatToolDate } from './_shared'
 import type {
@@ -16,7 +16,7 @@ import type {
 
 export const notionSearchRenderer: ToolRenderer = {
   match: 'notion_search',
-  icon: Search,
+  icon: MagnifyingGlass,
   displayName: 'Notion Search',
   summary: (output) => {
     const o = output as NotionSearchOutput | undefined
@@ -270,7 +270,7 @@ export const notionCreatePageRenderer: ToolRenderer = {
 
 export const notionAppendBlocksRenderer: ToolRenderer = {
   match: 'notion_append_blocks',
-  icon: StickyNote,
+  icon: Note,
   displayName: 'Notion Append',
   summary: (output) => {
     const o = output as NotionAppendBlocksOutput | undefined

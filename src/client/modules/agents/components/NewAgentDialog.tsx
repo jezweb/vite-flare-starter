@@ -12,7 +12,7 @@
  * (e.g. `researcher-cf-workers` alongside the default `researcher`).
  */
 import { useEffect, useState } from 'react'
-import { AlertTriangle } from 'lucide-react'
+import { Warning } from '@phosphor-icons/react'
 
 import {
   Dialog,
@@ -135,7 +135,7 @@ export function NewAgentDialog({ open, onOpenChange, onCreate }: Props) {
                 the Durable Object id. Promote that warning out of the
                 paragraph above so it can't be skimmed past. */}
             <p className="mt-1 inline-flex items-start gap-1.5 text-xs text-amber-700 dark:text-amber-400">
-              <AlertTriangle className="size-3.5 shrink-0 mt-px" />
+              <Warning className="size-3.5 shrink-0 mt-px" />
               <span>
                 <strong>Pick carefully — this name is permanent.</strong> It identifies your agent
                 across sessions and can't be changed later.

@@ -10,17 +10,7 @@
  *   - Delete (author only)
  */
 import { useState } from 'react'
-import {
-  MoreHorizontal,
-  Star,
-  StarOff,
-  Pin,
-  PinOff,
-  Quote,
-  Forward,
-  Link as LinkIcon,
-  Trash2,
-} from 'lucide-react'
+import { DotsThree, Star, PushPin, PushPinSlash, Quotes, ArrowBendUpRight, Link as LinkIcon, Trash } from '@phosphor-icons/react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -91,30 +81,30 @@ export function MessageMoreMenu({ message, onQuote, canPin }: Props) {
             />
           }
         >
-          <MoreHorizontal className="size-3.5" />
+          <DotsThree className="size-3.5" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
           <DropdownMenuItem
             onClick={() => star.mutate({ messageId: message.id, starred: !isStarred })}
           >
-            {isStarred ? <StarOff className="size-4" /> : <Star className="size-4" />}
+            {isStarred ? <Star className="size-4" /> : <Star className="size-4" />}
             {isStarred ? 'Unstar' : 'Star'}
           </DropdownMenuItem>
           <DropdownMenuItem
             disabled={!canPin}
             onClick={() => pin.mutate({ messageId: message.id, pinned: !isPinned })}
           >
-            {isPinned ? <PinOff className="size-4" /> : <Pin className="size-4" />}
+            {isPinned ? <PushPinSlash className="size-4" /> : <PushPin className="size-4" />}
             {isPinned ? 'Unpin from space' : 'Pin to space'}
           </DropdownMenuItem>
           {onQuote && (
             <DropdownMenuItem onClick={() => onQuote(message)}>
-              <Quote className="size-4" />
+              <Quotes className="size-4" />
               Quote in reply
             </DropdownMenuItem>
           )}
           <DropdownMenuItem onClick={() => setForwardOpen(true)}>
-            <Forward className="size-4" />
+            <ArrowBendUpRight className="size-4" />
             Forward to space
           </DropdownMenuItem>
           <DropdownMenuItem onClick={copyLink}>
@@ -128,7 +118,7 @@ export function MessageMoreMenu({ message, onQuote, canPin }: Props) {
                 onClick={onDelete}
                 className="text-destructive focus:text-destructive"
               >
-                <Trash2 className="size-4" />
+                <Trash className="size-4" />
                 Delete
               </DropdownMenuItem>
             </>

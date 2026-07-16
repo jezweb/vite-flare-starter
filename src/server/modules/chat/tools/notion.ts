@@ -18,7 +18,7 @@
 import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq } from 'drizzle-orm'
-import { Database, FileText, Plus, Search, StickyNote } from 'lucide-react'
+import { Database, FileText, Plus, MagnifyingGlass, Note } from '@phosphor-icons/react'
 import { notionTokens } from '@/server/modules/notion/db/schema'
 import { decrypt } from '@/server/lib/crypto'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
@@ -286,7 +286,7 @@ export const notionSearchDefinition: ToolDefinition<
       nextCursor: res.data.next_cursor,
     }
   },
-  render: { icon: Search, displayName: 'Notion — Search' },
+  render: { icon: MagnifyingGlass, displayName: 'Notion — Search' },
 }
 
 // ─── GET PAGE ──────────────────────────────────────────────────────────
@@ -635,7 +635,7 @@ export const notionAppendBlocksDefinition: ToolDefinition<
     if (!res.ok) return { error: res.error }
     return { appended: true as const, count: children.length }
   },
-  render: { icon: StickyNote, displayName: 'Notion — Append' },
+  render: { icon: Note, displayName: 'Notion — Append' },
 }
 
 /**

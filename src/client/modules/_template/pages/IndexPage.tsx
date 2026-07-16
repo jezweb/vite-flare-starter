@@ -13,7 +13,7 @@
  * with a Card grid.
  */
 import { Link } from 'react-router-dom'
-import { Plus, ChevronRight, FileText } from 'lucide-react'
+import { Plus, CaretRight, FileText } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
@@ -82,7 +82,7 @@ export function TemplateIndexPage() {
                   </ListRowMeta>
                 </ListRowBody>
                 <ListRowTrailing>
-                  <ChevronRight className="size-3.5 text-muted-foreground/50 group-hover/list-row:text-foreground transition-colors" />
+                  <CaretRight className="size-3.5 text-muted-foreground/50 group-hover/list-row:text-foreground transition-colors" />
                 </ListRowTrailing>
               </ListRow>
             </li>

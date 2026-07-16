@@ -1,6 +1,6 @@
 'use client'
 
-import { GripVerticalIcon } from 'lucide-react'
+import { DotsSixVerticalIcon } from '@phosphor-icons/react'
 import * as ResizablePrimitive from 'react-resizable-panels'
 
 import { cn } from '@/lib/utils'
@@ -37,7 +37,7 @@ function ResizableHandle({
     >
       {withHandle && (
         <div className="z-10 flex h-4 w-3 items-center justify-center rounded-xs border bg-border">
-          <GripVerticalIcon className="size-2.5" />
+          <DotsSixVerticalIcon className="size-2.5" />
         </div>
       )}
     </ResizablePrimitive.Separator>

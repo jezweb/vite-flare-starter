@@ -10,7 +10,7 @@
  * self via the kebab menu.
  */
 import { useState } from 'react'
-import { MoreVertical, Trash2, UserCog } from 'lucide-react'
+import { DotsThreeVertical, Trash, UserGear } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -127,7 +127,7 @@ export function MembersList({ organizationId, myRole }: Props) {
                       />
                     }
                   >
-                    <MoreVertical className="size-3.5" />
+                    <DotsThreeVertical className="size-3.5" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     {canChangeRole && (
@@ -141,7 +141,7 @@ export function MembersList({ organizationId, myRole }: Props) {
                             onClick={() => handleRoleChange(m, role)}
                             disabled={m.role === role}
                           >
-                            <UserCog className="size-3.5" />
+                            <UserGear className="size-3.5" />
                             {role === m.role ? `${formatRole(role)} (current)` : formatRole(role)}
                           </DropdownMenuItem>
                         ))}
@@ -153,7 +153,7 @@ export function MembersList({ organizationId, myRole }: Props) {
                         onClick={() => setConfirmRemove(m)}
                         className="text-destructive focus:bg-destructive/10 focus:text-destructive"
                       >
-                        <Trash2 className="size-3.5" />
+                        <Trash className="size-3.5" />
                         Remove from org
                       </DropdownMenuItem>
                     )}

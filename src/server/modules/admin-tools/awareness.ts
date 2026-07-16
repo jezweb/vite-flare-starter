@@ -18,7 +18,7 @@
  * already covers it.
  */
 import { z } from 'zod'
-import { Bot, Plug, Users } from 'lucide-react'
+import { Robot, Plug, Users } from '@phosphor-icons/react'
 import { drizzle } from 'drizzle-orm/d1'
 import { and, desc, eq } from 'drizzle-orm'
 
@@ -84,7 +84,7 @@ export function buildAwarenessTools(
         }))
         return { agents }
       },
-      render: { icon: Bot, displayName: 'List agent classes' },
+      render: { icon: Robot, displayName: 'List agent classes' },
     } as ToolDefinition<unknown, unknown>,
 
     {

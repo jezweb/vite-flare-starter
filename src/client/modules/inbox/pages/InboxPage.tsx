@@ -31,7 +31,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Inbox, X, Check, XCircle, Eye } from 'lucide-react'
+import { Tray, X, Check, XCircle, Eye } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ListRowGroup } from '@/components/ui/list-row'
@@ -309,7 +309,7 @@ export function InboxPage() {
 
       {!isLoading && data && data.total === 0 && (
         <EmptyState
-          icon={Inbox}
+          icon={Tray}
           title={status === 'unread' ? 'All caught up' : 'Nothing to review'}
           description={
             status === 'all'

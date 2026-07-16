@@ -32,7 +32,7 @@
 import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
 import { and, desc, eq, sql } from 'drizzle-orm'
-import { Lightbulb, BookOpen, Trash2 } from 'lucide-react'
+import { Lightbulb, BookOpen, Trash } from '@phosphor-icons/react'
 import { entities } from '@/server/modules/entities/db/schema'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 
@@ -304,7 +304,7 @@ export const dismissFindingDefinition: ToolDefinition<
       .where(eq(entities.id, findingId))
     return { findingId, status: 'dismissed' as const }
   },
-  render: { icon: Trash2, displayName: 'Dismiss finding' },
+  render: { icon: Trash, displayName: 'Dismiss finding' },
 }
 
 // ─── recurrence helper (server-only, not a tool) ─────────────────
