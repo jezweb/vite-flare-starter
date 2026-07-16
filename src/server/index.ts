@@ -64,6 +64,7 @@ import agentInstancesRoutes from './modules/agent-instances/routes'
 import messagesRoutes from './modules/spaces/messages-routes'
 import globalSearchRoutes from './modules/spaces/global-search'
 import batchJobsRoutes from './modules/batch-tasks/routes'
+import mirrorRoutes from './modules/mirror/routes'
 import { routeAgentRequest } from 'agents'
 import { ScratchpadMcpAgent } from './modules/mcp-agents/scratchpad-mcp-agent'
 // Re-export DO class(es) so wrangler migrations can locate them. Every DO
@@ -87,6 +88,9 @@ export { ChatAgent } from './modules/chat/chat-agent'
 // Cloudflare Workflow class for the batch-tasks module. Bound at
 // `BATCH_WORKFLOW` (see wrangler.jsonc → workflows[]).
 export { ProcessBatchWorkflow } from './modules/batch-tasks/workflows/process-batch'
+// Cloudflare Workflow for the D1 mirror pattern (issue #90). Bound at
+// `MIRROR_WORKFLOW` (see wrangler.jsonc → workflows[]).
+export { MirrorSyncWorkflow } from './modules/mirror/workflow'
 // Cloudflare Sandbox container DO — backs the run_python / run_shell /
 // run_js / generate_document chat tools. Bound at `SANDBOX` (see
 // wrangler.jsonc → containers + durable_objects). The class ships with
@@ -126,6 +130,11 @@ export interface Env {
   // See src/server/modules/batch-tasks/workflows/process-batch.ts.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   BATCH_WORKFLOW?: any
+
+  // Cloudflare Workflows — D1 mirror sync (issue #90 reference pattern).
+  // See src/server/modules/mirror/workflow.ts.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  MIRROR_WORKFLOW?: any
 
   // Environment variables
   BETTER_AUTH_SECRET: string
@@ -345,6 +354,7 @@ app.route('/api/admin-agent', adminAgentRoutes)
 app.route('/api/agent-instances', agentInstancesRoutes)
 app.route('/api/messages', messagesRoutes)
 app.route('/api/search', globalSearchRoutes)
+app.route('/api/mirror', mirrorRoutes)
 // Test-auth lives behind a TEST_AUTH_TOKEN env gate; if the secret
 // isn't set, every endpoint here returns 404. See module docstring.
 app.route('/api/test-auth', testAuthRoutes)
@@ -709,6 +719,30 @@ export default {
       if (removed > 0) logs['spacesHistorySwept'] = removed
     } catch (err) {
       logs['spacesHistoryError'] = err instanceof Error ? err.message : String(err)
+    }
+
+    // 7. D1 mirror refresh (issue #90) — opt-in via MIRROR_CRON='true'.
+    // The 15-min cron only kicks the Workflow when the mirrored data is
+    // older than MIRROR_MAX_AGE_HOURS (default 24), so the sync runs at
+    // most once per staleness window regardless of cron cadence.
+    try {
+      const mirrorEnv = env as unknown as {
+        MIRROR_CRON?: string
+        MIRROR_MAX_AGE_HOURS?: string
+        MIRROR_WORKFLOW?: { create(options?: { params?: unknown }): Promise<{ id: string }> }
+      }
+      if (mirrorEnv.MIRROR_CRON === 'true' && mirrorEnv.MIRROR_WORKFLOW) {
+        const { mirrorFreshness } = await import('./modules/mirror/workflow')
+        const { lastSyncedAt } = await mirrorFreshness(env.DB)
+        const maxAgeSeconds = (Number(mirrorEnv.MIRROR_MAX_AGE_HOURS) || 24) * 3600
+        const stale = !lastSyncedAt || Date.now() / 1000 - lastSyncedAt > maxAgeSeconds
+        if (stale) {
+          const instance = await mirrorEnv.MIRROR_WORKFLOW.create({ params: { prune: true } })
+          logs['mirrorRefreshStarted'] = instance.id
+        }
+      }
+    } catch (err) {
+      logs['mirrorError'] = err instanceof Error ? err.message : String(err)
     }
 
     if (Object.keys(logs).length > 1) {

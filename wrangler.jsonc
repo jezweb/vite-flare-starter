@@ -143,6 +143,14 @@
       "name": "vite-flare-starter-batch-workflow",
       "binding": "BATCH_WORKFLOW",
       "class_name": "ProcessBatchWorkflow"
+    },
+    // D1 mirror pattern (issue #90) — keeps an external reference dataset
+    // current in D1. Kick via POST /api/mirror/refresh (admin) or set
+    // MIRROR_CRON='true' for automatic staleness-based refresh.
+    {
+      "name": "vite-flare-starter-mirror-workflow",
+      "binding": "MIRROR_WORKFLOW",
+      "class_name": "MirrorSyncWorkflow"
     }
   ],
 
