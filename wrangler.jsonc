@@ -26,7 +26,9 @@
     //  - /api/*    — Hono REST routes
     //  - /agents/* — Durable Object agents SDK WebSocket routing (`routeAgentRequest`)
     //                Remove this entry if you're not using any DO agents.
-    "run_worker_first": ["/api/*", "/agents/*", "/mcp/*"]
+    //  - /llms.txt — generated agent-facing summary (llmstxt.org; Lighthouse
+    //                Agentic Browsing audit). See src/server/modules/llms-txt/.
+    "run_worker_first": ["/api/*", "/agents/*", "/mcp/*", "/llms.txt"]
   },
 
   // Cloudflare Bindings
@@ -143,6 +145,23 @@
       "name": "vite-flare-starter-batch-workflow",
       "binding": "BATCH_WORKFLOW",
       "class_name": "ProcessBatchWorkflow"
+    },
+    // D1 mirror pattern (issue #90) — keeps an external reference dataset
+    // current in D1. Kick via POST /api/mirror/refresh (admin) or set
+    // MIRROR_CRON='true' for automatic staleness-based refresh.
+    {
+      "name": "vite-flare-starter-mirror-workflow",
+      "binding": "MIRROR_WORKFLOW",
+      "class_name": "MirrorSyncWorkflow"
+    },
+    // Daily D1 → R2 backup beyond Time Travel's 30-day window. Needs
+    // D1_DATABASE_ID + CLOUDFLARE_ACCOUNT_ID vars and the
+    // D1_REST_API_TOKEN secret; enable the cron with BACKUP_CRON='true'.
+    // Full setup + restore runbook: docs/BACKUPS.md.
+    {
+      "name": "vite-flare-starter-backup-workflow",
+      "binding": "BACKUP_WORKFLOW",
+      "class_name": "D1BackupWorkflow"
     }
   ],
 

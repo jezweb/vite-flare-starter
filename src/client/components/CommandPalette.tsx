@@ -4,6 +4,16 @@
  * Global search and navigation. Reads nav items from the same config
  * as the sidebar, plus adds quick actions (theme toggle, sign out).
  *
+ * Search surfaces (grouped — grouping by type is what makes per-module
+ * FTS indexes composable; BM25 scores aren't comparable across separate
+ * indexes, so we never interleave-rank across groups):
+ *   Content (entities FTS) · Knowledge (knowledge FTS) · Projects ·
+ *   Conversations — plus an "Ask AI" escape hatch that hands the query
+ *   to the chat agent when search isn't the right tool.
+ *
+ * Empty state shows Recent destinations (localStorage, per-app-id) —
+ * recents do more for perceived speed than any spinner.
+ *
  * Keyboard: Cmd+K (Mac) or Ctrl+K (Windows/Linux)
  */
 import { useState, useEffect, useCallback, useDeferredValue } from 'react'
@@ -19,13 +29,50 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from '@/components/ui/command'
-import { Moon, Sun, SignOut, GearSix, Chats, Kanban, Plus, Chat, Repeat, Plug, CheckSquare, Tray, Hash, FileMagnifyingGlass } from '@phosphor-icons/react'
+import { Moon, Sun, SignOut, GearSix, Chats, Kanban, Plus, Chat, Repeat, Plug, CheckSquare, Tray, Hash, FileMagnifyingGlass, Brain, Sparkle, ClockCounterClockwise } from '@phosphor-icons/react'
 import { useTheme } from '@/client/components/theme-provider'
 import { authClient } from '@/client/lib/auth'
 import { apiClient } from '@/client/lib/api-client'
 import { NAV_SECTIONS } from '@/shared/config/nav'
 import { features } from '@/shared/config/features'
+import { appConfig } from '@/shared/config/app'
 import { announceGlobalModalOpen, subscribeGlobalModal } from '@/client/lib/global-modals'
+
+// ─── Recents (empty-state group) ──────────────────────────────────────
+// Last N destinations chosen from the palette. localStorage per app-id
+// (same scoping convention as useViewPreference). Deduped by `to`.
+
+interface RecentEntry {
+  to: string
+  label: string
+}
+
+const RECENTS_KEY = `${appConfig.id}-palette-recents`
+const RECENTS_MAX = 6
+
+function readRecents(): RecentEntry[] {
+  try {
+    const raw = window.localStorage.getItem(RECENTS_KEY)
+    if (!raw) return []
+    const parsed: unknown = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter(
+      (e): e is RecentEntry =>
+        typeof e === 'object' && e !== null && typeof (e as RecentEntry).to === 'string'
+    )
+  } catch {
+    return []
+  }
+}
+
+function pushRecent(entry: RecentEntry): void {
+  try {
+    const next = [entry, ...readRecents().filter((e) => e.to !== entry.to)].slice(0, RECENTS_MAX)
+    window.localStorage.setItem(RECENTS_KEY, JSON.stringify(next))
+  } catch {
+    // localStorage unavailable — recents just don't persist
+  }
+}
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false)
@@ -75,6 +122,25 @@ export function CommandPalette() {
   })
   const entityHits = entitiesData?.results ?? []
 
+  // Knowledge search — FTS5 across the user's accessible knowledge docs.
+  const { data: knowledgeData } = useQuery({
+    queryKey: ['cmd-palette', 'knowledge', deferredQuery],
+    queryFn: () =>
+      apiClient.get<{
+        hits: { id: string; title: string; summary?: string | null; snippet?: string | null }[]
+      }>(`/api/knowledge/search?q=${encodeURIComponent(deferredQuery)}&limit=5`),
+    enabled: open && deferredQuery.length >= 2 && features.knowledge,
+    staleTime: 5_000,
+    placeholderData: (prev) => prev,
+  })
+  const knowledgeHits = knowledgeData?.hits ?? []
+
+  // Recent destinations — loaded on open so external tabs' picks show too.
+  const [recents, setRecents] = useState<RecentEntry[]>([])
+  useEffect(() => {
+    if (open) setRecents(readRecents())
+  }, [open])
+
   // Where to send the user when they pick an entity hit. Findings +
   // learnings have a dedicated page; everything else falls back to
   // the inbox where the row will surface alongside other items.
@@ -123,6 +189,17 @@ export function CommandPalette() {
     command()
   }, [])
 
+  // Navigate + record in Recents. Use for destinations (nav, search hits);
+  // plain runCommand for verbs (theme toggle, sign out) that shouldn't
+  // clutter the recents list.
+  const go = useCallback(
+    (to: string, label: string) => {
+      pushRecent({ to, label })
+      runCommand(() => navigate(to))
+    },
+    [navigate, runCommand]
+  )
+
   // Filter nav items by feature flags (same logic as sidebar).
   // Drop /dashboard/inbox + /dashboard/approvals because they're already
   // surfaced verb-led in the Review group above — duplicating them in
@@ -145,6 +222,27 @@ export function CommandPalette() {
       />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
+
+        {/* Recents — empty-state only. The single highest-leverage row
+            group for perceived speed: the thing you want is usually the
+            thing you wanted five minutes ago. */}
+        {deferredQuery.length === 0 && recents.length > 0 && (
+          <>
+            <CommandGroup heading="Recent">
+              {recents.map((r) => (
+                <CommandItem
+                  key={`recent-${r.to}`}
+                  value={`recent ${r.label} ${r.to}`}
+                  onSelect={() => go(r.to, r.label)}
+                >
+                  <ClockCounterClockwise className="mr-2 h-4 w-4" />
+                  {r.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            <CommandSeparator />
+          </>
+        )}
 
         {/* Create / setup actions — surface high-value verbs above
             navigation so the palette behaves like an action layer, not
@@ -234,7 +332,7 @@ export function CommandPalette() {
                 <CommandItem
                   key={`entity-${hit.id}`}
                   value={`entity-${hit.id}-${hit.title}-${hit.snippet}`}
-                  onSelect={() => runCommand(() => navigate(entityHref(hit.type)))}
+                  onSelect={() => go(entityHref(hit.type), hit.title)}
                 >
                   <FileMagnifyingGlass className="mr-2 h-4 w-4" />
                   <div className="flex-1 min-w-0">
@@ -251,6 +349,32 @@ export function CommandPalette() {
           </>
         )}
 
+        {/* Knowledge hits — long-form reference docs (FTS5). */}
+        {deferredQuery.length >= 2 && knowledgeHits.length > 0 && (
+          <>
+            <CommandGroup heading="Knowledge">
+              {knowledgeHits.map((hit) => (
+                <CommandItem
+                  key={`knowledge-${hit.id}`}
+                  value={`knowledge-${hit.id}-${hit.title}`}
+                  onSelect={() => go(`/dashboard/knowledge/${hit.id}`, hit.title)}
+                >
+                  <Brain className="mr-2 h-4 w-4" />
+                  <div className="flex-1 min-w-0">
+                    <div className="truncate font-medium">{hit.title}</div>
+                    {(hit.snippet || hit.summary) && (
+                      <div className="truncate text-xs text-muted-foreground">
+                        {hit.snippet || hit.summary}
+                      </div>
+                    )}
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            <CommandSeparator />
+          </>
+        )}
+
         {/* Project hits (only when the user has typed a real query) */}
         {deferredQuery.length >= 2 && projectHits.length > 0 && (
           <>
@@ -259,7 +383,7 @@ export function CommandPalette() {
                 <CommandItem
                   key={`project-${p.id}`}
                   value={`project-${p.id}-${p.name}`}
-                  onSelect={() => runCommand(() => navigate(`/dashboard/projects/${p.id}`))}
+                  onSelect={() => go(`/dashboard/projects/${p.id}`, p.name)}
                 >
                   <Kanban className="mr-2 h-4 w-4" />
                   <div className="flex-1 min-w-0">
@@ -284,7 +408,7 @@ export function CommandPalette() {
                   key={`${hit.conversationId}-${hit.role}`}
                   value={`${hit.conversationId}-${hit.role}-${hit.snippet}`}
                   onSelect={() =>
-                    runCommand(() => navigate(`/dashboard/chat/${hit.conversationId}`))
+                    go(`/dashboard/chat/${hit.conversationId}`, hit.snippet.slice(0, 60))
                   }
                 >
                   <Chats className="mr-2 h-4 w-4" />
@@ -297,10 +421,33 @@ export function CommandPalette() {
           </>
         )}
 
+        {/* Ask AI — the escalation row when search isn't the right tool.
+            Lands mid-stream in a fresh chat (ChatPage auto-sends ?q=). */}
+        {deferredQuery.length >= 2 && features.chat && (
+          <>
+            <CommandGroup heading="Ask AI">
+              <CommandItem
+                value={`ask-ai ${deferredQuery}`}
+                onSelect={() =>
+                  runCommand(() =>
+                    navigate(`/dashboard/chat?new=1&q=${encodeURIComponent(query)}`)
+                  )
+                }
+              >
+                <Sparkle className="mr-2 h-4 w-4" />
+                <span className="truncate">
+                  Ask AI: <span className="text-muted-foreground">“{query}”</span>
+                </span>
+              </CommandItem>
+            </CommandGroup>
+            <CommandSeparator />
+          </>
+        )}
+
         {/* Navigation */}
         <CommandGroup heading="Navigation">
           {navItems.map((item) => (
-            <CommandItem key={item.to} onSelect={() => runCommand(() => navigate(item.to))}>
+            <CommandItem key={item.to} onSelect={() => go(item.to, item.label)}>
               {item.icon && <item.icon className="mr-2 h-4 w-4" />}
               {item.label}
             </CommandItem>

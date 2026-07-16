@@ -37,6 +37,8 @@ export interface UserResponse {
   sessionCount: number
   lastActiveAt: string | null
   isAdmin: boolean
+  /** better-auth admin plugin: banned users can't create sessions. */
+  banned: boolean
 }
 
 // User list response

@@ -20,6 +20,7 @@ import { SiteHeader } from '@/components/site-header'
 import { CommandPalette } from '@/client/components/CommandPalette'
 import { KeyboardShortcuts } from '@/client/components/KeyboardShortcuts'
 import { EmailVerificationBanner } from '@/client/components/EmailVerificationBanner'
+import { ImpersonationBanner } from '@/client/components/ImpersonationBanner'
 import { WalkaboutOverlay } from '@/client/modules/walkabout/components/WalkaboutOverlay'
 import { NAV_SECTIONS } from '@/shared/config/nav'
 import { appConfig } from '@/shared/config/app'
@@ -79,7 +80,12 @@ export function DashboardLayout() {
     <AppShell
       sidebar={<AppSidebar />}
       header={<SiteHeader />}
-      banner={<EmailVerificationBanner />}
+      banner={
+        <>
+          <ImpersonationBanner />
+          <EmailVerificationBanner />
+        </>
+      }
       overlays={
         <>
           <CommandPalette />

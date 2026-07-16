@@ -52,6 +52,12 @@ export const user = sqliteTable('user', {
    * even when production OAuth is broken.
    */
   lastLoginMethod: text('lastLoginMethod'),
+  // Admin plugin (ban/unban): a banned user can't create sessions; bans
+  // auto-lift when banExpires passes. Managed via better-auth's
+  // /admin/ban-user endpoints — role-gated to admins.
+  banned: integer('banned', { mode: 'boolean' }).default(false),
+  banReason: text('banReason'),
+  banExpires: isoTimestamp('banExpires'),
   createdAt: isoTimestamp('createdAt')
     .notNull()
     .$defaultFn(() => new Date()),
@@ -70,12 +76,32 @@ export const session = sqliteTable('session', {
   expiresAt: isoTimestamp('expiresAt').notNull(),
   ipAddress: text('ipAddress'),
   userAgent: text('userAgent'),
+  /** Admin plugin: set when this session is an admin impersonating the user (1h cap). */
+  impersonatedBy: text('impersonatedBy'),
   createdAt: isoTimestamp('createdAt')
     .notNull()
     .$defaultFn(() => new Date()),
   updatedAt: isoTimestamp('updatedAt')
     .notNull()
     .$defaultFn(() => new Date()),
+})
+
+// Passkeys (WebAuthn) — @better-auth/passkey plugin storage. One row per
+// registered credential; a user can hold several (phone, laptop, key).
+export const passkey = sqliteTable('passkey', {
+  id: text('id').primaryKey(),
+  name: text('name'),
+  publicKey: text('publicKey').notNull(),
+  userId: text('userId')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  credentialID: text('credentialID').notNull(),
+  counter: integer('counter').notNull(),
+  deviceType: text('deviceType').notNull(),
+  backedUp: integer('backedUp', { mode: 'boolean' }).notNull(),
+  transports: text('transports'),
+  aaguid: text('aaguid'),
+  createdAt: isoTimestamp('createdAt').$defaultFn(() => new Date()),
 })
 
 // Account table (for OAuth/social logins)
@@ -124,6 +150,23 @@ export const verification = sqliteTable('verification', {
   updatedAt: isoTimestamp('updatedAt')
     .notNull()
     .$defaultFn(() => new Date()),
+})
+
+/**
+ * Rate-limit counters (better-auth `rateLimit.storage: 'database'`).
+ *
+ * better-auth's DEFAULT rate-limit store is in-memory — on Workers that
+ * means per-isolate, so limits silently reset whenever a request lands
+ * on a different isolate and the protection is effectively off under
+ * load. Database storage makes the counter global. Column names are
+ * camelCase to match better-auth's expected field names.
+ */
+export const rateLimit = sqliteTable('rateLimit', {
+  id: text('id').primaryKey(),
+  key: text('key').notNull().unique(),
+  count: integer('count').notNull(),
+  /** Epoch ms of the window's last request (bigint-ish; fits SQLite INTEGER). */
+  lastRequest: integer('lastRequest').notNull(),
 })
 
 // Type exports for use in application code

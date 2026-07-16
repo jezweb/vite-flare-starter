@@ -61,6 +61,7 @@ VITE_FEATURE_ACTIVITY=false
 | **routine pickers** | AgentPicker / SkillsPicker / ToolsPicker / SingleSkillPicker — replace raw text inputs in NewRoutinePage with discoverable combobox + multi-select. Tools grouped by category (Gmail / Notion / Channels / Core / etc.). | `client/modules/routines/components/RoutinePickers.tsx` |
 | **email providers** | Six pluggable providers (`email-service` / `smtp2go` / `mailgun` / `resend` / `email-routing-send` / `console`), one file each, registry resolves a priority list. `EMAIL_FAILOVER='true'` cascades on error; `EMAIL_PROVIDER_ORDER` overrides priority. | `server/modules/email/providers/` |
 | **email delivery events** | Bounce/complaint feedback loop via Queues event subscriptions — opt-in consumer records `email_events` + maintains the `email_suppressions` list; `EMAIL_SUPPRESSION_ENFORCE='true'` makes `sendEmail()` skip suppressed recipients (typed `'suppressed'` result). email-service provider only. | `server/modules/email/delivery-events.ts`, `docs/ADDING_EMAIL_DELIVERY_EVENTS.md` |
+| **mirror** | **D1 mirror pattern** — keep an external reference dataset current in D1 (cron → Workflow → batched upserts + prune, per-row `syncedAt` freshness, admin `POST /api/mirror/refresh`). Swap `source.ts` for your API; demo mirrors restcountries.com. | `server/modules/mirror/`, `docs/ADDING_D1_MIRROR.md` |
 | **batch-tasks** | **Durable swarm fan-out** — Cloudflare Workflow processes N items in parallel windows of 8, retries per-item with exponential backoff. Used via the `start_batch_task` chat tool ("for each of these 50 PDFs, extract X"). Item content is loaded from R2 and converted via `env.AI.toMarkdown` for non-text docs. Approval-gated above 5 items. | `server/modules/batch-tasks/`, `server/modules/chat/tools/batch-task.ts`, `client/modules/jobs/pages/` |
 | **sandbox code-interpreter** | **`run_python` + `generate_document` chat tools on Cloudflare Sandbox containers** — conversation-scoped sandbox (`user-<id>-conv-<id>`, interpreter state persists while warm), input files staged from FILES R2 (`isOwnedR2Key`-guarded), output paths harvested back as `artifacts` + registered on the Files page. `generate_document` renders markdown → docx/xlsx/pptx via python-docx/openpyxl/python-pptx baked into the `Dockerfile` (base tag must match the `@cloudflare/sandbox` npm version). Output matches the terminal shape renderer — zero client code. Wiring: `containers` block + `SANDBOX` DO + migration v11 + `export { Sandbox }`; Docker must run locally at deploy; tools self-omit without the binding (`VITE_FEATURE_SANDBOX` opts out). | `server/modules/chat/tools/code.ts`, `Dockerfile`, `docs/AGENT_TOOLKIT.md` |
 | **with_review** | **Worker→Reviewer quality loop** (OpenSwarm pair-pipeline pattern). Cheap worker drafts → smarter reviewer scores via APPROVE/REVISE/REJECT verdicts → worker rewrites with notes → cap at max_iters with optional escalation. Reviewer criteria from a Skill (`review-output` ships bundled) or inline prompt. Use for high-quality outputs where iteration matters. | `server/modules/chat/tools/with-review.ts`, `skills/review-output/` |
@@ -129,7 +130,10 @@ reference lives in `docs/`, loaded only when you need it.
 | Add analytics / payments / email / real-time / background jobs | `docs/ADDING_*.md` |
 | Email inbound (Cloudflare Email Routing) | [`docs/ADDING_EMAIL_INBOUND.md`](./docs/ADDING_EMAIL_INBOUND.md) |
 | Email delivery events + bounce suppression | [`docs/ADDING_EMAIL_DELIVERY_EVENTS.md`](./docs/ADDING_EMAIL_DELIVERY_EVENTS.md) |
+| Mirror an external dataset into D1 (cron → Workflow → D1) | [`docs/ADDING_D1_MIRROR.md`](./docs/ADDING_D1_MIRROR.md) |
+| **Backups + restore** — Time Travel vs daily D1→R2 Workflow | [`docs/BACKUPS.md`](./docs/BACKUPS.md) |
 | Track fork divergence from upstream (forks only) | [`PATCHES.md`](./PATCHES.md) + [`docs/PATCHES-guide.md`](./docs/PATCHES-guide.md) |
+| Pull an upstream release into a fork (breaking-change notes + codemods) | [`UPGRADING.md`](./UPGRADING.md) |
 | Interop with [goanna](https://github.com/jezweb/goanna) — filesystem-markdown agent framework | [`docs/GOANNA_INTEROP.md`](./docs/GOANNA_INTEROP.md) |
 | Deploy checklist | [`docs/DEPLOYMENT_CHECKLIST.md`](./docs/DEPLOYMENT_CHECKLIST.md) |
 | MCP connectors setup | [`docs/mcp-connectors.md`](./docs/mcp-connectors.md) |
@@ -311,7 +315,7 @@ for each shape.
 | **List row** | find-and-act/edit, text-dominant queue | `ListRowGroup` (custom) | `_template/IndexPage.tsx` |
 | **Table** | structured uniform rows, sort/filter, 50+ items | shadcn `Data Table` | `_template/TablePage.tsx` |
 | **Split-pane** | sequential reading (Inbox, Approvals) | `Resizable` + `ListRow` | none yet — use Inbox as ref |
-| **Kanban** (v2) | workflow stages | not yet — extract when 1st use case lands | — |
+| **Kanban** | workflow stages, drag between columns | `KanbanBoard` (`components/ui/kanban.tsx`) — fractional-index ordering, keyboard DnD + announcements, `KanbanCardMenu` a11y fallback, agent-provenance convention | none yet — use `kanban-demo` module as ref (`VITE_FEATURE_KANBAN_DEMO=true`) |
 | **Calendar** (v2) | date-anchored entities | not yet — base on shadcn `Calendar` + custom event renderer | — |
 
 **View toggles** (cards ⇄ list on the same surface): use
@@ -633,6 +637,17 @@ fresh-fork auth issues are environmental, not code.
   HMAC-signed (`signValue`/`verifyValue`, `src/server/lib/crypto.ts`) and verified
   in the callback, so an attacker can't substitute a victim's id to hijack their
   token row. `mcp-connections` binds OAuth `state = signValue(connectionId)`.
+- **Passkeys + magic links** — opt-in passwordless: `ENABLE_PASSKEYS=true`
+  (WebAuthn; register in Settings → Security) and `ENABLE_MAGIC_LINK=true`
+  (sign-in links through the email provider registry; the allowlist gate
+  still applies). Sign-in page adapts via `/api/auth/config`.
+- **Admin plugin** — ban/unban (badge + confirm dialog in the Users table;
+  banned users' sessions are revoked and sign-in blocked until unbanned)
+  and **impersonation** (1h session stamped `impersonatedBy`, warning
+  banner with "Stop impersonating"). Uses the same `user.role === 'admin'`.
+- **Rate limiting** — better-auth's default in-memory store is per-isolate
+  on Workers (silently broken under load); the starter sets
+  `rateLimit.storage: 'database'` (table `rateLimit`).
 - **last-login-method** — better-auth plugin drops a
   `better-auth.last_used_login_method` cookie after each successful
   sign-in. The login page reads it client-side and surfaces a "Last

@@ -105,6 +105,13 @@ export const entityCreateDefinition: ToolDefinition<
   execute: async (input, ctx) => {
     const db = drizzle(getDb(ctx)!)
     const id = crypto.randomUUID()
+    // Provenance: agent-created entities self-identify so surfaces (e.g.
+    // the Kanban primitive's card badge) can distinguish agent-written
+    // rows from user-written ones. The stamp goes LAST so the agent (the
+    // untrusted caller here) can't override it via input.fields.createdBy
+    // — otherwise the provenance signal is spoofable by the party it's
+    // meant to identify.
+    const fields = { ...(input.fields ?? {}), createdBy: 'agent' }
     await db.insert(entities).values({
       id,
       userId: ctx.userId,
@@ -112,7 +119,7 @@ export const entityCreateDefinition: ToolDefinition<
       title: input.title,
       ...(input.status !== undefined && { status: input.status }),
       ...(input.externalId !== undefined && { externalId: input.externalId }),
-      ...(input.fields !== undefined && { fields: JSON.stringify(input.fields) }),
+      fields: JSON.stringify(fields),
     })
     const [row] = await db.select().from(entities).where(eq(entities.id, id)).limit(1)
     if (!row) return { error: 'Insert succeeded but row not found' }

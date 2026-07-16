@@ -1,6 +1,7 @@
 import { betterAuth } from 'better-auth'
 import { organization } from 'better-auth/plugins/organization'
-import { testUtils, lastLoginMethod } from 'better-auth/plugins'
+import { testUtils, lastLoginMethod, magicLink, admin } from 'better-auth/plugins'
+import { passkey } from '@better-auth/passkey'
 import type { D1Database } from '@cloudflare/workers-types'
 import { SESSION, TEST_EMAIL_PATTERN } from '@/shared/config/constants'
 import { logActivity } from '@/server/modules/activity/log'
@@ -133,6 +134,8 @@ export function createAuthFromEnv(d1: D1Database, env: Record<string, unknown>) 
     APP_URL: env['APP_URL'] as string | undefined,
     ENABLE_EMAIL_LOGIN: env['ENABLE_EMAIL_LOGIN'] as string | undefined,
     ENABLE_EMAIL_SIGNUP: env['ENABLE_EMAIL_SIGNUP'] as string | undefined,
+    ENABLE_MAGIC_LINK: env['ENABLE_MAGIC_LINK'] as string | undefined,
+    ENABLE_PASSKEYS: env['ENABLE_PASSKEYS'] as string | undefined,
     TRUSTED_ORIGINS: env['TRUSTED_ORIGINS'] as string | undefined,
     TEST_AUTH_TOKEN: env['TEST_AUTH_TOKEN'] as string | undefined,
     ALLOWED_AUTH_EMAILS: env['ALLOWED_AUTH_EMAILS'] as string | undefined,
@@ -162,6 +165,8 @@ export function createAuth(
     APP_URL?: string
     ENABLE_EMAIL_LOGIN?: string // Set to 'true' to enable email/password (default: disabled)
     ENABLE_EMAIL_SIGNUP?: string // Set to 'true' to allow signups (requires ENABLE_EMAIL_LOGIN)
+    ENABLE_MAGIC_LINK?: string // Set to 'true' for passwordless email links (needs a real email provider)
+    ENABLE_PASSKEYS?: string // Set to 'true' for WebAuthn passkeys
     TRUSTED_ORIGINS?: string
     /**
      * Signup allowlist (issue #88) — single-tenant / invite-only gate. Both
@@ -227,6 +232,17 @@ export function createAuth(
     // Don't use drizzleAdapter() — it creates an unnecessary Drizzle instance
     // and can cause JSON parse errors on deployed Workers.
     database: d1 as unknown as D1Database,
+
+    // Rate limiting MUST use database storage on Workers: the default
+    // in-memory store is per-isolate, so counters silently reset whenever
+    // a request lands on a fresh isolate — the protection is effectively
+    // off under exactly the load it exists for. Table: auth/db/schema.ts
+    // `rateLimit`. Enabled in production by default (better-auth), so no
+    // dev friction; window/max are the library defaults with the login
+    // endpoints already stricter out of the box.
+    rateLimit: {
+      storage: 'database',
+    },
 
     // Required on Cloudflare Workers — the OAuth state cookie doesn't reliably
     // survive cross-site redirects from Google. State is still validated via D1.
@@ -562,6 +578,41 @@ export function createAuth(
     plugins: [
       lastLoginMethod(),
       ...(env.TEST_AUTH_TOKEN ? [testUtils()] : []),
+      // Admin plugin — ban/unban + impersonation endpoints. Reads the
+      // same `user.role === 'admin'` our ADMIN_EMAILS gate promotes, so
+      // no second role system. Always on: the endpoints self-gate on
+      // role, and the schema columns (banned/banReason/banExpires +
+      // session.impersonatedBy) ship in the auth migration either way.
+      // Impersonation sessions last 1h and are stamped with the acting
+      // admin's id for the audit trail.
+      admin(),
+      // Magic links — passwordless email sign-in. Opt-in because it
+      // needs a real email provider (EMAIL_API_KEY etc.); the allowlist
+      // gate (isSignupAllowed) still applies via databaseHooks, so a
+      // magic link can never sidestep ALLOWED_AUTH_*.
+      ...(env.ENABLE_MAGIC_LINK === 'true'
+        ? [
+            magicLink({
+              sendMagicLink: async ({ email, url }) => {
+                await sendEmail(mailEnv, {
+                  to: email,
+                  subject: `Sign in to ${String(env.APP_NAME ?? 'your app')}`,
+                  html: `<p>Click to sign in:</p><p><a href="${url}">Sign in</a></p><p>This link expires in 5 minutes. If you didn't request it, ignore this email.</p>`,
+                  text: `Sign in: ${url}\n\nThis link expires in 5 minutes. If you didn't request it, ignore this email.`,
+                })
+              },
+            }),
+          ]
+        : []),
+      // Passkeys (WebAuthn) — opt-in via ENABLE_PASSKEYS='true'. rpID
+      // derives from BETTER_AUTH_URL's hostname; localhost works for dev.
+      ...(env.ENABLE_PASSKEYS === 'true'
+        ? [
+            passkey({
+              rpName: String(env.APP_NAME ?? 'Vite Flare Starter'),
+            }),
+          ]
+        : []),
       organization({
         // Default roles: owner, admin, member. Forks needing custom
         // roles configure `ac` here per the AC docs.

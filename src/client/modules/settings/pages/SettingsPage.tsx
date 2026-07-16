@@ -2,6 +2,7 @@ import { useSearchParams } from 'react-router-dom'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ProfileSection } from '../components/ProfileSection'
 import { SecuritySection } from '../components/SecuritySection'
+import { PasskeysSection } from '../components/PasskeysSection'
 import { SessionsSection } from '../components/SessionsSection'
 import { PreferencesSection } from '../components/PreferencesSection'
 import { ChatPreferencesSection } from '../components/ChatPreferencesSection'
@@ -89,8 +90,9 @@ export function SettingsPage() {
               <OrganizationSection />
             </TabsContent>
 
-            <TabsContent value="security" className="mt-0">
+            <TabsContent value="security" className="mt-0 space-y-6">
               <SecuritySection />
+              <PasskeysSection />
             </TabsContent>
 
             <TabsContent value="sessions" className="mt-0">

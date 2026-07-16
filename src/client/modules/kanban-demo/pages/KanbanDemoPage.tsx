@@ -1,22 +1,30 @@
 /**
  * KanbanDemoPage — exercises the <KanbanBoard> primitive against the
  * generic `entities` API. Uses entities of type `task`, mapping
- * `fields.column` → kanban column and `fields.order` → sort order.
+ * `fields.column` → kanban column and `fields.position` → fractional
+ * sort key.
  *
  * The page is feature-flagged off by default (set
  * VITE_FEATURE_KANBAN_DEMO=true to enable). It exists as a working
  * reference implementation — fork-users see the optimistic-update
- * pattern, the column-collapse wiring, and the slot-based card
- * rendering all in one place.
+ * pattern, keyboard DnD + the KanbanCardMenu a11y fallback, the
+ * agent-provenance badge, and slot-based card rendering in one place.
  */
 import * as React from 'react'
-import { Kanban as KanbanIcon } from '@phosphor-icons/react'
+import { Kanban as KanbanIcon, Robot } from '@phosphor-icons/react'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
 import { PageLoading } from '@/client/components/PageState'
 import { EmptyState } from '@/client/components/EmptyState'
-import { KanbanBoard, type KanbanColumn, type KanbanCardMove } from '@/components/ui/kanban'
+import {
+  KanbanBoard,
+  KanbanCardMenu,
+  positionBetween,
+  type KanbanColumn,
+  type KanbanCardMove,
+} from '@/components/ui/kanban'
 import {
   useTaskEntities,
   useMoveTask,
@@ -28,8 +36,9 @@ import {
 interface KanbanTask {
   id: string
   columnId: string
-  order: number
+  position: string | null
   title: string
+  isAgentCreated: boolean
   raw: TaskEntity
 }
 
@@ -48,23 +57,37 @@ function isTaskColumn(value: unknown): value is TaskColumn {
 function entityToCard(entity: TaskEntity): KanbanTask {
   const rawColumn = entity.fields.column
   const columnId = isTaskColumn(rawColumn) ? rawColumn : 'todo'
-  const order = typeof entity.fields.order === 'number' ? entity.fields.order : entity.createdAt
+  const position = typeof entity.fields.position === 'string' ? entity.fields.position : null
   return {
     id: entity.id,
     columnId,
-    order,
+    position,
     title: entity.title,
+    // Convention: entity chat tools stamp fields.createdBy = 'agent' so
+    // agent-written cards are visually distinct on boards.
+    isAgentCreated: entity.fields.createdBy === 'agent',
     raw: entity,
   }
 }
 
-const SEED_TASKS = [
-  { title: 'Draft kickoff brief', column: 'todo' as TaskColumn, order: 1 },
-  { title: 'Sketch component layouts', column: 'todo' as TaskColumn, order: 2 },
-  { title: 'Wire up dnd-kit sensors', column: 'doing' as TaskColumn, order: 1 },
-  { title: 'Hook up TanStack Query mutation', column: 'doing' as TaskColumn, order: 2 },
-  { title: 'Set up entities seed data', column: 'done' as TaskColumn, order: 1 },
-  { title: 'Pick the icon set', column: 'done' as TaskColumn, order: 2 },
+/** Seed keys via the same fractional generator the board uses. */
+function seedPositions(count: number): string[] {
+  const keys: string[] = []
+  let prev: string | null = null
+  for (let i = 0; i < count; i++) {
+    prev = positionBetween(prev, null)
+    keys.push(prev)
+  }
+  return keys
+}
+
+const SEED_DEFS = [
+  { title: 'Draft kickoff brief', column: 'todo' as TaskColumn },
+  { title: 'Sketch component layouts', column: 'todo' as TaskColumn },
+  { title: 'Wire up dnd-kit sensors', column: 'doing' as TaskColumn },
+  { title: 'Hook up TanStack Query mutation', column: 'doing' as TaskColumn },
+  { title: 'Set up entities seed data', column: 'done' as TaskColumn },
+  { title: 'Pick the icon set', column: 'done' as TaskColumn },
 ]
 
 export function KanbanDemoPage() {
@@ -92,7 +115,7 @@ export function KanbanDemoPage() {
     moveTask.mutate({
       id: move.cardId,
       column: move.toColumnId,
-      order: move.toOrder,
+      position: move.position,
     })
   }
 
@@ -106,14 +129,15 @@ export function KanbanDemoPage() {
   }
 
   const handleSeed = () => {
-    seedTasks.mutate(SEED_TASKS)
+    const keys = seedPositions(SEED_DEFS.length)
+    seedTasks.mutate(SEED_DEFS.map((t, i) => ({ ...t, position: keys[i] ?? 'a0' })))
   }
 
   return (
     <PageContainer type="detail" maxWidth="7xl">
       <PageHeader
         title="Kanban demo"
-        subtitle="Drag cards within a column to reorder, or across columns to move. Persisted to the entities API as type=task."
+        subtitle="Drag cards to reorder or move — or focus a card and use space + arrows, or the card menu. Persisted to the entities API as type=task."
         trailing={
           data && data.total > 0 ? (
             <span className="text-xs text-muted-foreground tabular-nums">
@@ -133,6 +157,7 @@ export function KanbanDemoPage() {
           tips={[
             'Each task is a generic `entity` of type `task` — same API any module can use.',
             'Drag cards across columns to reassign them; drag within a column to reorder.',
+            'Ask the AI chat to "create a task entity" — agent-created cards get a badge.',
           ]}
           action={{
             label: seedTasks.isPending ? 'Seeding…' : 'Seed 6 demo tasks',
@@ -150,10 +175,15 @@ export function KanbanDemoPage() {
             onColumnToggle={handleToggle}
             renderCard={(card) => (
               <div className="space-y-1">
-                <div className="text-sm font-medium leading-snug">{card.title}</div>
-                <div className="text-xs text-muted-foreground tabular-nums">
-                  order {Number(card.order).toFixed(2)}
+                <div className="flex items-start gap-2">
+                  <div className="flex-1 text-sm font-medium leading-snug">{card.title}</div>
+                  <KanbanCardMenu cardId={card.id} className="-mr-1.5 -mt-1" />
                 </div>
+                {card.isAgentCreated && (
+                  <Badge variant="outline" className="gap-1 text-[11px] text-muted-foreground">
+                    <Robot className="size-3" /> Agent
+                  </Badge>
+                )}
               </div>
             )}
           />

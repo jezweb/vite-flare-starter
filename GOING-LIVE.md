@@ -71,11 +71,31 @@ If either is wrong, sign-in bounces or fails with no useful error. Set `BETTER_A
 
 ## Step 5 — your own domain
 
+**Put the app on a subdomain (`app.yourdomain.com`), not the apex.** The
+origin you pick is close to permanent, and the apex will eventually want
+to be something else — a landing page, pricing, "start free". Moving an
+app origin later is genuinely painful:
+
+- **Installed PWAs are origin-bound** — an origin change kills the app on
+  every user's phone; everyone reinstalls.
+- Sessions invalidate (cookies are per-origin), OAuth redirect URIs
+  change, bookmarks and emailed deep links go stale.
+- A marketing site accumulates loose third-party scripts (analytics,
+  chat widgets); on its own subdomain none of that shares an origin with
+  the authenticated app — smaller XSS/CSRF blast radius.
+- Each hostname points anywhere independently: apex to a static
+  marketing Worker, `app.` here, later `portal.` / `docs.` / `status.`.
+
+The counterargument is four characters of typing, and a one-rule
+Cloudflare redirect (`yourdomain.com` → `app.yourdomain.com`) solves
+that anyway. Apex-as-app only makes sense when the domain will never be
+anything but the app.
+
 Same as any Worker, add routes to `wrangler.jsonc`:
 
 ```jsonc
 "routes": [
-  { "pattern": "yourdomain.com", "custom_domain": true }
+  { "pattern": "app.yourdomain.com", "custom_domain": true }
 ]
 ```
 

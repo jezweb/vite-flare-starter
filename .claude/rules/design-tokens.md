@@ -2,6 +2,9 @@
 
 The design language is Cloudflare-Kumo-derived (2026-07 reboot). `src/index.css` is the
 single source of truth; `src/lib/themes.ts` presets are deliberate inline overrides on top.
+The tool-agnostic description (Google Labs DESIGN.md format, readable by Cursor/Copilot/
+Stitch) lives at the repo root: [`DESIGN.md`](../../DESIGN.md) — update it in the same
+commit as any token change.
 
 ## The rules
 

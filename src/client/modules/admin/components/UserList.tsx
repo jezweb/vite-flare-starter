@@ -34,10 +34,23 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { useQueryClient } from '@tanstack/react-query'
 import { useDeleteUser, useRevokeUserSessions } from '../hooks/useAdmin'
 import { UserEditDialog } from './UserEditDialog'
+import { adminActions } from '@/client/lib/auth'
 import type { UserResponse } from '@/shared/schemas/admin.schema'
-import { DotsThree, Pencil, Key, Trash, Shield, UserGear, User, Copy } from '@phosphor-icons/react'
+import {
+  DotsThree,
+  Pencil,
+  Key,
+  Trash,
+  Shield,
+  UserGear,
+  User,
+  Copy,
+  Prohibit,
+  UserSwitch,
+} from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { formatDistanceToNow } from 'date-fns'
 
@@ -55,10 +68,39 @@ export function UserList({ users }: UserListProps) {
   const [editUser, setEditUser] = useState<UserResponse | null>(null)
   const [deleteUser, setDeleteUser] = useState<UserResponse | null>(null)
   const [revokeUser, setRevokeUser] = useState<UserResponse | null>(null)
+  const [banUser, setBanUser] = useState<UserResponse | null>(null)
 
   const deleteUserMutation = useDeleteUser()
   const revokeSessionsMutation = useRevokeUserSessions()
   const { copy } = useCopy()
+  const queryClient = useQueryClient()
+
+  const handleBanToggle = async () => {
+    if (!banUser) return
+    try {
+      if (banUser.banned) {
+        await adminActions.unbanUser(banUser.id)
+        toast.success(`"${banUser.name}" has been unbanned`)
+      } else {
+        await adminActions.banUser(banUser.id)
+        toast.success(`"${banUser.name}" has been banned — their sessions are revoked`)
+      }
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
+      setBanUser(null)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to update ban status')
+    }
+  }
+
+  const handleImpersonate = async (target: UserResponse) => {
+    try {
+      await adminActions.impersonateUser(target.id)
+      // Full reload: the session cookie now belongs to the target user.
+      window.location.href = '/dashboard'
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to impersonate user')
+    }
+  }
 
   const handleDelete = async () => {
     if (!deleteUser) return
@@ -128,10 +170,18 @@ export function UserList({ users }: UserListProps) {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={roleInfo.variant} className="gap-1">
-                      <RoleIcon className="h-3 w-3" />
-                      {roleInfo.label}
-                    </Badge>
+                    <div className="flex items-center gap-1.5">
+                      <Badge variant={roleInfo.variant} className="gap-1">
+                        <RoleIcon className="h-3 w-3" />
+                        {roleInfo.label}
+                      </Badge>
+                      {user.banned && (
+                        <Badge variant="destructive" className="gap-1">
+                          <Prohibit className="h-3 w-3" />
+                          Banned
+                        </Badge>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
                     <span className="text-sm text-muted-foreground">
@@ -169,7 +219,24 @@ export function UserList({ users }: UserListProps) {
                           <Key className="mr-2 h-4 w-4" />
                           Revoke Sessions
                         </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => void handleImpersonate(user)}
+                          disabled={user.isAdmin || user.banned}
+                        >
+                          <UserSwitch className="mr-2 h-4 w-4" />
+                          Impersonate
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => setBanUser(user)}
+                          disabled={user.isAdmin}
+                          className={
+                            user.banned ? undefined : 'text-destructive focus:text-destructive'
+                          }
+                        >
+                          <Prohibit className="mr-2 h-4 w-4" />
+                          {user.banned ? 'Unban User' : 'Ban User'}
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => setDeleteUser(user)}
                           className="text-destructive focus:text-destructive"
@@ -213,6 +280,40 @@ export function UserList({ users }: UserListProps) {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Ban / Unban Confirmation */}
+      <AlertDialog open={!!banUser} onOpenChange={(open) => !open && setBanUser(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{banUser?.banned ? 'Unban User' : 'Ban User'}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {banUser?.banned ? (
+                <>
+                  Allow <strong>{banUser?.name}</strong> to sign in again?
+                </>
+              ) : (
+                <>
+                  Ban <strong>{banUser?.name}</strong>? Their sessions are revoked immediately and
+                  they can't sign in until unbanned. Their data is kept.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBanToggle}
+              className={
+                banUser?.banned
+                  ? undefined
+                  : 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
+              }
+            >
+              {banUser?.banned ? 'Unban' : 'Ban'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

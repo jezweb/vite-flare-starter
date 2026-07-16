@@ -18,6 +18,13 @@
  *
  * Static routes are declared BEFORE parameterised ones — Hono matches
  * top-to-bottom and `/:id` greedily eats `/search`, `/catalog`, etc.
+ *
+ * OKF interop (Google's Open Knowledge Format, v0.1 2026-06): a knowledge
+ * doc maps 1:1 onto an OKF markdown file — title/summary/tags → YAML
+ * frontmatter, body → body. OKF's only REQUIRED field is `type` (free
+ * string); when exporting, derive it from the first tag or default to
+ * "Reference". No schema change until OKF grows a second consumer —
+ * spec: github.com/GoogleCloudPlatform/knowledge-catalog.
  * See ~/.claude/rules/hono-routing.md.
  */
 import { Hono } from 'hono'

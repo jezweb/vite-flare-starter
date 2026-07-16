@@ -64,6 +64,9 @@ import agentInstancesRoutes from './modules/agent-instances/routes'
 import messagesRoutes from './modules/spaces/messages-routes'
 import globalSearchRoutes from './modules/spaces/global-search'
 import batchJobsRoutes from './modules/batch-tasks/routes'
+import mirrorRoutes from './modules/mirror/routes'
+import llmsTxtRoutes from './modules/llms-txt/routes'
+import backupsRoutes from './modules/backups/routes'
 import { routeAgentRequest } from 'agents'
 import { ScratchpadMcpAgent } from './modules/mcp-agents/scratchpad-mcp-agent'
 // Re-export DO class(es) so wrangler migrations can locate them. Every DO
@@ -87,6 +90,12 @@ export { ChatAgent } from './modules/chat/chat-agent'
 // Cloudflare Workflow class for the batch-tasks module. Bound at
 // `BATCH_WORKFLOW` (see wrangler.jsonc → workflows[]).
 export { ProcessBatchWorkflow } from './modules/batch-tasks/workflows/process-batch'
+// Cloudflare Workflow for the D1 mirror pattern (issue #90). Bound at
+// `MIRROR_WORKFLOW` (see wrangler.jsonc → workflows[]).
+export { MirrorSyncWorkflow } from './modules/mirror/workflow'
+// Cloudflare Workflow for daily D1 → R2 backups. Bound at
+// `BACKUP_WORKFLOW` (see wrangler.jsonc → workflows[] + docs/BACKUPS.md).
+export { D1BackupWorkflow } from './modules/backups/workflow'
 // Cloudflare Sandbox container DO — backs the run_python / run_shell /
 // run_js / generate_document chat tools. Bound at `SANDBOX` (see
 // wrangler.jsonc → containers + durable_objects). The class ships with
@@ -127,6 +136,23 @@ export interface Env {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   BATCH_WORKFLOW?: any
 
+  // Cloudflare Workflows — D1 mirror sync (issue #90 reference pattern).
+  // See src/server/modules/mirror/workflow.ts.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  MIRROR_WORKFLOW?: any
+
+  // Cloudflare Workflows — daily D1 → R2 backup (docs/BACKUPS.md).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  BACKUP_WORKFLOW?: any
+  /** wrangler.jsonc d1_databases[0].database_id — needed by the backup workflow's export API call. */
+  D1_DATABASE_ID?: string
+  /** Secret: API token with D1 read permission (backup export). */
+  D1_REST_API_TOKEN?: string
+  /** Days of R2 backup retention (default 30). */
+  BACKUP_RETENTION_DAYS?: string
+  /** 'true' → daily backup via the cron guard (scheduled §8). */
+  BACKUP_CRON?: string
+
   // Environment variables
   BETTER_AUTH_SECRET: string
   BETTER_AUTH_URL: string
@@ -142,6 +168,8 @@ export interface Env {
   // Google OAuth domain restrictions: use Google Cloud Console, not these vars
   ENABLE_EMAIL_LOGIN?: string // Set to 'true' to allow email/password login (default: disabled)
   ENABLE_EMAIL_SIGNUP?: string // Set to 'true' to allow email signups (requires ENABLE_EMAIL_LOGIN=true)
+  ENABLE_MAGIC_LINK?: string // Set to 'true' for passwordless email sign-in links
+  ENABLE_PASSKEYS?: string // Set to 'true' for WebAuthn passkey sign-in
 
   // Trusted origins for auth (comma-separated list)
   // Example: "http://localhost:5173,https://myapp.workers.dev,https://myapp.com"
@@ -249,11 +277,15 @@ app.get('/api/auth/config', async (c) => {
   const emailLoginEnabled = c.env.ENABLE_EMAIL_LOGIN === 'true'
   const emailSignupEnabled = emailLoginEnabled && c.env.ENABLE_EMAIL_SIGNUP === 'true'
   const googleEnabled = !!(c.env.GOOGLE_CLIENT_ID && c.env.GOOGLE_CLIENT_SECRET)
+  const magicLinkEnabled = c.env.ENABLE_MAGIC_LINK === 'true'
+  const passkeysEnabled = c.env.ENABLE_PASSKEYS === 'true'
 
   return c.json({
     emailLoginEnabled,
     emailSignupEnabled,
     googleEnabled,
+    magicLinkEnabled,
+    passkeysEnabled,
   })
 })
 
@@ -345,6 +377,11 @@ app.route('/api/admin-agent', adminAgentRoutes)
 app.route('/api/agent-instances', agentInstancesRoutes)
 app.route('/api/messages', messagesRoutes)
 app.route('/api/search', globalSearchRoutes)
+app.route('/api/mirror', mirrorRoutes)
+// Public, unauthenticated: agent-facing site summary (llmstxt.org).
+// Requires "/llms.txt" in wrangler.jsonc run_worker_first.
+app.route('/llms.txt', llmsTxtRoutes)
+app.route('/api/backups', backupsRoutes)
 // Test-auth lives behind a TEST_AUTH_TOKEN env gate; if the secret
 // isn't set, every endpoint here returns 404. See module docstring.
 app.route('/api/test-auth', testAuthRoutes)
@@ -709,6 +746,56 @@ export default {
       if (removed > 0) logs['spacesHistorySwept'] = removed
     } catch (err) {
       logs['spacesHistoryError'] = err instanceof Error ? err.message : String(err)
+    }
+
+    // 7. D1 mirror refresh (issue #90) — opt-in via MIRROR_CRON='true'.
+    // The 15-min cron only kicks the Workflow when the mirrored data is
+    // older than MIRROR_MAX_AGE_HOURS (default 24), so the sync runs at
+    // most once per staleness window regardless of cron cadence.
+    try {
+      const mirrorEnv = env as unknown as {
+        MIRROR_CRON?: string
+        MIRROR_MAX_AGE_HOURS?: string
+        MIRROR_WORKFLOW?: { create(options?: { params?: unknown }): Promise<{ id: string }> }
+      }
+      if (mirrorEnv.MIRROR_CRON === 'true' && mirrorEnv.MIRROR_WORKFLOW) {
+        const { mirrorFreshness } = await import('./modules/mirror/workflow')
+        const { lastSyncedAt } = await mirrorFreshness(env.DB)
+        const maxAgeSeconds = (Number(mirrorEnv.MIRROR_MAX_AGE_HOURS) || 24) * 3600
+        const stale = !lastSyncedAt || Date.now() / 1000 - lastSyncedAt > maxAgeSeconds
+        if (stale) {
+          const instance = await mirrorEnv.MIRROR_WORKFLOW.create({ params: { prune: true } })
+          logs['mirrorRefreshStarted'] = instance.id
+        }
+      }
+    } catch (err) {
+      logs['mirrorError'] = err instanceof Error ? err.message : String(err)
+    }
+
+    // 8. Daily D1 → R2 backup (docs/BACKUPS.md) — opt-in via
+    // BACKUP_CRON='true'. Same staleness-guard shape as the mirror: the
+    // 15-min cron fires the Workflow only when the newest backup object
+    // is older than ~23h, so it runs once a day regardless of cadence.
+    try {
+      const backupEnv = env as unknown as {
+        BACKUP_CRON?: string
+        BACKUP_WORKFLOW?: { create(): Promise<{ id: string }> }
+        FILES?: R2Bucket
+      }
+      if (backupEnv.BACKUP_CRON === 'true' && backupEnv.BACKUP_WORKFLOW && backupEnv.FILES) {
+        const { BACKUP_PREFIX } = await import('./modules/backups/workflow')
+        const listing = await backupEnv.FILES.list({ prefix: BACKUP_PREFIX })
+        const newest = listing.objects.reduce<number>(
+          (max, o) => Math.max(max, o.uploaded.getTime()),
+          0
+        )
+        if (Date.now() - newest > 23 * 3600_000) {
+          const instance = await backupEnv.BACKUP_WORKFLOW.create()
+          logs['backupStarted'] = instance.id
+        }
+      }
+    } catch (err) {
+      logs['backupError'] = err instanceof Error ? err.message : String(err)
     }
 
     if (Object.keys(logs).length > 1) {
