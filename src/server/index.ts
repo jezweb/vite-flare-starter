@@ -65,6 +65,7 @@ import messagesRoutes from './modules/spaces/messages-routes'
 import globalSearchRoutes from './modules/spaces/global-search'
 import batchJobsRoutes from './modules/batch-tasks/routes'
 import mirrorRoutes from './modules/mirror/routes'
+import llmsTxtRoutes from './modules/llms-txt/routes'
 import { routeAgentRequest } from 'agents'
 import { ScratchpadMcpAgent } from './modules/mcp-agents/scratchpad-mcp-agent'
 // Re-export DO class(es) so wrangler migrations can locate them. Every DO
@@ -355,6 +356,9 @@ app.route('/api/agent-instances', agentInstancesRoutes)
 app.route('/api/messages', messagesRoutes)
 app.route('/api/search', globalSearchRoutes)
 app.route('/api/mirror', mirrorRoutes)
+// Public, unauthenticated: agent-facing site summary (llmstxt.org).
+// Requires "/llms.txt" in wrangler.jsonc run_worker_first.
+app.route('/llms.txt', llmsTxtRoutes)
 // Test-auth lives behind a TEST_AUTH_TOKEN env gate; if the secret
 // isn't set, every endpoint here returns 404. See module docstring.
 app.route('/api/test-auth', testAuthRoutes)
