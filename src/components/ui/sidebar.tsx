@@ -613,18 +613,24 @@ function SidebarMenuSkeleton({
   )
 }
 
-function SidebarMenuSub({ className, ...props }: React.ComponentProps<'ul'>) {
+function SidebarMenuSub({ className, children, ...props }: React.ComponentProps<'ul'>) {
+  // Kumo/Cloudflare-dashboard geometry: children indent past the parent's
+  // icon (pl-7) and a 1px rail hangs at the icon's horizontal centre
+  // (left-[19px]) — the rail, not per-child icons, carries the hierarchy.
   return (
     <ul
       data-slot="sidebar-menu-sub"
       data-sidebar="menu-sub"
       className={cn(
-        'mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l border-sidebar-border px-2.5 py-0.5',
+        'relative flex min-w-0 flex-col gap-px py-0.5 pl-7',
         'group-data-[collapsible=icon]:hidden',
         className
       )}
       {...props}
-    />
+    >
+      <div aria-hidden className="absolute inset-y-1 left-[19px] w-px bg-sidebar-border" />
+      {children}
+    </ul>
   )
 }
 

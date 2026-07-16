@@ -19,7 +19,7 @@
  * @see src/client/lib/builder-mode.tsx for the Builder Mode toggle
  */
 import type { Icon } from '@phosphor-icons/react'
-import { House, Chat, Sparkle, Pulse, FolderOpen, Lightning, Plug, Microphone, Camera, Kanban, Users, Tray, Lightbulb, Repeat, PuzzlePiece, Palette, ChartBar, ShieldCheck, Robot, Stack, BookOpen, Compass } from '@phosphor-icons/react'
+import { House, Chat, Lightning, Plug, Microphone, Camera, Kanban, Users, Tray, Lightbulb, Repeat, PuzzlePiece, Palette, ChartBar, ShieldCheck, Robot, Stack, BookOpen } from '@phosphor-icons/react'
 
 export interface NavItem {
   /** Route path */
@@ -37,6 +37,31 @@ export interface NavItem {
    * by default for normal users. The toggle lives in the user menu.
    */
   builderOnly?: boolean
+  /**
+   * Cloudflare-dashboard-style nesting: the item renders with its icon
+   * as a collapsible parent; children render text-only, indented behind
+   * a vertical rail. Children don't take icons — the rail IS the
+   * hierarchy cue. The parent's own `to` still navigates (first click
+   * expands + navigates, like dash.cloudflare.com).
+   */
+  children?: NavChildItem[]
+  /** Small dashed pill after the label (e.g. "Beta", "New") — Kumo MenuBadge. */
+  badge?: string
+}
+
+export interface NavChildItem {
+  /** Route path */
+  to: string
+  /** Display label */
+  label: string
+  /** Only show if this feature flag is true (from features config) */
+  feature?: string
+  /** Minimum role required. Omit = visible to all roles. */
+  minRole?: 'user' | 'manager' | 'admin'
+  /** Only show when Builder Mode is enabled. */
+  builderOnly?: boolean
+  /** Small dashed pill after the label (e.g. "Beta", "New"). */
+  badge?: string
 }
 
 export interface NavSection {
@@ -110,8 +135,11 @@ export const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    // Insights — observability + status. Collapsed by default; opened
-    // when the user wants to see what's queued, what's run, what cost.
+    // Insights — observability + status, in the Cloudflare-dashboard
+    // nested style: ONE icon'd parent (navigates to Observability, the
+    // natural overview) with text-only children behind a vertical rail.
+    // This is the worked example of `children:` — convert other groups
+    // the same way if the CF look suits your fork.
     //
     // Note: Approvals removed as a sidebar entry — they live inside
     // Inbox now (decisions are first-class inbox rows). The route
@@ -120,18 +148,19 @@ export const NAV_SECTIONS: NavSection[] = [
     label: 'Insights',
     defaultCollapsed: true,
     items: [
-      { to: '/dashboard/agent-observability', label: 'Observability', icon: ChartBar },
-      { to: '/dashboard/activity', label: 'Activity', icon: Pulse, feature: 'activity' },
       {
-        to: '/dashboard/admin/access-log',
-        label: 'Access log',
-        icon: ShieldCheck,
-        minRole: 'admin',
+        to: '/dashboard/agent-observability',
+        label: 'Insights',
+        icon: ChartBar,
+        children: [
+          { to: '/dashboard/activity', label: 'Activity', feature: 'activity' },
+          { to: '/dashboard/admin/access-log', label: 'Access log', minRole: 'admin' },
+          { to: '/dashboard/files', label: 'Files', feature: 'files' },
+          { to: '/dashboard/artifacts', label: 'Artifacts', feature: 'chat' },
+          { to: '/dashboard/extract', label: 'Extract', feature: 'chat' },
+          { to: '/dashboard/questions', label: 'Guide questions', feature: 'walkabout' },
+        ],
       },
-      { to: '/dashboard/files', label: 'Files', icon: FolderOpen, feature: 'files' },
-      { to: '/dashboard/artifacts', label: 'Artifacts', icon: Sparkle, feature: 'chat' },
-      { to: '/dashboard/extract', label: 'Extract', icon: Sparkle, feature: 'chat' },
-      { to: '/dashboard/questions', label: 'Guide questions', icon: Compass, feature: 'walkabout' },
     ],
   },
   {
@@ -145,12 +174,13 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { to: '/dashboard/components', label: 'Components', icon: PuzzlePiece },
       { to: '/dashboard/style-guide', label: 'Style guide', icon: Palette },
-      { to: '/dashboard/voice-example', label: 'Voice example', icon: Microphone, feature: 'voiceAgent' },
+      { to: '/dashboard/voice-example', label: 'Voice example', icon: Microphone, feature: 'voiceAgent', badge: 'Beta' },
       {
         to: '/dashboard/video-example',
         label: 'Video example',
         icon: Camera,
         feature: 'videoAgent',
+        badge: 'Beta',
       },
       { to: '/dashboard/kanban-demo', label: 'Kanban demo', icon: Kanban, feature: 'kanbanDemo' },
     ],

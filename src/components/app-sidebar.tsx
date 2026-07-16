@@ -21,23 +21,41 @@ import { features } from '@/shared/config/features'
 import { OrgSwitcher } from '@/client/modules/organizations/components/OrgSwitcher'
 import { NAV_SECTIONS, type NavItem } from '@/shared/config/nav'
 
+function isVisible(
+  item: Pick<NavItem, 'feature' | 'builderOnly' | 'minRole'>,
+  featureFlags: Record<string, boolean>,
+  userRole: string | undefined,
+  isBuilder: boolean
+): boolean {
+  if (item.feature && !featureFlags[item.feature]) return false
+  if (item.builderOnly && !isBuilder) return false
+  if (item.minRole) {
+    const roleHierarchy: Record<string, number> = { user: 0, manager: 1, admin: 2 }
+    const required = roleHierarchy[item.minRole] ?? 0
+    const current = roleHierarchy[userRole ?? 'user'] ?? 0
+    if (current < required) return false
+  }
+  return true
+}
+
 function filterItems(
   items: NavItem[],
   featureFlags: Record<string, boolean>,
   userRole: string | undefined,
   isBuilder: boolean
 ): NavItem[] {
-  return items.filter((item) => {
-    if (item.feature && !featureFlags[item.feature]) return false
-    if (item.builderOnly && !isBuilder) return false
-    if (item.minRole) {
-      const roleHierarchy: Record<string, number> = { user: 0, manager: 1, admin: 2 }
-      const required = roleHierarchy[item.minRole] ?? 0
-      const current = roleHierarchy[userRole ?? 'user'] ?? 0
-      if (current < required) return false
-    }
-    return true
-  })
+  return items
+    .filter((item) => isVisible(item, featureFlags, userRole, isBuilder))
+    .map((item) =>
+      item.children
+        ? {
+            ...item,
+            children: item.children.filter((child) =>
+              isVisible(child, featureFlags, userRole, isBuilder)
+            ),
+          }
+        : item
+    )
 }
 
 export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {

@@ -10,7 +10,7 @@
  */
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { CaretDown } from '@phosphor-icons/react'
+import { CaretDown, CaretRight } from '@phosphor-icons/react'
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -18,15 +18,34 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
 } from '@/components/ui/sidebar'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import type { NavItem } from '@/shared/config/nav'
+
+/**
+ * Kumo MenuBadge — dashed pill after a nav label ("Beta", "New").
+ * Hidden when the sidebar collapses to icons.
+ */
+function NavBadge({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="ml-auto inline-flex shrink-0 select-none items-center rounded-full border border-dashed border-border px-1.5 py-0.5 text-[11px]/none font-medium group-data-[collapsible=icon]:hidden">
+      {children}
+    </span>
+  )
+}
 
 interface Props {
   label: string
   items: NavItem[]
   /** If true, render the section as a Collapsible that starts closed. */
   defaultCollapsed?: boolean
+}
+
+function routeMatches(pathname: string, to: string): boolean {
+  return pathname === to || (to !== '/dashboard' && pathname.startsWith(to + '/'))
 }
 
 export function NavMain({ label, items, defaultCollapsed = false }: Props) {
@@ -38,31 +57,44 @@ export function NavMain({ label, items, defaultCollapsed = false }: Props) {
   // no indication of where they are.
   const hasActiveItem = items.some(
     (item) =>
-      location.pathname === item.to ||
-      (item.to !== '/dashboard' && location.pathname.startsWith(item.to + '/'))
+      routeMatches(location.pathname, item.to) ||
+      item.children?.some((child) => routeMatches(location.pathname, child.to))
   )
 
   const list = (
     <SidebarMenu>
-      {items.map((item) => {
-        const isActive =
-          location.pathname === item.to ||
-          (item.to !== '/dashboard' && location.pathname.startsWith(item.to + '/'))
-        return (
+      {items.map((item) =>
+        item.children && item.children.length > 0 ? (
+          <NestedNavItem key={item.to} item={item} pathname={location.pathname} />
+        ) : (
           <SidebarMenuItem key={item.to}>
             <SidebarMenuButton
               render={<NavLink to={item.to} end={item.to === '/dashboard'} />}
-              isActive={isActive}
+              isActive={routeMatches(location.pathname, item.to)}
               tooltip={item.label}
             >
               {item.icon && <item.icon />}
               <span>{item.label}</span>
+              {item.badge && <NavBadge>{item.badge}</NavBadge>}
             </SidebarMenuButton>
           </SidebarMenuItem>
         )
-      })}
+      )}
     </SidebarMenu>
   )
+
+  // A section whose only item is a nested parent sharing the section's
+  // name (e.g. Insights) would render "Insights ▸ Insights" — the item
+  // carries its own collapse, so skip the group chrome entirely.
+  const only = items.length === 1 ? items[0] : undefined
+  const singleNestedSelf = !!only?.children?.length && only.label === label
+  if (singleNestedSelf) {
+    return (
+      <SidebarGroup>
+        <SidebarGroupContent>{list}</SidebarGroupContent>
+      </SidebarGroup>
+    )
+  }
 
   if (!defaultCollapsed) {
     return (
@@ -77,6 +109,71 @@ export function NavMain({ label, items, defaultCollapsed = false }: Props) {
     <CollapsibleSection label={label} forceOpen={hasActiveItem} defaultCollapsed={defaultCollapsed}>
       {list}
     </CollapsibleSection>
+  )
+}
+
+/**
+ * Cloudflare-dashboard-style nested item: icon'd parent that BOTH
+ * navigates (to its overview route) and expands; text-only children
+ * indented behind the vertical rail (see SidebarMenuSub). The parent
+ * shows active styling only for its own route — when a child is
+ * active, the child carries the highlight (Kumo behaviour).
+ */
+function NestedNavItem({ item, pathname }: { item: NavItem; pathname: string }) {
+  const children = item.children ?? []
+  const parentActive = routeMatches(pathname, item.to)
+  const childActive = children.some((c) => routeMatches(pathname, c.to))
+  const [open, setOpen] = useState(parentActive || childActive)
+
+  // Navigating into the subtree from elsewhere (command palette, deep
+  // link) must reveal where the user is.
+  useEffect(() => {
+    if (parentActive || childActive) setOpen(true)
+  }, [parentActive, childActive])
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          render={<NavLink to={item.to} onClick={() => setOpen(true)} />}
+          isActive={parentActive}
+          tooltip={item.label}
+        >
+          {item.icon && <item.icon />}
+          <span>{item.label}</span>
+          {item.badge && <NavBadge>{item.badge}</NavBadge>}
+        </SidebarMenuButton>
+        <CollapsibleTrigger
+          render={
+            <button
+              type="button"
+              aria-label={`${open ? 'Collapse' : 'Expand'} ${item.label}`}
+              className="absolute top-1.5 right-1 flex size-5 items-center justify-center rounded-md text-sidebar-foreground/60 outline-hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring group-data-[collapsible=icon]:hidden"
+            />
+          }
+        >
+          <CaretRight
+            className={`size-3.5 transition-transform ${open ? 'rotate-90' : ''}`}
+            aria-hidden="true"
+          />
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <SidebarMenuSub>
+            {children.map((child) => (
+              <SidebarMenuSubItem key={child.to}>
+                <SidebarMenuSubButton
+                  render={<NavLink to={child.to} />}
+                  isActive={routeMatches(pathname, child.to)}
+                >
+                  <span>{child.label}</span>
+                  {child.badge && <NavBadge>{child.badge}</NavBadge>}
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            ))}
+          </SidebarMenuSub>
+        </CollapsibleContent>
+      </SidebarMenuItem>
+    </Collapsible>
   )
 }
 
