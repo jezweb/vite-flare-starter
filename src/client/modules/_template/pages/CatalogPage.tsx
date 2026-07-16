@@ -71,11 +71,9 @@ export function TemplateCatalogPage() {
         title="Things"
         subtitle="One-line, user-voice description of what this catalog is for and why someone would browse it."
         trailing={
-          <Button asChild className="gap-1.5">
-            <Link to="/dashboard/things/new">
-              <Plus className="size-4" />
-              New thing
-            </Link>
+          <Button className="gap-1.5" render={<Link to="/dashboard/things/new" />}>
+            <Plus className="size-4" />
+            New thing
           </Button>
         }
       />

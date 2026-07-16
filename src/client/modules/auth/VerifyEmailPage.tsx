@@ -105,8 +105,8 @@ export function VerifyEmailPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button asChild className="w-full">
-                <Link to="/dashboard">Go to Dashboard</Link>
+              <Button className="w-full" render={<Link to="/dashboard" />}>
+                Go to Dashboard
               </Button>
             </CardContent>
           </Card>

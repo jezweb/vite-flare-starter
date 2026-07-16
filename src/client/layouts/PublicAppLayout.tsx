@@ -33,12 +33,12 @@ function MinimalHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
         <div className="flex items-center gap-2">
           <ThemeToggle />
           {!isAuthenticated ? (
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/sign-in">Sign in</Link>
+            <Button variant="outline" size="sm" render={<Link to="/sign-in" />}>
+              Sign in
             </Button>
           ) : (
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/dashboard">Dashboard</Link>
+            <Button variant="outline" size="sm" render={<Link to="/dashboard" />}>
+              Dashboard
             </Button>
           )}
         </div>

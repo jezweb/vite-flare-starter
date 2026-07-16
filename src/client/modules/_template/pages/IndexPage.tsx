@@ -42,11 +42,9 @@ export function TemplateIndexPage() {
         title="Things"
         subtitle="One-line, user-voice description of what this page is for and why someone would visit it."
         trailing={
-          <Button asChild className="gap-1.5">
-            <Link to="/dashboard/things/new">
-              <Plus className="size-4" />
-              New thing
-            </Link>
+          <Button className="gap-1.5" render={<Link to="/dashboard/things/new" />}>
+            <Plus className="size-4" />
+            New thing
           </Button>
         }
       />

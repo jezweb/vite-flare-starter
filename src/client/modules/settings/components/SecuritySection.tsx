@@ -205,15 +205,19 @@ export function SecuritySection() {
               settings.
             </p>
             {primaryProvider && OAUTH_PROVIDER_SECURITY_URL[primaryProvider] && (
-              <Button variant="outline" size="sm" asChild>
-                <a
-                  href={OAUTH_PROVIDER_SECURITY_URL[primaryProvider]}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Open {OAUTH_PROVIDER_LABEL[primaryProvider] ?? primaryProvider} security
-                  <ExternalLink className="ml-1 h-3.5 w-3.5" />
-                </a>
+              <Button
+                variant="outline"
+                size="sm"
+                render={
+                  <a
+                    href={OAUTH_PROVIDER_SECURITY_URL[primaryProvider]}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  />
+                }
+              >
+                Open {OAUTH_PROVIDER_LABEL[primaryProvider] ?? primaryProvider} security
+                <ExternalLink className="ml-1 h-3.5 w-3.5" />
               </Button>
             )}
           </CardContent>

@@ -66,11 +66,9 @@ export function AdminPage() {
           <CardDescription>Failed to verify admin access. Please try again.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button asChild variant="outline">
-            <Link to="/dashboard">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Dashboard
-            </Link>
+          <Button variant="outline" render={<Link to="/dashboard" />}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Dashboard
           </Button>
         </CardContent>
       </Card>
@@ -94,11 +92,9 @@ export function AdminPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <Button asChild variant="outline">
-            <Link to="/dashboard">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to dashboard
-            </Link>
+          <Button variant="outline" render={<Link to="/dashboard" />}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to dashboard
           </Button>
           <p className="text-xs text-muted-foreground">
             Not on the right account?{' '}

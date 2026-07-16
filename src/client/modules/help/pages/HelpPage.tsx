@@ -65,11 +65,14 @@ function GlossaryCard({ entry }: { entry: GlossaryEntry }) {
       </p>
       {entry.action && (
         <div className="mt-auto pt-2">
-          <Button asChild size="sm" variant="outline" className="gap-1.5">
-            <Link to={entry.action.route}>
-              {entry.action.label}
-              <ArrowRight className="size-3.5" />
-            </Link>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5"
+            render={<Link to={entry.action.route} />}
+          >
+            {entry.action.label}
+            <ArrowRight className="size-3.5" />
           </Button>
         </div>
       )}

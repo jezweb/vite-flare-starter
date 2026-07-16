@@ -130,8 +130,8 @@ export function ProjectPage() {
         <p className="mt-2 text-sm text-muted-foreground">
           This project may have been deleted, or you don't have access to it.
         </p>
-        <Button asChild variant="outline" className="mt-4">
-          <Link to="/dashboard/projects">All projects</Link>
+        <Button variant="outline" className="mt-4" render={<Link to="/dashboard/projects" />}>
+          All projects
         </Button>
       </div>
     )
@@ -141,11 +141,14 @@ export function ProjectPage() {
     <div className="max-w-6xl mx-auto py-4 space-y-6">
       {/* Top bar — back link */}
       <div>
-        <Button variant="ghost" size="sm" asChild className="text-muted-foreground -ml-2">
-          <Link to="/dashboard/projects">
-            <ArrowLeft className="size-3.5 mr-1.5" />
-            All projects
-          </Link>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground -ml-2"
+          render={<Link to="/dashboard/projects" />}
+        >
+          <ArrowLeft className="size-3.5 mr-1.5" />
+          All projects
         </Button>
       </div>
 

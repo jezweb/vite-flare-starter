@@ -61,11 +61,9 @@ export function RoutinesPage() {
           title="Routines"
           subtitle="Have your AI do something on a schedule — a daily morning brief, a weekly digest, a check on stuck leads. Each routine drops its findings into your Inbox."
           trailing={
-            <Button asChild className="gap-1.5">
-              <Link to="/dashboard/routines/new">
-                <Plus className="size-4" />
-                New routine
-              </Link>
+            <Button className="gap-1.5" render={<Link to="/dashboard/routines/new" />}>
+              <Plus className="size-4" />
+              New routine
             </Button>
           }
         />

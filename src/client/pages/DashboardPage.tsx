@@ -159,11 +159,14 @@ function NeedsYouPanel({ approvals, loading }: { approvals?: ApprovalsList; load
             </CardDescription>
           </div>
           {approvals && approvals.total > 0 && (
-            <Button asChild size="sm" variant="ghost" className="gap-1 -my-1 -mr-2 h-8">
-              <Link to="/dashboard/approvals">
-                See all
-                <ArrowRight className="size-3.5" />
-              </Link>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="gap-1 -my-1 -mr-2 h-8"
+              render={<Link to="/dashboard/approvals" />}
+            >
+              See all
+              <ArrowRight className="size-3.5" />
             </Button>
           )}
         </div>
@@ -230,11 +233,14 @@ function RecentRunsPanel({ runs, loading }: { runs?: RunsList; loading: boolean 
             </CardDescription>
           </div>
           {runs && runs.total > 0 && (
-            <Button asChild size="sm" variant="ghost" className="gap-1 -my-1 -mr-2 h-8">
-              <Link to="/dashboard/activity">
-                Activity log
-                <ArrowRight className="size-3.5" />
-              </Link>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="gap-1 -my-1 -mr-2 h-8"
+              render={<Link to="/dashboard/activity" />}
+            >
+              Activity log
+              <ArrowRight className="size-3.5" />
             </Button>
           )}
         </div>

@@ -323,11 +323,14 @@ export function NewRoutinePage() {
   return (
     <div className="container mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
       <div>
-        <Button variant="ghost" size="sm" asChild className="-ml-2 mb-2 text-muted-foreground">
-          <Link to="/dashboard/routines">
-            <ArrowLeft className="size-3.5" />
-            Routines
-          </Link>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="-ml-2 mb-2 text-muted-foreground"
+          render={<Link to="/dashboard/routines" />}
+        >
+          <ArrowLeft className="size-3.5" />
+          Routines
         </Button>
         <h1 className="text-2xl font-semibold tracking-tight">New routine</h1>
         <p className="mt-1 text-sm text-muted-foreground">

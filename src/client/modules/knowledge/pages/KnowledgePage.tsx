@@ -90,10 +90,8 @@ export function KnowledgePage() {
           title="Knowledge"
           subtitle="Long-form reference documents the AI can apply during chat. Always-active docs bake into every prompt; on-demand docs surface in a catalog the agent can search."
           trailing={
-            <Button asChild>
-              <Link to="/dashboard/knowledge/new">
-                <Plus className="mr-2 size-4" /> New doc
-              </Link>
+            <Button render={<Link to="/dashboard/knowledge/new" />}>
+              <Plus className="mr-2 size-4" /> New doc
             </Button>
           }
         />

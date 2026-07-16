@@ -170,8 +170,8 @@ export function AcceptInvitationPage() {
             </div>
           )}
           {state.status === 'already-member' && (
-            <Button asChild className="w-full">
-              <Link to="/dashboard">Go to dashboard</Link>
+            <Button className="w-full" render={<Link to="/dashboard" />}>
+              Go to dashboard
             </Button>
           )}
           {state.status === 'error' && (
@@ -183,8 +183,8 @@ export function AcceptInvitationPage() {
                 <Button variant="outline" onClick={() => window.location.reload()}>
                   Retry
                 </Button>
-                <Button asChild variant="ghost">
-                  <Link to="/dashboard">Go to dashboard</Link>
+                <Button variant="ghost" render={<Link to="/dashboard" />}>
+                  Go to dashboard
                 </Button>
               </div>
             </>

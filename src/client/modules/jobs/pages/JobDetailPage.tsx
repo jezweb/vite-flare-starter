@@ -138,11 +138,9 @@ export function JobDetailPage() {
   return (
     <PageContainer type="detail">
       <div className="mb-3">
-        <Button asChild variant="ghost" size="sm">
-          <Link to="/dashboard/jobs">
-            <ArrowLeft className="mr-1.5 h-4 w-4" />
-            All jobs
-          </Link>
+        <Button variant="ghost" size="sm" render={<Link to="/dashboard/jobs" />}>
+          <ArrowLeft className="mr-1.5 h-4 w-4" />
+          All jobs
         </Button>
       </div>
 

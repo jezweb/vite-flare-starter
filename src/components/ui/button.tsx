@@ -1,6 +1,5 @@
-import * as React from 'react'
+import { Button as ButtonPrimitive } from '@base-ui/react/button'
 import { cva, type VariantProps } from 'class-variance-authority'
-import { Slot } from 'radix-ui'
 
 import { cn } from '@/lib/utils'
 
@@ -40,30 +39,28 @@ function Button({
   className,
   variant = 'default',
   size = 'default',
-  asChild = false,
-  type,
+  render,
+  nativeButton,
   ...props
-}: React.ComponentProps<'button'> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean
-  }) {
-  const Comp = asChild ? Slot.Root : 'button'
-
-  // Default `type="button"` when rendering as a real <button> to stop
-  // accidental form submits when nested in a <form> (e.g. PromptInput).
-  // The "New chat" button reloading the page was caused by the
-  // browser's HTML default of type="submit" inside a form context.
-  // asChild means we're rendering some other element — leave type alone.
-  const resolvedType = !asChild && type === undefined ? 'button' : type
-
+}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+  // Base UI's Button primitive defaults `type="button"` on native buttons,
+  // which stops accidental form submits when nested in a <form> (e.g.
+  // PromptInput). This replaces the hand-rolled resolvedType fix the radix
+  // wrapper carried — passing an explicit `type` still overrides it.
+  //
+  // `nativeButton` is inferred from `render`: when rendering a custom
+  // element (usually a <Link>/<a>) Base UI must not treat it as a native
+  // <button>. Pass `nativeButton` explicitly if you render a real <button>
+  // via `render`.
   return (
-    <Comp
+    <ButtonPrimitive
       data-slot="button"
       data-variant={variant}
       data-size={size}
       className={cn(buttonVariants({ variant, size, className }))}
+      render={render}
+      nativeButton={nativeButton ?? render === undefined}
       {...props}
-      {...(resolvedType !== undefined && { type: resolvedType })}
     />
   )
 }

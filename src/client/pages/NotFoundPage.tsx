@@ -33,18 +33,14 @@ export function NotFoundPage() {
         </p>
       </div>
       <div className="flex flex-wrap items-center justify-center gap-2">
-        <Button asChild>
-          <Link to={homePath}>
-            <Home className="mr-2 h-4 w-4" />
-            {homeLabel}
-          </Link>
+        <Button render={<Link to={homePath} />}>
+          <Home className="mr-2 h-4 w-4" />
+          {homeLabel}
         </Button>
         {isAuthed && (
-          <Button asChild variant="outline">
-            <Link to="/dashboard/chat">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Start a new chat
-            </Link>
+          <Button variant="outline" render={<Link to="/dashboard/chat" />}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Start a new chat
           </Button>
         )}
       </div>

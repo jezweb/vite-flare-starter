@@ -62,11 +62,9 @@ export function SkillDetailPage() {
           title="Skill not found"
           subtitle={`No skill named ${slug ? `"${slug}"` : 'that'} exists, or it was deleted.`}
           trailing={
-            <Button asChild variant="outline">
-              <Link to="/dashboard/skills">
-                <ArrowLeft className="mr-1.5 size-4" />
-                Back to skills
-              </Link>
+            <Button variant="outline" render={<Link to="/dashboard/skills" />}>
+              <ArrowLeft className="mr-1.5 size-4" />
+              Back to skills
             </Button>
           }
         />
@@ -86,11 +84,9 @@ export function SkillDetailPage() {
   return (
     <PageContainer type="detail">
       <div className="-mb-2 flex items-center justify-between">
-        <Button asChild variant="ghost" size="sm">
-          <Link to="/dashboard/skills">
-            <ArrowLeft className="mr-1 size-4" />
-            Back to skills
-          </Link>
+        <Button variant="ghost" size="sm" render={<Link to="/dashboard/skills" />}>
+          <ArrowLeft className="mr-1 size-4" />
+          Back to skills
         </Button>
         {skill.isPersonal && (
           <Button variant="outline" size="sm" onClick={() => setDeleteOpen(true)}>

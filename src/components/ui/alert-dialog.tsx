@@ -135,13 +135,20 @@ function AlertDialogAction({
 }: React.ComponentProps<typeof AlertDialogPrimitive.Action> &
   Pick<React.ComponentProps<typeof Button>, 'variant' | 'size'>) {
   return (
-    <Button variant={variant} size={size} asChild>
-      <AlertDialogPrimitive.Action
-        data-slot="alert-dialog-action"
-        className={cn(className)}
-        {...props}
-      />
-    </Button>
+    <Button
+      variant={variant}
+      size={size}
+      // radix Action renders a real <button>, so tell the Base UI Button
+      // primitive not to apply its non-native (role="button") handling.
+      nativeButton
+      render={
+        <AlertDialogPrimitive.Action
+          data-slot="alert-dialog-action"
+          className={cn(className)}
+          {...props}
+        />
+      }
+    />
   )
 }
 
@@ -153,13 +160,20 @@ function AlertDialogCancel({
 }: React.ComponentProps<typeof AlertDialogPrimitive.Cancel> &
   Pick<React.ComponentProps<typeof Button>, 'variant' | 'size'>) {
   return (
-    <Button variant={variant} size={size} asChild>
-      <AlertDialogPrimitive.Cancel
-        data-slot="alert-dialog-cancel"
-        className={cn(className)}
-        {...props}
-      />
-    </Button>
+    <Button
+      variant={variant}
+      size={size}
+      // radix Cancel renders a real <button>, so tell the Base UI Button
+      // primitive not to apply its non-native (role="button") handling.
+      nativeButton
+      render={
+        <AlertDialogPrimitive.Cancel
+          data-slot="alert-dialog-cancel"
+          className={cn(className)}
+          {...props}
+        />
+      }
+    />
   )
 }
 

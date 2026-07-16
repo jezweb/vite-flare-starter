@@ -50,11 +50,9 @@ export function AgentsPage() {
                 <Plus className="mr-1.5 size-4" />
                 New agent
               </Button>
-              <Button asChild variant="outline">
-                <Link to="/dashboard/admin-chat">
-                  <Sparkles className="mr-1.5 size-4" />
-                  Admin chat
-                </Link>
+              <Button variant="outline" render={<Link to="/dashboard/admin-chat" />}>
+                <Sparkles className="mr-1.5 size-4" />
+                Admin chat
               </Button>
             </>
           }

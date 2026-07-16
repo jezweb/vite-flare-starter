@@ -333,18 +333,18 @@ export function LandingPage() {
             </p>
 
             <div className="mt-10 flex flex-col sm:flex-row gap-4">
-              <Button size="lg" asChild>
-                <Link to={primaryCtaHref}>
-                  {primaryCtaLabel}
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
+              <Button size="lg" render={<Link to={primaryCtaHref} />}>
+                {primaryCtaLabel}
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
               {appConfig.githubUrl && (
-                <Button size="lg" variant="outline" asChild>
-                  <a href={appConfig.githubUrl} target="_blank" rel="noopener noreferrer">
-                    <GithubIcon className="mr-2 h-4 w-4" />
-                    View on GitHub
-                  </a>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  render={<a href={appConfig.githubUrl} target="_blank" rel="noopener noreferrer" />}
+                >
+                  <GithubIcon className="mr-2 h-4 w-4" />
+                  View on GitHub
                 </Button>
               )}
             </div>
@@ -714,18 +714,18 @@ export function LandingPage() {
             </div>
           )}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" asChild>
-              <Link to={primaryCtaHref}>
-                Try it live
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
+            <Button size="lg" render={<Link to={primaryCtaHref} />}>
+              Try it live
+              <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
             {appConfig.githubUrl && (
-              <Button size="lg" variant="outline" asChild>
-                <a href={appConfig.githubUrl} target="_blank" rel="noopener noreferrer">
-                  <GithubIcon className="mr-2 h-4 w-4" />
-                  Star on GitHub
-                </a>
+              <Button
+                size="lg"
+                variant="outline"
+                render={<a href={appConfig.githubUrl} target="_blank" rel="noopener noreferrer" />}
+              >
+                <GithubIcon className="mr-2 h-4 w-4" />
+                Star on GitHub
               </Button>
             )}
           </div>
