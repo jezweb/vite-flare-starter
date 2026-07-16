@@ -183,38 +183,40 @@ export function VoiceModeButton({
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          type="button"
-          variant={enabled ? (isRecording ? 'destructive' : 'default') : 'outline'}
-          size="icon"
-          className={cn(
-            'shrink-0 transition-colors',
-            isRecording && 'animate-pulse',
-            isSpeaking && 'border-primary/40 bg-primary/10 text-primary',
-            recordingUnsupported && 'opacity-60'
-          )}
-          disabled={disabled || (recordingUnsupported && !enabled)}
-          aria-label={ariaLabel}
-          onClick={(e) => {
-            // Skip if a pointerup just handled this same press — otherwise
-            // every successful hold-release also toggles mode off.
-            if (justHandledPointerRef.current) {
-              e.preventDefault()
-              return
-            }
-            if (isSpeaking) {
-              stopSpeaking()
-              return
-            }
-            handleToggleEnabled()
-          }}
-          onPointerDown={onPointerDown}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerCancel}
-        >
-          <Icon className={cn('size-4', showSpinner && 'animate-spin')} />
-        </Button>
+      <TooltipTrigger
+        render={
+          <Button
+            type="button"
+            variant={enabled ? (isRecording ? 'destructive' : 'default') : 'outline'}
+            size="icon"
+            className={cn(
+              'shrink-0 transition-colors',
+              isRecording && 'animate-pulse',
+              isSpeaking && 'border-primary/40 bg-primary/10 text-primary',
+              recordingUnsupported && 'opacity-60'
+            )}
+            disabled={disabled || (recordingUnsupported && !enabled)}
+            aria-label={ariaLabel}
+            onClick={(e) => {
+              // Skip if a pointerup just handled this same press — otherwise
+              // every successful hold-release also toggles mode off.
+              if (justHandledPointerRef.current) {
+                e.preventDefault()
+                return
+              }
+              if (isSpeaking) {
+                stopSpeaking()
+                return
+              }
+              handleToggleEnabled()
+            }}
+            onPointerDown={onPointerDown}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerCancel}
+          />
+        }
+      >
+        <Icon className={cn('size-4', showSpinner && 'animate-spin')} />
       </TooltipTrigger>
       <TooltipContent side="top">
         {recordingUnsupported ? (

@@ -477,12 +477,14 @@ export function ComponentsPage() {
             </CardHeader>
             <CardContent>
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline">
-                    <Info className="mr-2 h-4 w-4" />
-                    Hover me
-                  </Button>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <Button variant="outline">
+                      <Info className="mr-2 h-4 w-4" />
+                      Hover me
+                    </Button>
+                  }
+                />
                 <TooltipContent>
                   <p>This is a tooltip</p>
                 </TooltipContent>

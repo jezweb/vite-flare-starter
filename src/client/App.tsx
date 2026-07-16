@@ -238,7 +238,7 @@ function App() {
   return (
     <ErrorBoundary onError={createErrorHandler()}>
       <BuilderModeProvider>
-        <TooltipProvider delayDuration={200}>
+        <TooltipProvider delay={200}>
           <BrowserRouter>
             <ScrollToTop />
             <ThemeURLHandler />
