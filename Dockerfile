@@ -13,4 +13,5 @@
 FROM docker.io/cloudflare/sandbox:0.12.3-python
 
 # Document generation (generate_document tool): Word / Excel / PowerPoint.
-RUN pip install --no-cache-dir python-docx openpyxl python-pptx
+# Bare `pip` isn't on PATH in this image — use `python3 -m pip` (pip3 also works).
+RUN python3 -m pip install --no-cache-dir python-docx openpyxl python-pptx
