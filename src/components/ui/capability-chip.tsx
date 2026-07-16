@@ -9,9 +9,9 @@
  *   - count      → just a number + label ("22 skills")
  *
  * The chip is purely visual — to make a chip clickable, wrap it in a
- * `<Link>` or `<button>`. Don't try to use Radix `asChild` here: the
- * chip composes internal layout (dot + icon + label spans) which
- * violates Slot's single-child contract.
+ * `<Link>` or `<button>` rather than adding a render/slot prop: the
+ * chip composes internal layout (dot + icon + label spans) and wants
+ * to stay a dumb leaf.
  *
  *   <Link to="/dashboard/connections" className="rounded-full">
  *     <CapabilityChip icon={Mail} label="Gmail" />

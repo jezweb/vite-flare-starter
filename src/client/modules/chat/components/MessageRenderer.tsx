@@ -437,7 +437,7 @@ function MessageBody({
                 <ReasoningTrigger>
                   <BrainIcon className="size-4" />
                   <p>{reasoningLabel}</p>
-                  <ChevronDownIcon className="size-4 ml-auto transition-transform group-data-[state=open]/collapsible:rotate-180" />
+                  <ChevronDownIcon className="size-4 ml-auto transition-transform in-data-panel-open:rotate-180" />
                 </ReasoningTrigger>
               ) : (
                 <ReasoningTrigger />
