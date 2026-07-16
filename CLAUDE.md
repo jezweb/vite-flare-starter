@@ -313,10 +313,14 @@ for each shape.
 via localStorage scoped to `appConfig.id`. See `SkillsPage` for a
 worked example.
 
-**For aggregates / trends / dashboards**: shadcn `Chart` (Recharts under
-the hood, themed via `chart-1..5` CSS vars). Don't import Recharts
-directly — go through the shadcn wrapper for consistent theming. See
-`AgentObservabilityPage` for a worked example with bar + area charts.
+**For aggregates / trends / dashboards**: Kumo's `Chart` /
+`TimeseriesChart` from `@cloudflare/kumo/components/chart` (ECharts
+under the hood). Pass the shared `echarts` instance and resolve series
+colors from the `--chart-1..5` tokens via `useChartTheme` — both from
+`@/client/lib/echarts` (canvas can't read CSS vars, so colors are
+resolved to hex at render). Keep chart imports inside route-lazy pages
+so ECharts stays out of the entry bundle. See `AgentObservabilityPage`
+for a worked example with bar + line charts.
 
 **When to add a new layout primitive** (Kanban, Tree, Gallery, …):
 
