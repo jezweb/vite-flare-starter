@@ -111,7 +111,7 @@ export function EmailLogsTabContent() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
             <div className="space-y-1.5">
               <Label className="text-xs">Template</Label>
-              <Select value={template} onValueChange={setTemplate}>
+              <Select value={template} onValueChange={(v) => v != null && setTemplate(v)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -126,7 +126,7 @@ export function EmailLogsTabContent() {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Status</Label>
-              <Select value={status} onValueChange={setStatus}>
+              <Select value={status} onValueChange={(v) => v != null && setStatus(v)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -298,7 +298,7 @@ function TestSendDialog({ onSent }: { onSent: () => void }) {
           </div>
           <div className="space-y-1.5">
             <Label>Template</Label>
-            <Select value={tpl} onValueChange={setTpl}>
+            <Select value={tpl} onValueChange={(v) => v != null && setTpl(v)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>

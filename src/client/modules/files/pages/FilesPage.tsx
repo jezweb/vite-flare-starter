@@ -92,7 +92,7 @@ export function FilesPage() {
               <CardDescription>View and manage uploaded files</CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Select value={currentFolder} onValueChange={setCurrentFolder}>
+              <Select value={currentFolder} onValueChange={(v) => v != null && setCurrentFolder(v)}>
                 <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="Select folder" />
                 </SelectTrigger>

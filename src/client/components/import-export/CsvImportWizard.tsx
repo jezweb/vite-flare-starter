@@ -184,7 +184,7 @@ export function CsvImportWizard({ fields, onImport, maxPreviewRows = 5 }: Props)
                 <Select
                   value={mapping[field.key] || '__skip__'}
                   onValueChange={(v) =>
-                    setMapping((m) => ({ ...m, [field.key]: v === '__skip__' ? '' : v }))
+                    setMapping((m) => ({ ...m, [field.key]: !v || v === '__skip__' ? '' : v }))
                   }
                 >
                   <SelectTrigger className="h-8 flex-1">

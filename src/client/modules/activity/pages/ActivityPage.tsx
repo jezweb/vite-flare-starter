@@ -224,7 +224,7 @@ export function ActivityPage() {
       <PageFilters>
         <span />
         <PageFilterGroup>
-          <Select value={actionFilter} onValueChange={setActionFilter}>
+          <Select value={actionFilter} onValueChange={(v) => v != null && setActionFilter(v)}>
             <SelectTrigger className="h-8 w-[170px]">
               <SelectValue placeholder="Filter by action" />
             </SelectTrigger>

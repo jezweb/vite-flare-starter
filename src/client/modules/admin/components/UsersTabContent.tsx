@@ -113,7 +113,7 @@ export function UsersTabContent() {
             showClearButton
             className="flex-1"
           />
-          <Select value={sortParam} onValueChange={handleSortChange}>
+          <Select value={sortParam} onValueChange={(v) => v != null && handleSortChange(v)}>
             <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="Sort by..." />
             </SelectTrigger>

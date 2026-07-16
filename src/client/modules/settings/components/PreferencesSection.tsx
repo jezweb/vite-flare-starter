@@ -740,7 +740,7 @@ export function PreferencesSection() {
             </div>
             <Select
               value={currentTimezone}
-              onValueChange={handleTimezoneChange}
+              onValueChange={(v) => v != null && void handleTimezoneChange(v)}
               disabled={updatePreferences.isPending}
             >
               <SelectTrigger className="w-full sm:w-[280px]">

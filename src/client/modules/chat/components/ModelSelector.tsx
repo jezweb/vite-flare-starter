@@ -222,7 +222,11 @@ export function ModelSelector({ value, onChange, disabled }: ModelSelectorProps)
     key === 'free' ? 'Free · Workers AI' : (PROVIDER_LABELS[key] ?? key)
 
   return (
-    <Select value={value || data.recommended} onValueChange={onChange} disabled={disabled}>
+    <Select
+      value={value || data.recommended}
+      onValueChange={(v) => v != null && onChange(v)}
+      disabled={disabled}
+    >
       <SelectTrigger
         aria-label={`Select AI model${selectedModel?.name ? ` (current: ${selectedModel.name})` : ''}`}
         className="w-[160px] max-w-[160px]"
