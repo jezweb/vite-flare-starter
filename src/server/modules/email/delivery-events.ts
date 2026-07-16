@@ -154,6 +154,11 @@ export function parseEmailEvent(body: unknown): ParsedEmailEvent | null {
   if (typeof envelope.type !== 'string' || !envelope.type.startsWith(EVENT_TYPE_PREFIX)) {
     return null
   }
+  // Trust the source, not just the type string: a forged message from any
+  // other producer on the same queue must not be able to suppress an
+  // arbitrary recipient (adversarial review 2026-07-16, L3). Subscription
+  // envelopes always carry source.type = "email.sending".
+  if (envelope.source?.type !== 'email.sending') return null
   const eventType = envelope.type.slice(EVENT_TYPE_PREFIX.length)
   if (!KNOWN_EVENT_TYPES.has(eventType)) return null
 
