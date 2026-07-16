@@ -2,9 +2,12 @@
  * Kanban demo — TanStack Query hooks against /api/entities.
  *
  * Models a `task` entity:
- *   - title     — used as the card label
+ *   - title           — used as the card label
  *   - fields.column   — 'todo' | 'doing' | 'done' (defaults to 'todo')
- *   - fields.order    — float, sort within column (defaults to created time)
+ *   - fields.position — fractional-index string, sort within column
+ *                       (cards without one sort last; see ui/kanban.tsx)
+ *   - fields.createdBy — 'agent' when created via the entity chat tools
+ *                        (provenance badge on the card)
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/client/lib/api-client'
@@ -19,7 +22,8 @@ export interface TaskEntity {
   externalId: string | null
   fields: {
     column?: TaskColumn
-    order?: number
+    position?: string
+    createdBy?: string
     [k: string]: unknown
   }
   createdAt: number
@@ -44,7 +48,7 @@ export function useTaskEntities() {
 interface MoveTaskInput {
   id: string
   column: TaskColumn
-  order: number
+  position: string
 }
 
 interface MoveContext {
@@ -54,18 +58,18 @@ interface MoveContext {
 export function useMoveTask() {
   const queryClient = useQueryClient()
   return useMutation<TaskEntity, Error, MoveTaskInput, MoveContext>({
-    mutationFn: ({ id, column, order }) =>
+    mutationFn: ({ id, column, position }) =>
       apiClient.patch<TaskEntity>(`/api/entities/${id}`, {
-        fields: { column, order },
+        fields: { column, position },
       }),
-    onMutate: async ({ id, column, order }) => {
+    onMutate: async ({ id, column, position }) => {
       await queryClient.cancelQueries({ queryKey: QUERY_KEY })
       const prev = queryClient.getQueryData<ListResponse>(QUERY_KEY)
       if (prev) {
         queryClient.setQueryData<ListResponse>(QUERY_KEY, {
           ...prev,
           entities: prev.entities.map((e) =>
-            e.id === id ? { ...e, fields: { ...e.fields, column, order } } : e
+            e.id === id ? { ...e, fields: { ...e.fields, column, position } } : e
           ),
         })
       }
@@ -83,7 +87,7 @@ export function useMoveTask() {
 interface SeedTaskInput {
   title: string
   column: TaskColumn
-  order: number
+  position: string
 }
 
 export function useSeedDemoTasks() {
@@ -95,7 +99,7 @@ export function useSeedDemoTasks() {
         await apiClient.post('/api/entities', {
           type: 'task',
           title: t.title,
-          fields: { column: t.column, order: t.order },
+          fields: { column: t.column, position: t.position },
         })
       }
     },

@@ -311,7 +311,7 @@ for each shape.
 | **List row** | find-and-act/edit, text-dominant queue | `ListRowGroup` (custom) | `_template/IndexPage.tsx` |
 | **Table** | structured uniform rows, sort/filter, 50+ items | shadcn `Data Table` | `_template/TablePage.tsx` |
 | **Split-pane** | sequential reading (Inbox, Approvals) | `Resizable` + `ListRow` | none yet — use Inbox as ref |
-| **Kanban** (v2) | workflow stages | not yet — extract when 1st use case lands | — |
+| **Kanban** | workflow stages, drag between columns | `KanbanBoard` (`components/ui/kanban.tsx`) — fractional-index ordering, keyboard DnD + announcements, `KanbanCardMenu` a11y fallback, agent-provenance convention | none yet — use `kanban-demo` module as ref (`VITE_FEATURE_KANBAN_DEMO=true`) |
 | **Calendar** (v2) | date-anchored entities | not yet — base on shadcn `Calendar` + custom event renderer | — |
 
 **View toggles** (cards ⇄ list on the same surface): use
