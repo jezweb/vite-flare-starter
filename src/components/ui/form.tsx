@@ -1,6 +1,6 @@
 import * as React from 'react'
-import type { Label as LabelPrimitive } from 'radix-ui'
-import { Slot } from 'radix-ui'
+import { mergeProps } from '@base-ui/react/merge-props'
+import { useRender } from '@base-ui/react/use-render'
 import {
   Controller,
   FormProvider,
@@ -77,7 +77,7 @@ function FormItem({ className, ...props }: React.ComponentProps<'div'>) {
   )
 }
 
-function FormLabel({ className, ...props }: React.ComponentProps<typeof LabelPrimitive.Root>) {
+function FormLabel({ className, ...props }: React.ComponentProps<typeof Label>) {
   const { error, formItemId } = useFormField()
 
   return (
@@ -91,18 +91,36 @@ function FormLabel({ className, ...props }: React.ComponentProps<typeof LabelPri
   )
 }
 
-function FormControl({ ...props }: React.ComponentProps<typeof Slot.Root>) {
+/**
+ * Merges the field wiring (id + aria attributes) onto its single child
+ * element — the radix Slot idiom, reimplemented with Base UI's
+ * `useRender`. `<FormControl><Input {...field} /></FormControl>` keeps
+ * working unchanged; a `render` prop is also accepted.
+ */
+function FormControl({ children, render, ...props }: useRender.ComponentProps<'div'>) {
   const { error, formItemId, formDescriptionId, formMessageId } = useFormField()
 
-  return (
-    <Slot.Root
-      data-slot="form-control"
-      id={formItemId}
-      aria-describedby={!error ? `${formDescriptionId}` : `${formDescriptionId} ${formMessageId}`}
-      aria-invalid={!!error}
-      {...props}
-    />
-  )
+  const renderTarget =
+    render ?? (React.isValidElement(children) ? (children as React.ReactElement) : undefined)
+
+  return useRender({
+    defaultTagName: 'div',
+    render: renderTarget,
+    props: mergeProps<'div'>(
+      {
+        'data-slot': 'form-control',
+        id: formItemId,
+        'aria-describedby': !error
+          ? `${formDescriptionId}`
+          : `${formDescriptionId} ${formMessageId}`,
+        'aria-invalid': !!error,
+        // When a render prop is used, children remain the element's content;
+        // in the children-as-slot case the child element carries its own.
+        ...(render ? { children } : {}),
+      } as React.ComponentProps<'div'>,
+      props
+    ),
+  })
 }
 
 function FormDescription({ className, ...props }: React.ComponentProps<'p'>) {
