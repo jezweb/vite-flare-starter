@@ -219,17 +219,25 @@ function FeatureGatedPage({
  * of React state — without this, useAgentChat's `use(initialMessagesPromise)`
  * suspends ChatPage, which remounts on resolve and re-allocates a new id,
  * suspending again in an infinite loop (see chat migration plan v2.1, 1C
- * commit). Preserves `?projectId=` so a "New chat in this project" link
- * stamps the right project on the first turn.
+ * commit).
+ *
+ * Forwards ALL search params to the destination — ChatPage owns their
+ * meaning: `projectId` (project stamping), `q` (auto-send: project
+ * quick-chat + palette Ask-AI), `title`/`text`/`url` (PWA Share Target —
+ * manifest.json posts shares to /dashboard/chat). This redirect once
+ * forwarded only projectId, which silently killed the Share Target and
+ * project quick-chat flows: the conversation got created, the user's text
+ * vanished. Only the decorative `new` flag is stripped.
  */
 function NewChatRedirect() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   useEffect(() => {
     const id = crypto.randomUUID()
-    const projectId = searchParams.get('projectId')
-    const suffix = projectId ? `?projectId=${projectId}` : ''
-    navigate(`/dashboard/chat/${id}${suffix}`, { replace: true })
+    const next = new URLSearchParams(searchParams)
+    next.delete('new')
+    const qs = next.toString()
+    navigate(`/dashboard/chat/${id}${qs ? `?${qs}` : ''}`, { replace: true })
   }, [navigate, searchParams])
   return <PageSpinner />
 }
