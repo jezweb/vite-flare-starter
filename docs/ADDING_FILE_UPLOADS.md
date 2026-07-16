@@ -419,7 +419,7 @@ import { useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
-import { Upload, File, X } from 'lucide-react'
+import { Upload, File, X } from '@phosphor-icons/react'
 import { useUploadFile } from '../hooks/useFiles'
 import { cn } from '@/lib/utils'
 

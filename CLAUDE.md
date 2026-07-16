@@ -1,7 +1,7 @@
 # CLAUDE.md — AI Developer Context
 
 **Project:** Vite Flare Starter
-**Version:** 2.3.0
+**Version:** 2.0.0
 **Purpose:** Pattern library and production-ready starter kit for Cloudflare Workers
 
 ---
@@ -201,7 +201,7 @@ Page shapes (frontmatter, Gotchas section, `_index.md` threshold, when-to-subfol
 | **Backend** | Hono 4.12 |
 | **Database** | D1 (SQLite) + Drizzle ORM 0.45 |
 | **Auth** | better-auth 1.6 (Google OAuth, optional email/password) |
-| **AI** | AI SDK v6 + workers-ai-provider + OpenRouter (16 models across 8 providers) |
+| **AI** | AI SDK v6 + workers-ai-provider + OpenRouter (20 models across 9 providers) |
 | **UI** | Tailwind v4 + shadcn/ui on **Base UI** (`base-nova` style) + Phosphor icons — Kumo-derived design tokens (see `src/index.css`), Inter, 14px base scale |
 | **Data fetching** | TanStack Query 5 + apiClient |
 | **Forms** | React Hook Form + Zod |
@@ -455,7 +455,7 @@ reading source"*. Anywhere you'd say "click Skip", that's a UX bug.
 
 ## AI Module
 
-18 curated models across 9 providers. Edit `src/shared/config/models.ts`.
+20 curated models across 9 providers. Edit `src/shared/config/models.ts`.
 Metadata comes from a bundled snapshot of [models.flared.au](https://models.flared.au)
 + [ai.flared.au](https://ai.flared.au). `pnpm models:refresh` to update.
 
@@ -465,11 +465,11 @@ the live catalogue. Re-run after any Workers AI release announcement.
 
 | Source | Models | Keys |
 |---|---|---|
-| **Workers AI** (free) | Kimi K2.6 (default), Gemma 4 26B, GLM 4.7 Flash, QwQ 32B, GPT-OSS 120b, GPT-OSS 20b | none |
-| **Anthropic** | Claude Opus 4.6, Sonnet 4.6, Haiku 4.5 | via OpenRouter |
+| **Workers AI** (free) | Kimi K2.6 (default), Gemma 4 26B, GLM 4.7 Flash, GLM 5.2, QwQ 32B, GPT-OSS 120b, GPT-OSS 20b | none |
+| **Anthropic** | Claude Opus 4.8, Sonnet 4.6, Haiku 4.5 | via OpenRouter |
 | **OpenAI** | GPT-5.4, GPT-5.4 mini | via OpenRouter |
 | **Google** | Gemini 3.1 Pro, Gemini 3 Flash | via OpenRouter |
-| **DeepSeek / Qwen / Mistral / xAI / Z.AI** | V3.2 Speciale, 3.6 Plus, Large 3 2512, Grok 4.1 Fast, GLM 5 | via OpenRouter |
+| **DeepSeek / Qwen / Mistral / xAI / Z.AI** | V4 Pro, V4 Flash, 3.6 Plus, Large 3 2512, Grok 4.20, GLM 5 | via OpenRouter |
 
 One `OPENROUTER_API_KEY` unlocks everything non-Workers-AI. Direct-provider
 SDKs (`@ai-sdk/anthropic`, `@ai-sdk/openai`, `@ai-sdk/google`) remain as
@@ -556,7 +556,7 @@ trigger-first descriptions than generic "this skill does X" copy. See
 ### Three storage sources
 
 - **Bundled** — drop `skills/<name>/SKILL.md` in the repo. Vite glob,
-  build-time. 12 examples ship with the starter.
+  build-time. 30 examples ship with the starter.
 - **R2** — `POST /api/skills/upload` with SKILL.md content. Stored in
   the SKILLS R2 bucket.
 - **GitHub** — `POST /api/skills/github` with a raw URL or directory URL.
@@ -594,7 +594,7 @@ routes, apply switch). Shared React component:
 
 ### Bundled skills
 
-12 reference implementations:
+30 reference implementations, including:
 
 - **Research**: `web-research`, `fact-check`, `summarise-url`
 - **Writing**: `draft-email`, `rewrite-for-audience`
@@ -733,4 +733,4 @@ pnpm type-check             # Type check
 
 ---
 
-**Created:** 2025-11-29 · **Updated:** 2026-06-23 (security review: allowlist, signed connector cookies, access log, tenancy/R2 guards — see `docs/SECURITY.md`) · **Author:** Jeremy Dawes (Jezweb)
+**Created:** 2025-11-29 · **Updated:** 2026-07-16 (v2.0.0 design reboot: Base UI + Kumo tokens + Phosphor + ECharts — see `.claude/rules/design-tokens.md`; platform currency, email delivery events, sandbox tools — see `CHANGELOG.md`) · **Author:** Jeremy Dawes (Jezweb)

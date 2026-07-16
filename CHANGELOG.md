@@ -2,6 +2,204 @@
 
 All notable changes to `vite-flare-starter`.
 
+## v2.0.0 — 2026-07-16
+
+The design reboot. One session, ~62 commits: every shadcn primitive
+migrated **Radix → Base UI**, the visual language rebuilt on
+**Cloudflare's Kumo design system** (single-source `light-dark()`
+tokens, Inter, 14px density), **lucide → Phosphor** icons,
+**Recharts → ECharts** via Kumo's chart components, new
+Banner / Meter / ClipboardText primitives, and a Cloudflare-style
+nested sidebar with quick search. Plus a platform-currency pass:
+agents-stack bump (agents 0.17.4 / ai-chat 0.9.3 / voice 0.3.4),
+security dep batch, model-catalog refresh (GLM-5.2 + Moondream,
+prefix caching, AI-Gateway option), email delivery/bounce events +
+suppression list, and container-backed sandbox code-interpreter +
+document-generation tools. Major bump: the Radix → Base UI swap and
+token rewrite are breaking for forks that customised `ui/` primitives
+or styled on Radix data-attributes.
+
+Shipped as PR #104; the platform work tracks issues #105–#108 (close
+on merge). #109 stays open as the deliberate-migrations tracker (DO
+declarative exports, workers-types v5, TS7, React Router v8, pnpm pin).
+
+### Changed — Radix → Base UI migration (breaking)
+
+All ~36 shadcn primitives in `src/components/ui/` now sit on
+`@base-ui/react`; `radix-ui` + 22 `@radix-ui/react-*` direct deps are
+gone (cmdk/vaul keep their own transitive react-dialog). Closing
+sweeps: 0 radix imports, 0 `asChild`, 0 `--radix-*` vars in src.
+`components.json` flipped to the **`base-nova`** registry style so
+future `shadcn add` fetches Base UI variants. Per-component migration
+notes live in `.migration/*.md`; the reusable procedure is the
+`migrate-radix-to-base` skill.
+
+Behaviour deltas — flagged, deliberately kept to match the shadcn base
+registry rather than silently patched back:
+
+- **Tabs keyboard activation is now MANUAL** (arrow keys move focus,
+  Enter/Space activates — Radix activated on focus). Opt-in restore per
+  surface: `<TabsList activateOnFocus>`.
+- **Dropdown/context-menu checkbox + radio items no longer close the
+  menu on click** (Base UI `closeOnClick` defaults false for those item
+  types) — affects nav-user's Builder-mode toggle and DataTable column
+  visibility; arguably better UX for toggles.
+- `PromptInputActionAddScreenshot` public prop `onSelect` → `onClick`
+  (API break for forks composing it; no internal caller passed it).
+- No `asChild` anywhere — Base UI composes via the `render` prop.
+  Primitives with internal layout (e.g. `CapabilityChip`) are wrapped
+  from outside instead.
+
+### Added — Kumo design language (tokens, Inter, density)
+
+- `src/index.css` is the single source of truth: `light-dark()` tokens
+  replace the duplicated `:root`/`.dark` blocks (`.dark` only flips
+  `color-scheme`). Kumo surface hierarchy
+  (canvas / base / elevated / recessed / tint), **two border weights**
+  (`border-border` line + `border-hairline` divider), blue primary with
+  orange as brand-accent only (CF convention), neutral focus ring,
+  status tint tokens, Kumo badge-hue chart palette, 0.375rem radius.
+- **Inter Variable** + Kumo's global text scale (base 14px, sm 13px,
+  xs 12px) — the density lever the CF dashboard uses. `tabular-nums`
+  on table cells.
+- `themes.ts` 'default' scheme no longer applies inline vars —
+  index.css owns it; presets/custom still override inline (this closes
+  a two-month drift where themes.ts silently overrode index.css).
+- Codified in `.claude/rules/design-tokens.md`: semantic tokens only,
+  never a `.dark { --token }` block, don't invent a third border weight.
+- Token values extracted from `@cloudflare/kumo` 2.8.0; their
+  badge-purple fallback bug substituted with real violet (filed
+  upstream as kumo#631).
+
+### Changed — Icons: lucide-react → @phosphor-icons/react
+
+Phosphor is Kumo's icon peer. AST codemod over 255 files / 251 unique
+icon names against a machine-checked mapping; duplicate specifiers
+merged (14, e.g. MailOpen+MailCheck → EnvelopeOpen); `LucideIcon` type →
+Phosphor `Icon` across every icon registry. Namespace `icons[name]`
+lookups converted to explicit icon maps — the dynamic access defeated
+tree-shaking and pulled the whole 5 MB icon library into a chunk shared
+by 52 pages; now only used icons ship.
+
+### Changed — Charts: Recharts → Kumo ECharts
+
+- `AgentObservabilityPage` charts now use
+  `@cloudflare/kumo/components/chart` — `TimeseriesChart` (line +
+  gradient) for cost-by-day, low-level `Chart` with a categorical axis
+  for runs-per-agent.
+- New `src/client/lib/echarts.ts`: shared tree-shaken `echarts/core`
+  registration + `useChartTheme`, which resolves `--chart-1..5` tokens
+  to canvas-safe hex (canvas can't read CSS vars; a bare readback hands
+  `oklch()` to Kumo's hex-only gradient parser and paints
+  `rgba(NaN,…)`), re-resolving on light/dark and theme changes.
+- `kumo-*` interop utilities generated via an `@source` scan of Kumo's
+  chart chunk; Kumo's own theme CSS deliberately NOT imported.
+- `recharts`, the shadcn `chart.tsx` wrapper, and the dead
+  chart-area-interactive demo removed. ECharts stays route-split —
+  entry bundle unchanged.
+
+### Added — Kumo-anatomy primitives + page/nav anatomy
+
+- **Banner** (status-tint tokens, danger announces as `role=alert`),
+  **Meter** (Base UI accessible Meter + CF quota-threshold idiom),
+  **ClipboardText** (CopyButton + optional fixed-width masking for
+  sensitive values). Native implementations in our token language, not
+  Kumo DOM imports. Showcased on ComponentsPage.
+- `PageHeader` adopts Kumo page anatomy: breadcrumbs strip → title →
+  max-w-prose subtitle → tabs. Hand-rolled page headers are now a smell.
+- **Cloudflare-style nested sidebar** — nav items take `children`;
+  parents are whole-row toggles (right-edge caret, degrade to a link
+  when icon-collapsed), inline Kumo menu badges, per-item open state in
+  localStorage. **Sidebar quick search** field (⌘K) at the top opens
+  the command palette. Verified against the live dash.cloudflare.com
+  anatomy.
+
+### Changed — Platform currency (coordinated dep batch)
+
+- **agents stack** (#105): agents ^0.14.1 → ^0.17.4, @cloudflare/voice
+  ^0.2.1 → ^0.3.4, @cloudflare/ai-chat 0.8.1 → 0.9.3 (kept
+  exact-pinned — its @ai-sdk/react peer floor moves per patch), ai
+  ^6.0.228 with all providers on the latest v6 line (ai v7 blocked by
+  agents/ai-chat peer pins), @openrouter/ai-sdk-provider pinned 2.10.0,
+  workers-ai-provider ^3.3.1 (AI Gateway routing + 429/5xx auto-retry),
+  @cloudflare/sandbox ^0.12.3. 150/150 tests + live streaming verified;
+  agents 0.16 RPC-timeout audit came back clean (no affected call sites).
+- **Security batch**: better-auth 1.6.23 (token replay-race, hd-claim
+  enforcement), hono 4.12.30 (CORS + body-limit fixes), vite-plugin
+  1.45.0 (ws CVE), vitest-pool-workers 0.18.5, wrangler 4.111.0.
+
+### Added — AI layer quick wins (#108)
+
+- Model snapshot refreshed via `pnpm models:refresh` (130 models, was
+  3 weeks stale). **GLM-5.2** added to the free Workers AI list (262K
+  ctx, tools + reasoning — reasoner-role candidate; default stays Kimi
+  K2.6). Catalog is now **20 models across 9 providers**.
+- **Moondream 3.1** is the first-line vision/OCR fallback in
+  `documents.ts` (fast image-to-text specialist); Kimi K2.6 chat-VLM
+  kept as fallback / explicit override.
+- **Prefix caching**: per-conversation `sessionAffinity` wired through
+  `resolveModel(ForUser)` → workers-ai-provider, keyed on the chat DO
+  instance name.
+- Optional **OpenRouter-through-AI-Gateway** BYOK proxy when
+  `AI_GATEWAY_ACCOUNT_ID` + `AI_GATEWAY_ID` are set (logging/caching,
+  zero billing change).
+- batch-tasks: dynamic retry delay (attempt×30s on rate-limit/429, 10s
+  otherwise).
+
+### Added — Email delivery events + suppression list (#107)
+
+Bounce/complaint feedback loop for Cloudflare Email Service via Queues
+event subscriptions. Opt-in consumer records `email_events` and
+maintains `email_suppressions`; `EMAIL_SUPPRESSION_ENFORCE='true'`
+makes `sendEmail()` skip suppressed recipients with a typed
+`'suppressed'` result. `parseEmailEvent` validates
+`source.type='email.sending'` so a forged message from another queue
+producer can't suppress arbitrary recipients. email-service provider
+only. Guide: `docs/ADDING_EMAIL_DELIVERY_EVENTS.md`.
+
+### Added — Sandbox code-interpreter + `generate_document` (#106)
+
+- `run_python` upgraded to a full code interpreter on Cloudflare
+  Sandbox containers: conversation-scoped sandbox
+  (`user-<id>-conv-<id>`, interpreter state persists while warm), input
+  files staged from FILES R2 behind `isOwnedR2Key`, output paths
+  harvested back as `artifacts` and registered on the Files page, 50KB
+  code cap. Output keeps the `{ stdout, stderr, exitCode }` shape so
+  the existing terminal shape-renderer covers it with zero client code.
+- `generate_document`: renders markdown → docx / xlsx / pptx in-sandbox
+  via python-docx / openpyxl / python-pptx and returns the file as an
+  artifact.
+- Wiring: `containers` block + `SANDBOX` DO binding + migration v11,
+  `Dockerfile` on `cloudflare/sandbox:0.12.3-python` (tag must match
+  the npm version; Docker must be running at deploy). Tools self-omit
+  without the binding; `VITE_FEATURE_SANDBOX` opts out. Egress
+  trade-off for open-signup deployments documented in
+  `docs/SECURITY.md` §9.
+
+### Fixed
+
+- Brains-trust panel fixes (GPT-5.6 Sol + Opus 4.8 + Gemini 3.1 Pro,
+  cross-validated): Button anchor render targets bypass the Base UI
+  primitive so links keep link semantics; echarts alpha tokens
+  composite to opaque hex + charts re-resolve on `vfs:themechange`;
+  ThemeProvider `matchMedia` listener so mode:system tracks live OS
+  appearance flips (pre-existing gap); Meter always shows a value
+  readout + aria-label path; ClipboardText fixed-width mask (no
+  secret-length leak); Banner danger variant announces as `role=alert`.
+- Sandbox Dockerfile `pip` → `python3 -m pip` (bare pip not on the
+  image PATH).
+- e2e: stale Source-tab locator in the skills spec.
+- Missing `@tailwindcss/typography` devDependency surfaced by the
+  reboot build.
+
+### Internal
+
+- Research + decision artefacts:
+  `.jez/research/{cloudflare-dashboard-design-kumo,cloudflare-platform-state,platform-currency-review,base-ui-kumo-adoption-decision}-2026-07-16.md`,
+  panel record `.jez/audits/2026-07-16-brains-trust-design-reboot.md`.
+- New `.claude/rules/design-tokens.md`; `migrate-radix-to-base` skill
+  captures the migration procedure for other repos.
+
 ## v1.9.0 — 2026-05-07
 
 Two-week sprint covering: a new Knowledge primitive, voice mode for the

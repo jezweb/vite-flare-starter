@@ -10,6 +10,10 @@
 
 ## See it in action
 
+> Screenshots and GIFs below predate the v2.0 design reboot (Base UI +
+> Cloudflare Kumo design language) — layouts and flows are current, the
+> visual styling has since changed.
+
 ### Take the guided tour
 
 The starter ships **Walkabout** — it demos itself. Below is the home dashboard with the narration-synced moving spotlight. **▶ [Watch the full 3-minute narrated tour](https://pub-fe51e0b1ecfb48d896a06618f6da1ed2.r2.dev/full-tour.mp4)** (with sound) — it walks all 13 modules end to end. Or sign in to the [live demo](https://vite-flare-starter.webfonts.workers.dev) and it offers the tour itself.
@@ -43,7 +47,7 @@ The full @-mention flow: open the create modal, pick the Marketing pod template,
 
 | | |
 |---|---|
-| ![AI Chat](./docs/screenshots/dashboard/01-chat.png) | **AI Chat** — `"Good evening, Jeremy"` greeting, 5 preset chips (Write / Research / Code / Plan / Local), starter suggestions, 16-model picker (Kimi K2.6 default), Attach + voice + drag-drop. |
+| ![AI Chat](./docs/screenshots/dashboard/01-chat.png) | **AI Chat** — `"Good evening, Jeremy"` greeting, 5 preset chips (Write / Research / Code / Plan / Local), starter suggestions, 20-model picker (Kimi K2.6 default), Attach + voice + drag-drop. |
 | ![Projects](./docs/screenshots/dashboard/02-projects.png) | **Projects** — long-lived workspaces grouping conversations + files + memory + instructions. Search, archive toggle, sort by activity, multi-user share. |
 | ![Skills](./docs/screenshots/dashboard/03-skills.png) | **Skills** — 14 bundled Claude Agent Skills + Sync bundled / Install from GitHub / Add skill. AI Sparkle rewrite + History (4 versions). Source / Preview / History tabs. |
 | ![Connectors](./docs/screenshots/dashboard/04-connectors.png) | **MCP Connectors** — Google Workspace + Microsoft 365 connect (OAuth + bearer both), per-tool always/ask/never, AES-GCM tokens at rest. |
@@ -99,7 +103,7 @@ Per-agent reply modes (`mention` / `proactive` / `ambient` / `always` / `off`), 
 | | |
 |---|---|
 | ![Dashboard](./docs/screenshots/03-dashboard.png) | **Dashboard shell** — config-driven sidebar with role + feature-flag gating. Edit `nav.ts`, not layouts. |
-| ![Chat](./docs/screenshots/04-chat-empty.png) | **AI Chat** — greeting by time of day, preset prompts, persisted conversations. 16 models across 8 providers. |
+| ![Chat](./docs/screenshots/04-chat-empty.png) | **AI Chat** — greeting by time of day, preset prompts, persisted conversations. 20 models across 9 providers. |
 | ![Chat with tools](./docs/screenshots/05-chat-with-tools.png) | **Agent loop in one turn** — tool chips, reasoning, streamed answer. Every call logs tokens and duration. |
 | `/dashboard/spaces` | **Spaces (NEW)** — multi-user multi-agent rooms with @-mentions, threads, reactions, pin/star/quote/forward, cross-space search, proactive/ambient modes, slash sub-commands, MCP attachments. |
 | `/dashboard/projects` | **Projects** — long-lived workspaces grouping conversations, files, instructions, memory. Multi-user share with editor/viewer roles (Phase 5). |
@@ -141,7 +145,7 @@ Per-agent reply modes (`mention` / `proactive` / `ambient` / `always` / `off`), 
 - Per-tool telemetry in `ai_tool_calls` D1 table + admin "Tool errors" tab for 24h observability
 - Natural-language query translation — pass `naturalQuery: "emails from nick last week"` instead of constructing Gmail operator syntax; server translates via Nemotron 3
 - Sources footer under assistant messages — claude.ai-style citation strip aggregated from tool outputs (web_search, gmail, drive, places) + native `source-url` / `source-document` SDK parts
-- 16 models across 8 providers (Workers AI free tier + OpenRouter unlocks the rest)
+- 20 models across 9 providers (Workers AI free tier + OpenRouter unlocks the rest)
 - MCP integration (tools, resources, prompts, elicitation) + MCP-UI rendering
 
 **Application framework**
@@ -151,8 +155,9 @@ Per-agent reply modes (`mention` / `proactive` / `ambient` / `always` / `off`), 
 - MCP Connectors — per-user OAuth to external MCP servers, PKCE + DCR flow, tokens AES-GCM encrypted at rest, per-tool always/ask/never policies
 - Google Workspace — per-user OAuth with automatic token refresh, granular scope tracking, 26 tools across 6 Google services
 - Config-driven sidebar — add nav items in `nav.ts`, feature-flag modules in `features.ts`
-- UI — Tailwind v4 + shadcn/ui (~80 primitives), 8+ themes, dark/light/system
-- Layout primitives — three list-page shapes (queue / cards / table) with copy-paste scaffolds in `_template/`, themed `Chart` wrapper for trends. Picker rule in CLAUDE.md.
+- UI — Tailwind v4 + shadcn/ui on **Base UI** (~80 primitives, `base-nova` style) + Phosphor icons, Cloudflare-Kumo-derived design tokens (single-source `light-dark()`, Inter, 14px density), 8+ themes, dark/light/system
+- Layout primitives — three list-page shapes (queue / cards / table) with copy-paste scaffolds in `_template/`, Kumo ECharts `Chart` / `TimeseriesChart` for trends. Picker rule in CLAUDE.md.
+- Email — six pluggable providers with failover, plus delivery/bounce events via Queues and an enforced suppression list
 - Command palette — Cmd+K, keyboard shortcuts
 - Files — R2 upload/download with D1 metadata
 - Activity — audit log with pagination and entity history
@@ -172,7 +177,8 @@ Per-agent reply modes (`mention` / `proactive` / `ambient` / `always` / `off`), 
 | Database | D1 (SQLite) + Drizzle ORM 0.45 |
 | Auth | better-auth 1.6 |
 | AI | AI SDK v6 + workers-ai-provider + OpenRouter |
-| UI | Tailwind v4 + shadcn/ui |
+| UI | Tailwind v4 + shadcn/ui on Base UI (`base-nova`) + Phosphor icons — Kumo-derived design tokens, Inter, 14px scale |
+| Charts | ECharts via `@cloudflare/kumo` `Chart` / `TimeseriesChart` |
 | Data | TanStack Query 5 + `apiClient` |
 | Forms | React Hook Form + Zod |
 | Testing | Vitest 4 + `@cloudflare/vitest-pool-workers` |
@@ -216,7 +222,7 @@ Tools live in `src/server/modules/chat/tools/` and are auto-included based on av
 | delegate | `delegate` (role-based subagent spawn) | Always |
 | audio | `transcribe_audio`, `speak_text` | Always (AI binding) |
 | documents | `convert_document`, `read_pdf` | Always (AI binding) |
-| code | `run_python`, `run_shell`, `run_js` | `SANDBOX` DO binding |
+| code | `run_python` (conversation-scoped code interpreter, R2 file staging, artifact harvest), `run_shell`, `run_js`, `generate_document` (markdown → docx/xlsx/pptx) | `SANDBOX` container binding (Cloudflare Sandbox) |
 | browser | `browser_markdown`, `browser_extract`, `browser_screenshot`, `browser_links`, `browser_content` | CF API token |
 | search | `web_search` | One of Serper / Brave / Tavily / Exa key |
 | places | `places_search`, `places_details` | `GOOGLE_PLACES_API_KEY` |
@@ -244,7 +250,7 @@ skills/
   draft-email/SKILL.md
   code-review/SKILL.md
   extract-structured-data/SKILL.md
-  ...12 total
+  ...30 total
 ```
 
 Progressive disclosure: only names + descriptions are in the system prompt. The full body loads on demand via `load_skill`. Register more skills from GitHub URLs or R2 uploads at runtime.
@@ -256,11 +262,11 @@ Progressive disclosure: only names + descriptions are in the system prompt. The 
 One `resolveModel()` call picks the right provider from the model string.
 
 ```typescript
-resolveModel(env, '@cf/moonshotai/kimi-k2.5')        // Workers AI — free
+resolveModel(env, '@cf/moonshotai/kimi-k2.6')        // Workers AI — free
 resolveModel(env, 'claude-sonnet-4-6')                // Anthropic
 resolveModel(env, 'gpt-5.4-mini')                     // OpenAI
 resolveModel(env, 'gemini-3.1-pro')                   // Google
-resolveModel(env, 'openrouter/deepseek/deepseek-v3.2') // OpenRouter
+resolveModel(env, 'openrouter/deepseek/deepseek-v4-flash') // OpenRouter
 ```
 
 Model catalogue is a bundled snapshot from [models.flared.au](https://models.flared.au). Refresh with `pnpm models:refresh`.

@@ -241,7 +241,7 @@ For agent toolkit + connector setup: `docs/AGENT_TOOLKIT.md`.
 - **Always update `drizzle/meta/_journal.json`** when adding migrations — it's the source of truth for the migration runner
 - **Static routes before parameterised** in Hono routers (see `~/.claude/rules/hono-route-ordering.md`)
 - **Multiple `Set-Cookie` headers** require `headers.append()`, not concatenation
-- **Lucide icon imports** must be explicit, not `import * as` (tree-shaking)
+- **Phosphor icon imports** (`@phosphor-icons/react`) must be explicit, not `import * as` or dynamic `icons[name]` lookups (tree-shaking — a namespace lookup once pulled the whole 5 MB icon library into a shared chunk)
 
 ### Architectural discipline
 

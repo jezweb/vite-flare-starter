@@ -46,7 +46,7 @@ client render metadata in one object. See
 ```ts
 // src/server/modules/chat/tools/my-domain.ts
 import { z } from 'zod'
-import { Sparkles } from 'lucide-react'
+import { Sparkle } from '@phosphor-icons/react'
 import type { ToolDefinition } from '@/shared/agent'
 
 const MyInput = z.object({ query: z.string() })
