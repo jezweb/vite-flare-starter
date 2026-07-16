@@ -182,11 +182,10 @@ export function SkillsPage() {
               {allSkills.length === 1 ? 'skill' : 'skills'}
             </p>
             <ToggleGroup
-              type="single"
               variant="outline"
               size="sm"
-              value={view}
-              onValueChange={(v) => v && setView(v as 'cards' | 'list')}
+              value={[view]}
+              onValueChange={([v]) => v && setView(v as 'cards' | 'list')}
               aria-label="Layout view"
             >
               <ToggleGroupItem value="cards" aria-label="Card view">

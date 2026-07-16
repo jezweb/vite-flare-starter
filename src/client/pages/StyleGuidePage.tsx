@@ -777,9 +777,8 @@ export function StyleGuidePage() {
             <div className="space-y-2">
               <Label>Text Alignment (Single Select)</Label>
               <ToggleGroup
-                type="single"
-                value={toggleGroupValue}
-                onValueChange={(value: string) => value && setToggleGroupValue(value)}
+                value={[toggleGroupValue]}
+                onValueChange={([value]) => value && setToggleGroupValue(value)}
               >
                 <ToggleGroupItem value="left" aria-label="Align left">
                   <AlignLeft className="h-4 w-4" />
@@ -794,7 +793,7 @@ export function StyleGuidePage() {
             </div>
             <div className="space-y-2">
               <Label>Text Formatting (Multiple Select)</Label>
-              <ToggleGroup type="multiple">
+              <ToggleGroup multiple>
                 <ToggleGroupItem value="bold" aria-label="Toggle bold">
                   <Bold className="h-4 w-4" />
                 </ToggleGroupItem>

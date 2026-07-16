@@ -107,11 +107,10 @@ export function AgentObservabilityPage() {
         subtitle="How much agent work happened and what it cost. Pulled from the agent_runs audit log."
         trailing={
           <ToggleGroup
-            type="single"
             variant="outline"
             size="sm"
-            value={range}
-            onValueChange={(v) => v && setRange(v as Range)}
+            value={[range]}
+            onValueChange={([v]) => v && setRange(v as Range)}
             aria-label="Date range"
           >
             <ToggleGroupItem value="7d">7d</ToggleGroupItem>

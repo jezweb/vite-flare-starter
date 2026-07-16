@@ -104,11 +104,10 @@ export function TemplateCatalogPage() {
               {data.total} {data.total === 1 ? 'thing' : 'things'}
             </p>
             <ToggleGroup
-              type="single"
               variant="outline"
               size="sm"
-              value={view}
-              onValueChange={(v) => v && setView(v as 'cards' | 'list')}
+              value={[view]}
+              onValueChange={([v]) => v && setView(v as 'cards' | 'list')}
               aria-label="Layout view"
             >
               <ToggleGroupItem value="cards" aria-label="Card view">
