@@ -24,6 +24,27 @@
 @custom-variant dark (&:is(.dark *));
 @plugin "@tailwindcss/typography";
 
+/* ── Kumo chart components (@cloudflare/kumo Chart / TimeseriesChart) ──────
+ * We deliberately do NOT import Kumo's theme CSS — our tokens below ARE the
+ * Kumo-derived design language. The chart components' DOM (tooltip, legend,
+ * loading skeleton) is styled with kumo-namespaced Tailwind utilities
+ * (bg-kumo-base, text-kumo-subtle, …), so we:
+ *   1. scan the chart chunk so Tailwind generates exactly those utilities
+ *      (glob survives Kumo's content-hash renames; if Kumo splits charts out
+ *      of the Maps chunk, chart tooltips losing their styling is the tell)
+ *   2. map the kumo-* tokens onto our own (in :root + @theme inline below)
+ *   3. carry the one keyframe its loading skeleton needs */
+@source "../node_modules/@cloudflare/kumo/dist/chunks/Maps-*.js";
+
+@keyframes kumo-chart-wave {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-400px);
+  }
+}
+
 /* ── Design tokens ─────────────────────────────────────────────────────────
  * Kumo-derived design language (@cloudflare/kumo 2.8.0 theme values, adapted
  * onto shadcn variable names so every component picks them up unchanged).
@@ -99,6 +120,14 @@
   --chart-4: light-dark(oklch(54.1% 0.281 293.009), oklch(60.6% 0.25 292.717));
   --chart-5: light-dark(oklch(59.6% 0.145 163.225), oklch(50.8% 0.118 165.612));
 
+  /* Kumo chart interop — the chart components reference these exact var
+     names in inline styles (ECharts HTML tooltips), so they must exist at
+     :root; the @theme inline block maps the same names onto utilities. */
+  --color-kumo-base: var(--card);
+  --color-kumo-line: var(--border);
+  --text-color-kumo-default: var(--foreground);
+  --text-color-kumo-subtle: var(--muted-foreground);
+
   /* Sidebar — CF-style: shares the canvas surface, hairline-divided */
   --sidebar: var(--background);
   --sidebar-foreground: var(--foreground);
@@ -143,6 +172,14 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  /* Kumo chart utilities (bg-kumo-base, outline-kumo-fill, …) — values match
+     Kumo's own theme where we have an equivalent token */
+  --color-kumo-base: var(--card);
+  --color-kumo-line: var(--border);
+  --color-kumo-fill: var(--secondary);
+  --color-kumo-tip-shadow: light-dark(oklch(92.8% 0.006 264.531), transparent);
+  --text-color-kumo-default: var(--foreground);
+  --text-color-kumo-subtle: var(--muted-foreground);
   --color-surface-elevated: var(--surface-elevated);
   --color-surface-recessed: var(--surface-recessed);
   --color-surface-tint: var(--surface-tint);
