@@ -199,7 +199,7 @@ Page shapes (frontmatter, Gotchas section, `_index.md` threshold, when-to-subfol
 | **Database** | D1 (SQLite) + Drizzle ORM 0.45 |
 | **Auth** | better-auth 1.6 (Google OAuth, optional email/password) |
 | **AI** | AI SDK v6 + workers-ai-provider + OpenRouter (16 models across 8 providers) |
-| **UI** | Tailwind v4 + shadcn/ui |
+| **UI** | Tailwind v4 + shadcn/ui on **Base UI** (`base-nova` style) + Phosphor icons — Kumo-derived design tokens (see `src/index.css`), Inter, 14px base scale |
 | **Data fetching** | TanStack Query 5 + apiClient |
 | **Forms** | React Hook Form + Zod |
 | **Testing** | Vitest 4 + @cloudflare/vitest-pool-workers (unit) · Playwright (e2e killer flows in `tests/e2e/`) |
@@ -292,6 +292,9 @@ fork a whole layout file to change shape — compose `AppShell` differently:
 | **ConfigDiffCard** | `client/components/ConfigDiffCard.tsx` | Shared approval card with line diff (used by skills editor + propose_patch chat tool) |
 | **MarkdownField** | `client/components/MarkdownField.tsx` | Preview/edit toggle + rich copy (formatted paste) + .md/.txt export for user markdown. Read-only when no `onChange`. |
 | **CopyButton (rich)** | `components/ui/copy-button.tsx` | Pass `html=` for formatted clipboard copy (writes text/html + text/plain). `useCopy().copyRich()` for the hook form. |
+| **Banner** | `components/ui/banner.tsx` | Full-width page-level notice (edge-to-edge chrome vs Alert's in-flow callout). Status-tint tokens, optional action/dismiss. |
+| **Meter** | `components/ui/meter.tsx` | Measured value in a known range (quota/storage/budget). Base UI Meter semantics + CF threshold idiom (warns near max). NOT a Progress. |
+| **ClipboardText** | `components/ui/clipboard-text.tsx` | Read-only copyable value (API keys, webhook URLs); optional `masked` reveal toggle. |
 
 ### Choosing a layout for a list page
 
