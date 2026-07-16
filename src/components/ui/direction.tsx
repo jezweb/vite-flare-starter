@@ -1,20 +1,26 @@
 'use client'
 
 import * as React from 'react'
-import { Direction } from 'radix-ui'
+import {
+  DirectionProvider as DirectionProviderPrimitive,
+  useDirection,
+} from '@base-ui/react/direction-provider'
 
+// Base UI's Direction Provider takes `direction` (radix took `dir`). This
+// wrapper keeps accepting both spellings for call-site compatibility.
 function DirectionProvider({
   dir,
   direction,
   children,
-}: React.ComponentProps<typeof Direction.DirectionProvider> & {
-  direction?: React.ComponentProps<typeof Direction.DirectionProvider>['dir']
+}: Omit<React.ComponentProps<typeof DirectionProviderPrimitive>, 'direction'> & {
+  dir?: React.ComponentProps<typeof DirectionProviderPrimitive>['direction']
+  direction?: React.ComponentProps<typeof DirectionProviderPrimitive>['direction']
 }) {
   return (
-    <Direction.DirectionProvider dir={direction ?? dir}>{children}</Direction.DirectionProvider>
+    <DirectionProviderPrimitive direction={direction ?? dir}>
+      {children}
+    </DirectionProviderPrimitive>
   )
 }
-
-const useDirection = Direction.useDirection
 
 export { DirectionProvider, useDirection }
