@@ -5,6 +5,9 @@ node_modules
 # Cloudflare
 .wrangler
 .dev.vars
+# ...and any backup/variant copies — a `.dev.vars.bak` in a PUBLIC repo is a
+# secrets leak one `git add -A` away.
+.dev.vars.*
 .mf
 
 # Build outputs
@@ -57,6 +60,16 @@ SESSION.md
 # Playwright CLI session captures (ephemeral page snapshots)
 .playwright-cli/
 .playwright-mcp/
+
+# Security-review working registers — may hold unfixed findings; never
+# publish from a public repo. Summaries land in issues/audits instead.
+.jez/review/
+.jez/review*/
+
+# Local agent-session tooling (not part of the starter)
+.agents/
+.claude/skills/
+skills-lock.json
 
 # .jez artifacts — commit markdown, gitignore one-off binaries
 # (UX extract screenshots are kept — they're part of curated references)
