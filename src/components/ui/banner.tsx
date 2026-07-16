@@ -61,7 +61,9 @@ export function Banner({
   const Icon = VARIANT_ICONS[variant]
   return (
     <div
-      role="status"
+      // Danger banners interrupt (role=alert → assertive live region);
+      // everything else queues politely.
+      role={variant === 'danger' ? 'alert' : 'status'}
       data-slot="banner"
       data-variant={variant}
       className={cn(

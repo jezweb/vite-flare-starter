@@ -49,6 +49,25 @@ export function ThemeProvider({
     }
   }, [session, preferences, localTheme])
 
+  // mode: 'system' must track OS appearance changes while the app is open.
+  // applyTheme resolves matchMedia once per call; without this listener a
+  // live OS flip leaves the .dark class (and preset inline vars) stale
+  // (brains-trust 2026-07-16, H3).
+  useEffect(() => {
+    const mode = session && preferences ? preferences.mode : localTheme
+    if (mode !== 'system') return
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    const reapply = () => {
+      if (session && preferences) {
+        applyTheme(preferences.theme, preferences.mode, preferences.customTheme)
+      } else {
+        applyTheme(defaultPreferences.theme, localTheme)
+      }
+    }
+    mq.addEventListener('change', reapply)
+    return () => mq.removeEventListener('change', reapply)
+  }, [session, preferences, localTheme])
+
   // For backwards compatibility with components that use setTheme directly
   // This only affects non-logged-in users (logged-in users should use PreferencesSection)
   const handleSetTheme = (theme: Theme) => {

@@ -2,7 +2,7 @@
  * PageHeader — the canonical page-top primitive.
  *
  * Every dashboard page renders a PageHeader. It owns:
- *   - The H1 (`text-2xl font-semibold tracking-tight`)
+ *   - The H1 (`text-3xl font-semibold tracking-tight`)
  *   - The subtitle (`text-sm text-muted-foreground`)
  *   - The primary + optional secondary CTA in the trailing slot
  *   - `document.title` — sets it as a side effect, fixing the bug where

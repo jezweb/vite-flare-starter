@@ -26,7 +26,16 @@ interface ClipboardTextProps {
 export function ClipboardText({ value, label, masked = false, className }: ClipboardTextProps) {
   const [revealed, setRevealed] = React.useState(!masked)
   const id = React.useId()
-  const display = revealed ? value : '•'.repeat(Math.min(value.length, 32))
+
+  // Re-mask whenever the field becomes sensitive or the value changes —
+  // a reveal must never outlive the secret it was granted for. Fixed-width
+  // mask so the dot count doesn't leak secret length (brains-trust
+  // 2026-07-16, H4).
+  React.useEffect(() => {
+    setRevealed(!masked)
+  }, [masked, value])
+
+  const display = revealed ? value : '•'.repeat(12)
 
   return (
     <div className={cn('w-full', className)}>
@@ -40,7 +49,9 @@ export function ClipboardText({ value, label, masked = false, className }: Clipb
           id={id}
           readOnly
           value={display}
-          onFocus={(e) => e.currentTarget.select()}
+          // Select-on-focus only when the real value is shown — selecting
+          // the mask invites Ctrl+C of literal bullets.
+          onFocus={(e) => revealed && e.currentTarget.select()}
           className="min-w-0 flex-1 truncate bg-transparent font-mono text-[13px] outline-none"
           aria-label={typeof label === 'string' ? label : 'Copyable value'}
         />

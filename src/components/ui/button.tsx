@@ -1,3 +1,4 @@
+import * as React from 'react'
 import { Button as ButtonPrimitive } from '@base-ui/react/button'
 import { cva, type VariantProps } from 'class-variance-authority'
 
@@ -43,15 +44,37 @@ function Button({
   nativeButton,
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+  // Navigation targets keep LINK semantics. Base UI's useButton spreads
+  // `role="button"` + Space-activation onto any non-native render target —
+  // anchors included — which strips links out of screen-reader link lists
+  // (brains-trust 2026-07-16, verified in @base-ui/react source). A render
+  // element that is an <a>/<Link> is therefore styled directly and never
+  // routed through the Button primitive.
+  if (React.isValidElement(render)) {
+    const rp = render.props as Record<string, unknown>
+    const isAnchor = render.type === 'a' || 'href' in rp || 'to' in rp
+    if (isAnchor) {
+      const { children, ...rest } = props as Record<string, unknown>
+      return React.cloneElement(render as React.ReactElement<Record<string, unknown>>, {
+        'data-slot': 'button',
+        'data-variant': variant,
+        'data-size': size,
+        ...rest,
+        className: cn(buttonVariants({ variant, size, className }), rp['className'] as string),
+        children: children ?? rp['children'],
+      })
+    }
+  }
+
   // Base UI's Button primitive defaults `type="button"` on native buttons,
   // which stops accidental form submits when nested in a <form> (e.g.
   // PromptInput). This replaces the hand-rolled resolvedType fix the radix
   // wrapper carried — passing an explicit `type` still overrides it.
   //
   // `nativeButton` is inferred from `render`: when rendering a custom
-  // element (usually a <Link>/<a>) Base UI must not treat it as a native
-  // <button>. Pass `nativeButton` explicitly if you render a real <button>
-  // via `render`.
+  // non-anchor element Base UI must not treat it as a native <button>.
+  // Pass `nativeButton` explicitly if you render a real <button> via
+  // `render`.
   return (
     <ButtonPrimitive
       data-slot="button"

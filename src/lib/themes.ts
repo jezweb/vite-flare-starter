@@ -557,6 +557,13 @@ export function applyTheme(
       root.style.setProperty('--accent', appConfig.brand.accentColor)
     }
   }
+
+  // Notify canvas consumers (charts resolve tokens to concrete colors and
+  // can't see CSS-var rewrites): bump a revision + fire vfs:themechange.
+  // useChartTheme subscribes via useSyncExternalStore.
+  const rev = Number(root.getAttribute('data-theme-rev') ?? '0') + 1
+  root.setAttribute('data-theme-rev', String(rev))
+  window.dispatchEvent(new CustomEvent('vfs:themechange'))
 }
 
 /**

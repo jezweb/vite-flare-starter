@@ -21,7 +21,7 @@ import {
   TooltipComponent,
 } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
-import { useMemo } from 'react'
+import { useMemo, useSyncExternalStore } from 'react'
 
 import { useResolvedMode } from '@/client/components/theme-provider'
 
@@ -54,6 +54,10 @@ export { echarts }
  *      gradient parser paints `rgba(NaN,…)` and kills the whole series.)
  */
 export function resolveCssColor(cssVar: string): string {
+  // Non-browser guard (Workers/test import): a neutral fallback beats a
+  // ReferenceError. Charts re-resolve on mount in the browser.
+  if (typeof document === 'undefined') return '#888888'
+
   const probe = document.createElement('span')
   probe.style.color = `var(${cssVar})`
   probe.style.display = 'none'
@@ -66,14 +70,28 @@ export function resolveCssColor(cssVar: string): string {
   canvas.height = 1
   const ctx = canvas.getContext('2d', { willReadFrequently: true })
   if (!ctx) return computed
+  // Composite over the resolved page background so semi-transparent tokens
+  // (--border is 10%-alpha in light mode) STILL come out as opaque #rrggbb —
+  // Kumo's gradient helper parses hex/rgb only, and an `rgba(…)` string fed
+  // to it fails the same way oklch does (brains-trust 2026-07-16, C1).
+  ctx.fillStyle = getComputedStyle(document.documentElement).backgroundColor || '#ffffff'
+  ctx.fillRect(0, 0, 1, 1)
   ctx.fillStyle = computed
   ctx.fillRect(0, 0, 1, 1)
-  const [r = 0, g = 0, b = 0, a = 0] = ctx.getImageData(0, 0, 1, 1).data
-  if (a === 255) {
-    const hex = (n: number) => n.toString(16).padStart(2, '0')
-    return `#${hex(r)}${hex(g)}${hex(b)}`
-  }
-  return `rgba(${r}, ${g}, ${b}, ${(a / 255).toFixed(3)})`
+  const [r = 0, g = 0, b = 0] = ctx.getImageData(0, 0, 1, 1).data
+  const hex = (n: number) => n.toString(16).padStart(2, '0')
+  return `#${hex(r)}${hex(g)}${hex(b)}`
+}
+
+/**
+ * Theme revision counter — bumped whenever applyTheme() rewrites tokens
+ * (preset/custom edits change values WITHOUT a light⇄dark flip, which the
+ * mode dependency alone can't see). applyTheme dispatches
+ * `vfs:themechange`; useChartTheme subscribes.
+ */
+function subscribeThemeChange(cb: () => void) {
+  window.addEventListener('vfs:themechange', cb)
+  return () => window.removeEventListener('vfs:themechange', cb)
 }
 
 /**
@@ -91,11 +109,18 @@ export function useChartTheme<const T extends readonly string[]>(
   isDarkMode: boolean
 } {
   const mode = useResolvedMode()
+  // Re-resolve when applyTheme rewrites tokens without a mode flip
+  // (custom-theme edit, preset switch while staying in light mode).
+  const themeRev = useSyncExternalStore(
+    subscribeThemeChange,
+    () => document.documentElement.getAttribute('data-theme-rev') ?? '0',
+    () => '0'
+  )
   const key = cssVars.join(',')
   const colors = useMemo(
     () => key.split(',').filter(Boolean).map(resolveCssColor),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- key encodes the var list; mode triggers re-resolution
-    [key, mode]
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- key encodes the var list; mode/themeRev trigger re-resolution
+    [key, mode, themeRev]
   ) as { [K in keyof T]: string }
   return { colors, isDarkMode: mode === 'dark' }
 }
