@@ -71,10 +71,10 @@ export function TemplateDetailPage() {
               Primary action
             </Button>
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="More actions">
-                  <MoreVertical className="size-4" />
-                </Button>
+              <DropdownMenuTrigger
+                render={<Button variant="ghost" size="icon" aria-label="More actions" />}
+              >
+                <MoreVertical className="size-4" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem>

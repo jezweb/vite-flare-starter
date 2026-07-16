@@ -62,8 +62,7 @@ export function PromptInputActionAddScreenshotCountdown({
   const [state, setState] = useState<ScreenshotState>({ kind: 'idle' })
   const videoRef = useRef<HTMLVideoElement | null>(null)
 
-  const startPicker = useCallback(async (event?: Event) => {
-    event?.preventDefault()
+  const startPicker = useCallback(async () => {
     if (!canCaptureScreen()) return
     let stream: MediaStream | null = null
     try {
@@ -152,7 +151,9 @@ export function PromptInputActionAddScreenshotCountdown({
 
   return (
     <>
-      <DropdownMenuItem onSelect={startPicker}>
+      {/* closeOnClick={false} preserves the radix onSelect-preventDefault
+          behavior: keep the menu mounted while the native picker opens */}
+      <DropdownMenuItem closeOnClick={false} onClick={() => void startPicker()}>
         <Monitor className="mr-2 size-4" />
         {label}
       </DropdownMenuItem>
@@ -390,8 +391,7 @@ export function PromptInputActionAddScreenCapture({ label = 'Capture steps' }: {
   const [withAudio, setWithAudio] = useState(true)
   const videoRef = useRef<HTMLVideoElement | null>(null)
 
-  const startConfig = useCallback((event: Event) => {
-    event.preventDefault()
+  const startConfig = useCallback(() => {
     if (!canCaptureScreen()) return
     setState({ kind: 'config' })
   }, [])
@@ -550,7 +550,7 @@ export function PromptInputActionAddScreenCapture({ label = 'Capture steps' }: {
 
   return (
     <>
-      <DropdownMenuItem onSelect={startConfig}>
+      <DropdownMenuItem closeOnClick={false} onClick={startConfig}>
         <Video className="mr-2 size-4" />
         {label}
       </DropdownMenuItem>

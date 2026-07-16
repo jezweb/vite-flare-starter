@@ -117,15 +117,17 @@ export function MembersList({ organizationId, myRole }: Props) {
               </span>
               {canChangeRole || canRemoveThisMember ? (
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 shrink-0"
-                      aria-label={`Manage ${m.user.name ?? m.user.email}`}
-                    >
-                      <MoreVertical className="size-3.5" />
-                    </Button>
+                  <DropdownMenuTrigger
+                    render={
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 shrink-0"
+                        aria-label={`Manage ${m.user.name ?? m.user.email}`}
+                      />
+                    }
+                  >
+                    <MoreVertical className="size-3.5" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     {canChangeRole && (

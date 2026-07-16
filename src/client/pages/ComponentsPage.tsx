@@ -576,10 +576,8 @@ export function ComponentsPage() {
             </CardHeader>
             <CardContent>
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
+                <DropdownMenuTrigger render={<Button variant="outline" />}>
+                  <MoreHorizontal className="h-4 w-4" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>

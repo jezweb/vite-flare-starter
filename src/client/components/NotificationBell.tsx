@@ -72,8 +72,7 @@ export function NotificationBell() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
+      <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="relative" />}>
           <Bell className="h-5 w-5" />
           {hasUnread && (
             <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
@@ -83,7 +82,6 @@ export function NotificationBell() {
           <span className="sr-only">
             {hasUnread ? `${unreadCount} unread notifications` : 'Notifications'}
           </span>
-        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
         <DropdownMenuLabel className="flex items-center justify-between">
@@ -149,10 +147,11 @@ export function NotificationBell() {
               ))}
             </ScrollArea>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild className="justify-center text-sm font-medium">
-              <Link to="/dashboard/notifications" className="w-full text-center">
-                View all notifications
-              </Link>
+            <DropdownMenuItem
+              render={<Link to="/dashboard/notifications" className="w-full text-center" />}
+              className="justify-center text-sm font-medium"
+            >
+              View all notifications
             </DropdownMenuItem>
           </>
         )}

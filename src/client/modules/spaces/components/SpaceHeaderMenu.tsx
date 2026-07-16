@@ -85,14 +85,16 @@ export function SpaceHeaderMenu({ space }: Props) {
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            className="flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
-            aria-label="Space menu"
-          >
-            <MoreHorizontal className="size-4" />
-          </button>
+        <DropdownMenuTrigger
+          render={
+            <button
+              type="button"
+              className="flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+              aria-label="Space menu"
+            />
+          }
+        >
+          <MoreHorizontal className="size-4" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuItem onClick={() => setSettingsOpen('members')}>

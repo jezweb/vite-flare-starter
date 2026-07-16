@@ -82,14 +82,16 @@ export function MessageMoreMenu({ message, onQuote, canPin }: Props) {
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
-            aria-label="More actions"
-          >
-            <MoreHorizontal className="size-3.5" />
-          </button>
+        <DropdownMenuTrigger
+          render={
+            <button
+              type="button"
+              className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+              aria-label="More actions"
+            />
+          }
+        >
+          <MoreHorizontal className="size-3.5" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
           <DropdownMenuItem

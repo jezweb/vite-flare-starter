@@ -261,10 +261,8 @@ export function FileList({ files, isLoading, folder, onUploadClick }: FileListPr
                 </Button>
 
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
+                  <DropdownMenuTrigger render={<Button variant="ghost" size="icon" />}>
+                    <MoreHorizontal className="h-4 w-4" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => handleEdit(file)}>

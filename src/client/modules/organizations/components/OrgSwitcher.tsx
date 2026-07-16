@@ -98,12 +98,15 @@ export function OrgSwitcher() {
       <SidebarMenu>
         <SidebarMenuItem>
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <SidebarMenuButton
-                size="lg"
-                className="data-[slot=sidebar-menu-button]:!p-1.5"
-                aria-label="Switch organisation"
-              >
+            <DropdownMenuTrigger
+              render={
+                <SidebarMenuButton
+                  size="lg"
+                  className="data-[slot=sidebar-menu-button]:!p-1.5"
+                  aria-label="Switch organisation"
+                />
+              }
+            >
                 <Avatar name={display?.name} />
                 <div className="grid flex-1 text-left leading-tight">
                   <span className="truncate text-sm font-semibold">
@@ -120,10 +123,9 @@ export function OrgSwitcher() {
                   )}
                 </div>
                 <ChevronsUpDown className="ml-auto size-4 text-muted-foreground" />
-              </SidebarMenuButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent
-              className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+              className="w-(--anchor-width) min-w-56 rounded-lg"
               align="start"
               side="bottom"
             >

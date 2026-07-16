@@ -301,29 +301,31 @@ export function ConversationSidebar({ activeConversationId }: Props) {
             open={openMenuId === conv.id}
             onOpenChange={(open) => setOpenMenuId(open ? conv.id : null)}
           >
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  'size-6 transition-opacity',
-                  openMenuId === conv.id
-                    ? 'opacity-100'
-                    : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100'
-                )}
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                }}
-                title="More actions"
-                aria-label="More actions"
-              >
-                <MoreHorizontal className="size-3.5" />
-              </Button>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    'size-6 transition-opacity',
+                    openMenuId === conv.id
+                      ? 'opacity-100'
+                      : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100'
+                  )}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                  }}
+                  title="More actions"
+                  aria-label="More actions"
+                />
+              }
+            >
+              <MoreHorizontal className="size-3.5" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" onClick={(e) => e.preventDefault()}>
               <DropdownMenuItem
-                onSelect={() => {
+                onClick={() => {
                   setRenameText(conv.title || '')
                   setRenamingId(conv.id)
                   setOpenMenuId(null)
@@ -347,7 +349,7 @@ export function ConversationSidebar({ activeConversationId }: Props) {
                       <DropdownMenuItem
                         key={p.id}
                         disabled={conv.projectId === p.id}
-                        onSelect={() => {
+                        onClick={() => {
                           moveConversation.mutate({ id: conv.id, projectId: p.id })
                           setOpenMenuId(null)
                         }}
@@ -360,7 +362,7 @@ export function ConversationSidebar({ activeConversationId }: Props) {
                       <>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
-                          onSelect={() => {
+                          onClick={() => {
                             moveConversation.mutate({ id: conv.id, projectId: null })
                             setOpenMenuId(null)
                           }}
@@ -376,7 +378,7 @@ export function ConversationSidebar({ activeConversationId }: Props) {
 
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onSelect={() => {
+                onClick={() => {
                   setConfirmDeleteId(conv.id)
                   setOpenMenuId(null)
                 }}
@@ -817,28 +819,30 @@ function ProjectsSection({
                       open={openProjectMenuId === project.id}
                       onOpenChange={(open) => setOpenProjectMenuId(open ? project.id : null)}
                     >
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className={cn(
-                            'size-5 shrink-0 transition-opacity',
-                            openProjectMenuId === project.id
-                              ? 'opacity-100'
-                              : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100'
-                          )}
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                          }}
-                          aria-label="Project actions"
-                        >
-                          <MoreHorizontal className="size-3" />
-                        </Button>
+                      <DropdownMenuTrigger
+                        render={
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={cn(
+                              'size-5 shrink-0 transition-opacity',
+                              openProjectMenuId === project.id
+                                ? 'opacity-100'
+                                : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100'
+                            )}
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                            }}
+                            aria-label="Project actions"
+                          />
+                        }
+                      >
+                        <MoreHorizontal className="size-3" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
-                          onSelect={() => {
+                          onClick={() => {
                             setProjectRenameText(project.name)
                             setRenamingProjectId(project.id)
                             setOpenProjectMenuId(null)
@@ -849,7 +853,7 @@ function ProjectsSection({
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
-                          onSelect={() => {
+                          onClick={() => {
                             requestDeleteProject(project.id)
                             setOpenProjectMenuId(null)
                           }}

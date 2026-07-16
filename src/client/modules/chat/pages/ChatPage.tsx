@@ -999,16 +999,18 @@ function ChatPageInner({ userId }: { userId: string }) {
             )}
             {hasMessages && conversationId && (
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    className="text-muted-foreground"
-                    title="Export conversation"
-                    aria-label="Export conversation"
-                  >
-                    <Download className="size-3.5" />
-                  </Button>
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="text-muted-foreground"
+                      title="Export conversation"
+                      aria-label="Export conversation"
+                    />
+                  }
+                >
+                  <Download className="size-3.5" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem

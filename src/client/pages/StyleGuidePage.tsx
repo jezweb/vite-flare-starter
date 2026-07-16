@@ -1161,9 +1161,7 @@ export function StyleGuidePage() {
           </CardHeader>
           <CardContent>
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">Open Menu</Button>
-              </DropdownMenuTrigger>
+              <DropdownMenuTrigger render={<Button variant="outline">Open Menu</Button>} />
               <DropdownMenuContent className="w-56">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />

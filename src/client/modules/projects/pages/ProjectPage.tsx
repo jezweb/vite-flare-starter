@@ -174,18 +174,18 @@ export function ProjectPage() {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label="Project options">
-                <MoreVertical className="size-4" />
-              </Button>
+            <DropdownMenuTrigger
+              render={<Button variant="ghost" size="icon" aria-label="Project options" />}
+            >
+              <MoreVertical className="size-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onSelect={() => setEditProjectOpen(true)}>
+              <DropdownMenuItem onClick={() => setEditProjectOpen(true)}>
                 <Edit3 className="size-3.5 mr-2" />
                 Edit project
               </DropdownMenuItem>
               <DropdownMenuItem
-                onSelect={() => archiveProject.mutate({ id, archived: !isArchived })}
+                onClick={() => archiveProject.mutate({ id, archived: !isArchived })}
               >
                 <Archive className="size-3.5 mr-2" />
                 {isArchived ? 'Restore from archive' : 'Archive project'}
@@ -193,7 +193,7 @@ export function ProjectPage() {
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-destructive focus:text-destructive"
-                onSelect={() => setDeleteConfirmOpen(true)}
+                onClick={() => setDeleteConfirmOpen(true)}
               >
                 <Trash2 className="size-3.5 mr-2" />
                 Delete project

@@ -127,10 +127,10 @@ export function SkillsPage() {
               <Upload className="mr-2 size-4" /> Add skill
             </Button>
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" aria-label="More skill actions">
-                  <MoreHorizontal className="size-4" />
-                </Button>
+              <DropdownMenuTrigger
+                render={<Button variant="outline" size="icon" aria-label="More skill actions" />}
+              >
+                <MoreHorizontal className="size-4" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => setInstallOpen(true)}>

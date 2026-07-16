@@ -160,11 +160,9 @@ export function DataTable<TData>({
         )}
         {showColumnToggle && (
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1.5">
-                <SlidersHorizontal className="size-3.5" />
-                Columns
-              </Button>
+            <DropdownMenuTrigger render={<Button variant="outline" size="sm" className="gap-1.5" />}>
+              <SlidersHorizontal className="size-3.5" />
+              Columns
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {table
