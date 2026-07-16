@@ -157,9 +157,9 @@
  *
  * Applied globally via *, not on body, because the chat scroller and sidebar
  * list are nested scroll containers — each needs its own styled scrollbar.
- * Radix ScrollArea components (used in command palette, select dropdowns)
- * hide the native scrollbar themselves via data-radix-scroll-area-viewport,
- * so this doesn't conflict with them.
+ * ScrollArea components (used in command palette, select dropdowns) hide
+ * the native scrollbar themselves (Base UI injects a scrollbar-width:none
+ * class on its viewport), so this doesn't conflict with them.
  *
  * - 10px wide, transparent track, muted-foreground thumb at 20% opacity
  * - Hover brightens to 40% so the thumb becomes visible when reaching for it
