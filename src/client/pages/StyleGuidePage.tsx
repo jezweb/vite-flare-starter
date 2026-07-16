@@ -587,7 +587,7 @@ export function StyleGuidePage() {
                 <Label>Volume: {sliderValue[0]}%</Label>
                 <Slider
                   value={sliderValue}
-                  onValueChange={setSliderValue}
+                  onValueChange={(value) => setSliderValue(Array.isArray(value) ? [...value] : [value])}
                   max={100}
                   step={1}
                   className="w-full max-w-md"

@@ -269,7 +269,7 @@ export function ComponentsPage() {
               <div className="space-y-4">
                 <Slider
                   value={sliderValue}
-                  onValueChange={setSliderValue}
+                  onValueChange={(value) => setSliderValue(Array.isArray(value) ? [...value] : [value])}
                   max={100}
                   step={1}
                   className="w-full max-w-sm"
