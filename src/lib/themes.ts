@@ -68,48 +68,54 @@ export const THEME_OPTIONAL_VARIABLES = [
 export const THEME_CSS_VARIABLES = [...THEME_CORE_VARIABLES, ...THEME_OPTIONAL_VARIABLES] as const
 
 const themes: Record<ThemeScheme, ThemeColors> = {
+  // The 'default' scheme is CANONICAL IN CSS — src/index.css defines the
+  // Kumo-derived tokens with light-dark(), and applyTheme() deliberately
+  // applies NO inline variables for it (see applyTheme). The values below
+  // exist ONLY so picker previews/swatches can render without reading
+  // computed styles. They are close HSL approximations of the oklch
+  // tokens in index.css — if you change index.css, update these swatches.
   default: {
     light: {
-      background: '0 0% 100%',
-      foreground: '240 10% 3.9%',
+      background: '0 0% 98.6%',
+      foreground: '240 6% 10%',
       card: '0 0% 100%',
-      'card-foreground': '240 10% 3.9%',
+      'card-foreground': '240 6% 10%',
       popover: '0 0% 100%',
-      'popover-foreground': '240 10% 3.9%',
-      primary: '240 5.9% 10%',
+      'popover-foreground': '240 6% 10%',
+      primary: '227 71% 50%',
       'primary-foreground': '0 0% 98%',
-      secondary: '240 4.8% 95.9%',
-      'secondary-foreground': '240 5.9% 10%',
-      muted: '240 4.8% 95.9%',
-      'muted-foreground': '240 3.8% 41%',
-      accent: '240 4.8% 95.9%',
-      'accent-foreground': '240 5.9% 10%',
-      destructive: '0 84.2% 60.2%',
+      secondary: '0 0% 90%',
+      'secondary-foreground': '0 0% 9%',
+      muted: '0 0% 96%',
+      'muted-foreground': '0 0% 44%',
+      accent: '0 0% 96%',
+      'accent-foreground': '0 0% 9%',
+      destructive: '0 72% 47%',
       'destructive-foreground': '0 0% 98%',
-      border: '240 5.9% 90%',
-      input: '240 5.9% 90%',
-      ring: '240 5.9% 10%',
+      border: '0 0% 9% / 0.1',
+      input: '0 0% 9% / 0.1',
+      ring: '0 0% 9%',
     },
     dark: {
-      background: '240 10% 3.9%',
-      foreground: '0 0% 98%',
-      card: '240 10% 3.9%',
-      'card-foreground': '0 0% 98%',
-      popover: '240 10% 3.9%',
-      'popover-foreground': '0 0% 98%',
-      primary: '0 0% 98%',
-      'primary-foreground': '240 5.9% 10%',
-      secondary: '240 3.7% 15.9%',
+      background: '0 0% 4.5%',
+      foreground: '0 0% 96%',
+      card: '0 0% 10%',
+      'card-foreground': '0 0% 96%',
+      popover: '240 6% 12%',
+      'popover-foreground': '0 0% 96%',
+      primary: '227 71% 45%',
+      'primary-foreground': '0 0% 98%',
+      secondary: '0 0% 17%',
       'secondary-foreground': '0 0% 98%',
-      muted: '240 3.7% 15.9%',
-      'muted-foreground': '240 5% 64.9%',
-      accent: '240 3.7% 15.9%',
+      muted: '0 0% 17%',
+      'muted-foreground': '0 0% 62%',
+      accent: '0 0% 17%',
       'accent-foreground': '0 0% 98%',
-      destructive: '0 62.8% 30.6%',
+      destructive: '0 72% 47%',
       'destructive-foreground': '0 0% 98%',
-      border: '240 3.7% 15.9%',
-      input: '240 3.7% 15.9%',
-      ring: '240 4.9% 83.9%',
+      border: '0 0% 22%',
+      input: '0 0% 22%',
+      ring: '0 0% 90%',
     },
   },
   blue: {
@@ -500,19 +506,22 @@ export function applyTheme(
     root.classList.remove('dark')
   }
 
-  // Get theme colors for the effective mode
-  // For custom scheme, use provided colors if they have actual data
-  let colors: Record<string, string>
+  // Get theme colors for the effective mode.
+  // The 'default' scheme (and a 'custom' scheme with no colours saved yet)
+  // applies NO inline variables — index.css is its single source of truth
+  // (Kumo-derived light-dark() tokens that resolve via the color-scheme
+  // flip above). Presets/custom themes override via inline vars; they set
+  // a single mode's values and rely on applyTheme re-running on mode
+  // change (unchanged behaviour). Brand overrides still apply below.
+  let colors: Record<string, string> | null = null
   if (scheme === 'custom') {
     const customModeColors = customColors?.[effectiveMode]
-    // Only use custom colors if they exist and have content
+    // Only use custom colors if they exist and have content;
+    // empty custom falls through to the canonical CSS defaults
     if (customModeColors && Object.keys(customModeColors).length > 0) {
       colors = customModeColors as Record<string, string>
-    } else {
-      // Fall back to default theme if custom colors are empty
-      colors = themes['default'][effectiveMode]
     }
-  } else {
+  } else if (scheme !== 'default') {
     colors = themes[scheme][effectiveMode]
   }
 
@@ -523,10 +532,15 @@ export function applyTheme(
     root.style.removeProperty(`--${key}`)
   })
 
-  // Update CSS variables on :root (wrap with hsl() for Tailwind v4)
-  Object.entries(colors).forEach(([key, value]) => {
-    root.style.setProperty(`--${key}`, `hsl(${value})`)
-  })
+  if (colors) {
+    // Update CSS variables on :root. Bare `H S% L%` triplets get wrapped in
+    // hsl() (legacy preset format); complete colour values (oklch/hex/rgb/
+    // color-mix/var) pass through verbatim so modern syntax works too.
+    Object.entries(colors).forEach(([key, value]) => {
+      const isCompleteColor = /^(#|[a-z-]+\()/i.test(value.trim())
+      root.style.setProperty(`--${key}`, isCompleteColor ? value : `hsl(${value})`)
+    })
+  }
 
   // Fork-author brand overrides — applied after the preset palette so
   // forks rebrand cleanly without users picking a custom scheme. Only

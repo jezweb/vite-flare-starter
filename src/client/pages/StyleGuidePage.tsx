@@ -164,8 +164,8 @@ export function StyleGuidePage() {
     {
       value: 'default' as ThemeScheme,
       label: 'Default',
-      description: 'Neutral gray tones',
-      preview: { primary: '#18181b', accent: '#f4f4f5', background: '#ffffff' },
+      description: 'Kumo — neutral surfaces, blue actions',
+      preview: { primary: '#2b5ce6', accent: '#f5f5f5', background: '#fcfcfc' },
     },
     {
       value: 'blue' as ThemeScheme,
