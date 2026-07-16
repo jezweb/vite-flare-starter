@@ -263,12 +263,14 @@ export function SkillEditor({ name }: SkillEditorProps) {
               }
             }}
           >
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Sparkles className="mr-1 h-3.5 w-3.5" />
-                AI Sparkle
-              </Button>
-            </PopoverTrigger>
+            <PopoverTrigger
+              render={
+                <Button variant="outline" size="sm">
+                  <Sparkles className="mr-1 h-3.5 w-3.5" />
+                  AI Sparkle
+                </Button>
+              }
+            />
             <PopoverContent className="w-80" align="end">
               <div className="space-y-3">
                 <Field>

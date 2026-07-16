@@ -94,17 +94,14 @@ function PickerButton({ onPick, compact }: { onPick: (emoji: string) => void; co
   const [open, setOpen] = useState(false)
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            'flex items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground',
-            compact ? 'size-6' : 'size-7'
-          )}
-          aria-label="Pick a reaction"
-        >
-          <Smile className={compact ? 'size-3' : 'size-3.5'} />
-        </button>
+      <PopoverTrigger
+        className={cn(
+          'flex items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground',
+          compact ? 'size-6' : 'size-7'
+        )}
+        aria-label="Pick a reaction"
+      >
+        <Smile className={compact ? 'size-3' : 'size-3.5'} />
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="end">
         <Suspense

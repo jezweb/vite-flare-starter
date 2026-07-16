@@ -570,19 +570,21 @@ function RestrictAgentPicker({
         </div>
       )}
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full justify-between text-xs font-normal"
-          >
-            <span className="text-muted-foreground">
-              {value.length === 0 ? 'Pick routines / agents…' : 'Edit selection'}
-            </span>
-            <ChevronsUpDown className="size-3 opacity-50" />
-          </Button>
+        <PopoverTrigger
+          render={
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full justify-between text-xs font-normal"
+            />
+          }
+        >
+          <span className="text-muted-foreground">
+            {value.length === 0 ? 'Pick routines / agents…' : 'Edit selection'}
+          </span>
+          <ChevronsUpDown className="size-3 opacity-50" />
         </PopoverTrigger>
-        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+        <PopoverContent className="w-[var(--anchor-width)] p-0" align="start">
           <div className="max-h-72 overflow-y-auto p-1">
             {knownOptions.map((opt) => {
               const checked = value.includes(opt.name)

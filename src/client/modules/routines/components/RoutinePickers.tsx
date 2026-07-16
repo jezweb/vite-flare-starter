@@ -37,33 +37,35 @@ export function AgentPicker({ value, onChange }: AgentPickerProps) {
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-full justify-between font-normal"
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <span className="text-muted-foreground inline-flex items-center gap-2">
-              <Spinner size="sm" /> Loading…
+      <PopoverTrigger
+        render={
+          <Button
+            type="button"
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between font-normal"
+            disabled={isLoading}
+          />
+        }
+      >
+        {isLoading ? (
+          <span className="text-muted-foreground inline-flex items-center gap-2">
+            <Spinner size="sm" /> Loading…
+          </span>
+        ) : selected ? (
+          <span className="flex flex-col items-start text-left min-w-0">
+            <span className="truncate">{selected.displayName}</span>
+            <span className="truncate text-[11px] text-muted-foreground">
+              {selected.description}
             </span>
-          ) : selected ? (
-            <span className="flex flex-col items-start text-left min-w-0">
-              <span className="truncate">{selected.displayName}</span>
-              <span className="truncate text-[11px] text-muted-foreground">
-                {selected.description}
-              </span>
-            </span>
-          ) : (
-            <span className="text-muted-foreground">Pick an agent…</span>
-          )}
-          <ChevronsUpDown className="size-4 text-muted-foreground" />
-        </Button>
+          </span>
+        ) : (
+          <span className="text-muted-foreground">Pick an agent…</span>
+        )}
+        <ChevronsUpDown className="size-4 text-muted-foreground" />
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+      <PopoverContent className="w-[var(--anchor-width)] p-0" align="start">
         <ul className="max-h-80 overflow-auto p-1">
           {agents.map((a) => (
             <AgentOption
@@ -149,24 +151,26 @@ export function SkillsPicker({ value, onChange, placeholder = 'Pick skills…' }
   return (
     <div className="space-y-1.5">
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full justify-between font-normal"
-            disabled={isLoading}
-          >
-            {value.length === 0 ? (
-              <span className="text-muted-foreground">{placeholder}</span>
-            ) : (
-              <span>
-                {value.length} skill{value.length === 1 ? '' : 's'} selected
-              </span>
-            )}
-            <ChevronsUpDown className="size-4 text-muted-foreground" />
-          </Button>
+        <PopoverTrigger
+          render={
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full justify-between font-normal"
+              disabled={isLoading}
+            />
+          }
+        >
+          {value.length === 0 ? (
+            <span className="text-muted-foreground">{placeholder}</span>
+          ) : (
+            <span>
+              {value.length} skill{value.length === 1 ? '' : 's'} selected
+            </span>
+          )}
+          <ChevronsUpDown className="size-4 text-muted-foreground" />
         </PopoverTrigger>
-        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+        <PopoverContent className="w-[var(--anchor-width)] p-0" align="start">
           <div className="border-b p-2">
             <div className="relative">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
@@ -251,29 +255,31 @@ export function SingleSkillPicker({ value, onChange }: SingleSkillPickerProps) {
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full justify-between font-normal"
-          disabled={isLoading}
-        >
-          {selected ? (
-            <span className="flex items-baseline gap-1.5 truncate">
-              <span className="truncate">{formatSkillName(selected.name)}</span>
-              <span className="text-[10px] font-mono text-muted-foreground/70 shrink-0">
-                /{selected.name}
-              </span>
+      <PopoverTrigger
+        render={
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full justify-between font-normal"
+            disabled={isLoading}
+          />
+        }
+      >
+        {selected ? (
+          <span className="flex items-baseline gap-1.5 truncate">
+            <span className="truncate">{formatSkillName(selected.name)}</span>
+            <span className="text-[10px] font-mono text-muted-foreground/70 shrink-0">
+              /{selected.name}
             </span>
-          ) : value ? (
-            <span className="font-mono truncate">{value}</span>
-          ) : (
-            <span className="text-muted-foreground">None — skip this hook</span>
-          )}
-          <ChevronsUpDown className="size-4 text-muted-foreground" />
-        </Button>
+          </span>
+        ) : value ? (
+          <span className="font-mono truncate">{value}</span>
+        ) : (
+          <span className="text-muted-foreground">None — skip this hook</span>
+        )}
+        <ChevronsUpDown className="size-4 text-muted-foreground" />
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+      <PopoverContent className="w-[var(--anchor-width)] p-0" align="start">
         <ul className="max-h-80 overflow-auto p-1">
           <li>
             <button
@@ -368,27 +374,26 @@ export function ToolsPicker({ value, onChange }: ToolsPickerProps) {
   return (
     <div className="space-y-1.5">
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full justify-between font-normal"
-            disabled={isLoading}
-          >
-            {value.length === 0 ? (
-              <span className="text-muted-foreground">All tools available — click to restrict</span>
-            ) : (
-              <span>
-                {value.length} tool{value.length === 1 ? '' : 's'} allowed
-              </span>
-            )}
-            <ChevronsUpDown className="size-4 text-muted-foreground" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent
-          className="w-[var(--radix-popover-trigger-width)] max-w-2xl p-0"
-          align="start"
+        <PopoverTrigger
+          render={
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full justify-between font-normal"
+              disabled={isLoading}
+            />
+          }
         >
+          {value.length === 0 ? (
+            <span className="text-muted-foreground">All tools available — click to restrict</span>
+          ) : (
+            <span>
+              {value.length} tool{value.length === 1 ? '' : 's'} allowed
+            </span>
+          )}
+          <ChevronsUpDown className="size-4 text-muted-foreground" />
+        </PopoverTrigger>
+        <PopoverContent className="w-[var(--anchor-width)] max-w-2xl p-0" align="start">
           <div className="border-b p-2">
             <div className="relative">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />

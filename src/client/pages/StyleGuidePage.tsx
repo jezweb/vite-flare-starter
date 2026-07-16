@@ -619,17 +619,19 @@ export function StyleGuidePage() {
             <div className="space-y-2">
               <Label>Select a date</Label>
               <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      'w-full max-w-sm justify-start text-left font-normal',
-                      !date && 'text-muted-foreground'
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, 'PPP') : <span>Pick a date</span>}
-                  </Button>
+                <PopoverTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        'w-full max-w-sm justify-start text-left font-normal',
+                        !date && 'text-muted-foreground'
+                      )}
+                    />
+                  }
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {date ? format(date, 'PPP') : <span>Pick a date</span>}
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar mode="single" selected={date} onSelect={setDate} autoFocus />
@@ -650,18 +652,20 @@ export function StyleGuidePage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={comboboxOpen}
-                  className="w-full max-w-md justify-between"
-                >
-                  {comboboxValue
-                    ? ['active', 'pending', 'inactive'].find((status) => status === comboboxValue)
-                    : 'Select status...'}
-                  <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
+              <PopoverTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={comboboxOpen}
+                    className="w-full max-w-md justify-between"
+                  />
+                }
+              >
+                {comboboxValue
+                  ? ['active', 'pending', 'inactive'].find((status) => status === comboboxValue)
+                  : 'Select status...'}
+                <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </PopoverTrigger>
               <PopoverContent className="w-full max-w-md p-0">
                 <Command>

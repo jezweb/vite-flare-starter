@@ -98,15 +98,12 @@ export function AttachmentMenu({ onAttach }: Props) {
 
   return (
     <Popover open={open} onOpenChange={(o) => (o ? setOpen(true) : close())}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
-          aria-label="Attach"
-          title="Attach file, project, or MCP resource"
-        >
-          <Plus className="size-4" />
-        </button>
+      <PopoverTrigger
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+        aria-label="Attach"
+        title="Attach file, project, or MCP resource"
+      >
+        <Plus className="size-4" />
       </PopoverTrigger>
       <PopoverContent align="start" className="w-72 p-1">
         {view === 'root' && (
