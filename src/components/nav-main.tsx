@@ -50,11 +50,13 @@ export function NavMain({ label, items, defaultCollapsed = false }: Props) {
           (item.to !== '/dashboard' && location.pathname.startsWith(item.to + '/'))
         return (
           <SidebarMenuItem key={item.to}>
-            <SidebarMenuButton asChild isActive={isActive} tooltip={item.label}>
-              <NavLink to={item.to} end={item.to === '/dashboard'}>
-                {item.icon && <item.icon />}
-                <span>{item.label}</span>
-              </NavLink>
+            <SidebarMenuButton
+              render={<NavLink to={item.to} end={item.to === '/dashboard'} />}
+              isActive={isActive}
+              tooltip={item.label}
+            >
+              {item.icon && <item.icon />}
+              <span>{item.label}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         )
