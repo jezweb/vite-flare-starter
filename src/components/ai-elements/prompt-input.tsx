@@ -1202,18 +1202,18 @@ export const PromptInputSelectValue = ({ className, ...props }: PromptInputSelec
 
 export type PromptInputHoverCardProps = ComponentProps<typeof HoverCard>
 
-export const PromptInputHoverCard = ({
-  openDelay = 0,
-  closeDelay = 0,
-  ...props
-}: PromptInputHoverCardProps) => (
-  <HoverCard closeDelay={closeDelay} openDelay={openDelay} {...props} />
-)
+export const PromptInputHoverCard = (props: PromptInputHoverCardProps) => <HoverCard {...props} />
 
 export type PromptInputHoverCardTriggerProps = ComponentProps<typeof HoverCardTrigger>
 
-export const PromptInputHoverCardTrigger = (props: PromptInputHoverCardTriggerProps) => (
-  <HoverCardTrigger {...props} />
+// Base UI moved open/close delays from the Root to the Trigger — the
+// instant-open/instant-close defaults (0/0) live here now.
+export const PromptInputHoverCardTrigger = ({
+  delay = 0,
+  closeDelay = 0,
+  ...props
+}: PromptInputHoverCardTriggerProps) => (
+  <HoverCardTrigger delay={delay} closeDelay={closeDelay} {...props} />
 )
 
 export type PromptInputHoverCardContentProps = ComponentProps<typeof HoverCardContent>
