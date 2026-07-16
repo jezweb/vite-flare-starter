@@ -11,11 +11,13 @@
  *   - Optional `<PageHeaderHelp>` slot below subtitle (e.g. "Technical
  *     details" disclosure for two-tier copy)
  *
- * Layout:
+ * Layout (Kumo page-header anatomy — breadcrumbs/tabs slots optional):
  *   ┌────────────────────────────────────────────────────────────────┐
- *   │  TITLE                                          [primary CTA]  │
+ *   │  [breadcrumbs strip, hairline-divided]                         │
+ *   │  TITLE (3xl)                                    [primary CTA]  │
  *   │  Subtitle line that explains what this page is for.            │
  *   │  [help disclosure]                                             │
+ *   │  [tab bar, hairline-divided]                                   │
  *   └────────────────────────────────────────────────────────────────┘
  *
  * No page is allowed to hand-roll its own header markup. If a page
@@ -45,6 +47,19 @@ interface PageHeaderProps {
   trailing?: React.ReactNode
   /** Optional row below subtitle (links / disclosures / capability chips). */
   help?: React.ReactNode
+  /**
+   * Optional breadcrumb strip rendered ABOVE the title, hairline-divided —
+   * Kumo page-header anatomy (breadcrumbs → title → description → tabs).
+   * Pass a <Breadcrumbs/> element; detail pages inside a module want this,
+   * top-level pages usually don't.
+   */
+  breadcrumbs?: React.ReactNode
+  /**
+   * Optional tab bar rendered below the header block, hairline-divided.
+   * Pass a <TabsList/> (or full Tabs header) — content panels live in the
+   * page body.
+   */
+  tabs?: React.ReactNode
   className?: string
 }
 
@@ -54,6 +69,8 @@ export function PageHeader({
   docTitle,
   trailing,
   help,
+  breadcrumbs,
+  tabs,
   className,
 }: PageHeaderProps) {
   useEffect(() => {
@@ -63,24 +80,30 @@ export function PageHeader({
   }, [title, docTitle])
 
   return (
-    <header
-      data-slot="page-header"
-      className={cn(
-        'flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4',
-        className
+    <header data-slot="page-header" className={cn('flex flex-col gap-2', className)}>
+      {breadcrumbs && (
+        <div data-slot="page-header-breadcrumbs" className="border-b border-hairline pb-2">
+          {breadcrumbs}
+        </div>
       )}
-    >
-      <div className="min-w-0 flex-1 space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        {subtitle && <p className="text-sm text-muted-foreground max-w-2xl">{subtitle}</p>}
-        {help && <div className="pt-1">{help}</div>}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        <div className="min-w-0 flex-1 space-y-1">
+          <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
+          {subtitle && <p className="text-base text-muted-foreground max-w-prose">{subtitle}</p>}
+          {help && <div className="pt-1">{help}</div>}
+        </div>
+        {trailing && (
+          <div
+            data-slot="page-header-trailing"
+            className="flex flex-wrap items-center gap-2 shrink-0"
+          >
+            {trailing}
+          </div>
+        )}
       </div>
-      {trailing && (
-        <div
-          data-slot="page-header-trailing"
-          className="flex flex-wrap items-center gap-2 shrink-0"
-        >
-          {trailing}
+      {tabs && (
+        <div data-slot="page-header-tabs" className="border-b border-hairline pt-1">
+          {tabs}
         </div>
       )}
     </header>
