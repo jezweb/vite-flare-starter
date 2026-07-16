@@ -1309,9 +1309,7 @@ export function StyleGuidePage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive">Delete Item</Button>
-              </AlertDialogTrigger>
+              <AlertDialogTrigger render={<Button variant="destructive">Delete Item</Button>} />
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>

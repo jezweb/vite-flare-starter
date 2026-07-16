@@ -194,12 +194,14 @@ export function SessionsSection() {
           </CardHeader>
           <CardContent>
             <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive">
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Log Out of All Other Sessions
-                </Button>
-              </AlertDialogTrigger>
+              <AlertDialogTrigger
+                render={
+                  <Button variant="destructive">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Log Out of All Other Sessions
+                  </Button>
+                }
+              />
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>Log out everywhere?</AlertDialogTitle>
