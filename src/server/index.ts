@@ -87,6 +87,11 @@ export { ChatAgent } from './modules/chat/chat-agent'
 // Cloudflare Workflow class for the batch-tasks module. Bound at
 // `BATCH_WORKFLOW` (see wrangler.jsonc → workflows[]).
 export { ProcessBatchWorkflow } from './modules/batch-tasks/workflows/process-batch'
+// Cloudflare Sandbox container DO — backs the run_python / run_shell /
+// run_js / generate_document chat tools. Bound at `SANDBOX` (see
+// wrangler.jsonc → containers + durable_objects). The class ships with
+// the SDK; we only re-export it so wrangler can wire the container.
+export { Sandbox } from '@cloudflare/sandbox'
 import { securityHeaders } from './middleware/security'
 import { rateLimiter } from './middleware/rate-limit'
 import { authMiddleware, requireScopes } from './middleware/auth'

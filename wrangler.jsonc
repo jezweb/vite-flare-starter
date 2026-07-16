@@ -223,6 +223,29 @@
   //   ]
   // },
 
+  // Containers — Cloudflare Sandbox (code-interpreter for the chat agent).
+  // Backs the run_python / run_shell / run_js / generate_document tools
+  // (src/server/modules/chat/tools/code.ts). Requires Workers Paid.
+  //
+  //  - The image is built from ./Dockerfile at deploy time — Docker must be
+  //    RUNNING locally when you `pnpm run deploy` (first deploy pushes the
+  //    image; subsequent deploys reuse the layer cache).
+  //  - Keep the Dockerfile base tag in sync with the @cloudflare/sandbox
+  //    npm version (0.12.3 today) — the SDK checks compat on startup.
+  //  - Billing: containers charge for active CPU + memory while a sandbox
+  //    is awake; sandboxes sleep after ~10 min idle. One sandbox per
+  //    (user, conversation).
+  //  - The `Sandbox` class is re-exported from src/server/index.ts and
+  //    provisioned in migrations tag v11 below.
+  "containers": [
+    {
+      "class_name": "Sandbox",
+      "image": "./Dockerfile",
+      "instance_type": "lite",
+      "max_instances": 5
+    }
+  ],
+
   // Durable Objects — stateful, SQLite-backed classes that live longer than
   // a single request. One instance per `idFromName(name)`. Used for:
   //  - Voice agents (VoiceInputExample — streams mic + transcribes)
@@ -315,6 +338,15 @@
         // See src/server/modules/chat/chat-agent.ts.
         "name": "ChatAgent",
         "class_name": "ChatAgent"
+      },
+      {
+        // Sandbox — Cloudflare Sandbox SDK container DO (see `containers`
+        // block above). Class ships with @cloudflare/sandbox; re-exported
+        // from src/server/index.ts. Tools self-omit when this binding is
+        // absent, so removing this block (plus `containers`) is the way
+        // to opt out on a free-plan fork.
+        "name": "SANDBOX",
+        "class_name": "Sandbox"
       }
     ]
   },
@@ -364,6 +396,10 @@
     {
       "tag": "v10",
       "new_sqlite_classes": ["ChatAgent"]
+    },
+    {
+      "tag": "v11",
+      "new_sqlite_classes": ["Sandbox"]
     }
   ],
 

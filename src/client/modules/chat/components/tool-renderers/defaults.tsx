@@ -18,7 +18,7 @@
  * For tools with a rich expanded view (Gmail, Drive, Calendar, etc.),
  * the per-domain renderer in `gmail.tsx`/`drive.tsx`/... takes precedence.
  */
-import { Clock, Info, Calculator, Checks, Brain, BookOpen, MagnifyingGlass, Trash, Scroll, Books, ChartBar, TreeStructure, FileText, FilePlus, FileX, FileMagnifyingGlass, List, Terminal, PlusSquare, Download, ToggleRight, ListPlus, CheckCircle, ListChecks, Eraser, FileCode, Microphone, SpeakerHigh, UserPlus, EnvelopeSimple, ImageIcon, MagicWand, Scissors, MusicNote, GridNine, MapPin, Sparkle, Database, CalendarDots, ListNumbers, XCircle, Camera, LinkSimple, Code, MagicWand as EditIcon, Bell, Tray, CheckSquare, PaperPlaneTilt, PlugsConnected, Table, Funnel, TrendUp, ChartPie, FileXls, Plus as PlusIcon, PencilSimple, Eye, Lightbulb, ArrowCircleUp, XCircle as XCircleIcon, Globe, Network, Cube } from '@phosphor-icons/react'
+import { Clock, Info, Calculator, Checks, Brain, BookOpen, MagnifyingGlass, Trash, Scroll, Books, ChartBar, TreeStructure, FileText, FilePlus, FileX, FileMagnifyingGlass, List, Terminal, PlusSquare, Download, ToggleRight, ListPlus, CheckCircle, ListChecks, Eraser, FileCode, FileDoc, Microphone, SpeakerHigh, UserPlus, EnvelopeSimple, ImageIcon, MagicWand, Scissors, MusicNote, GridNine, MapPin, Sparkle, Database, CalendarDots, ListNumbers, XCircle, Camera, LinkSimple, Code, MagicWand as EditIcon, Bell, Tray, CheckSquare, PaperPlaneTilt, PlugsConnected, Table, Funnel, TrendUp, ChartPie, FileXls, Plus as PlusIcon, PencilSimple, Eye, Lightbulb, ArrowCircleUp, XCircle as XCircleIcon, Globe, Network, Cube } from '@phosphor-icons/react'
 import type { Icon } from '@phosphor-icons/react'
 import type { ToolRenderer } from './_shared'
 
@@ -73,6 +73,7 @@ const DEFAULT_META: Record<string, DefaultMeta> = {
   run_python: { icon: FileCode, displayName: 'Run Python' },
   run_shell: { icon: Terminal, displayName: 'Run Shell' },
   run_js: { icon: FileCode, displayName: 'Run JavaScript' },
+  generate_document: { icon: FileDoc, displayName: 'Generate Document' },
 
   // Audio
   transcribe_audio: { icon: Microphone, displayName: 'Transcribe Audio' },
