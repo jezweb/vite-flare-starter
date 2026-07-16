@@ -66,6 +66,7 @@ import globalSearchRoutes from './modules/spaces/global-search'
 import batchJobsRoutes from './modules/batch-tasks/routes'
 import mirrorRoutes from './modules/mirror/routes'
 import llmsTxtRoutes from './modules/llms-txt/routes'
+import backupsRoutes from './modules/backups/routes'
 import { routeAgentRequest } from 'agents'
 import { ScratchpadMcpAgent } from './modules/mcp-agents/scratchpad-mcp-agent'
 // Re-export DO class(es) so wrangler migrations can locate them. Every DO
@@ -92,6 +93,9 @@ export { ProcessBatchWorkflow } from './modules/batch-tasks/workflows/process-ba
 // Cloudflare Workflow for the D1 mirror pattern (issue #90). Bound at
 // `MIRROR_WORKFLOW` (see wrangler.jsonc → workflows[]).
 export { MirrorSyncWorkflow } from './modules/mirror/workflow'
+// Cloudflare Workflow for daily D1 → R2 backups. Bound at
+// `BACKUP_WORKFLOW` (see wrangler.jsonc → workflows[] + docs/BACKUPS.md).
+export { D1BackupWorkflow } from './modules/backups/workflow'
 // Cloudflare Sandbox container DO — backs the run_python / run_shell /
 // run_js / generate_document chat tools. Bound at `SANDBOX` (see
 // wrangler.jsonc → containers + durable_objects). The class ships with
@@ -136,6 +140,18 @@ export interface Env {
   // See src/server/modules/mirror/workflow.ts.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   MIRROR_WORKFLOW?: any
+
+  // Cloudflare Workflows — daily D1 → R2 backup (docs/BACKUPS.md).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  BACKUP_WORKFLOW?: any
+  /** wrangler.jsonc d1_databases[0].database_id — needed by the backup workflow's export API call. */
+  D1_DATABASE_ID?: string
+  /** Secret: API token with D1 read permission (backup export). */
+  D1_REST_API_TOKEN?: string
+  /** Days of R2 backup retention (default 30). */
+  BACKUP_RETENTION_DAYS?: string
+  /** 'true' → daily backup via the cron guard (scheduled §8). */
+  BACKUP_CRON?: string
 
   // Environment variables
   BETTER_AUTH_SECRET: string
@@ -359,6 +375,7 @@ app.route('/api/mirror', mirrorRoutes)
 // Public, unauthenticated: agent-facing site summary (llmstxt.org).
 // Requires "/llms.txt" in wrangler.jsonc run_worker_first.
 app.route('/llms.txt', llmsTxtRoutes)
+app.route('/api/backups', backupsRoutes)
 // Test-auth lives behind a TEST_AUTH_TOKEN env gate; if the secret
 // isn't set, every endpoint here returns 404. See module docstring.
 app.route('/api/test-auth', testAuthRoutes)
@@ -747,6 +764,32 @@ export default {
       }
     } catch (err) {
       logs['mirrorError'] = err instanceof Error ? err.message : String(err)
+    }
+
+    // 8. Daily D1 → R2 backup (docs/BACKUPS.md) — opt-in via
+    // BACKUP_CRON='true'. Same staleness-guard shape as the mirror: the
+    // 15-min cron fires the Workflow only when the newest backup object
+    // is older than ~23h, so it runs once a day regardless of cadence.
+    try {
+      const backupEnv = env as unknown as {
+        BACKUP_CRON?: string
+        BACKUP_WORKFLOW?: { create(): Promise<{ id: string }> }
+        FILES?: R2Bucket
+      }
+      if (backupEnv.BACKUP_CRON === 'true' && backupEnv.BACKUP_WORKFLOW && backupEnv.FILES) {
+        const { BACKUP_PREFIX } = await import('./modules/backups/workflow')
+        const listing = await backupEnv.FILES.list({ prefix: BACKUP_PREFIX })
+        const newest = listing.objects.reduce<number>(
+          (max, o) => Math.max(max, o.uploaded.getTime()),
+          0
+        )
+        if (Date.now() - newest > 23 * 3600_000) {
+          const instance = await backupEnv.BACKUP_WORKFLOW.create()
+          logs['backupStarted'] = instance.id
+        }
+      }
+    } catch (err) {
+      logs['backupError'] = err instanceof Error ? err.message : String(err)
     }
 
     if (Object.keys(logs).length > 1) {

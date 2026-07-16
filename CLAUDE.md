@@ -131,6 +131,7 @@ reference lives in `docs/`, loaded only when you need it.
 | Email inbound (Cloudflare Email Routing) | [`docs/ADDING_EMAIL_INBOUND.md`](./docs/ADDING_EMAIL_INBOUND.md) |
 | Email delivery events + bounce suppression | [`docs/ADDING_EMAIL_DELIVERY_EVENTS.md`](./docs/ADDING_EMAIL_DELIVERY_EVENTS.md) |
 | Mirror an external dataset into D1 (cron → Workflow → D1) | [`docs/ADDING_D1_MIRROR.md`](./docs/ADDING_D1_MIRROR.md) |
+| **Backups + restore** — Time Travel vs daily D1→R2 Workflow | [`docs/BACKUPS.md`](./docs/BACKUPS.md) |
 | Track fork divergence from upstream (forks only) | [`PATCHES.md`](./PATCHES.md) + [`docs/PATCHES-guide.md`](./docs/PATCHES-guide.md) |
 | Interop with [goanna](https://github.com/jezweb/goanna) — filesystem-markdown agent framework | [`docs/GOANNA_INTEROP.md`](./docs/GOANNA_INTEROP.md) |
 | Deploy checklist | [`docs/DEPLOYMENT_CHECKLIST.md`](./docs/DEPLOYMENT_CHECKLIST.md) |
