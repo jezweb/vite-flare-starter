@@ -470,7 +470,9 @@ export function ArtifactSidebar({ messages, onClose, scrollRoot: _scrollRoot }: 
           // `sm:max-w-lg`. See rules/css-patterns.md — breakpoint overrides
           // need same breakpoint specificity or the default wins.
           className="w-[95vw] sm:w-[80vw] sm:max-w-[min(80vw,1200px)] h-[85vh] p-0 gap-0 overflow-hidden"
-          onOpenAutoFocus={(e) => e.preventDefault()}
+          // Base UI: initialFocus={false} replaces radix's
+          // onOpenAutoFocus={(e) => e.preventDefault()} — keep focus where it was.
+          initialFocus={false}
         >
           <DialogTitle className="sr-only">
             {lightbox ? `Artifact: ${lightbox.title}` : 'Artifact'}

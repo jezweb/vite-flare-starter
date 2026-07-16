@@ -242,9 +242,7 @@ export function SecuritySection() {
           </Alert>
 
           <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-            <DialogTrigger asChild>
-              <Button variant="destructive">Delete Account</Button>
-            </DialogTrigger>
+            <DialogTrigger render={<Button variant="destructive">Delete Account</Button>} />
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Are you absolutely sure?</DialogTitle>

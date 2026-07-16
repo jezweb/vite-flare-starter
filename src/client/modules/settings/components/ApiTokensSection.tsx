@@ -232,12 +232,14 @@ export function ApiTokensSection() {
               <CardTitle>API Tokens</CardTitle>
             </div>
             <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-              <DialogTrigger asChild>
-                <Button size="sm">
-                  <Plus className="h-4 w-4 mr-1" />
-                  New Token
-                </Button>
-              </DialogTrigger>
+              <DialogTrigger
+                render={
+                  <Button size="sm">
+                    <Plus className="h-4 w-4 mr-1" />
+                    New Token
+                  </Button>
+                }
+              />
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Create API Token</DialogTitle>

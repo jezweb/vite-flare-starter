@@ -47,12 +47,14 @@ export function FilesPage() {
           subtitle="PDFs, images, docs and more — your AI can read them and use them in answers."
           trailing={
             <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Upload
-                </Button>
-              </DialogTrigger>
+              <DialogTrigger
+                render={
+                  <Button>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Upload
+                  </Button>
+                }
+              />
               <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
                   <DialogTitle>Upload files</DialogTitle>

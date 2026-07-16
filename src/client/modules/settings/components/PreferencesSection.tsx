@@ -483,35 +483,33 @@ export function PreferencesSection() {
 
               {/* Custom Theme Option */}
               <Dialog open={customThemeDialogOpen} onOpenChange={setCustomThemeDialogOpen}>
-                <DialogTrigger asChild>
-                  <button
-                    className={cn(
-                      'group relative flex flex-col items-start gap-2 rounded-lg border-2 p-4 text-left transition-all hover:bg-accent',
-                      currentScheme === 'custom'
-                        ? 'border-primary bg-accent'
-                        : 'border-dashed border-muted hover:border-muted-foreground/50'
-                    )}
-                  >
-                    {/* Custom icon */}
-                    <div className="flex gap-1.5 items-center">
-                      <Wand2 className="h-5 w-5 text-muted-foreground" />
-                    </div>
+                <DialogTrigger
+                  className={cn(
+                    'group relative flex flex-col items-start gap-2 rounded-lg border-2 p-4 text-left transition-all hover:bg-accent',
+                    currentScheme === 'custom'
+                      ? 'border-primary bg-accent'
+                      : 'border-dashed border-muted hover:border-muted-foreground/50'
+                  )}
+                >
+                  {/* Custom icon */}
+                  <div className="flex gap-1.5 items-center">
+                    <Wand2 className="h-5 w-5 text-muted-foreground" />
+                  </div>
 
-                    {/* Label and description */}
-                    <div className="flex-1">
-                      <div className="font-semibold">Custom</div>
-                      <div className="text-xs text-muted-foreground">
-                        {currentScheme === 'custom' ? 'Your custom theme' : 'Import from generator'}
-                      </div>
+                  {/* Label and description */}
+                  <div className="flex-1">
+                    <div className="font-semibold">Custom</div>
+                    <div className="text-xs text-muted-foreground">
+                      {currentScheme === 'custom' ? 'Your custom theme' : 'Import from generator'}
                     </div>
+                  </div>
 
-                    {/* Active indicator */}
-                    {currentScheme === 'custom' && (
-                      <div className="absolute right-3 top-3">
-                        <div className="h-2 w-2 rounded-full bg-primary" />
-                      </div>
-                    )}
-                  </button>
+                  {/* Active indicator */}
+                  {currentScheme === 'custom' && (
+                    <div className="absolute right-3 top-3">
+                      <div className="h-2 w-2 rounded-full bg-primary" />
+                    </div>
+                  )}
                 </DialogTrigger>
 
                 <DialogContent className="sm:max-w-[720px]">

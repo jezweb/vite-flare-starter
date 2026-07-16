@@ -526,9 +526,7 @@ export function ComponentsPage() {
             </CardHeader>
             <CardContent>
               <Dialog>
-                <DialogTrigger asChild>
-                  <Button>Open Dialog</Button>
-                </DialogTrigger>
+                <DialogTrigger render={<Button>Open Dialog</Button>} />
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Are you sure?</DialogTitle>

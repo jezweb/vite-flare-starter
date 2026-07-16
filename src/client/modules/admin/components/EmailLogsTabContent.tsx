@@ -270,12 +270,14 @@ function TestSendDialog({ onSent }: { onSent: () => void }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <SendHorizonal className="mr-2 h-4 w-4" />
-          Send test
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          <Button variant="outline" size="sm">
+            <SendHorizonal className="mr-2 h-4 w-4" />
+            Send test
+          </Button>
+        }
+      />
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Send a test email</DialogTitle>
