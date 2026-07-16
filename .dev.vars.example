@@ -35,6 +35,9 @@ GOOGLE_CLIENT_SECRET=your-client-secret
 #
 # ENABLE_EMAIL_LOGIN=true   → Enable email/password login
 # ENABLE_EMAIL_SIGNUP=true  → Also allow new email signups (requires ENABLE_EMAIL_LOGIN)
+# ENABLE_MAGIC_LINK=true    → Passwordless email sign-in links (needs a real email provider;
+#                             the allowlist below still gates who can sign in)
+# ENABLE_PASSKEYS=true      → WebAuthn passkeys (register in Settings → Security)
 #
 # The UI automatically adapts based on these settings via /api/auth/config
 #

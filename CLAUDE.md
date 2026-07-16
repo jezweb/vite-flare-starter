@@ -637,6 +637,17 @@ fresh-fork auth issues are environmental, not code.
   HMAC-signed (`signValue`/`verifyValue`, `src/server/lib/crypto.ts`) and verified
   in the callback, so an attacker can't substitute a victim's id to hijack their
   token row. `mcp-connections` binds OAuth `state = signValue(connectionId)`.
+- **Passkeys + magic links** — opt-in passwordless: `ENABLE_PASSKEYS=true`
+  (WebAuthn; register in Settings → Security) and `ENABLE_MAGIC_LINK=true`
+  (sign-in links through the email provider registry; the allowlist gate
+  still applies). Sign-in page adapts via `/api/auth/config`.
+- **Admin plugin** — ban/unban (badge + confirm dialog in the Users table;
+  banned users' sessions are revoked and sign-in blocked until unbanned)
+  and **impersonation** (1h session stamped `impersonatedBy`, warning
+  banner with "Stop impersonating"). Uses the same `user.role === 'admin'`.
+- **Rate limiting** — better-auth's default in-memory store is per-isolate
+  on Workers (silently broken under load); the starter sets
+  `rateLimit.storage: 'database'` (table `rateLimit`).
 - **last-login-method** — better-auth plugin drops a
   `better-auth.last_used_login_method` cookie after each successful
   sign-in. The login page reads it client-side and surfaces a "Last

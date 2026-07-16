@@ -168,6 +168,8 @@ export interface Env {
   // Google OAuth domain restrictions: use Google Cloud Console, not these vars
   ENABLE_EMAIL_LOGIN?: string // Set to 'true' to allow email/password login (default: disabled)
   ENABLE_EMAIL_SIGNUP?: string // Set to 'true' to allow email signups (requires ENABLE_EMAIL_LOGIN=true)
+  ENABLE_MAGIC_LINK?: string // Set to 'true' for passwordless email sign-in links
+  ENABLE_PASSKEYS?: string // Set to 'true' for WebAuthn passkey sign-in
 
   // Trusted origins for auth (comma-separated list)
   // Example: "http://localhost:5173,https://myapp.workers.dev,https://myapp.com"
@@ -275,11 +277,15 @@ app.get('/api/auth/config', async (c) => {
   const emailLoginEnabled = c.env.ENABLE_EMAIL_LOGIN === 'true'
   const emailSignupEnabled = emailLoginEnabled && c.env.ENABLE_EMAIL_SIGNUP === 'true'
   const googleEnabled = !!(c.env.GOOGLE_CLIENT_ID && c.env.GOOGLE_CLIENT_SECRET)
+  const magicLinkEnabled = c.env.ENABLE_MAGIC_LINK === 'true'
+  const passkeysEnabled = c.env.ENABLE_PASSKEYS === 'true'
 
   return c.json({
     emailLoginEnabled,
     emailSignupEnabled,
     googleEnabled,
+    magicLinkEnabled,
+    passkeysEnabled,
   })
 })
 

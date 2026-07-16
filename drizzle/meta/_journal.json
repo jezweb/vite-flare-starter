@@ -351,6 +351,20 @@
       "when": 1784207108615,
       "tag": "20260716130508_mirror_records",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "6",
+      "when": 1784231555554,
+      "tag": "20260716195235_rate_limit_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "6",
+      "when": 1784231716375,
+      "tag": "20260716195516_auth_admin_passkey",
+      "breakpoints": true
     }
   ]
 }

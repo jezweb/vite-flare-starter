@@ -272,6 +272,7 @@ adminRoutes.get('/users', zValidator('query', userListQuerySchema), async (c) =>
     sessionCount: sessionCounts[user.id] || 0,
     lastActiveAt: lastActiveTimes[user.id]?.toISOString() || null,
     isAdmin: user.role === 'admin' || isAdminEmail(user.email, c.env.ADMIN_EMAILS),
+    banned: !!user.banned,
   }))
 
   const response: UserListResponse = {
@@ -327,6 +328,7 @@ adminRoutes.get('/users/:id', async (c) => {
     sessionCount: sessionResult?.count || 0,
     lastActiveAt: lastSession[0]?.updatedAt?.toISOString() || null,
     isAdmin: user.role === 'admin' || isAdminEmail(user.email, c.env.ADMIN_EMAILS),
+    banned: !!user.banned,
   }
 
   return c.json({ user: response })
@@ -399,6 +401,7 @@ adminRoutes.patch('/users/:id', zValidator('json', updateUserSchema), async (c) 
     sessionCount: 0,
     lastActiveAt: null,
     isAdmin: updated.role === 'admin' || isAdminEmail(updated.email, c.env.ADMIN_EMAILS),
+    banned: !!updated.banned,
   }
 
   return c.json({ user: response })
