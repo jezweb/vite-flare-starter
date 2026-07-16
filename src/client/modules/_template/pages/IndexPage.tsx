@@ -71,21 +71,19 @@ export function TemplateIndexPage() {
         <ListRowGroup>
           {data.things.map((thing) => (
             <li key={thing.id}>
-              <ListRow asChild>
-                <Link to={`/dashboard/things/${thing.id}`}>
-                  <ListRowIcon>
-                    <FileText className="text-muted-foreground" />
-                  </ListRowIcon>
-                  <ListRowBody>
-                    <ListRowTitle>{thing.name}</ListRowTitle>
-                    <ListRowMeta>
-                      <span>updated {thing.updatedAt}</span>
-                    </ListRowMeta>
-                  </ListRowBody>
-                  <ListRowTrailing>
-                    <ChevronRight className="size-3.5 text-muted-foreground/50 group-hover/list-row:text-foreground transition-colors" />
-                  </ListRowTrailing>
-                </Link>
+              <ListRow render={<Link to={`/dashboard/things/${thing.id}`} />}>
+                <ListRowIcon>
+                  <FileText className="text-muted-foreground" />
+                </ListRowIcon>
+                <ListRowBody>
+                  <ListRowTitle>{thing.name}</ListRowTitle>
+                  <ListRowMeta>
+                    <span>updated {thing.updatedAt}</span>
+                  </ListRowMeta>
+                </ListRowBody>
+                <ListRowTrailing>
+                  <ChevronRight className="size-3.5 text-muted-foreground/50 group-hover/list-row:text-foreground transition-colors" />
+                </ListRowTrailing>
               </ListRow>
             </li>
           ))}

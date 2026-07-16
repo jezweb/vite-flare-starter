@@ -180,11 +180,7 @@ function ActivityItem({ activity }: { activity: Activity }) {
   )
 
   if (href) {
-    return (
-      <ListRow asChild>
-        <Link to={href}>{inner}</Link>
-      </ListRow>
-    )
+    return <ListRow render={<Link to={href} />}>{inner}</ListRow>
   }
 
   return <ListRow variant="plain">{inner}</ListRow>

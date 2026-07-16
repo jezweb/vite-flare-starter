@@ -154,23 +154,21 @@ export function TemplateCatalogPage() {
             <ListRowGroup>
               {data.things.map((thing) => (
                 <li key={thing.id}>
-                  <ListRow asChild>
-                    <Link to={`/dashboard/things/${thing.id}`}>
-                      <ListRowIcon>
-                        <FileText className="text-muted-foreground" />
-                      </ListRowIcon>
-                      <ListRowBody>
-                        <ListRowTitle>{thing.name}</ListRowTitle>
-                        <ListRowMeta>
-                          <span>updated {thing.updatedAt}</span>
-                          <span>·</span>
-                          <span>{thing.category}</span>
-                        </ListRowMeta>
-                      </ListRowBody>
-                      <ListRowTrailing>
-                        <ChevronRight className="size-3.5 text-muted-foreground/50 transition-colors group-hover/list-row:text-foreground" />
-                      </ListRowTrailing>
-                    </Link>
+                  <ListRow render={<Link to={`/dashboard/things/${thing.id}`} />}>
+                    <ListRowIcon>
+                      <FileText className="text-muted-foreground" />
+                    </ListRowIcon>
+                    <ListRowBody>
+                      <ListRowTitle>{thing.name}</ListRowTitle>
+                      <ListRowMeta>
+                        <span>updated {thing.updatedAt}</span>
+                        <span>·</span>
+                        <span>{thing.category}</span>
+                      </ListRowMeta>
+                    </ListRowBody>
+                    <ListRowTrailing>
+                      <ChevronRight className="size-3.5 text-muted-foreground/50 transition-colors group-hover/list-row:text-foreground" />
+                    </ListRowTrailing>
                   </ListRow>
                 </li>
               ))}

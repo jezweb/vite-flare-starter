@@ -21,11 +21,13 @@
  *   - `urgent` — amber tint + amber border-left accent
  *   - `disabled` — muted + reduced opacity
  *
- * Use `asChild` to render the row as a Link or button while keeping
- * the layout (Radix Slot pattern, same as Button + DropdownMenuItem).
+ * Use `render` to render the row as a Link or button while keeping
+ * the layout (Base UI render-prop pattern, same as Button + menu items):
+ * `<ListRow render={<Link to="/x" />}>…slots…</ListRow>`.
  */
 import * as React from 'react'
-import { Slot } from 'radix-ui'
+import { mergeProps } from '@base-ui/react/merge-props'
+import { useRender } from '@base-ui/react/use-render'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
@@ -56,32 +58,29 @@ const listRowVariants = cva(
   }
 )
 
-interface ListRowProps
-  extends React.HTMLAttributes<HTMLElement>,
-    VariantProps<typeof listRowVariants> {
-  asChild?: boolean
-}
+type ListRowProps = useRender.ComponentProps<'div'> & VariantProps<typeof listRowVariants>
 
-const ListRow = React.forwardRef<HTMLElement, ListRowProps>(
-  ({ className, variant, state, interactive, asChild, ...props }, ref) => {
-    const Comp = asChild ? Slot.Slot : 'div'
-    return (
-      <Comp
-        ref={ref as React.Ref<HTMLDivElement>}
-        data-slot="list-row"
-        className={cn(
+function ListRow({ className, variant, state, interactive, render, ...props }: ListRowProps) {
+  return useRender({
+    defaultTagName: 'div',
+    render,
+    props: mergeProps<'div'>(
+      {
+        'data-slot': 'list-row',
+        className: cn(
           listRowVariants({
             variant,
             state,
-            interactive: interactive ?? asChild,
+            // A row rendered as a Link/button is interactive by default.
+            interactive: interactive ?? Boolean(render),
             className,
           })
-        )}
-        {...props}
-      />
-    )
-  }
-)
+        ),
+      } as React.ComponentProps<'div'>,
+      props
+    ),
+  })
+}
 ListRow.displayName = 'ListRow'
 
 const ListRowIcon = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
