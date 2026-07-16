@@ -429,7 +429,7 @@ export function ComponentsPage() {
               <CardDescription>Collapsible content sections</CardDescription>
             </CardHeader>
             <CardContent>
-              <Accordion type="single" collapsible className="w-full">
+              <Accordion className="w-full">
                 <AccordionItem value="item-1">
                   <AccordionTrigger>Is it accessible?</AccordionTrigger>
                   <AccordionContent>
