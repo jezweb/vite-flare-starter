@@ -9,6 +9,16 @@
  * - Set VITE_FEATURE_[NAME]=false in .dev.vars to hide modules you don't need
  * - The module code remains available as patterns for Claude Code to reference
  *
+ * TWO FLAG LAYERS EXIST — they deliberately do NOT interact:
+ * - THIS file (VITE_FEATURE_*, build-time): which starter MODULES are
+ *   visible. Fork-time decisions, baked into the bundle, gate nav +
+ *   routes. This is the only layer the starter itself gates on.
+ * - The `feature-flags` module (D1 + admin UI, runtime): a reference
+ *   implementation for toggling YOUR product's features without a
+ *   redeploy. Copy the pattern for your own domain flags; it does not
+ *   override anything here. Client hook: `useFeatures.ts`
+ *   (usePublicFeatures / useAdminFeatures).
+ *
  * @see src/shared/config/nav.ts for sidebar item filtering
  */
 

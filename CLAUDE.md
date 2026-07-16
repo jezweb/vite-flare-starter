@@ -32,7 +32,7 @@ VITE_FEATURE_ACTIVITY=false
 | **activity** | Audit logging with pagination, entity history, stats aggregation | `server/modules/activity/routes.ts` |
 | **notifications** | In-app service, unread counts, bulk operations | `server/modules/notifications/routes.ts` |
 | **api-tokens** | Token generation, SHA-256 hashing, scope-based access | `server/modules/api-tokens/routes.ts` |
-| **feature-flags** | DB-backed feature toggles, public/admin endpoints | `server/modules/feature-flags/routes.ts` |
+| **feature-flags** | DB-backed **runtime** feature toggles, public/admin endpoints — a pattern to copy for your product's own flags. Deliberately separate from the build-time `VITE_FEATURE_*` module-visibility flags (`shared/config/features.ts`), which are the only layer the starter gates on. | `server/modules/feature-flags/routes.ts` |
 | **organization** | Single-row business settings with upsert | `server/modules/organization/routes.ts` |
 | **admin** | User management, role promotion, admin stats | `server/modules/admin/routes.ts` |
 | **settings** | Profile CRUD, password, preferences, sessions, data export | `server/modules/settings/routes.ts` |
