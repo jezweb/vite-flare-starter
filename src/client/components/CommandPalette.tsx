@@ -104,6 +104,17 @@ export function CommandPalette() {
     return () => document.removeEventListener('keydown', handler)
   }, [])
 
+  // Programmatic open — the sidebar Quick-search field dispatches this
+  // (Cloudflare-style search-first sidebar).
+  useEffect(() => {
+    const openHandler = () => {
+      announceGlobalModalOpen('command-palette')
+      setOpen(true)
+    }
+    window.addEventListener('vfs:open-command-palette', openHandler)
+    return () => window.removeEventListener('vfs:open-command-palette', openHandler)
+  }, [])
+
   // Close if any other global modal opens — one-at-a-time policy.
   useEffect(() => subscribeGlobalModal('command-palette', () => setOpen(false)), [])
 

@@ -21,17 +21,19 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  useSidebar,
 } from '@/components/ui/sidebar'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import type { NavItem } from '@/shared/config/nav'
 
 /**
- * Kumo MenuBadge — dashed pill after a nav label ("Beta", "New").
+ * Kumo MenuBadge — dashed pill inline after a nav label ("Beta", "New";
+ * CF renders it in flow right after the text, not pushed to the edge).
  * Hidden when the sidebar collapses to icons.
  */
 function NavBadge({ children }: { children: React.ReactNode }) {
   return (
-    <span className="ml-auto inline-flex shrink-0 select-none items-center rounded-full border border-dashed border-border px-1.5 py-0.5 text-[11px]/none font-medium group-data-[collapsible=icon]:hidden">
+    <span className="inline-flex shrink-0 select-none items-center rounded-full border border-dashed border-border px-1.5 py-0.5 text-[11px]/none font-medium group-data-[collapsible=icon]:hidden">
       {children}
     </span>
   )
@@ -113,17 +115,35 @@ export function NavMain({ label, items, defaultCollapsed = false }: Props) {
 }
 
 /**
- * Cloudflare-dashboard-style nested item: icon'd parent that BOTH
- * navigates (to its overview route) and expands; text-only children
- * indented behind the vertical rail (see SidebarMenuSub). The parent
- * shows active styling only for its own route — when a child is
- * active, the child carries the highlight (Kumo behaviour).
+ * Cloudflare-dashboard-style nested item (anatomy verified against the
+ * live dash.cloudflare.com markup, 2026-07-16):
+ *   - the parent row is a whole-row TOGGLE, not a link — navigation
+ *     lives in the children; the parent's icon renders muted
+ *   - caret sits at the row's right edge (opacity-40 → 100 on hover),
+ *     rotates 90° when open
+ *   - when a child is active, the child carries the highlight and the
+ *     parent stays transparent
+ *   - open state persists per item; deep links auto-expand the subtree
+ *   - icon-collapsed sidebar: children are unreachable, so the parent
+ *     row degrades to a link to `item.to` (its overview route)
  */
 function NestedNavItem({ item, pathname }: { item: NavItem; pathname: string }) {
+  const { state } = useSidebar()
   const children = item.children ?? []
   const parentActive = routeMatches(pathname, item.to)
   const childActive = children.some((c) => routeMatches(pathname, c.to))
-  const [open, setOpen] = useState(parentActive || childActive)
+  const storage = `nav.item.${item.to}.open`
+
+  const [open, setOpen] = useState(() => {
+    if (parentActive || childActive) return true
+    if (typeof window === 'undefined') return false
+    return window.localStorage.getItem(storage) === 'true'
+  })
+
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next)
+    window.localStorage.setItem(storage, next ? 'true' : 'false')
+  }
 
   // Navigating into the subtree from elsewhere (command palette, deep
   // link) must reveal where the user is.
@@ -131,29 +151,34 @@ function NestedNavItem({ item, pathname }: { item: NavItem; pathname: string }) 
     if (parentActive || childActive) setOpen(true)
   }, [parentActive, childActive])
 
-  return (
-    <Collapsible open={open} onOpenChange={setOpen}>
+  // Icon-collapsed mode: no room for children — the parent acts as a
+  // plain link to its overview route, tooltip carries the label.
+  if (state === 'collapsed') {
+    return (
       <SidebarMenuItem>
         <SidebarMenuButton
-          render={<NavLink to={item.to} onClick={() => setOpen(true)} />}
-          isActive={parentActive}
+          render={<NavLink to={item.to} />}
+          isActive={parentActive || childActive}
           tooltip={item.label}
         >
           {item.icon && <item.icon />}
           <span>{item.label}</span>
-          {item.badge && <NavBadge>{item.badge}</NavBadge>}
         </SidebarMenuButton>
+      </SidebarMenuItem>
+    )
+  }
+
+  return (
+    <Collapsible open={open} onOpenChange={handleOpenChange}>
+      <SidebarMenuItem>
         <CollapsibleTrigger
-          render={
-            <button
-              type="button"
-              aria-label={`${open ? 'Collapse' : 'Expand'} ${item.label}`}
-              className="absolute top-1.5 right-1 flex size-5 items-center justify-center rounded-md text-sidebar-foreground/60 outline-hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring group-data-[collapsible=icon]:hidden"
-            />
-          }
+          render={<SidebarMenuButton tooltip={item.label} aria-expanded={open} />}
         >
+          {item.icon && <item.icon className="opacity-50" />}
+          <span>{item.label}</span>
+          {item.badge && <NavBadge>{item.badge}</NavBadge>}
           <CaretRight
-            className={`size-3.5 transition-transform ${open ? 'rotate-90' : ''}`}
+            className={`ml-auto size-3 shrink-0 opacity-40 transition-[transform,opacity] duration-200 group-hover/menu-item:opacity-100 ${open ? 'rotate-90' : ''}`}
             aria-hidden="true"
           />
         </CollapsibleTrigger>

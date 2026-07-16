@@ -38,11 +38,12 @@ export interface NavItem {
    */
   builderOnly?: boolean
   /**
-   * Cloudflare-dashboard-style nesting: the item renders with its icon
-   * as a collapsible parent; children render text-only, indented behind
-   * a vertical rail. Children don't take icons — the rail IS the
-   * hierarchy cue. The parent's own `to` still navigates (first click
-   * expands + navigates, like dash.cloudflare.com).
+   * Cloudflare-dashboard-style nesting: the item renders with a muted
+   * icon as a whole-row collapsible toggle; children render text-only,
+   * indented behind a vertical rail (the rail IS the hierarchy cue —
+   * no child icons). Navigation lives in the children; the parent's
+   * `to` is only used when the sidebar is icon-collapsed (children
+   * unreachable → parent degrades to a link to its overview route).
    */
   children?: NavChildItem[]
   /** Small dashed pill after the label (e.g. "Beta", "New") — Kumo MenuBadge. */
@@ -153,6 +154,7 @@ export const NAV_SECTIONS: NavSection[] = [
         label: 'Insights',
         icon: ChartBar,
         children: [
+          { to: '/dashboard/agent-observability', label: 'Observability' },
           { to: '/dashboard/activity', label: 'Activity', feature: 'activity' },
           { to: '/dashboard/admin/access-log', label: 'Access log', minRole: 'admin' },
           { to: '/dashboard/files', label: 'Files', feature: 'files' },
