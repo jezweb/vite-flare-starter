@@ -190,9 +190,18 @@ The four `design-review-*` files in `artifacts/` are the canonical chain pattern
 
 Page shapes (frontmatter, Gotchas section, `_index.md` threshold, when-to-subfolder rule) follow the global wiki conventions: see `~/Documents/.jez/CONVENTIONS.md`. This section only documents what's local to this project.
 
-### Pending
+### Artifacts index (generated)
 
-`artifacts/_index.md` is past due — 60+ files crossed the threshold. Whoever next does an audit cycle should seed it (Librarian's `~/Documents/.jez/clients/_index.md` is the model: table + cross-cutting flags + last-updated stamp).
+`artifacts/_index.md` is **generated** — never hand-edit it. After adding or
+retiring artifacts, re-run:
+
+```bash
+node .jez/scripts/gen-artifacts-index.mjs
+```
+
+It parses YAML frontmatter, bold-label headers, and filename dates, and writes
+a newest-first table (date / title / status). Per the derived-files rule, a
+hand-kept index would drift; the generator re-reads the corpus every run.
 
 ---
 
