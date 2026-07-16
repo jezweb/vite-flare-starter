@@ -15,18 +15,17 @@
  *   - active   → primary tint to draw the eye to the next step
  */
 import * as React from 'react'
-import { Slot } from 'radix-ui'
+import { mergeProps } from '@base-ui/react/merge-props'
+import { useRender } from '@base-ui/react/use-render'
 import { CheckCircle2, ChevronRight } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-interface SetupCardProps extends Omit<React.HTMLAttributes<HTMLElement>, 'title'> {
+interface SetupCardProps extends Omit<useRender.ComponentProps<'div'>, 'title'> {
   icon: LucideIcon
   title: React.ReactNode
   description?: React.ReactNode
   state?: 'default' | 'active' | 'completed'
-  /** Render as a Link / button (Radix Slot pattern). */
-  asChild?: boolean
 }
 
 export function SetupCard({
@@ -34,26 +33,13 @@ export function SetupCard({
   title,
   description,
   state = 'default',
-  asChild,
+  render,
   className,
   children,
   ...rest
 }: SetupCardProps) {
-  const Comp = asChild ? Slot.Slot : 'div'
-  return (
-    <Comp
-      data-slot="setup-card"
-      data-state={state}
-      className={cn(
-        'group/setup flex items-center gap-3 rounded-md border p-3 transition-colors',
-        state === 'default' && 'bg-card hover:bg-muted/50',
-        state === 'active' && 'border-primary/40 bg-primary/5 hover:bg-primary/10',
-        state === 'completed' && 'bg-muted/40 opacity-80',
-        asChild && 'cursor-pointer',
-        className
-      )}
-      {...rest}
-    >
+  const content = (
+    <>
       <div
         className={cn(
           'flex size-9 shrink-0 items-center justify-center rounded-md',
@@ -75,13 +61,34 @@ export function SetupCard({
           <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{description}</p>
         )}
       </div>
-      {asChild && state !== 'completed' && (
+      {render && state !== 'completed' && (
         <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover/setup:translate-x-0.5" />
       )}
-      {/* Children render on the right when not asChild — useful for badges. */}
-      {!asChild && children && <div className="shrink-0 flex items-center gap-2">{children}</div>}
-    </Comp>
+      {/* Children render on the right when not rendered-as-link — useful for badges. */}
+      {!render && children && <div className="shrink-0 flex items-center gap-2">{children}</div>}
+    </>
   )
+
+  return useRender({
+    defaultTagName: 'div',
+    render,
+    props: mergeProps<'div'>(
+      {
+        'data-slot': 'setup-card',
+        'data-state': state,
+        className: cn(
+          'group/setup flex items-center gap-3 rounded-md border p-3 transition-colors',
+          state === 'default' && 'bg-card hover:bg-muted/50',
+          state === 'active' && 'border-primary/40 bg-primary/5 hover:bg-primary/10',
+          state === 'completed' && 'bg-muted/40 opacity-80',
+          render && 'cursor-pointer',
+          className
+        ),
+        children: content,
+      } as React.ComponentProps<'div'>,
+      rest
+    ),
+  })
 }
 
 interface SetupCardListProps extends React.HTMLAttributes<HTMLDivElement> {}
