@@ -67,7 +67,13 @@ export interface ChatStorage {
    */
   getProjectId(conversationId: string, userId: string): Promise<string | null>
   loadChat(conversationId: string): Promise<UIMessage[]>
-  saveChat(params: { conversationId: string; messages: UIMessage[] }): Promise<void>
+  /**
+   * Persist new messages. `userId` is the acting user and is verified
+   * against conversation membership before any insert — storage-layer
+   * defense-in-depth so a bug in a caller can't write messages into a
+   * conversation the user has no access to. Throws on non-members.
+   */
+  saveChat(params: { conversationId: string; messages: UIMessage[]; userId: string }): Promise<void>
   listConversations(
     userId: string,
     opts?: { limit?: number; offset?: number }
@@ -97,6 +103,31 @@ export interface ChatStorage {
  */
 export function createD1ChatStorage(db: D1Database): ChatStorage {
   const d = drizzle(db)
+
+  // Closure (not a method reference) so saveChat's membership check
+  // survives destructuring — `const { saveChat } = storage` must not
+  // silently lose `this` and throw into a best-effort catch upstream.
+  const isMemberOf = async (conversationId: string, userId: string): Promise<boolean> => {
+    const [row] = await d
+      .select({ id: conversationMembers.id })
+      .from(conversationMembers)
+      .where(
+        and(
+          eq(conversationMembers.conversationId, conversationId),
+          eq(conversationMembers.kind, 'user'),
+          eq(conversationMembers.userId, userId)
+        )
+      )
+      .limit(1)
+    if (row) return true
+    // Legacy fallback — pre-members rows only have conversations.user_id.
+    const [legacyRow] = await d
+      .select({ id: conversations.id })
+      .from(conversations)
+      .where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)))
+      .limit(1)
+    return !!legacyRow
+  }
 
   return {
     async createConversation(userId, opts) {
@@ -169,27 +200,7 @@ export function createD1ChatStorage(db: D1Database): ChatStorage {
       return !!row
     },
 
-    async isMember(conversationId, userId) {
-      const [row] = await d
-        .select({ id: conversationMembers.id })
-        .from(conversationMembers)
-        .where(
-          and(
-            eq(conversationMembers.conversationId, conversationId),
-            eq(conversationMembers.kind, 'user'),
-            eq(conversationMembers.userId, userId)
-          )
-        )
-        .limit(1)
-      if (row) return true
-      // Legacy fallback — same defensive path as isOwner.
-      const [legacyRow] = await d
-        .select({ id: conversations.id })
-        .from(conversations)
-        .where(and(eq(conversations.id, conversationId), eq(conversations.userId, userId)))
-        .limit(1)
-      return !!legacyRow
-    },
+    isMember: isMemberOf,
 
     async loadChat(conversationId) {
       const rows = await d
@@ -228,7 +239,17 @@ export function createD1ChatStorage(db: D1Database): ChatStorage {
       }) as UIMessage[]
     },
 
-    async saveChat({ conversationId, messages }) {
+    async saveChat({ conversationId, messages, userId }) {
+      // Defense-in-depth: the caller (chat-agent / compact route) has
+      // already authorised this user, but verify membership here too so
+      // no future code path can write into someone else's conversation.
+      const member = await isMemberOf(conversationId, userId)
+      if (!member) {
+        throw new Error(
+          `saveChat: user ${userId} is not a member of conversation ${conversationId}`
+        )
+      }
+
       // Get existing message IDs to avoid duplicates
       const existing = await d
         .select({ id: conversationMessages.id })

@@ -1222,7 +1222,7 @@ export class ChatAgent extends AIChatAgent<Env> {
     // the chat experience.
     try {
       const storage = createD1ChatStorage(this.env.DB)
-      await storage.saveChat({ conversationId, messages: this.messages as UIMessage[] })
+      await storage.saveChat({ conversationId, messages: this.messages as UIMessage[], userId })
     } catch (err) {
       console.error(
         JSON.stringify({

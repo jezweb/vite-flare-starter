@@ -195,6 +195,14 @@ export interface RunOnceInput {
    * and on any approvals queued during the run as
    * `requestedByUserId`. Defaults to `state.userId` (legacy 1:1
    * behaviour — agent acts for its own owner).
+   *
+   * Principal model (#95): the agent always acts AS ITS OWNER —
+   * persona, memory blocks, budget, BYOK model keys — because a Space
+   * agent is the owner's agent deployed into a shared room. The one
+   * exception is the owner's connected MCP accounts (Gmail, Notion,
+   * …): when `actingUserId` differs from the owner, those tools are
+   * NOT mounted, so a space member can't prompt the agent into
+   * reading the owner's external accounts.
    */
   actingUserId?: string
   /**
@@ -732,7 +740,8 @@ export abstract class AutonomousAgent<
 
       // Resolve tools. Each tool sees an AgentContext with the
       // agent's owner (state.userId) so user-scoped tools work.
-      const tools = await this.buildToolset()
+      // actingUserId gates the owner's MCP tools (see RunOnceInput).
+      const tools = await this.buildToolset({ actingUserId })
 
       // Resolve the model. BYOK-aware: user-supplied keys override
       // env defaults. Falls back to plain resolveModel when no owner.
@@ -1179,7 +1188,13 @@ export abstract class AutonomousAgent<
    * a clean lifecycle hook tied to the agent run, but the SDK's
    * connection pool reuses idle connections so the cost is bounded.
    */
-  protected async buildToolset(): Promise<Awaited<ReturnType<typeof collectAvailableTools>>> {
+  protected async buildToolset(opts?: {
+    /** Who triggered this run. When set and different from the owner
+     *  (a Space @-mention by another member), the owner's per-user MCP
+     *  connections are NOT mounted — fail-closed so another member
+     *  can't prompt the agent into the owner's external accounts. */
+    actingUserId?: string
+  }): Promise<Awaited<ReturnType<typeof collectAvailableTools>>> {
     const allowed = this.state.toolsAllowed
     const allowedSet = allowed && allowed.length > 0 ? new Set(allowed) : null
     const defs = (await this.getToolDefinitions()).filter(
@@ -1206,10 +1221,15 @@ export abstract class AutonomousAgent<
     }
     const localTools = defs.length === 0 ? {} : await collectAvailableTools(defs, ctx)
 
-    // Per-user MCP — only when we know the owner. Best-effort: a
-    // failing MCP load shouldn't break the agent run.
+    // Per-user MCP — only when we know the owner AND the acting user
+    // IS the owner. In a Space, another member's @-mention must not
+    // reach the owner's connected accounts (Gmail, Notion, …) — the
+    // exfil path is "member prompts agent → agent reads owner's inbox
+    // → replies into the shared space". Best-effort: a failing MCP
+    // load shouldn't break the agent run.
+    const actorIsOwner = !opts?.actingUserId || opts.actingUserId === this.state.userId
     let mcpTools: Record<string, unknown> = {}
-    if (this.state.userId) {
+    if (this.state.userId && actorIsOwner) {
       // Issue #39: drain any pending cleanup from the previous run BEFORE
       // opening fresh connections. Guarantees at most one outstanding
       // cleanup per agent instance even if a prior waitUntil never

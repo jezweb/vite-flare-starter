@@ -11,6 +11,29 @@ decide about the rest at your own pace.
 
 ---
 
+## v2.0.1 — security batch (2026-07-17)
+
+Remaining #95 highs. One breaking change:
+
+### Webhook agent URLs changed (external senders break)
+
+`POST /api/webhooks/agent/:class/:slug` now expects an HMAC-signed
+handle instead of a bare slug, and agent DOs are namespaced per user
+(`userId:slug`) — closing slug-squatting and cross-user collisions.
+Old bare-slug URLs return 401. Fix: re-fetch
+`GET /api/webhooks/agent/:class/:slug/info` and paste the new URL into
+each external sender. Secrets are per-DO; the namespaced DO is new, so
+also re-copy the secret from the same `/info` response.
+
+Silent-but-good changes (no action): `install_skill` now installs into
+the calling user's namespace (was: shared, visible to all users);
+MCP-connector OAuth state binds the initiating user; chat D1 projection
+verifies conversation membership; Space agents drop the owner's
+connected-account (MCP) tools when a different space member triggers
+the run.
+
+---
+
 ## v2.0.0 — design reboot (2026-07-16)
 
 The UI foundation changed: Radix → Base UI, lucide → Phosphor,

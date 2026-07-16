@@ -63,32 +63,94 @@ export const scheduledJobs = sqliteTable(
 // ─── Cron Parser (minimal — supports standard 5-field cron) ─────────
 
 /**
- * Calculate the next run time from a cron expression.
- * Supports: minute hour day-of-month month day-of-week
- * Special values: * (any), specific numbers, comma-separated lists
+ * Calculate the next run time from a cron expression (UTC).
+ * Supports: minute hour day-of-month month day-of-week.
  *
- * This is intentionally simple — for complex cron, use a library.
+ * Field syntax (deliberately minimal — for complex cron use a library):
+ *   minute  — a single number 0-59 (NOT `*`: sub-hourly agent schedules
+ *             are rejected rather than silently misread)
+ *   hour    — `*` (every hour) or a single number 0-23
+ *   date fields — `*`, a number, or a comma-separated list
+ *             (day-of-month 1-31, month 1-12, day-of-week 0-6 with
+ *             Sunday = 0; 7 also accepted for Sunday)
+ *   Ranges (`1-5`) and step syntax (every-N) throw.
+ *
+ * All values are range-checked — JS Date would otherwise "helpfully"
+ * roll `0 99 * * *` into a different day instead of erroring, and an
+ * earlier version silently ignored the date fields entirely (a
+ * "monthly" schedule fired daily) and read `30 * * * *` as daily 00:30
+ * instead of hourly at :30.
+ *
+ * Per POSIX, when BOTH DOM and DOW are restricted, either matching
+ * suffices; we use the simpler both-must-match rule and document it.
  */
-function nextCronRun(cronExpr: string, after: Date = new Date()): Date {
+export function nextCronRun(cronExpr: string, after: Date = new Date()): Date {
   const parts = cronExpr.trim().split(/\s+/)
   if (parts.length !== 5) throw new Error('Cron must have 5 fields: minute hour day month weekday')
 
-  const [minSpec, hourSpec] = parts
+  const [minSpec, hourSpec, domSpec, monthSpec, dowSpec] = parts
 
-  // Simple case: fixed time daily (most common for agent tasks)
-  const minute = minSpec === '*' ? 0 : Number.parseInt(minSpec!, 10)
-  const hour = hourSpec === '*' ? 0 : Number.parseInt(hourSpec!, 10)
-
-  const next = new Date(after)
-  next.setMinutes(minute, 0, 0)
-  next.setHours(hour)
-
-  // If the time already passed today, schedule for tomorrow
-  if (next <= after) {
-    next.setDate(next.getDate() + 1)
+  const inRange = (v: number, lo: number, hi: number, label: string, spec: string): number => {
+    if (v < lo || v > hi) {
+      throw new Error(`Cron ${label} value "${spec}" out of range (${lo}-${hi})`)
+    }
+    return v
   }
 
-  return next
+  const parseList = (
+    spec: string,
+    label: string,
+    lo: number,
+    hi: number
+  ): number[] | null => {
+    if (spec === '*') return null
+    const items = spec.split(',')
+    // Strict per-element check — parseInt('1-5') would silently return 1,
+    // turning a range into a single day.
+    if (items.some((v) => !/^\d+$/.test(v))) {
+      throw new Error(`Unsupported cron ${label} field "${spec}" — use *, a number, or a list`)
+    }
+    return items.map((v) => inRange(Number.parseInt(v, 10), lo, hi, label, spec))
+  }
+
+  const parseSingle = (spec: string, label: string, lo: number, hi: number): number => {
+    if (!/^\d+$/.test(spec)) {
+      throw new Error(`Unsupported cron ${label} field "${spec}" — use a single number`)
+    }
+    return inRange(Number.parseInt(spec, 10), lo, hi, label, spec)
+  }
+
+  if (minSpec === '*') {
+    throw new Error(
+      'Cron minute field "*" (sub-hourly) is not supported — give an explicit minute, e.g. "0 * * * *" for hourly on the hour'
+    )
+  }
+  const minute = parseSingle(minSpec!, 'minute', 0, 59)
+  const everyHour = hourSpec === '*'
+  const hour = everyHour ? null : parseSingle(hourSpec!, 'hour', 0, 23)
+  const days = parseList(domSpec!, 'day-of-month', 1, 31)
+  const months = parseList(monthSpec!, 'month', 1, 12)
+  // Normalise 7 → 0 (both mean Sunday in most cron dialects).
+  const weekdays = parseList(dowSpec!, 'day-of-week', 0, 7)?.map((d) => (d === 7 ? 0 : d)) ?? null
+
+  // Start at the next minute-boundary candidate and step hour by hour
+  // until every field matches. Four years covers the worst legitimate
+  // case (`0 9 29 2 *` — Feb 29 exists only in leap years); anything
+  // unmatched after that genuinely never fires. Worst case ~35k cheap
+  // Date mutations (sub-millisecond).
+  const next = new Date(after)
+  next.setUTCMinutes(minute, 0, 0)
+  if (next <= after) next.setUTCHours(next.getUTCHours() + 1)
+
+  for (let i = 0; i < 4 * 366 * 24; i++) {
+    const hourOk = hour === null || next.getUTCHours() === hour
+    const domOk = !days || days.includes(next.getUTCDate())
+    const monthOk = !months || months.includes(next.getUTCMonth() + 1)
+    const dowOk = !weekdays || weekdays.includes(next.getUTCDay())
+    if (hourOk && domOk && monthOk && dowOk) return next
+    next.setUTCHours(next.getUTCHours() + 1)
+  }
+  throw new Error(`Cron "${cronExpr}" never matches a real date`)
 }
 
 // ─── Schedule Tools ─────────────────────────────────────────────────
@@ -130,7 +192,7 @@ export const scheduleTaskDefinition: ToolDefinition<
       .string()
       .optional()
       .describe(
-        'Cron expression for recurring tasks (e.g. "0 6 * * *" = daily at 6am, "0 9 * * 1" = Monday 9am)'
+        'Cron expression for recurring tasks (e.g. "0 6 * * *" = daily at 6am, "0 9 * * 1" = Monday 9am, "30 * * * *" = hourly at :30). Minute must be a number (no sub-hourly); ranges and step syntax (*/N) are not supported.'
       ),
   }),
   outputSchema: ScheduleTaskOutput,

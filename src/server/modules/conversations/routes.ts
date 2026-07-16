@@ -408,6 +408,7 @@ app.post('/:id/compact', async (c) => {
     projectId: original?.projectId ?? null,
   })
   await storage.saveChat({
+    userId,
     conversationId: newId,
     messages: [
       {
