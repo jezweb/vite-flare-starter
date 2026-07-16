@@ -173,8 +173,12 @@ export class D1BackupWorkflow extends WorkflowEntrypoint<BackupWorkflowEnv, unkn
       async () => {
         const dump = await fetch(signedUrl as string)
         if (!dump.ok || !dump.body) throw new Error(`dump download failed: ${dump.status}`)
-        const stamp = event.timestamp.toISOString().replace(/[:]/g, '-').slice(0, 16)
-        const objectKey = `${BACKUP_PREFIX}${stamp}.sql`
+        // Seconds precision + a short suffix from the export bookmark (unique
+        // per run) so two runs in the same minute can't overwrite each other's
+        // object. Timestamp stays lexicographically sortable for pruning.
+        const stamp = event.timestamp.toISOString().replace(/[:]/g, '-').slice(0, 19)
+        const suffix = bookmark.slice(-8).replace(/[^\w]/g, '')
+        const objectKey = `${BACKUP_PREFIX}${stamp}-${suffix}.sql`
         // lib.dom's ReadableStream vs workers-types' — same object at
         // runtime in workerd, but the ambient fetch types disagree.
         await this.env.FILES.put(objectKey, dump.body as unknown as WorkersReadableStream)

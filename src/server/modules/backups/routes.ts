@@ -60,16 +60,26 @@ app.get('/status/:instanceId', async (c) => {
 // Key arrives URL-encoded (contains a slash). Constrained to the backup
 // prefix so this can never serve user files.
 app.get('/download/:key{.+}', async (c) => {
-  const key = decodeURIComponent(c.req.param('key'))
+  let key: string
+  try {
+    key = decodeURIComponent(c.req.param('key'))
+  } catch {
+    // Malformed percent-encoding — decodeURIComponent throws; don't 500.
+    return c.json({ error: 'Invalid backup key' }, 400)
+  }
   if (!key.startsWith(BACKUP_PREFIX) || key.includes('..')) {
     return c.json({ error: 'Invalid backup key' }, 400)
   }
   const object = await c.env.FILES.get(key)
   if (!object) return c.json({ error: 'Not found' }, 404)
+  // Sanitise the filename before it enters the header: strip anything
+  // outside a safe set so a hostile object key can't inject quotes or
+  // CR/LF into content-disposition (header-injection defence-in-depth).
+  const safeName = key.slice(BACKUP_PREFIX.length).replace(/[^\w.\-]/g, '_') || 'backup.sql'
   return new Response(object.body, {
     headers: {
       'content-type': 'application/sql',
-      'content-disposition': `attachment; filename="${key.slice(BACKUP_PREFIX.length)}"`,
+      'content-disposition': `attachment; filename="${safeName}"`,
     },
   })
 })

@@ -107,8 +107,11 @@ export const entityCreateDefinition: ToolDefinition<
     const id = crypto.randomUUID()
     // Provenance: agent-created entities self-identify so surfaces (e.g.
     // the Kanban primitive's card badge) can distinguish agent-written
-    // rows from user-written ones. Caller-supplied createdBy wins.
-    const fields = { createdBy: 'agent', ...(input.fields ?? {}) }
+    // rows from user-written ones. The stamp goes LAST so the agent (the
+    // untrusted caller here) can't override it via input.fields.createdBy
+    // — otherwise the provenance signal is spoofable by the party it's
+    // meant to identify.
+    const fields = { ...(input.fields ?? {}), createdBy: 'agent' }
     await db.insert(entities).values({
       id,
       userId: ctx.userId,
