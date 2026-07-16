@@ -188,6 +188,41 @@
   //   // { "name": "EMAIL", "allowed_sender_addresses": ["noreply@yourdomain.com"] }
   // ],
 
+  // Email delivery events (opt-in) — Queues event subscription
+  // -----------------------------------------------------------
+  // Email Sending publishes six lifecycle events per message
+  // (message.delivered / deferred / bounced / failed / rejected /
+  // complained) into a queue you subscribe. The consumer in
+  // src/server/modules/email/delivery-events.ts records them into the
+  // email_events table and maintains the email_suppressions bounce/
+  // complaint list. email-service provider (env.EMAIL) only — the other
+  // providers have their own webhook systems.
+  //
+  // Enable by:
+  //   1. npx wrangler queues create email-events
+  //   2. Create the event subscription — one per sending domain — via
+  //      dashboard (Queues → email-events → Subscriptions) or
+  //      `wrangler queues subscription create email-events --source ... --events ...`.
+  //      https://developers.cloudflare.com/email-service/platform/event-subscriptions/
+  //   3. Uncomment the consumers block below
+  //   4. Wire the queue() export in src/server/index.ts — see the
+  //      delivery-events.ts docstring (covers sharing the export with
+  //      the async-send consumer in queue.ts, dispatching on batch.queue)
+  //   5. Optional: EMAIL_SUPPRESSION_ENFORCE='true' makes sendEmail()
+  //      skip suppressed recipients (default off — data-only)
+  // Full walkthrough: docs/ADDING_EMAIL_DELIVERY_EVENTS.md
+  //
+  // "queues": {
+  //   "consumers": [
+  //     {
+  //       "queue": "email-events",
+  //       "max_batch_size": 25,
+  //       "max_retries": 5,
+  //       "dead_letter_queue": "email-events-dlq"
+  //     }
+  //   ]
+  // },
+
   // Durable Objects — stateful, SQLite-backed classes that live longer than
   // a single request. One instance per `idFromName(name)`. Used for:
   //  - Voice agents (VoiceInputExample — streams mic + transcribes)

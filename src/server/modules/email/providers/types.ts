@@ -104,6 +104,15 @@ export interface EmailEnv {
    *   "smtp2go,email-service,resend"
    */
   EMAIL_PROVIDER_ORDER?: string
+
+  /**
+   * When set to 'true', sendEmail() checks recipients against the
+   * email_suppressions table (populated by the delivery-events queue
+   * consumer + manual admin entries) and skips suppressed addresses.
+   * Default: off — the table accumulates data but nothing is blocked,
+   * so forks opt in deliberately. See delivery-events.ts.
+   */
+  EMAIL_SUPPRESSION_ENFORCE?: string
 }
 
 /**
