@@ -379,7 +379,10 @@ export async function syncBundledSkills(
 export async function addGitHubSkill(
   env: SkillsEnv,
   url: string,
-  userId: string = BUNDLED_USER_ID
+  // No default on purpose: defaulting to BUNDLED_USER_ID silently made a
+  // caller's install visible to every user (see issue #95). Pass
+  // BUNDLED_USER_ID explicitly if a shared install is truly intended.
+  userId: string
 ): Promise<{ name: string; description: string }> {
   // SSRF guard: only fetch GitHub-hosted skill URLs, never an arbitrary
   // user-supplied host (which could target internal services / metadata).
@@ -440,7 +443,8 @@ export async function addGitHubSkill(
 export async function addGitHubSkillDirectory(
   env: SkillsEnv,
   input: string,
-  userId: string = BUNDLED_USER_ID
+  // No default — see addGitHubSkill.
+  userId: string
 ): Promise<{ name: string; description: string; files: string[] }> {
   if (!env.SKILLS)
     throw new Error('SKILLS R2 bucket required for directory imports — bind it in wrangler.jsonc')

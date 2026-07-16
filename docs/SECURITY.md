@@ -84,12 +84,21 @@ DO checks membership itself). Adding a new agent is secure by default. Routines 
 with `setOwner(routine.userId)` and an owner-namespaced agent name; routine
 `agentClass` is allowlisted against the registry.
 
+**Space principal model:** a Space agent acts AS ITS OWNER (persona, memory,
+budget, BYOK) — but when the run is triggered by a different member
+(`actingUserId !== owner`), the owner's per-user MCP connections are NOT mounted
+(`buildToolset` fail-closed), so a member can't prompt the agent into the owner's
+external accounts. Webhook agents are addressed by an HMAC-signed `userId:slug`
+handle minted at `/info` — DOs are per-user namespaced and bare slugs are rejected.
+
 ## 6. OAuth connector token security
 
 The connecting `userId` carried through a provider redirect is HMAC-signed
 (`signValue`/`verifyValue`, `src/server/lib/crypto.ts`) in the `*_user` cookie and
 verified in the callback, so it can't be substituted to hijack a victim's token row.
-`mcp-connections` binds `state = signValue(connectionId)` and verifies it.
+`mcp-connections` binds `state = signValue(connectionId:userId)` and verifies both
+halves against the connection row in the callback (a replayed state can't bind
+tokens onto another user's connection).
 Connector access tokens are stored AES-GCM encrypted and **decrypted before use**
 (never sent as ciphertext).
 

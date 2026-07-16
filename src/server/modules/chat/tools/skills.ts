@@ -412,7 +412,10 @@ export function skillsDefinitions(
     needsApproval: true,
     execute: async ({ url }, ctx) => {
       try {
-        const result = await addGitHubSkill(getSkillsEnv(ctx), url)
+        // Install into the CALLER's namespace — omitting userId would
+        // default to the shared BUNDLED namespace, making one user's
+        // installed skill visible to every user on the deployment.
+        const result = await addGitHubSkill(getSkillsEnv(ctx), url, ctx.userId)
         return { ...result, source: 'github', action: 'installed' }
       } catch (error) {
         return { error: error instanceof Error ? error.message : String(error) }

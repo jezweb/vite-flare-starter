@@ -8,7 +8,7 @@
  * 8 sessions for 4 users in the morning audit).
  */
 import { drizzle } from 'drizzle-orm/d1'
-import { lt, sql } from 'drizzle-orm'
+import { sql } from 'drizzle-orm'
 import type { D1Database } from '@cloudflare/workers-types'
 import { session, verification } from './db/schema'
 
@@ -17,14 +17,38 @@ export interface CleanupResult {
   verificationsDeleted: number
 }
 
+/**
+ * Timestamp column normalised to Unix epoch SECONDS, whatever format the
+ * row was written in. Live data has MIXED formats: better-auth on Workers
+ * writes ISO strings in some paths and numeric epochs in others.
+ *
+ * Why not `lt(col, new Date())`: that serialises the bound value to an
+ * ISO string, and SQLite's type ordering puts every INTEGER below every
+ * TEXT — so numeric-stored rows compare "less than" ANY ISO string and a
+ * naive expiry sweep deletes live sessions.
+ *
+ * Handles: numeric epoch seconds, numeric epoch millis (magnitude split
+ * at 1e11, same rule as isoTimestamp.fromDriver), and ISO-8601 text.
+ * Note the column has TEXT affinity, so "numeric" rows are usually
+ * numeric STRINGS — the CAST branch catches millis-as-string (which
+ * unixepoch's 'auto' would misread as epoch seconds); an ISO string
+ * CASTs to a small year-number and falls through to unixepoch.
+ */
+const asEpochSeconds = (col: unknown) => sql<number>`(CASE
+  WHEN typeof(${col}) IN ('integer', 'real') THEN
+    CASE WHEN ${col} > 100000000000 THEN ${col} / 1000.0 ELSE ${col} END
+  WHEN CAST(${col} AS INTEGER) > 100000000000 THEN CAST(${col} AS INTEGER) / 1000.0
+  ELSE unixepoch(${col}, 'auto')
+END)`
+
 export async function cleanupExpiredAuthRows(d1: D1Database): Promise<CleanupResult> {
   const db = drizzle(d1)
-  const now = new Date()
+  const nowSec = Math.floor(Date.now() / 1000)
 
   // Sessions whose expiresAt has passed are dead weight.
   const sessionsResult = await db
     .delete(session)
-    .where(lt(session.expiresAt, now))
+    .where(sql`${asEpochSeconds(session.expiresAt)} < ${nowSec}`)
     .returning({ id: session.id })
 
   // Verification tokens (password resets, email verifications, magic links)
@@ -33,7 +57,7 @@ export async function cleanupExpiredAuthRows(d1: D1Database): Promise<CleanupRes
   try {
     const verificationsResult = await db
       .delete(verification)
-      .where(lt(verification.expiresAt, now))
+      .where(sql`${asEpochSeconds(verification.expiresAt)} < ${nowSec}`)
       .returning({ id: verification.id })
     verificationsDeleted = verificationsResult.length
   } catch {
@@ -55,21 +79,27 @@ export async function cleanupExpiredAuthRows(d1: D1Database): Promise<CleanupRes
  */
 export async function purgeStaleSessions(d1: D1Database, maxAgeDays = 30): Promise<number> {
   const db = drizzle(d1)
-  const cutoff = new Date(Date.now() - maxAgeDays * 24 * 60 * 60 * 1000)
+  const cutoffSec = Math.floor((Date.now() - maxAgeDays * 24 * 60 * 60 * 1000) / 1000)
   const result = await db
     .delete(session)
-    .where(lt(session.createdAt, cutoff))
+    .where(sql`${asEpochSeconds(session.createdAt)} < ${cutoffSec}`)
     .returning({ id: session.id })
   return result.length
 }
 
-// Raw-SQL variant for cases where Drizzle isn't handy.
+// Raw-SQL variant for cases where Drizzle isn't handy. Same mixed-format
+// normalisation as asEpochSeconds — `datetime(expiresAt)` alone would
+// misread numeric epochs as Julian day numbers.
 export async function cleanupExpiredSessionsRaw(d1: D1Database): Promise<number> {
   const result = await d1
-    .prepare(`DELETE FROM session WHERE datetime(expiresAt) < datetime('now')`)
+    .prepare(
+      `DELETE FROM session WHERE (CASE
+         WHEN typeof(expiresAt) IN ('integer', 'real') THEN
+           CASE WHEN expiresAt > 100000000000 THEN expiresAt / 1000.0 ELSE expiresAt END
+         WHEN CAST(expiresAt AS INTEGER) > 100000000000 THEN CAST(expiresAt AS INTEGER) / 1000.0
+         ELSE unixepoch(expiresAt, 'auto')
+       END) < unixepoch('now')`
+    )
     .run()
   return result.meta.changes ?? 0
 }
-
-// Keep sql import "used" for type inference consumers — noop.
-void sql

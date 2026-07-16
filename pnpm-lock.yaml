@@ -113,6 +113,9 @@ importers:
       '@milkdown/ctx':
         specifier: ^7.21.2
         version: 7.21.2
+      '@milkdown/plugin-listener':
+        specifier: ^7.21.2
+        version: 7.21.2
       '@milkdown/preset-commonmark':
         specifier: ^7.21.2
         version: 7.21.2

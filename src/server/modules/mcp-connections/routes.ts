@@ -50,10 +50,15 @@ app.get('/callback', async (c) => {
   }
   const pkceVerifier = decodeURIComponent(pkceMatch[1]!)
   const connectionId = decodeURIComponent(connectionMatch[1]!)
-  // Verify the OAuth state binds to this connection (HMAC-signed connectionId).
-  // Previously state was accepted without any check.
-  const stateConnId = await verifyValue(state, c.env.BETTER_AUTH_SECRET)
-  if (!stateConnId || stateConnId !== connectionId) {
+  // Verify the OAuth state binds to this connection AND its initiating user
+  // (HMAC-signed `connectionId:userId`). The user check below (against the DB
+  // row) stops a replayed state from binding attacker tokens to a victim's
+  // connection. Previously state carried only the connectionId.
+  const stateValue = await verifyValue(state, c.env.BETTER_AUTH_SECRET)
+  const sep = stateValue?.indexOf(':') ?? -1
+  const stateConnId = sep > 0 ? stateValue!.slice(0, sep) : null
+  const stateUserId = sep > 0 ? stateValue!.slice(sep + 1) : null
+  if (!stateConnId || !stateUserId || stateConnId !== connectionId) {
     return c.html(callbackPage({ status: 'error', message: 'Invalid OAuth state — try connecting again.' }))
   }
 
@@ -66,6 +71,11 @@ app.get('/callback', async (c) => {
 
   if (!conn || !conn.tokenEndpoint) {
     return c.html(callbackPage({ status: 'error', message: 'Connection not found.' }))
+  }
+  if (conn.userId !== stateUserId) {
+    return c.html(
+      callbackPage({ status: 'error', message: 'OAuth state does not match this connection — try connecting again.' })
+    )
   }
 
   const redirectUri = new URL('/api/mcp-connections/callback', c.env.BETTER_AUTH_URL).toString()
@@ -283,9 +293,11 @@ app.post('/connect', zValidator('json', connectSchema), async (c) => {
   }
 
   const { verifier, challenge } = await generatePkcePair()
-  // State is the HMAC-signed connectionId so the callback can verify it binds
-  // to a connect THIS server issued (the callback previously trusted any state).
-  const state = await signValue(connectionId, c.env.BETTER_AUTH_SECRET)
+  // State is the HMAC-signed `connectionId:userId` pair. The callback verifies
+  // BOTH: the connection id matches the cookie, and the connection row is owned
+  // by the user who initiated the flow — so a leaked/replayed state can never
+  // bind tokens onto another user's connection.
+  const state = await signValue(`${connectionId}:${userId}`, c.env.BETTER_AUTH_SECRET)
 
   const row = {
     id: connectionId,
@@ -386,7 +398,8 @@ app.post('/:id/authorize', async (c) => {
 
   const redirectUri = new URL('/api/mcp-connections/callback', c.env.BETTER_AUTH_URL).toString()
   const { verifier, challenge } = await generatePkcePair()
-  const state = await signValue(id, c.env.BETTER_AUTH_SECRET)
+  // Same connectionId:userId binding as /add — see the callback check.
+  const state = await signValue(`${id}:${userId}`, c.env.BETTER_AUTH_SECRET)
 
   const authUrl = new URL(conn.authorizationEndpoint)
   authUrl.searchParams.set('response_type', 'code')

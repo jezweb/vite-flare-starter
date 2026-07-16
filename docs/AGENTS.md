@@ -591,9 +591,19 @@ shared secret, then dispatches to `agent.handleWebhook(payload, headers)`.
 **Files**: `src/server/lib/agents/webhook-verify.ts` + `src/server/modules/webhook-agents/routes.ts`.
 
 Routes:
-- `POST /api/webhooks/agent/:class/:slug` — public, signature is the auth
-- `GET /api/webhooks/agent/:class/:slug/info` — auth-gated, returns URL + secret to copy into the sender
+- `POST /api/webhooks/agent/:class/:handle` — public. `:handle` is an
+  HMAC-signed `userId:slug` minted by `/info`; it authenticates the
+  address (and yields the per-user DO name) before the sender signature
+  is checked. Bare slugs are rejected — one user can never address or
+  squat on another user's agent.
+- `GET /api/webhooks/agent/:class/:slug/info` — auth-gated, returns the
+  handle URL + secret to copy into the sender
 - `POST /api/webhooks/agent/:class/:slug/rotate` — rotate secret
+
+Agent DOs are namespaced `userId:slug`, so two users can both have a
+"github" agent. If you upgraded from the bare-slug scheme, re-fetch
+`/info` and update the URL in your external sender — old bare-slug URLs
+return 401.
 
 `handleWebhook` default invokes `runOnce({ input: JSON.stringify(payload) })`.
 Subclasses override to parse webhook envelopes (Slack event, GitHub PR
