@@ -129,14 +129,11 @@ export function SpacePage() {
           </Link>
           {/* Mobile-only members button — opens the Sheet drawer. Hidden on md+ where the rail is visible. */}
           <Sheet>
-            <SheetTrigger asChild>
-              <button
-                type="button"
-                className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground md:hidden"
-                aria-label="Show members"
-              >
-                <Users className="size-4" />
-              </button>
+            <SheetTrigger
+              className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground md:hidden"
+              aria-label="Show members"
+            >
+              <Users className="size-4" />
             </SheetTrigger>
             <SheetContent side="left" className="w-72 p-3">
               <SheetTitle className="sr-only">Members</SheetTitle>

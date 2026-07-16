@@ -600,12 +600,14 @@ export function ComponentsPage() {
             </CardHeader>
             <CardContent>
               <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="outline">
-                    <PanelRight className="mr-2 h-4 w-4" />
-                    Open Sheet
-                  </Button>
-                </SheetTrigger>
+                <SheetTrigger
+                  render={
+                    <Button variant="outline">
+                      <PanelRight className="mr-2 h-4 w-4" />
+                      Open Sheet
+                    </Button>
+                  }
+                />
                 <SheetContent>
                   <SheetHeader>
                     <SheetTitle>Sheet Title</SheetTitle>

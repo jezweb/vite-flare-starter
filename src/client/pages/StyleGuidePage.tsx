@@ -1101,9 +1101,7 @@ export function StyleGuidePage() {
           </CardHeader>
           <CardContent>
             <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline">Open Sheet</Button>
-              </SheetTrigger>
+              <SheetTrigger render={<Button variant="outline">Open Sheet</Button>} />
               <SheetContent>
                 <SheetHeader>
                   <SheetTitle>Sheet Title</SheetTitle>
