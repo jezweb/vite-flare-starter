@@ -46,6 +46,7 @@ import { notionDefinitions } from './notion'
 import { atlassianDefinitions } from './atlassian'
 import { proposePatchDefinitions } from './propose-patch'
 import { dataDefinitions } from './data'
+import { sqlDefinitions } from './sql'
 import { entityDefinitions } from './entities'
 import { findingsDefinitions } from './findings'
 import { firecrawlDefinitions } from './firecrawl'
@@ -99,6 +100,7 @@ export async function buildChatTools(
     ...atlassianDefinitions,
     ...proposePatchDefinitions,
     ...dataDefinitions,
+    ...sqlDefinitions,
     ...entityDefinitions,
     ...findingsDefinitions,
     ...firecrawlDefinitions,

@@ -38,6 +38,7 @@ client render metadata in one object. See
 | **microsoft-workspace — OneDrive** | `onedrive_search`, `onedrive_get_file` | Same |
 | **microsoft-workspace — Calendar** | `msoffice_calendar_list`, `msoffice_calendar_create` (Teams meeting link via `isOnlineMeeting: true`) | Same |
 | **slack / notion / atlassian** | Scaffolded (OAuth + cards + tokens). Implementations in GitHub issues #21, #22, #23. | Connectors page auto-shows cards when `<PROVIDER>_CLIENT_ID` + `_SECRET` set |
+| **sql** | `sql_schema`, `sql_query` — read-only SELECT over an isolated reference D1 | If `REFERENCE_DB` binding (see “Read-only SQL” below) |
 
 ---
 
@@ -204,6 +205,40 @@ exposes a tool named `google_local_places`.
 | Brave | $5 monthly credits | brave.com/search/api → `BRAVE_API_KEY` |
 | Tavily | 1,000 credits/month | tavily.com → `TAVILY_API_KEY` |
 | Exa | Paid | exa.ai → `EXA_API_KEY` |
+
+---
+
+## Read-only SQL over an isolated database (#77)
+
+`sql_query` lets the agent write its own `SELECT`s for analytical
+questions (aggregates, filters, joins) that no purpose-built tool
+expresses; `sql_schema` gives it exact table/column names first.
+
+**The security model is isolation, not sandboxing.** The tools bind
+ONLY to `REFERENCE_DB` — a separate D1 that holds non-sensitive data
+(mirrored external datasets, catalogues, published stats). Users,
+sessions, tokens, and per-user rows never live there, so even a
+validator bypass reaches nothing worth stealing. Never point the
+binding at the app database.
+
+The validator (`src/server/lib/sql-guard.ts`) is defence-in-depth:
+literals/comments stripped before keyword checks, single statement,
+SELECT/WITH only (no `WITH RECURSIVE`), no writes/DDL/PRAGMA/
+`sqlite_master`/blob functions, no CROSS or comma joins, ≤3 JOINs, and
+the row cap is pushed **into** the query (`SELECT * FROM (…) LIMIT n+1`)
+so the engine never materialises an unbounded result.
+
+Setup:
+
+```bash
+npx wrangler d1 create <your-app>-reference
+# add the REFERENCE_DB binding (commented example in wrangler.jsonc)
+```
+
+Feed it with the mirror module (`docs/ADDING_D1_MIRROR.md`) pointed at
+`REFERENCE_DB`, a one-off import, or a scheduled Workflow. Results
+return `{ columns, rows }`, which the shape-tier table renderer picks
+up automatically — no client code.
 
 ---
 

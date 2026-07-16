@@ -43,6 +43,18 @@
       "database_id": "eb72fbdd-aafb-4a2f-ad9a-4b824b3dc700",
       "migrations_dir": "drizzle"
     }
+    ,
+    // Read-only SQL tool (#77, isolation-over-sandboxing). A SEPARATE
+    // database holding only non-sensitive reference data (mirrored
+    // datasets, catalogues) — NEVER point this at the app DB. The
+    // sql_query/sql_schema chat tools self-omit if you remove this
+    // binding. Forks: `npx wrangler d1 create <your-app>-reference`
+    // and swap the id (same as DB above).
+    {
+      "binding": "REFERENCE_DB",
+      "database_name": "vite-flare-starter-reference",
+      "database_id": "ee4eae5c-2fdb-4d47-a9d1-9533b26e4cdb"
+    }
   ],
 
   // R2 Storage (S3-compatible object storage)
