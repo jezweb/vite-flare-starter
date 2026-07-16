@@ -2,7 +2,7 @@
  * Web/places search tool renderers. Wraps the existing WebSearchResults
  * component so web_search gets summary-on-pill treatment without a rewrite.
  */
-import { Globe } from 'lucide-react'
+import { Globe } from '@phosphor-icons/react'
 import type { ToolRenderer } from './_shared'
 import { WebSearchResults, isWebSearchOutput } from '../chat-ui/WebSearchResults'
 

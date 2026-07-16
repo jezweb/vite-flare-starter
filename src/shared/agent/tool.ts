@@ -25,7 +25,7 @@
  * adapter in server/lib/ai/tool-adapter.ts.
  */
 import type { ZodType } from 'zod'
-import type { LucideIcon } from 'lucide-react'
+import type { Icon } from '@phosphor-icons/react'
 import type { ReactNode } from 'react'
 import type { AgentContext } from './context'
 
@@ -66,7 +66,7 @@ export interface ToolDefinition<TInput, TOutput> {
    * imported into client bundles without dragging server deps.
    */
   render?: {
-    icon?: LucideIcon
+    icon?: Icon
     displayName?: string
     /** One-liner shown next to the pill status (e.g. "3 messages"). */
     summary?: (output: TOutput, input: TInput) => string | null

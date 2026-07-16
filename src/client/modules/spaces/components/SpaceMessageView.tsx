@@ -7,7 +7,7 @@
  *   - Thread count indicator + "Reply in thread" link
  *   - Pinned-at indicator (Phase 2 polish)
  */
-import { Bot, MessageSquare, Pin, Quote as QuoteIcon, Star, User } from 'lucide-react'
+import { Robot, Chat, PushPin, Quotes as QuoteIcon, Star, User } from '@phosphor-icons/react'
 import { MentionPill } from './MentionPill'
 import { MessageReactions } from './MessageReactions'
 import { MessageMoreMenu } from './MessageMoreMenu'
@@ -72,7 +72,7 @@ export function SpaceMessageView({
         )}
       >
         {isBot ? (
-          <Bot className="size-4 text-emerald-700 dark:text-emerald-300" />
+          <Robot className="size-4 text-emerald-700 dark:text-emerald-300" />
         ) : senderUser?.image ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -94,7 +94,7 @@ export function SpaceMessageView({
           )}
           <span className="text-muted-foreground">{relTime(message.createdAt)}</span>
           {isStarred && <Star className="size-3 text-amber-500" aria-label="Starred" />}
-          {isPinned && <Pin className="size-3 text-amber-500" aria-label="Pinned to space" />}
+          {isPinned && <PushPin className="size-3 text-amber-500" aria-label="Pinned to space" />}
         </div>
         {quotedSource ? (
           <div className="mt-1 rounded-md border-l-2 border-muted-foreground/40 bg-muted/30 px-2 py-1.5 text-xs text-muted-foreground">
@@ -127,7 +127,7 @@ export function SpaceMessageView({
             onClick={() => onOpenThread(message.id)}
             className="mt-1 inline-flex items-center gap-1 text-xs text-primary hover:underline"
           >
-            <MessageSquare className="size-3" />
+            <Chat className="size-3" />
             {message.threadCount} {message.threadCount === 1 ? 'reply' : 'replies'}
           </button>
         )}
@@ -151,7 +151,7 @@ export function SpaceMessageView({
               aria-label="Reply in thread"
               title="Reply in thread"
             >
-              <MessageSquare className="size-3.5" />
+              <Chat className="size-3.5" />
             </button>
           )}
           <MessageMoreMenu message={message} onQuote={onQuote} canPin={!!canPin} />

@@ -7,16 +7,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import {
-  Plus,
-  Lock,
-  Brain,
-  ChevronDown,
-  ChevronRight,
-  Trash2,
-  PencilLine,
-  ArrowUpRight,
-} from 'lucide-react'
+import { Plus, Lock, Brain, CaretDown, CaretRight, Trash, PencilLine, ArrowUpRight } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -212,9 +203,9 @@ export function MemorySection({
                     className="w-full flex items-start gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50 transition-colors text-left"
                   >
                     {expanded ? (
-                      <ChevronDown className="size-3.5 shrink-0 mt-0.5 text-muted-foreground" />
+                      <CaretDown className="size-3.5 shrink-0 mt-0.5 text-muted-foreground" />
                     ) : (
-                      <ChevronRight className="size-3.5 shrink-0 mt-0.5 text-muted-foreground" />
+                      <CaretRight className="size-3.5 shrink-0 mt-0.5 text-muted-foreground" />
                     )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
@@ -273,7 +264,7 @@ export function MemorySection({
                             title="Delete"
                             aria-label={`Delete ${m.name}`}
                           >
-                            <Trash2 className="size-3" />
+                            <Trash className="size-3" />
                           </button>
                         </div>
                       </div>

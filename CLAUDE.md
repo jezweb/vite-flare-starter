@@ -1,7 +1,7 @@
 # CLAUDE.md — AI Developer Context
 
 **Project:** Vite Flare Starter
-**Version:** 2.3.0
+**Version:** 2.0.0
 **Purpose:** Pattern library and production-ready starter kit for Cloudflare Workers
 
 ---
@@ -60,7 +60,9 @@ VITE_FEATURE_ACTIVITY=false
 | **format helpers** | Single-source-of-truth translators: `formatAgentClass / formatOutcome / formatTrigger / formatRole / formatImportance / formatCadenceInterval / deriveInstanceName`. Stops snake_case enum strings from leaking into UI. | `shared/format/agent.ts` |
 | **routine pickers** | AgentPicker / SkillsPicker / ToolsPicker / SingleSkillPicker — replace raw text inputs in NewRoutinePage with discoverable combobox + multi-select. Tools grouped by category (Gmail / Notion / Channels / Core / etc.). | `client/modules/routines/components/RoutinePickers.tsx` |
 | **email providers** | Six pluggable providers (`email-service` / `smtp2go` / `mailgun` / `resend` / `email-routing-send` / `console`), one file each, registry resolves a priority list. `EMAIL_FAILOVER='true'` cascades on error; `EMAIL_PROVIDER_ORDER` overrides priority. | `server/modules/email/providers/` |
+| **email delivery events** | Bounce/complaint feedback loop via Queues event subscriptions — opt-in consumer records `email_events` + maintains the `email_suppressions` list; `EMAIL_SUPPRESSION_ENFORCE='true'` makes `sendEmail()` skip suppressed recipients (typed `'suppressed'` result). email-service provider only. | `server/modules/email/delivery-events.ts`, `docs/ADDING_EMAIL_DELIVERY_EVENTS.md` |
 | **batch-tasks** | **Durable swarm fan-out** — Cloudflare Workflow processes N items in parallel windows of 8, retries per-item with exponential backoff. Used via the `start_batch_task` chat tool ("for each of these 50 PDFs, extract X"). Item content is loaded from R2 and converted via `env.AI.toMarkdown` for non-text docs. Approval-gated above 5 items. | `server/modules/batch-tasks/`, `server/modules/chat/tools/batch-task.ts`, `client/modules/jobs/pages/` |
+| **sandbox code-interpreter** | **`run_python` + `generate_document` chat tools on Cloudflare Sandbox containers** — conversation-scoped sandbox (`user-<id>-conv-<id>`, interpreter state persists while warm), input files staged from FILES R2 (`isOwnedR2Key`-guarded), output paths harvested back as `artifacts` + registered on the Files page. `generate_document` renders markdown → docx/xlsx/pptx via python-docx/openpyxl/python-pptx baked into the `Dockerfile` (base tag must match the `@cloudflare/sandbox` npm version). Output matches the terminal shape renderer — zero client code. Wiring: `containers` block + `SANDBOX` DO + migration v11 + `export { Sandbox }`; Docker must run locally at deploy; tools self-omit without the binding (`VITE_FEATURE_SANDBOX` opts out). | `server/modules/chat/tools/code.ts`, `Dockerfile`, `docs/AGENT_TOOLKIT.md` |
 | **with_review** | **Worker→Reviewer quality loop** (OpenSwarm pair-pipeline pattern). Cheap worker drafts → smarter reviewer scores via APPROVE/REVISE/REJECT verdicts → worker rewrites with notes → cap at max_iters with optional escalation. Reviewer criteria from a Skill (`review-output` ships bundled) or inline prompt. Use for high-quality outputs where iteration matters. | `server/modules/chat/tools/with-review.ts`, `skills/review-output/` |
 | **always_active skills** | Frontmatter `always_active: true` bakes a skill's full body into every chat's system prompt — bypasses `load_skill`. For baseline knowledge (style, persona, project glossary). Loaded via `loadAlwaysActiveSkills(env, userId)`. | `server/lib/ai/skills/registry.ts`, `server/modules/chat/chat-agent.ts` (section 8b) |
 | **hybrid memory recall** | `agentRecall` ranks via `0.55*sim + 0.20*importance + 0.15*recency + 0.10*frequency`. `RECALL_WEIGHTS` exposed as a constant; importance optional on `agentRemember`. Frequency reserved at 0 until Vectorize counter support lands. | `server/lib/agents/agent-memory.ts` |
@@ -126,6 +128,7 @@ reference lives in `docs/`, loaded only when you need it.
 | Enable KV / Queues / Vectorize / Hyperdrive / Stream | [`docs/PLATFORM_SERVICES.md`](./docs/PLATFORM_SERVICES.md) |
 | Add analytics / payments / email / real-time / background jobs | `docs/ADDING_*.md` |
 | Email inbound (Cloudflare Email Routing) | [`docs/ADDING_EMAIL_INBOUND.md`](./docs/ADDING_EMAIL_INBOUND.md) |
+| Email delivery events + bounce suppression | [`docs/ADDING_EMAIL_DELIVERY_EVENTS.md`](./docs/ADDING_EMAIL_DELIVERY_EVENTS.md) |
 | Track fork divergence from upstream (forks only) | [`PATCHES.md`](./PATCHES.md) + [`docs/PATCHES-guide.md`](./docs/PATCHES-guide.md) |
 | Interop with [goanna](https://github.com/jezweb/goanna) — filesystem-markdown agent framework | [`docs/GOANNA_INTEROP.md`](./docs/GOANNA_INTEROP.md) |
 | Deploy checklist | [`docs/DEPLOYMENT_CHECKLIST.md`](./docs/DEPLOYMENT_CHECKLIST.md) |
@@ -198,8 +201,8 @@ Page shapes (frontmatter, Gotchas section, `_index.md` threshold, when-to-subfol
 | **Backend** | Hono 4.12 |
 | **Database** | D1 (SQLite) + Drizzle ORM 0.45 |
 | **Auth** | better-auth 1.6 (Google OAuth, optional email/password) |
-| **AI** | AI SDK v6 + workers-ai-provider + OpenRouter (16 models across 8 providers) |
-| **UI** | Tailwind v4 + shadcn/ui |
+| **AI** | AI SDK v6 + workers-ai-provider + OpenRouter (20 models across 9 providers) |
+| **UI** | Tailwind v4 + shadcn/ui on **Base UI** (`base-nova` style) + Phosphor icons — Kumo-derived design tokens (see `src/index.css`), Inter, 14px base scale |
 | **Data fetching** | TanStack Query 5 + apiClient |
 | **Forms** | React Hook Form + Zod |
 | **Testing** | Vitest 4 + @cloudflare/vitest-pool-workers (unit) · Playwright (e2e killer flows in `tests/e2e/`) |
@@ -292,6 +295,9 @@ fork a whole layout file to change shape — compose `AppShell` differently:
 | **ConfigDiffCard** | `client/components/ConfigDiffCard.tsx` | Shared approval card with line diff (used by skills editor + propose_patch chat tool) |
 | **MarkdownField** | `client/components/MarkdownField.tsx` | Preview/edit toggle + rich copy (formatted paste) + .md/.txt export for user markdown. Read-only when no `onChange`. |
 | **CopyButton (rich)** | `components/ui/copy-button.tsx` | Pass `html=` for formatted clipboard copy (writes text/html + text/plain). `useCopy().copyRich()` for the hook form. |
+| **Banner** | `components/ui/banner.tsx` | Full-width page-level notice (edge-to-edge chrome vs Alert's in-flow callout). Status-tint tokens, optional action/dismiss. |
+| **Meter** | `components/ui/meter.tsx` | Measured value in a known range (quota/storage/budget). Base UI Meter semantics + CF threshold idiom (warns near max). NOT a Progress. |
+| **ClipboardText** | `components/ui/clipboard-text.tsx` | Read-only copyable value (API keys, webhook URLs); optional `masked` reveal toggle. |
 
 ### Choosing a layout for a list page
 
@@ -313,10 +319,14 @@ for each shape.
 via localStorage scoped to `appConfig.id`. See `SkillsPage` for a
 worked example.
 
-**For aggregates / trends / dashboards**: shadcn `Chart` (Recharts under
-the hood, themed via `chart-1..5` CSS vars). Don't import Recharts
-directly — go through the shadcn wrapper for consistent theming. See
-`AgentObservabilityPage` for a worked example with bar + area charts.
+**For aggregates / trends / dashboards**: Kumo's `Chart` /
+`TimeseriesChart` from `@cloudflare/kumo/components/chart` (ECharts
+under the hood). Pass the shared `echarts` instance and resolve series
+colors from the `--chart-1..5` tokens via `useChartTheme` — both from
+`@/client/lib/echarts` (canvas can't read CSS vars, so colors are
+resolved to hex at render). Keep chart imports inside route-lazy pages
+so ECharts stays out of the entry bundle. See `AgentObservabilityPage`
+for a worked example with bar + line charts.
 
 **When to add a new layout primitive** (Kanban, Tree, Gallery, …):
 
@@ -445,7 +455,7 @@ reading source"*. Anywhere you'd say "click Skip", that's a UX bug.
 
 ## AI Module
 
-18 curated models across 9 providers. Edit `src/shared/config/models.ts`.
+20 curated models across 9 providers. Edit `src/shared/config/models.ts`.
 Metadata comes from a bundled snapshot of [models.flared.au](https://models.flared.au)
 + [ai.flared.au](https://ai.flared.au). `pnpm models:refresh` to update.
 
@@ -455,11 +465,11 @@ the live catalogue. Re-run after any Workers AI release announcement.
 
 | Source | Models | Keys |
 |---|---|---|
-| **Workers AI** (free) | Kimi K2.6 (default), Gemma 4 26B, GLM 4.7 Flash, QwQ 32B, GPT-OSS 120b, GPT-OSS 20b | none |
-| **Anthropic** | Claude Opus 4.6, Sonnet 4.6, Haiku 4.5 | via OpenRouter |
+| **Workers AI** (free) | Kimi K2.6 (default), Gemma 4 26B, GLM 4.7 Flash, GLM 5.2, QwQ 32B, GPT-OSS 120b, GPT-OSS 20b | none |
+| **Anthropic** | Claude Opus 4.8, Sonnet 4.6, Haiku 4.5 | via OpenRouter |
 | **OpenAI** | GPT-5.4, GPT-5.4 mini | via OpenRouter |
 | **Google** | Gemini 3.1 Pro, Gemini 3 Flash | via OpenRouter |
-| **DeepSeek / Qwen / Mistral / xAI / Z.AI** | V3.2 Speciale, 3.6 Plus, Large 3 2512, Grok 4.1 Fast, GLM 5 | via OpenRouter |
+| **DeepSeek / Qwen / Mistral / xAI / Z.AI** | V4 Pro, V4 Flash, 3.6 Plus, Large 3 2512, Grok 4.20, GLM 5 | via OpenRouter |
 
 One `OPENROUTER_API_KEY` unlocks everything non-Workers-AI. Direct-provider
 SDKs (`@ai-sdk/anthropic`, `@ai-sdk/openai`, `@ai-sdk/google`) remain as
@@ -546,7 +556,7 @@ trigger-first descriptions than generic "this skill does X" copy. See
 ### Three storage sources
 
 - **Bundled** — drop `skills/<name>/SKILL.md` in the repo. Vite glob,
-  build-time. 12 examples ship with the starter.
+  build-time. 30 examples ship with the starter.
 - **R2** — `POST /api/skills/upload` with SKILL.md content. Stored in
   the SKILLS R2 bucket.
 - **GitHub** — `POST /api/skills/github` with a raw URL or directory URL.
@@ -584,7 +594,7 @@ routes, apply switch). Shared React component:
 
 ### Bundled skills
 
-12 reference implementations:
+30 reference implementations, including:
 
 - **Research**: `web-research`, `fact-check`, `summarise-url`
 - **Writing**: `draft-email`, `rewrite-for-audience`
@@ -723,4 +733,4 @@ pnpm type-check             # Type check
 
 ---
 
-**Created:** 2025-11-29 · **Updated:** 2026-06-23 (security review: allowlist, signed connector cookies, access log, tenancy/R2 guards — see `docs/SECURITY.md`) · **Author:** Jeremy Dawes (Jezweb)
+**Created:** 2025-11-29 · **Updated:** 2026-07-16 (v2.0.0 design reboot: Base UI + Kumo tokens + Phosphor + ECharts — see `.claude/rules/design-tokens.md`; platform currency, email delivery events, sandbox tools — see `CHANGELOG.md`) · **Author:** Jeremy Dawes (Jezweb)

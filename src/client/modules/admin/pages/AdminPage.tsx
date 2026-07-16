@@ -19,7 +19,7 @@ import { FeaturesTabContent } from '../components/FeaturesTabContent'
 import { EmailLogsTabContent } from '../components/EmailLogsTabContent'
 import { ToolErrorsTabContent } from '../components/ToolErrorsTabContent'
 import { ApiTokensSection } from '@/client/modules/settings/components/ApiTokensSection'
-import { Shield, Users, Flag, Key, ArrowLeft, Mail, AlertCircle } from 'lucide-react'
+import { Shield, Users, Flag, Key, ArrowLeft, EnvelopeSimple, WarningCircle } from '@phosphor-icons/react'
 
 const TABS = ['users', 'features', 'tokens', 'emails', 'tool-errors'] as const
 type TabValue = (typeof TABS)[number]
@@ -66,11 +66,9 @@ export function AdminPage() {
           <CardDescription>Failed to verify admin access. Please try again.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button asChild variant="outline">
-            <Link to="/dashboard">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Dashboard
-            </Link>
+          <Button variant="outline" render={<Link to="/dashboard" />}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Dashboard
           </Button>
         </CardContent>
       </Card>
@@ -94,11 +92,9 @@ export function AdminPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <Button asChild variant="outline">
-            <Link to="/dashboard">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to dashboard
-            </Link>
+          <Button variant="outline" render={<Link to="/dashboard" />}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to dashboard
           </Button>
           <p className="text-xs text-muted-foreground">
             Not on the right account?{' '}
@@ -136,11 +132,11 @@ export function AdminPage() {
             API Tokens
           </TabsTrigger>
           <TabsTrigger value="emails" className="gap-2">
-            <Mail className="h-4 w-4" />
+            <EnvelopeSimple className="h-4 w-4" />
             Emails
           </TabsTrigger>
           <TabsTrigger value="tool-errors" className="gap-2">
-            <AlertCircle className="h-4 w-4" />
+            <WarningCircle className="h-4 w-4" />
             Tool errors
           </TabsTrigger>
         </TabsList>

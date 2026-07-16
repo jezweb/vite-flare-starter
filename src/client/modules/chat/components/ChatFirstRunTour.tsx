@@ -14,7 +14,7 @@
  * the tour as seen.
  */
 import { useEffect, useMemo, useState } from 'react'
-import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover'
+import { Popover, PopoverContent } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
 import { usePreferences, useUpdatePreferences } from '@/client/modules/settings/hooks/useSettings'
 
@@ -117,13 +117,17 @@ export function ChatFirstRunTour() {
 
   return (
     <Popover open={open} onOpenChange={(v) => !v && close(true)}>
-      <PopoverAnchor virtualRef={{ current: anchor }} />
+      {/* Base UI dropped the Anchor part — the anchor element is passed to
+          the Positioner via PopoverContent's `anchor` prop instead. */}
       <PopoverContent
+        anchor={anchor}
         side={current.side ?? 'top'}
         align="center"
         sideOffset={12}
         className="w-80"
-        onOpenAutoFocus={(e) => e.preventDefault()}
+        // Base UI: initialFocus={false} replaces radix's
+        // onOpenAutoFocus={(e) => e.preventDefault()} — keep focus in the page.
+        initialFocus={false}
       >
         <div className="space-y-3">
           <div className="flex items-center justify-between text-[10px] uppercase tracking-wide text-muted-foreground">

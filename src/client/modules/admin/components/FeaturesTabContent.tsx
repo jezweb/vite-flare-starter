@@ -12,10 +12,24 @@ import { Badge } from '@/components/ui/badge'
 import { useAdminFeatures, useToggleFeature, useSyncFeatures } from '@/client/hooks/useFeatures'
 import type { FeatureFlag } from '@/client/hooks/useFeatures'
 import { toast } from 'sonner'
-import { Flag, RefreshCw, Lock, Check, X } from 'lucide-react'
+import {
+  Flag,
+  ArrowsClockwise,
+  Lock,
+  Check,
+  X,
+  Chat,
+  FileText,
+  Pulse,
+  Bell,
+  Key,
+  Palette,
+  Wrench,
+  PuzzlePiece,
+  CheckSquare,
+} from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
-import * as LucideIcons from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import type { Icon } from '@phosphor-icons/react'
 import { features as buildTimeFeatures } from '@/shared/config/features'
 import { cn } from '@/lib/utils'
 
@@ -27,15 +41,33 @@ const CATEGORY_INFO: Record<string, { label: string; description: string }> = {
   development: { label: 'Development', description: 'Developer tools and debugging' },
 }
 
-function getIconComponent(iconName: string | null): LucideIcon {
+/**
+ * Explicit icon map — a `Record<string, Icon>` lookup over a namespace
+ * import (`import * as PhosphorIcons`) defeats tree-shaking and drags the
+ * entire icon library (~5 MB) into the client bundle. Add new feature-flag
+ * icons here as they're introduced (kebab-case DB values also accepted).
+ */
+const FEATURE_ICONS: Record<string, Icon> = {
+  Chat,
+  FileText,
+  Pulse,
+  Bell,
+  Key,
+  Palette,
+  Wrench,
+  PuzzlePiece,
+  CheckSquare,
+  Flag,
+}
+
+function getIconComponent(iconName: string | null): Icon {
   if (!iconName) return Flag
-  // Convert icon name to PascalCase for Lucide
+  // Accept kebab-case ("check-square") by converting to PascalCase
   const pascalCase = iconName
     .split('-')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join('')
-  const icons = LucideIcons as unknown as Record<string, LucideIcon>
-  return icons[pascalCase] ?? Flag
+  return FEATURE_ICONS[pascalCase] ?? Flag
 }
 
 interface FeatureCardProps {
@@ -174,7 +206,7 @@ export function FeaturesTabContent() {
               {syncFeatures.isPending ? (
                 <Spinner size="md" className="mr-2" />
               ) : (
-                <RefreshCw className="mr-2 h-4 w-4" />
+                <ArrowsClockwise className="mr-2 h-4 w-4" />
               )}
               Sync Defaults
             </Button>
@@ -265,7 +297,7 @@ export function FeaturesTabContent() {
               {syncFeatures.isPending ? (
                 <Spinner size="md" className="mr-2" />
               ) : (
-                <RefreshCw className="mr-2 h-4 w-4" />
+                <ArrowsClockwise className="mr-2 h-4 w-4" />
               )}
               Sync Defaults
             </Button>

@@ -18,95 +18,12 @@
  * For tools with a rich expanded view (Gmail, Drive, Calendar, etc.),
  * the per-domain renderer in `gmail.tsx`/`drive.tsx`/... takes precedence.
  */
-import {
-  // Core
-  Clock,
-  Info,
-  Calculator,
-  CheckCheck,
-  // Memory
-  Brain,
-  BookOpen,
-  Search,
-  Trash2,
-  ScrollText,
-  Library,
-  BarChart3,
-  // Files
-  FolderTree,
-  FileCheck,
-  FilePlus,
-  FileX,
-  FileSearch,
-  // Skills
-  List,
-  Terminal,
-  PlusSquare,
-  Download,
-  ToggleRight,
-  // Todo
-  ListPlus,
-  CheckCircle2,
-  ListChecks,
-  Eraser,
-  // Code
-  FileCode2,
-  // Audio
-  Mic,
-  Volume2,
-  // Delegate
-  UserPlus,
-  // Email
-  Mail,
-  // Image
-  ImageIcon,
-  Wand2,
-  // Media
-  Scissors,
-  Music,
-  Grid3x3,
-  // Places
-  MapPin,
-  // Semantic
-  Sparkles,
-  Database,
-  // Schedule
-  CalendarClock,
-  ListOrdered,
-  XCircle,
-  // Browser
-  FileText,
-  Camera,
-  Link2,
-  Code,
-  // Bare-tier additions (2026-05-07 brains-trust ship)
-  Wand2 as EditIcon,
-  Bell,
-  Inbox,
-  CheckSquare,
-  Send,
-  Webhook,
-  TableProperties,
-  Filter,
-  TrendingUp,
-  PieChart,
-  FileSpreadsheet,
-  Plus as PlusIcon,
-  Edit3,
-  Eye,
-  Lightbulb,
-  ArrowUpCircle,
-  XCircle as XCircleIcon,
-  Globe,
-  Network,
-  FilePlus2,
-  Box,
-} from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { Clock, Info, Calculator, Checks, Brain, BookOpen, MagnifyingGlass, Trash, Scroll, Books, ChartBar, TreeStructure, FileText, FilePlus, FileX, FileMagnifyingGlass, List, Terminal, PlusSquare, Download, ToggleRight, ListPlus, CheckCircle, ListChecks, Eraser, FileCode, FileDoc, Microphone, SpeakerHigh, UserPlus, EnvelopeSimple, ImageIcon, MagicWand, Scissors, MusicNote, GridNine, MapPin, Sparkle, Database, CalendarDots, ListNumbers, XCircle, Camera, LinkSimple, Code, MagicWand as EditIcon, Bell, Tray, CheckSquare, PaperPlaneTilt, PlugsConnected, Table, Funnel, TrendUp, ChartPie, FileXls, Plus as PlusIcon, PencilSimple, Eye, Lightbulb, ArrowCircleUp, XCircle as XCircleIcon, Globe, Network, Cube } from '@phosphor-icons/react'
+import type { Icon } from '@phosphor-icons/react'
 import type { ToolRenderer } from './_shared'
 
 interface DefaultMeta {
-  icon: LucideIcon
+  icon: Icon
   displayName: string
 }
 
@@ -120,27 +37,27 @@ const DEFAULT_META: Record<string, DefaultMeta> = {
   get_server_time: { icon: Clock, displayName: 'Server Time' },
   get_model_info: { icon: Info, displayName: 'Model Info' },
   calculate: { icon: Calculator, displayName: 'Calculator' },
-  done: { icon: CheckCheck, displayName: 'Done' },
+  done: { icon: Checks, displayName: 'Done' },
 
   // Memory
   remember: { icon: Brain, displayName: 'Remember' },
   recall: { icon: BookOpen, displayName: 'Recall' },
-  search_memory: { icon: Search, displayName: 'Search Memory' },
-  forget: { icon: Trash2, displayName: 'Forget' },
-  session_stats: { icon: BarChart3, displayName: 'Session Stats' },
-  search_memories: { icon: ScrollText, displayName: 'Search Memories' },
-  list_all_memories: { icon: Library, displayName: 'List All Memories' },
+  search_memory: { icon: MagnifyingGlass, displayName: 'Search Memory' },
+  forget: { icon: Trash, displayName: 'Forget' },
+  session_stats: { icon: ChartBar, displayName: 'Session Stats' },
+  search_memories: { icon: Scroll, displayName: 'Search Memories' },
+  list_all_memories: { icon: Books, displayName: 'List All Memories' },
 
   // Files (fs_*)
-  fs_list: { icon: FolderTree, displayName: 'List Files' },
-  fs_read: { icon: FileCheck, displayName: 'Read File' },
+  fs_list: { icon: TreeStructure, displayName: 'List Files' },
+  fs_read: { icon: FileText, displayName: 'Read File' },
   fs_write: { icon: FilePlus, displayName: 'Write File' },
   fs_delete: { icon: FileX, displayName: 'Delete File' },
 
   // Skills
   list_skills: { icon: List, displayName: 'List Skills' },
   load_skill: { icon: BookOpen, displayName: 'Load Skill' },
-  read_skill_resource: { icon: FileSearch, displayName: 'Read Skill Resource' },
+  read_skill_resource: { icon: FileMagnifyingGlass, displayName: 'Read Skill Resource' },
   run_skill_script: { icon: Terminal, displayName: 'Run Skill Script' },
   create_skill: { icon: PlusSquare, displayName: 'Create Skill' },
   install_skill: { icon: Download, displayName: 'Install Skill' },
@@ -148,67 +65,68 @@ const DEFAULT_META: Record<string, DefaultMeta> = {
 
   // Todo
   todo_add: { icon: ListPlus, displayName: 'Add Todo' },
-  todo_update: { icon: CheckCircle2, displayName: 'Update Todo' },
+  todo_update: { icon: CheckCircle, displayName: 'Update Todo' },
   todo_list: { icon: ListChecks, displayName: 'Todo List' },
   todo_clear: { icon: Eraser, displayName: 'Clear Todos' },
 
   // Code
-  run_python: { icon: FileCode2, displayName: 'Run Python' },
+  run_python: { icon: FileCode, displayName: 'Run Python' },
   run_shell: { icon: Terminal, displayName: 'Run Shell' },
-  run_js: { icon: FileCode2, displayName: 'Run JavaScript' },
+  run_js: { icon: FileCode, displayName: 'Run JavaScript' },
+  generate_document: { icon: FileDoc, displayName: 'Generate Document' },
 
   // Audio
-  transcribe_audio: { icon: Mic, displayName: 'Transcribe Audio' },
-  speak_text: { icon: Volume2, displayName: 'Text to Speech' },
+  transcribe_audio: { icon: Microphone, displayName: 'Transcribe Audio' },
+  speak_text: { icon: SpeakerHigh, displayName: 'Text to Speech' },
 
   // Delegate
   delegate: { icon: UserPlus, displayName: 'Delegate' },
 
   // Email
-  send_email: { icon: Mail, displayName: 'Send Email' },
+  send_email: { icon: EnvelopeSimple, displayName: 'Send Email' },
 
   // Image
   generate_image: { icon: ImageIcon, displayName: 'Generate Image' },
-  image_transform: { icon: Wand2, displayName: 'Transform Image' },
+  image_transform: { icon: MagicWand, displayName: 'Transform Image' },
   image_info: { icon: Info, displayName: 'Image Info' },
 
   // Media (video_*)
   video_clip: { icon: Scissors, displayName: 'Clip Video' },
   video_frame: { icon: ImageIcon, displayName: 'Extract Frame' },
-  video_audio: { icon: Music, displayName: 'Extract Audio' },
-  video_spritesheet: { icon: Grid3x3, displayName: 'Video Spritesheet' },
+  video_audio: { icon: MusicNote, displayName: 'Extract Audio' },
+  video_spritesheet: { icon: GridNine, displayName: 'Video Spritesheet' },
 
   // Places
   places_search: { icon: MapPin, displayName: 'Places Search' },
   places_details: { icon: Info, displayName: 'Place Details' },
 
   // Semantic / RAG
-  semantic_search: { icon: Sparkles, displayName: 'Semantic Search' },
+  semantic_search: { icon: Sparkle, displayName: 'Semantic Search' },
   vectorize_content: { icon: Database, displayName: 'Vectorize Content' },
-  search_files: { icon: FileSearch, displayName: 'Search Files' },
+  search_files: { icon: FileMagnifyingGlass, displayName: 'Search Files' },
 
   // Schedule
-  schedule_task: { icon: CalendarClock, displayName: 'Schedule Task' },
-  list_tasks: { icon: ListOrdered, displayName: 'List Tasks' },
+  schedule_task: { icon: CalendarDots, displayName: 'Schedule Task' },
+  list_tasks: { icon: ListNumbers, displayName: 'List Tasks' },
   cancel_task: { icon: XCircle, displayName: 'Cancel Task' },
 
   // Browser
   browser_markdown: { icon: FileText, displayName: 'Browser Markdown' },
   browser_extract: { icon: Database, displayName: 'Browser Extract' },
   browser_screenshot: { icon: Camera, displayName: 'Browser Screenshot' },
-  browser_links: { icon: Link2, displayName: 'Browser Links' },
+  browser_links: { icon: LinkSimple, displayName: 'Browser Links' },
   browser_content: { icon: Code, displayName: 'Browser Content' },
 
   // Microsoft Workspace (parallels Google Workspace entries in the
   // per-domain renderer files — these are fallbacks in case the
   // per-domain renderers aren't registered for a given deploy)
-  outlook_search: { icon: Mail, displayName: 'Outlook — Search' },
-  outlook_get_message: { icon: Mail, displayName: 'Outlook — Read' },
-  outlook_send: { icon: Mail, displayName: 'Outlook — Send' },
-  onedrive_search: { icon: FolderTree, displayName: 'OneDrive — Search' },
-  onedrive_get_file: { icon: FileCheck, displayName: 'OneDrive — Get File' },
-  msoffice_calendar_list: { icon: CalendarClock, displayName: 'MS Calendar — List' },
-  msoffice_calendar_create: { icon: CalendarClock, displayName: 'MS Calendar — Create' },
+  outlook_search: { icon: EnvelopeSimple, displayName: 'Outlook — Search' },
+  outlook_get_message: { icon: EnvelopeSimple, displayName: 'Outlook — Read' },
+  outlook_send: { icon: EnvelopeSimple, displayName: 'Outlook — Send' },
+  onedrive_search: { icon: TreeStructure, displayName: 'OneDrive — Search' },
+  onedrive_get_file: { icon: FileText, displayName: 'OneDrive — Get File' },
+  msoffice_calendar_list: { icon: CalendarDots, displayName: 'MS Calendar — List' },
+  msoffice_calendar_create: { icon: CalendarDots, displayName: 'MS Calendar — Create' },
 
   // ─── Tier-3 batch (added 2026-05-07 brains-trust ship — was bare wrench) ───
   // Most of these will get rich body rendering at runtime via shape
@@ -220,32 +138,32 @@ const DEFAULT_META: Record<string, DefaultMeta> = {
 
   // Channels (the 5 routine-dispatch tools)
   notify: { icon: Bell, displayName: 'Notify User' },
-  inbox_add: { icon: Inbox, displayName: 'Inbox · Add' },
+  inbox_add: { icon: Tray, displayName: 'Inbox · Add' },
   approval_queue: { icon: CheckSquare, displayName: 'Approval Queue' },
-  space_send: { icon: Send, displayName: 'Space · Send Message' },
-  webhook_post: { icon: Webhook, displayName: 'Webhook · Post' },
+  space_send: { icon: PaperPlaneTilt, displayName: 'Space · Send Message' },
+  webhook_post: { icon: PlugsConnected, displayName: 'Webhook · Post' },
 
   // Data (will hit table shape renderer for {rows, columns})
-  read_data: { icon: TableProperties, displayName: 'Read Data' },
-  aggregate_data: { icon: BarChart3, displayName: 'Aggregate Data' },
-  pivot_data: { icon: Filter, displayName: 'Pivot Data' },
-  trend_data: { icon: TrendingUp, displayName: 'Trend Data' },
-  distribution_data: { icon: PieChart, displayName: 'Distribution Data' },
+  read_data: { icon: Table, displayName: 'Read Data' },
+  aggregate_data: { icon: ChartBar, displayName: 'Aggregate Data' },
+  pivot_data: { icon: Funnel, displayName: 'Pivot Data' },
+  trend_data: { icon: TrendUp, displayName: 'Trend Data' },
+  distribution_data: { icon: ChartPie, displayName: 'Distribution Data' },
   export_data: { icon: Download, displayName: 'Export Data' },
 
   // Documents — generate_csv had a server render block, fallback meta here too
-  generate_csv: { icon: FileSpreadsheet, displayName: 'Generate CSV' },
+  generate_csv: { icon: FileXls, displayName: 'Generate CSV' },
 
   // Entities (typed CRUD store)
   entity_create: { icon: PlusIcon, displayName: 'Entity · Create' },
-  entity_update: { icon: Edit3, displayName: 'Entity · Update' },
+  entity_update: { icon: PencilSimple, displayName: 'Entity · Update' },
   entity_get: { icon: Eye, displayName: 'Entity · Get' },
-  entity_list: { icon: Box, displayName: 'Entity · List' },
-  entity_search: { icon: Search, displayName: 'Entity · Search' },
+  entity_list: { icon: Cube, displayName: 'Entity · List' },
+  entity_search: { icon: MagnifyingGlass, displayName: 'Entity · Search' },
 
   // Findings (agent observability)
   record_finding: { icon: Lightbulb, displayName: 'Record Finding' },
-  promote_finding: { icon: ArrowUpCircle, displayName: 'Promote Finding' },
+  promote_finding: { icon: ArrowCircleUp, displayName: 'Promote Finding' },
   dismiss_finding: { icon: XCircleIcon, displayName: 'Dismiss Finding' },
 
   // Firecrawl (will hit markdown shape renderer for content)
@@ -253,18 +171,18 @@ const DEFAULT_META: Record<string, DefaultMeta> = {
   firecrawl_crawl: { icon: Network, displayName: 'Firecrawl · Crawl' },
 
   // Google Workspace — markdown→docs upload (others have rich renderers)
-  docs_create_from_markdown: { icon: FilePlus2, displayName: 'Docs · Create from Markdown' },
+  docs_create_from_markdown: { icon: FilePlus, displayName: 'Docs · Create from Markdown' },
 
   // Memory (multi-entry — distinct from the simpler memory.tsx renderers)
-  memory_search: { icon: Search, displayName: 'Memory · Search' },
+  memory_search: { icon: MagnifyingGlass, displayName: 'Memory · Search' },
   memory_add: { icon: Brain, displayName: 'Memory · Add' },
-  memory_update: { icon: Edit3, displayName: 'Memory · Update' },
-  memory_remove: { icon: Trash2, displayName: 'Memory · Remove' },
+  memory_update: { icon: PencilSimple, displayName: 'Memory · Update' },
+  memory_remove: { icon: Trash, displayName: 'Memory · Remove' },
   load_memory: { icon: BookOpen, displayName: 'Memory · Load' },
 
   // Search (web_search has a domain renderer for search.tsx — this is the
   // fallback when the registry doesn't recognise the variant)
-  web_search: { icon: Search, displayName: 'Web Search' },
+  web_search: { icon: MagnifyingGlass, displayName: 'Web Search' },
 }
 
 /**

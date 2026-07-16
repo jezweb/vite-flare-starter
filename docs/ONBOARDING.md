@@ -164,9 +164,11 @@ Need a view toggle on the same page (cards ⇄ list)? Use
 `useViewPreference('<surface>', '<default>')` from
 `@/client/lib/use-view-preference`. SkillsPage is the worked example.
 
-Trends / dashboards / charts? `ChartContainer` from
-`@/components/ui/chart` (Recharts under the hood, themed). Don't
-import Recharts directly. AgentObservabilityPage is the worked example.
+Trends / dashboards / charts? Kumo's `Chart` / `TimeseriesChart` from
+`@cloudflare/kumo/components/chart` (ECharts under the hood). Pass the
+shared `echarts` instance and resolve series colors with `useChartTheme`
+— both from `@/client/lib/echarts`. AgentObservabilityPage is the
+worked example.
 
 ### What to skip until later
 
@@ -227,7 +229,7 @@ For agent toolkit + connector setup: `docs/AGENT_TOOLKIT.md`.
 | BYOK credentials | Phase L — `service_credentials` + `getServiceKey` resolution chain |
 | Generic data table with sort + pagination | `DataTable` from `@/components/ui/data-table` (TanStack Table integration) |
 | Per-surface view-toggle persistence | `useViewPreference` from `@/client/lib/use-view-preference` |
-| Themed chart wrappers | `ChartContainer` / `ChartTooltip` from `@/components/ui/chart` (don't import Recharts directly) |
+| Themed charts | Kumo `Chart` / `TimeseriesChart` (`@cloudflare/kumo/components/chart`) + `echarts` / `useChartTheme` from `@/client/lib/echarts` |
 
 ### Pattern conventions
 
@@ -239,7 +241,7 @@ For agent toolkit + connector setup: `docs/AGENT_TOOLKIT.md`.
 - **Always update `drizzle/meta/_journal.json`** when adding migrations — it's the source of truth for the migration runner
 - **Static routes before parameterised** in Hono routers (see `~/.claude/rules/hono-route-ordering.md`)
 - **Multiple `Set-Cookie` headers** require `headers.append()`, not concatenation
-- **Lucide icon imports** must be explicit, not `import * as` (tree-shaking)
+- **Phosphor icon imports** (`@phosphor-icons/react`) must be explicit, not `import * as` or dynamic `icons[name]` lookups (tree-shaking — a namespace lookup once pulled the whole 5 MB icon library into a shared chunk)
 
 ### Architectural discipline
 

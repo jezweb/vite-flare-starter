@@ -9,7 +9,7 @@
  * Fork: edit or replace these to match your product. Set an empty array to
  * hide the chip row entirely.
  */
-import { Pencil, Search, Code2, ListChecks, MapPin, type LucideIcon } from 'lucide-react'
+import { Pencil, MagnifyingGlass, CodeSimple, ListChecks, MapPin, type Icon } from '@phosphor-icons/react'
 
 export interface ChipPreset {
   /** Short label shown in the preset list */
@@ -21,8 +21,8 @@ export interface ChipPreset {
 export interface ChatChip {
   /** Text shown on the chip */
   label: string
-  /** Lucide icon for the chip */
-  icon: LucideIcon
+  /** Phosphor icon for the chip */
+  icon: Icon
   /** Preset prompts shown when the chip expands */
   presets: ChipPreset[]
 }
@@ -62,7 +62,7 @@ export const CHAT_CHIPS: ChatChip[] = [
   },
   {
     label: 'Research',
-    icon: Search,
+    icon: MagnifyingGlass,
     presets: [
       { label: 'Search the web for news', prompt: 'Search the web for the latest news on ' },
       {
@@ -82,7 +82,7 @@ export const CHAT_CHIPS: ChatChip[] = [
   },
   {
     label: 'Code',
-    icon: Code2,
+    icon: CodeSimple,
     presets: [
       { label: 'Debug an error', prompt: 'Help me debug this error:\n\n' },
       {

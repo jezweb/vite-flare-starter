@@ -4,7 +4,7 @@
  * yet, so clicking it toggles the read state.
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Inbox } from 'lucide-react'
+import { Tray } from '@phosphor-icons/react'
 import { apiClient } from '@/client/lib/api-client'
 import { cn } from '@/lib/utils'
 import type { RowRendererProps } from '../../row-shapes'
@@ -26,7 +26,7 @@ export function FindingRow(props: RowRendererProps) {
     <RowShell
       {...props}
       state={isUnread ? 'unread' : isUrgent ? 'urgent' : 'default'}
-      icon={<Inbox className={cn(isUnread ? 'text-primary' : 'text-muted-foreground')} />}
+      icon={<Tray className={cn(isUnread ? 'text-primary' : 'text-muted-foreground')} />}
       meta={<StandardMeta row={row} agentRegistry={agentRegistry} />}
       trailing={
         <span className="text-[10px] text-muted-foreground/0 transition-colors group-hover/list-row:text-muted-foreground">

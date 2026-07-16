@@ -15,7 +15,7 @@
  * Don't mix sub-patterns inside one detail page.
  */
 import { useParams } from 'react-router-dom'
-import { MoreVertical, Trash2, Edit3 } from 'lucide-react'
+import { DotsThreeVertical, Trash, PencilSimple } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { PageContainer } from '@/components/ui/page-container'
@@ -71,19 +71,19 @@ export function TemplateDetailPage() {
               Primary action
             </Button>
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="More actions">
-                  <MoreVertical className="size-4" />
-                </Button>
+              <DropdownMenuTrigger
+                render={<Button variant="ghost" size="icon" aria-label="More actions" />}
+              >
+                <DotsThreeVertical className="size-4" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem>
-                  <Edit3 className="size-3.5 mr-2" />
+                  <PencilSimple className="size-3.5 mr-2" />
                   Edit
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-destructive focus:text-destructive">
-                  <Trash2 className="size-3.5 mr-2" />
+                  <Trash className="size-3.5 mr-2" />
                   Delete
                 </DropdownMenuItem>
               </DropdownMenuContent>

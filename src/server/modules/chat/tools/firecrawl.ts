@@ -13,7 +13,7 @@
  * Sign up: https://firecrawl.dev (free tier ~500 pages/mo as of 2026-04).
  */
 import { z } from 'zod'
-import { Globe, Network } from 'lucide-react'
+import { Globe, Network } from '@phosphor-icons/react'
 import { getServiceKey, type CredentialEnv } from '@/server/lib/credentials'
 import {
   detectInterstitial,

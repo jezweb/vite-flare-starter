@@ -12,22 +12,12 @@
  *   3. Keep `summary` ~50 words; `whenToUse` ~30 words. Glossary is
  *      reference, not tutorial.
  */
-import {
-  Activity,
-  CheckSquare,
-  FileText,
-  FolderKanban,
-  Hash,
-  MessageSquare,
-  Plug,
-  Sparkles,
-  type LucideIcon,
-} from 'lucide-react'
+import { Pulse, CheckSquare, FileText, Kanban, Hash, Chat, Plug, Sparkle, type Icon } from '@phosphor-icons/react'
 
 export interface GlossaryEntry {
   id: string
   name: string
-  icon: LucideIcon
+  icon: Icon
   summary: string
   whenToUse: string
   action?: { label: string; route: string }
@@ -39,7 +29,7 @@ export const GLOSSARY_ENTRIES: GlossaryEntry[] = [
   {
     id: 'chat',
     name: 'Chat',
-    icon: MessageSquare,
+    icon: Chat,
     summary:
       'A one-on-one conversation with an AI agent. Pick a model, type a prompt, and the agent responds — sometimes calling tools (search, calendar, files) along the way. Each chat keeps its own history.',
     whenToUse:
@@ -50,7 +40,7 @@ export const GLOSSARY_ENTRIES: GlossaryEntry[] = [
   {
     id: 'projects',
     name: 'Projects',
-    icon: FolderKanban,
+    icon: Kanban,
     summary:
       'Long-running spaces that bind shared memory, instructions, and files to multiple chats. Conversations inside a project inherit its context automatically.',
     whenToUse:
@@ -71,7 +61,7 @@ export const GLOSSARY_ENTRIES: GlossaryEntry[] = [
   {
     id: 'memory',
     name: 'Memory',
-    icon: Sparkles,
+    icon: Sparkle,
     summary:
       'Persistent facts the AI remembers about you, a project, or your organisation. Three trust modes per user: ask before saving, save automatically, or never save.',
     whenToUse:
@@ -81,7 +71,7 @@ export const GLOSSARY_ENTRIES: GlossaryEntry[] = [
   {
     id: 'skills',
     name: 'Skills',
-    icon: Sparkles,
+    icon: Sparkle,
     summary:
       'Reusable prompts the AI can invoke via `/skill-name` in chat. Bundled examples include `/morning-brief`, `/research`, `/summarise-url`. You can edit them or add your own.',
     whenToUse:
@@ -121,7 +111,7 @@ export const GLOSSARY_ENTRIES: GlossaryEntry[] = [
   {
     id: 'activity',
     name: 'Activity',
-    icon: Activity,
+    icon: Pulse,
     summary:
       'Audit log of everything created, edited, or deleted in the app — sign-ins, items created, items updated, items archived — with timestamps.',
     whenToUse:

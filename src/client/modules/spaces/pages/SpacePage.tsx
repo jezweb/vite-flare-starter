@@ -9,18 +9,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import {
-  ChevronLeft,
-  X,
-  Hash,
-  MessageSquare,
-  Search,
-  Pin,
-  Quote as QuoteIcon,
-  Users,
-  Bell,
-  BellOff,
-} from 'lucide-react'
+import { CaretLeft, X, Hash, Chat, MagnifyingGlass, PushPin, Quotes as QuoteIcon, Users, Bell, BellSlash } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { useSession } from '@/client/lib/auth'
@@ -100,7 +89,7 @@ export function SpacePage() {
           to="/dashboard/spaces"
           className="mt-2 inline-flex items-center gap-1 text-primary hover:underline"
         >
-          <ChevronLeft className="size-3.5" />
+          <CaretLeft className="size-3.5" />
           Back to spaces
         </Link>
       </div>
@@ -125,18 +114,15 @@ export function SpacePage() {
             className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
             aria-label="Back to spaces"
           >
-            <ChevronLeft className="size-4" />
+            <CaretLeft className="size-4" />
           </Link>
           {/* Mobile-only members button — opens the Sheet drawer. Hidden on md+ where the rail is visible. */}
           <Sheet>
-            <SheetTrigger asChild>
-              <button
-                type="button"
-                className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground md:hidden"
-                aria-label="Show members"
-              >
-                <Users className="size-4" />
-              </button>
+            <SheetTrigger
+              className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground md:hidden"
+              aria-label="Show members"
+            >
+              <Users className="size-4" />
             </SheetTrigger>
             <SheetContent side="left" className="w-72 p-3">
               <SheetTitle className="sr-only">Members</SheetTitle>
@@ -163,7 +149,7 @@ export function SpacePage() {
               className="flex h-8 items-center gap-1 rounded-md px-2 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
               aria-label={`${pinnedCount} pinned messages`}
             >
-              <Pin className="size-3.5" />
+              <PushPin className="size-3.5" />
               {pinnedCount}
             </button>
           )}
@@ -173,7 +159,7 @@ export function SpacePage() {
             className="flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
             aria-label="Search in space"
           >
-            <Search className="size-4" />
+            <MagnifyingGlass className="size-4" />
           </button>
           <SpaceHeaderMenu space={space} />
         </div>
@@ -363,7 +349,7 @@ function ThreadAside(props: ThreadAsideProps) {
     <aside className="hidden w-96 shrink-0 flex-col border-l border-border bg-background/60 lg:flex">
       <div className="flex shrink-0 items-center justify-between border-b border-border px-3 py-2 text-xs">
         <div className="flex items-center gap-1.5">
-          <MessageSquare className="size-3.5 text-muted-foreground" />
+          <Chat className="size-3.5 text-muted-foreground" />
           <span className="font-medium">Thread</span>
         </div>
         <div className="flex items-center gap-1">
@@ -378,7 +364,7 @@ function ThreadAside(props: ThreadAsideProps) {
             title={muted ? 'Unmute thread' : 'Mute thread'}
             aria-label={muted ? 'Unmute thread' : 'Mute thread'}
           >
-            {muted ? <BellOff className="size-3.5" /> : <Bell className="size-3.5" />}
+            {muted ? <BellSlash className="size-3.5" /> : <Bell className="size-3.5" />}
           </button>
           <button
             type="button"

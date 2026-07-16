@@ -23,7 +23,7 @@
  *     Chrome/Firefox" tooltip on iOS Safari rather than crashing.
  */
 import { useEffect, useRef } from 'react'
-import { Mic, MicOff, Loader2, Volume2 } from 'lucide-react'
+import { Microphone, MicrophoneSlash, CircleNotch, SpeakerHigh } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -162,14 +162,14 @@ export function VoiceModeButton({
   const showSpinner = state === 'transcribing'
   const Icon =
     recordingUnsupported && enabled
-      ? MicOff
+      ? MicrophoneSlash
       : !enabled
-        ? MicOff
+        ? MicrophoneSlash
         : showSpinner
-          ? Loader2
+          ? CircleNotch
           : isSpeaking
-            ? Volume2
-            : Mic
+            ? SpeakerHigh
+            : Microphone
 
   const ariaLabel = recordingUnsupported
     ? 'Voice mode unsupported on this browser'
@@ -183,38 +183,40 @@ export function VoiceModeButton({
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          type="button"
-          variant={enabled ? (isRecording ? 'destructive' : 'default') : 'outline'}
-          size="icon"
-          className={cn(
-            'shrink-0 transition-colors',
-            isRecording && 'animate-pulse',
-            isSpeaking && 'border-primary/40 bg-primary/10 text-primary',
-            recordingUnsupported && 'opacity-60'
-          )}
-          disabled={disabled || (recordingUnsupported && !enabled)}
-          aria-label={ariaLabel}
-          onClick={(e) => {
-            // Skip if a pointerup just handled this same press — otherwise
-            // every successful hold-release also toggles mode off.
-            if (justHandledPointerRef.current) {
-              e.preventDefault()
-              return
-            }
-            if (isSpeaking) {
-              stopSpeaking()
-              return
-            }
-            handleToggleEnabled()
-          }}
-          onPointerDown={onPointerDown}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerCancel}
-        >
-          <Icon className={cn('size-4', showSpinner && 'animate-spin')} />
-        </Button>
+      <TooltipTrigger
+        render={
+          <Button
+            type="button"
+            variant={enabled ? (isRecording ? 'destructive' : 'default') : 'outline'}
+            size="icon"
+            className={cn(
+              'shrink-0 transition-colors',
+              isRecording && 'animate-pulse',
+              isSpeaking && 'border-primary/40 bg-primary/10 text-primary',
+              recordingUnsupported && 'opacity-60'
+            )}
+            disabled={disabled || (recordingUnsupported && !enabled)}
+            aria-label={ariaLabel}
+            onClick={(e) => {
+              // Skip if a pointerup just handled this same press — otherwise
+              // every successful hold-release also toggles mode off.
+              if (justHandledPointerRef.current) {
+                e.preventDefault()
+                return
+              }
+              if (isSpeaking) {
+                stopSpeaking()
+                return
+              }
+              handleToggleEnabled()
+            }}
+            onPointerDown={onPointerDown}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerCancel}
+          />
+        }
+      >
+        <Icon className={cn('size-4', showSpinner && 'animate-spin')} />
       </TooltipTrigger>
       <TooltipContent side="top">
         {recordingUnsupported ? (

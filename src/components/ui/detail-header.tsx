@@ -32,7 +32,7 @@
 import * as React from 'react'
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronLeft } from 'lucide-react'
+import { CaretLeft } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { appConfig } from '@/shared/config/app'
 
@@ -74,7 +74,7 @@ export function DetailHeader({
           to={backTo}
           className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
-          <ChevronLeft className="size-3" />
+          <CaretLeft className="size-3" />
           {backLabel}
         </Link>
       )}

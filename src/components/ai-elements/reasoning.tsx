@@ -1,13 +1,13 @@
 'use client'
 
-import { useControllableState } from '@radix-ui/react-use-controllable-state'
+import { useControllableState } from '@/hooks/use-controllable-state'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { cn } from '@/lib/utils'
 import { cjk } from '@streamdown/cjk'
 import { code } from '@streamdown/code'
 import { math } from '@streamdown/math'
 import { mermaid } from '@streamdown/mermaid'
-import { BrainIcon, ChevronDownIcon } from 'lucide-react'
+import { BrainIcon, CaretDownIcon } from '@phosphor-icons/react'
 import type { ComponentProps, ReactNode } from 'react'
 import {
   createContext,
@@ -227,7 +227,7 @@ export const ReasoningTrigger = memo(
           <>
             <BrainIcon className="size-4" />
             {getThinkingMessage(isStreaming, duration)}
-            <ChevronDownIcon
+            <CaretDownIcon
               className={cn('size-4 transition-transform', isOpen ? 'rotate-180' : 'rotate-0')}
             />
           </>
@@ -247,7 +247,7 @@ export const ReasoningContent = memo(({ className, children, ...props }: Reasoni
   <CollapsibleContent
     className={cn(
       'mt-4 text-sm',
-      'data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 text-muted-foreground outline-none data-[state=closed]:animate-out data-[state=open]:animate-in',
+      'text-muted-foreground outline-none transition-all duration-150 data-starting-style:opacity-0 data-starting-style:-translate-y-2 data-ending-style:opacity-0 data-ending-style:-translate-y-2',
       className
     )}
     {...props}

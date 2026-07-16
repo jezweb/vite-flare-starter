@@ -19,7 +19,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { useUsers } from '../hooks/useAdmin'
 import { UserList } from './UserList'
-import { ChevronLeft, ChevronRight, Users } from 'lucide-react'
+import { CaretLeft, CaretRight, Users } from '@phosphor-icons/react'
 import { useDebounce } from '@/client/hooks/useDebounce'
 import { EmptyState } from '@/client/components/EmptyState'
 
@@ -113,7 +113,7 @@ export function UsersTabContent() {
             showClearButton
             className="flex-1"
           />
-          <Select value={sortParam} onValueChange={handleSortChange}>
+          <Select value={sortParam} onValueChange={(v) => v != null && handleSortChange(v)}>
             <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="Sort by..." />
             </SelectTrigger>
@@ -165,7 +165,7 @@ export function UsersTabContent() {
                 onClick={() => handlePageChange(page - 1)}
                 disabled={!hasPrevPage}
               >
-                <ChevronLeft className="h-4 w-4" />
+                <CaretLeft className="h-4 w-4" />
                 Previous
               </Button>
               <Button
@@ -175,7 +175,7 @@ export function UsersTabContent() {
                 disabled={!hasNextPage}
               >
                 Next
-                <ChevronRight className="h-4 w-4" />
+                <CaretRight className="h-4 w-4" />
               </Button>
             </div>
           </div>

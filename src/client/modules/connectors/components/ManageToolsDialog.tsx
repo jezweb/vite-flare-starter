@@ -13,7 +13,7 @@
  * open/close state.
  */
 import { useMemo, useState } from 'react'
-import { RotateCcw, Search, ShieldAlert } from 'lucide-react'
+import { ArrowCounterClockwise, MagnifyingGlass, ShieldWarning } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import {
   Sheet,
@@ -131,14 +131,14 @@ export function ManageToolsDialog({ connectorId, open, onOpenChange }: ManageToo
                 disabled={update.isPending}
                 className="h-7 text-xs"
               >
-                <RotateCcw className="mr-1 h-3 w-3" />
+                <ArrowCounterClockwise className="mr-1 h-3 w-3" />
                 Reset to defaults
               </Button>
             </div>
 
             {showSearch && (
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
@@ -185,7 +185,7 @@ export function ManageToolsDialog({ connectorId, open, onOpenChange }: ManageToo
                                   variant="outline"
                                   className="text-[10px] gap-1 border-amber-500/40 text-amber-700 dark:text-amber-400"
                                 >
-                                  <ShieldAlert className="h-2.5 w-2.5" />
+                                  <ShieldWarning className="h-2.5 w-2.5" />
                                   Destructive
                                 </Badge>
                               )}

@@ -5,7 +5,7 @@
  * audio, generate spritesheets. Requires MEDIA + FILES bindings.
  */
 import { z } from 'zod'
-import { Scissors, Image as ImageIcon, Music, Grid3x3 } from 'lucide-react'
+import { Scissors, Image as ImageIcon, MusicNote, GridNine } from '@phosphor-icons/react'
 import {
   extractFrame,
   extractAudio,
@@ -183,7 +183,7 @@ export const videoAudioDefinition: ToolDefinition<
       return { error: error instanceof Error ? error.message : String(error) }
     }
   },
-  render: { icon: Music, displayName: 'Extract Audio' },
+  render: { icon: MusicNote, displayName: 'Extract Audio' },
 }
 
 const VideoSpritesheetOutput = z.union([
@@ -230,7 +230,7 @@ export const videoSpritesheetDefinition: ToolDefinition<
       return { error: error instanceof Error ? error.message : String(error) }
     }
   },
-  render: { icon: Grid3x3, displayName: 'Video Spritesheet' },
+  render: { icon: GridNine, displayName: 'Video Spritesheet' },
 }
 
 export const mediaDefinitions = [

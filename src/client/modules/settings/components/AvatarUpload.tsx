@@ -3,7 +3,7 @@ import { useSession, authClient } from '@/client/lib/auth'
 import { validateAndResize } from '@/client/lib/image-resize'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
-import { Upload, X } from 'lucide-react'
+import { Upload, X } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 
 type AvatarUploadProps = {

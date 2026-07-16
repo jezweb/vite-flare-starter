@@ -15,7 +15,7 @@ import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq, and, lte } from 'drizzle-orm'
 import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core'
-import { CalendarClock, ListOrdered, XCircle } from 'lucide-react'
+import { CalendarDots, ListNumbers, XCircle } from '@phosphor-icons/react'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 
 function getDB(ctx: AgentContext): D1Database {
@@ -169,7 +169,7 @@ export const scheduleTaskDefinition: ToolDefinition<
       return { error: error instanceof Error ? error.message : String(error) }
     }
   },
-  render: { icon: CalendarClock, displayName: 'Schedule Task' },
+  render: { icon: CalendarDots, displayName: 'Schedule Task' },
 }
 
 const ListTasksOutput = z.union([
@@ -233,7 +233,7 @@ export const listTasksDefinition: ToolDefinition<
       return { error: error instanceof Error ? error.message : String(error) }
     }
   },
-  render: { icon: ListOrdered, displayName: 'List Tasks' },
+  render: { icon: ListNumbers, displayName: 'List Tasks' },
 }
 
 const CancelTaskOutput = z.union([

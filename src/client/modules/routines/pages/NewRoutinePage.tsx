@@ -15,7 +15,7 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, ChevronDown, ChevronRight, Sparkles } from 'lucide-react'
+import { ArrowLeft, CaretDown, CaretRight, Sparkle } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -323,11 +323,14 @@ export function NewRoutinePage() {
   return (
     <div className="container mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
       <div>
-        <Button variant="ghost" size="sm" asChild className="-ml-2 mb-2 text-muted-foreground">
-          <Link to="/dashboard/routines">
-            <ArrowLeft className="size-3.5" />
-            Routines
-          </Link>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="-ml-2 mb-2 text-muted-foreground"
+          render={<Link to="/dashboard/routines" />}
+        >
+          <ArrowLeft className="size-3.5" />
+          Routines
         </Button>
         <h1 className="text-2xl font-semibold tracking-tight">New routine</h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -341,7 +344,7 @@ export function NewRoutinePage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <Sparkles className="size-4 text-primary" />
+            <Sparkle className="size-4 text-primary" />
             Start from a template
           </CardTitle>
           <CardDescription>
@@ -586,9 +589,9 @@ export function NewRoutinePage() {
           >
             <span className="flex items-center gap-1.5 text-muted-foreground">
               {advancedOpen ? (
-                <ChevronDown className="size-3.5" />
+                <CaretDown className="size-3.5" />
               ) : (
-                <ChevronRight className="size-3.5" />
+                <CaretRight className="size-3.5" />
               )}
               Advanced — instance ID
             </span>

@@ -7,18 +7,7 @@
  * dialog so users can verify file content before sending.
  */
 import { useState } from 'react'
-import {
-  FileText,
-  FileSpreadsheet,
-  FileImage,
-  FileAudio,
-  FileVideo,
-  FileCode,
-  FileArchive,
-  File as FileIcon,
-  X,
-  Eye,
-} from 'lucide-react'
+import { FileText, FileXls, FileImage, FileAudio, FileVideo, FileCode, FileArchive, File as FileIcon, X, Eye } from '@phosphor-icons/react'
 import { usePromptInputAttachments } from '@/components/ai-elements/prompt-input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
@@ -38,7 +27,7 @@ function iconFor(mediaType?: string) {
   if (mediaType.startsWith('video/')) return FileVideo
   if (mediaType === 'application/pdf') return FileText
   if (mediaType.includes('spreadsheet') || mediaType.includes('excel') || mediaType === 'text/csv')
-    return FileSpreadsheet
+    return FileXls
   if (mediaType.includes('wordprocessingml') || mediaType === 'application/msword') return FileText
   if (
     mediaType.startsWith('text/') ||

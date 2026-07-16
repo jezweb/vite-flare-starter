@@ -12,7 +12,7 @@
  */
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Save, Trash2, Loader2, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, FloppyDisk, Trash, CircleNotch, Warning } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -223,7 +223,7 @@ export function KnowledgeDetailPage() {
     return (
       <PageContainer type="detail">
         <div className="flex items-center justify-center py-12 text-muted-foreground">
-          <Loader2 className="mr-2 size-4 animate-spin" /> Loading…
+          <CircleNotch className="mr-2 size-4 animate-spin" /> Loading…
         </div>
       </PageContainer>
     )
@@ -261,14 +261,14 @@ export function KnowledgeDetailPage() {
                 disabled={remove.isPending}
                 className="text-destructive hover:text-destructive"
               >
-                <Trash2 className="mr-2 size-4" /> Delete
+                <Trash className="mr-2 size-4" /> Delete
               </Button>
             )}
             <Button onClick={handleSave} disabled={!canSave}>
               {create.isPending || update.isPending ? (
-                <Loader2 className="mr-2 size-4 animate-spin" />
+                <CircleNotch className="mr-2 size-4 animate-spin" />
               ) : (
-                <Save className="mr-2 size-4" />
+                <FloppyDisk className="mr-2 size-4" />
               )}
               {isNew ? 'Create' : 'Save'}
             </Button>
@@ -331,7 +331,7 @@ export function KnowledgeDetailPage() {
             />
             {overHardCap && (
               <div className="flex items-start gap-2 rounded-md border border-destructive/50 bg-destructive/10 p-2 text-xs text-destructive">
-                <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
+                <Warning className="mt-0.5 size-3.5 shrink-0" />
                 Server will reject saves over the hard cap. Trim or split the doc.
               </div>
             )}

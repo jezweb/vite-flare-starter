@@ -7,7 +7,7 @@
 import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq, desc, sql } from 'drizzle-orm'
-import { BarChart3, ScrollText, Library } from 'lucide-react'
+import { ChartBar, Scroll, Books } from '@phosphor-icons/react'
 import { aiUsageLogs } from '../db/schema'
 import { userMeta } from '@/server/modules/user-meta/db/schema'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
@@ -109,7 +109,7 @@ export const sessionStatsDefinition: ToolDefinition<
       return { error: error instanceof Error ? error.message : String(error) }
     }
   },
-  render: { icon: BarChart3, displayName: 'Session Stats' },
+  render: { icon: ChartBar, displayName: 'Session Stats' },
 }
 
 // ─── search_memories ────────────────────────────────────────────
@@ -158,7 +158,7 @@ export const searchMemoriesDefinition: ToolDefinition<
       return { query, error: error instanceof Error ? error.message : String(error) }
     }
   },
-  render: { icon: ScrollText, displayName: 'Search Memories' },
+  render: { icon: Scroll, displayName: 'Search Memories' },
 }
 
 // ─── list_all_memories ──────────────────────────────────────────
@@ -202,7 +202,7 @@ export const listAllMemoriesDefinition: ToolDefinition<
       return { error: error instanceof Error ? error.message : String(error) }
     }
   },
-  render: { icon: Library, displayName: 'List All Memories' },
+  render: { icon: Books, displayName: 'List All Memories' },
 }
 
 export const sessionDefinitions = [

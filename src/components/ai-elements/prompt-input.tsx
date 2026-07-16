@@ -33,7 +33,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import type { ChatStatus, FileUIPart, SourceDocumentUIPart } from 'ai'
-import { CornerDownLeftIcon, ImageIcon, Monitor, PlusIcon, SquareIcon, XIcon } from 'lucide-react'
+import { ArrowElbowDownLeftIcon, ImageIcon, Monitor, PlusIcon, SquareIcon, XIcon } from '@phosphor-icons/react'
 import { nanoid } from 'nanoid'
 import type {
   ChangeEvent,
@@ -388,16 +388,14 @@ export const PromptInputActionAddAttachments = ({
 }: PromptInputActionAddAttachmentsProps) => {
   const attachments = usePromptInputAttachments()
 
-  const handleSelect = useCallback(
-    (e: Event) => {
-      e.preventDefault()
-      attachments.openFileDialog()
-    },
-    [attachments]
-  )
+  const handleClick = useCallback(() => {
+    attachments.openFileDialog()
+  }, [attachments])
 
   return (
-    <DropdownMenuItem {...props} onSelect={handleSelect}>
+    // closeOnClick={false} preserves the radix behavior (onSelect
+    // preventDefault kept the menu open while the file dialog opens)
+    <DropdownMenuItem {...props} closeOnClick={false} onClick={handleClick}>
       <ImageIcon className="mr-2 size-4" /> {label}
     </DropdownMenuItem>
   )
@@ -409,14 +407,14 @@ export type PromptInputActionAddScreenshotProps = ComponentProps<typeof Dropdown
 
 export const PromptInputActionAddScreenshot = ({
   label = 'Take screenshot',
-  onSelect,
+  onClick,
   ...props
 }: PromptInputActionAddScreenshotProps) => {
   const attachments = usePromptInputAttachments()
 
-  const handleSelect = useCallback(
-    async (event: Event) => {
-      onSelect?.(event)
+  const handleClick = useCallback(
+    async (event: React.MouseEvent<HTMLDivElement>) => {
+      onClick?.(event as Parameters<NonNullable<typeof onClick>>[0])
       if (event.defaultPrevented) {
         return
       }
@@ -436,11 +434,11 @@ export const PromptInputActionAddScreenshot = ({
         throw error
       }
     },
-    [onSelect, attachments]
+    [onClick, attachments]
   )
 
   return (
-    <DropdownMenuItem {...props} onSelect={handleSelect}>
+    <DropdownMenuItem {...props} onClick={handleClick}>
       <Monitor className="mr-2 size-4" />
       {label}
     </DropdownMenuItem>
@@ -1062,7 +1060,7 @@ export const PromptInputButton = ({
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild>{button}</TooltipTrigger>
+      <TooltipTrigger render={button} />
       <TooltipContent side={side}>
         {tooltipContent}
         {shortcut && <span className="ml-2 text-muted-foreground">{shortcut}</span>}
@@ -1083,10 +1081,8 @@ export const PromptInputActionMenuTrigger = ({
   children,
   ...props
 }: PromptInputActionMenuTriggerProps) => (
-  <DropdownMenuTrigger asChild>
-    <PromptInputButton className={className} {...props}>
-      {children ?? <PlusIcon className="size-4" />}
-    </PromptInputButton>
+  <DropdownMenuTrigger render={<PromptInputButton className={className} {...props} />}>
+    {children ?? <PlusIcon className="size-4" />}
   </DropdownMenuTrigger>
 )
 
@@ -1124,7 +1120,7 @@ export const PromptInputSubmit = ({
 }: PromptInputSubmitProps) => {
   const isGenerating = status === 'submitted' || status === 'streaming'
 
-  let Icon = <CornerDownLeftIcon className="size-4" />
+  let Icon = <ArrowElbowDownLeftIcon className="size-4" />
 
   if (status === 'submitted') {
     Icon = <Spinner />
@@ -1135,7 +1131,7 @@ export const PromptInputSubmit = ({
   }
 
   const handleClick = useCallback(
-    (e: React.MouseEvent<HTMLButtonElement>) => {
+    (e: Parameters<NonNullable<PromptInputSubmitProps['onClick']>>[0]) => {
       if (isGenerating && onStop) {
         e.preventDefault()
         onStop()
@@ -1202,18 +1198,18 @@ export const PromptInputSelectValue = ({ className, ...props }: PromptInputSelec
 
 export type PromptInputHoverCardProps = ComponentProps<typeof HoverCard>
 
-export const PromptInputHoverCard = ({
-  openDelay = 0,
-  closeDelay = 0,
-  ...props
-}: PromptInputHoverCardProps) => (
-  <HoverCard closeDelay={closeDelay} openDelay={openDelay} {...props} />
-)
+export const PromptInputHoverCard = (props: PromptInputHoverCardProps) => <HoverCard {...props} />
 
 export type PromptInputHoverCardTriggerProps = ComponentProps<typeof HoverCardTrigger>
 
-export const PromptInputHoverCardTrigger = (props: PromptInputHoverCardTriggerProps) => (
-  <HoverCardTrigger {...props} />
+// Base UI moved open/close delays from the Root to the Trigger — the
+// instant-open/instant-close defaults (0/0) live here now.
+export const PromptInputHoverCardTrigger = ({
+  delay = 0,
+  closeDelay = 0,
+  ...props
+}: PromptInputHoverCardTriggerProps) => (
+  <HoverCardTrigger delay={delay} closeDelay={closeDelay} {...props} />
 )
 
 export type PromptInputHoverCardContentProps = ComponentProps<typeof HoverCardContent>

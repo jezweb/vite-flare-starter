@@ -12,7 +12,7 @@
  */
 import { useNavigate, useParams } from 'react-router-dom'
 import { formatDistanceToNow } from 'date-fns'
-import { Play, Trash2, CheckCircle2, XCircle, AlertTriangle, Clock, Activity } from 'lucide-react'
+import { Play, Trash, CheckCircle, XCircle, Warning, Clock, Pulse } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -130,7 +130,7 @@ export function RoutineDetailPage() {
               onClick={() => setConfirmDelete(true)}
               aria-label="Delete routine"
             >
-              <Trash2 className="size-3.5" />
+              <Trash className="size-3.5" />
             </Button>
           </>
         }
@@ -252,12 +252,12 @@ export function RoutineDetailPage() {
 function RunRow({ run }: { run: RoutineRun }) {
   const Icon =
     run.outcome === 'ok'
-      ? CheckCircle2
+      ? CheckCircle
       : run.outcome === 'error'
         ? XCircle
         : run.outcome === 'budget_exceeded'
-          ? AlertTriangle
-          : Activity
+          ? Warning
+          : Pulse
   const colour =
     run.outcome === 'ok'
       ? 'text-emerald-600'

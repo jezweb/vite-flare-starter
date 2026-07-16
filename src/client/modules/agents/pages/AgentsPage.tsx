@@ -11,7 +11,7 @@
  * PATCH /api/agent-instances/:class/:name endpoint serves both surfaces.
  */
 import { useState } from 'react'
-import { Bot, Plus, Sparkles } from 'lucide-react'
+import { Robot, Plus, Sparkle } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 
 import { PageContainer } from '@/components/ui/page-container'
@@ -50,11 +50,9 @@ export function AgentsPage() {
                 <Plus className="mr-1.5 size-4" />
                 New agent
               </Button>
-              <Button asChild variant="outline">
-                <Link to="/dashboard/admin-chat">
-                  <Sparkles className="mr-1.5 size-4" />
-                  Admin chat
-                </Link>
+              <Button variant="outline" render={<Link to="/dashboard/admin-chat" />}>
+                <Sparkle className="mr-1.5 size-4" />
+                Admin chat
               </Button>
             </>
           }
@@ -121,7 +119,7 @@ export function AgentsPage() {
                 className="flex min-w-0 flex-1 items-start gap-3 rounded-md text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
               >
                 <ItemMedia variant="icon">
-                  <Bot className="size-4" />
+                  <Robot className="size-4" />
                 </ItemMedia>
                 <ItemContent>
                   <ItemTitle>

@@ -13,18 +13,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import {
-  ArrowLeft,
-  Plus,
-  Star,
-  Share2,
-  MoreVertical,
-  Archive,
-  Trash2,
-  Edit3,
-  MessageSquare,
-  PencilLine,
-} from 'lucide-react'
+import { ArrowLeft, Plus, Star, ShareNetwork, DotsThreeVertical, Archive, Trash, PencilSimple, Chat, PencilLine } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -130,8 +119,8 @@ export function ProjectPage() {
         <p className="mt-2 text-sm text-muted-foreground">
           This project may have been deleted, or you don't have access to it.
         </p>
-        <Button asChild variant="outline" className="mt-4">
-          <Link to="/dashboard/projects">All projects</Link>
+        <Button variant="outline" className="mt-4" render={<Link to="/dashboard/projects" />}>
+          All projects
         </Button>
       </div>
     )
@@ -141,11 +130,14 @@ export function ProjectPage() {
     <div className="max-w-6xl mx-auto py-4 space-y-6">
       {/* Top bar — back link */}
       <div>
-        <Button variant="ghost" size="sm" asChild className="text-muted-foreground -ml-2">
-          <Link to="/dashboard/projects">
-            <ArrowLeft className="size-3.5 mr-1.5" />
-            All projects
-          </Link>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground -ml-2"
+          render={<Link to="/dashboard/projects" />}
+        >
+          <ArrowLeft className="size-3.5 mr-1.5" />
+          All projects
         </Button>
       </div>
 
@@ -171,18 +163,18 @@ export function ProjectPage() {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label="Project options">
-                <MoreVertical className="size-4" />
-              </Button>
+            <DropdownMenuTrigger
+              render={<Button variant="ghost" size="icon" aria-label="Project options" />}
+            >
+              <DotsThreeVertical className="size-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onSelect={() => setEditProjectOpen(true)}>
-                <Edit3 className="size-3.5 mr-2" />
+              <DropdownMenuItem onClick={() => setEditProjectOpen(true)}>
+                <PencilSimple className="size-3.5 mr-2" />
                 Edit project
               </DropdownMenuItem>
               <DropdownMenuItem
-                onSelect={() => archiveProject.mutate({ id, archived: !isArchived })}
+                onClick={() => archiveProject.mutate({ id, archived: !isArchived })}
               >
                 <Archive className="size-3.5 mr-2" />
                 {isArchived ? 'Restore from archive' : 'Archive project'}
@@ -190,9 +182,9 @@ export function ProjectPage() {
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-destructive focus:text-destructive"
-                onSelect={() => setDeleteConfirmOpen(true)}
+                onClick={() => setDeleteConfirmOpen(true)}
               >
-                <Trash2 className="size-3.5 mr-2" />
+                <Trash className="size-3.5 mr-2" />
                 Delete project
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -203,10 +195,10 @@ export function ProjectPage() {
             onClick={() => starProject.mutate({ id, starred: project.starred === 0 })}
             aria-label={project.starred ? 'Unstar project' : 'Star project'}
           >
-            <Star className={cn('size-4', project.starred && 'fill-yellow-500 text-yellow-500')} />
+            <Star weight={project.starred ? 'fill' : 'regular'} className={cn('size-4', project.starred && 'text-yellow-500')} />
           </Button>
           <Button variant="outline" onClick={() => setShareInfoOpen(true)}>
-            <Share2 className="size-3.5 mr-1.5" />
+            <ShareNetwork className="size-3.5 mr-1.5" />
             Share
           </Button>
         </div>
@@ -262,9 +254,9 @@ export function ProjectPage() {
                       className="group flex items-center gap-3 rounded-md px-3 py-2.5 transition-colors hover:bg-muted"
                     >
                       {c.starred ? (
-                        <Star className="size-3.5 shrink-0 fill-yellow-500 text-yellow-500" />
+                        <Star weight="fill" className="size-3.5 shrink-0 text-yellow-500" />
                       ) : (
-                        <MessageSquare className="size-3.5 shrink-0 text-muted-foreground" />
+                        <Chat className="size-3.5 shrink-0 text-muted-foreground" />
                       )}
                       <div className="flex-1 min-w-0">
                         <div className="truncate text-sm font-medium">{c.title || 'Untitled'}</div>

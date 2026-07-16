@@ -24,7 +24,7 @@
 import { useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { AlertTriangle, Sparkles } from 'lucide-react'
+import { Warning, Sparkle } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -147,9 +147,9 @@ export function ConversationSizeIndicator({ messages, model, conversationId }: P
       title={tokensFormatted}
     >
       {isUrgent ? (
-        <AlertTriangle className="size-3 shrink-0" aria-hidden />
+        <Warning className="size-3 shrink-0" aria-hidden />
       ) : (
-        <Sparkles className="size-3 shrink-0" aria-hidden />
+        <Sparkle className="size-3 shrink-0" aria-hidden />
       )}
       <span className="font-medium tabular-nums">{pctRounded}% full</span>
       {conversationId && (

@@ -19,7 +19,7 @@
  * hidden) in edit mode so copy works from either view.
  */
 import { useRef, useState } from 'react'
-import { Pencil, Eye, Download, ChevronDown } from 'lucide-react'
+import { Pencil, Eye, Download, CaretDown } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { CopyButton } from '@/components/ui/copy-button'
@@ -106,12 +106,12 @@ export function MarkdownField({
             disabled={!value}
           />
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button type="button" size="sm" variant="ghost" disabled={!value}>
-                <Download />
-                <span>Export</span>
-                <ChevronDown className="opacity-60" />
-              </Button>
+            <DropdownMenuTrigger
+              render={<Button type="button" size="sm" variant="ghost" disabled={!value} />}
+            >
+              <Download />
+              <span>Export</span>
+              <CaretDown className="opacity-60" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem

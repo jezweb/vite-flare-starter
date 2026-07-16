@@ -8,7 +8,7 @@
  * The card is marked `bare: true` so the ConfigDiffCard owns its own
  * container (chrome comes from the card itself, not the tool collapsible).
  */
-import { FileDiff } from 'lucide-react'
+import { GitDiff } from '@phosphor-icons/react'
 import { ConfigDiffCard } from '@/client/components/ConfigDiffCard'
 import {
   useApproveProposal,
@@ -57,7 +57,7 @@ function ProposePatchInline({ output }: { output: ProposePatchOutput }) {
 
 export const proposePatchRenderer: ToolRenderer = {
   match: 'propose_patch',
-  icon: FileDiff,
+  icon: GitDiff,
   displayName: 'Propose change',
   bare: true,
   summary: (output) => {

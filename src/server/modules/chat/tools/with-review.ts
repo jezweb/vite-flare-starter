@@ -26,7 +26,7 @@
  * accuracy / intent / tone / no hallucinations / clarity.
  */
 import { z } from 'zod'
-import { GitPullRequest } from 'lucide-react'
+import { GitPullRequest } from '@phosphor-icons/react'
 import { runModelText } from '@/server/lib/ai/providers'
 import { loadSkill } from '@/server/lib/ai/skills/registry'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'

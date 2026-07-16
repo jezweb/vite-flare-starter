@@ -9,7 +9,7 @@
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { CheckSquare, ChevronRight, Check, X } from 'lucide-react'
+import { CheckSquare, CaretRight, Check, X } from '@phosphor-icons/react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { apiClient } from '@/client/lib/api-client'
@@ -82,7 +82,7 @@ export function DecisionRow(props: RowRendererProps) {
       </Button>
       <span className="ml-1 hidden items-center gap-1 text-xs text-muted-foreground transition-colors group-hover/list-row:text-foreground sm:inline-flex">
         Review
-        <ChevronRight className="size-3" />
+        <CaretRight className="size-3" />
       </span>
     </span>
   ) : (

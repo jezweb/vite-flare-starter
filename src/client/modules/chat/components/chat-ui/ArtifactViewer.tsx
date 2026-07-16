@@ -9,7 +9,7 @@
  * the user's authenticated session — same trust model as claude.ai artifacts.
  */
 import { useState, useRef, useEffect } from 'react'
-import { Code2, Eye, Copy, Check, ExternalLink } from 'lucide-react'
+import { CodeSimple, Eye, Copy, Check, ArrowSquareOut } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { useCopy } from '@/client/lib/use-copy'
@@ -105,7 +105,7 @@ export function ArtifactViewer({ artifact }: Props) {
             title={showCode ? 'Show preview' : 'Show code'}
             aria-label={showCode ? 'Show preview' : 'Show code'}
           >
-            {showCode ? <Eye className="size-3.5" /> : <Code2 className="size-3.5" />}
+            {showCode ? <Eye className="size-3.5" /> : <CodeSimple className="size-3.5" />}
           </Button>
           <Button
             variant="ghost"
@@ -133,7 +133,7 @@ export function ArtifactViewer({ artifact }: Props) {
               title="Open in new tab"
               aria-label="Open in new tab"
             >
-              <ExternalLink className="size-3.5" />
+              <ArrowSquareOut className="size-3.5" />
             </Button>
           )}
         </div>

@@ -19,7 +19,7 @@
  */
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Building2, Check, ChevronsUpDown, Plus, Settings, UserPlus } from 'lucide-react'
+import { Buildings, Check, CaretUpDown, Plus, GearSix, UserPlus } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import {
   DropdownMenu,
@@ -98,12 +98,15 @@ export function OrgSwitcher() {
       <SidebarMenu>
         <SidebarMenuItem>
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <SidebarMenuButton
-                size="lg"
-                className="data-[slot=sidebar-menu-button]:!p-1.5"
-                aria-label="Switch organisation"
-              >
+            <DropdownMenuTrigger
+              render={
+                <SidebarMenuButton
+                  size="lg"
+                  className="data-[slot=sidebar-menu-button]:!p-1.5"
+                  aria-label="Switch organisation"
+                />
+              }
+            >
                 <Avatar name={display?.name} />
                 <div className="grid flex-1 text-left leading-tight">
                   <span className="truncate text-sm font-semibold">
@@ -119,11 +122,10 @@ export function OrgSwitcher() {
                     </span>
                   )}
                 </div>
-                <ChevronsUpDown className="ml-auto size-4 text-muted-foreground" />
-              </SidebarMenuButton>
+                <CaretUpDown className="ml-auto size-4 text-muted-foreground" />
             </DropdownMenuTrigger>
             <DropdownMenuContent
-              className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+              className="w-(--anchor-width) min-w-56 rounded-lg"
               align="start"
               side="bottom"
             >
@@ -159,7 +161,7 @@ export function OrgSwitcher() {
                     onClick={() => navigate('/dashboard/organization')}
                     className="gap-2 cursor-pointer"
                   >
-                    <Settings className="size-4" />
+                    <GearSix className="size-4" />
                     Manage current
                   </DropdownMenuItem>
                   <DropdownMenuItem
@@ -211,7 +213,7 @@ function Avatar({ name, size = 'md' }: { name?: string; size?: 'sm' | 'md' }) {
       {/^[A-Z]/.test(letter) ? (
         letter
       ) : (
-        <Building2 className={size === 'sm' ? 'size-3.5' : 'size-4'} />
+        <Buildings className={size === 'sm' ? 'size-3.5' : 'size-4'} />
       )}
     </div>
   )

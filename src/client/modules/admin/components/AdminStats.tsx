@@ -10,7 +10,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatGrid } from '@/components/ui/stat-grid'
 import { useAdminStats } from '../hooks/useAdmin'
-import { AlertCircle } from 'lucide-react'
+import { WarningCircle } from '@phosphor-icons/react'
 
 export function AdminStats() {
   const { data: stats, isLoading, error } = useAdminStats()
@@ -35,7 +35,7 @@ export function AdminStats() {
     return (
       <Card className="border-destructive/50 bg-destructive/5">
         <CardContent className="flex items-start gap-3 py-4 text-sm">
-          <AlertCircle className="mt-0.5 h-4 w-4 text-destructive" />
+          <WarningCircle className="mt-0.5 h-4 w-4 text-destructive" />
           <div className="space-y-0.5">
             <p className="font-medium text-destructive">Couldn't load stats</p>
             <p className="text-muted-foreground">

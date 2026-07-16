@@ -14,17 +14,7 @@
  * filename; we render those as "Attached file" with no label.
  */
 import { useMemo, useState } from 'react'
-import {
-  ChevronDown,
-  ChevronRight,
-  FileText,
-  FileImage,
-  FileAudio,
-  FileVideo,
-  FileSpreadsheet,
-  FileCode,
-  File as FileIcon,
-} from 'lucide-react'
+import { CaretDown, CaretRight, FileText, FileImage, FileAudio, FileVideo, FileXls, FileCode, File as FileIcon } from '@phosphor-icons/react'
 import { MessageResponse } from '@/components/ai-elements/message'
 import { cn } from '@/lib/utils'
 
@@ -78,7 +68,7 @@ function iconForFilename(filename?: string) {
   if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'tiff'].includes(ext)) return FileImage
   if (['mp3', 'wav', 'webm', 'ogg', 'm4a', 'flac'].includes(ext)) return FileAudio
   if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) return FileVideo
-  if (['xls', 'xlsx', 'csv', 'tsv'].includes(ext)) return FileSpreadsheet
+  if (['xls', 'xlsx', 'csv', 'tsv'].includes(ext)) return FileXls
   if (['json', 'xml', 'yaml', 'yml', 'html', 'css', 'js', 'ts', 'tsx', 'md'].includes(ext))
     return FileCode
   return FileText
@@ -125,9 +115,9 @@ export function AttachedFileBlock({ parsed, className }: Props) {
         aria-expanded={expanded}
       >
         {expanded ? (
-          <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
+          <CaretDown className="size-3.5 shrink-0 text-muted-foreground" />
         ) : (
-          <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
+          <CaretRight className="size-3.5 shrink-0 text-muted-foreground" />
         )}
         <Icon className="size-4 shrink-0 text-muted-foreground" />
         <div className="flex-1 min-w-0">

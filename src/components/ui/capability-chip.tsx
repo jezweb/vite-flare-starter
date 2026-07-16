@@ -9,20 +9,20 @@
  *   - count      → just a number + label ("22 skills")
  *
  * The chip is purely visual — to make a chip clickable, wrap it in a
- * `<Link>` or `<button>`. Don't try to use Radix `asChild` here: the
- * chip composes internal layout (dot + icon + label spans) which
- * violates Slot's single-child contract.
+ * `<Link>` or `<button>` rather than adding a render/slot prop: the
+ * chip composes internal layout (dot + icon + label spans) and wants
+ * to stay a dumb leaf.
  *
  *   <Link to="/dashboard/connections" className="rounded-full">
  *     <CapabilityChip icon={Mail} label="Gmail" />
  *   </Link>
  */
 import * as React from 'react'
-import type { LucideIcon } from 'lucide-react'
+import type { Icon } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 
 interface CapabilityChipProps extends React.HTMLAttributes<HTMLElement> {
-  icon?: LucideIcon
+  icon?: Icon
   label: React.ReactNode
   state?: 'active' | 'inactive' | 'count'
 }

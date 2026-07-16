@@ -29,12 +29,10 @@ function PublicHeader() {
         <div className="flex items-center gap-4">
           <ThemeToggle />
           {session?.user ? (
-            <Button asChild>
-              <Link to="/dashboard">Open Dashboard</Link>
-            </Button>
+            <Button render={<Link to="/dashboard" />}>Open Dashboard</Button>
           ) : (
-            <Button variant="ghost" asChild>
-              <Link to="/sign-in">Sign In</Link>
+            <Button variant="ghost" render={<Link to="/sign-in" />}>
+              Sign In
             </Button>
           )}
         </div>

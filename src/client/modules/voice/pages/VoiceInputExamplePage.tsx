@@ -14,7 +14,7 @@
  */
 import { useMemo, useState } from 'react'
 import { useVoiceInput } from '@cloudflare/voice/react'
-import { Mic, Square } from 'lucide-react'
+import { Microphone, Square } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -101,13 +101,13 @@ export function VoiceInputExamplePage() {
           <div className="flex items-center gap-3">
             {!isActive ? (
               <Button onClick={handleStart} className="gap-2">
-                <Mic className="h-4 w-4" />
+                <Microphone className="h-4 w-4" />
                 Start listening
               </Button>
             ) : (
               <>
                 <Button onClick={handleStop} variant="destructive" className="gap-2">
-                  <Square className="h-4 w-4 fill-current" />
+                  <Square weight="fill" className="h-4 w-4" />
                   Stop
                 </Button>
                 <Button onClick={toggleMute} variant="outline">

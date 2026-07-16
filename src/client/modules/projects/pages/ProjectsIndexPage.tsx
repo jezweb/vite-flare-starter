@@ -13,7 +13,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Plus, Star, FolderOpen, Archive } from 'lucide-react'
+import { Plus, Star, FolderOpen, Archive } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
@@ -272,7 +272,7 @@ function ProjectCard({
           aria-label={project.starred ? 'Unstar project' : 'Star project'}
           title={project.starred ? 'Unstar' : 'Star'}
         >
-          <Star className={cn('size-4', project.starred && 'fill-current')} />
+          <Star weight={project.starred ? 'fill' : 'regular'} className="size-4" />
         </button>
       </div>
 

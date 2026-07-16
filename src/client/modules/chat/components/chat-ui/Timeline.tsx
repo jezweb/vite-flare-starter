@@ -1,4 +1,4 @@
-import { Check, Circle, Clock } from 'lucide-react'
+import { Check, Circle, Clock } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { STATUS_SOLID } from '@/client/lib/status-colors'
 

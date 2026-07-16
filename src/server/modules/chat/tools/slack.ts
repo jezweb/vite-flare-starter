@@ -18,7 +18,7 @@
 import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq } from 'drizzle-orm'
-import { MessageSquare, Hash, User, Send, Search } from 'lucide-react'
+import { Chat, Hash, User, PaperPlaneTilt, MagnifyingGlass } from '@phosphor-icons/react'
 import { slackTokens } from '@/server/modules/slack/db/schema'
 import { decrypt } from '@/server/lib/crypto'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
@@ -178,7 +178,7 @@ export const slackSearchMessagesDefinition: ToolDefinition<
       count: matches.length,
     }
   },
-  render: { icon: Search, displayName: 'Slack — Search' },
+  render: { icon: MagnifyingGlass, displayName: 'Slack — Search' },
 }
 
 // ─── LIST CHANNELS ──────────────────────────────────────────────────────
@@ -318,7 +318,7 @@ export const slackGetChannelHistoryDefinition: ToolDefinition<
       count: raw.length,
     }
   },
-  render: { icon: MessageSquare, displayName: 'Slack — History' },
+  render: { icon: Chat, displayName: 'Slack — History' },
 }
 
 // ─── GET USER ───────────────────────────────────────────────────────────
@@ -433,7 +433,7 @@ export const slackPostMessageDefinition: ToolDefinition<
       permalink,
     }
   },
-  render: { icon: Send, displayName: 'Slack — Post' },
+  render: { icon: PaperPlaneTilt, displayName: 'Slack — Post' },
 }
 
 // ─── AGGREGATE ─────────────────────────────────────────────────────────

@@ -10,7 +10,7 @@
 import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq, and } from 'drizzle-orm'
-import { ListChecks, ListPlus, CheckCircle2, Eraser } from 'lucide-react'
+import { ListChecks, ListPlus, CheckCircle, Eraser } from '@phosphor-icons/react'
 import { userMeta } from '@/server/modules/user-meta/db/schema'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 
@@ -149,7 +149,7 @@ export const todoUpdateDefinition: ToolDefinition<
     }
   },
   render: {
-    icon: CheckCircle2,
+    icon: CheckCircle,
     displayName: 'Update Todo',
     summary: (_output, input) => (input as { status?: string } | undefined)?.status ?? null,
   },

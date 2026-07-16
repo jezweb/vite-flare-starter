@@ -1,17 +1,5 @@
 import { useState } from 'react'
-import {
-  FileIcon,
-  ImageIcon,
-  FileText,
-  FileCode,
-  Archive,
-  Download,
-  Trash2,
-  MoreHorizontal,
-  Globe,
-  Lock,
-  Pencil,
-} from 'lucide-react'
+import { FileIcon, ImageIcon, FileText, FileCode, Archive, Download, Trash, DotsThree, Globe, Lock, Pencil } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { useCopy } from '@/client/lib/use-copy'
@@ -261,10 +249,8 @@ export function FileList({ files, isLoading, folder, onUploadClick }: FileListPr
                 </Button>
 
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
+                  <DropdownMenuTrigger render={<Button variant="ghost" size="icon" />}>
+                    <DotsThree className="h-4 w-4" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => handleEdit(file)}>
@@ -286,7 +272,7 @@ export function FileList({ files, isLoading, folder, onUploadClick }: FileListPr
                       className="text-destructive focus:text-destructive"
                       onClick={() => setDeleteTarget(file)}
                     >
-                      <Trash2 className="h-4 w-4 mr-2" />
+                      <Trash className="h-4 w-4 mr-2" />
                       Delete
                     </DropdownMenuItem>
                   </DropdownMenuContent>

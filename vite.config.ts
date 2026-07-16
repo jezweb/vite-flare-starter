@@ -61,7 +61,7 @@ export default defineConfig({
           // Vendor chunks
           if (id.includes('/react-router')) return 'react-router'
           if (id.includes('/@tanstack/')) return 'tanstack'
-          if (id.includes('/@radix-ui/')) return 'radix'
+          if (id.includes('/@base-ui/')) return 'base-ui'
           if (id.includes('/ai/') || id.includes('/@ai-sdk/')) return 'ai-sdk'
           return undefined
         },

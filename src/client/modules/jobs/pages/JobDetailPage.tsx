@@ -13,18 +13,7 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import {
-  ArrowLeft,
-  Layers,
-  CheckCircle2,
-  AlertCircle,
-  Clock,
-  Loader2,
-  XCircle,
-  Square,
-  ChevronRight,
-  ChevronDown,
-} from 'lucide-react'
+import { ArrowLeft, Stack, CheckCircle, WarningCircle, Clock, CircleNotch, XCircle, Square, CaretRight, CaretDown } from '@phosphor-icons/react'
 import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
 import { PageLoading } from '@/client/components/PageState'
@@ -68,16 +57,16 @@ interface JobResponse {
 
 const ITEM_BADGE = {
   pending: { variant: 'outline' as const, Icon: Clock, label: 'Pending' },
-  running: { variant: 'default' as const, Icon: Loader2, label: 'Running' },
-  completed: { variant: 'secondary' as const, Icon: CheckCircle2, label: 'Done' },
-  failed: { variant: 'destructive' as const, Icon: AlertCircle, label: 'Failed' },
+  running: { variant: 'default' as const, Icon: CircleNotch, label: 'Running' },
+  completed: { variant: 'secondary' as const, Icon: CheckCircle, label: 'Done' },
+  failed: { variant: 'destructive' as const, Icon: WarningCircle, label: 'Failed' },
 }
 
 const JOB_BADGE = {
   queued: { variant: 'outline' as const, Icon: Clock, label: 'Queued' },
-  running: { variant: 'default' as const, Icon: Loader2, label: 'Running' },
-  completed: { variant: 'secondary' as const, Icon: CheckCircle2, label: 'Completed' },
-  failed: { variant: 'destructive' as const, Icon: AlertCircle, label: 'Failed' },
+  running: { variant: 'default' as const, Icon: CircleNotch, label: 'Running' },
+  completed: { variant: 'secondary' as const, Icon: CheckCircle, label: 'Completed' },
+  failed: { variant: 'destructive' as const, Icon: WarningCircle, label: 'Failed' },
   cancelled: { variant: 'outline' as const, Icon: XCircle, label: 'Cancelled' },
 }
 
@@ -111,7 +100,7 @@ export function JobDetailPage() {
     return (
       <PageContainer type="detail">
         <EmptyState
-          icon={Layers}
+          icon={Stack}
           title="Job not found"
           description="This job doesn't exist or you don't have access to it."
         />
@@ -138,11 +127,9 @@ export function JobDetailPage() {
   return (
     <PageContainer type="detail">
       <div className="mb-3">
-        <Button asChild variant="ghost" size="sm">
-          <Link to="/dashboard/jobs">
-            <ArrowLeft className="mr-1.5 h-4 w-4" />
-            All jobs
-          </Link>
+        <Button variant="ghost" size="sm" render={<Link to="/dashboard/jobs" />}>
+          <ArrowLeft className="mr-1.5 h-4 w-4" />
+          All jobs
         </Button>
       </div>
 
@@ -228,9 +215,9 @@ function ItemRow({
         className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-muted/40"
       >
         {expanded ? (
-          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          <CaretDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         ) : (
-          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          <CaretRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         )}
         <Badge variant={meta.variant} className="shrink-0 gap-1 text-[10px]">
           <meta.Icon className={`h-3 w-3 ${item.status === 'running' ? 'animate-spin' : ''}`} />

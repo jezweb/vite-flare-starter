@@ -8,7 +8,7 @@
  * `MessageRenderer.isArtifact()` and rendered by `ArtifactViewer`.
  */
 import { z } from 'zod'
-import { Sparkles, Wand2 } from 'lucide-react'
+import { Sparkle, MagicWand } from '@phosphor-icons/react'
 import type { ToolDefinition } from '@/shared/agent'
 
 const ArtifactType = z.enum(['html', 'svg', 'mermaid'])
@@ -76,7 +76,7 @@ IMPORTANT: Output the COMPLETE code as the 'code' parameter — no markdown fenc
     height,
   }),
   render: {
-    icon: Sparkles,
+    icon: Sparkle,
     displayName: 'Create Artifact',
     summary: (output) => {
       const o = output as { type?: string; title?: string }
@@ -112,7 +112,7 @@ export const editArtifactDefinition: ToolDefinition<
     height,
   }),
   render: {
-    icon: Wand2,
+    icon: MagicWand,
     displayName: 'Edit Artifact',
     summary: (output) => {
       const o = output as { type?: string; title?: string }

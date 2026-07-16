@@ -5,7 +5,7 @@
  * All on the canonical ToolDefinition contract (Phase 0).
  */
 import { z } from 'zod'
-import { Clock, Info, Calculator, CheckCheck } from 'lucide-react'
+import { Clock, Info, Calculator, Checks } from '@phosphor-icons/react'
 import { getModel, listModels } from '@/server/lib/ai/models'
 import type { ModelId } from '@/server/lib/ai/types'
 import type { ToolDefinition } from '@/shared/agent'
@@ -241,7 +241,7 @@ export const doneDefinition: ToolDefinition<
   }),
   outputSchema: z.object({ answer: z.string(), completed: z.boolean() }),
   execute: async ({ answer }) => ({ answer, completed: true }),
-  render: { icon: CheckCheck, displayName: 'Done' },
+  render: { icon: Checks, displayName: 'Done' },
 }
 
 export const coreDefinitions = [

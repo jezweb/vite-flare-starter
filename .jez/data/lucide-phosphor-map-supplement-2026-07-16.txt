@@ -1,0 +1,32 @@
+# Supplement to lucide-phosphor-map-2026-07-16.txt
+# These 29 names were assumed verbatim-compatible but do NOT exist in
+# @phosphor-icons/react 2.1.10 (or exist with the wrong metaphor — Align*).
+# Every target machine-checked against dist/index.d.ts exports.
+AlignCenter=TextAlignCenter
+AlignLeft=TextAlignLeft
+AlignRight=TextAlignRight
+ArrowRightLeft=ArrowsLeftRight
+ArrowUpCircle=ArrowCircleUp
+ArrowUpDown=ArrowsDownUp
+BellOff=BellSlash
+Bold=TextB
+Box=Cube
+CalendarSearch=Calendar
+Component=PuzzlePiece
+Edit=NotePencil
+FileDown=FileArrowDown
+FilePlus2=FilePlus
+Filter=Funnel
+FolderX=FolderMinus
+Italic=TextItalic
+Maximize2=ArrowsOutSimple
+MessageSquarePlus=ChatText
+MessagesSquare=Chats
+MoveRight=ArrowRight
+PieChart=ChartPie
+PinOff=PushPinSlash
+Share2=ShareNetwork
+StarOff=Star
+TableProperties=Table
+Underline=TextUnderline
+Workflow=FlowArrow

@@ -8,7 +8,7 @@
  * `navigate('/dashboard/digests/' + row.id)`.
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { FileText, ChevronRight } from 'lucide-react'
+import { FileText, CaretRight } from '@phosphor-icons/react'
 import { apiClient } from '@/client/lib/api-client'
 import { cn } from '@/lib/utils'
 import type { RowRendererProps } from '../../row-shapes'
@@ -34,7 +34,7 @@ export function DigestRow(props: RowRendererProps) {
       trailing={
         <span className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors group-hover/list-row:text-foreground">
           {isUnread ? 'Open digest' : 'Open'}
-          <ChevronRight className="size-3" />
+          <CaretRight className="size-3" />
         </span>
       }
       onRowClick={() => toggleRead.mutate()}

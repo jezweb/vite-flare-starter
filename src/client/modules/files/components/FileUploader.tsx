@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { Upload, X, CheckCircle, AlertCircle } from 'lucide-react'
+import { Upload, X, CheckCircle, WarningCircle } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { cn } from '@/lib/utils'
 import { useUploadFile } from '../hooks/useFiles'
@@ -180,7 +180,7 @@ export function FileUploader({
                   )}
                   {item.status === 'error' && (
                     <>
-                      <AlertCircle className="h-3 w-3 text-destructive" />
+                      <WarningCircle className="h-3 w-3 text-destructive" />
                       <span className="text-xs text-destructive">{item.error}</span>
                     </>
                   )}

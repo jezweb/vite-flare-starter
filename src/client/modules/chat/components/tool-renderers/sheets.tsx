@@ -2,7 +2,7 @@
  * Google Sheets tool renderers — sheets_list_tabs, sheets_read_range,
  * sheets_append_row, sheets_write_range.
  */
-import { Sheet, Table2, Rows4, ExternalLink } from 'lucide-react'
+import { Table, Rows, ArrowSquareOut } from '@phosphor-icons/react'
 import type { ToolRenderer } from './_shared'
 import type {
   SheetsListTabsOutput,
@@ -55,7 +55,7 @@ function PreviewGrid({ values }: { values: Array<Array<string | number | boolean
 
 export const sheetsListTabsRenderer: ToolRenderer = {
   match: 'sheets_list_tabs',
-  icon: Sheet,
+  icon: Table,
   displayName: 'Sheets — Tabs',
   summary: (output) => {
     const o = output as SheetsListTabsOutput | undefined
@@ -95,7 +95,7 @@ export const sheetsListTabsRenderer: ToolRenderer = {
           className="inline-flex items-center gap-1 text-foreground hover:underline"
         >
           Open in Google Sheets
-          <ExternalLink className="size-3" />
+          <ArrowSquareOut className="size-3" />
         </a>
       </div>
     )
@@ -104,7 +104,7 @@ export const sheetsListTabsRenderer: ToolRenderer = {
 
 export const sheetsReadRangeRenderer: ToolRenderer = {
   match: 'sheets_read_range',
-  icon: Table2,
+  icon: Table,
   displayName: 'Sheets — Read',
   summary: (output) => {
     const o = output as SheetsReadRangeOutput | undefined
@@ -136,7 +136,7 @@ export const sheetsReadRangeRenderer: ToolRenderer = {
 
 export const sheetsAppendRowRenderer: ToolRenderer = {
   match: 'sheets_append_row',
-  icon: Rows4,
+  icon: Rows,
   displayName: 'Sheets — Append',
   summary: (output) => {
     const o = output as SheetsAppendRowOutput | undefined
@@ -169,7 +169,7 @@ export const sheetsAppendRowRenderer: ToolRenderer = {
           className="inline-flex items-center gap-1 text-foreground hover:underline"
         >
           Open in Google Sheets
-          <ExternalLink className="size-3" />
+          <ArrowSquareOut className="size-3" />
         </a>
       </div>
     )
@@ -178,7 +178,7 @@ export const sheetsAppendRowRenderer: ToolRenderer = {
 
 export const sheetsWriteRangeRenderer: ToolRenderer = {
   match: 'sheets_write_range',
-  icon: Table2,
+  icon: Table,
   displayName: 'Sheets — Write',
   summary: (output) => {
     const o = output as SheetsWriteRangeOutput | undefined
@@ -211,7 +211,7 @@ export const sheetsWriteRangeRenderer: ToolRenderer = {
           className="inline-flex items-center gap-1 text-foreground hover:underline"
         >
           Open in Google Sheets
-          <ExternalLink className="size-3" />
+          <ArrowSquareOut className="size-3" />
         </a>
       </div>
     )

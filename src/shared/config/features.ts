@@ -89,6 +89,17 @@ export const features = {
   walkabout: isEnabled('VITE_FEATURE_WALKABOUT'),
 
   /**
+   * Sandbox code-interpreter — run_python / run_shell / run_js /
+   * generate_document chat tools backed by Cloudflare Sandbox containers
+   * (Workers Paid). Default ON, but the tools only appear when the SANDBOX
+   * binding is wired (wrangler.jsonc containers block + Dockerfile).
+   * Setting VITE_FEATURE_SANDBOX=false hides them even with the binding —
+   * note the server reads this from the worker env, so set it in .dev.vars
+   * AND as a production var (not just a client build var) to disable.
+   */
+  sandbox: isEnabled('VITE_FEATURE_SANDBOX'),
+
+  /**
    * Voice agent example page (@cloudflare/voice + agents SDK).
    * Default OFF — opt-in by setting VITE_FEATURE_VOICE_AGENT=true.
    * This demo shows the pattern; not every fork needs a voice UI.

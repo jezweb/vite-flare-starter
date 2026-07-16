@@ -17,7 +17,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Monitor, Video, X, Circle, Square, RefreshCw } from 'lucide-react'
+import { Monitor, Video, X, Circle, Square, ArrowsClockwise } from '@phosphor-icons/react'
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
@@ -62,8 +62,7 @@ export function PromptInputActionAddScreenshotCountdown({
   const [state, setState] = useState<ScreenshotState>({ kind: 'idle' })
   const videoRef = useRef<HTMLVideoElement | null>(null)
 
-  const startPicker = useCallback(async (event?: Event) => {
-    event?.preventDefault()
+  const startPicker = useCallback(async () => {
     if (!canCaptureScreen()) return
     let stream: MediaStream | null = null
     try {
@@ -152,7 +151,9 @@ export function PromptInputActionAddScreenshotCountdown({
 
   return (
     <>
-      <DropdownMenuItem onSelect={startPicker}>
+      {/* closeOnClick={false} preserves the radix onSelect-preventDefault
+          behavior: keep the menu mounted while the native picker opens */}
+      <DropdownMenuItem closeOnClick={false} onClick={() => void startPicker()}>
         <Monitor className="mr-2 size-4" />
         {label}
       </DropdownMenuItem>
@@ -165,10 +166,10 @@ export function PromptInputActionAddScreenshotCountdown({
             primary={{
               label: 'Capture now',
               onClick: capture,
-              icon: <Circle className="size-3.5 fill-current" />,
+              icon: <Circle weight="fill" className="size-3.5" />,
             }}
             secondary={[
-              { label: 'Retake', onClick: retake, icon: <RefreshCw className="size-3.5" /> },
+              { label: 'Retake', onClick: retake, icon: <ArrowsClockwise className="size-3.5" /> },
               { label: 'Cancel', onClick: cancel, icon: <X className="size-3.5" /> },
             ]}
           />,
@@ -390,8 +391,7 @@ export function PromptInputActionAddScreenCapture({ label = 'Capture steps' }: {
   const [withAudio, setWithAudio] = useState(true)
   const videoRef = useRef<HTMLVideoElement | null>(null)
 
-  const startConfig = useCallback((event: Event) => {
-    event.preventDefault()
+  const startConfig = useCallback(() => {
     if (!canCaptureScreen()) return
     setState({ kind: 'config' })
   }, [])
@@ -550,7 +550,7 @@ export function PromptInputActionAddScreenCapture({ label = 'Capture steps' }: {
 
   return (
     <>
-      <DropdownMenuItem onSelect={startConfig}>
+      <DropdownMenuItem closeOnClick={false} onClick={startConfig}>
         <Video className="mr-2 size-4" />
         {label}
       </DropdownMenuItem>
@@ -610,7 +610,7 @@ export function PromptInputActionAddScreenCapture({ label = 'Capture steps' }: {
               onClick: () => {
                 void finishRecording()
               },
-              icon: <Square className="size-3.5 fill-current" />,
+              icon: <Square weight="fill" className="size-3.5" />,
             }}
             secondary={[
               { label: 'Cancel', onClick: cancelRecording, icon: <X className="size-3.5" /> },

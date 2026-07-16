@@ -4,9 +4,10 @@
  * Two strategies:
  * 1. `env.AI.toMarkdown()` — Cloudflare's built-in converter (free, fast,
  *    handles PDFs natively + images via Workers AI vision models). Preferred.
- * 2. Vision model fallback — sends the file as an image to a vision-capable
- *    LLM (Kimi K2.5 default). Used when toMarkdown isn't available or for
- *    formats it doesn't support.
+ * 2. Vision model fallback — Moondream 3.1 first (fast OCR/vision specialist,
+ *    image-to-text task), then a general chat VLM (Kimi K2.6) if Moondream
+ *    fails or an explicit model override is set. Used when toMarkdown isn't
+ *    available or for formats it doesn't support.
  *
  * @example
  * const markdown = await convertToMarkdown(env, pdfBuffer, 'application/pdf', { filename: 'report.pdf' })
@@ -23,7 +24,16 @@ interface DocumentEnv {
   OPENROUTER_API_KEY?: string
 }
 
+/** General chat VLM — fallback when the OCR specialist fails or is overridden. */
 const DEFAULT_VISION_MODEL = '@cf/moonshotai/kimi-k2.6'
+
+/**
+ * Fast OCR/vision specialist (Moondream 3.1, 9B MoE / 2B active). Runs the
+ * Workers AI `image-to-text` task schema — `env.AI.run` with `{ task: 'query',
+ * image, question }`, NOT chat messages — so it can't route through
+ * resolveModel/the AI SDK. Verified against the live catalogue 2026-07-16.
+ */
+const FAST_VISION_MODEL = '@cf/moondream/moondream3.1-9B-A2B'
 
 export interface ConvertOptions {
   /** Override the model for vision fallback */
@@ -130,13 +140,19 @@ export async function convertToMarkdown(
     typeof ai?.toMarkdown === 'function'
   ) {
     try {
-      const result = (await ai.toMarkdown([
-        {
-          name: options?.filename || `file.${mimeType.split('/')[1]}`,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          blob: new Blob([data as any], { type: mimeType }),
-        },
-      ])) as { name: string; data: string }[]
+      const result = (await ai.toMarkdown(
+        [
+          {
+            name: options?.filename || `file.${mimeType.split('/')[1]}`,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            blob: new Blob([data as any], { type: mimeType }),
+          },
+        ],
+        // Output feeds LLM prompts (chat file context, ingest indexing) —
+        // plain text strips markdown syntax noise. Docs-verified 2026-07-16:
+        // developers.cloudflare.com/workers-ai/features/markdown-conversion/conversion-options/
+        { conversionOptions: { output: { format: 'text' } } }
+      )) as { name: string; data: string }[]
       if (result?.[0]?.data) {
         return result[0].data
       }
@@ -175,9 +191,6 @@ async function extractWithVision(
   mimeType: string,
   options?: ConvertOptions
 ): Promise<string> {
-  const modelId = options?.model || DEFAULT_VISION_MODEL
-  const model = resolveModel(env as Parameters<typeof resolveModel>[0], modelId)
-
   const prompt =
     options?.prompt ||
     `Extract all text content from this ${options?.filename || 'document'} and convert it to well-formatted markdown. ` +
@@ -186,6 +199,35 @@ async function extractWithVision(
   const bytes = data instanceof Uint8Array ? data : new Uint8Array(data)
   const base64 = bytesToBase64(bytes)
   const dataUrl = `data:${mimeType};base64,${base64}`
+
+  // Fast path: Moondream 3.1 OCR/vision specialist, unless the caller pinned
+  // a specific model. Falls through to the chat VLM on any error/empty result.
+  if (!options?.model) {
+    try {
+      const result = (await env.AI.run(FAST_VISION_MODEL as Parameters<Ai['run']>[0], {
+        task: 'query',
+        image: dataUrl,
+        question: prompt,
+        stream: false, // streams by default — force a single JSON response
+        reasoning: false, // OCR extraction doesn't need the reasoning trace
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any)) as { answer?: string; caption?: string }
+      const text = (result?.answer ?? result?.caption ?? '').trim()
+      if (text) return text
+    } catch (err) {
+      console.warn(
+        JSON.stringify({
+          event: 'moondream_vision_failed',
+          mimeType,
+          filename: options?.filename,
+          error: err instanceof Error ? err.message : String(err),
+        })
+      )
+    }
+  }
+
+  const modelId = options?.model || DEFAULT_VISION_MODEL
+  const model = resolveModel(env as Parameters<typeof resolveModel>[0], modelId)
 
   try {
     const { text } = await generateText({

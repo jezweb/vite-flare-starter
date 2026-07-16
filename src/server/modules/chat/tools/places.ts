@@ -9,7 +9,7 @@
  * Get a key: https://console.cloud.google.com → enable "Places API (New)".
  */
 import { z } from 'zod'
-import { MapPin, Info } from 'lucide-react'
+import { MapPin, Info } from '@phosphor-icons/react'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 
 interface PlacesEnv {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { RotateCcw } from 'lucide-react'
+import { ArrowCounterClockwise } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -336,7 +336,7 @@ function ColorRow({
         onClick={onReset}
         aria-label={`Reset ${label}`}
       >
-        <RotateCcw className="h-3.5 w-3.5" />
+        <ArrowCounterClockwise className="h-3.5 w-3.5" />
       </Button>
     </div>
   )

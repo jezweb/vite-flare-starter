@@ -1,20 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import {
-  Moon,
-  Sun,
-  Monitor,
-  Palette,
-  Globe,
-  Clock,
-  Calendar,
-  ExternalLink,
-  Wand2,
-  AlertCircle,
-  Check,
-  Download,
-  Upload,
-  Link2,
-} from 'lucide-react'
+import { Moon, Sun, Monitor, Palette, Globe, Clock, Calendar, ArrowSquareOut, MagicWand, WarningCircle, Check, Download, Upload, LinkSimple } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { useCopy } from '@/client/lib/use-copy'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -483,41 +468,39 @@ export function PreferencesSection() {
 
               {/* Custom Theme Option */}
               <Dialog open={customThemeDialogOpen} onOpenChange={setCustomThemeDialogOpen}>
-                <DialogTrigger asChild>
-                  <button
-                    className={cn(
-                      'group relative flex flex-col items-start gap-2 rounded-lg border-2 p-4 text-left transition-all hover:bg-accent',
-                      currentScheme === 'custom'
-                        ? 'border-primary bg-accent'
-                        : 'border-dashed border-muted hover:border-muted-foreground/50'
-                    )}
-                  >
-                    {/* Custom icon */}
-                    <div className="flex gap-1.5 items-center">
-                      <Wand2 className="h-5 w-5 text-muted-foreground" />
-                    </div>
+                <DialogTrigger
+                  className={cn(
+                    'group relative flex flex-col items-start gap-2 rounded-lg border-2 p-4 text-left transition-all hover:bg-accent',
+                    currentScheme === 'custom'
+                      ? 'border-primary bg-accent'
+                      : 'border-dashed border-muted hover:border-muted-foreground/50'
+                  )}
+                >
+                  {/* Custom icon */}
+                  <div className="flex gap-1.5 items-center">
+                    <MagicWand className="h-5 w-5 text-muted-foreground" />
+                  </div>
 
-                    {/* Label and description */}
-                    <div className="flex-1">
-                      <div className="font-semibold">Custom</div>
-                      <div className="text-xs text-muted-foreground">
-                        {currentScheme === 'custom' ? 'Your custom theme' : 'Import from generator'}
-                      </div>
+                  {/* Label and description */}
+                  <div className="flex-1">
+                    <div className="font-semibold">Custom</div>
+                    <div className="text-xs text-muted-foreground">
+                      {currentScheme === 'custom' ? 'Your custom theme' : 'Import from generator'}
                     </div>
+                  </div>
 
-                    {/* Active indicator */}
-                    {currentScheme === 'custom' && (
-                      <div className="absolute right-3 top-3">
-                        <div className="h-2 w-2 rounded-full bg-primary" />
-                      </div>
-                    )}
-                  </button>
+                  {/* Active indicator */}
+                  {currentScheme === 'custom' && (
+                    <div className="absolute right-3 top-3">
+                      <div className="h-2 w-2 rounded-full bg-primary" />
+                    </div>
+                  )}
                 </DialogTrigger>
 
                 <DialogContent className="sm:max-w-[720px]">
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                      <Wand2 className="h-5 w-5" />
+                      <MagicWand className="h-5 w-5" />
                       Custom Theme
                     </DialogTitle>
                     <DialogDescription>
@@ -553,7 +536,7 @@ export function PreferencesSection() {
                       onClick={handleCopyShareLink}
                       disabled={!hasCurrentCustomTheme}
                     >
-                      <Link2 className="h-3.5 w-3.5" />
+                      <LinkSimple className="h-3.5 w-3.5" />
                       Copy share link
                     </Button>
                     <input
@@ -597,7 +580,7 @@ export function PreferencesSection() {
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
                           >
-                            <ExternalLink className="h-3 w-3" />
+                            <ArrowSquareOut className="h-3 w-3" />
                             {gen.name}
                           </a>
                         ))}
@@ -633,7 +616,7 @@ export function PreferencesSection() {
 
                       {parseError && (
                         <Alert variant="destructive">
-                          <AlertCircle className="h-4 w-4" />
+                          <WarningCircle className="h-4 w-4" />
                           <AlertDescription>{parseError}</AlertDescription>
                         </Alert>
                       )}
@@ -742,7 +725,7 @@ export function PreferencesSection() {
             </div>
             <Select
               value={currentTimezone}
-              onValueChange={handleTimezoneChange}
+              onValueChange={(v) => v != null && void handleTimezoneChange(v)}
               disabled={updatePreferences.isPending}
             >
               <SelectTrigger className="w-full sm:w-[280px]">

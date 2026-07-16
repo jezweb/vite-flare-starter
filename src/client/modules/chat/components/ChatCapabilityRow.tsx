@@ -18,7 +18,7 @@
  */
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { Mail, FolderOpen, CalendarDays, Plug, Sparkles } from 'lucide-react'
+import { EnvelopeSimple, FolderOpen, Calendar, Plug, Sparkle } from '@phosphor-icons/react'
 import { CapabilityChip, CapabilityRow } from '@/components/ui/capability-chip'
 import { apiClient } from '@/client/lib/api-client'
 import { useConnections } from '@/client/modules/connectors/hooks/useConnectors'
@@ -55,13 +55,13 @@ export function ChatCapabilityRow() {
 
   // Native Google: derive product chips from granted scopes so the user
   // sees "Gmail · Drive · Calendar" rather than the generic "Google".
-  const googleProducts: Array<{ icon: typeof Mail; label: string }> = []
+  const googleProducts: Array<{ icon: typeof EnvelopeSimple; label: string }> = []
   if (google.data?.connected) {
     const scopes = google.data.scopes ?? []
     const has = (token: string) => scopes.some((s) => s.includes(token))
-    if (has('gmail')) googleProducts.push({ icon: Mail, label: 'Gmail' })
+    if (has('gmail')) googleProducts.push({ icon: EnvelopeSimple, label: 'Gmail' })
     if (has('drive')) googleProducts.push({ icon: FolderOpen, label: 'Drive' })
-    if (has('calendar')) googleProducts.push({ icon: CalendarDays, label: 'Calendar' })
+    if (has('calendar')) googleProducts.push({ icon: Calendar, label: 'Calendar' })
     // Generic fallback if scopes aren't readable
     if (googleProducts.length === 0) {
       googleProducts.push({ icon: Plug, label: 'Google' })
@@ -69,13 +69,13 @@ export function ChatCapabilityRow() {
   }
 
   // Microsoft: do the same, but the scope strings are PascalCase.
-  const microsoftProducts: Array<{ icon: typeof Mail; label: string }> = []
+  const microsoftProducts: Array<{ icon: typeof EnvelopeSimple; label: string }> = []
   if (microsoft.data?.connected) {
     const scopes = microsoft.data.scopes ?? []
     const has = (token: string) => scopes.some((s) => s.toLowerCase().includes(token))
-    if (has('mail')) microsoftProducts.push({ icon: Mail, label: 'Outlook' })
+    if (has('mail')) microsoftProducts.push({ icon: EnvelopeSimple, label: 'Outlook' })
     if (has('files')) microsoftProducts.push({ icon: FolderOpen, label: 'OneDrive' })
-    if (has('calendar')) microsoftProducts.push({ icon: CalendarDays, label: 'Calendar' })
+    if (has('calendar')) microsoftProducts.push({ icon: Calendar, label: 'Calendar' })
     if (microsoftProducts.length === 0) {
       microsoftProducts.push({ icon: Plug, label: 'Microsoft 365' })
     }
@@ -136,7 +136,7 @@ export function ChatCapabilityRow() {
         <Link to="/dashboard/skills" className="rounded-full hover:opacity-80 transition-opacity">
           <CapabilityChip
             state="count"
-            icon={Sparkles}
+            icon={Sparkle}
             label={`${skillCount} ${skillCount === 1 ? 'skill' : 'skills'}`}
           />
         </Link>

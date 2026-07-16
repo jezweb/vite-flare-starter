@@ -19,7 +19,7 @@
  */
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { CheckCircle2, AlertTriangle, Mail } from 'lucide-react'
+import { CheckCircle, Warning, EnvelopeSimple } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -134,7 +134,7 @@ export function AcceptInvitationPage() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <div className="flex items-center gap-2 text-muted-foreground text-xs">
-            <Mail className="size-3.5" />
+            <EnvelopeSimple className="size-3.5" />
             {appConfig.name} invitation
           </div>
           <CardTitle>{titleFor(state)}</CardTitle>
@@ -150,7 +150,7 @@ export function AcceptInvitationPage() {
           {state.status === 'success' && (
             <>
               <div className="rounded-md border border-emerald-500/40 bg-emerald-500/5 p-3 flex items-start gap-2">
-                <CheckCircle2 className="size-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                <CheckCircle className="size-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                 <div className="text-sm">
                   You've joined <strong>{state.organizationName}</strong>. We've set it as your
                   active workspace.
@@ -163,15 +163,15 @@ export function AcceptInvitationPage() {
           )}
           {state.status === 'expired' && (
             <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 flex items-start gap-2">
-              <AlertTriangle className="size-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <Warning className="size-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <div className="text-sm">
                 This invitation has expired or was already used. Ask your inviter for a fresh link.
               </div>
             </div>
           )}
           {state.status === 'already-member' && (
-            <Button asChild className="w-full">
-              <Link to="/dashboard">Go to dashboard</Link>
+            <Button className="w-full" render={<Link to="/dashboard" />}>
+              Go to dashboard
             </Button>
           )}
           {state.status === 'error' && (
@@ -183,8 +183,8 @@ export function AcceptInvitationPage() {
                 <Button variant="outline" onClick={() => window.location.reload()}>
                   Retry
                 </Button>
-                <Button asChild variant="ghost">
-                  <Link to="/dashboard">Go to dashboard</Link>
+                <Button variant="ghost" render={<Link to="/dashboard" />}>
+                  Go to dashboard
                 </Button>
               </div>
             </>

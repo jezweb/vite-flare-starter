@@ -6,7 +6,7 @@
  * Inline summary makes the chat transcript readable at a glance —
  * "Saved: 'tool-troubleshooting-preference'" instead of "{ id: 'abc' }".
  */
-import { Brain, BookOpen, Trash2, ScrollText, Library } from 'lucide-react'
+import { Brain, BookOpen, Trash, Scroll, Books } from '@phosphor-icons/react'
 import type { ToolRenderer } from './_shared'
 import { truncate } from './_shared'
 
@@ -122,7 +122,7 @@ const recallRenderer: ToolRenderer = {
 
 const listMemoriesRenderer: ToolRenderer = {
   match: 'list_all_memories',
-  icon: Library,
+  icon: Books,
   displayName: 'List all memories',
   summary: (output) => {
     const o = output as { memories?: unknown[] } | undefined
@@ -133,7 +133,7 @@ const listMemoriesRenderer: ToolRenderer = {
 
 const sessionStatsRenderer: ToolRenderer = {
   match: 'session_stats',
-  icon: ScrollText,
+  icon: Scroll,
   displayName: 'Session stats',
   summary: (output) => {
     const o = output as { tokens?: number; messages?: number } | undefined
@@ -147,7 +147,7 @@ const sessionStatsRenderer: ToolRenderer = {
 
 const forgetRenderer: ToolRenderer = {
   match: 'forget',
-  icon: Trash2,
+  icon: Trash,
   displayName: 'Forget memory',
   summary: (_output, input) => {
     const i = input as { id?: string; query?: string } | undefined

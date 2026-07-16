@@ -11,7 +11,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { desc, eq, and, gte, lte } from 'drizzle-orm'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import { adminMiddleware } from '@/server/middleware/admin'
-import { emailLog } from './db/schema'
+import { emailLog, emailSuppressions } from './db/schema'
 import { sendEmail, type EmailEnv } from './service'
 import type { TemplateKey } from './templates'
 
@@ -148,7 +148,7 @@ const logsQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(200).default(50),
   offset: z.coerce.number().int().nonnegative().default(0),
   template: z.string().max(50).optional(),
-  status: z.enum(['sent', 'queued', 'failed']).optional(),
+  status: z.enum(['sent', 'queued', 'failed', 'suppressed']).optional(),
   to: z.string().max(200).optional(),
   since: z.string().datetime().optional(),
   until: z.string().datetime().optional(),
@@ -192,5 +192,79 @@ function safeJsonArray(s: string): string[] {
     return []
   }
 }
+
+/**
+ * GET /api/email/suppressions
+ * Paginated suppression list. App-global (deliverability is a property
+ * of the sending domain, not a user), so admin-only like the rest of
+ * this module — no scopeUser.
+ */
+const suppressionsQuerySchema = z.object({
+  limit: z.coerce.number().int().positive().max(200).default(50),
+  offset: z.coerce.number().int().nonnegative().default(0),
+  reason: z.enum(['bounce', 'complaint', 'manual']).optional(),
+  email: z.string().max(200).optional(),
+})
+
+app.get('/suppressions', zValidator('query', suppressionsQuerySchema), async (c) => {
+  const q = c.req.valid('query')
+  const db = drizzle(c.env.DB)
+  const filters = [
+    q.reason ? eq(emailSuppressions.reason, q.reason) : undefined,
+    q.email ? eq(emailSuppressions.email, q.email.toLowerCase()) : undefined,
+  ].filter(Boolean)
+  const whereExpr = filters.length > 0 ? and(...(filters as [(typeof filters)[0]])) : undefined
+
+  const rows = await db
+    .select()
+    .from(emailSuppressions)
+    .where(whereExpr)
+    .orderBy(desc(emailSuppressions.createdAt))
+    .limit(q.limit)
+    .offset(q.offset)
+
+  return c.json({
+    rows,
+    pagination: { limit: q.limit, offset: q.offset, count: rows.length },
+  })
+})
+
+/**
+ * POST /api/email/suppressions
+ * Manually suppress an address (unsubscribe request, known-bad inbox).
+ * Idempotent — suppressing an already-suppressed address is a no-op.
+ */
+app.post(
+  '/suppressions',
+  zValidator('json', z.object({ email: z.string().email() })),
+  async (c) => {
+    const email = c.req.valid('json').email.toLowerCase()
+    const db = drizzle(c.env.DB)
+    const inserted = await db
+      .insert(emailSuppressions)
+      .values({ email, reason: 'manual' })
+      .onConflictDoNothing({ target: emailSuppressions.email })
+      .returning({ id: emailSuppressions.id })
+    return c.json({ email, created: inserted.length > 0 }, inserted.length > 0 ? 201 : 200)
+  }
+)
+
+/**
+ * DELETE /api/email/suppressions/:email
+ * Unsuppress an address (e.g. the mailbox was fixed, or a complaint was
+ * a misfire). The next bounce/complaint event re-suppresses it.
+ */
+app.delete('/suppressions/:email', async (c) => {
+  const email = decodeURIComponent(c.req.param('email')).toLowerCase()
+  const db = drizzle(c.env.DB)
+  const deleted = await db
+    .delete(emailSuppressions)
+    .where(eq(emailSuppressions.email, email))
+    .returning({ id: emailSuppressions.id })
+  if (deleted.length === 0) {
+    return c.json({ error: 'Not suppressed' }, 404)
+  }
+  return c.json({ deleted: true, email })
+})
 
 export default app

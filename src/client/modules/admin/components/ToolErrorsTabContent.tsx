@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { AlertCircle, CheckCircle2 } from 'lucide-react'
+import { WarningCircle, CheckCircle } from '@phosphor-icons/react'
 import { formatDistanceToNow } from 'date-fns'
 import { cn } from '@/lib/utils'
 
@@ -55,7 +55,7 @@ export function ToolErrorsTabContent() {
         <div className="flex items-center justify-between gap-4">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-destructive" />
+              <WarningCircle className="h-5 w-5 text-destructive" />
               Recent Tool Errors
             </CardTitle>
             <CardDescription>
@@ -78,7 +78,7 @@ export function ToolErrorsTabContent() {
           </div>
         ) : errors.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <CheckCircle2 className="h-12 w-12 text-muted-foreground/40" />
+            <CheckCircle className="h-12 w-12 text-muted-foreground/40" />
             <p className="mt-4 text-lg font-medium">No tool errors</p>
             <p className="text-sm text-muted-foreground">
               All tool calls in the last 24 hours succeeded.

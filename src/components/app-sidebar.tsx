@@ -6,6 +6,7 @@
  * floating sidebar style.
  */
 import * as React from 'react'
+import { MagnifyingGlass } from '@phosphor-icons/react'
 import {
   Sidebar,
   SidebarContent,
@@ -21,23 +22,66 @@ import { features } from '@/shared/config/features'
 import { OrgSwitcher } from '@/client/modules/organizations/components/OrgSwitcher'
 import { NAV_SECTIONS, type NavItem } from '@/shared/config/nav'
 
+function isVisible(
+  item: Pick<NavItem, 'feature' | 'builderOnly' | 'minRole'>,
+  featureFlags: Record<string, boolean>,
+  userRole: string | undefined,
+  isBuilder: boolean
+): boolean {
+  if (item.feature && !featureFlags[item.feature]) return false
+  if (item.builderOnly && !isBuilder) return false
+  if (item.minRole) {
+    const roleHierarchy: Record<string, number> = { user: 0, manager: 1, admin: 2 }
+    const required = roleHierarchy[item.minRole] ?? 0
+    const current = roleHierarchy[userRole ?? 'user'] ?? 0
+    if (current < required) return false
+  }
+  return true
+}
+
 function filterItems(
   items: NavItem[],
   featureFlags: Record<string, boolean>,
   userRole: string | undefined,
   isBuilder: boolean
 ): NavItem[] {
-  return items.filter((item) => {
-    if (item.feature && !featureFlags[item.feature]) return false
-    if (item.builderOnly && !isBuilder) return false
-    if (item.minRole) {
-      const roleHierarchy: Record<string, number> = { user: 0, manager: 1, admin: 2 }
-      const required = roleHierarchy[item.minRole] ?? 0
-      const current = roleHierarchy[userRole ?? 'user'] ?? 0
-      if (current < required) return false
-    }
-    return true
-  })
+  return items
+    .filter((item) => isVisible(item, featureFlags, userRole, isBuilder))
+    .map((item) =>
+      item.children
+        ? {
+            ...item,
+            children: item.children.filter((child) =>
+              isVisible(child, featureFlags, userRole, isBuilder)
+            ),
+          }
+        : item
+    )
+}
+
+/**
+ * Cloudflare-style sidebar Quick search — a search-shaped button at the
+ * top of the sidebar that opens the command palette. Collapses to a
+ * bare icon in icon-collapsed mode. The palette still owns ⌘K.
+ */
+function SidebarQuickSearch() {
+  const open = () => window.dispatchEvent(new CustomEvent('vfs:open-command-palette'))
+  return (
+    <button
+      type="button"
+      onClick={open}
+      aria-label="Quick search"
+      className="mx-2 mt-1 flex h-8 items-center gap-2 rounded-md border border-hairline bg-card px-2.5 text-sm text-muted-foreground shadow-xs outline-none transition-colors hover:border-border focus-visible:ring-2 focus-visible:ring-sidebar-ring group-data-[collapsible=icon]:mx-0 group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:border-transparent group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:shadow-none"
+    >
+      <MagnifyingGlass className="size-4 shrink-0" aria-hidden />
+      <span className="flex-1 truncate text-left group-data-[collapsible=icon]:hidden">
+        Quick search...
+      </span>
+      <kbd className="pointer-events-none rounded border border-hairline bg-surface-tint px-1 text-[10px] font-medium group-data-[collapsible=icon]:hidden">
+        ⌘K
+      </kbd>
+    </button>
+  )
 }
 
 export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
@@ -66,6 +110,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
          * identity. The sidebar header is the tenant identity.
          */}
         <OrgSwitcher />
+        <SidebarQuickSearch />
       </SidebarHeader>
 
       <SidebarContent>

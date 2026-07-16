@@ -10,7 +10,7 @@
 import { memo, useState, useCallback } from 'react'
 import { Message, MessageContent, MessageResponse } from '@/components/ai-elements/message'
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@/components/ai-elements/reasoning'
-import { BrainIcon, ChevronDownIcon } from 'lucide-react'
+import { BrainIcon, CaretDownIcon } from '@phosphor-icons/react'
 import type { Message as UIMessageType, MessageMetadata } from '../hooks/useChat'
 import { ChatUiElement, hasUiMarker } from './chat-ui/ChatUiElement'
 import { isTakeoverElement } from './chat-ui/InputTakeover'
@@ -24,22 +24,7 @@ import { ToolCard, findRenderer, type ToolState } from './tool-renderers'
 import { SourcesFooter } from './SourcesFooter'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  RotateCcw,
-  Pencil,
-  Copy,
-  Check,
-  ThumbsUp,
-  ThumbsDown,
-  Sparkles,
-  FileText,
-  FileSpreadsheet,
-  FileAudio,
-  FileVideo,
-  FileCode,
-  FileArchive,
-  File as FileIcon,
-} from 'lucide-react'
+import { ArrowCounterClockwise, Pencil, Copy, Check, ThumbsUp, ThumbsDown, Sparkle, FileText, FileXls, FileAudio, FileVideo, FileCode, FileArchive, File as FileIcon } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { useBuilderMode } from '@/client/lib/builder-mode'
@@ -150,7 +135,7 @@ export const MessageRenderer = memo(function MessageRenderer({
         <div className="flex items-start gap-3">
           <Avatar className="size-7 mt-0.5 shrink-0">
             <AvatarFallback className="bg-primary/10 text-primary">
-              <Sparkles className="size-3.5" />
+              <Sparkle className="size-3.5" />
             </AvatarFallback>
           </Avatar>
           <MessageBody
@@ -243,7 +228,7 @@ export const MessageRenderer = memo(function MessageRenderer({
             title="Regenerate response"
             aria-label="Regenerate response"
           >
-            <RotateCcw className="size-3.5" />
+            <ArrowCounterClockwise className="size-3.5" />
           </Button>
           <Button
             variant="ghost"
@@ -394,7 +379,7 @@ function MessageBody({
             (p) => p.type === 'reasoning' && !!(p as { text?: string }).text?.trim()
           ).length
           const reasoningLabel = computeReasoningLabel(reasoningIndex, totalReasoning)
-          // Some reasoning models (e.g. Kimi K2.5 via workers-ai-provider)
+          // Some reasoning models (e.g. Kimi K2.6 via workers-ai-provider)
           // bake their FINAL answer into their reasoning stream and never
           // emit a separate text part. Detect that case — completed
           // assistant message, this is the trailing content, and no text
@@ -437,7 +422,7 @@ function MessageBody({
                 <ReasoningTrigger>
                   <BrainIcon className="size-4" />
                   <p>{reasoningLabel}</p>
-                  <ChevronDownIcon className="size-4 ml-auto transition-transform group-data-[state=open]/collapsible:rotate-180" />
+                  <CaretDownIcon className="size-4 ml-auto transition-transform in-data-panel-open:rotate-180" />
                 </ReasoningTrigger>
               ) : (
                 <ReasoningTrigger />
@@ -685,7 +670,7 @@ function iconForMime(mediaType?: string) {
   if (mediaType.startsWith('video/')) return FileVideo
   if (mediaType === 'application/pdf') return FileText
   if (mediaType.includes('spreadsheet') || mediaType.includes('excel') || mediaType === 'text/csv')
-    return FileSpreadsheet
+    return FileXls
   if (mediaType.includes('wordprocessingml') || mediaType === 'application/msword') return FileText
   if (
     mediaType.startsWith('text/') ||

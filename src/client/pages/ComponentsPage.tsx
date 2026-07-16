@@ -48,6 +48,9 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Banner } from '@/components/ui/banner'
+import { Meter } from '@/components/ui/meter'
+import { ClipboardText } from '@/components/ui/clipboard-text'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
@@ -91,7 +94,7 @@ import { AudioRecorder } from '@/client/components/AudioRecorder'
 import { EmptyState } from '@/client/components/EmptyState'
 import { MarkdownField } from '@/client/components/MarkdownField'
 import { toast } from 'sonner'
-import { AlertCircle, Check, Info, MoreHorizontal, Terminal, Inbox, PanelRight } from 'lucide-react'
+import { WarningCircle, Check, Info, DotsThree, Terminal, Tray, SidebarSimple } from '@phosphor-icons/react'
 
 /**
  * Components showcase page
@@ -269,7 +272,7 @@ export function ComponentsPage() {
               <div className="space-y-4">
                 <Slider
                   value={sliderValue}
-                  onValueChange={setSliderValue}
+                  onValueChange={(value) => setSliderValue(Array.isArray(value) ? [...value] : [value])}
                   max={100}
                   step={1}
                   className="w-full max-w-sm"
@@ -429,7 +432,7 @@ export function ComponentsPage() {
               <CardDescription>Collapsible content sections</CardDescription>
             </CardHeader>
             <CardContent>
-              <Accordion type="single" collapsible className="w-full">
+              <Accordion className="w-full">
                 <AccordionItem value="item-1">
                   <AccordionTrigger>Is it accessible?</AccordionTrigger>
                   <AccordionContent>
@@ -463,10 +466,35 @@ export function ComponentsPage() {
                 </AlertDescription>
               </Alert>
               <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
+                <WarningCircle className="h-4 w-4" />
                 <AlertTitle>Error</AlertTitle>
                 <AlertDescription>Your session has expired. Please log in again.</AlertDescription>
               </Alert>
+              <div className="space-y-3 pt-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Banner — page-level notice (edge-to-edge chrome, not content)
+                </p>
+                <Banner variant="warning" title="Sandbox mode" action={<Button size="sm" variant="outline">Upgrade</Button>}>
+                  Emails are logged, not sent. Upgrade to enable delivery.
+                </Banner>
+                <Banner variant="info" onDismiss={() => {}}>
+                  A new version of this app is available.
+                </Banner>
+              </div>
+              <div className="space-y-3 pt-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Meter — measured value in a known range (quota idiom)
+                </p>
+                <Meter label="Storage" value={6.2} max={10} format={(v) => `${v} GB`} />
+                <Meter label="API requests" value={9700} max={10000} format={(v) => v.toLocaleString()} />
+              </div>
+              <div className="space-y-3 pt-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  ClipboardText — copyable value, optional masking
+                </p>
+                <ClipboardText label="Webhook URL" value="https://example.workers.dev/api/webhooks/agents/inbound" />
+                <ClipboardText label="API token" value="vfs_demo_2kX9mQp7vRw4tYz8" masked />
+              </div>
             </CardContent>
           </Card>
 
@@ -477,12 +505,14 @@ export function ComponentsPage() {
             </CardHeader>
             <CardContent>
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline">
-                    <Info className="mr-2 h-4 w-4" />
-                    Hover me
-                  </Button>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <Button variant="outline">
+                      <Info className="mr-2 h-4 w-4" />
+                      Hover me
+                    </Button>
+                  }
+                />
                 <TooltipContent>
                   <p>This is a tooltip</p>
                 </TooltipContent>
@@ -526,9 +556,7 @@ export function ComponentsPage() {
             </CardHeader>
             <CardContent>
               <Dialog>
-                <DialogTrigger asChild>
-                  <Button>Open Dialog</Button>
-                </DialogTrigger>
+                <DialogTrigger render={<Button>Open Dialog</Button>} />
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Are you sure?</DialogTitle>
@@ -552,9 +580,7 @@ export function ComponentsPage() {
             </CardHeader>
             <CardContent>
               <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive">Delete Account</Button>
-                </AlertDialogTrigger>
+                <AlertDialogTrigger render={<Button variant="destructive">Delete Account</Button>} />
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
@@ -578,10 +604,8 @@ export function ComponentsPage() {
             </CardHeader>
             <CardContent>
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
+                <DropdownMenuTrigger render={<Button variant="outline" />}>
+                  <DotsThree className="h-4 w-4" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
@@ -604,12 +628,14 @@ export function ComponentsPage() {
             </CardHeader>
             <CardContent>
               <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="outline">
-                    <PanelRight className="mr-2 h-4 w-4" />
-                    Open Sheet
-                  </Button>
-                </SheetTrigger>
+                <SheetTrigger
+                  render={
+                    <Button variant="outline">
+                      <SidebarSimple className="mr-2 h-4 w-4" />
+                      Open Sheet
+                    </Button>
+                  }
+                />
                 <SheetContent>
                   <SheetHeader>
                     <SheetTitle>Sheet Title</SheetTitle>
@@ -699,7 +725,7 @@ export function ComponentsPage() {
             </CardHeader>
             <CardContent>
               <EmptyState
-                icon={Inbox}
+                icon={Tray}
                 title="No items yet"
                 description="Get started by creating your first item."
                 action={{ label: 'Create item', onClick: () => alert('Create clicked') }}

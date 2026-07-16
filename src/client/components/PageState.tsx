@@ -13,7 +13,7 @@
  * but lock in the visual language: skeleton matches body shape, error
  * has retry, empty has clear next action.
  */
-import { AlertTriangle, type LucideIcon } from 'lucide-react'
+import { Warning, type Icon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Spinner } from '@/components/ui/spinner'
@@ -103,7 +103,7 @@ export function PageError({
 }: PageErrorProps) {
   return (
     <EmptyState
-      icon={AlertTriangle}
+      icon={Warning}
       title={title}
       description={description}
       action={onRetry ? { label: 'Try again', onClick: onRetry } : undefined}
@@ -115,7 +115,7 @@ export function PageError({
 // ─── Empty (re-export for symmetry) ───────────────────────────────────
 
 interface PageEmptyProps {
-  icon: LucideIcon
+  icon: Icon
   title: string
   description?: string
   tips?: string[]

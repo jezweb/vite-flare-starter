@@ -664,10 +664,16 @@ export class ChatAgent extends AIChatAgent<Env> {
     const modelConfig = getModel(modelId)
 
     // ─── 7. Resolve model + apply middleware (BYOK-aware) ────────────
+    // sessionAffinity (Workers AI models only): the DO instance name is
+    // user-{userId}-conv-{conversationId}, so every turn of a conversation
+    // carries the same x-session-affinity key and lands on the same backend
+    // replica — the big static prompt prefix (system prompt, skills,
+    // knowledge) hits the prefix cache instead of re-processing each turn.
     const baseModel = await resolveModelForUser(
       this.env as unknown as Parameters<typeof resolveModelForUser>[0],
       { userId },
-      modelId
+      modelId,
+      { workersAi: { sessionAffinity: this.name } }
     )
     const model = buildModel(baseModel, modelId)
 

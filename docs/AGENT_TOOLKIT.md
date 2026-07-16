@@ -19,7 +19,7 @@ client render metadata in one object. See
 | **memory** | `remember`, `recall`, `search_memory`, `forget` | Yes (user_meta D1 table) |
 | **ui** | `offer_choices`, `show_alert`, `show_contact`, `collect_info`, `ask_questions`, `show_data_table`, `show_metric_cards`, `show_timeline`, `show_progress`, `show_comparison`, `confirm_action`, `show_map` | Yes (inline React components) |
 | **skills** | `load_skill` | Yes |
-| **code** | `run_python`, `run_shell`, `run_js` | Yes (setup msg if SANDBOX missing) |
+| **code** | `run_python` (R2 file staging + artifact harvest), `run_shell`, `run_js`, `generate_document` (markdown → docx/xlsx/pptx) | If `SANDBOX` container binding (Workers Paid) |
 | **delegate** | `delegate` | Yes (subagent pattern) |
 | **audio** | `transcribe_audio` (Deepgram Nova 3), `speak_text` (Deepgram Aura 2, 12 voices, Aura 1 fallback) | Yes (AI binding, no external keys) |
 | **todo** | `todo_add`, `todo_update`, `todo_list`, `todo_clear` | Yes (persisted via user_meta) |
@@ -46,7 +46,7 @@ client render metadata in one object. See
 ```ts
 // src/server/modules/chat/tools/my-domain.ts
 import { z } from 'zod'
-import { Sparkles } from 'lucide-react'
+import { Sparkle } from '@phosphor-icons/react'
 import type { ToolDefinition } from '@/shared/agent'
 
 const MyInput = z.object({ query: z.string() })
@@ -207,12 +207,43 @@ exposes a tool named `google_local_places`.
 
 ---
 
-## Code execution
+## Code execution + document generation
 
-`run_python`, `run_shell`, `run_js` use Cloudflare Sandbox — isolated
-Linux containers via Firecracker microVMs. Each user gets their own
-persistent sandbox (`user-<userId>`). Requires Workers Paid plan and a
-SANDBOX Durable Object binding.
+`run_python`, `run_shell`, `run_js`, and `generate_document` use
+Cloudflare Sandbox (`@cloudflare/sandbox`) — isolated Linux containers.
+Each conversation gets its own sandbox (`user-<userId>-conv-<convId>`,
+falling back to `user-<userId>` for routines/agents without a
+conversation), so Python interpreter state and files persist across
+calls within a chat while the container is warm (~10 min idle sleep)
+and never leak between conversations.
 
-When the binding is missing, tools still appear in the toolkit but
-return a clear setup message.
+**Wiring** (all in place in this repo; forks on the free plan can remove
+it): `containers` block + `SANDBOX` DO binding + migration `v11` in
+`wrangler.jsonc`, `export { Sandbox }` in `src/server/index.ts`, and the
+project `Dockerfile` (base image tag must match the npm version —
+`0.12.3` ↔ `cloudflare/sandbox:0.12.3-python`). Docker must be running
+locally when you deploy. Containers bill active CPU + memory while a
+sandbox is awake. When the binding is missing the tools self-omit from
+the toolkit; `VITE_FEATURE_SANDBOX=false` (as a worker var) disables
+them explicitly.
+
+**`run_python` file round-trips**: `files: [{ r2Key, path? }]` stages
+the user's own stored files into the sandbox before the run (guarded by
+`isOwnedR2Key` — cross-tenant keys are refused before any I/O), and
+`outputs: ["/workspace/chart.png"]` harvests files back into FILES under
+`users/<userId>/sandbox/...` after the run, returned as
+`artifacts: [{ name, r2Key, size }]` and registered on the Files page.
+The `{ stdout, stderr, exitCode }` output matches the terminal shape
+renderer, so results render richly with zero client code.
+
+**`generate_document`** renders markdown → docx / xlsx / pptx with
+python-docx / openpyxl / python-pptx (baked into the Dockerfile) and
+returns the file as an artifact. Headings, lists, tables, code blocks
+and inline bold/italic/code are supported; each markdown table becomes
+an xlsx worksheet; each H1/H2 becomes a pptx slide. Code payloads are
+capped at 50KB per call.
+
+**Post-deploy verification** (the unit tests mock the sandbox — the
+container path needs a live deploy): send "run python: print(2+2)" in
+chat, then "generate a docx summarising this conversation", and confirm
+the artifact appears under Files.

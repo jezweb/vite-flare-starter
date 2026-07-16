@@ -6,7 +6,7 @@
  * Requires IMAGES + FILES bindings.
  */
 import { z } from 'zod'
-import { Wand2, Info } from 'lucide-react'
+import { MagicWand, Info } from '@phosphor-icons/react'
 import {
   transformImage,
   getImageInfo,
@@ -139,7 +139,7 @@ export const imageTransformDefinition: ToolDefinition<
       return { error: error instanceof Error ? error.message : String(error) }
     }
   },
-  render: { icon: Wand2, displayName: 'Transform Image' },
+  render: { icon: MagicWand, displayName: 'Transform Image' },
 }
 
 const ImageInfoOutput = z.union([

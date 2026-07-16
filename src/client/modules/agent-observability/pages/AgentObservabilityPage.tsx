@@ -4,35 +4,30 @@
  * Surfaces the agent_runs audit log as charts + a recent-runs list.
  * Two charts on top:
  *   - Runs per agent class (bar) — answers "what's running?"
- *   - Cost per day (area)         — answers "where's spend going?"
+ *   - Cost per day (line+gradient) — answers "where's spend going?"
  *
- * Both use shadcn Chart (Recharts under the hood) so theme tokens
- * (--chart-1..5) carry across light/dark and forks rebrand cleanly.
- *
- * Empty state: chart components handle the no-data case via a textual
- * fallback rather than a broken-axis Recharts render.
+ * Charts are Kumo's ECharts wrappers (`@cloudflare/kumo/components/chart`):
+ * TimeseriesChart for the time-axis cost chart, low-level Chart for the
+ * categorical bar chart. Series colors come from our --chart-1..5 tokens,
+ * resolved to canvas-safe hex via useChartTheme (src/client/lib/echarts.ts)
+ * so light/dark and fork rebrands carry through.
  *
  * For per-run drilldown: `GET /api/agent-observability/runs/:id`. The
  * Dashboard "Recent runs" panel shows the live tail (last 8). This
  * page is the historical view.
  */
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Bar, BarChart, CartesianGrid, XAxis, Area, AreaChart, YAxis } from 'recharts'
-import { TrendingUp, BarChart3, DollarSign } from 'lucide-react'
+import { Chart, TimeseriesChart, type KumoChartOption } from '@cloudflare/kumo/components/chart'
+import { TrendUp, ChartBar, CurrencyDollar } from '@phosphor-icons/react'
 
 import { apiClient } from '@/client/lib/api-client'
+import { echarts, useChartTheme } from '@/client/lib/echarts'
 import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { EmptyState } from '@/client/components/EmptyState'
 import { Spinner } from '@/components/ui/spinner'
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from '@/components/ui/chart'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { formatAgentClass } from '@/shared/format/agent'
 
@@ -57,22 +52,17 @@ interface ToolUsageResponse {
   }>
 }
 
-const runsConfig: ChartConfig = {
-  count: {
-    label: 'Runs',
-    theme: { light: 'hsl(var(--chart-1))', dark: 'hsl(var(--chart-1))' },
-  },
-}
-
-const costConfig: ChartConfig = {
-  cost: {
-    label: 'Cost (USD)',
-    theme: { light: 'hsl(var(--chart-2))', dark: 'hsl(var(--chart-2))' },
-  },
-}
+/** Both charts render at the old ChartContainer height (h-64). */
+const CHART_HEIGHT = 256
 
 export function AgentObservabilityPage() {
   const [range, setRange] = useState<Range>('7d')
+
+  // Canvas-safe colors resolved from theme tokens (re-resolve on mode flip).
+  const {
+    colors: [runsColor, costColor, axisTextColor],
+    isDarkMode,
+  } = useChartTheme('--chart-1', '--chart-2', '--muted-foreground')
 
   const stats = useQuery({
     queryKey: ['agent-observability', 'stats', range],
@@ -91,14 +81,80 @@ export function AgentObservabilityPage() {
     refetchInterval: 60_000,
   })
 
-  const runsByAgent =
-    stats.data?.runsByAgent.map((r) => ({
-      ...r,
-      label: formatAgentClass(r.agentClass),
-    })) ?? []
+  const runsByAgent = useMemo(
+    () =>
+      stats.data?.runsByAgent.map((r) => ({
+        ...r,
+        label: formatAgentClass(r.agentClass),
+      })) ?? [],
+    [stats.data]
+  )
   const costByDay = stats.data?.costByDay ?? []
   const totalRuns = runsByAgent.reduce((sum, r) => sum + r.count, 0)
   const totalCost = costByDay.reduce((sum, d) => sum + d.cost, 0)
+
+  // Runs-per-agent is categorical, so it uses the low-level Chart wrapper
+  // (TimeseriesChart is time-axis only). Tooltip is ECharts' HTML tooltip —
+  // DOM-rendered, so it can consume our kumo interop CSS vars directly.
+  const runsOptions = useMemo<KumoChartOption>(
+    () => ({
+      backgroundColor: 'transparent',
+      // ECharts 6 contains axis labels by default (containLabel is legacy).
+      grid: { left: 8, right: 12, top: 16, bottom: 0 },
+      xAxis: {
+        type: 'category',
+        data: runsByAgent.map((r) => r.label),
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { fontSize: 11, interval: 0, rotate: 15, color: axisTextColor },
+      },
+      yAxis: {
+        type: 'value',
+        axisLabel: { fontSize: 11, color: axisTextColor },
+        splitLine: { lineStyle: { type: 'dashed', width: 1 } },
+      },
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' },
+        backgroundColor: 'var(--color-kumo-base)',
+        borderColor: 'var(--color-kumo-line)',
+        borderWidth: 1,
+        padding: 8,
+        textStyle: { color: 'var(--text-color-kumo-default)', fontSize: 13 },
+        extraCssText: 'border-radius: 0.5rem;',
+        valueFormatter: (value) => Number(value).toLocaleString(),
+      },
+      series: [
+        {
+          type: 'bar',
+          name: 'Runs',
+          data: runsByAgent.map((r) => r.count),
+          itemStyle: { color: runsColor, borderRadius: [4, 4, 0, 0] },
+          barMaxWidth: 48,
+        },
+      ],
+    }),
+    [runsByAgent, runsColor, axisTextColor]
+  )
+
+  // Dates arrive as YYYY-MM-DD day buckets. Anchor each bucket to LOCAL
+  // midnight (not Date.parse's UTC) so Kumo's built-in tooltip header —
+  // which formats in local time — shows the same calendar date everywhere;
+  // the axis tick formatter below then reads the local date back out.
+  const costSeries = useMemo(
+    () => [
+      {
+        name: 'Cost (USD)',
+        color: costColor,
+        data: costByDay.map((d) => {
+          const [y = 1970, m = 1, day = 1] = d.date.split('-').map(Number)
+          return [new Date(y, m - 1, day).getTime(), d.cost] as [number, number]
+        }),
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [stats.data, costColor]
+  )
 
   return (
     <PageContainer type="hub">
@@ -107,11 +163,10 @@ export function AgentObservabilityPage() {
         subtitle="How much agent work happened and what it cost. Pulled from the agent_runs audit log."
         trailing={
           <ToggleGroup
-            type="single"
             variant="outline"
             size="sm"
-            value={range}
-            onValueChange={(v) => v && setRange(v as Range)}
+            value={[range]}
+            onValueChange={([v]) => v && setRange(v as Range)}
             aria-label="Date range"
           >
             <ToggleGroupItem value="7d">7d</ToggleGroupItem>
@@ -129,7 +184,7 @@ export function AgentObservabilityPage() {
         </div>
       ) : totalRuns === 0 ? (
         <EmptyState
-          icon={BarChart3}
+          icon={ChartBar}
           title="No agent runs yet"
           description="Agents log a row to agent_runs every time they run. Trigger an agent (REST, schedule, webhook, or inter-agent) and stats land here."
           tips={[
@@ -144,7 +199,7 @@ export function AgentObservabilityPage() {
             <Card>
               <CardContent className="flex items-center gap-3 p-4">
                 <div className="flex size-10 items-center justify-center rounded-md bg-primary/10 text-primary">
-                  <TrendingUp className="size-5" />
+                  <TrendUp className="size-5" />
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Total runs</p>
@@ -155,7 +210,7 @@ export function AgentObservabilityPage() {
             <Card>
               <CardContent className="flex items-center gap-3 p-4">
                 <div className="flex size-10 items-center justify-center rounded-md bg-primary/10 text-primary">
-                  <DollarSign className="size-5" />
+                  <CurrencyDollar className="size-5" />
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Total cost</p>
@@ -171,23 +226,12 @@ export function AgentObservabilityPage() {
                 <CardTitle>Runs per agent</CardTitle>
               </CardHeader>
               <CardContent>
-                <ChartContainer config={runsConfig} className="h-64">
-                  <BarChart data={runsByAgent} margin={{ left: 0, right: 12 }}>
-                    <CartesianGrid vertical={false} />
-                    <XAxis
-                      dataKey="label"
-                      tickLine={false}
-                      axisLine={false}
-                      tickMargin={8}
-                      interval={0}
-                      angle={-15}
-                      height={48}
-                      fontSize={11}
-                    />
-                    <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
-                    <Bar dataKey="count" fill="var(--color-count)" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ChartContainer>
+                <Chart
+                  echarts={echarts}
+                  options={runsOptions}
+                  isDarkMode={isDarkMode}
+                  height={CHART_HEIGHT}
+                />
               </CardContent>
             </Card>
 
@@ -196,49 +240,29 @@ export function AgentObservabilityPage() {
                 <CardTitle>Cost per day</CardTitle>
               </CardHeader>
               <CardContent>
-                <ChartContainer config={costConfig} className="h-64">
-                  <AreaChart data={costByDay} margin={{ left: 0, right: 12 }}>
-                    <CartesianGrid vertical={false} />
-                    <XAxis
-                      dataKey="date"
-                      tickLine={false}
-                      axisLine={false}
-                      tickMargin={8}
-                      tickFormatter={(d: string) => d.slice(5)}
-                      fontSize={11}
-                    />
-                    <YAxis
-                      tickLine={false}
-                      axisLine={false}
-                      tickMargin={4}
-                      width={48}
-                      fontSize={11}
-                      tickFormatter={(v: number) => `$${v.toFixed(2)}`}
-                    />
-                    <ChartTooltip
-                      content={
-                        <ChartTooltipContent
-                          indicator="dot"
-                          formatter={(value, name) => (
-                            <div className="flex w-full items-center justify-between gap-3">
-                              <span className="text-muted-foreground">{String(name)}</span>
-                              <span className="font-mono font-medium">
-                                ${(value as number).toFixed(4)}
-                              </span>
-                            </div>
-                          )}
-                        />
-                      }
-                    />
-                    <Area
-                      dataKey="cost"
-                      type="monotone"
-                      fill="var(--color-cost)"
-                      stroke="var(--color-cost)"
-                      fillOpacity={0.3}
-                    />
-                  </AreaChart>
-                </ChartContainer>
+                {costByDay.length === 0 ? (
+                  <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+                    No cost data in this range.
+                  </div>
+                ) : (
+                  <TimeseriesChart
+                    echarts={echarts}
+                    data={costSeries}
+                    type="line"
+                    gradient
+                    isDarkMode={isDarkMode}
+                    height={CHART_HEIGHT}
+                    xAxisTickFormat={(ts) => {
+                      const d = new Date(ts)
+                      const pad = (n: number) => String(n).padStart(2, '0')
+                      return `${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+                    }}
+                    yAxisTickFormat={(v) => `$${v.toFixed(2)}`}
+                    tooltipValueFormat={(v) => `$${v.toFixed(4)}`}
+                    tooltipFollowCursor="x"
+                    ariaDescription="Daily agent cost in US dollars over the selected date range"
+                  />
+                )}
               </CardContent>
             </Card>
           </div>
@@ -250,7 +274,7 @@ export function AgentObservabilityPage() {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span className="flex items-center gap-2">
-                  <BarChart3 className="size-4" />
+                  <ChartBar className="size-4" />
                   Tool usage
                 </span>
                 <span className="text-xs font-normal text-muted-foreground">

@@ -51,7 +51,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { ChevronDown, ChevronRight } from 'lucide-react'
+import { CaretDown, CaretRight } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 
 // ─── Types ────────────────────────────────────────────────────────────
@@ -160,7 +160,7 @@ function KanbanColumnView<TCard extends KanbanCard>({
   const sortedCards = React.useMemo(() => [...cards].sort((a, b) => a.order - b.order), [cards])
   const cardIds = React.useMemo(() => sortedCards.map((c) => c.id), [sortedCards])
   const isCollapsed = column.collapsed ?? false
-  const Icon = isCollapsed ? ChevronRight : ChevronDown
+  const Icon = isCollapsed ? CaretRight : CaretDown
 
   return (
     <div

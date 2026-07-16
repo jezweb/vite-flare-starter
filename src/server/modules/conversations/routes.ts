@@ -173,7 +173,8 @@ app.get('/:id/export', async (c) => {
  * POST /api/conversations/:id/summarise
  *
  * Generate a short title + one-line sidebar summary from the first user +
- * first assistant messages. Runs against Workers AI (Kimi K2.5, free) so we
+ * first assistant messages. Runs against the composer model role (free
+ * Workers AI default — see server/lib/ai/roles.ts) so we
  * don't burn paid credits every new conversation. Idempotent — safe to call
  * multiple times but callers should skip when a title is already set.
  *

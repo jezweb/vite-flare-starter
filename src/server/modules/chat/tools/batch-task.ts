@@ -20,7 +20,7 @@
  *   - >50 items: also approval, with a stronger warning in the card
  */
 import { z } from 'zod'
-import { Layers } from 'lucide-react'
+import { Stack } from '@phosphor-icons/react'
 import { drizzle } from 'drizzle-orm/d1'
 import { and, eq, inArray, or } from 'drizzle-orm'
 import { files as filesTable } from '@/server/modules/files/db/schema'
@@ -239,7 +239,7 @@ export const startBatchTaskDefinition: ToolDefinition<
     }
   },
   render: {
-    icon: Layers,
+    icon: Stack,
     displayName: 'Start batch task',
     summary: (output) => {
       if (!output.ok) return `Error: ${output.error.slice(0, 80)}`

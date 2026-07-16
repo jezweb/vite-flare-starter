@@ -111,6 +111,19 @@ cross-user activity at **`GET /api/admin/access-log`** (auth + admin gated) and 
 **`/dashboard/admin/access-log`** UI (filter by user / action / entity / date).
 Forks extend coverage by calling `logActivity()` for their own domain actions.
 
+## 9. Sandbox code execution
+
+The `run_python` / `run_shell` / `run_js` / `generate_document` tools give every
+authenticated user an isolated Linux container **with internet egress**, billed
+to the operator (active CPU). Guards in `server/modules/chat/tools/code.ts`:
+per-(user, conversation) sandbox isolation, `/workspace`-constrained paths,
+`isOwnedR2Key` on all staging/harvest, 50KB code / 25MB transfer caps, 30s exec
+timeout. What they do NOT stop: a signed-in user running arbitrary egress
+(proxying, mining) on your bill. **Open-signup deployments should either leave
+`SANDBOX` unwired, set the auth allowlist (§1), or flip the tools to
+`needsApproval: true`.** The container cannot reach Worker bindings (D1/R2 are
+RPC, not network-addressable) and holds no auth material.
+
 ---
 
 ## Pre-deploy checklist (security)

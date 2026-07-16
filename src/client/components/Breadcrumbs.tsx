@@ -16,7 +16,7 @@
  * ]} />
  */
 import { Link, useLocation } from 'react-router-dom'
-import { ChevronRight, Home } from 'lucide-react'
+import { CaretRight, House } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 
 interface BreadcrumbItem {
@@ -50,9 +50,9 @@ export function Breadcrumbs({ items, labels = {}, showHome = true, className }: 
       {showHome && (
         <>
           <Link to="/dashboard" className="hover:text-foreground transition-colors">
-            <Home className="size-3.5" />
+            <House className="size-3.5" />
           </Link>
-          {breadcrumbs.length > 0 && <ChevronRight className="size-3 text-muted-foreground/50" />}
+          {breadcrumbs.length > 0 && <CaretRight className="size-3 text-muted-foreground/50" />}
         </>
       )}
       {breadcrumbs.map((item, i) => {
@@ -71,7 +71,7 @@ export function Breadcrumbs({ items, labels = {}, showHome = true, className }: 
                 >
                   {item.label}
                 </Link>
-                <ChevronRight className="size-3 text-muted-foreground/50 shrink-0" />
+                <CaretRight className="size-3 text-muted-foreground/50 shrink-0" />
               </>
             )}
           </span>

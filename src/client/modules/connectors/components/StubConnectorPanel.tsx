@@ -10,14 +10,7 @@
  */
 import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import {
-  Plug,
-  CheckCircle2,
-  AlertCircle,
-  Trash2,
-  ExternalLink,
-  SlidersHorizontal,
-} from 'lucide-react'
+import { Plug, CheckCircle, WarningCircle, Trash, ArrowSquareOut, SlidersHorizontal } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -124,10 +117,10 @@ export function StubConnectorPanel({ providerId, logo }: StubConnectorPanelProps
             <div className="flex items-center gap-2 flex-wrap">
               <p className="font-semibold">{provider.label}</p>
               {connected && !isError && (
-                <StatusPill kind="success" label="Connected" icon={<CheckCircle2 />} />
+                <StatusPill kind="success" label="Connected" icon={<CheckCircle />} />
               )}
               {isError && (
-                <StatusPill kind="danger" label="Reconnect needed" icon={<AlertCircle />} />
+                <StatusPill kind="danger" label="Reconnect needed" icon={<WarningCircle />} />
               )}
             </div>
             {connected ? (
@@ -157,7 +150,7 @@ export function StubConnectorPanel({ providerId, logo }: StubConnectorPanelProps
                     className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2"
                   >
                     Developer portal
-                    <ExternalLink className="h-3 w-3" />
+                    <ArrowSquareOut className="h-3 w-3" />
                   </a>
                 )}
               </>
@@ -202,7 +195,7 @@ export function StubConnectorPanel({ providerId, logo }: StubConnectorPanelProps
                   className="text-destructive hover:text-destructive"
                   aria-label={`Disconnect ${provider.label}`}
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
+                  <Trash className="h-3.5 w-3.5" />
                 </Button>
               </>
             ) : (

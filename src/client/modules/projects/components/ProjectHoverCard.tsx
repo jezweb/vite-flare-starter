@@ -13,10 +13,10 @@
  * noise. Apply where the user's question is likely "what's this thing
  * I'm looking at?" — sidebar links, chat references, search results.
  */
-import { type ReactNode } from 'react'
+import { type ReactElement } from 'react'
 
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card'
-import { Folder, MessageSquare } from 'lucide-react'
+import { Folder, Chat } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 
 import { useProject } from '../hooks/useProjects'
@@ -26,7 +26,8 @@ import { cn } from '@/lib/utils'
 
 interface ProjectHoverCardProps {
   projectId: string
-  children: ReactNode
+  /** Single element — becomes the hover-card trigger via Base UI's `render`. */
+  children: ReactElement
   /** ms before the card opens. Default 300 — long enough to dampen scan-hovers. */
   openDelay?: number
   /** ms after pointer leaves before the card closes. Default 100. */
@@ -40,8 +41,10 @@ export function ProjectHoverCard({
   closeDelay = 100,
 }: ProjectHoverCardProps) {
   return (
-    <HoverCard openDelay={openDelay} closeDelay={closeDelay}>
-      <HoverCardTrigger asChild>{children}</HoverCardTrigger>
+    <HoverCard>
+      {/* Base UI moved open/close delays from the Root to the Trigger
+          (radix openDelay -> delay). */}
+      <HoverCardTrigger delay={openDelay} closeDelay={closeDelay} render={children} />
       <HoverCardContent className="w-80" align="start" side="right">
         <ProjectHoverPreview projectId={projectId} />
       </HoverCardContent>
@@ -85,7 +88,7 @@ function ProjectHoverPreview({ projectId }: { projectId: string }) {
 
       <div className="flex items-center gap-3 border-t pt-2 text-[11px] text-muted-foreground">
         <span className="flex items-center gap-1">
-          <MessageSquare className="size-3" />
+          <Chat className="size-3" />
           {data.conversations.length} {data.conversations.length === 1 ? 'chat' : 'chats'}
         </span>
         {project.updatedAt && <span>Updated {formatRelative(project.updatedAt)}</span>}

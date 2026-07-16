@@ -4,7 +4,7 @@
  * Show the generated/edited image inline with a download link, or the
  * structured analysis result with scene + subjects + identified things.
  */
-import { Eye, ImageIcon, Wand2 } from 'lucide-react'
+import { Eye, ImageIcon, MagicWand } from '@phosphor-icons/react'
 import type { ToolRenderer } from './_shared'
 import type { AnalyzeImageOutput } from '@/server/modules/chat/tools/image-analyze'
 import type { EditImageOutput } from '@/server/modules/chat/tools/image-edit'
@@ -67,7 +67,7 @@ export const generateImageRenderer: ToolRenderer = {
 
 export const editImageRenderer: ToolRenderer = {
   match: 'edit_image',
-  icon: Wand2,
+  icon: MagicWand,
   displayName: 'Edit Image',
   summary: (output) => {
     const o = output as EditImageOutput | undefined

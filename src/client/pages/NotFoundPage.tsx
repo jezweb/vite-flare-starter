@@ -8,7 +8,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { useSession } from '@/client/lib/auth'
-import { FileQuestion, ArrowLeft, Home } from 'lucide-react'
+import { FileDashed, ArrowLeft, House } from '@phosphor-icons/react'
 
 export function NotFoundPage() {
   const location = useLocation()
@@ -20,7 +20,7 @@ export function NotFoundPage() {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 px-4 text-center">
       <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
-        <FileQuestion className="h-8 w-8 text-muted-foreground" />
+        <FileDashed className="h-8 w-8 text-muted-foreground" />
       </div>
       <div className="space-y-2">
         <h1 className="text-3xl font-semibold tracking-tight">Page not found</h1>
@@ -33,18 +33,14 @@ export function NotFoundPage() {
         </p>
       </div>
       <div className="flex flex-wrap items-center justify-center gap-2">
-        <Button asChild>
-          <Link to={homePath}>
-            <Home className="mr-2 h-4 w-4" />
-            {homeLabel}
-          </Link>
+        <Button render={<Link to={homePath} />}>
+          <House className="mr-2 h-4 w-4" />
+          {homeLabel}
         </Button>
         {isAuthed && (
-          <Button asChild variant="outline">
-            <Link to="/dashboard/chat">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Start a new chat
-            </Link>
+          <Button variant="outline" render={<Link to="/dashboard/chat" />}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Start a new chat
           </Button>
         )}
       </div>

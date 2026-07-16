@@ -1,7 +1,7 @@
 /**
  * TagBadge — coloured pill displaying a tag label
  */
-import { X } from 'lucide-react'
+import { X } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 
 interface Props {

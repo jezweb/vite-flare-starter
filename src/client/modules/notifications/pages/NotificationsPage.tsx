@@ -9,7 +9,7 @@ import { useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { formatDistanceToNow, format } from 'date-fns'
-import { Bell, Check, CheckCheck, Info, AlertTriangle, AlertCircle, Inbox } from 'lucide-react'
+import { Bell, Check, Checks, Info, Warning, WarningCircle, Tray } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { TabsTrigger } from '@/components/ui/tabs'
@@ -40,9 +40,9 @@ type Filter = 'all' | 'unread'
 function iconFor(type: string) {
   switch (type) {
     case 'warning':
-      return <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+      return <Warning className="h-4 w-4 text-amber-600 dark:text-amber-400" />
     case 'error':
-      return <AlertCircle className="h-4 w-4 text-destructive" />
+      return <WarningCircle className="h-4 w-4 text-destructive" />
     case 'success':
       return <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
     default:
@@ -97,7 +97,7 @@ export function NotificationsPage() {
               {markAllAsRead.isPending ? (
                 <Spinner size="md" className="mr-2" />
               ) : (
-                <CheckCheck className="mr-2 h-4 w-4" />
+                <Checks className="mr-2 h-4 w-4" />
               )}
               Mark all read
             </Button>
@@ -123,7 +123,7 @@ export function NotificationsPage() {
         <PageLoading variant="list" count={4} />
       ) : notifications.length === 0 ? (
         <EmptyState
-          icon={filter === 'unread' ? Inbox : Bell}
+          icon={filter === 'unread' ? Tray : Bell}
           title={filter === 'unread' ? 'All caught up' : 'No notifications yet'}
           description={
             filter === 'unread'

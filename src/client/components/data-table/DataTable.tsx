@@ -30,14 +30,7 @@ import {
   type VisibilityState,
   type RowSelectionState,
 } from '@tanstack/react-table'
-import {
-  ArrowUpDown,
-  ChevronLeft,
-  ChevronRight,
-  Search,
-  SlidersHorizontal,
-  Download,
-} from 'lucide-react'
+import { ArrowsDownUp, CaretLeft, CaretRight, MagnifyingGlass, SlidersHorizontal, Download } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -142,7 +135,7 @@ export function DataTable<TData>({
       <div className="flex items-center gap-2">
         {searchColumn && (
           <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
+            <MagnifyingGlass className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
             <Input
               placeholder={searchPlaceholder}
               value={(table.getColumn(searchColumn)?.getFilterValue() as string) ?? ''}
@@ -160,11 +153,9 @@ export function DataTable<TData>({
         )}
         {showColumnToggle && (
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1.5">
-                <SlidersHorizontal className="size-3.5" />
-                Columns
-              </Button>
+            <DropdownMenuTrigger render={<Button variant="outline" size="sm" className="gap-1.5" />}>
+              <SlidersHorizontal className="size-3.5" />
+              Columns
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {table
@@ -214,7 +205,7 @@ export function DataTable<TData>({
                         ? null
                         : flexRender(header.column.columnDef.header, header.getContext())}
                       {header.column.getCanSort() && (
-                        <ArrowUpDown className="size-3 text-muted-foreground/50" />
+                        <ArrowsDownUp className="size-3 text-muted-foreground/50" />
                       )}
                     </div>
                   </th>
@@ -290,7 +281,7 @@ export function DataTable<TData>({
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
             >
-              <ChevronLeft className="size-4" />
+              <CaretLeft className="size-4" />
             </Button>
             <span className="text-xs text-muted-foreground px-2">
               {table.getState().pagination.pageIndex + 1} / {table.getPageCount() || 1}
@@ -302,7 +293,7 @@ export function DataTable<TData>({
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
             >
-              <ChevronRight className="size-4" />
+              <CaretRight className="size-4" />
             </Button>
           </div>
         </div>

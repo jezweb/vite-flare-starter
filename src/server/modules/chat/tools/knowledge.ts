@@ -17,7 +17,7 @@
 import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq } from 'drizzle-orm'
-import { BookOpen, Search } from 'lucide-react'
+import { BookOpen, MagnifyingGlass } from '@phosphor-icons/react'
 import { projects } from '@/server/modules/projects/db/schema'
 import { getKnowledgeForUser, searchKnowledge } from '@/server/modules/knowledge/storage'
 import type { KnowledgeScope } from '@/server/modules/knowledge/db/schema'
@@ -119,7 +119,7 @@ const knowledgeSearchDef: ToolDefinition<
       return { error: err instanceof Error ? err.message : String(err) }
     }
   },
-  render: { icon: Search, displayName: 'Knowledge Search' },
+  render: { icon: MagnifyingGlass, displayName: 'Knowledge Search' },
 }
 
 const LoadOutput = z.union([

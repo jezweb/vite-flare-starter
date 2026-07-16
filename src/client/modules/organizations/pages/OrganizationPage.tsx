@@ -12,7 +12,7 @@
  */
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { UserPlus, LogOut } from 'lucide-react'
+import { UserPlus, SignOut } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -20,7 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { TabsTrigger } from '@/components/ui/tabs'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { EmptyState } from '@/client/components/EmptyState'
-import { Building2 } from 'lucide-react'
+import { Buildings } from '@phosphor-icons/react'
 import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
 import { PageFilters, PageFilterTabs } from '@/components/ui/page-filters'
@@ -65,7 +65,7 @@ export function OrganizationPage() {
     return (
       <div className="container mx-auto max-w-3xl p-4 sm:p-6">
         <EmptyState
-          icon={Building2}
+          icon={Buildings}
           title="No active organisation"
           description="Use the workspace switcher in the sidebar to create or pick one."
         />
@@ -168,7 +168,7 @@ export function OrganizationPage() {
                 disabled={isSoleOwner}
                 title={isSoleOwner ? 'Transfer ownership first' : undefined}
               >
-                <LogOut className="size-3.5" />
+                <SignOut className="size-3.5" />
                 Leave organisation
               </Button>
             </CardContent>

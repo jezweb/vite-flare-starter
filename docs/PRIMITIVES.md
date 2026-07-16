@@ -33,9 +33,13 @@ Use `useViewPreference('<surface-key>', '<default>')` from
 scoped to `appConfig.id` so forks don't collide. See `SkillsPage` for a
 worked example.
 
-**For trends / dashboards / charts**: shadcn `Chart` (Recharts under the
-hood, themed via `--chart-1..5` CSS vars). See `AgentObservabilityPage`
-for a worked example with bar + area charts side-by-side.
+**For trends / dashboards / charts**: Kumo's ECharts wrappers
+(`@cloudflare/kumo/components/chart`) — `TimeseriesChart` for time-axis
+line/bar, low-level `Chart` for everything else. Import the shared
+`echarts` instance + `useChartTheme` from `@/client/lib/echarts` so
+series colors resolve from `--chart-1..5` tokens (canvas can't read CSS
+vars). See `AgentObservabilityPage` for a worked example with bar +
+line charts side-by-side.
 
 ## Page-level primitives (mandatory)
 
@@ -80,7 +84,7 @@ for a worked example with bar + area charts side-by-side.
 | **EmptyState** | `client/components/EmptyState.tsx` | Wired by PageEmpty/PageError. Has `tips` + dual-action API. |
 | **ConfigDiffCard** | `client/components/ConfigDiffCard.tsx` | Approval card with line diff. |
 | **ToggleGroup + ToggleGroupItem** | `components/ui/toggle-group.tsx` | Single/multi-select pill row. Use for view toggles (cards ⇄ list), date-range pickers (7d/14d/30d), filter sets. |
-| **Chart + ChartContainer + ChartTooltip + ChartTooltipContent + ChartLegend** | `components/ui/chart.tsx` | Wraps Recharts with theme-token resolution (`--chart-1..5`). Don't import Recharts directly. |
+| **Chart + TimeseriesChart** (Kumo/ECharts) | `@cloudflare/kumo/components/chart` + `client/lib/echarts.ts` | ECharts-backed charts. Pass the shared `echarts` instance; resolve series colors from `--chart-1..5` via `useChartTheme` (canvas can't read CSS vars). Don't import `echarts` outside `client/lib/echarts.ts`. |
 | **Empty + EmptyHeader + EmptyMedia + EmptyTitle + EmptyDescription + EmptyContent** | `components/ui/empty.tsx` | Low-level shadcn empty-state composables. Use `EmptyState` (canonical, has `tips` + actions) for normal cases; reach for these only when you need finer control. |
 | **Resizable** | `components/ui/resizable.tsx` | Drag-handle split panes. Use for sequential-reading surfaces (Inbox, Approvals). |
 | **HoverCard** | `components/ui/hover-card.tsx` | Hover-triggered popover for richer-than-Tooltip preview content. **Worked example**: `ProjectHoverCard` in chat sidebar's project bucket headers. |
@@ -135,7 +139,7 @@ for a worked example with bar + area charts side-by-side.
 | `toast.success('X saved.')` / `toast.error('Failed to save X. Please try again.')` | Verb-tense + period drift across 30+ sites | `toastSavedX('X')` / `toastFailedTo('save X', err)` from `toast-helpers.ts` |
 | Hand-rolled detail-page header (back-link + h1 + actions) | Drift across detail pages | `<DetailHeader>` |
 | Hand-rolled form section (h2 + description + field group) on `form`-type pages | Settings tabs drifted before this primitive landed | `<FormSection>` with `density="comfortable"` (Card-wrapped) or `compact` (no Card) |
-| Importing `recharts` directly | Skips theme-token resolution; charts won't follow `--chart-1..5` and won't rebrand cleanly | Wrap in `<ChartContainer config={…}>` from `@/components/ui/chart` |
+| Importing `echarts` directly in a page | Duplicate module registration; misses theme-token color resolution, so charts won't follow `--chart-1..5` or rebrand cleanly | Import `echarts` + `useChartTheme` from `@/client/lib/echarts`, pass to Kumo's `Chart`/`TimeseriesChart` |
 | Hand-rolled `<button>` + Switch nested in a single clickable card | nested-interactive a11y violation; breaks keyboard focus order | Use `Item` with the title-button as a flex child and Switch in `ItemActions` (sibling) — two clean focus stops. See `SkillsPage` worked example. |
 | Hand-rolled `localStorage.getItem('view-…')` for view toggles | Drift on storage-key prefix; not SSR-safe; collides across forks | `useViewPreference('<surface>', '<default>')` from `@/client/lib/use-view-preference` |
 | `<EntityListPage<T> config={…} />` mega-component | Premature framework — extracts the same bug across 3 pages | Compose the primitive matching the shape (Item / ListRow / DataTable) per page; only extract a generic when 3+ surfaces prove it |
@@ -145,7 +149,7 @@ for a worked example with bar + area charts side-by-side.
 | Building a custom `<details>` with bespoke styling | Drift | `<HelpDisclosure>` |
 | Inline `agentClass` / `kind` / `slug` in user copy | Vocabulary leak | `formatAgentClass` / `formatKind` / `formatTrigger` from `@/shared/format/agent` |
 | `cn('text-sm text-muted-foreground …')` for a section description | Hand-rolled drift | `<Section description="…">` or `<FormSection description="…">` |
-| `<CapabilityChip asChild><Link …/></CapabilityChip>` (or any chip with internal layout + asChild) | Radix Slot expects a single child element; the chip's dot+icon+label spans break it. Throws "React.Children.only expected to receive a single React element child." | Wrap from outside: `<Link><CapabilityChip … /></Link>`. Same applies to other primitives that compose internal layout. |
+| Adding a `render`/slot prop to `CapabilityChip` (or any chip with internal layout) to merge it into a `<Link>` | Slot-style merging expects a single child element; the chip's dot+icon+label spans break it (Base UI's `render` prop has the same constraint Radix Slot did) | Wrap from outside: `<Link><CapabilityChip … /></Link>`. Same applies to other primitives that compose internal layout. |
 
 ## Verification grep recipes
 

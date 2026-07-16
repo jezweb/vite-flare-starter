@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Field, FieldLabel, FieldGroup } from '@/components/ui/field'
-import { CheckCircle, XCircle, Mail } from 'lucide-react'
+import { CheckCircle, XCircle, EnvelopeSimple } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 
 type VerificationState = 'verifying' | 'success' | 'error' | 'resend'
@@ -105,8 +105,8 @@ export function VerifyEmailPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button asChild className="w-full">
-                <Link to="/dashboard">Go to Dashboard</Link>
+              <Button className="w-full" render={<Link to="/dashboard" />}>
+                Go to Dashboard
               </Button>
             </CardContent>
           </Card>
@@ -125,7 +125,7 @@ export function VerifyEmailPage() {
               {state === 'error' ? (
                 <XCircle className="h-16 w-16 text-destructive" />
               ) : (
-                <Mail className="h-16 w-16 text-primary" />
+                <EnvelopeSimple className="h-16 w-16 text-primary" />
               )}
             </div>
             <CardTitle className="text-center">

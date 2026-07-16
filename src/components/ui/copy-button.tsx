@@ -18,7 +18,7 @@
  * used in 80% of sites today (inside a row's trailing slot).
  */
 import type * as React from 'react'
-import { Check, Copy } from 'lucide-react'
+import { Check, Copy } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { useCopy } from '@/client/lib/use-copy'
 

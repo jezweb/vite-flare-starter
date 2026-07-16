@@ -18,40 +18,16 @@
  * @see src/shared/config/features.ts for feature flag definitions
  * @see src/client/lib/builder-mode.tsx for the Builder Mode toggle
  */
-import type { LucideIcon } from 'lucide-react'
-import {
-  Home,
-  MessageSquare,
-  Sparkles,
-  Activity,
-  FolderOpen,
-  Zap,
-  Plug,
-  Mic,
-  Camera,
-  FolderKanban,
-  Users,
-  Inbox,
-  Lightbulb,
-  Repeat,
-  Component,
-  Palette,
-  BarChart3,
-  ShieldCheck,
-  Bot,
-  Kanban,
-  Layers,
-  BookOpen,
-  Compass,
-} from 'lucide-react'
+import type { Icon } from '@phosphor-icons/react'
+import { House, Chat, Lightning, Plug, Microphone, Camera, Kanban, Users, Tray, Lightbulb, Repeat, PuzzlePiece, Palette, ChartBar, ShieldCheck, Robot, Stack, BookOpen } from '@phosphor-icons/react'
 
 export interface NavItem {
   /** Route path */
   to: string
   /** Display label */
   label: string
-  /** Lucide icon component */
-  icon: LucideIcon
+  /** Phosphor icon component */
+  icon: Icon
   /** Only show if this feature flag is true (from features config) */
   feature?: string
   /** Minimum role required. Omit = visible to all roles. */
@@ -61,6 +37,32 @@ export interface NavItem {
    * by default for normal users. The toggle lives in the user menu.
    */
   builderOnly?: boolean
+  /**
+   * Cloudflare-dashboard-style nesting: the item renders with a muted
+   * icon as a whole-row collapsible toggle; children render text-only,
+   * indented behind a vertical rail (the rail IS the hierarchy cue —
+   * no child icons). Navigation lives in the children; the parent's
+   * `to` is only used when the sidebar is icon-collapsed (children
+   * unreachable → parent degrades to a link to its overview route).
+   */
+  children?: NavChildItem[]
+  /** Small dashed pill after the label (e.g. "Beta", "New") — Kumo MenuBadge. */
+  badge?: string
+}
+
+export interface NavChildItem {
+  /** Route path */
+  to: string
+  /** Display label */
+  label: string
+  /** Only show if this feature flag is true (from features config) */
+  feature?: string
+  /** Minimum role required. Omit = visible to all roles. */
+  minRole?: 'user' | 'manager' | 'admin'
+  /** Only show when Builder Mode is enabled. */
+  builderOnly?: boolean
+  /** Small dashed pill after the label (e.g. "Beta", "New"). */
+  badge?: string
 }
 
 export interface NavSection {
@@ -110,12 +112,12 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     label: 'Work',
     items: [
-      { to: '/dashboard', label: 'Home', icon: Home },
-      { to: '/dashboard/chat', label: 'AI Chat', icon: MessageSquare, feature: 'chat' },
-      { to: '/dashboard/inbox', label: 'Inbox', icon: Inbox },
-      { to: '/dashboard/jobs', label: 'Batch jobs', icon: Layers, feature: 'batchTasks' },
+      { to: '/dashboard', label: 'Home', icon: House },
+      { to: '/dashboard/chat', label: 'AI Chat', icon: Chat, feature: 'chat' },
+      { to: '/dashboard/inbox', label: 'Inbox', icon: Tray },
+      { to: '/dashboard/jobs', label: 'Batch jobs', icon: Stack, feature: 'batchTasks' },
       { to: '/dashboard/findings', label: 'Findings', icon: Lightbulb, feature: 'findings' },
-      { to: '/dashboard/projects', label: 'Projects', icon: FolderKanban },
+      { to: '/dashboard/projects', label: 'Projects', icon: Kanban },
       { to: '/dashboard/spaces', label: 'Spaces', icon: Users, feature: 'spaces' },
       { to: '/dashboard/routines', label: 'Routines', icon: Repeat },
     ],
@@ -127,15 +129,18 @@ export const NAV_SECTIONS: NavSection[] = [
     defaultCollapsed: true,
     items: [
       { to: '/dashboard/connections', label: 'Connections', icon: Plug, feature: 'connectors' },
-      { to: '/dashboard/skills', label: 'Skills', icon: Zap, feature: 'skills' },
+      { to: '/dashboard/skills', label: 'Skills', icon: Lightning, feature: 'skills' },
       { to: '/dashboard/knowledge', label: 'Knowledge', icon: BookOpen, feature: 'knowledge' },
-      { to: '/dashboard/agents', label: 'Agents', icon: Bot },
+      { to: '/dashboard/agents', label: 'Agents', icon: Robot },
       { to: '/dashboard/admin-chat', label: 'Admin chat', icon: ShieldCheck },
     ],
   },
   {
-    // Insights — observability + status. Collapsed by default; opened
-    // when the user wants to see what's queued, what's run, what cost.
+    // Insights — observability + status, in the Cloudflare-dashboard
+    // nested style: ONE icon'd parent (navigates to Observability, the
+    // natural overview) with text-only children behind a vertical rail.
+    // This is the worked example of `children:` — convert other groups
+    // the same way if the CF look suits your fork.
     //
     // Note: Approvals removed as a sidebar entry — they live inside
     // Inbox now (decisions are first-class inbox rows). The route
@@ -144,18 +149,20 @@ export const NAV_SECTIONS: NavSection[] = [
     label: 'Insights',
     defaultCollapsed: true,
     items: [
-      { to: '/dashboard/agent-observability', label: 'Observability', icon: BarChart3 },
-      { to: '/dashboard/activity', label: 'Activity', icon: Activity, feature: 'activity' },
       {
-        to: '/dashboard/admin/access-log',
-        label: 'Access log',
-        icon: ShieldCheck,
-        minRole: 'admin',
+        to: '/dashboard/agent-observability',
+        label: 'Insights',
+        icon: ChartBar,
+        children: [
+          { to: '/dashboard/agent-observability', label: 'Observability' },
+          { to: '/dashboard/activity', label: 'Activity', feature: 'activity' },
+          { to: '/dashboard/admin/access-log', label: 'Access log', minRole: 'admin' },
+          { to: '/dashboard/files', label: 'Files', feature: 'files' },
+          { to: '/dashboard/artifacts', label: 'Artifacts', feature: 'chat' },
+          { to: '/dashboard/extract', label: 'Extract', feature: 'chat' },
+          { to: '/dashboard/questions', label: 'Guide questions', feature: 'walkabout' },
+        ],
       },
-      { to: '/dashboard/files', label: 'Files', icon: FolderOpen, feature: 'files' },
-      { to: '/dashboard/artifacts', label: 'Artifacts', icon: Sparkles, feature: 'chat' },
-      { to: '/dashboard/extract', label: 'Extract', icon: Sparkles, feature: 'chat' },
-      { to: '/dashboard/questions', label: 'Guide questions', icon: Compass, feature: 'walkabout' },
     ],
   },
   {
@@ -167,14 +174,15 @@ export const NAV_SECTIONS: NavSection[] = [
     defaultCollapsed: true,
     builderOnly: true,
     items: [
-      { to: '/dashboard/components', label: 'Components', icon: Component },
+      { to: '/dashboard/components', label: 'Components', icon: PuzzlePiece },
       { to: '/dashboard/style-guide', label: 'Style guide', icon: Palette },
-      { to: '/dashboard/voice-example', label: 'Voice example', icon: Mic, feature: 'voiceAgent' },
+      { to: '/dashboard/voice-example', label: 'Voice example', icon: Microphone, feature: 'voiceAgent', badge: 'Beta' },
       {
         to: '/dashboard/video-example',
         label: 'Video example',
         icon: Camera,
         feature: 'videoAgent',
+        badge: 'Beta',
       },
       { to: '/dashboard/kanban-demo', label: 'Kanban demo', icon: Kanban, feature: 'kanbanDemo' },
     ],

@@ -26,20 +26,7 @@ import {
   PromptInputActionAddScreenshotCountdown,
   PromptInputActionAddScreenCapture,
 } from '../components/ScreenCaptureMenuItems'
-import {
-  Plus,
-  MessageSquare,
-  MessagesSquare,
-  Download,
-  ArrowDown,
-  Paperclip,
-  FileText,
-  Folder,
-  X,
-  FileQuestion,
-  ChevronLeft,
-  ArrowUpRight,
-} from 'lucide-react'
+import { Plus, Chat, Chats, Download, ArrowDown, Paperclip, FileText, Folder, X, FileDashed, CaretLeft, ArrowUpRight } from '@phosphor-icons/react'
 import { Link as RouterLink } from 'react-router-dom'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 import {
@@ -920,7 +907,7 @@ function ChatPageInner({ userId }: { userId: string }) {
             >
               {/* MessagesSquare (plural speech bubbles) distinguishes this from
                   the dashboard sidebar toggle in SiteHeader which uses PanelLeft. */}
-              <MessagesSquare className="size-4" />
+              <Chats className="size-4" />
             </Button>
             {/* In-project breadcrumb: when this chat belongs to a project,
                 lead with a prominent "← {Project name}" back-link so the
@@ -936,7 +923,7 @@ function ChatPageInner({ userId }: { userId: string }) {
                   className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
                   title={`Back to project: ${activeProject.name}`}
                 >
-                  <ChevronLeft className="size-4" />
+                  <CaretLeft className="size-4" />
                   <Folder className="size-3.5" />
                   <span className="truncate max-w-[14rem]">{activeProject.name}</span>
                 </RouterLink>
@@ -966,7 +953,7 @@ function ChatPageInner({ userId }: { userId: string }) {
               </>
             ) : (
               <>
-                <MessageSquare className="size-4 text-muted-foreground ml-1" />
+                <Chat className="size-4 text-muted-foreground ml-1" />
                 <h1
                   className="text-sm font-medium truncate max-w-[28rem]"
                   title={activeConversation?.title ?? 'AI Chat'}
@@ -999,16 +986,18 @@ function ChatPageInner({ userId }: { userId: string }) {
             )}
             {hasMessages && conversationId && (
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    className="text-muted-foreground"
-                    title="Export conversation"
-                    aria-label="Export conversation"
-                  >
-                    <Download className="size-3.5" />
-                  </Button>
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="text-muted-foreground"
+                      title="Export conversation"
+                      aria-label="Export conversation"
+                    />
+                  }
+                >
+                  <Download className="size-3.5" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem
@@ -1091,7 +1080,7 @@ function ChatPageInner({ userId }: { userId: string }) {
             <div className="flex-1 flex items-center justify-center px-4 py-6">
               <div className="max-w-md w-full text-center space-y-4">
                 <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
-                  <FileQuestion className="h-7 w-7 text-muted-foreground" />
+                  <FileDashed className="h-7 w-7 text-muted-foreground" />
                 </div>
                 <div className="space-y-1">
                   <h2 className="text-xl font-semibold">Conversation not found</h2>
@@ -1107,7 +1096,7 @@ function ChatPageInner({ userId }: { userId: string }) {
                       setShowSidebar(true)
                     }}
                   >
-                    <MessagesSquare className="mr-2 h-4 w-4" />
+                    <Chats className="mr-2 h-4 w-4" />
                     Browse conversations
                   </Button>
                   <Button onClick={() => navigate('/dashboard/chat')}>

@@ -13,7 +13,7 @@
  * these tools simply don't show up in the model's toolkit.
  */
 import { z } from 'zod'
-import { Database, BarChart3, Download, Grid3x3, TrendingUp, Activity } from 'lucide-react'
+import { Database, ChartBar, Download, GridNine, TrendUp, Pulse } from '@phosphor-icons/react'
 import {
   readDataset,
   aggregateDataset,
@@ -181,7 +181,7 @@ export const aggregateDataDefinition: ToolDefinition<
       truncated: result.truncated,
     }
   },
-  render: { icon: BarChart3, displayName: 'Aggregate Data' },
+  render: { icon: ChartBar, displayName: 'Aggregate Data' },
 }
 
 // ─── export_data ─────────────────────────────────────────────────
@@ -307,7 +307,7 @@ export const pivotDataDefinition: ToolDefinition<
       truncated: result.truncated,
     }
   },
-  render: { icon: Grid3x3, displayName: 'Pivot Data' },
+  render: { icon: GridNine, displayName: 'Pivot Data' },
 }
 
 // ─── trend_data ──────────────────────────────────────────────────
@@ -380,7 +380,7 @@ export const trendDataDefinition: ToolDefinition<
       parse_failures: result.parseFailures,
     }
   },
-  render: { icon: TrendingUp, displayName: 'Trend Data' },
+  render: { icon: TrendUp, displayName: 'Trend Data' },
 }
 
 // ─── distribution_data ────────────────────────────────────────────
@@ -447,7 +447,7 @@ export const distributionDataDefinition: ToolDefinition<
       numeric_values: result.numericValues,
     }
   },
-  render: { icon: Activity, displayName: 'Distribution' },
+  render: { icon: Pulse, displayName: 'Distribution' },
 }
 
 export const dataDefinitions = [

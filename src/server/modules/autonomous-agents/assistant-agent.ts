@@ -27,7 +27,7 @@
  *     long conversation history (replaces the sliding window)
  */
 import { z } from 'zod'
-import { Mail, BookmarkPlus } from 'lucide-react'
+import { EnvelopeSimple, BookmarkSimple } from '@phosphor-icons/react'
 import {
   AutonomousAgent,
   type AutonomousAgentEnv,
@@ -117,7 +117,7 @@ export class AssistantAgent extends AutonomousAgent<Env, AutonomousAgentState> {
           }
         }
       },
-      render: { icon: Mail, displayName: 'Request Email Approval' },
+      render: { icon: EnvelopeSimple, displayName: 'Request Email Approval' },
     }
   }
 
@@ -307,7 +307,7 @@ export class AssistantAgent extends AutonomousAgent<Env, AutonomousAgentState> {
           }
         }
       },
-      render: { icon: BookmarkPlus, displayName: 'Remember' },
+      render: { icon: BookmarkSimple, displayName: 'Remember' },
     }
   }
 

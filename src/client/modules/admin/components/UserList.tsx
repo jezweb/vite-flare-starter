@@ -37,13 +37,13 @@ import {
 import { useDeleteUser, useRevokeUserSessions } from '../hooks/useAdmin'
 import { UserEditDialog } from './UserEditDialog'
 import type { UserResponse } from '@/shared/schemas/admin.schema'
-import { MoreHorizontal, Pencil, Key, Trash2, Shield, UserCog, User, Copy } from 'lucide-react'
+import { DotsThree, Pencil, Key, Trash, Shield, UserGear, User, Copy } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { formatDistanceToNow } from 'date-fns'
 
 const ROLE_INFO = {
   admin: { label: 'Admin', icon: Shield, variant: 'default' as const },
-  manager: { label: 'Manager', icon: UserCog, variant: 'secondary' as const },
+  manager: { label: 'Manager', icon: UserGear, variant: 'secondary' as const },
   user: { label: 'User', icon: User, variant: 'outline' as const },
 }
 
@@ -145,11 +145,11 @@ export function UserList({ users }: UserListProps) {
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Actions</span>
-                        </Button>
+                      <DropdownMenuTrigger
+                        render={<Button variant="ghost" size="icon" className="h-8 w-8" />}
+                      >
+                        <DotsThree className="h-4 w-4" />
+                        <span className="sr-only">Actions</span>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => setEditUser(user)}>
@@ -175,7 +175,7 @@ export function UserList({ users }: UserListProps) {
                           className="text-destructive focus:text-destructive"
                           disabled={user.isAdmin}
                         >
-                          <Trash2 className="mr-2 h-4 w-4" />
+                          <Trash className="mr-2 h-4 w-4" />
                           Delete User
                         </DropdownMenuItem>
                       </DropdownMenuContent>

@@ -8,7 +8,7 @@
  */
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight } from '@phosphor-icons/react'
 import { GLOSSARY_ENTRIES, type GlossaryEntry } from '@/shared/config/glossary'
 import { features } from '@/shared/config/features'
 import { PageContainer } from '@/components/ui/page-container'
@@ -65,11 +65,14 @@ function GlossaryCard({ entry }: { entry: GlossaryEntry }) {
       </p>
       {entry.action && (
         <div className="mt-auto pt-2">
-          <Button asChild size="sm" variant="outline" className="gap-1.5">
-            <Link to={entry.action.route}>
-              {entry.action.label}
-              <ArrowRight className="size-3.5" />
-            </Link>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5"
+            render={<Link to={entry.action.route} />}
+          >
+            {entry.action.label}
+            <ArrowRight className="size-3.5" />
           </Button>
         </div>
       )}

@@ -21,7 +21,7 @@ import {
   useMarkAsRead,
   useMarkAllAsRead,
 } from '@/client/hooks/useNotifications'
-import { Bell, Check, CheckCheck, Info, AlertTriangle, AlertCircle } from 'lucide-react'
+import { Bell, Check, Checks, Info, Warning, WarningCircle } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
@@ -32,9 +32,9 @@ import { formatDistanceToNow } from 'date-fns'
 function getNotificationIcon(type: string) {
   switch (type) {
     case 'warning':
-      return <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+      return <Warning className="h-4 w-4 text-amber-600 dark:text-amber-400" />
     case 'error':
-      return <AlertCircle className="h-4 w-4 text-destructive" />
+      return <WarningCircle className="h-4 w-4 text-destructive" />
     case 'success':
       return <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
     default:
@@ -72,8 +72,7 @@ export function NotificationBell() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
+      <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="relative" />}>
           <Bell className="h-5 w-5" />
           {hasUnread && (
             <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
@@ -83,7 +82,6 @@ export function NotificationBell() {
           <span className="sr-only">
             {hasUnread ? `${unreadCount} unread notifications` : 'Notifications'}
           </span>
-        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
         <DropdownMenuLabel className="flex items-center justify-between">
@@ -99,7 +97,7 @@ export function NotificationBell() {
               {markAllAsRead.isPending ? (
                 <Spinner size="xs" className="mr-1" />
               ) : (
-                <CheckCheck className="mr-1 h-3 w-3" />
+                <Checks className="mr-1 h-3 w-3" />
               )}
               Mark all read
             </Button>
@@ -149,10 +147,11 @@ export function NotificationBell() {
               ))}
             </ScrollArea>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild className="justify-center text-sm font-medium">
-              <Link to="/dashboard/notifications" className="w-full text-center">
-                View all notifications
-              </Link>
+            <DropdownMenuItem
+              render={<Link to="/dashboard/notifications" className="w-full text-center" />}
+              className="justify-center text-sm font-medium"
+            >
+              View all notifications
             </DropdownMenuItem>
           </>
         )}

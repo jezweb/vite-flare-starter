@@ -7,7 +7,7 @@
  */
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { UserPlus, X, Trash2 } from 'lucide-react'
+import { UserPlus, X, Trash } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import {
   Sheet,
@@ -135,7 +135,7 @@ export function ShareProjectDialog({ projectId, open, onClose }: Props) {
                           className="rounded-md p-1 text-muted-foreground hover:bg-destructive/15 hover:text-destructive"
                           aria-label="Remove member"
                         >
-                          <Trash2 className="size-3.5" />
+                          <Trash className="size-3.5" />
                         </button>
                       </>
                     )}

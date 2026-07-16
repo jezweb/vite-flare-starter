@@ -12,7 +12,7 @@
 import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq, and, like } from 'drizzle-orm'
-import { Brain, Search, Trash2, BookOpen } from 'lucide-react'
+import { Brain, MagnifyingGlass, Trash, BookOpen } from '@phosphor-icons/react'
 import { userMeta } from '@/server/modules/user-meta/db/schema'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 
@@ -175,7 +175,7 @@ export const searchMemoryDefinition: ToolDefinition<
       return { query, error: error instanceof Error ? error.message : String(error) }
     }
   },
-  render: { icon: Search, displayName: 'Search Memory' },
+  render: { icon: MagnifyingGlass, displayName: 'Search Memory' },
 }
 
 // ─── forget ─────────────────────────────────────────────────────
@@ -204,7 +204,7 @@ export const forgetDefinition: ToolDefinition<
       return { key, error: error instanceof Error ? error.message : String(error) }
     }
   },
-  render: { icon: Trash2, displayName: 'Forget' },
+  render: { icon: Trash, displayName: 'Forget' },
 }
 
 export const memoryDefinitions = [

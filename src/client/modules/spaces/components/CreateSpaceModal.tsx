@@ -10,7 +10,7 @@
  */
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Hash, Sparkles, FolderKanban } from 'lucide-react'
+import { Hash, Sparkle, Kanban } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import {
   Dialog,
@@ -149,7 +149,7 @@ export function CreateSpaceModal({ open, onClose }: Props) {
         <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="template">
-              <FolderKanban className="mr-1.5 size-3.5" />
+              <Kanban className="mr-1.5 size-3.5" />
               Templates
             </TabsTrigger>
             <TabsTrigger value="blank">
@@ -157,7 +157,7 @@ export function CreateSpaceModal({ open, onClose }: Props) {
               Custom
             </TabsTrigger>
             <TabsTrigger value="solo">
-              <Sparkles className="mr-1.5 size-3.5" />
+              <Sparkle className="mr-1.5 size-3.5" />
               Solo
             </TabsTrigger>
           </TabsList>

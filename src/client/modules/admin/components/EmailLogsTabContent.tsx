@@ -28,7 +28,7 @@ import {
   DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { Mail, Check, X, Clock, SendHorizonal } from 'lucide-react'
+import { EnvelopeSimple, Check, X, Clock, PaperPlaneRight } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { formatDistanceToNow, format } from 'date-fns'
 import { toast } from 'sonner'
@@ -96,7 +96,7 @@ export function EmailLogsTabContent() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <Mail className="h-5 w-5" />
+                <EnvelopeSimple className="h-5 w-5" />
                 Email logs
               </CardTitle>
               <CardDescription>
@@ -111,7 +111,7 @@ export function EmailLogsTabContent() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
             <div className="space-y-1.5">
               <Label className="text-xs">Template</Label>
-              <Select value={template} onValueChange={setTemplate}>
+              <Select value={template} onValueChange={(v) => v != null && setTemplate(v)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -126,7 +126,7 @@ export function EmailLogsTabContent() {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Status</Label>
-              <Select value={status} onValueChange={setStatus}>
+              <Select value={status} onValueChange={(v) => v != null && setStatus(v)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -155,7 +155,7 @@ export function EmailLogsTabContent() {
             </div>
           ) : !data || data.rows.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
-              <Mail className="h-8 w-8" />
+              <EnvelopeSimple className="h-8 w-8" />
               <p className="text-sm">No emails match these filters.</p>
             </div>
           ) : (
@@ -270,12 +270,14 @@ function TestSendDialog({ onSent }: { onSent: () => void }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <SendHorizonal className="mr-2 h-4 w-4" />
-          Send test
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          <Button variant="outline" size="sm">
+            <PaperPlaneRight className="mr-2 h-4 w-4" />
+            Send test
+          </Button>
+        }
+      />
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Send a test email</DialogTitle>
@@ -296,7 +298,7 @@ function TestSendDialog({ onSent }: { onSent: () => void }) {
           </div>
           <div className="space-y-1.5">
             <Label>Template</Label>
-            <Select value={tpl} onValueChange={setTpl}>
+            <Select value={tpl} onValueChange={(v) => v != null && setTpl(v)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>

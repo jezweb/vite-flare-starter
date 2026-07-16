@@ -8,7 +8,7 @@
 import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
 import { inArray } from 'drizzle-orm'
-import { FileSearch } from 'lucide-react'
+import { FileMagnifyingGlass } from '@phosphor-icons/react'
 import { embedText } from '@/server/lib/ai/embeddings'
 import { files } from '@/server/modules/files/db/schema'
 import type { ProviderEnv } from '@/server/lib/ai/providers'
@@ -145,7 +145,7 @@ export const searchFilesDefinition: ToolDefinition<
       }
     }
   },
-  render: { icon: FileSearch, displayName: 'Search Files' },
+  render: { icon: FileMagnifyingGlass, displayName: 'Search Files' },
 }
 
 export const searchFilesDefinitions = [searchFilesDefinition] as ToolDefinition<unknown, unknown>[]

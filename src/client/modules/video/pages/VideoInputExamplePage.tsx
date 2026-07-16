@@ -17,7 +17,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAgent } from 'agents/react'
-import { Camera, Square } from 'lucide-react'
+import { Camera, Square } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -208,7 +208,7 @@ export function VideoInputExamplePage() {
               </Button>
             ) : (
               <Button onClick={handleStop} variant="destructive" className="gap-2">
-                <Square className="h-4 w-4 fill-current" />
+                <Square weight="fill" className="h-4 w-4" />
                 Stop
               </Button>
             )}

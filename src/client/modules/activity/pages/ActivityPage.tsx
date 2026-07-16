@@ -30,22 +30,7 @@ import {
   ListRowTrailing,
 } from '@/components/ui/list-row'
 import { VirtualActivityList } from '../components/VirtualActivityList'
-import {
-  Activity as ActivityIcon,
-  Plus,
-  Pencil,
-  Trash2,
-  Archive,
-  RotateCcw,
-  Upload,
-  Download,
-  UserPlus,
-  UserMinus,
-  Eye,
-  ArrowRightLeft,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react'
+import { Pulse as ActivityIcon, Plus, Pencil, Trash, Archive, ArrowCounterClockwise, Upload, Download, UserPlus, UserMinus, Eye, ArrowsLeftRight, CaretLeft, CaretRight } from '@phosphor-icons/react'
 import { formatDistanceToNow } from 'date-fns'
 
 // Server caps `limit` at 100; 100 + virtualization is smoother than
@@ -55,15 +40,15 @@ const PAGE_SIZE = 100
 const ACTION_ICONS: Record<Activity['action'], React.ElementType> = {
   create: Plus,
   update: Pencil,
-  delete: Trash2,
+  delete: Trash,
   archive: Archive,
-  restore: RotateCcw,
+  restore: ArrowCounterClockwise,
   import: Upload,
   export: Download,
   assign: UserPlus,
   unassign: UserMinus,
   view: Eye,
-  convert: ArrowRightLeft,
+  convert: ArrowsLeftRight,
 }
 
 const ACTION_COLORS: Record<Activity['action'], string> = {
@@ -173,18 +158,14 @@ function ActivityItem({ activity }: { activity: Activity }) {
       </ListRowBody>
       {href && (
         <ListRowTrailing>
-          <ChevronRight className="size-3.5 text-muted-foreground/50 group-hover/list-row:text-foreground transition-colors" />
+          <CaretRight className="size-3.5 text-muted-foreground/50 group-hover/list-row:text-foreground transition-colors" />
         </ListRowTrailing>
       )}
     </>
   )
 
   if (href) {
-    return (
-      <ListRow asChild>
-        <Link to={href}>{inner}</Link>
-      </ListRow>
-    )
+    return <ListRow render={<Link to={href} />}>{inner}</ListRow>
   }
 
   return <ListRow variant="plain">{inner}</ListRow>
@@ -224,7 +205,7 @@ export function ActivityPage() {
       <PageFilters>
         <span />
         <PageFilterGroup>
-          <Select value={actionFilter} onValueChange={setActionFilter}>
+          <Select value={actionFilter} onValueChange={(v) => v != null && setActionFilter(v)}>
             <SelectTrigger className="h-8 w-[170px]">
               <SelectValue placeholder="Filter by action" />
             </SelectTrigger>
@@ -277,7 +258,7 @@ export function ActivityPage() {
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
             >
-              <ChevronLeft className="mr-1 h-4 w-4" />
+              <CaretLeft className="mr-1 h-4 w-4" />
               Previous
             </Button>
             <Button
@@ -287,7 +268,7 @@ export function ActivityPage() {
               disabled={!hasMore}
             >
               Next
-              <ChevronRight className="ml-1 h-4 w-4" />
+              <CaretRight className="ml-1 h-4 w-4" />
             </Button>
           </div>
         </div>

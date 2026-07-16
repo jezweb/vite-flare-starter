@@ -218,6 +218,17 @@ NODE_ENV=development
 # MICROSOFT_WORKSPACE_TENANT=common
 
 # ============================================
+# AI Gateway proxy for OpenRouter (optional)
+# ============================================
+# Route all OpenRouter traffic through your Cloudflare AI Gateway (BYOK proxy)
+# for request logging, caching, and spend visibility — ZERO billing change,
+# the same OPENROUTER_API_KEY pays. Set BOTH to enable; unset (default) hits
+# OpenRouter directly. Create a gateway: dash.cloudflare.com → AI → AI Gateway.
+# See https://developers.cloudflare.com/ai-gateway/usage/providers/openrouter/
+# AI_GATEWAY_ACCOUNT_ID=your-cloudflare-account-id
+# AI_GATEWAY_ID=your-gateway-id
+
+# ============================================
 # MCP Servers (optional)
 # ============================================
 # Auto-discovered via the MCP_<ID>_URL / _TOKEN / _TRANSPORT convention.

@@ -9,7 +9,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Bot, User, Brain, Wrench, RotateCcw } from 'lucide-react'
+import { Robot, User, Brain, Wrench, ArrowCounterClockwise } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import type { Message, MessageMetadata } from '../hooks/useChat'
@@ -47,7 +47,7 @@ export const ChatMessage = memo(function ChatMessage({
     <div className={cn('flex gap-3 p-4', isUser && 'flex-row-reverse')}>
       <Avatar className="size-8 shrink-0">
         <AvatarFallback className={cn(isUser ? 'bg-primary text-primary-foreground' : 'bg-muted')}>
-          {isUser ? <User className="size-4" /> : <Bot className="size-4" />}
+          {isUser ? <User className="size-4" /> : <Robot className="size-4" />}
         </AvatarFallback>
       </Avatar>
 
@@ -254,7 +254,7 @@ export const ChatMessage = memo(function ChatMessage({
                 title="Regenerate response"
                 aria-label="Regenerate response"
               >
-                <RotateCcw className="size-3" />
+                <ArrowCounterClockwise className="size-3" />
               </Button>
             )}
           </div>

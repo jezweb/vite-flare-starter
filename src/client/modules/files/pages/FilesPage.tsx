@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, RefreshCw } from 'lucide-react'
+import { Plus, ArrowsClockwise } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -47,12 +47,14 @@ export function FilesPage() {
           subtitle="PDFs, images, docs and more — your AI can read them and use them in answers."
           trailing={
             <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Upload
-                </Button>
-              </DialogTrigger>
+              <DialogTrigger
+                render={
+                  <Button>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Upload
+                  </Button>
+                }
+              />
               <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
                   <DialogTitle>Upload files</DialogTitle>
@@ -90,7 +92,7 @@ export function FilesPage() {
               <CardDescription>View and manage uploaded files</CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Select value={currentFolder} onValueChange={setCurrentFolder}>
+              <Select value={currentFolder} onValueChange={(v) => v != null && setCurrentFolder(v)}>
                 <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="Select folder" />
                 </SelectTrigger>
@@ -104,7 +106,7 @@ export function FilesPage() {
                 </SelectContent>
               </Select>
               <Button variant="outline" size="icon" onClick={() => refetch()}>
-                <RefreshCw className="h-4 w-4" />
+                <ArrowsClockwise className="h-4 w-4" />
               </Button>
             </div>
           </div>

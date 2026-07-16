@@ -37,12 +37,12 @@ import { useUpdateUser } from '../hooks/useAdmin'
 import type { UserResponse } from '@/shared/schemas/admin.schema'
 import { ROLES } from '@/shared/schemas/admin.schema'
 import { toast } from 'sonner'
-import { Shield, UserCog, User } from 'lucide-react'
+import { Shield, UserGear, User } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 
 const ROLE_OPTIONS = [
   { value: 'user', label: 'User', icon: User, description: 'Standard user access' },
-  { value: 'manager', label: 'Manager', icon: UserCog, description: 'Can manage team resources' },
+  { value: 'manager', label: 'Manager', icon: UserGear, description: 'Can manage team resources' },
   { value: 'admin', label: 'Admin', icon: Shield, description: 'Full administrative access' },
 ]
 

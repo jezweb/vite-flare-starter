@@ -11,7 +11,7 @@
  */
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Sparkles, ArrowLeft } from 'lucide-react'
+import { Sparkle, ArrowLeft } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import {
   Dialog,
@@ -64,7 +64,7 @@ export function CreateProjectModal({ open, onOpenChange }: Props) {
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="template">From template</TabsTrigger>
             <TabsTrigger value="ai">
-              <Sparkles className="size-3.5 mr-1.5" />
+              <Sparkle className="size-3.5 mr-1.5" />
               AI-assisted
             </TabsTrigger>
             <TabsTrigger value="blank">Blank</TabsTrigger>
@@ -237,7 +237,7 @@ function AiTab({ onCreated, navigate }: { onCreated: () => void; navigate: (to: 
               </>
             ) : (
               <>
-                <Sparkles className="size-3.5 mr-1.5" />
+                <Sparkle className="size-3.5 mr-1.5" />
                 Generate project
               </>
             )}

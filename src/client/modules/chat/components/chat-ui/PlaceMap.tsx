@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { MapContainer, Marker, TileLayer, Tooltip, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { Star, Phone, ExternalLink, MapPin } from 'lucide-react'
+import { Star, Phone, ArrowSquareOut, MapPin } from '@phosphor-icons/react'
 import { Card } from '@/components/ui/card'
 
 function useIsDark(): boolean {
@@ -189,7 +189,7 @@ export function PlaceMap({ title, places, center, zoom }: Props) {
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5 min-w-0">
                       {p.rating !== undefined && (
                         <span className="flex items-center gap-0.5 whitespace-nowrap shrink-0">
-                          <Star className="w-3 h-3 fill-current" />
+                          <Star weight="fill" className="w-3 h-3" />
                           {p.rating.toFixed(1)}
                           {p.reviewCount !== undefined && <span>&nbsp;({p.reviewCount})</span>}
                         </span>
@@ -221,7 +221,7 @@ export function PlaceMap({ title, places, center, zoom }: Props) {
                             className="inline-flex items-center gap-1 text-primary hover:underline"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <ExternalLink className="w-3 h-3" />
+                            <ArrowSquareOut className="w-3 h-3" />
                             Website
                           </a>
                         )}

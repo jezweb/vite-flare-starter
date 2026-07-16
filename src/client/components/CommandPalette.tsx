@@ -19,22 +19,7 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from '@/components/ui/command'
-import {
-  Moon,
-  Sun,
-  LogOut,
-  Settings,
-  MessagesSquare,
-  FolderKanban,
-  Plus,
-  MessageSquare,
-  Repeat,
-  Plug,
-  CheckSquare,
-  Inbox,
-  Hash,
-  FileSearch,
-} from 'lucide-react'
+import { Moon, Sun, SignOut, GearSix, Chats, Kanban, Plus, Chat, Repeat, Plug, CheckSquare, Tray, Hash, FileMagnifyingGlass } from '@phosphor-icons/react'
 import { useTheme } from '@/client/components/theme-provider'
 import { authClient } from '@/client/lib/auth'
 import { apiClient } from '@/client/lib/api-client'
@@ -119,6 +104,17 @@ export function CommandPalette() {
     return () => document.removeEventListener('keydown', handler)
   }, [])
 
+  // Programmatic open — the sidebar Quick-search field dispatches this
+  // (Cloudflare-style search-first sidebar).
+  useEffect(() => {
+    const openHandler = () => {
+      announceGlobalModalOpen('command-palette')
+      setOpen(true)
+    }
+    window.addEventListener('vfs:open-command-palette', openHandler)
+    return () => window.removeEventListener('vfs:open-command-palette', openHandler)
+  }, [])
+
   // Close if any other global modal opens — one-at-a-time policy.
   useEffect(() => subscribeGlobalModal('command-palette', () => setOpen(false)), [])
 
@@ -168,7 +164,7 @@ export function CommandPalette() {
             value="new project new folder create project workspace"
             onSelect={() => runCommand(() => navigate('/dashboard/projects?new=1'))}
           >
-            <FolderKanban className="mr-2 h-4 w-4" />
+            <Kanban className="mr-2 h-4 w-4" />
             New project
           </CommandItem>
           <CommandItem
@@ -194,7 +190,7 @@ export function CommandPalette() {
             value="open inbox findings undecided review triage"
             onSelect={() => runCommand(() => navigate('/dashboard/inbox'))}
           >
-            <Inbox className="mr-2 h-4 w-4" />
+            <Tray className="mr-2 h-4 w-4" />
             Open inbox
           </CommandItem>
           <CommandItem
@@ -220,7 +216,7 @@ export function CommandPalette() {
             value="browse skills library agent procedures markdown"
             onSelect={() => runCommand(() => navigate('/dashboard/skills'))}
           >
-            <MessageSquare className="mr-2 h-4 w-4" />
+            <Chat className="mr-2 h-4 w-4" />
             Browse skills
           </CommandItem>
         </CommandGroup>
@@ -240,7 +236,7 @@ export function CommandPalette() {
                   value={`entity-${hit.id}-${hit.title}-${hit.snippet}`}
                   onSelect={() => runCommand(() => navigate(entityHref(hit.type)))}
                 >
-                  <FileSearch className="mr-2 h-4 w-4" />
+                  <FileMagnifyingGlass className="mr-2 h-4 w-4" />
                   <div className="flex-1 min-w-0">
                     <div className="truncate font-medium">{hit.title}</div>
                     {hit.snippet && (
@@ -265,7 +261,7 @@ export function CommandPalette() {
                   value={`project-${p.id}-${p.name}`}
                   onSelect={() => runCommand(() => navigate(`/dashboard/projects/${p.id}`))}
                 >
-                  <FolderKanban className="mr-2 h-4 w-4" />
+                  <Kanban className="mr-2 h-4 w-4" />
                   <div className="flex-1 min-w-0">
                     <div className="truncate font-medium">{p.name}</div>
                     {p.description && (
@@ -291,7 +287,7 @@ export function CommandPalette() {
                     runCommand(() => navigate(`/dashboard/chat/${hit.conversationId}`))
                   }
                 >
-                  <MessagesSquare className="mr-2 h-4 w-4" />
+                  <Chats className="mr-2 h-4 w-4" />
                   <span className="truncate">{hit.snippet}</span>
                   <CommandShortcut>{hit.role === 'title' ? 'title' : 'message'}</CommandShortcut>
                 </CommandItem>
@@ -316,7 +312,7 @@ export function CommandPalette() {
         {/* Quick Actions */}
         <CommandGroup heading="Actions">
           <CommandItem onSelect={() => runCommand(() => navigate('/dashboard/settings'))}>
-            <Settings className="mr-2 h-4 w-4" />
+            <GearSix className="mr-2 h-4 w-4" />
             Settings
           </CommandItem>
           <CommandItem
@@ -338,7 +334,7 @@ export function CommandPalette() {
               })
             }
           >
-            <LogOut className="mr-2 h-4 w-4" />
+            <SignOut className="mr-2 h-4 w-4" />
             Sign out
           </CommandItem>
         </CommandGroup>

@@ -12,7 +12,7 @@
  */
 import { ToolLoopAgent, stepCountIs, readUIMessageStream, type ToolSet } from 'ai'
 import { z } from 'zod'
-import { UserPlus } from 'lucide-react'
+import { UserPlus } from '@phosphor-icons/react'
 import { resolveModel, type ProviderEnv } from '@/server/lib/ai/providers'
 import { buildModel } from '@/server/lib/ai/middleware'
 import { collectAvailableTools } from '@/server/lib/ai/tool-adapter'

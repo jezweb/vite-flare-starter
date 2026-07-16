@@ -25,7 +25,7 @@
  *   so the user can edit and then send.
  */
 import { useEffect, useRef, useState, type RefObject } from 'react'
-import { Mic, Square } from 'lucide-react'
+import { Microphone, Square } from '@phosphor-icons/react'
 import { useVoiceInput } from '@cloudflare/voice/react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -141,7 +141,7 @@ export function VoiceDictationButton({
     >
       {isActive ? (
         <>
-          <Square className="size-4 fill-current" />
+          <Square weight="fill" className="size-4" />
           {/* Audio level indicator — subtle pulse ring that scales
               with mic input. Gives immediate "we're hearing you"
               feedback distinct from the icon. */}
@@ -152,7 +152,7 @@ export function VoiceDictationButton({
           />
         </>
       ) : (
-        <Mic className="size-4" />
+        <Microphone className="size-4" />
       )}
     </Button>
   )

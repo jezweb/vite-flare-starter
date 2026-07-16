@@ -12,7 +12,7 @@ import {
 } from 'ai'
 import { z } from 'zod'
 import { createWorkersAI } from 'workers-ai-provider'
-import { Mic, Volume2 } from 'lucide-react'
+import { Microphone, SpeakerHigh } from '@phosphor-icons/react'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 
 const SPEAKERS = [
@@ -104,7 +104,7 @@ export const transcribeAudioDefinition: ToolDefinition<
       return { error: error instanceof Error ? error.message : String(error) }
     }
   },
-  render: { icon: Mic, displayName: 'Transcribe Audio' },
+  render: { icon: Microphone, displayName: 'Transcribe Audio' },
 }
 
 // ─── speak_text ─────────────────────────────────────────────────
@@ -178,7 +178,7 @@ export const speakTextDefinition: ToolDefinition<
       return { error: error instanceof Error ? error.message : String(error) }
     }
   },
-  render: { icon: Volume2, displayName: 'Text to Speech' },
+  render: { icon: SpeakerHigh, displayName: 'Text to Speech' },
 }
 
 export const audioDefinitions = [transcribeAudioDefinition, speakTextDefinition] as ToolDefinition<

@@ -13,7 +13,7 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
-import { ShieldCheck } from 'lucide-react'
+import { ShieldCheck } from '@phosphor-icons/react'
 
 import { apiClient } from '@/client/lib/api-client'
 import { PageContainer } from '@/components/ui/page-container'

@@ -7,7 +7,7 @@
 import { useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Building2, Mail, Phone, Globe, MapPin, Clock, FileText, Save } from 'lucide-react'
+import { Buildings, EnvelopeSimple, Phone, Globe, MapPin, Clock, FileText, FloppyDisk } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -125,7 +125,7 @@ export function OrganizationSection() {
           <CardHeader>
             <CardTitle>
               <div className="flex items-center gap-2">
-                <Building2 className="h-5 w-5" />
+                <Buildings className="h-5 w-5" />
                 Business Information
               </div>
             </CardTitle>
@@ -161,7 +161,7 @@ export function OrganizationSection() {
               <div className="space-y-2">
                 <Label htmlFor="businessEmail">Business Email</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <EnvelopeSimple className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="businessEmail"
                     type="email"
@@ -381,7 +381,7 @@ export function OrganizationSection() {
               </>
             ) : (
               <>
-                <Save className="mr-2 h-4 w-4" />
+                <FloppyDisk className="mr-2 h-4 w-4" />
                 Save Changes
               </>
             )}

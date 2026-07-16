@@ -12,7 +12,7 @@
  */
 import { useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Compass, HelpCircle, Send, Sparkles, X } from 'lucide-react'
+import { Compass, Question, PaperPlaneTilt, Sparkle, X } from '@phosphor-icons/react'
 import { apiClient } from '@/client/lib/api-client'
 
 interface Exchange {
@@ -84,7 +84,7 @@ export function AssistWidget({
         aria-label="Open the guide — ask a question or take the tour"
         className="fixed bottom-5 right-5 z-[1090] flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
       >
-        <HelpCircle className="h-6 w-6" />
+        <Question className="h-6 w-6" />
       </button>
     )
   }
@@ -94,7 +94,7 @@ export function AssistWidget({
       {/* Header */}
       <div className="flex items-center justify-between px-4 pb-2 pt-3">
         <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-primary">
-          <Sparkles className="h-3.5 w-3.5" /> Guide
+          <Sparkle className="h-3.5 w-3.5" /> Guide
         </p>
         <button
           type="button"
@@ -167,7 +167,7 @@ export function AssistWidget({
             aria-label="Send question"
             className="rounded-lg bg-primary px-3 py-2 text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
           >
-            <Send className="h-4 w-4" />
+            <PaperPlaneTilt className="h-4 w-4" />
           </button>
         </div>
       </form>

@@ -14,7 +14,7 @@
  * />
  */
 import { useState, useCallback } from 'react'
-import { Upload, ArrowRight, Check, AlertCircle } from 'lucide-react'
+import { Upload, ArrowRight, Check, WarningCircle } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import {
@@ -184,7 +184,7 @@ export function CsvImportWizard({ fields, onImport, maxPreviewRows = 5 }: Props)
                 <Select
                   value={mapping[field.key] || '__skip__'}
                   onValueChange={(v) =>
-                    setMapping((m) => ({ ...m, [field.key]: v === '__skip__' ? '' : v }))
+                    setMapping((m) => ({ ...m, [field.key]: !v || v === '__skip__' ? '' : v }))
                   }
                 >
                   <SelectTrigger className="h-8 flex-1">
@@ -204,7 +204,7 @@ export function CsvImportWizard({ fields, onImport, maxPreviewRows = 5 }: Props)
           </div>
           {missingRequired.length > 0 && (
             <div className="flex items-center gap-2 text-sm text-destructive">
-              <AlertCircle className="size-4" />
+              <WarningCircle className="size-4" />
               Required fields not mapped: {missingRequired.map((f) => f.label).join(', ')}
             </div>
           )}

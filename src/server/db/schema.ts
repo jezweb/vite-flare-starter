@@ -51,7 +51,9 @@ export { projects } from '@/server/modules/projects/db/schema'
 export { memories } from '@/server/modules/memories/db/schema'
 
 // Email log — every outbound email attempt with provider + status
-export { emailLog } from '@/server/modules/email/db/schema'
+// Email events + suppressions — delivery lifecycle (Queues event
+// subscription) and the bounce/complaint suppression list
+export { emailLog, emailEvents, emailSuppressions } from '@/server/modules/email/db/schema'
 
 // MCP Connectors (Phase 5) — per-user OAuth-connected MCP servers
 export {

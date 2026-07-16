@@ -17,32 +17,8 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Time } from '@/components/ui/time'
-import {
-  Brain,
-  Wrench,
-  Image,
-  Video,
-  Search,
-  FileText,
-  Settings,
-  Shield,
-  Sparkles,
-  ArrowRight,
-  ChevronDown,
-  ChevronRight,
-  CheckSquare,
-  Activity as ActivityIcon,
-  MessageSquare,
-  Plug,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  AlertTriangle,
-  FolderKanban,
-  Users,
-  Repeat,
-} from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { Brain, Wrench, Image, Video, MagnifyingGlass, FileText, GearSix, Shield, Sparkle, ArrowRight, CaretDown, CaretRight, CheckSquare, Pulse as ActivityIcon, Chat, Plug, CheckCircle, XCircle, Clock, Warning, Kanban, Users, Repeat } from '@phosphor-icons/react'
+import type { Icon } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -159,11 +135,14 @@ function NeedsYouPanel({ approvals, loading }: { approvals?: ApprovalsList; load
             </CardDescription>
           </div>
           {approvals && approvals.total > 0 && (
-            <Button asChild size="sm" variant="ghost" className="gap-1 -my-1 -mr-2 h-8">
-              <Link to="/dashboard/approvals">
-                See all
-                <ArrowRight className="size-3.5" />
-              </Link>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="gap-1 -my-1 -mr-2 h-8"
+              render={<Link to="/dashboard/approvals" />}
+            >
+              See all
+              <ArrowRight className="size-3.5" />
             </Button>
           )}
         </div>
@@ -177,7 +156,7 @@ function NeedsYouPanel({ approvals, loading }: { approvals?: ApprovalsList; load
         )}
         {!loading && approvals && approvals.total === 0 && (
           <div className="rounded-md border border-dashed p-4 text-center">
-            <CheckCircle2 className="mx-auto size-5 text-muted-foreground" />
+            <CheckCircle className="mx-auto size-5 text-muted-foreground" />
             <p className="mt-1.5 text-sm font-medium">All clear</p>
             <p className="mt-0.5 text-xs text-muted-foreground">
               When an agent proposes a destructive action, it queues here first.
@@ -230,11 +209,14 @@ function RecentRunsPanel({ runs, loading }: { runs?: RunsList; loading: boolean 
             </CardDescription>
           </div>
           {runs && runs.total > 0 && (
-            <Button asChild size="sm" variant="ghost" className="gap-1 -my-1 -mr-2 h-8">
-              <Link to="/dashboard/activity">
-                Activity log
-                <ArrowRight className="size-3.5" />
-              </Link>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="gap-1 -my-1 -mr-2 h-8"
+              render={<Link to="/dashboard/activity" />}
+            >
+              Activity log
+              <ArrowRight className="size-3.5" />
             </Button>
           )}
         </div>
@@ -248,7 +230,7 @@ function RecentRunsPanel({ runs, loading }: { runs?: RunsList; loading: boolean 
         )}
         {!loading && runs && runs.total === 0 && (
           <div className="rounded-md border border-dashed p-4 text-center">
-            <Sparkles className="mx-auto size-5 text-muted-foreground" />
+            <Sparkle className="mx-auto size-5 text-muted-foreground" />
             <p className="mt-1.5 text-sm font-medium">No agent activity yet</p>
             <p className="mt-0.5 text-xs text-muted-foreground">
               Open AI Chat and ask the agent to do something — it'll show up here.
@@ -272,11 +254,11 @@ function RunRow({ run }: { run: AgentRun }) {
   const agentRegistry = new Map((agentCatalog?.agents ?? []).map((a) => [a.className, a]))
   const Icon =
     run.outcome === 'ok'
-      ? CheckCircle2
+      ? CheckCircle
       : run.outcome === 'error'
         ? XCircle
         : run.outcome === 'budget_exceeded'
-          ? AlertTriangle
+          ? Warning
           : Clock
   const colour =
     run.outcome === 'ok'
@@ -313,7 +295,7 @@ interface QuickActionCard {
   to: string
   label: string
   description: string
-  icon: LucideIcon
+  icon: Icon
   /** Hide if matching feature flag is off — set the key from features.ts. */
   feature?: 'chat' | 'spaces'
 }
@@ -335,7 +317,7 @@ const QUICK_ACTIONS: QuickActionCard[] = [
     to: '/dashboard/chat',
     label: 'Start a chat',
     description: 'Quick question or one-off task. Pick a model, paste an image, get an answer.',
-    icon: MessageSquare,
+    icon: Chat,
     feature: 'chat',
   },
   {
@@ -348,7 +330,7 @@ const QUICK_ACTIONS: QuickActionCard[] = [
     label: 'New project',
     description:
       'A long-running workspace for ongoing work — chats, files, memory, instructions all in one place.',
-    icon: FolderKanban,
+    icon: Kanban,
   },
   {
     to: '/dashboard/spaces?new=1',
@@ -417,7 +399,7 @@ interface OnboardingState {
 interface ChecklistItem {
   id: keyof OnboardingState['steps']
   label: string
-  icon: LucideIcon
+  icon: Icon
   to: string
 }
 
@@ -435,11 +417,11 @@ const CHECKLIST_ITEMS: ChecklistItem[] = [
     icon: Brain,
     to: '/dashboard/settings?tab=memory',
   },
-  { id: 'chat', label: 'Send a message in chat', icon: MessageSquare, to: '/dashboard/chat' },
+  { id: 'chat', label: 'Send a message in chat', icon: Chat, to: '/dashboard/chat' },
   {
     id: 'skill',
     label: 'Try a skill (type /skill-name in chat)',
-    icon: Sparkles,
+    icon: Sparkle,
     to: '/dashboard/skills',
   },
   { id: 'routine', label: 'Schedule your first routine', icon: Repeat, to: '/dashboard/routines' },
@@ -513,7 +495,7 @@ function OnboardingChecklist() {
                 )}
               >
                 {done ? (
-                  <CheckCircle2 className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                  <CheckCircle className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
                 ) : (
                   <span className="inline-block size-4 shrink-0 rounded-full border border-border" />
                 )}
@@ -553,7 +535,7 @@ function CapabilityTour() {
         onClick={() => setOpen((v) => !v)}
         className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
       >
-        {open ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
+        {open ? <CaretDown className="size-4" /> : <CaretRight className="size-4" />}
         What this starter ships with
       </button>
       {open && (
@@ -607,7 +589,7 @@ function CapabilityTour() {
             ctaLabel="Open AI Chat"
           />
           <CapabilityCard
-            icon={Search}
+            icon={MagnifyingGlass}
             title="Semantic Search"
             items={[
               'AI SDK embeddings',
@@ -641,7 +623,7 @@ function CapabilityTour() {
             ctaLabel="Open settings"
           />
           <CapabilityCard
-            icon={Settings}
+            icon={GearSix}
             title="UI Library"
             items={[
               '59 shadcn/ui components',
@@ -665,7 +647,7 @@ function CapabilityCard({
   to,
   ctaLabel,
 }: {
-  icon: LucideIcon
+  icon: Icon
   title: string
   items: string[]
   to?: string

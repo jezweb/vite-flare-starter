@@ -21,7 +21,7 @@
  *   action={{ label: "Add skill", onClick: () => {} }}
  * />
  */
-import type { LucideIcon } from 'lucide-react'
+import type { Icon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 
 interface EmptyStateAction {
@@ -31,7 +31,7 @@ interface EmptyStateAction {
 }
 
 interface EmptyStateProps {
-  icon: LucideIcon
+  icon: Icon
   title: string
   description?: string
   /**

@@ -30,7 +30,7 @@
  * conversation history is scoped to that topic).
  */
 import { z } from 'zod'
-import { Send } from 'lucide-react'
+import { PaperPlaneTilt } from '@phosphor-icons/react'
 import { getAgentByName } from 'agents'
 import {
   AutonomousAgent,
@@ -151,7 +151,7 @@ export class ResearcherAgent extends AutonomousAgent<Env, AutonomousAgentState> 
           }
         }
       },
-      render: { icon: Send, displayName: 'Delegate to Writer' },
+      render: { icon: PaperPlaneTilt, displayName: 'Delegate to Writer' },
     }
   }
 }

@@ -21,7 +21,7 @@
  * decision-making mid-turn.
  */
 import { z } from 'zod'
-import { Bot, ScanText, Sparkles, Cpu, PiggyBank } from 'lucide-react'
+import { Robot, Scan, Sparkle, Cpu, PiggyBank } from '@phosphor-icons/react'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq, sql } from 'drizzle-orm'
 
@@ -128,7 +128,7 @@ export function buildAgentManagementTools(
           })),
         }
       },
-      render: { icon: Bot, displayName: 'List agent instances' },
+      render: { icon: Robot, displayName: 'List agent instances' },
     } as ToolDefinition<unknown, unknown>,
 
     {
@@ -166,7 +166,7 @@ export function buildAgentManagementTools(
           lastRunAt: row.lastRunAt,
         }
       },
-      render: { icon: ScanText, displayName: 'Inspect agent' },
+      render: { icon: Scan, displayName: 'Inspect agent' },
     } as ToolDefinition<unknown, unknown>,
 
     {
@@ -191,7 +191,7 @@ export function buildAgentManagementTools(
           return { ok: false as const, error: err instanceof Error ? err.message : String(err) }
         }
       },
-      render: { icon: Sparkles, displayName: 'Propose persona update' },
+      render: { icon: Sparkle, displayName: 'Propose persona update' },
     } as ToolDefinition<unknown, unknown>,
 
     {

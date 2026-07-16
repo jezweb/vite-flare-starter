@@ -10,7 +10,7 @@ import { type ReactNode, useMemo } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { formatDistanceToNow } from 'date-fns'
 import { toast } from 'sonner'
-import { Clock, AlertTriangle } from 'lucide-react'
+import { Clock, Warning } from '@phosphor-icons/react'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -122,7 +122,7 @@ export function StandardMeta({
         <>
           <span>·</span>
           <span className="inline-flex items-center gap-1 shrink-0">
-            {row.dueAt * 1000 < Date.now() && <AlertTriangle className="size-3 text-amber-500" />}
+            {row.dueAt * 1000 < Date.now() && <Warning className="size-3 text-amber-500" />}
             <Clock className="size-3" />
             due {formatDistanceToNow(new Date(row.dueAt * 1000), { addSuffix: true })}
           </span>
@@ -219,18 +219,21 @@ export function RowShell({
 
   return (
     <ContextMenu>
-      <ContextMenuTrigger asChild>
-        <ListRow
-          ref={rowRef}
-          state={state}
-          interactive
-          className={cn(
-            isSelected && 'bg-primary/10 hover:bg-primary/15',
-            isFocused && 'ring-2 ring-ring/50 ring-inset'
-          )}
-          onClick={handleClick}
-          onMouseEnter={onFocusChange}
-        >
+      <ContextMenuTrigger
+        render={
+          <ListRow
+            ref={rowRef}
+            state={state}
+            interactive
+            className={cn(
+              isSelected && 'bg-primary/10 hover:bg-primary/15',
+              isFocused && 'ring-2 ring-ring/50 ring-inset'
+            )}
+            onClick={handleClick}
+            onMouseEnter={onFocusChange}
+          />
+        }
+      >
           {/* a11y: the row used to have role="button" + tabIndex={0} alongside a
               focusable Review Link inside, which axe flags as nested-interactive.
               The row stays clickable via pointer (handleClick still fires); for
@@ -259,29 +262,28 @@ export function RowShell({
             {meta}
           </ListRowBody>
           <ListRowTrailing>{trailing}</ListRowTrailing>
-        </ListRow>
       </ContextMenuTrigger>
       <ContextMenuContent>
         {row.source === 'inbox' && (
-          <ContextMenuItem onSelect={() => toggleRead.mutate()}>
+          <ContextMenuItem onClick={() => toggleRead.mutate()}>
             {isUnread ? 'Mark read' : 'Mark unread'}
           </ContextMenuItem>
         )}
-        <ContextMenuItem onSelect={() => onToggleSelect()}>
+        <ContextMenuItem onClick={() => onToggleSelect()}>
           {isSelected ? 'Deselect' : 'Select'}
         </ContextMenuItem>
         {isApproval && (
-          <ContextMenuItem onSelect={() => onOpenApproval(row.id)}>Review approval</ContextMenuItem>
+          <ContextMenuItem onClick={() => onOpenApproval(row.id)}>Review approval</ContextMenuItem>
         )}
         {extraMenuItems}
         <ContextMenuSeparator />
-        <ContextMenuItem onSelect={copyId}>Copy row ID</ContextMenuItem>
+        <ContextMenuItem onClick={copyId}>Copy row ID</ContextMenuItem>
         {row.source === 'inbox' && (
           <>
             <ContextMenuSeparator />
             <ContextMenuItem
               variant="destructive"
-              onSelect={() => archive.mutate()}
+              onClick={() => archive.mutate()}
               disabled={archive.isPending}
             >
               Archive

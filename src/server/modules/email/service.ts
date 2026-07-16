@@ -26,6 +26,7 @@ import {
   type EmailProvider,
   type NormalisedMessage,
 } from './providers'
+import { filterSuppressed } from './delivery-events'
 
 export type { EmailEnv, EmailProvider } from './providers'
 
@@ -59,7 +60,11 @@ export type SendEmailInput<K extends TemplateKey | undefined = undefined> = {
 
 export interface SendResult {
   provider: EmailProvider
-  status: 'sent' | 'failed' | 'skipped'
+  /**
+   * 'suppressed' = every recipient is on the email_suppressions list and
+   * EMAIL_SUPPRESSION_ENFORCE='true' — nothing was sent, by design.
+   */
+  status: 'sent' | 'failed' | 'skipped' | 'suppressed'
   messageId?: string
   error?: string
 }
@@ -81,7 +86,34 @@ export async function sendEmail<K extends TemplateKey | undefined = undefined>(
   // a display name (`Display <addr>`), we don't double-wrap it.
   const fromName = env.EMAIL_FROM_NAME || env.APP_NAME
   const from = fromName && !fromAddress.includes('<') ? `${fromName} <${fromAddress}>` : fromAddress
-  const recipients = Array.isArray(input.to) ? input.to : [input.to]
+  let recipients = Array.isArray(input.to) ? input.to : [input.to]
+
+  // ─── Suppression enforcement (opt-in) ─────────────────────────────
+  //
+  // With EMAIL_SUPPRESSION_ENFORCE='true', recipients on the
+  // email_suppressions list (bounces/complaints recorded by the
+  // delivery-events consumer, plus manual admin entries) are dropped.
+  // All recipients suppressed → typed 'suppressed' result, nothing
+  // sent. Partial → the send proceeds to the remaining recipients.
+  // The lookup fails open, so a broken table never blocks auth emails.
+  if (env.EMAIL_SUPPRESSION_ENFORCE === 'true') {
+    const { allowed, suppressed } = await filterSuppressed(env, recipients)
+    if (suppressed.length > 0) {
+      console.warn(
+        JSON.stringify({ event: 'email_recipients_suppressed', recipients: suppressed })
+      )
+    }
+    if (allowed.length === 0 && suppressed.length > 0) {
+      return finaliseLog(env, {
+        input,
+        from,
+        provider: 'console',
+        status: 'suppressed',
+        error: `Suppressed recipients: ${suppressed.join(', ')}`,
+      })
+    }
+    recipients = allowed
+  }
 
   // Resolve template → subject + html + text
   let subject = 'subject' in input ? (input.subject ?? '') : ''
@@ -223,7 +255,13 @@ async function finaliseLog(
 ): Promise<SendResult> {
   const recipients = Array.isArray(args.input.to) ? args.input.to : [args.input.to]
   const logStatus =
-    args.status === 'sent' ? 'sent' : args.status === 'skipped' ? 'queued' : 'failed'
+    args.status === 'sent'
+      ? 'sent'
+      : args.status === 'skipped'
+        ? 'queued'
+        : args.status === 'suppressed'
+          ? 'suppressed'
+          : 'failed'
   try {
     const db = drizzle(env.DB)
     await db.insert(emailLog).values({

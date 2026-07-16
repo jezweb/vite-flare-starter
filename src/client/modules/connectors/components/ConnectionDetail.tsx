@@ -6,7 +6,7 @@
  * (heuristic: tool name contains create/update/delete/send/post → write).
  */
 import { useMemo, useState, useEffect } from 'react'
-import { Shield, Trash2, KeyRound, ExternalLink } from 'lucide-react'
+import { Shield, Trash, Key, ArrowSquareOut } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import {
   Sheet,
@@ -47,7 +47,7 @@ import { useRoutines, type Routine } from '@/client/modules/routines/hooks/useRo
 import { useAgentCatalog } from '@/client/modules/routines/hooks/useAgentCatalog'
 import { formatAgentClass } from '@/shared/format/agent'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Check, ChevronsUpDown, Plus, X } from 'lucide-react'
+import { Check, CaretUpDown, Plus, X } from '@phosphor-icons/react'
 
 type Policy = 'always' | 'ask' | 'never'
 
@@ -188,7 +188,7 @@ export function ConnectionDetail({
             onClick={() => setConfirmOpen(true)}
             disabled={disconnect.isPending}
           >
-            <Trash2 className="mr-2 h-4 w-4" />
+            <Trash className="mr-2 h-4 w-4" />
             Disconnect
           </Button>
 
@@ -311,7 +311,7 @@ function BearerTokenPanel({ connectionId }: { connectionId: string }) {
   return (
     <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 mt-6 space-y-3">
       <div className="flex items-center gap-2 text-sm font-medium">
-        <KeyRound className="h-4 w-4" />
+        <Key className="h-4 w-4" />
         Bearer token required
       </div>
       <p className="text-xs text-muted-foreground">
@@ -368,7 +368,7 @@ function ResumeOAuthPanel({ connectionId }: { connectionId: string }) {
   return (
     <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 mt-6 space-y-3">
       <div className="flex items-center gap-2 text-sm font-medium">
-        <ExternalLink className="h-4 w-4" />
+        <ArrowSquareOut className="h-4 w-4" />
         Finish OAuth sign-in
       </div>
       <p className="text-xs text-muted-foreground">
@@ -380,7 +380,7 @@ function ResumeOAuthPanel({ connectionId }: { connectionId: string }) {
           <Spinner size="md" />
         ) : (
           <>
-            <ExternalLink className="mr-2 h-4 w-4" />
+            <ArrowSquareOut className="mr-2 h-4 w-4" />
             Resume OAuth
           </>
         )}
@@ -438,7 +438,7 @@ function ProfilePanel({ connection }: { connection: McpConnection }) {
   return (
     <div className="rounded-lg border bg-muted/20 p-3 mt-6 space-y-3">
       <div className="flex items-center gap-2 text-sm font-medium">
-        <KeyRound className="h-3.5 w-3.5" />
+        <Key className="h-3.5 w-3.5" />
         Connection profile
       </div>
       <p className="text-[11px] text-muted-foreground -mt-2">
@@ -570,19 +570,21 @@ function RestrictAgentPicker({
         </div>
       )}
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full justify-between text-xs font-normal"
-          >
-            <span className="text-muted-foreground">
-              {value.length === 0 ? 'Pick routines / agents…' : 'Edit selection'}
-            </span>
-            <ChevronsUpDown className="size-3 opacity-50" />
-          </Button>
+        <PopoverTrigger
+          render={
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full justify-between text-xs font-normal"
+            />
+          }
+        >
+          <span className="text-muted-foreground">
+            {value.length === 0 ? 'Pick routines / agents…' : 'Edit selection'}
+          </span>
+          <CaretUpDown className="size-3 opacity-50" />
         </PopoverTrigger>
-        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+        <PopoverContent className="w-[var(--anchor-width)] p-0" align="start">
           <div className="max-h-72 overflow-y-auto p-1">
             {knownOptions.map((opt) => {
               const checked = value.includes(opt.name)

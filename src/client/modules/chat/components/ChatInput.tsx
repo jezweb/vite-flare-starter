@@ -8,7 +8,7 @@ import { useState, useRef, useEffect, useCallback, type KeyboardEvent, type Form
 import { useDropzone } from 'react-dropzone'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { Send, Square, Paperclip, X } from 'lucide-react'
+import { PaperPlaneTilt, Square, Paperclip, X } from '@phosphor-icons/react'
 import { features } from '@/shared/config/features'
 import { SkillsSlashMenu, parseSlashQuery } from './SkillsSlashMenu'
 import { useSkillSummary, type SkillSummary } from '@/client/modules/skills/hooks/useSkills'
@@ -271,7 +271,7 @@ export function ChatInput({
             disabled={(!input.trim() && attachedFiles.length === 0) || disabled}
             className="shrink-0 size-[44px]"
           >
-            <Send className="size-4" />
+            <PaperPlaneTilt className="size-4" />
             <span className="sr-only">Send message</span>
           </Button>
         )}

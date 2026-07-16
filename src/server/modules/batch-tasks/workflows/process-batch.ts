@@ -2,9 +2,11 @@
  * ProcessBatchWorkflow — durable fan-out over a list of batch_items.
  *
  * Outer loop chunks items into windows of CONCURRENCY (default 8) so we
- * respect AI rate limits + the Workflow CPU budget per step. Inside each
- * window every item is its own `step.do()` so a single failure retries
- * independently and doesn't poison the rest of the batch.
+ * respect AI provider rate limits (Workflows V2 raised the platform's own
+ * concurrency limits — the window exists for the AI backends, not the
+ * Workflow engine). Inside each window every item is its own `step.do()`
+ * so a single failure retries independently and doesn't poison the rest
+ * of the batch.
  *
  * AI output is written straight to D1 (`batch_items.result`) inside the
  * step, NOT returned through `step.do()`. Step output is capped at 1MB and
@@ -28,7 +30,8 @@ interface WorkflowEnv {
   AI?: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     toMarkdown: (
-      docs: Array<{ name: string; blob: Blob }>
+      docs: Array<{ name: string; blob: Blob }>,
+      opts?: { conversionOptions?: { output?: { format?: 'markdown' | 'text' } } }
     ) => Promise<
       Array<{ name: string; mimeType: string; format: string; tokens: number; data: string }>
     >
@@ -101,7 +104,21 @@ export class ProcessBatchWorkflow extends WorkflowEntrypoint<WorkflowEnv, BatchW
           step.do(
             `item-${item.id}`,
             {
-              retries: { limit: 3, delay: '5 seconds', backoff: 'exponential' },
+              retries: {
+                limit: 3,
+                // Dynamic retry delay (docs-verified 2026-07-16, see
+                // developers.cloudflare.com/workflows/build/sleeping-and-retrying/):
+                // rate-limited items back off progressively (30s × attempt) so a
+                // window that trips the AI backend's limiter drains cleanly;
+                // everything else retries after a short fixed delay. The runtime
+                // accepts a delay function but installed workers-types (wrangler
+                // 4.111 / workers-types 4.x) still type `delay` as a static
+                // duration — cast until the types catch up.
+                delay: (({ ctx, error }: { ctx: { attempt: number }; error: Error }) =>
+                  error.message.includes('rate limit') || error.message.includes('429')
+                    ? `${ctx.attempt * 30} seconds`
+                    : '10 seconds') as unknown as number,
+              },
               timeout: '5 minutes',
             },
             async () => {
@@ -214,9 +231,12 @@ async function loadItemContent(
       }
       const buf = await obj.arrayBuffer()
       const filename = item.refValue.split('/').pop() ?? 'document'
-      const [converted] = await env.AI.toMarkdown([
-        { name: filename, blob: new Blob([buf], { type: mime }) },
-      ])
+      // Output feeds the item's LLM prompt — plain text strips markdown
+      // syntax noise. Docs-verified 2026-07-16 (conversion-options page).
+      const [converted] = await env.AI.toMarkdown(
+        [{ name: filename, blob: new Blob([buf], { type: mime }) }],
+        { conversionOptions: { output: { format: 'text' } } }
+      )
       if (!converted?.data) {
         throw new Error(`toMarkdown returned no content for ${filename}`)
       }

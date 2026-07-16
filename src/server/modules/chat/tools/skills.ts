@@ -18,15 +18,7 @@ import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
 import { and, eq } from 'drizzle-orm'
 import { getSandbox } from '@cloudflare/sandbox'
-import {
-  BookOpen,
-  List,
-  FileSearch,
-  Terminal,
-  PlusSquare,
-  Download,
-  ToggleRight,
-} from 'lucide-react'
+import { BookOpen, List, FileMagnifyingGlass, Terminal, PlusSquare, Download, ToggleRight } from '@phosphor-icons/react'
 import {
   listSkills,
   loadSkill,
@@ -224,7 +216,7 @@ export function skillsDefinitions(
         return { name, path, error: error instanceof Error ? error.message : String(error) }
       }
     },
-    render: { icon: FileSearch, displayName: 'Read Skill Resource' },
+    render: { icon: FileMagnifyingGlass, displayName: 'Read Skill Resource' },
   }
 
   const RunSkillScriptOutput = z.union([

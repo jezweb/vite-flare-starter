@@ -1,16 +1,19 @@
-'use client'
-
 import * as React from 'react'
-import { Label as LabelPrimitive } from 'radix-ui'
 
 import { cn } from '@/lib/utils'
 
-function Label({ className, ...props }: React.ComponentProps<typeof LabelPrimitive.Root>) {
+// Base UI has no standalone Label primitive (Field.Label exists only inside
+// Field.Root). Radix Label's sole behavioral extra — preventing text
+// selection on double click — is covered by the existing `select-none`.
+// `peer-data-disabled:*` variants sit alongside `peer-disabled:*` because
+// Base UI checkbox/switch/radio render <span>s that surface disabled state
+// as `data-disabled` instead of the :disabled pseudo-class.
+function Label({ className, ...props }: React.ComponentProps<'label'>) {
   return (
-    <LabelPrimitive.Root
+    <label
       data-slot="label"
       className={cn(
-        'flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50',
+        'flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 peer-data-disabled:cursor-not-allowed peer-data-disabled:opacity-50',
         className
       )}
       {...props}

@@ -12,7 +12,7 @@
  * Add new kinds in config-diff/apply.ts first, then widen the enum here.
  */
 import { z } from 'zod'
-import { FileDiff } from 'lucide-react'
+import { GitDiff } from '@phosphor-icons/react'
 import type { ToolDefinition } from '@/shared/agent'
 import { createProposal } from '@/server/modules/config-diff/storage'
 import { loadCurrentContent } from '@/server/modules/config-diff/apply'
@@ -114,7 +114,7 @@ export const proposePatchDefinition: ToolDefinition<
     }
   },
   render: {
-    icon: FileDiff,
+    icon: GitDiff,
     displayName: 'Propose change',
     summary: (output) => `${output.resourceKind}: ${output.resourceId}`,
   },

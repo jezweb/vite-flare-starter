@@ -12,7 +12,7 @@
  *    transcript
  */
 import { useState, useMemo } from 'react'
-import { Globe, ChevronDown, ChevronUp } from 'lucide-react'
+import { Globe, CaretDown, CaretUp } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 
 export interface WebSearchOutput {
@@ -103,9 +103,9 @@ export function WebSearchResults({ output }: Props) {
           {output.count} result{output.count === 1 ? '' : 's'}
         </span>
         {open ? (
-          <ChevronUp className="size-3.5 shrink-0" />
+          <CaretUp className="size-3.5 shrink-0" />
         ) : (
-          <ChevronDown className="size-3.5 shrink-0" />
+          <CaretDown className="size-3.5 shrink-0" />
         )}
       </button>
 

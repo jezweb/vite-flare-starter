@@ -16,7 +16,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, Compass, Pause, Play, Volume2, VolumeX, X } from 'lucide-react'
+import { CaretLeft, CaretRight, Compass, Pause, Play, SpeakerHigh, SpeakerSlash, X } from '@phosphor-icons/react'
 import { TOUR_STEPS, markTour, tourSeen } from '../tour/steps'
 import { TOUR_CUES, type TourCue } from '../tour/cues.gen'
 
@@ -305,7 +305,7 @@ export function Tour({
             aria-label={muted ? 'Unmute narration' : 'Mute narration'}
             className="rounded-md p-1.5 text-muted-foreground hover:bg-muted"
           >
-            {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+            {muted ? <SpeakerSlash className="h-4 w-4" /> : <SpeakerHigh className="h-4 w-4" />}
           </button>
           <button
             type="button"
@@ -343,7 +343,7 @@ export function Tour({
               onClick={() => setI(i - 1)}
               className="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-sm hover:bg-muted"
             >
-              <ChevronLeft className="h-4 w-4" /> Back
+              <CaretLeft className="h-4 w-4" /> Back
             </button>
           )}
           <button
@@ -351,7 +351,7 @@ export function Tour({
             onClick={() => (last ? onClose('done') : setI(i + 1))}
             className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
           >
-            {last ? 'Finish' : 'Next'} {!last && <ChevronRight className="h-4 w-4" />}
+            {last ? 'Finish' : 'Next'} {!last && <CaretRight className="h-4 w-4" />}
           </button>
         </div>
       </div>

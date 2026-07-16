@@ -8,7 +8,7 @@
 import { z } from 'zod'
 import { and, eq, gte } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
-import { Mail } from 'lucide-react'
+import { EnvelopeSimple } from '@phosphor-icons/react'
 import { sendEmail, type EmailEnv } from '@/server/modules/email/service'
 import { emailLog } from '@/server/modules/email/db/schema'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
@@ -145,7 +145,7 @@ export const sendEmailDefinition: ToolDefinition<
       error: result.error ?? 'Email send failed.',
     }
   },
-  render: { icon: Mail, displayName: 'Send Email' },
+  render: { icon: EnvelopeSimple, displayName: 'Send Email' },
 }
 
 export const emailDefinitions = [sendEmailDefinition] as ToolDefinition<unknown, unknown>[]

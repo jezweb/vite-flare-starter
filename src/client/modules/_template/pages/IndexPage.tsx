@@ -13,7 +13,7 @@
  * with a Card grid.
  */
 import { Link } from 'react-router-dom'
-import { Plus, ChevronRight, FileText } from 'lucide-react'
+import { Plus, CaretRight, FileText } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
@@ -42,11 +42,9 @@ export function TemplateIndexPage() {
         title="Things"
         subtitle="One-line, user-voice description of what this page is for and why someone would visit it."
         trailing={
-          <Button asChild className="gap-1.5">
-            <Link to="/dashboard/things/new">
-              <Plus className="size-4" />
-              New thing
-            </Link>
+          <Button className="gap-1.5" render={<Link to="/dashboard/things/new" />}>
+            <Plus className="size-4" />
+            New thing
           </Button>
         }
       />
@@ -73,21 +71,19 @@ export function TemplateIndexPage() {
         <ListRowGroup>
           {data.things.map((thing) => (
             <li key={thing.id}>
-              <ListRow asChild>
-                <Link to={`/dashboard/things/${thing.id}`}>
-                  <ListRowIcon>
-                    <FileText className="text-muted-foreground" />
-                  </ListRowIcon>
-                  <ListRowBody>
-                    <ListRowTitle>{thing.name}</ListRowTitle>
-                    <ListRowMeta>
-                      <span>updated {thing.updatedAt}</span>
-                    </ListRowMeta>
-                  </ListRowBody>
-                  <ListRowTrailing>
-                    <ChevronRight className="size-3.5 text-muted-foreground/50 group-hover/list-row:text-foreground transition-colors" />
-                  </ListRowTrailing>
-                </Link>
+              <ListRow render={<Link to={`/dashboard/things/${thing.id}`} />}>
+                <ListRowIcon>
+                  <FileText className="text-muted-foreground" />
+                </ListRowIcon>
+                <ListRowBody>
+                  <ListRowTitle>{thing.name}</ListRowTitle>
+                  <ListRowMeta>
+                    <span>updated {thing.updatedAt}</span>
+                  </ListRowMeta>
+                </ListRowBody>
+                <ListRowTrailing>
+                  <CaretRight className="size-3.5 text-muted-foreground/50 group-hover/list-row:text-foreground transition-colors" />
+                </ListRowTrailing>
               </ListRow>
             </li>
           ))}

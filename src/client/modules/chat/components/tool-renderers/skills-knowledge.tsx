@@ -13,7 +13,7 @@
  * generic renderer doesn't know about.
  */
 import { useState } from 'react'
-import { BookOpen, Search, Sparkles, FileText, Copy, Check } from 'lucide-react'
+import { BookOpen, MagnifyingGlass, Sparkle, FileText, Copy, Check } from '@phosphor-icons/react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -86,7 +86,7 @@ function HitsList({ hits }: { hits: SearchHit[] }) {
 
 export const knowledgeSearchRenderer: ToolRenderer = {
   match: 'knowledge_search',
-  icon: Search,
+  icon: MagnifyingGlass,
   displayName: 'Knowledge Search',
   summary: (output) => {
     const o = output as SearchOutput
@@ -108,7 +108,7 @@ export const knowledgeSearchRenderer: ToolRenderer = {
 
 export const listSkillsRenderer: ToolRenderer = {
   match: 'list_skills',
-  icon: Sparkles,
+  icon: Sparkle,
   displayName: 'List Skills',
   summary: (output) => {
     const o = output as SearchOutput

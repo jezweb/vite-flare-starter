@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { AlertTriangle } from 'lucide-react'
+import { Warning } from '@phosphor-icons/react'
 
 interface Props {
   message: string
@@ -31,7 +31,7 @@ export function ConfirmAction({
   return (
     <div className="rounded-lg border border-border p-3 max-w-md">
       <div className="flex gap-3">
-        {destructive && <AlertTriangle className="size-5 text-destructive shrink-0 mt-0.5" />}
+        {destructive && <Warning className="size-5 text-destructive shrink-0 mt-0.5" />}
         <div className="flex-1 min-w-0">
           <p className="text-sm">{message}</p>
           <div className="flex gap-2 mt-3">

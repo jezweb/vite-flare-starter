@@ -52,6 +52,45 @@ export interface ProviderEnv {
   MISTRAL_API_KEY?: string
   XAI_API_KEY?: string
   OPENROUTER_API_KEY?: string
+  /**
+   * Optional pair: route OpenRouter traffic through Cloudflare AI Gateway
+   * (BYOK proxy) for request logging, caching, and spend visibility with
+   * ZERO billing change — the same OpenRouter key pays. Set both to enable;
+   * unset (default) hits OpenRouter directly.
+   */
+  AI_GATEWAY_ACCOUNT_ID?: string
+  AI_GATEWAY_ID?: string
+}
+
+/** Per-call options for resolveModel / resolveModelForUser. */
+export interface ResolveModelOptions {
+  /**
+   * Extra settings applied ONLY when the model resolves to the Workers AI
+   * binding (ignored on every other route). `sessionAffinity` becomes the
+   * `x-session-affinity` header — repeat calls with the same key land on the
+   * same backend replica, so a big static prompt prefix (system prompt,
+   * skills, knowledge) hits the prefix cache. Supported natively by
+   * workers-ai-provider ≥3.3 (typed WorkersAIChatSettings.sessionAffinity).
+   */
+  workersAi?: { sessionAffinity?: string }
+}
+
+/**
+ * OpenRouter provider factory — single place that decides direct-vs-gateway.
+ * Gateway path verified 2026-07-16:
+ * https://developers.cloudflare.com/ai-gateway/usage/providers/openrouter/
+ * (provider segment is `openrouter`; the AI SDK provider appends
+ * `/chat/completions` to baseURL, matching the documented URL structure).
+ */
+function openRouterProvider(env: ProviderEnv) {
+  const gatewayBaseURL =
+    env.AI_GATEWAY_ACCOUNT_ID && env.AI_GATEWAY_ID
+      ? `https://gateway.ai.cloudflare.com/v1/${env.AI_GATEWAY_ACCOUNT_ID}/${env.AI_GATEWAY_ID}/openrouter`
+      : undefined
+  return createOpenRouter({
+    apiKey: env.OPENROUTER_API_KEY,
+    ...(gatewayBaseURL ? { baseURL: gatewayBaseURL } : {}),
+  })
 }
 
 /**
@@ -126,10 +165,11 @@ async function buildBYOKEnv(
 export async function resolveModelForUser(
   env: ProviderEnv & CredentialEnv,
   owner: CredentialOwner,
-  modelId: string
+  modelId: string,
+  opts?: ResolveModelOptions
 ) {
   const overlay = await buildBYOKEnv(env, owner, modelId)
-  return resolveModel(overlay, modelId)
+  return resolveModel(overlay, modelId, opts)
 }
 
 /**
@@ -170,11 +210,14 @@ function tryDirectFromPrefix(env: ProviderEnv, modelId: string) {
   return null
 }
 
-export function resolveModel(env: ProviderEnv, modelId: string) {
-  // 1. Workers AI — native binding, free.
+export function resolveModel(env: ProviderEnv, modelId: string, opts?: ResolveModelOptions) {
+  // 1. Workers AI — native binding, free. Per-call settings (currently just
+  //    sessionAffinity for prefix-cache routing) apply on this path only.
   if (modelId.startsWith('@cf/') || modelId.startsWith('@hf/')) {
     const workersai = createWorkersAI({ binding: env.AI })
-    return workersai(modelId)
+    return opts?.workersAi?.sessionAffinity
+      ? workersai(modelId, { sessionAffinity: opts.workersAi.sessionAffinity })
+      : workersai(modelId)
   }
 
   // 2. Explicit `openrouter/...` prefix forces OpenRouter even when the
@@ -182,8 +225,7 @@ export function resolveModel(env: ProviderEnv, modelId: string) {
   if (modelId.startsWith('openrouter/')) {
     if (!env.OPENROUTER_API_KEY)
       throw new Error(`OPENROUTER_API_KEY required for model: ${modelId}`)
-    const openrouter = createOpenRouter({ apiKey: env.OPENROUTER_API_KEY })
-    return openrouter(modelId.replace('openrouter/', ''))
+    return openRouterProvider(env)(modelId.replace('openrouter/', ''))
   }
 
   // 3 + 4. `provider/model` shape — prefer direct, fall back to OpenRouter.
@@ -191,8 +233,7 @@ export function resolveModel(env: ProviderEnv, modelId: string) {
     const direct = tryDirectFromPrefix(env, modelId)
     if (direct) return direct
     if (env.OPENROUTER_API_KEY) {
-      const openrouter = createOpenRouter({ apiKey: env.OPENROUTER_API_KEY })
-      return openrouter(modelId)
+      return openRouterProvider(env)(modelId)
     }
     throw new Error(
       `No route for model "${modelId}" — set OPENROUTER_API_KEY (or the direct key for the matching provider).`
@@ -238,8 +279,7 @@ export function resolveModel(env: ProviderEnv, modelId: string) {
 
   // 6. Last-chance fallback: OpenRouter if key set, else Workers AI.
   if (env.OPENROUTER_API_KEY) {
-    const openrouter = createOpenRouter({ apiKey: env.OPENROUTER_API_KEY })
-    return openrouter(modelId)
+    return openRouterProvider(env)(modelId)
   }
   console.warn(`Unknown model "${modelId}" — falling back to Workers AI`)
   return createWorkersAI({ binding: env.AI })(modelId)

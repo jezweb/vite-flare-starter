@@ -15,7 +15,7 @@
 import { diffLines } from 'diff'
 import { useMemo, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
-import { Check, ChevronDown, ChevronUp, FileDiff, Sparkles, User, X } from 'lucide-react'
+import { Check, CaretDown, CaretUp, GitDiff, Sparkle, User, X } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
@@ -134,9 +134,9 @@ function creatorIcon(type: ConfigDiffProposal['createdBy']['type']) {
     case 'user':
       return User
     case 'ai-sparkle':
-      return Sparkles
+      return Sparkle
     case 'agent':
-      return FileDiff
+      return GitDiff
   }
 }
 
@@ -184,7 +184,7 @@ export function ConfigDiffCard({
     >
       <div className={cn('flex flex-wrap items-start gap-2 border-b p-3', compact && 'p-2')}>
         <Badge variant="outline" className="gap-1 font-mono text-[10px]">
-          <FileDiff className="h-3 w-3" />
+          <GitDiff className="h-3 w-3" />
           {kindLabel(proposal.resource.kind)}
         </Badge>
         <div className="min-w-0 flex-1">
@@ -219,7 +219,7 @@ export function ConfigDiffCard({
             className="flex w-full items-center justify-between px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted/40"
           >
             <span>Rationale</span>
-            {showReason ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            {showReason ? <CaretUp className="h-3 w-3" /> : <CaretDown className="h-3 w-3" />}
           </button>
           {showReason ? (
             <div className="prose prose-sm dark:prose-invert max-w-none px-3 pb-3 text-sm">
@@ -236,7 +236,7 @@ export function ConfigDiffCard({
           className="flex w-full items-center justify-between px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted/40"
         >
           <span>Diff</span>
-          {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          {expanded ? <CaretUp className="h-3 w-3" /> : <CaretDown className="h-3 w-3" />}
         </button>
         {expanded ? (
           <div className="max-h-96 overflow-auto bg-muted/20 font-mono text-[11px] leading-relaxed">
