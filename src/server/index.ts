@@ -55,6 +55,7 @@ import webhookAgentsRoutes from './modules/webhook-agents/routes'
 import agentObservabilityRoutes from './modules/agent-observability/routes'
 import entitiesRoutes from './modules/entities/routes'
 import fieldConfigsRoutes from './modules/field-configs/routes'
+import shareTokensRoutes, { publicShareRoutes } from './modules/share-tokens/routes'
 import findingsRoutes, { learningsApp as learningsRoutes } from './modules/findings/routes'
 import organizationsRoutes from './modules/organizations/routes'
 import credentialsRoutes from './modules/credentials/routes'
@@ -364,6 +365,9 @@ app.route('/api/webhooks', webhookAgentsRoutes)
 app.route('/api/agent-observability', agentObservabilityRoutes)
 app.route('/api/entities', entitiesRoutes)
 app.route('/api/field-configs', fieldConfigsRoutes)
+app.route('/api/share-tokens', shareTokensRoutes)
+// Public share resolution — deliberately unauthenticated (see module docs).
+app.route('/api/share', publicShareRoutes)
 app.route('/api/findings', findingsRoutes)
 app.route('/api/learnings', learningsRoutes)
 app.route('/api/organizations', organizationsRoutes)

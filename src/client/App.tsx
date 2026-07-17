@@ -135,6 +135,7 @@ const OrganizationPage = lazy(() =>
 const AcceptInvitationPage = lazy(() =>
   import('./pages/AcceptInvitationPage').then((m) => ({ default: m.AcceptInvitationPage }))
 )
+const SharePage = lazy(() => import('./pages/SharePage').then((m) => ({ default: m.SharePage })))
 const ConnectorsPage = lazy(() =>
   import('./modules/connectors/pages/ConnectorsPage').then((m) => ({ default: m.ConnectorsPage }))
 )
@@ -293,6 +294,8 @@ function App() {
                 {/* Accept-invitation — handles both signed-in (accept now) and
               signed-out (stash + bounce to sign-in) cases. */}
                 <Route path="/accept-invitation/:invitationId" element={<AcceptInvitationPage />} />
+                {/* Public share links — read-only view behind a share token */}
+                <Route path="/share/:token" element={<SharePage />} />
 
                 {/* Protected dashboard routes */}
                 <Route

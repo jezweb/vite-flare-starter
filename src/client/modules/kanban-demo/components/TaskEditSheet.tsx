@@ -29,6 +29,7 @@ import {
   DynamicFieldRenderer,
   type FieldValues,
 } from '@/client/components/DynamicFieldRenderer'
+import { ShareButton } from '@/client/components/ShareButton'
 import { useCreateFieldConfig, useFieldConfigs } from '@/client/hooks/useFieldConfigs'
 import { useUpdateTask, type TaskEntity } from '../hooks/useTaskEntities'
 
@@ -179,7 +180,10 @@ export function TaskEditSheet({ task, onClose }: TaskEditSheetProps) {
           )}
         </div>
 
-        <SheetFooter>
+        <SheetFooter className="flex-row items-center">
+          {/* Public read-only link (#62(4) share tokens worked example) */}
+          {task && <ShareButton entityType="entity" entityId={task.id} />}
+          <div className="flex-1" />
           <Button variant="ghost" onClick={onClose} disabled={updateTask.isPending}>
             Cancel
           </Button>

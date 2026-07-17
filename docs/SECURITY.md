@@ -112,6 +112,25 @@ Connector access tokens are stored AES-GCM encrypted and **decrypted before use*
 - **Webhooks:** signatures compared in constant time; Stripe verified with the
   `t=…,v1=…` scheme over `<timestamp>.<body>`.
 
+## 7b. Share tokens — the deliberate public surface
+
+`share_tokens` (#62) mints unauthenticated read-only links (`/share/:token`).
+The controls that keep that safe:
+
+- **Hashed at rest** — the DB stores SHA-256 of the token; the raw value is
+  returned once at mint. A database read can't reconstruct live links.
+- **Resolver allow-list** — each shareable type declares `loadPublic()`
+  field-by-field (`server/modules/share-tokens/resolvers.ts`). Never spread a
+  row; the shipped `entity` resolver omits owner id, org id, assignee, and
+  `externalId`. Review this function whenever you add a resolver — it defines
+  what the public internet sees.
+- **Uniform 404** — unknown, expired, and revoked tokens are indistinguishable.
+- **Creator-scoped management** — even in shared tenancy, only the minter can
+  list or revoke a link: sharing records with the team doesn't share control
+  of public exposure.
+- **Expiry by default** — links expire in 30 days unless the caller explicitly
+  requests longer or never.
+
 ## 8. Audit / access log
 
 Every module records user actions via `logActivity()` into `activity_logs`
