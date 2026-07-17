@@ -30,6 +30,8 @@ import {
   type FieldValues,
 } from '@/client/components/DynamicFieldRenderer'
 import { ShareButton } from '@/client/components/ShareButton'
+import { TimeLogger } from '@/client/components/TimeLogger'
+import { Separator } from '@/components/ui/separator'
 import { useCreateFieldConfig, useFieldConfigs } from '@/client/hooks/useFieldConfigs'
 import { useUpdateTask, type TaskEntity } from '../hooks/useTaskEntities'
 
@@ -177,6 +179,14 @@ export function TaskEditSheet({ task, onClose }: TaskEditSheetProps) {
                 {createConfig.isPending ? 'Creating…' : 'Add example fields'}
               </Button>
             </div>
+          )}
+
+          {task && (
+            <>
+              <Separator />
+              {/* Time tracking (#62(3) worked example) */}
+              <TimeLogger entityType="entity" entityId={task.id} />
+            </>
           )}
         </div>
 

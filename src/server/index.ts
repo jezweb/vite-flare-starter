@@ -56,6 +56,7 @@ import agentObservabilityRoutes from './modules/agent-observability/routes'
 import entitiesRoutes from './modules/entities/routes'
 import fieldConfigsRoutes from './modules/field-configs/routes'
 import shareTokensRoutes, { publicShareRoutes } from './modules/share-tokens/routes'
+import timeEntriesRoutes from './modules/time-entries/routes'
 import findingsRoutes, { learningsApp as learningsRoutes } from './modules/findings/routes'
 import organizationsRoutes from './modules/organizations/routes'
 import credentialsRoutes from './modules/credentials/routes'
@@ -368,6 +369,7 @@ app.route('/api/field-configs', fieldConfigsRoutes)
 app.route('/api/share-tokens', shareTokensRoutes)
 // Public share resolution — deliberately unauthenticated (see module docs).
 app.route('/api/share', publicShareRoutes)
+app.route('/api/time-entries', timeEntriesRoutes)
 app.route('/api/findings', findingsRoutes)
 app.route('/api/learnings', learningsRoutes)
 app.route('/api/organizations', organizationsRoutes)
