@@ -183,6 +183,21 @@ NODE_ENV=development
 # Never commit production secrets to git!
 
 # ============================================
+# Web Search (optional — powers web_search + trusted_search)
+# ============================================
+# Pick ONE provider and set its key; web_search appears when a key exists.
+# SEARCH_PROVIDER=serper            # serper (default) | brave | tavily | exa
+# SERPER_API_KEY=                   # free 2,500/month — https://serper.dev
+# BRAVE_API_KEY=                    # https://brave.com/search/api
+# TAVILY_API_KEY=                   # https://tavily.com
+# EXA_API_KEY=                      # https://exa.ai
+#
+# Domain-scoped search (#89): setting an allow-list adds a trusted_search
+# tool pinned to these domains (results outside the list are filtered
+# server-side). For answers that must come from authoritative sources.
+# SEARCH_TRUSTED_DOMAINS=ato.gov.au, developers.cloudflare.com
+
+# ============================================
 # Google Places (optional — powers places_search + show_map)
 # ============================================
 # Pairs with the show_map inline UI tool to render map answers like claude.ai.

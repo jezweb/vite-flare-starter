@@ -25,7 +25,7 @@ client render metadata in one object. See
 | **todo** | `todo_add`, `todo_update`, `todo_list`, `todo_clear` | Yes (persisted via user_meta) |
 | **config-diff** | `propose_patch` | Yes — stages a change for user approval |
 | **browser** | `browser_markdown`, `browser_extract`, `browser_screenshot`, `browser_links`, `browser_content` | If `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_API_TOKEN` |
-| **search** | `web_search` | If a provider key is set |
+| **search** | `web_search`, `trusted_search` | Provider key set; trusted_search also needs `SEARCH_TRUSTED_DOMAINS` |
 | **places** | `places_search`, `places_details` | If `GOOGLE_PLACES_API_KEY` |
 | **files** | `fs_list`, `fs_read`, `fs_write`, `fs_delete` | If `FILES` R2 bucket bound |
 | **google-workspace — Gmail** | `gmail_search`, `gmail_get_message`, `gmail_list_labels`, `gmail_draft`, `gmail_reply`, `gmail_send` | Per-user OAuth |
@@ -205,6 +205,33 @@ exposes a tool named `google_local_places`.
 | Brave | $5 monthly credits | brave.com/search/api → `BRAVE_API_KEY` |
 | Tavily | 1,000 credits/month | tavily.com → `TAVILY_API_KEY` |
 | Exa | Paid | exa.ai → `EXA_API_KEY` |
+
+### Domain-scoped search — `trusted_search` (#89)
+
+Set `SEARCH_TRUSTED_DOMAINS` (comma-separated, e.g.
+`ato.gov.au, developers.cloudflare.com, docs.yourvendor.com`) and the
+agent gains a `trusted_search` tool pinned to those domains — for
+answers that must come from an authoritative source, not the open web.
+Unset, the tool never appears.
+
+Scoping is enforced twice: pushed to the provider where a native
+mechanism exists (Tavily `include_domains`, Exa `includeDomains`,
+`site:` operators for Serper/Brave), **and re-filtered server-side**
+against the allow-list (exact host or subdomain — `evil-example.com`
+does not match `example.com`; unparseable URLs are dropped). A provider
+that ignores its scope parameter degrades to fewer results, never to an
+off-list citation.
+
+> **Tavily gotcha baked in:** `include_domains` was historically
+> ignored under Tavily's legacy `{api_key}`-in-body auth (observed
+> fixed upstream 2026-07-17, but don't depend on it). The provider
+> impl uses Bearer-header auth — the current documented format — and
+> the server-side re-filter makes the scope hold either way.
+
+Forks with a fixed authority set can mint bespoke variants with
+`createScopedSearchTool({ name, displayName, description, domains })`
+from `server/modules/chat/tools/search.ts` (static `string[]` or a
+per-context resolver) and register them alongside their other tools.
 
 ---
 
