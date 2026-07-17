@@ -18,6 +18,8 @@ import { drizzle } from 'drizzle-orm/d1'
 import { and, eq } from 'drizzle-orm'
 import { scopeUser, isCondition } from '@/server/lib/tenancy'
 import { entities } from '@/server/modules/entities/db/schema'
+import { artifacts } from '@/server/modules/artifacts/db/schema'
+import { getLatestVersion } from '@/server/modules/artifacts/store'
 
 export interface ShareResolver {
   canShare(env: { DB: D1Database }, entityId: string, userId: string): Promise<boolean>
@@ -56,6 +58,34 @@ export const shareResolvers: Record<string, ShareResolver> = {
         status: row.status,
         fields,
         updatedAt: row.updatedAt,
+      }
+    },
+  },
+
+  // AI-generated artifacts (WorkspacePanel) — publishes the LATEST
+  // version at resolve time, so an updated artifact updates its links.
+  artifact: {
+    async canShare(env, entityId, userId) {
+      const db = drizzle(env.DB)
+      const conditions = [eq(artifacts.id, entityId), scopeUser(artifacts.userId, userId)].filter(
+        isCondition
+      )
+      const [row] = await db
+        .select({ id: artifacts.id })
+        .from(artifacts)
+        .where(and(...conditions))
+        .limit(1)
+      return !!row
+    },
+    async loadPublic(env, entityId) {
+      const latest = await getLatestVersion(env, entityId)
+      if (!latest) return null
+      return {
+        artifactType: latest.artifact.type,
+        title: latest.version.title,
+        code: latest.version.code,
+        version: latest.version.version,
+        updatedAt: latest.artifact.updatedAt,
       }
     },
   },

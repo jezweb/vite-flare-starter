@@ -1,19 +1,18 @@
 /**
  * ArtifactsPage — `/dashboard/artifacts`
  *
- * Lists all AI-generated artifacts (HTML / SVG / Mermaid) the user has
- * created in any conversation. Reached via the user-menu → "My artifacts".
+ * Lists the user's AI-generated artifacts (HTML / SVG / Mermaid /
+ * Markdown) across all conversations, from the table-backed index the
+ * create/edit tools maintain (server/modules/artifacts). Reached via
+ * the user-menu → "My artifacts".
  *
  * Each artifact card links back to the source conversation where it
- * appears inline; click → /dashboard/chat/:conversationId.
- *
- * Phase 1 ships the list view + search + type filter. A future enhancement
- * could add a per-artifact preview pane.
+ * appears inline (and in the WorkspacePanel).
  */
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Sparkle, MagnifyingGlass, Chat, CodeSimple, Image as ImageIcon, GitBranch } from '@phosphor-icons/react'
+import { Sparkle, MagnifyingGlass, Chat, CodeSimple, Image as ImageIcon, GitBranch, FileText } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { Input } from '@/components/ui/input'
 import { apiClient } from '@/client/lib/api-client'
@@ -21,14 +20,14 @@ import { cn } from '@/lib/utils'
 import { EmptyState as SharedEmptyState } from '@/client/components/EmptyState'
 
 interface Artifact {
-  conversationId: string
+  conversationId: string | null
   conversationTitle: string | null
-  messageId: string
   artifactId: string
   type: string
   title: string
-  height: number
+  latestVersion: number
   createdAt: string
+  updatedAt: string
 }
 
 function timeAgo(dateStr: string | null): string {
@@ -45,12 +44,14 @@ const TYPE_ICONS: Record<string, typeof CodeSimple> = {
   html: CodeSimple,
   svg: ImageIcon,
   mermaid: GitBranch,
+  markdown: FileText,
 }
 
 const TYPE_LABELS: Record<string, string> = {
   html: 'HTML',
   svg: 'SVG',
   mermaid: 'Mermaid diagram',
+  markdown: 'Document',
 }
 
 export function ArtifactsPage() {
@@ -98,6 +99,7 @@ export function ArtifactsPage() {
           className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
         >
           <option value="all">All types</option>
+          <option value="markdown">Documents</option>
           <option value="html">HTML</option>
           <option value="svg">SVG</option>
           <option value="mermaid">Mermaid</option>
@@ -116,9 +118,9 @@ export function ArtifactsPage() {
           {artifacts.map((a) => {
             const Icon = TYPE_ICONS[a.type] ?? CodeSimple
             return (
-              <li key={`${a.messageId}-${a.artifactId}`}>
+              <li key={a.artifactId}>
                 <Link
-                  to={`/dashboard/chat/${a.conversationId}`}
+                  to={a.conversationId ? `/dashboard/chat/${a.conversationId}` : '/dashboard/chat'}
                   className={cn(
                     'group flex items-start gap-3 rounded-lg border bg-card p-4 transition-all',
                     'hover:border-primary/40 hover:shadow-sm'
@@ -138,6 +140,11 @@ export function ArtifactsPage() {
                       <span className="rounded-full bg-muted px-2 py-0.5">
                         {TYPE_LABELS[a.type] ?? a.type}
                       </span>
+                      {a.latestVersion > 1 && (
+                        <span className="rounded-full bg-muted px-2 py-0.5 tabular-nums">
+                          v{a.latestVersion}
+                        </span>
+                      )}
                       <span className="flex items-center gap-1 truncate">
                         <Chat className="size-3 shrink-0" />
                         <span className="truncate">

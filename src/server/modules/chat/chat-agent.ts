@@ -863,6 +863,9 @@ export class ChatAgent extends AIChatAgent<Env> {
       env: this.env as unknown as Record<string, unknown>,
       userId,
       user: userRecord,
+      // The DO name encodes the conversation — tools that index their
+      // output (artifacts) use this to link rows back to the transcript.
+      conversationId: this.resolveSession().conversationId,
       projectId: effectiveProjectId ?? null,
       model: {
         id: modelId,

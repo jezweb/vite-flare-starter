@@ -28,6 +28,10 @@ interface ShareResponse {
     status?: string
     fields?: Record<string, unknown>
     updatedAt?: number
+    /** artifact resolver payload */
+    artifactType?: 'html' | 'svg' | 'mermaid' | 'markdown'
+    code?: string
+    version?: number
   }
 }
 
@@ -95,7 +99,11 @@ export function SharePage() {
           </div>
         )}
 
-        {state === 'ok' && data && (
+        {state === 'ok' && data && data.entityType === 'artifact' && (
+          <ArtifactShareView data={data} />
+        )}
+
+        {state === 'ok' && data && data.entityType !== 'artifact' && (
           <Card>
             <CardHeader>
               <div className="flex flex-wrap items-center gap-2">
@@ -138,6 +146,59 @@ export function SharePage() {
         )}
       </main>
     </div>
+  )
+}
+
+/**
+ * Published artifact view — sandboxed iframe for HTML/SVG (scripts
+ * allowed, same-origin denied), plain rendering for mermaid source and
+ * markdown. The share link always serves the artifact's LATEST version.
+ */
+function ArtifactShareView({ data }: { data: ShareResponse }) {
+  const { payload } = data
+  const type = payload.artifactType
+  const code = payload.code ?? ''
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="outline" className="uppercase">
+            {type}
+          </Badge>
+          {payload.version && payload.version > 1 && (
+            <Badge variant="secondary" className="tabular-nums">
+              v{payload.version}
+            </Badge>
+          )}
+        </div>
+        <CardTitle className="mt-2 text-2xl">{payload.title ?? 'Untitled artifact'}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {type === 'html' || type === 'svg' ? (
+          <iframe
+            srcDoc={
+              type === 'svg'
+                ? `<!DOCTYPE html><html><head><style>body{margin:0;padding:16px;display:flex;justify-content:center;align-items:center;min-height:100vh;}</style></head><body>${code}</body></html>`
+                : code
+            }
+            sandbox="allow-scripts"
+            className="h-[70vh] w-full rounded-md border border-hairline bg-white"
+            title={payload.title ?? 'Shared artifact'}
+          />
+        ) : (
+          <pre className="max-h-[70vh] overflow-auto whitespace-pre-wrap rounded-md border border-hairline bg-surface-recessed p-4 text-sm">
+            {code}
+          </pre>
+        )}
+        <p className="mt-6 text-xs text-muted-foreground">
+          Shared {new Date(data.sharedAt * 1000).toLocaleDateString()}
+          {data.expiresAt
+            ? ` · link expires ${new Date(data.expiresAt * 1000).toLocaleDateString()}`
+            : ''}
+        </p>
+      </CardContent>
+    </Card>
   )
 }
 

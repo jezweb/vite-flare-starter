@@ -393,6 +393,13 @@
       "when": 1784263917105,
       "tag": "20260717045157_time_entries",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "6",
+      "when": 1784274049967,
+      "tag": "20260717074049_artifacts_versioned",
+      "breakpoints": true
     }
   ]
 }

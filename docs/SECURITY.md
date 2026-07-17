@@ -130,6 +130,12 @@ The controls that keep that safe:
   of public exposure.
 - **Expiry by default** — links expire in 30 days unless the caller explicitly
   requests longer or never.
+- **Artifact links are LIVE** — the `artifact` resolver serves the latest
+  version at resolve time (Google-Docs-style), so later edits update what the
+  public sees. Deliberate; the artifact's type is pinned at creation (an edit
+  can't flip a shared markdown doc to script-capable html), and revoking the
+  link is the off switch. A fork wanting immutable snapshots pins the version
+  into the resolver payload instead.
 
 ## 8. Audit / access log
 

@@ -12,6 +12,7 @@ import { useState, useRef, useEffect } from 'react'
 import { CodeSimple, Eye, Copy, Check, ArrowSquareOut } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { MessageResponse } from '@/components/ai-elements/message'
 import { useCopy } from '@/client/lib/use-copy'
 import { useTheme } from '@/client/components/theme-provider'
 
@@ -41,11 +42,12 @@ function useResolvedDarkMode(): boolean {
 
 interface ArtifactData {
   _artifact: true
-  type: 'html' | 'svg' | 'mermaid'
+  type: 'html' | 'svg' | 'mermaid' | 'markdown'
   title: string
   code: string
   height?: number
   artifactId?: string
+  version?: number
 }
 
 export function isArtifact(output: unknown): output is ArtifactData {
@@ -140,12 +142,16 @@ export function ArtifactViewer({ artifact }: Props) {
       </div>
 
       {showCode ? (
-        <pre className="p-3 text-xs font-mono overflow-auto max-h-96 bg-background">
+        <pre className="p-3 text-xs font-mono overflow-auto max-h-96 bg-background whitespace-pre-wrap">
           {artifact.code}
         </pre>
       ) : (
         <div className="bg-muted/50">
-          {artifact.type === 'svg' ? (
+          {artifact.type === 'markdown' ? (
+            <div className="max-h-[70vh] overflow-y-auto bg-background p-4">
+              <MessageResponse>{artifact.code}</MessageResponse>
+            </div>
+          ) : artifact.type === 'svg' ? (
             <SvgRenderer code={artifact.code} height={height} isDark={isDark} />
           ) : (
             <iframe

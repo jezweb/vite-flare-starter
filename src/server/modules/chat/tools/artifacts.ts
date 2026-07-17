@@ -1,48 +1,62 @@
 /**
- * Artifact Tools — AI-generated visual content (HTML, SVG, Mermaid)
+ * Artifact Tools — AI-generated documents and visuals (HTML, SVG,
+ * Mermaid, Markdown)
  *
- * Creates interactive artifacts rendered in sandboxed iframes inline in chat.
- * The AI generates the code as a tool result — no separate sub-agent needed.
- *
- * Output shape is a `_artifact: true` marker intercepted by
- * `MessageRenderer.isArtifact()` and rendered by `ArtifactViewer`.
+ * The tool result streams into the transcript (`_artifact: true` marker
+ * → rendered inline AND in the WorkspacePanel), and every create/edit
+ * is ALSO indexed into the artifacts tables (see
+ * `server/modules/artifacts/`) so artifacts get durable identity,
+ * a version chain, and publishability via share tokens. Persistence is
+ * best-effort — a D1 hiccup degrades to an unpersisted artifact, never
+ * a failed tool call.
  */
 import { z } from 'zod'
 import { Sparkle, MagicWand } from '@phosphor-icons/react'
-import type { ToolDefinition } from '@/shared/agent'
+import type { ToolDefinition, AgentContext } from '@/shared/agent'
+import { createArtifact, addArtifactVersion, type ArtifactEnv } from '@/server/modules/artifacts/store'
 
-const ArtifactType = z.enum(['html', 'svg', 'mermaid'])
+const ArtifactType = z.enum(['html', 'svg', 'mermaid', 'markdown'])
 
 const CreateArtifactInput = z.object({
   type: ArtifactType.describe('Artifact type'),
-  title: z.string().describe('Short display title'),
+  title: z.string().max(300).describe('Short display title'),
   code: z
     .string()
-    .describe('The complete HTML/SVG/Mermaid code. No markdown fences. Self-contained.'),
+    .max(300_000)
+    .describe('The complete HTML/SVG/Mermaid/Markdown content. No outer markdown fences. Self-contained.'),
   height: z.number().optional().describe('Display height in pixels (default: 400)'),
 })
 
 const EditArtifactInput = z.object({
   artifactId: z.string().describe('The artifact ID from a previous create_artifact result'),
-  type: ArtifactType.describe('Artifact type (same as original)'),
-  title: z.string().describe('Updated title'),
-  code: z.string().describe('The COMPLETE updated code (not a diff — the full artifact)'),
+  type: ArtifactType.describe('Artifact type (same as original — a chain keeps its original type)'),
+  title: z.string().max(300).describe('Updated title'),
+  code: z
+    .string()
+    .max(300_000)
+    .describe('The COMPLETE updated content (not a diff — the full artifact)'),
   height: z.number().optional().describe('Display height in pixels'),
 })
 
 function cleanFences(code: string): string {
   return code
     .trim()
-    .replace(/^```(?:html|svg|mermaid)?\n?/, '')
+    .replace(/^```(?:html|svg|mermaid|markdown|md)?\n?/, '')
     .replace(/\n?```$/, '')
 }
 
+const persistEnv = (ctx: AgentContext): ArtifactEnv => ctx.env as unknown as ArtifactEnv
+
 const CreateArtifactOutput = z.object({
   _artifact: z.literal(true),
+  artifactId: z.string().optional(),
+  version: z.number().optional(),
   type: ArtifactType,
   title: z.string(),
   code: z.string(),
   height: z.number(),
+  /** Model-facing steering — keeps revisions on the same version chain. */
+  next: z.string().optional(),
 })
 
 export const createArtifactDefinition: ToolDefinition<
@@ -50,31 +64,55 @@ export const createArtifactDefinition: ToolDefinition<
   z.infer<typeof CreateArtifactOutput>
 > = {
   name: 'create_artifact',
-  description: `Create a visual artifact rendered inline in chat. Use for dashboards, charts, diagrams, interactive calculators, reports, or any visual content. Displayed in a sandboxed iframe with code/preview toggle.
+  description: `Create an artifact — a document or visual shown in the workspace panel beside the chat, with versions the user can step through. Use for dashboards, charts, diagrams, interactive calculators, reports, drafted documents, or any content the user will keep, iterate on, or share.
 
 Types:
-- html: Full interactive pages with CSS + JS. For charts, use Chart.js via CDN: <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>. For formatted documents/reports, use marked.js: <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> and render markdown to HTML. Dark theme (#0f1117 bg, light text). Include all CSS inline.
+- markdown: written documents — reports, plans, drafts, briefs, specs. Preferred for prose the user will edit or reuse.
+- html: Full interactive pages with CSS + JS. For charts, use Chart.js via CDN: <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>. Dark theme (#0f1117 bg, light text). Include all CSS inline.
 - svg: Vector graphics. Self-contained SVG with viewBox.
 - mermaid: Diagrams (flowchart, sequenceDiagram, classDiagram, erDiagram, gantt, pie, mindmap).
 
-CDN libraries available in HTML artifacts:
-- Chart.js: charts (bar, line, pie, doughnut, radar, scatter, bubble)
-- Marked.js: markdown to HTML (for formatted reports/documents)
-- Mermaid: diagrams (if you need a diagram inside an HTML artifact)
-- D3.js: advanced data visualisation
-- Leaflet: maps
-- Three.js: 3D graphics
+CDN libraries available in HTML artifacts: Chart.js, Marked.js, Mermaid, D3.js, Leaflet, Three.js.
 
-IMPORTANT: Output the COMPLETE code as the 'code' parameter — no markdown fences, no explanation. Make it visually polished with dark theme.`,
+The result includes an artifactId — reuse it with edit_artifact to produce the next version instead of a separate copy.
+
+IMPORTANT: Output the COMPLETE content as the 'code' parameter — no outer markdown fences, no explanation. Make it polished.`,
   inputSchema: CreateArtifactInput,
   outputSchema: CreateArtifactOutput,
-  execute: async ({ type, title, code, height = 400 }) => ({
-    _artifact: true,
-    type,
-    title,
-    code: cleanFences(code),
-    height,
-  }),
+  execute: async ({ type, title, code, height = 400 }, ctx) => {
+    const cleaned = cleanFences(code)
+    let persisted: { artifactId: string; version: number } | null = null
+    try {
+      persisted = await createArtifact(persistEnv(ctx), {
+        userId: ctx.userId,
+        conversationId: ctx.conversationId ?? null,
+        type,
+        title,
+        code: cleaned,
+        height,
+      })
+    } catch (err) {
+      console.warn(JSON.stringify({ event: 'artifact_persist_failed', error: String(err) }))
+    }
+    return {
+      _artifact: true,
+      ...(persisted
+        ? {
+            artifactId: persisted.artifactId,
+            version: persisted.version,
+            // Output-embedded steering: models reliably act on the tool
+            // result they just read, far more than on tool descriptions
+            // discovered earlier — without this, revisions tend to call
+            // create_artifact again and fork a duplicate instead of v2.
+            next: `To revise this artifact, call edit_artifact with artifactId "${persisted.artifactId}" — do NOT call create_artifact again for the same document.`,
+          }
+        : {}),
+      type,
+      title,
+      code: cleaned,
+      height,
+    }
+  },
   render: {
     icon: Sparkle,
     displayName: 'Create Artifact',
@@ -88,6 +126,9 @@ IMPORTANT: Output the COMPLETE code as the 'code' parameter — no markdown fenc
 const EditArtifactOutput = z.object({
   _artifact: z.literal(true),
   artifactId: z.string(),
+  version: z.number().optional(),
+  /** True when the id was unknown/out-of-scope and a fresh artifact was created instead. */
+  forked: z.boolean().optional(),
   type: ArtifactType,
   title: z.string(),
   code: z.string(),
@@ -100,23 +141,45 @@ export const editArtifactDefinition: ToolDefinition<
 > = {
   name: 'edit_artifact',
   description:
-    'Edit an existing artifact by describing what to change. Provide the artifact ID and the change instruction. The AI will output the complete updated code.',
+    'Produce the next version of an existing artifact. Provide the artifact ID from the earlier create_artifact result and the COMPLETE updated content. The workspace panel groups versions so the user can step between them.',
   inputSchema: EditArtifactInput,
   outputSchema: EditArtifactOutput,
-  execute: async ({ artifactId, type, title, code, height = 400 }) => ({
-    _artifact: true,
-    artifactId,
-    type,
-    title,
-    code: cleanFences(code),
-    height,
-  }),
+  execute: async ({ artifactId, type, title, code, height = 400 }, ctx) => {
+    const cleaned = cleanFences(code)
+    let persisted: { artifactId: string; version: number; forked?: boolean } | null = null
+    try {
+      persisted = await addArtifactVersion(persistEnv(ctx), {
+        artifactId,
+        userId: ctx.userId,
+        conversationId: ctx.conversationId ?? null,
+        type,
+        title,
+        code: cleaned,
+        height,
+      })
+    } catch (err) {
+      console.warn(JSON.stringify({ event: 'artifact_persist_failed', error: String(err) }))
+    }
+    return {
+      _artifact: true,
+      // addArtifactVersion may have forked a fresh artifact (unknown /
+      // out-of-scope id) — echo the id it actually landed on, and say
+      // so, rather than letting the caller believe the chain advanced.
+      artifactId: persisted?.artifactId ?? artifactId,
+      ...(persisted ? { version: persisted.version } : {}),
+      ...(persisted?.forked ? { forked: true } : {}),
+      type,
+      title,
+      code: cleaned,
+      height,
+    }
+  },
   render: {
     icon: MagicWand,
     displayName: 'Edit Artifact',
     summary: (output) => {
-      const o = output as { type?: string; title?: string }
-      return o?.title ? `${o.title} (${o.type})` : (o?.type ?? null)
+      const o = output as { type?: string; title?: string; version?: number }
+      return o?.title ? `${o.title}${o.version ? ` v${o.version}` : ''}` : (o?.type ?? null)
     },
   },
 }

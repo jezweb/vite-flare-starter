@@ -40,7 +40,7 @@ import { useChat, type Message } from '../hooks/useChat'
 import { useConversationList, useConversationMessages } from '../hooks/useConversations'
 import { useProjectList, useMoveConversation } from '@/client/modules/projects/hooks/useProjects'
 import { ConversationSidebar } from '../components/ConversationSidebar'
-import { ArtifactSidebar, countArtifactsAndFiles } from '../components/ArtifactSidebar'
+import { WorkspacePanel, countWorkspaceItems } from '../components/WorkspacePanel'
 import { MessageRenderer } from '../components/MessageRenderer'
 import { VirtualMessageList } from '../components/VirtualMessageList'
 import { ModelSelector } from '../components'
@@ -715,10 +715,19 @@ function ChatPageInner({ userId }: { userId: string }) {
   // regenerate is rebuilding the transcript. Empty state shows ONLY when
   // the transcript is genuinely empty AND we're not mid-request.
   const hasMessages = messages.length > 0 || isLoading
-  // Derive whether the artifact panel toggle should appear at all. Recomputed
+  // Derive whether the workspace toggle should appear at all. Recomputed
   // per render — cheap walk, no need for useMemo.
-  const { artifactCount, fileCount } = countArtifactsAndFiles(messages)
+  const { artifactCount, fileCount } = countWorkspaceItems(messages)
   const hasArtifactsOrFiles = artifactCount + fileCount > 0
+
+  // Auto-open the workspace when a NEW artifact lands (claude.ai
+  // behaviour) — the panel itself auto-selects the newest one. Only on
+  // increases, so closing the panel stays closed until the next artifact.
+  const prevArtifactCount = useRef(artifactCount)
+  useEffect(() => {
+    if (artifactCount > prevArtifactCount.current) setShowArtifactPanel(true)
+    prevArtifactCount.current = artifactCount
+  }, [artifactCount])
 
   // Resolve the current conversation's project (if any) for the header pill.
   // Two paths: (a) new chat launched from a project page — `urlProjectId` set
@@ -975,10 +984,10 @@ function ChatPageInner({ userId }: { userId: string }) {
                 onClick={() => setShowArtifactPanel((v) => !v)}
                 title={
                   showArtifactPanel
-                    ? 'Hide artifact panel'
-                    : `Artifacts (${artifactCount}) & files (${fileCount})`
+                    ? 'Hide workspace'
+                    : `Workspace — artifacts (${artifactCount}) & files (${fileCount})`
                 }
-                aria-label={showArtifactPanel ? 'Hide artifact panel' : 'Show artifact panel'}
+                aria-label={showArtifactPanel ? 'Hide workspace' : 'Show workspace'}
                 aria-pressed={showArtifactPanel}
               >
                 <FileText className="size-3.5" />
@@ -1323,11 +1332,12 @@ function ChatPageInner({ userId }: { userId: string }) {
         </div>
       </div>
 
-      {/* Right-side artifact panel: inline on large screens, Sheet on mobile.
-          Zero-schema derivation — ArtifactSidebar walks `messages` itself for
-          artifacts (_artifact tool results) and user file parts. */}
+      {/* Right-side workspace: inline on large screens, Sheet on mobile.
+          Zero-schema derivation — WorkspacePanel walks `messages` itself for
+          artifacts (_artifact tool results, version-grouped), files, and the
+          tool-activity feed. */}
       {showArtifactPanel && isLargeScreen && (
-        <ArtifactSidebar messages={messages} onClose={() => setShowArtifactPanel(false)} />
+        <WorkspacePanel messages={messages} onClose={() => setShowArtifactPanel(false)} />
       )}
       {showArtifactPanel && !isLargeScreen && (
         <Sheet
@@ -1337,7 +1347,7 @@ function ChatPageInner({ userId }: { userId: string }) {
           }}
         >
           <SheetContent side="right" className="w-80 p-0">
-            <ArtifactSidebar messages={messages} onClose={() => setShowArtifactPanel(false)} />
+            <WorkspacePanel messages={messages} onClose={() => setShowArtifactPanel(false)} />
           </SheetContent>
         </Sheet>
       )}
