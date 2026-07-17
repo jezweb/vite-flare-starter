@@ -32,6 +32,7 @@ import {
   type TaskColumn,
   type TaskEntity,
 } from '../hooks/useTaskEntities'
+import { TaskEditSheet } from '../components/TaskEditSheet'
 
 interface KanbanTask {
   id: string
@@ -99,6 +100,9 @@ export function KanbanDemoPage() {
   // forks adopting this primitive can wire it to user prefs / localStorage.
   const [collapsed, setCollapsed] = React.useState<Set<string>>(new Set())
 
+  // Card edit sheet (custom-fields worked example, #62(2)).
+  const [editingId, setEditingId] = React.useState<string | null>(null)
+
   const cards: KanbanTask[] = React.useMemo(() => (data?.entities ?? []).map(entityToCard), [data])
 
   const columns: KanbanColumn[] = React.useMemo(
@@ -137,7 +141,7 @@ export function KanbanDemoPage() {
     <PageContainer type="detail" maxWidth="7xl">
       <PageHeader
         title="Kanban demo"
-        subtitle="Drag cards to reorder or move — or focus a card and use space + arrows, or the card menu. Persisted to the entities API as type=task."
+        subtitle="Drag cards to reorder or move — or focus a card and use space + arrows, or the card menu. Click a card title to edit its custom fields (DynamicFieldRenderer). Persisted to the entities API as type=task."
         trailing={
           data && data.total > 0 ? (
             <span className="text-xs text-muted-foreground tabular-nums">
@@ -176,7 +180,13 @@ export function KanbanDemoPage() {
             renderCard={(card) => (
               <div className="space-y-1">
                 <div className="flex items-start gap-2">
-                  <div className="flex-1 text-sm font-medium leading-snug">{card.title}</div>
+                  <button
+                    type="button"
+                    className="flex-1 text-left text-sm font-medium leading-snug hover:underline"
+                    onClick={() => setEditingId(card.id)}
+                  >
+                    {card.title}
+                  </button>
                   <KanbanCardMenu cardId={card.id} className="-mr-1.5 -mt-1" />
                 </div>
                 {card.isAgentCreated && (
@@ -186,6 +196,10 @@ export function KanbanDemoPage() {
                 )}
               </div>
             )}
+          />
+          <TaskEditSheet
+            task={cards.find((card) => card.id === editingId)?.raw ?? null}
+            onClose={() => setEditingId(null)}
           />
           <div className="flex justify-end">
             <Button variant="outline" size="sm" onClick={handleSeed} disabled={seedTasks.isPending}>

@@ -84,6 +84,24 @@ export function useMoveTask() {
   })
 }
 
+interface UpdateTaskInput {
+  id: string
+  title?: string
+  /** Merged per-key on the server; null clears a key. */
+  fields?: Record<string, unknown>
+}
+
+/** Title + custom-field updates from the card edit sheet. */
+export function useUpdateTask() {
+  const queryClient = useQueryClient()
+  return useMutation<TaskEntity, Error, UpdateTaskInput>({
+    mutationFn: ({ id, ...patch }) => apiClient.patch<TaskEntity>(`/api/entities/${id}`, patch),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY })
+    },
+  })
+}
+
 interface SeedTaskInput {
   title: string
   column: TaskColumn
