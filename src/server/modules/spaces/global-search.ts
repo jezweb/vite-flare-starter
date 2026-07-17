@@ -14,6 +14,7 @@
 import { Hono } from 'hono'
 import { drizzle } from 'drizzle-orm/d1'
 import { and, desc, eq, inArray, like } from 'drizzle-orm'
+import { isSharedTenancy } from '@/shared/config/tenancy'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import {
   conversationMembers,
@@ -139,9 +140,10 @@ function safeJson(v: unknown): unknown {
 /**
  * GET /api/search/entities — FTS5 search across the user's entities.
  *
- * Indexes title + fields.body (extracted via JSON_EXTRACT in triggers).
- * Returns up to `limit` (default 20) hits scoped to the requesting
- * user's rows.
+ * Indexes title + every top-level text value in `fields` (extracted in
+ * the entities_fts triggers — see 20260717034646_entities_fts_all_fields).
+ * Returns up to `limit` (default 20) hits, scoped per tenancy mode:
+ * requester's rows in per-user mode, all rows in shared mode.
  *
  * Response shape: { results: [{ id, type, title, snippet, rank }] }.
  *   - snippet is the first ~160 chars of fields.body (may be empty
@@ -168,12 +170,20 @@ app.get('/entities', async (c) => {
       query: q,
       limit,
       // Pull the body out of the JSON column at query time so we can
-      // build a snippet without a separate round trip. Scope to the
-      // requesting user's rows only.
+      // build a snippet without a separate round trip. Scoping follows
+      // the tenancy mode (raw-SQL equivalent of scopeUser — searchFTS
+      // takes a where string, not a Drizzle condition): per-user mode
+      // filters to the requester's rows, shared mode searches the
+      // whole team's entities (#62(5) — a team wiki fork is the
+      // canonical shared-mode consumer).
       select:
-        '"entities".id, "entities".type, "entities".title, JSON_EXTRACT("entities".fields, \'$.body\') AS body',
-      where: '"entities".user_id = ?',
-      whereParams: [userId],
+        '"entities".id, "entities".type, "entities".title, ' +
+        // Snippet source mirrors what the FTS triggers index (all
+        // top-level text values), so a hit matched via $.content or
+        // $.notes still shows a snippet instead of an empty string.
+        `(SELECT group_concat(value, ' ') FROM json_each("entities".fields) WHERE type = 'text') AS body`,
+      where: isSharedTenancy ? undefined : '"entities".user_id = ?',
+      whereParams: isSharedTenancy ? [] : [userId],
     })
 
     const hits = results.map((r) => ({
@@ -190,14 +200,16 @@ app.get('/entities', async (c) => {
     // returning a 500. Body match is sacrificed in this branch.
     console.warn(JSON.stringify({ event: 'entities_fts_fallback', error: String(err) }))
     const escaped = q.replace(/[\\_%]/g, (m) => `\\${m}`)
+    const scope = isSharedTenancy ? '' : 'user_id = ? AND '
+    const binds = isSharedTenancy ? [`%${escaped}%`, limit] : [userId, `%${escaped}%`, limit]
     const { results } = await c.env.DB.prepare(
       `SELECT id, type, title, JSON_EXTRACT(fields, '$.body') AS body
        FROM entities
-       WHERE user_id = ? AND title LIKE ? ESCAPE '\\'
+       WHERE ${scope}title LIKE ? ESCAPE '\\'
        ORDER BY updated_at DESC
        LIMIT ?`
     )
-      .bind(userId, `%${escaped}%`, limit)
+      .bind(...binds)
       .all<{ id: string; type: string; title: string; body: string | null }>()
     const hits = (results ?? []).map((r) => ({
       id: r.id,

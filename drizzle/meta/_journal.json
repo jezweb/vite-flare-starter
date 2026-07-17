@@ -365,6 +365,13 @@
       "when": 1784231716375,
       "tag": "20260716195516_auth_admin_passkey",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "6",
+      "when": 1784260006000,
+      "tag": "20260717034646_entities_fts_all_fields",
+      "breakpoints": true
     }
   ]
 }
