@@ -1,3 +1,4 @@
+import path from 'node:path'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
@@ -29,6 +30,13 @@ export default defineConfig({
   // Path aliases — reads from tsconfig.json paths automatically in Vite 8
   resolve: {
     tsconfigPaths: true,
+    alias: {
+      // agents/skills statically imports just-bash (~4 MB simulated bash)
+      // for loader-executed .sh skill scripts — a path we never use (bash
+      // goes to the sandbox container). Stub it out of the bundle; see
+      // src/server/lib/ai/skills/just-bash-stub.ts to re-enable.
+      'just-bash': path.resolve(__dirname, './src/server/lib/ai/skills/just-bash-stub.ts'),
+    },
   },
 
   // Development server configuration

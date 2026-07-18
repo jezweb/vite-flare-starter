@@ -580,6 +580,19 @@ phrases. Anthropic's models tool-select much better against
 trigger-first descriptions than generic "this skill does X" copy. See
 `skills/code-review/SKILL.md` for a worked example.
 
+### Scripts + SDK interop
+
+Skills can ship executables under `scripts/` — `run_skill_script`
+fetches + runs them in one call. Function-style JS
+(`export default run(input, ctx)`) executes in an isolated dynamic
+worker via the `LOADER` Worker Loader binding (no container, no
+network); `.py`/`.sh` go to the `SANDBOX` container. Worked example:
+`skills/compare-options/scripts/score.js`. The registry is also
+mountable as an agents-SDK `SkillSource`
+(`userSkillSource`, `server/lib/ai/skills/sdk-source.ts`) for SDK
+surfaces like a Think pilot — the D1 layer (per-user overrides,
+enable/disable, always_active) stays ours.
+
 ### Three storage sources
 
 - **Bundled** — drop `skills/<name>/SKILL.md` in the repo. Vite glob,

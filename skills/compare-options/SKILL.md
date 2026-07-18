@@ -26,6 +26,11 @@ description: Evaluate multiple choices side-by-side based on relevant criteria, 
    - Use specific values where possible (price, dates, sizes)
    - Use boolean for present/absent features
    - Use short text ("excellent", "limited", "good") for qualitative
+   - For a weighted ranking, don't do the arithmetic yourself — run
+     `run_skill_script` with this skill and path `scripts/score.js`,
+     passing `{"weights": {...}, "options": [{"name", "scores": {...}}]}`
+     as stdin (scores 0-10). It returns the ranked totals, winner, and
+     margin deterministically.
 
 4. **Display the comparison**:
    - Use `show_comparison` with each option as a card, features as the criteria

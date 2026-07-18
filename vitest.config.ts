@@ -35,6 +35,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      // Mirror of the vite.config.ts stub — see just-bash-stub.ts.
+      'just-bash': path.resolve(__dirname, './src/server/lib/ai/skills/just-bash-stub.ts'),
       '@': path.resolve(__dirname, './src'),
       '@/client': path.resolve(__dirname, './src/client'),
       '@/server': path.resolve(__dirname, './src/server'),

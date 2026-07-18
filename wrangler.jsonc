@@ -277,6 +277,13 @@
     }
   ],
 
+  // Worker Loader (beta) — containerless dynamic-worker execution. Backs
+  // function-style skill scripts (`export default run(input, ctx)`) via the
+  // agents/skills runner: no network, no bindings, per-run isolate. Remove
+  // this block if your account can't deploy the beta; the tool degrades
+  // gracefully when the binding is absent.
+  "worker_loaders": [{ "binding": "LOADER" }],
+
   // Durable Objects — stateful, SQLite-backed classes that live longer than
   // a single request. One instance per `idFromName(name)`. Used for:
   //  - Voice agents (VoiceInputExample — streams mic + transcribes)

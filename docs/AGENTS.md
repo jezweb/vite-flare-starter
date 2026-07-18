@@ -881,10 +881,12 @@ Requires Hono route introspection + a route-to-tool-schema converter.
 
 ## Future extensions (not yet shipped)
 
-- **`agents:skills` migration** — swap the skills registry loading
-  layer onto the SDK's SKILL.md-compatible sources (+`skills.r2()`),
-  gaining `run_skill_script`; keep our editor/AI-sparkle/config-diff
-  UI on top (adoption step 2)
+- ~~`agents:skills` migration~~ — **resolved 2026-07-18 as interop,
+  not swap**: our D1 layer (per-user overrides, enable/disable,
+  always_active) has no SDK equivalent, so the registry stays ours;
+  `userSkillSource` adapts it to the SDK `SkillSource` interface and
+  `run_skill_script` runs function-style JS via the Worker Loader
+  runner. See AGENT_TOOLKIT.md §Skill scripts.
 - **Think pilot** — one new agent class (messenger-facing or
   AdminAgent v2) on `@cloudflare/think`
 - **Agents-as-tools / fibers pilot** — rework researcher→writer on

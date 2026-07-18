@@ -92,9 +92,15 @@ function parseFrontmatter(yaml: string): Record<string, unknown> {
       continue
     }
 
-    // Plain string value
+    // Plain scalar value. Booleans must coerce — YAML `true`/`false`
+    // left as strings makes every strict `=== true` flag check downstream
+    // silently false (disable_model_invocation / always_active leaked
+    // routine-only skills into the model catalog before this).
     if (value) {
-      result[key] = value.trim()
+      const trimmed = value.trim()
+      if (trimmed === 'true') result[key] = true
+      else if (trimmed === 'false') result[key] = false
+      else result[key] = trimmed
     }
   }
 

@@ -18,7 +18,7 @@ client render metadata in one object. See
 | **core** | `get_server_time`, `get_model_info`, `calculate` | Yes |
 | **memory** | `remember`, `recall`, `search_memory`, `forget` | Yes (user_meta D1 table) |
 | **ui** | `offer_choices`, `show_alert`, `show_contact`, `collect_info`, `ask_questions`, `show_data_table`, `show_metric_cards`, `show_timeline`, `show_progress`, `show_comparison`, `confirm_action`, `show_map` | Yes (inline React components) |
-| **skills** | `load_skill` | Yes |
+| **skills** | `list_skills`, `load_skill`, `read_skill_resource`, `run_skill_script`, `create_skill`, `install_skill`, `toggle_skill` | Yes (script execution: function-style JS via the `LOADER` Worker Loader binding, other scripts via `SANDBOX`; degrades to a clear error when neither is bound) |
 | **code** | `run_python` (R2 file staging + artifact harvest), `run_shell`, `run_js`, `generate_document` (markdown → docx/xlsx/pptx) | If `SANDBOX` container binding (Workers Paid) |
 | **delegate** | `delegate` | Yes (subagent pattern) |
 | **audio** | `transcribe_audio` (Deepgram Nova 3), `speak_text` (Deepgram Aura 2, 12 voices, Aura 1 fallback) | Yes (AI binding, no external keys) |
@@ -309,3 +309,28 @@ capped at 50KB per call.
 container path needs a live deploy): send "run python: print(2+2)" in
 chat, then "generate a docx summarising this conversation", and confirm
 the artifact appears under Files.
+
+## Skill scripts (`run_skill_script`)
+
+Skills can ship executable scripts under `scripts/` in their directory
+(bundled, R2, or GitHub — enumerated as resources automatically). The
+tool fetches + executes in one call, routing by script style:
+
+- **Function-style JS** (`export default async run(input, ctx)`) → the
+  agents-SDK Worker Loader runner: a per-run isolated dynamic worker
+  with **no network and no bindings**, `stdin` parsed as JSON into
+  `input`, return value comes back as `result`. Needs the
+  `worker_loaders` binding (`LOADER` in `wrangler.jsonc`) — no
+  container, no Docker, works on any plan with the beta.
+- **Everything else** (`.py`, `.sh`, script-style `.js`) → the
+  `SANDBOX` container with stdin piped, `{stdout, stderr, exitCode}`
+  output (terminal shape renderer).
+
+Worked example: `skills/compare-options/scripts/score.js` — weighted
+option ranking, so comparison arithmetic is deterministic instead of
+in-model. Interop note: our registry is also mountable as an SDK
+`SkillSource` via `userSkillSource(env, userId)`
+(`src/server/lib/ai/skills/sdk-source.ts`) — the shape a
+`@cloudflare/think` pilot would consume. `just-bash` (the SDK's
+loader-bash simulator, ~4 MB) is deliberately stubbed out of the build;
+see `src/server/lib/ai/skills/just-bash-stub.ts` to re-enable.

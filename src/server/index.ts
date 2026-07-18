@@ -217,6 +217,14 @@ export interface Env {
   BRAVE_API_KEY?: string
   TAVILY_API_KEY?: string
   EXA_API_KEY?: string
+
+  /**
+   * Worker Loader (beta) — containerless dynamic-worker execution. Backs
+   * function-style skill scripts (agents/skills runner) without needing the
+   * SANDBOX container; also the substrate a Code Mode pilot would use.
+   * Tools degrade gracefully when absent.
+   */
+  LOADER?: WorkerLoader
 }
 
 // Create Hono app with type-safe environment

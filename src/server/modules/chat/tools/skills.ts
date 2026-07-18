@@ -18,6 +18,7 @@ import { z } from 'zod'
 import { drizzle } from 'drizzle-orm/d1'
 import { and, eq } from 'drizzle-orm'
 import { getSandbox } from '@cloudflare/sandbox'
+import { runner as skillScriptRunner } from 'agents/skills'
 import { BookOpen, List, FileMagnifyingGlass, Terminal, PlusSquare, Download, ToggleRight } from '@phosphor-icons/react'
 import {
   listSkills,
@@ -25,6 +26,7 @@ import {
   addGitHubSkill,
   uploadSkillToR2,
 } from '@/server/lib/ai/skills/registry'
+import { userSkillSource } from '@/server/lib/ai/skills/sdk-source'
 import { skills } from '@/server/modules/skills/db/schema'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 
@@ -33,6 +35,8 @@ type SkillsEnv = {
   SKILLS?: R2Bucket
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   SANDBOX?: any
+  /** Worker Loader (beta) — containerless skill-script execution. */
+  LOADER?: WorkerLoader
 }
 
 function getSkillsEnv(ctx: AgentContext): SkillsEnv {
@@ -230,6 +234,18 @@ export function skillsDefinitions(
       error: z.string().optional(),
       success: z.boolean().optional(),
     }),
+    // Worker-Loader (function-style) runs return a value, not stdout.
+    z.object({
+      name: z.string(),
+      path: z.string(),
+      language: z.string(),
+      runtime: z.literal('worker-loader'),
+      result: z.unknown(),
+      logs: z.array(z.string()).optional(),
+      outputFiles: z
+        .array(z.object({ path: z.string(), content: z.string() }))
+        .optional(),
+    }),
     z.object({ name: z.string(), path: z.string(), error: z.string() }),
   ])
 
@@ -239,7 +255,7 @@ export function skillsDefinitions(
   > = {
     name: 'run_skill_script',
     description:
-      "Fetch a script file bundled with a skill and execute it in the sandbox in one call. Detects interpreter from file extension (.py → python, .sh/.bash → bash, .js/.mjs → node). Use when a skill's instructions point at a scripts/*.py or similar — avoids the read-then-run round trip. Optional stdin string for feeding data to the script.",
+      "Fetch a script file bundled with a skill and execute it in one call. Detects interpreter from file extension (.py → python, .sh/.bash → bash, .js/.mjs → node). Function-style JS scripts (`export default async run(input, ctx)`) run in an isolated dynamic worker and return a value — pass their input via stdin (JSON preferred); other scripts run in the sandbox with stdin piped. Use when a skill's instructions point at a scripts/* file — avoids the read-then-run round trip.",
     inputSchema: z.object({
       name: nameSchema.describe('The skill name'),
       path: z.string().describe('Relative resource path to the script, e.g. "scripts/extract.py"'),
@@ -253,14 +269,6 @@ export function skillsDefinitions(
     execute: async ({ name, path, stdin, timeout = 60 }, ctx) => {
       try {
         const env = getSkillsEnv(ctx)
-        if (!env.SANDBOX) {
-          return {
-            name,
-            path,
-            error:
-              'Cloudflare Sandbox not configured — SANDBOX binding missing. Use read_skill_resource + run_python/run_shell/run_js as a fallback.',
-          }
-        }
         const skill = await loadSkill(env, name, ctx.userId)
         if (!skill) return { name, path, error: `Skill "${name}" not found` }
         if (!skill.resources.includes(path)) {
@@ -280,6 +288,65 @@ export function skillsDefinitions(
         }
         const content = await skill.fetchResource(path)
         if (content === null) return { name, path, error: `Script "${path}" could not be loaded.` }
+
+        // Function-style JS scripts (`export default async run(input, ctx)`)
+        // use the agents-SDK Worker Loader runner — a containerless dynamic
+        // worker with no network and no tools. Preferred when available:
+        // it's lighter than the container AND `export default` is a syntax
+        // error under the sandbox's script-style node eval. Input: `stdin`
+        // is parsed as JSON when possible, else passed as a raw string.
+        const isFunctionStyle =
+          interp.lang === 'javascript' && /export\s+default/.test(content)
+        if (isFunctionStyle) {
+          if (!env.LOADER) {
+            return {
+              name,
+              path,
+              error:
+                'This is a function-style script (`export default run(input, ctx)`), which needs the Worker Loader — add a `worker_loaders` binding named LOADER in wrangler.jsonc. (Script-style .js without `export default` runs in the sandbox instead.)',
+            }
+          }
+          let input: unknown = stdin
+          if (stdin !== undefined) {
+            try {
+              input = JSON.parse(stdin)
+            } catch {
+              /* raw string input */
+            }
+          }
+          const source = userSkillSource(env, ctx.userId)
+          const sdkSkill = await source.load(name)
+          if (!sdkSkill) return { name, path, error: `Skill "${name}" not found` }
+          const run = await skillScriptRunner({
+            loader: env.LOADER,
+            timeout: timeout * 1000,
+            network: false,
+          }).run({ skill: sdkSkill, path, source: content, input })
+          const wrapped =
+            run !== null && typeof run === 'object' && 'result' in (run as Record<string, unknown>)
+              ? (run as { result: unknown; logs?: string[]; outputFiles?: { path: string; content: string }[] })
+              : { result: run }
+          return {
+            name,
+            path,
+            language: interp.lang,
+            runtime: 'worker-loader' as const,
+            result: wrapped.result,
+            ...(wrapped.logs?.length ? { logs: wrapped.logs } : {}),
+            ...(wrapped.outputFiles?.length
+              ? { outputFiles: wrapped.outputFiles.map((f) => ({ path: f.path, content: f.content })) }
+              : {}),
+          }
+        }
+
+        if (!env.SANDBOX) {
+          return {
+            name,
+            path,
+            error:
+              'Cloudflare Sandbox not configured — SANDBOX binding missing. Use read_skill_resource + run_python/run_shell/run_js as a fallback.',
+          }
+        }
 
         const sandboxId = `user-${ctx.userId}`
         const sandbox = getSandbox(env.SANDBOX, sandboxId)
