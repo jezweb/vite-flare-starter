@@ -190,6 +190,13 @@ app.post('/cookies', zValidator('json', cookiesBody), async (c) => {
  *
  * Delete every test-domain user — useful between audit runs to avoid
  * D1 row growth. No body needed.
+ *
+ * ⚠️  Ordering footgun (#116): cleanup deletes the user behind any
+ * still-open browser context's cookie too — a suite that cleans up
+ * between its API phase and its screenshot phase silently logs itself
+ * out, and the redirect-to-sign-in reads like an auth regression.
+ * Either run cleanup LAST, or pass `?keep=<email>` (repeatable /
+ * comma-separated) to spare the sessions you're still driving.
  */
 app.post('/cleanup', async (c) => {
   const auth = createAuthFromEnv(c.env.DB, c.env as Record<string, unknown>)
@@ -197,14 +204,25 @@ app.post('/cleanup', async (c) => {
   const test = ctx.test
   if (!test) return c.json({ error: 'test-utils plugin not initialised' }, 500)
 
+  // ?keep=a@test.x.local&keep=b@test.x.local (or comma-separated) —
+  // spared users are matched case-insensitively against the stored email.
+  const keep = new Set(
+    (c.req.queries('keep') ?? [])
+      .flatMap((v) => v.split(','))
+      .map((v) => v.trim().toLowerCase())
+      .filter(Boolean)
+  )
+
   const db = drizzle(c.env.DB)
   const rows = await db
     .select({ id: userTable.id, email: userTable.email })
     .from(userTable)
     .where(like(userTable.email, '%@test.%.local'))
 
+  const targets = rows.filter((row) => !keep.has(row.email.toLowerCase()))
+
   let deleted = 0
-  for (const row of rows) {
+  for (const row of targets) {
     try {
       await test.deleteUser(row.id)
       deleted += 1
@@ -218,7 +236,7 @@ app.post('/cleanup', async (c) => {
       )
     }
   }
-  return c.json({ deleted, scanned: rows.length })
+  return c.json({ deleted, scanned: rows.length, kept: rows.length - targets.length })
 })
 
 export default app

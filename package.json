@@ -32,6 +32,7 @@
     "lint:fix": "biome lint --write .",
     "format": "biome format --write .",
     "tool-coverage": "node scripts/tool-coverage.mjs",
+    "test:session": "node scripts/test-session.mjs",
     "doctor:auth": "node scripts/doctor-auth.mjs",
     "doctor:models": "node scripts/doctor-models.mjs"
   },

@@ -28,6 +28,19 @@ Headless test agent / sub-agent / Playwright run needs to "see" real data:
 
 The bug is the testing pattern that bridges them, not any single layer.
 
+## Related footgun: cleanup mid-suite logs out your own session (#116)
+
+`/api/test-auth/cleanup` deletes **every** `*@test.*.local` user — including
+the one whose cookie your still-open Playwright context holds. A suite that
+cleans up between its API phase and its screenshot phase silently signs
+itself out, and the redirect-to-sign-in looks like an auth regression.
+
+Rules: run cleanup **LAST**, or pass `?keep=<email>` (repeatable or
+comma-separated) to spare sessions still in use. To mint a session without
+hand-shaping cookies, use `pnpm test:session` (`scripts/test-session.mjs`) —
+it emits Playwright `storageState.json` on stdout and a curl `Cookie:` header
+line on stderr.
+
 ## Symptoms (after the fact)
 
 - Suddenly empty tables that previously had real data

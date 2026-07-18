@@ -726,9 +726,14 @@ curl -X POST $URL/api/test-auth/cookies \
 # → { user, cookies: [{ name, value, domain, path, httpOnly, ... }] }
 #   cookies are Playwright/Puppeteer-compatible
 
-# Tear down — delete every test-domain user
+# Tear down — delete every test-domain user. Run LAST (it deletes the
+# user behind any still-open session); ?keep=<email> spares active ones.
 curl -X POST $URL/api/test-auth/cleanup -H "X-Test-Auth: $TEST_AUTH_TOKEN"
 ```
+
+Or skip the cookie hand-shaping entirely: `pnpm test:session --url $URL
+--email alice@test.vite-flare.local > state.json` emits Playwright
+`storageState.json` (stdout) + a curl `Cookie:` header line (stderr).
 
 Test agents can mint different sessions per call (different email =
 different user). The email pattern is locked to `*@test.<anything>.local`

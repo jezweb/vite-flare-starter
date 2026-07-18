@@ -93,7 +93,8 @@ function ThinkPilotChat({ userId }: { userId: string }) {
     const text = input.trim()
     if (!text) return
     setInput('')
-    void sendMessage({ text })
+    // Restore the draft if the send never reaches the agent (WS drop etc.)
+    void sendMessage({ text }).catch(() => setInput(text))
   }
 
   return (
@@ -102,7 +103,12 @@ function ThinkPilotChat({ userId }: { userId: string }) {
         title="Think pilot"
         subtitle="Demo agent on Cloudflare's Think harness — durable actions, approvals, scheduled tasks."
         trailing={
-          <Button variant="outline" size="sm" onClick={() => clearHistory()}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isStreaming}
+            onClick={() => clearHistory()}
+          >
             <Trash className="mr-1 size-4" /> Clear history
           </Button>
         }
