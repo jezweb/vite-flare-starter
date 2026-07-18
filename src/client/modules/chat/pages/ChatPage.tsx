@@ -717,17 +717,18 @@ function ChatPageInner({ userId }: { userId: string }) {
   const hasMessages = messages.length > 0 || isLoading
   // Derive whether the workspace toggle should appear at all. Recomputed
   // per render — cheap walk, no need for useMemo.
-  const { artifactCount, fileCount } = countWorkspaceItems(messages)
-  const hasArtifactsOrFiles = artifactCount + fileCount > 0
+  const { artifactCount, fileCount, siteCount } = countWorkspaceItems(messages)
+  const hasArtifactsOrFiles = artifactCount + fileCount + siteCount > 0
 
-  // Auto-open the workspace when a NEW artifact lands (claude.ai
-  // behaviour) — the panel itself auto-selects the newest one. Only on
-  // increases, so closing the panel stays closed until the next artifact.
-  const prevArtifactCount = useRef(artifactCount)
+  // Auto-open the workspace when a NEW artifact or site preview lands
+  // (claude.ai behaviour) — the panel itself auto-selects the newest one.
+  // Only on increases, so closing the panel stays closed until the next.
+  const openableCount = artifactCount + siteCount
+  const prevArtifactCount = useRef(openableCount)
   useEffect(() => {
-    if (artifactCount > prevArtifactCount.current) setShowArtifactPanel(true)
-    prevArtifactCount.current = artifactCount
-  }, [artifactCount])
+    if (openableCount > prevArtifactCount.current) setShowArtifactPanel(true)
+    prevArtifactCount.current = openableCount
+  }, [openableCount])
 
   // Resolve the current conversation's project (if any) for the header pill.
   // Two paths: (a) new chat launched from a project page — `urlProjectId` set

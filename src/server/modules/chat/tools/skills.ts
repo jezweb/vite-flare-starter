@@ -29,6 +29,7 @@ import {
 import { userSkillSource } from '@/server/lib/ai/skills/sdk-source'
 import { skills } from '@/server/modules/skills/db/schema'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
+import { sandboxIdFor } from '@/server/lib/sandbox-id'
 
 type SkillsEnv = {
   DB: D1Database
@@ -348,8 +349,7 @@ export function skillsDefinitions(
           }
         }
 
-        const sandboxId = `user-${ctx.userId}`
-        const sandbox = getSandbox(env.SANDBOX, sandboxId)
+        const sandbox = getSandbox(env.SANDBOX, await sandboxIdFor(ctx.userId, ctx.conversationId))
 
         if (interp.lang === 'python') {
           const preamble =

@@ -23,6 +23,7 @@ import { uiDefinitions } from './ui'
 import { skillsDefinitions } from './skills'
 import { knowledgeDefinitions } from './knowledge'
 import { codeDefinitions } from './code'
+import { siteDefinitions } from './site'
 import { delegateDefinitions } from './delegate'
 import { audioDefinitions } from './audio'
 import { todoDefinitions } from './todo'
@@ -77,6 +78,7 @@ export async function buildChatTools(
     ...skillsDefinitions(options.availableSkillNames ?? []),
     ...knowledgeDefinitions,
     ...codeDefinitions,
+    ...siteDefinitions,
     ...delegateDefinitions,
     ...audioDefinitions,
     ...scheduleDefinitions,

@@ -40,6 +40,8 @@ import {
   CircleNotch,
   WarningCircle,
   Wrench,
+  Globe as GlobeIcon,
+  ArrowSquareOut,
 } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { toast } from 'sonner'
@@ -79,6 +81,25 @@ interface CollectedFile {
   url?: string
 }
 
+/** A live site preview served from the conversation sandbox (site_serve). */
+interface SiteItem {
+  id: string
+  url: string
+  port: number
+  command: string
+  /** false once a later site_stop for the same port appears */
+  active: boolean
+}
+
+function isSite(output: unknown): output is { url: string; port: number; command?: string } {
+  return (
+    !!output &&
+    typeof output === 'object' &&
+    (output as Record<string, unknown>)['_site'] === true &&
+    typeof (output as Record<string, unknown>)['url'] === 'string'
+  )
+}
+
 interface ActivityItem {
   id: string
   name: string
@@ -110,10 +131,14 @@ function collect(messages: UIMessageType[]): {
   groups: ArtifactGroup[]
   files: CollectedFile[]
   activity: ActivityItem[]
+  sites: SiteItem[]
 } {
   const groupMap = new Map<string, ArtifactGroup>()
   const files: CollectedFile[] = []
   const activity: ActivityItem[] = []
+  // Keyed by port: a later site_serve upserts (URL can change per revive),
+  // a later site_stop marks inactive. Message order = chronology.
+  const siteMap = new Map<number, SiteItem>()
 
   for (const message of messages) {
     const parts = Array.isArray(message.parts) ? message.parts : []
@@ -140,6 +165,25 @@ function collect(messages: UIMessageType[]): {
           state: String(p['state'] ?? 'done'),
         })
         const output = p['output']
+        if (isSite(output)) {
+          const o = output as { url: string; port: number; command?: string }
+          siteMap.set(o.port, {
+            id: `${message.id}-${idx}`,
+            url: o.url,
+            port: o.port,
+            command: o.command ?? '',
+            active: true,
+          })
+          return
+        }
+        if (name === 'site_stop') {
+          const o = output as { stopped?: boolean; port?: number } | undefined
+          if (o?.stopped && typeof o.port === 'number') {
+            const site = siteMap.get(o.port)
+            if (site) site.active = false
+          }
+          return
+        }
         if (isArtifact(output)) {
           const partId = `${message.id}-${idx}`
           const persistedId =
@@ -159,7 +203,7 @@ function collect(messages: UIMessageType[]): {
       }
     })
   }
-  return { groups: [...groupMap.values()], files, activity }
+  return { groups: [...groupMap.values()], files, activity, sites: [...siteMap.values()] }
 }
 
 // ─── Small helpers (shared with the old sidebar behaviour) ────────
@@ -215,7 +259,7 @@ function downloadBlob(filename: string, content: string | Blob, mime: string) {
 
 // ─── Panel ────────────────────────────────────────────────────────
 
-type Tab = 'artifacts' | 'files' | 'activity'
+type Tab = 'artifacts' | 'sites' | 'files' | 'activity'
 
 interface Props {
   messages: UIMessageType[]
@@ -223,10 +267,12 @@ interface Props {
 }
 
 export function WorkspacePanel({ messages, onClose }: Props) {
-  const { groups, files, activity } = useMemo(() => collect(messages), [messages])
+  const { groups, files, activity, sites } = useMemo(() => collect(messages), [messages])
   const [tab, setTab] = useState<Tab>('artifacts')
   /** Selected artifact group + which version is shown (index into versions). */
   const [selected, setSelected] = useState<{ groupId: string; versionIndex: number } | null>(null)
+  /** Site whose live preview is open in the wide viewer (by port). */
+  const [openSitePort, setOpenSitePort] = useState<number | null>(null)
   const [lightbox, setLightbox] = useState<CollectedVersion | null>(null)
   const [saveState, setSaveState] = useState<Record<string, 'saving' | 'saved'>>({})
 
@@ -244,6 +290,26 @@ export function WorkspacePanel({ messages, onClose }: Props) {
     }
     prevCount.current = versionCount
   }, [versionCount, groups])
+
+  // Same behaviour for sites: when a serve lands (new port or revived
+  // URL), jump to its live preview. On mount, artifacts win the landing
+  // view when both exist (the effect above); a panel opened BY a site
+  // (no artifacts) lands on the site.
+  const siteKey = sites.map((s) => `${s.port}:${s.url}:${s.active}`).join('|')
+  const prevSiteKey = useRef<string | null>(null)
+  useEffect(() => {
+    const isMount = prevSiteKey.current === null
+    const changed = siteKey !== prevSiteKey.current
+    if ((isMount && groups.length === 0) || (!isMount && changed)) {
+      const newest = [...sites].reverse().find((s) => s.active)
+      if (newest) {
+        setTab('sites')
+        setSelected(null)
+        setOpenSitePort(newest.port)
+      }
+    }
+    prevSiteKey.current = siteKey
+  }, [siteKey, sites, groups.length])
 
   const selectedGroup = selected ? groups.find((g) => g.groupId === selected.groupId) : null
   const selectedVersion =
@@ -294,16 +360,51 @@ export function WorkspacePanel({ messages, onClose }: Props) {
   )
 
   const viewerOpen = tab === 'artifacts' && !!selectedVersion
+  const openSite = tab === 'sites' ? (sites.find((s) => s.port === openSitePort) ?? null) : null
 
   return (
     <aside
       aria-label="Workspace"
       className={cn(
         'shrink-0 border-l bg-muted/30 flex flex-col h-full overflow-hidden transition-[width] duration-200',
-        viewerOpen ? 'w-[min(44rem,50vw)]' : 'w-72'
+        viewerOpen || openSite ? 'w-[min(44rem,50vw)]' : 'w-72'
       )}
     >
-      {viewerOpen && selectedGroup && selectedVersion ? (
+      {openSite ? (
+        <div className="flex items-center gap-1 border-b px-2 py-1.5">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => setOpenSitePort(null)}
+            aria-label="Back to sites list"
+          >
+            <CaretLeft className="size-3.5" />
+          </Button>
+          <GlobeIcon className="size-3.5 shrink-0 text-muted-foreground" />
+          <span className="min-w-0 flex-1 truncate text-xs font-medium">
+            {new URL(openSite.url).hostname}
+          </span>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Open site in new tab"
+            onClick={() => window.open(openSite.url, '_blank', 'noopener')}
+          >
+            <ArrowSquareOut className="size-3.5" />
+          </Button>
+          {onClose && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="text-muted-foreground hover:text-foreground"
+              onClick={onClose}
+              aria-label="Close workspace panel"
+            >
+              <X className="size-3.5" />
+            </Button>
+          )}
+        </div>
+      ) : viewerOpen && selectedGroup && selectedVersion ? (
         <ArtifactViewerHeader
           group={selectedGroup}
           version={selectedVersion}
@@ -321,6 +422,12 @@ export function WorkspacePanel({ messages, onClose }: Props) {
             {(
               [
                 ['artifacts', `Artifacts${groups.length ? ` ${groups.length}` : ''}`],
+                ...(sites.length
+                  ? ([['sites', `Sites ${sites.filter((s) => s.active).length || sites.length}`]] as [
+                      Tab,
+                      string,
+                    ][])
+                  : []),
                 ['files', `Files${files.length ? ` ${files.length}` : ''}`],
                 ['activity', 'Activity'],
               ] as [Tab, string][]
@@ -356,7 +463,20 @@ export function WorkspacePanel({ messages, onClose }: Props) {
       )}
 
       <div className="flex-1 min-h-0 overflow-y-auto">
-        {viewerOpen && selectedVersion ? (
+        {openSite ? (
+          <div className="h-full flex flex-col">
+            <iframe
+              key={openSite.url}
+              src={openSite.url}
+              title={`Site preview — ${openSite.url}`}
+              className="w-full flex-1 min-h-0 border-0 bg-white"
+              sandbox="allow-scripts allow-forms allow-same-origin allow-popups"
+            />
+            <p className="border-t px-3 py-1.5 text-[10px] text-muted-foreground truncate">
+              Live from the conversation sandbox — temporary URL, sleeps after ~10 min idle.
+            </p>
+          </div>
+        ) : viewerOpen && selectedVersion ? (
           <div className="p-2">
             <ArtifactViewer
               artifact={{
@@ -371,6 +491,8 @@ export function WorkspacePanel({ messages, onClose }: Props) {
             groups={groups}
             onOpen={(groupId, versionIndex) => setSelected({ groupId, versionIndex })}
           />
+        ) : tab === 'sites' ? (
+          <SiteList sites={sites} onOpen={(port) => setOpenSitePort(port)} />
         ) : tab === 'files' ? (
           <FileList files={files} saveState={saveState} onSave={saveToFiles} />
         ) : (
@@ -682,6 +804,55 @@ function ActivityList({ items }: { items: ActivityItem[] }) {
   )
 }
 
+function SiteList({ sites, onOpen }: { sites: SiteItem[]; onOpen: (port: number) => void }) {
+  if (sites.length === 0) {
+    return (
+      <EmptyHint
+        title="No sites yet"
+        body="Ask the AI to build and serve a site — multi-file projects run in the sandbox with a live preview URL."
+      />
+    )
+  }
+  return (
+    <ul className="p-2 space-y-1">
+      {sites.map((site) => (
+        <li key={site.port}>
+          <button
+            onClick={() => site.active && onOpen(site.port)}
+            disabled={!site.active}
+            className={cn(
+              'w-full rounded-md border bg-background px-2.5 py-2 text-left transition-colors',
+              site.active ? 'hover:bg-accent' : 'opacity-60'
+            )}
+          >
+            <span className="flex items-center gap-2">
+              <GlobeIcon className="size-4 shrink-0 text-muted-foreground" />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-xs font-medium">
+                  {new URL(site.url).hostname}
+                </span>
+                <span className="block truncate text-[10px] text-muted-foreground">
+                  {site.active ? `port ${site.port}` : `port ${site.port} — stopped`}
+                </span>
+              </span>
+              {site.active && (
+                <ArrowSquareOut
+                  className="size-3.5 shrink-0 text-muted-foreground"
+                  role="presentation"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    window.open(site.url, '_blank', 'noopener')
+                  }}
+                />
+              )}
+            </span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 function EmptyHint({ title, body }: { title: string; body: string }) {
   return (
     <div className="px-4 py-8 text-center text-xs text-muted-foreground space-y-2">
@@ -695,10 +866,12 @@ function EmptyHint({ title, body }: { title: string; body: string }) {
 export function countWorkspaceItems(messages: UIMessageType[]): {
   artifactCount: number
   fileCount: number
+  siteCount: number
 } {
-  const { groups, files } = collect(messages)
+  const { groups, files, sites } = collect(messages)
   return {
     artifactCount: groups.reduce((n, g) => n + g.versions.length, 0),
     fileCount: files.length,
+    siteCount: sites.length,
   }
 }

@@ -277,6 +277,13 @@
     }
   ],
 
+  // Runtime worker vars (non-secret; secrets go via `wrangler secret put`).
+  // SANDBOX_TRANSPORT=rpc switches the Sandbox DO ↔ container control
+  // plane to the RPC transport — required for `sandbox.tunnels.*` (the
+  // site_serve preview URLs) and the streaming file APIs. "http" (the
+  // default) leaves those methods throwing "requires RPC transport".
+  "vars": { "SANDBOX_TRANSPORT": "rpc" },
+
   // Worker Loader (beta) — containerless dynamic-worker execution. Backs
   // function-style skill scripts (`export default run(input, ctx)`) via the
   // agents/skills runner: no network, no bindings, per-run isolate. Remove

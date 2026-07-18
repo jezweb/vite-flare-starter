@@ -29,7 +29,13 @@ export const securityHeaders = createMiddleware<{ Bindings: Env }>(async (c, nex
   const isHtml = contentType.includes('text/html')
   const isApi = c.req.path.startsWith('/api/')
 
-  // CSP only for HTML responses (not API JSON responses)
+  // CSP only for HTML responses (not API JSON responses).
+  //
+  // ⚠ TWIN: `public/_headers` carries the SAME policy for ASSET-served pages
+  // (the SPA's index.html never passes through this middleware — the assets
+  // layer answers first). Any CSP change here must be mirrored there, minus
+  // env-conditional parts (_headers is static). Forks wanting a conditional
+  // allowance (e.g. the CF insights beacon) on SPA pages must edit _headers.
   if (isHtml && !isApi) {
     // Zones with Cloudflare Web Analytics (RUM) auto-injection add a beacon
     // script this CSP blocks — harmless but a permanent console error (#117).
@@ -43,6 +49,7 @@ export const securityHeaders = createMiddleware<{ Bindings: Env }>(async (c, nex
       "img-src 'self' data: https: blob:", // https images + canvas/blob URLs (video frame capture)
       "font-src 'self' data:",
       `connect-src 'self' https://accounts.google.com wss:${allowInsights ? ' https://cloudflareinsights.com' : ''}`, // Google OAuth + agent WebSockets
+      "frame-src 'self' https://*.trycloudflare.com", // workspace panel iframes sandbox site previews (quick tunnels)
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",

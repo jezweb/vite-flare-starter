@@ -41,6 +41,7 @@ import { Terminal, FileCode, FileDoc } from '@phosphor-icons/react'
 import { drizzle } from 'drizzle-orm/d1'
 import { getSandbox, type ExecutionResult, type ExecResult } from '@cloudflare/sandbox'
 import { isOwnedR2Key } from '@/server/lib/r2-keys'
+import { sandboxIdFor } from '@/server/lib/sandbox-id'
 import { bytesToBase64, base64ToBytes } from '@/server/lib/base64'
 import { files as filesTable } from '@/server/modules/files/db/schema'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
@@ -94,17 +95,15 @@ const sandboxAvailable = (ctx: AgentContext) => {
 const docgenAvailable = (ctx: AgentContext) => sandboxAvailable(ctx) && !!getFilesBucket(ctx)
 
 /**
- * Sandbox id: per (user, conversation) so interpreter/file state persists
- * across calls within one chat and never leaks between conversations.
+ * Sandbox scope: per (user, conversation) so interpreter/file state
+ * persists across calls within one chat and never leaks between
+ * conversations. Id derivation lives in server/lib/sandbox-id.ts — the
+ * SDK caps ids at 63 DNS-shaped chars, so raw `user-…-conv-…` throws.
  */
-function sandboxIdFor(ctx: AgentContext): string {
-  return ctx.conversationId ? `user-${ctx.userId}-conv-${ctx.conversationId}` : `user-${ctx.userId}`
-}
-
-function sandboxFor(ctx: AgentContext) {
+async function sandboxFor(ctx: AgentContext) {
   const binding = getSandboxBinding(ctx)
   if (!binding) throw new Error('Cloudflare Sandbox not configured — SANDBOX binding missing.')
-  return getSandbox(binding, sandboxIdFor(ctx))
+  return getSandbox(binding, await sandboxIdFor(ctx.userId, ctx.conversationId))
 }
 
 // ─── Path + key helpers ────────────────────────────────────────────────
@@ -324,7 +323,7 @@ export const runPythonDefinition: ToolDefinition<RunPythonInput, z.infer<typeof 
           harvestPlan.push(p)
         }
 
-        const sandbox = sandboxFor(ctx)
+        const sandbox = await sandboxFor(ctx)
 
         // Stage inputs from R2.
         const staged: { r2Key: string; path: string }[] = []
@@ -403,7 +402,7 @@ export const runShellDefinition: ToolDefinition<
       if (command.length > MAX_CODE_CHARS) {
         return { error: `Command too large (${command.length} chars > 50KB limit).` }
       }
-      const sandbox = sandboxFor(ctx)
+      const sandbox = await sandboxFor(ctx)
       const result = await sandbox.exec(command, { cwd, timeout: timeout * 1000 })
       return normalizeShellResult(result)
     } catch (error) {
@@ -443,7 +442,7 @@ export const runJsDefinition: ToolDefinition<
       if (code.length > MAX_CODE_CHARS) {
         return { error: `Code too large (${code.length} chars > 50KB limit).` }
       }
-      const sandbox = sandboxFor(ctx)
+      const sandbox = await sandboxFor(ctx)
       const result = await sandbox.runCode(code, {
         language: 'javascript',
         timeout: timeout * 1000,
@@ -761,7 +760,7 @@ export const generateDocumentDefinition: ToolDefinition<
           .slice(0, 80) || 'document'
       const outPath = `/workspace/.docgen/out/${safeName}.${format}`
 
-      const sandbox = sandboxFor(ctx)
+      const sandbox = await sandboxFor(ctx)
       await sandbox.mkdir('/workspace/.docgen/out', { recursive: true })
       await sandbox.writeFile('/workspace/.docgen/input.md', markdown)
       await sandbox.writeFile('/workspace/.docgen/generate.py', DOCGEN_SCRIPT)

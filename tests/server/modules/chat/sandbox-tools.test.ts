@@ -201,10 +201,20 @@ describe('run_python staging + harvest', () => {
     expect((out as { artifacts?: unknown[] }).artifacts).toBeUndefined()
   })
 
-  it('uses a conversation-scoped sandbox id', async () => {
+  it('uses a conversation-scoped, DNS-safe sandbox id', async () => {
+    // Derived (hashed) id, not raw concatenation: the SDK caps ids at 63
+    // DNS-shaped chars, and better-auth userIds are mixed-case — the raw
+    // `user-…-conv-…` form threw INVALID_SANDBOX_ID_LENGTH in production.
     const ctx = makeCtx({ SANDBOX: {} })
     await runPythonDefinition.execute({ code: 'print(1)' }, ctx)
-    expect(mockGetSandbox).toHaveBeenCalledWith({}, `user-${ME}-conv-conv-1`)
+    const id = mockGetSandbox.mock.calls[0]![1] as string
+    expect(id).toMatch(/^sb-u[0-9a-f]{16}-c[0-9a-f]{16}$/)
+    expect(id.length).toBeLessThanOrEqual(63)
+
+    // Deterministic: same (user, conversation) → same sandbox.
+    mockGetSandbox.mockClear()
+    await runPythonDefinition.execute({ code: 'print(2)' }, ctx)
+    expect(mockGetSandbox.mock.calls[0]![1]).toBe(id)
   })
 })
 

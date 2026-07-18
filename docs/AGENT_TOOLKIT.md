@@ -20,6 +20,7 @@ client render metadata in one object. See
 | **ui** | `offer_choices`, `show_alert`, `show_contact`, `collect_info`, `ask_questions`, `show_data_table`, `show_metric_cards`, `show_timeline`, `show_progress`, `show_comparison`, `confirm_action`, `show_map` | Yes (inline React components) |
 | **skills** | `list_skills`, `load_skill`, `read_skill_resource`, `run_skill_script`, `create_skill`, `install_skill`, `toggle_skill` | Yes (script execution: function-style JS via the `LOADER` Worker Loader binding, other scripts via `SANDBOX`; degrades to a clear error when neither is bound) |
 | **code** | `run_python` (R2 file staging + artifact harvest), `run_shell`, `run_js`, `generate_document` (markdown → docx/xlsx/pptx) | If `SANDBOX` container binding (Workers Paid) |
+| **site** | `site_serve` (background server + quick-tunnel preview URL), `site_stop` | Same `SANDBOX` gate — see §Sites |
 | **delegate** | `delegate` | Yes (subagent pattern) |
 | **audio** | `transcribe_audio` (Deepgram Nova 3), `speak_text` (Deepgram Aura 2, 12 voices, Aura 1 fallback) | Yes (AI binding, no external keys) |
 | **todo** | `todo_add`, `todo_update`, `todo_list`, `todo_clear` | Yes (persisted via user_meta) |
@@ -309,6 +310,32 @@ capped at 50KB per call.
 container path needs a live deploy): send "run python: print(2+2)" in
 chat, then "generate a docx summarising this conversation", and confirm
 the artifact appears under Files.
+
+## Sites — live previews from the sandbox (`site_serve` / `site_stop`)
+
+The capability tier above artifacts: an artifact is one self-contained
+document; a **site** is a real multi-file project in the conversation's
+sandbox — npm installs, build steps, a server — on a public preview URL.
+
+Flow: the agent scaffolds files under `/workspace/site` with the code
+tools, then `site_serve` starts the server as a background process
+(deterministic id per port → clean restarts), waits for the port, and
+opens a Cloudflare **quick tunnel** (`https://<random>.trycloudflare.com`).
+The WorkspacePanel gets a Sites tab with an inline live preview
+(CSP `frame-src` allows trycloudflare). Default command is a static
+`python3 -m http.server`; framework apps pass their dev-server command
+(must bind `0.0.0.0`).
+
+Scope honestly: this is a **preview, not a deployment** — the URL is
+public-but-unguessable, dies with the container (~10 min idle), and can
+change on revive. Durable options remain artifacts (share tokens) and
+Files. Custom-domain forks can upgrade to same-domain preview URLs with
+`sandbox.exposePort(port, { hostname })` + `proxyToSandbox(request, env)`
+early in the Worker fetch path — URL shape
+`https://<port>-<sandbox-id>-<token>.<your-domain>`, which needs
+wildcard DNS (unavailable on workers.dev, hence quick tunnels as the
+starter default). Deploy-to-permanent (VibeSDK-style Workers for
+Platforms dispatch) is a deliberate non-goal for the starter.
 
 ## Skill scripts (`run_skill_script`)
 
