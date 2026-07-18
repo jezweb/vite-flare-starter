@@ -621,8 +621,12 @@ function parseAgentRoute(pathname: string): { agentName: string; instanceName: s
  *   - 'do-enforced' access is not owner-scoped (e.g. a Space shared by many
  *     members); the DO MUST verify access itself in onConnect. Only assign this
  *     to a class whose DO actually performs that check (SpaceAgent.onConnect).
+ *   - 'owner-single' instance name must be EXACTLY `<userId>:main` — one DO
+ *     per user. Use for classes that register recurring work on boot (e.g.
+ *     Think's declared scheduled tasks): under 'owner-colon' a user could mint
+ *     unlimited instances, each accruing scheduled model spend forever.
  */
-type AgentAccessPolicy = 'owner-chat' | 'owner-colon' | 'do-enforced'
+type AgentAccessPolicy = 'owner-chat' | 'owner-colon' | 'do-enforced' | 'owner-single'
 
 const AGENT_ACCESS_POLICY: Record<string, AgentAccessPolicy> = {
   'chat-agent': 'owner-chat',
@@ -632,7 +636,7 @@ const AGENT_ACCESS_POLICY: Record<string, AgentAccessPolicy> = {
   'sweeper-agent': 'owner-colon',
   'admin-agent': 'owner-colon',
   'reminder-agent': 'owner-colon',
-  'think-pilot-agent': 'owner-colon',
+  'think-pilot-agent': 'owner-single',
   'voice-input-example': 'owner-colon',
   'video-input-example': 'owner-colon',
   // SpaceAgent is shared across a Space's members; SpaceAgent.onConnect
@@ -651,6 +655,12 @@ function validateAgentAccess(pathname: string, session: RequestSession): Respons
   if (!policy) return jsonResponse({ error: 'Forbidden' }, 403)
 
   if (policy === 'do-enforced') return null
+
+  if (policy === 'owner-single') {
+    if (route.instanceName !== `${session.userId}:main`)
+      return jsonResponse({ error: 'Forbidden' }, 403)
+    return null
+  }
 
   if (policy === 'owner-chat') {
     const routeUserId = route.instanceName.match(/^user-([^-].*?)-conv-(.+)$/)?.[1]

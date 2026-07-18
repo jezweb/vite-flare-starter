@@ -61,12 +61,11 @@ function ToolPart({
           {JSON.stringify(getToolOutput(part))}
         </pre>
       )}
-      {(state === 'loading' || state === 'streaming' || state === 'waiting-approval') &&
-        getToolInput(part) !== undefined && (
-          <pre className="mt-1 overflow-x-auto text-xs text-muted-foreground">
-            {JSON.stringify(getToolInput(part))}
-          </pre>
-        )}
+      {getToolInput(part) !== undefined && (
+        <pre className="mt-1 overflow-x-auto text-xs text-muted-foreground">
+          {JSON.stringify(getToolInput(part))}
+        </pre>
+      )}
     </div>
   )
 }

@@ -21,8 +21,11 @@
  * Interop proof: `getSkills()` mounts the same D1-backed `userSkillSource`
  * the chat agent's skill registry uses — one skills store, two harnesses.
  *
- * Instance naming: `<userId>:main` (owner-colon access policy — see
- * AGENT_ACCESS_POLICY in server/index.ts). One pilot DO per user.
+ * Instance naming: exactly `<userId>:main` (owner-single access policy —
+ * see AGENT_ACCESS_POLICY in server/index.ts). One pilot DO per user,
+ * enforced at the route gate: because getScheduledTasks() registers
+ * recurring model work on boot, unlimited instances would mean unlimited
+ * standing spend.
  *
  * Deliberate opt-outs:
  *   - `workspaceBash = false`: Think's built-in workspace Bash tool needs
@@ -88,8 +91,10 @@ export class ThinkPilotAgent extends Think<Env> {
     return {
       record_note: action({
         description:
-          'Save a markdown note into the agent workspace. Idempotent per noteId: ' +
-          'calling again with the same noteId returns the original result without rewriting.',
+          'Save a markdown note into the agent workspace. Notes are immutable per noteId: ' +
+          'repeating a call with identical input replays the original result; reusing a ' +
+          'noteId with different content is rejected (ActionKeyConflict). To change a note, ' +
+          'pick a new noteId or edit the file in the workspace directly.',
         inputSchema: z.object({
           noteId: z
             .string()
@@ -121,6 +126,11 @@ export class ThinkPilotAgent extends Think<Env> {
         approval: true,
         approvalSummary: 'Send an in-app notification',
         approvalRisk: 'low',
+        // Known limit: the D1 insert and the ledger's settle aren't atomic —
+        // a crash in between can re-run the insert on recovery. Acceptable
+        // for a demo notification; forks wiring real side effects should
+        // pass a stable operation id into the external write (UNIQUE +
+        // ON CONFLICT) in addition to a ledger idempotencyKey.
         execute: async (input) => {
           await createInAppNotification(env.DB, {
             userId: ownerId,
