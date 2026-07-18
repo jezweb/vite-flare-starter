@@ -85,6 +85,10 @@ export { ResearcherAgent } from './modules/autonomous-agents/researcher-agent'
 export { WriterAgent } from './modules/autonomous-agents/writer-agent'
 export { SweeperAgent } from './modules/autonomous-agents/sweeper-agent'
 export { AdminAgent } from './modules/autonomous-agents/admin-agent'
+// Pilot of the @cloudflare/think harness (actions ledger + scheduled DSL +
+// shared skills registry). Routed via routeAgentRequest at
+// /agents/think-pilot-agent/{userId}:main — see modules/think-pilot/.
+export { ThinkPilotAgent } from './modules/think-pilot/think-pilot-agent'
 export { ScratchpadMcpAgent }
 export { SpaceAgent } from './modules/spaces/space-agent'
 // SDK-aligned chat DO. Routed via `routeAgentRequest` at
@@ -628,6 +632,7 @@ const AGENT_ACCESS_POLICY: Record<string, AgentAccessPolicy> = {
   'sweeper-agent': 'owner-colon',
   'admin-agent': 'owner-colon',
   'reminder-agent': 'owner-colon',
+  'think-pilot-agent': 'owner-colon',
   'voice-input-example': 'owner-colon',
   'video-input-example': 'owner-colon',
   // SpaceAgent is shared across a Space's members; SpaceAgent.onConnect

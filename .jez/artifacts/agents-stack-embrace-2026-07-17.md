@@ -173,6 +173,16 @@ live 2026-07-17.
 3. **Think pilot (1–2 sessions):** one new agent class (messenger-facing or
    AdminAgent v2) on Think — exercises Actions/approvals ledger, scheduled
    DSL, Telegram channel. Coexists in the same Worker.
+   ✅ **DONE 2026-07-18** — `ThinkPilotAgent` (`server/modules/think-pilot/`,
+   flag `VITE_FEATURE_THINK_PILOT`, page `/dashboard/think-pilot`).
+   Live-verified: streaming turn, `record_note` ledger action (idempotency
+   enforced — same key + different input → `ActionKeyConflict`),
+   approval-gated `send_notification` (approve → real D1 notification row),
+   D1 `userSkillSource` mounted (one skills store, two harnesses),
+   `morning-brief` scheduled-DSL task reconciled on boot. Telegram channel
+   deferred (no bot token in the starter; `getMessengers()` is the seam).
+   Note: Think's `workspaceBash` must stay `false` while the `just-bash`
+   stub alias exists.
 4. **Code Mode pilot (1 session, flagged):** durable runtime over the
    shape-tier long-tail; measure context savings vs `find_tools`.
 5. **Fibers + agents-as-tools pilot (1 session):** rework researcher→writer

@@ -392,6 +392,15 @@
         // to opt out on a free-plan fork.
         "name": "SANDBOX",
         "class_name": "Sandbox"
+      },
+      {
+        // ThinkPilotAgent — pilot of the @cloudflare/think harness
+        // (actions ledger, scheduled-task DSL, shared skills registry).
+        // One DO per user, named `{userId}:main`. Routed via
+        // routeAgentRequest at /agents/think-pilot-agent/{instance-name}.
+        // See src/server/modules/think-pilot/think-pilot-agent.ts.
+        "name": "ThinkPilotAgent",
+        "class_name": "ThinkPilotAgent"
       }
     ]
   },
@@ -445,6 +454,10 @@
     {
       "tag": "v11",
       "new_sqlite_classes": ["Sandbox"]
+    },
+    {
+      "tag": "v12",
+      "new_sqlite_classes": ["ThinkPilotAgent"]
     }
   ],
 

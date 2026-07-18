@@ -185,6 +185,7 @@ export const NAV_SECTIONS: NavSection[] = [
         badge: 'Beta',
       },
       { to: '/dashboard/kanban-demo', label: 'Kanban demo', icon: Kanban, feature: 'kanbanDemo' },
+      { to: '/dashboard/think-pilot', label: 'Think pilot', icon: Robot, feature: 'thinkPilot', badge: 'Beta' },
     ],
   },
 ]

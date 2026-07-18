@@ -15,7 +15,7 @@ import { ProtectedRoute } from './components/shared/ProtectedRoute'
 import { PublicOnlyRoute } from './components/shared/PublicOnlyRoute'
 import { ThemeURLHandler } from './components/ThemeURLHandler'
 import { BuilderModeProvider } from './lib/builder-mode'
-import { Microphone, Camera, Kanban } from '@phosphor-icons/react'
+import { Microphone, Camera, Kanban, Robot } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { features } from '@/shared/config/features'
 import { EmptyState } from './components/EmptyState'
@@ -152,6 +152,7 @@ const VideoInputExamplePage = lazy(() =>
 const KanbanDemoPage = lazy(() =>
   import('./modules/kanban-demo/pages/KanbanDemoPage').then((m) => ({ default: m.KanbanDemoPage }))
 )
+const ThinkPilotPage = lazy(() => import('./modules/think-pilot/pages/ThinkPilotPage'))
 const AgentObservabilityPage = lazy(() =>
   import('./modules/agent-observability/pages/AgentObservabilityPage').then((m) => ({
     default: m.AgentObservabilityPage,
@@ -436,6 +437,24 @@ function App() {
                         envVar="VITE_FEATURE_KANBAN_DEMO"
                       >
                         <KanbanDemoPage />
+                      </FeatureGatedPage>
+                    }
+                  />
+
+                  {/* Think pilot — demo agent on the @cloudflare/think
+                harness (actions ledger, approvals, scheduled DSL).
+                Same opt-in pattern as voice/video. */}
+                  <Route
+                    path="think-pilot"
+                    element={
+                      <FeatureGatedPage
+                        enabled={features.thinkPilot}
+                        icon={Robot}
+                        title="Think pilot is opt-in"
+                        description="The Think pilot runs a demo agent on Cloudflare's pre-1.0 Think harness — durable actions with approvals, a declarative scheduled-task DSL, and the shared skills registry. It ships disabled by default — turn it on with a feature flag."
+                        envVar="VITE_FEATURE_THINK_PILOT"
+                      >
+                        <ThinkPilotPage />
                       </FeatureGatedPage>
                     }
                   />

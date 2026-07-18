@@ -125,6 +125,15 @@ export const features = {
   videoAgent: import.meta.env['VITE_FEATURE_VIDEO_AGENT'] === 'true',
 
   /**
+   * Think pilot — demo agent on Cloudflare's @cloudflare/think harness
+   * (durable actions ledger, approval-gated actions, scheduled-task DSL,
+   * shared skills registry). Default OFF — opt-in by setting
+   * VITE_FEATURE_THINK_PILOT=true. Pre-1.0 SDK; the pilot exists so a
+   * fork can evaluate the harness before committing to it.
+   */
+  thinkPilot: import.meta.env['VITE_FEATURE_THINK_PILOT'] === 'true',
+
+  /**
    * Kanban demo — exercises the <KanbanBoard> primitive against the
    * generic entities API. Default OFF — opt-in by setting
    * VITE_FEATURE_KANBAN_DEMO=true. The primitive itself

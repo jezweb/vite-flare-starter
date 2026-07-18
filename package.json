@@ -50,6 +50,7 @@
     "@cloudflare/ai-utils": "^1.0.1",
     "@cloudflare/kumo": "^2.8.0",
     "@cloudflare/sandbox": "^0.12.3",
+    "@cloudflare/think": "^0.13.0",
     "@cloudflare/voice": "^0.3.4",
     "@codemirror/lang-markdown": "^6.5.0",
     "@codemirror/language": "^6.12.3",

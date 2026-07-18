@@ -833,6 +833,39 @@ adopt / align / pilot / hold decision table:
 - **Pin exact versions; treat every 0.x bump as breaking.** CI +
   brains-trust gate on upgrades.
 
+### Think pilot (`ThinkPilotAgent`)
+
+A working Think agent ships as the pilot:
+`src/server/modules/think-pilot/think-pilot-agent.ts`, page at
+`/dashboard/think-pilot` behind `VITE_FEATURE_THINK_PILOT`. What it
+demonstrates, and what a fork should copy when evaluating Think:
+
+- **Actions ledger** — `action({ inputSchema, idempotencyKey, execute })`.
+  The ledger replays a settled result when the same key + input recur
+  (recovery-retry safe) and throws `ActionKeyConflict` when a key is
+  reused with different input. Stronger than our approvals module,
+  which trusts the executor to run once.
+- **Approval-gated side effects** — `approval: true` renders an
+  in-transcript Approve/Deny card (`getToolApproval` +
+  `addToolApprovalResponse` on the client); the turn auto-continues
+  after the decision. `kind: "durable-pause"` + the client-callable
+  `pendingApprovals`/`approveExecution` RPCs are the dashboard-style
+  alternative (maps to our Inbox pattern).
+- **Scheduled-task DSL** — `getScheduledTasks()` returns declarative
+  `"every day at 07:30"` tasks reconciled on boot. Per-instance and
+  code-declared; user-facing recurring agents still belong to Routines.
+- **Skills interop** — `getSkills()` mounts the same D1-backed
+  `userSkillSource` the chat agent uses. One skills store, two harnesses.
+- **Model routing** — `getModel()` returns a constructed `LanguageModel`
+  from our provider registry, bypassing Think's AI-Gateway string slugs
+  so the pilot honours the app's existing key configuration.
+
+Gotchas: `workspaceBash` must stay `false` while the repo's `just-bash`
+stub alias exists (Think's built-in workspace Bash tool needs the real
+package — see `server/lib/ai/skills/just-bash-stub.ts` to opt in);
+messengers (`getMessengers()`) are the seam for Telegram etc. but need a
+bot token, so the starter leaves them unwired.
+
 ### Code Mode (`@cloudflare/codemode`)
 
 Now a real package (bundled inside `agents`): the model writes one
