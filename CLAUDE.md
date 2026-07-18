@@ -799,6 +799,7 @@ pnpm models:refresh         # Update AI model catalogue from flared.au
 pnpm doctor:auth            # Diagnose better-auth setup — run before debugging "OAuth completes, no session". Read-only checks for wrangler flags, code patterns, secrets, D1 tables; prints manual-verification block for things we can't read (secret values, Google Cloud Console redirect URI).
 pnpm doctor:models          # Scan src/ for @cf/ Workers AI model IDs and compare against the live Cloudflare catalogue (via ai.flared.au). Catches deprecations before they 404 in production. Run after a Workers AI release blog post or any "models retired" announcement.
 pnpm test                   # Run unit tests (Vitest, runs in Workers pool)
+pnpm test:session           # Mint a headless test session → Playwright storageState (stdout) + curl Cookie line (stderr). Needs TEST_AUTH_TOKEN. See docs/test-auth-cascade-delete.md for the cleanup-LAST rule.
 pnpm test:e2e               # Run Playwright killer-flow tests (live deploy by default)
 pnpm type-check             # Type check
 ```
