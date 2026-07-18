@@ -62,6 +62,11 @@
  *     }
  */
 import { Agent } from 'agents'
+import type {
+  AgentToolRunInspection,
+  AgentToolStoredChunk,
+  FiberRecoveryContext,
+} from 'agents'
 import { streamText, convertToModelMessages, type UIMessage } from 'ai'
 import { drizzle } from 'drizzle-orm/d1'
 import { and, eq, gte, sql } from 'drizzle-orm'
@@ -222,6 +227,14 @@ export interface RunOnceInput {
    * in the same thread.
    */
   parentMessageId?: string
+  /**
+   * Cooperative cancellation for the decision loop. Passed through to
+   * the AI SDK's streamText, so an abort stops the model stream and
+   * the step loop; a tool ALREADY mid-execute runs to completion.
+   * In-process callers only (AbortSignal doesn't cross RPC) — used by
+   * the agents-as-tools child adapter's cancel path.
+   */
+  abortSignal?: AbortSignal
 }
 
 export interface RunOnceResult {
@@ -242,6 +255,30 @@ export interface RunOnceResult {
    * mechanically-truncated last-280-chars fallback.
    */
   hookSummary?: string | null
+}
+
+/**
+ * Input contract when this agent runs as an agents-as-tools CHILD —
+ * i.e. another agent dispatched it via `this.runAgentTool(MyAgent, ...)`.
+ * A child runs as a fresh facet DO named by the runId, so it has no
+ * owner until `userId` is bound here.
+ */
+export interface AgentToolRunInput {
+  /** The user-style message fed to the child's decision loop. */
+  input: string
+  /** Owner to bind on the fresh facet (enables user-scoped tools + audit
+   *  attribution). Omit for ownerless utility runs. */
+  userId?: string
+  /** Per-run model override (falls back to the child's state.modelId). */
+  model?: string
+  /** Cap on decision-loop steps. Defaults to runOnce's default (5). */
+  maxSteps?: number
+}
+
+/** Output shape an agents-as-tools child returns in its run inspection. */
+export interface AgentToolRunOutput {
+  text: string
+  steps: number
 }
 
 const DEFAULT_MAX_RECENT_MESSAGES = 30
@@ -731,42 +768,68 @@ export abstract class AutonomousAgent<
     }
 
     try {
-      // Build the system prompt. Persona first, then blocks (one
-      // labelled section each), then any subclass extras, then
-      // semantic recall snippets for this turn (if recallSemantic is
-      // wired).
-      const recall = userMessage ? await this.recallSemantic(userMessage) : []
-      const systemPrompt = await this.buildSystemPrompt(input?.systemPromptOverride, recall)
+      // The whole model loop runs inside a durable FIBER (agents SDK
+      // runFiber): a row is written before execution, `keepAlive` is held
+      // for the duration, and a checkpoint is stashed after every step.
+      // If the DO is evicted or redeployed mid-run, `onFiberRecovered`
+      // fires on the next wake with the last checkpoint — we use it to
+      // finalise the audit row that would otherwise strand at 'started'
+      // forever (previously undetectable). We deliberately do NOT re-run
+      // the loop on recovery: tools may have side effects, and scheduled
+      // /routine triggers re-fire on their own cadence anyway.
+      return await this.runFiber('run-once', async (fiber) => {
+        fiber.stash({ auditRunId: runId, step: 0 })
 
-      // Resolve tools. Each tool sees an AgentContext with the
-      // agent's owner (state.userId) so user-scoped tools work.
-      // actingUserId gates the owner's MCP tools (see RunOnceInput).
-      const tools = await this.buildToolset({ actingUserId })
+        // Build the system prompt. Persona first, then blocks (one
+        // labelled section each), then any subclass extras, then
+        // semantic recall snippets for this turn (if recallSemantic is
+        // wired).
+        const recall = userMessage ? await this.recallSemantic(userMessage) : []
+        const systemPrompt = await this.buildSystemPrompt(input?.systemPromptOverride, recall)
 
-      // Resolve the model. BYOK-aware: user-supplied keys override
-      // env defaults. Falls back to plain resolveModel when no owner.
-      // Skip resolution entirely when the caller passed a prebuiltModel —
-      // batch loops (SweeperAgent.doSweep) cache the resolved model
-      // across N runOnce invocations to avoid N D1 round-trips for the
-      // BYOK key lookup. Cast through unknown to keep the AI SDK's
-      // LanguageModel type out of the public RunOnceInput shape.
-      const model = input?.prebuiltModel
-        ? (input.prebuiltModel as Parameters<typeof streamText>[0]['model'])
-        : this.state.userId
-          ? await resolveModelForUser(
-              this.env as Parameters<typeof resolveModelForUser>[0],
-              { userId: this.state.userId },
-              modelId
-            )
-          : resolveModel(this.env, modelId)
+        // Resolve tools. Each tool sees an AgentContext with the
+        // agent's owner (state.userId) so user-scoped tools work.
+        // actingUserId gates the owner's MCP tools (see RunOnceInput).
+        const tools = await this.buildToolset({ actingUserId })
 
-      const result = streamText({
-        model,
-        system: systemPrompt,
-        messages: await convertToModelMessages(messages),
-        tools,
-        stopWhen: ({ steps }) => steps.length >= maxSteps,
-      })
+        // Resolve the model. BYOK-aware: user-supplied keys override
+        // env defaults. Falls back to plain resolveModel when no owner.
+        // Skip resolution entirely when the caller passed a prebuiltModel —
+        // batch loops (SweeperAgent.doSweep) cache the resolved model
+        // across N runOnce invocations to avoid N D1 round-trips for the
+        // BYOK key lookup. Cast through unknown to keep the AI SDK's
+        // LanguageModel type out of the public RunOnceInput shape.
+        const model = input?.prebuiltModel
+          ? (input.prebuiltModel as Parameters<typeof streamText>[0]['model'])
+          : this.state.userId
+            ? await resolveModelForUser(
+                this.env as Parameters<typeof resolveModelForUser>[0],
+                { userId: this.state.userId },
+                modelId
+              )
+            : resolveModel(this.env, modelId)
+
+        let checkpointStep = 0
+        const result = streamText({
+          model,
+          system: systemPrompt,
+          messages: await convertToModelMessages(messages),
+          tools,
+          stopWhen: ({ steps }) => steps.length >= maxSteps,
+          ...(input?.abortSignal && { abortSignal: input.abortSignal }),
+          // Checkpoint after each completed step (synchronous SQLite
+          // write via the fiber context — bound to this fiber, safe to
+          // call from the SDK's callback chain). The snapshot tells
+          // recovery how far the run got before an interruption.
+          onStepFinish: () => {
+            checkpointStep += 1
+            try {
+              fiber.stash({ auditRunId: runId, step: checkpointStep })
+            } catch {
+              /* stash after fiber settled — ignore */
+            }
+          },
+        })
 
       // Drain the stream. We don't expose streaming in this base —
       // for streaming UI, extend AIChatAgent. Accumulate the final
@@ -866,12 +929,13 @@ export abstract class AutonomousAgent<
         }
       }
 
-      return {
-        text,
-        usage: { inputTokens, outputTokens },
-        steps,
-        ...(hookSummary !== null ? { hookSummary } : {}),
-      }
+        return {
+          text,
+          usage: { inputTokens, outputTokens },
+          steps,
+          ...(hookSummary !== null ? { hookSummary } : {}),
+        }
+      })
     } catch (err) {
       // Failure path — update the audit row with the error before
       // re-throwing. The agent loop can surface a meaningful error
@@ -906,6 +970,313 @@ export abstract class AutonomousAgent<
   ): Promise<{ scheduleId: string }> {
     const schedule = await this.schedule(when, 'runScheduled', input ?? {})
     return { scheduleId: schedule.id }
+  }
+
+  // ─── Agents-as-tools child adapter ────────────────────────────
+  //
+  // Implements the agents-SDK AgentToolChildAdapter contract
+  // (startAgentToolRun / cancelAgentToolRun / inspectAgentToolRun /
+  // getAgentToolChunks / tailAgentToolRun) so ANY AutonomousAgent can be
+  // dispatched as a `runAgentTool` child — awaited or detached — by
+  // another agent. The framework spawns the child as a facet DO named by
+  // the runId and calls these methods over RPC; without them it throws
+  // "use a Think subclass or an AIChatAgent subclass".
+  //
+  // Contract mechanics (mirrors @cloudflare/ai-chat's implementation):
+  //   - startAgentToolRun must DISPATCH and return `status: 'running'`
+  //     immediately — the parent awaits it before branching on detached,
+  //     so blocking here would serialise detached runs too.
+  //   - The lifecycle runs under `keepAliveWhile` + its own fiber; the
+  //     SQLite row is the durable truth, terminalised by the lifecycle,
+  //     by cancel, or by fiber recovery after an eviction.
+  //   - Awaited parents wait on `tailAgentToolRun`'s stream closing,
+  //     then read the terminal row via `inspectAgentToolRun`.
+  //   - We emit no streaming chunks (the base agent isn't a streaming
+  //     surface); the result travels in the inspection's `output`.
+
+  /** In-memory settle signals + abort controllers for live agent-tool
+   *  runs. Lost on eviction by design — a 'running' row with no live
+   *  entry IS the interrupted case, terminalised lazily in inspect or
+   *  by fiber recovery. */
+  private agentToolLive = new Map<
+    string,
+    { settled: Promise<void>; settle: () => void; controller: AbortController }
+  >()
+
+  private ensureAgentToolRunsTable(): void {
+    this.sql`
+      create table if not exists autonomous_agent_tool_runs (
+        run_id text primary key,
+        status text not null,
+        output_json text,
+        summary text,
+        error text,
+        started_at integer not null,
+        completed_at integer
+      )
+    `
+  }
+
+  private readAgentToolRun(runId: string): AgentToolRunInspection<AgentToolRunOutput> | null {
+    const rows = this.sql<{
+      run_id: string
+      status: string
+      output_json: string | null
+      summary: string | null
+      error: string | null
+      started_at: number
+      completed_at: number | null
+    }>`select * from autonomous_agent_tool_runs where run_id = ${runId}`
+    const row = rows[0]
+    if (!row) return null
+    let output: AgentToolRunOutput | undefined
+    if (row.output_json) {
+      try {
+        output = JSON.parse(row.output_json) as AgentToolRunOutput
+      } catch {
+        /* corrupt output — surface the row without it */
+      }
+    }
+    return {
+      runId: row.run_id,
+      status: row.status as AgentToolRunInspection['status'],
+      ...(output !== undefined && { output }),
+      ...(row.summary !== null && { summary: row.summary }),
+      ...(row.error !== null && { error: row.error }),
+      startedAt: row.started_at,
+      ...(row.completed_at !== null && { completedAt: row.completed_at }),
+    }
+  }
+
+  /** Flip a still-'running' row to a terminal state. The status guard
+   *  makes every terminaliser (lifecycle, cancel, recovery, lazy
+   *  reconcile) idempotent — first writer wins. */
+  private terminaliseAgentToolRun(
+    runId: string,
+    status: 'completed' | 'error' | 'aborted',
+    fields: { output?: AgentToolRunOutput; summary?: string; error?: string }
+  ): void {
+    this.sql`
+      update autonomous_agent_tool_runs
+      set status = ${status},
+          output_json = ${fields.output ? JSON.stringify(fields.output) : null},
+          summary = ${fields.summary ?? null},
+          error = ${fields.error ?? null},
+          completed_at = ${Date.now()}
+      where run_id = ${runId} and status = 'running'
+    `
+  }
+
+  private settleAgentToolRun(runId: string): void {
+    this.agentToolLive.get(runId)?.settle()
+    this.agentToolLive.delete(runId)
+  }
+
+  async startAgentToolRun(
+    input: unknown,
+    options: { runId: string; signal?: AbortSignal }
+  ): Promise<AgentToolRunInspection<AgentToolRunOutput>> {
+    this.ensureAgentToolRunsTable()
+    // Idempotent re-dispatch (parent retry after partial failure).
+    const existing = this.readAgentToolRun(options.runId)
+    if (existing) return existing
+
+    // Accept either the typed contract or a bare string for robustness —
+    // a parent experimenting from another framework shouldn't hard-fail.
+    const parsed: AgentToolRunInput =
+      typeof input === 'string'
+        ? { input }
+        : ((input ?? {}) as Partial<AgentToolRunInput>).input
+          ? (input as AgentToolRunInput)
+          : (() => {
+              throw new Error(
+                'AutonomousAgent agent-tool input must be { input: string, userId?, model?, maxSteps? }'
+              )
+            })()
+
+    const startedAt = Date.now()
+    this.sql`
+      insert into autonomous_agent_tool_runs (run_id, status, started_at)
+      values (${options.runId}, 'running', ${startedAt})
+    `
+    const controller = new AbortController()
+    if (options.signal?.aborted) controller.abort(options.signal.reason)
+    else options.signal?.addEventListener('abort', () => controller.abort(options.signal?.reason))
+    let settle = () => {}
+    const settled = new Promise<void>((resolve) => {
+      settle = resolve
+    })
+    this.agentToolLive.set(options.runId, { settled, settle, controller })
+
+    const lifecycle = async () => {
+      try {
+        // Its own fiber: if the facet is evicted mid-run,
+        // onFiberRecovered terminalises the row so the parent's
+        // detached backbone collects a real terminal instead of
+        // waiting out its no-progress budget.
+        const result = await this.runFiber('agent-tool-run', async (fiber) => {
+          fiber.stash({ agentToolRunId: options.runId })
+          if (parsed.userId) {
+            if (!this.state.userId) {
+              await this.setOwner(parsed.userId)
+            } else if (this.state.userId !== parsed.userId) {
+              // Defence-in-depth at the child boundary (brains-trust
+              // 2026-07-18): facets are fresh per runId so this
+              // shouldn't happen via the framework path — but if a
+              // pre-owned facet is ever reached, refuse rather than
+              // silently run with the existing owner's tools + keys.
+              throw new Error(
+                'Agent-tool child owner mismatch — facet already bound to a different user.'
+              )
+            }
+          }
+          return await this.runOnce({
+            input: parsed.input,
+            ...(parsed.model && { model: parsed.model }),
+            ...(parsed.maxSteps !== undefined && { maxSteps: parsed.maxSteps }),
+            trigger: 'inter_agent',
+            abortSignal: controller.signal,
+          })
+        })
+        this.terminaliseAgentToolRun(options.runId, 'completed', {
+          output: { text: result.text, steps: result.steps },
+          summary: result.text.slice(0, 280),
+        })
+      } catch (err) {
+        this.terminaliseAgentToolRun(options.runId, 'error', {
+          error: err instanceof Error ? err.message : String(err),
+        })
+      } finally {
+        this.settleAgentToolRun(options.runId)
+      }
+    }
+    // Fire-and-forget under keepAlive; the returned inspection says
+    // 'running' and the parent takes it from there.
+    void this.keepAliveWhile(lifecycle)
+
+    return { runId: options.runId, status: 'running', startedAt }
+  }
+
+  async cancelAgentToolRun(runId: string, reason?: unknown): Promise<void> {
+    this.ensureAgentToolRunsTable()
+    // Abort the live decision loop (stops the model stream + step loop;
+    // a tool already mid-execute finishes — cooperative cancellation).
+    // The row flips 'aborted' first so the lifecycle's completed-write
+    // loses the status-guard race and any late result is discarded.
+    this.agentToolLive.get(runId)?.controller.abort(reason)
+    this.terminaliseAgentToolRun(runId, 'aborted', {
+      error: reason !== undefined ? String(reason) : 'cancelled',
+    })
+    this.settleAgentToolRun(runId)
+  }
+
+  async inspectAgentToolRun(
+    runId: string
+  ): Promise<AgentToolRunInspection<AgentToolRunOutput> | null> {
+    this.ensureAgentToolRunsTable()
+    const row = this.readAgentToolRun(runId)
+    if (!row) return null
+    // Lazy reconcile: a 'running' row with no live lifecycle means the
+    // facet was evicted mid-run and recovery hasn't fired yet.
+    // Terminalise here so the parent collects promptly.
+    if (row.status === 'running' && !this.agentToolLive.has(runId)) {
+      this.terminaliseAgentToolRun(runId, 'error', {
+        error: 'Run interrupted — Durable Object evicted or redeployed mid-run.',
+      })
+      return this.readAgentToolRun(runId)
+    }
+    return row
+  }
+
+  async getAgentToolChunks(
+    _runId: string,
+    _options?: { afterSequence?: number }
+  ): Promise<AgentToolStoredChunk[]> {
+    // The base agent doesn't stream UI chunks; results travel in the
+    // run inspection's output.
+    return []
+  }
+
+  /** Awaited parents block on this stream closing, then inspect the
+   *  terminal row. Emits no chunks — it's purely a completion signal. */
+  async tailAgentToolRun(
+    runId: string,
+    _options?: { afterSequence?: number; signal?: AbortSignal }
+  ): Promise<ReadableStream<AgentToolStoredChunk>> {
+    const live = this.agentToolLive.get(runId)
+    return new ReadableStream<AgentToolStoredChunk>({
+      start: async (controller) => {
+        if (live) await live.settled
+        controller.close()
+      },
+    })
+  }
+
+  /**
+   * Durable-execution recovery hook (agents SDK fibers). Fires on the
+   * next wake after a fiber was interrupted by eviction / redeploy.
+   * Two fibers run in this class:
+   *
+   *   - `run-once` — finalises the agent_runs audit row that would
+   *     otherwise strand at outcome='started' forever (the snapshot
+   *     carries the audit id + last completed step). No re-run: tools
+   *     may have side effects, and scheduled/routine triggers re-fire
+   *     on their own cadence.
+   *   - `agent-tool-run` — terminalises this facet's child-run row so
+   *     a detached parent's reconcile backbone collects a real
+   *     terminal promptly.
+   */
+  override async onFiberRecovered(
+    ctx: FiberRecoveryContext
+  ): ReturnType<Agent['onFiberRecovered']> {
+    const snap = (ctx.snapshot ?? null) as {
+      auditRunId?: string
+      step?: number
+      agentToolRunId?: string
+    } | null
+
+    if (ctx.name === 'run-once' && typeof snap?.auditRunId === 'string') {
+      const finishedAtMs = Date.now()
+      // No try/catch (brains-trust 2026-07-18): a transient D1 failure
+      // here must rethrow so the framework retries the recovery hook —
+      // swallowing it would re-strand the exact audit row this exists
+      // to finalise. Poison rows are bounded by fiberRecoveryMaxAgeMs.
+      await drizzle((this.env as { DB: D1Database }).DB)
+        .update(agentRuns)
+        .set({
+          finishedAt: Math.floor(finishedAtMs / 1000),
+          durationMs: finishedAtMs - ctx.createdAt,
+          outcome: 'error',
+          errorMessage: `Run interrupted after step ${snap.step ?? 0} — Durable Object evicted or redeployed mid-run.`,
+        })
+        .where(and(eq(agentRuns.id, snap.auditRunId), eq(agentRuns.outcome, 'started')))
+      console.warn(
+        JSON.stringify({
+          event: 'agent_run_interrupted_recovered',
+          agentClass: (this.constructor as typeof AutonomousAgent).className,
+          auditRunId: snap.auditRunId,
+          lastStep: snap.step ?? 0,
+        })
+      )
+      return
+    }
+
+    if (ctx.name === 'agent-tool-run' && typeof snap?.agentToolRunId === 'string') {
+      this.ensureAgentToolRunsTable()
+      this.terminaliseAgentToolRun(snap.agentToolRunId, 'error', {
+        error: 'Run interrupted — Durable Object evicted or redeployed mid-run.',
+      })
+      console.warn(
+        JSON.stringify({
+          event: 'agent_tool_run_interrupted_recovered',
+          agentClass: (this.constructor as typeof AutonomousAgent).className,
+          agentToolRunId: snap.agentToolRunId,
+        })
+      )
+      return
+    }
+
+    return super.onFiberRecovered(ctx)
   }
 
   // ─── Approval queue ───────────────────────────────────────────

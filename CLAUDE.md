@@ -39,7 +39,7 @@ VITE_FEATURE_ACTIVITY=false
 | **skills** | Claude Agent Skills registry + editor + AI-sparkle rewrite + diff approval | `server/modules/skills/routes.ts` |
 | **config-diff** | Shared primitive for staged user-config changes (skills, prompts, …) | `server/modules/config-diff/` |
 | **scheduled-agents** | DO scheduled work via agents SDK `schedule()` / `retry()` — no hand-rolled alarms | `server/modules/scheduled-agents/reminder-agent.ts` |
-| **autonomous-agents** | Stateful AI agent base — persona + memory blocks + tools + decision loop + approval queue + webhooks + budget gate + run audit. Plus multi-agent handoff (researcher → writer) | `server/lib/agents/autonomous-agent.ts`, `server/modules/autonomous-agents/{assistant,researcher,writer}-agent.ts` |
+| **autonomous-agents** | Stateful AI agent base — persona + memory blocks + tools + decision loop (fiber-checkpointed: evictions detected + audit rows finalised via `onFiberRecovered`) + approval queue + webhooks + budget gate + run audit. Multi-agent handoff on native `runAgentTool` — awaited or detached facet children with durable `onFinish`; the `AgentToolChildAdapter` is implemented once on the base so ANY autonomous agent is dispatchable (#113 step 5) | `server/lib/agents/autonomous-agent.ts`, `server/modules/autonomous-agents/{assistant,researcher,writer}-agent.ts` |
 | **mcp-agents** | Agent-as-MCP-server pattern — exposes app data over MCP for external Claude Code / clients | `server/modules/mcp-agents/scratchpad-mcp-agent.ts` |
 | **approvals** | Human-in-the-loop queue for autonomous agent actions — draft → review → approve → execute | `server/modules/approvals/routes.ts` |
 | **webhook-agents** | External event ingestion — HMAC-verified webhook → agent.handleWebhook | `server/lib/agents/webhook-verify.ts`, `server/modules/webhook-agents/routes.ts` |
@@ -396,7 +396,7 @@ SDK. **Don't extend raw `DurableObject` — use the SDK base.**
 | Live mic / camera / WebSocket | `Agent` + `withVoiceInput` mixin | `VoiceInputExample` |
 | Scheduled non-AI work | `Agent` directly + `this.schedule()` | `ReminderAgent` |
 | Stateful AI agent (persona + memory + tools) | `AutonomousAgent` | `AssistantAgent` |
-| Multi-agent handoff (specialist → specialist) | `AutonomousAgent` + inline `delegate_to_X` tool | `ResearcherAgent` → `WriterAgent` |
+| Multi-agent handoff (specialist → specialist) | `AutonomousAgent` + `delegate_to_X` tool on `runAgentTool` (awaited / detached) | `ResearcherAgent` → `WriterAgent` |
 | Platform-management chat (configure routines / agents / connections via natural language) | `AutonomousAgent` + admin tool catalogue, all writes through `requestApproval` | `AdminAgent` |
 | Expose agent's data over MCP | `McpAgent` from `agents/mcp` + `McpServer` from `@modelcontextprotocol/sdk` | `ScratchpadMcpAgent` at `/mcp/scratchpad/<id>` |
 | Multi-session AI chat surface | `ChatAgent extends AIChatAgent` from `@cloudflare/ai-chat` | `server/modules/chat/chat-agent.ts` |

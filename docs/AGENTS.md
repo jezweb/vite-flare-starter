@@ -40,7 +40,7 @@ Agent (from agents SDK)              ← all stateful long-lived things
 | Live mic / camera / WebSocket session per user | `Agent` + `withVoiceInput` (or `withVideoInput`) mixin | `VoiceInputExample`, `VideoInputExample` |
 | Scheduled fire (one-shot or recurring) for non-AI work | `Agent` directly + `this.schedule()` / `this.scheduleEvery()` | `ReminderAgent` |
 | Stateful AI assistant with persona + memory + tools | `AutonomousAgent` | `AssistantAgent` |
-| Multi-agent handoff (specialist agents call each other) | `AutonomousAgent` + custom `delegate_to_X` tool that calls another agent's stub | `ResearcherAgent` → `WriterAgent` |
+| Multi-agent handoff (specialist agents call each other) | `AutonomousAgent` + `delegate_to_X` tool on `this.runAgentTool` (awaited or detached facet child) | `ResearcherAgent` → `WriterAgent` |
 | Expose agent's data over MCP for external clients | `McpAgent` from `agents/mcp` (SDK) + `McpServer` from `@modelcontextprotocol/sdk` | `ScratchpadMcpAgent` |
 | Multi-session AI chat with state-sync to clients | `AIChatAgent` from `agents/chat` (SDK) | `ChatAgent` in `src/server/modules/chat/chat-agent.ts` (shipped — closed issue #34) |
 | Long-running multi-step business logic with checkpointing | Cloudflare Workflows + `AgentWorkflow` from `agents/workflows` | _not yet shipped_ |
@@ -369,9 +369,10 @@ are unguessable but defence in depth.
 - **Streaming to clients** — `runOnce` accumulates the full response
   before returning. For chat UIs needing token-by-token streaming,
   extend `AIChatAgent` from the SDK instead.
-- **Multi-agent orchestration** — the primitives are here (sub-agent
-  routing, RPC stubs, queues) but the handoff API isn't. Build a real
-  product use case first to learn what the ergonomics should be.
+- **Complex orchestration graphs** — the handoff API is here
+  (`runAgentTool` awaited/detached, see the worked example below), but
+  there's no DAG/planner layer. Build a real product use case first to
+  learn what the ergonomics should be.
 - **Vector memory** — the sliding window is good for short-term
   context. Long conversations want `AgentMemory`; wire it in your
   subclass when you need it.
@@ -407,11 +408,13 @@ export class ReminderAgent extends Agent<Env, ReminderState> {
 }
 ```
 
-## Multi-agent handoff (worked example)
+## Multi-agent handoff (worked example — `runAgentTool`)
 
-The agents-as-tools pattern, where the LLM decides when to hand off
-by calling a tool that invokes another agent. From OpenAI Agents SDK,
-Mastra, and Anthropic Claude Agent SDK conventions.
+The agents-as-tools pattern, where the LLM decides when to hand off by
+calling a tool that dispatches another agent. Since adoption step 5
+(#113) this runs on the agents SDK's native **`runAgentTool`**: the
+child runs as a **facet sub-agent** — a child Durable Object spawned
+inside the parent, named by the runId, with its own isolated SQLite.
 
 **Files**: `src/server/modules/autonomous-agents/researcher-agent.ts`
 + `writer-agent.ts`. Route: `POST /api/autonomous-agents/researcher/:slug { topic }`.
@@ -420,36 +423,53 @@ Flow:
 1. ResearcherAgent's LLM uses `web_search` to gather facts
 2. When it has enough material, the LLM calls `delegate_to_writer`
    with notes + brief
-3. The `delegate_to_writer` tool fetches the WriterAgent stub and
-   calls `runOnce` on it
-4. Writer composes the polished response (no tools, just LLM)
-5. Researcher returns the writer's text as its final answer
-
-The handoff tool is **inline to the delegating agent** — partition
-logic (which Writer instance to invoke) is explicit. Forks adapting
-to a different topology (multiple writers routed by topic, parallel
-fan-out) customise the tool body. Don't over-abstract this into a
-shared factory until you have 3+ delegators with the same wiring.
+3. The tool calls `this.runAgentTool(WriterAgent, ...)` in one of two
+   delivery modes the model chooses between:
+   - **awaited** (default): blocks until the writer facet completes,
+     returns the text inline — with real interruption semantics
+     (`retryable`, `childStillRunning`) instead of an opaque RPC error
+   - **`background: true`**: detached dispatch — the researcher's turn
+     ends immediately; when the writer finishes (even across an
+     eviction or deploy — a durable reconcile alarm on the parent
+     guarantees delivery), the `onWriterFinished` method fires and
+     posts the text as an in-app notification
 
 ```typescript
-private delegateToWriterTool(): ToolDefinition<...> {
-  const userId = this.state.userId ?? ''
-  const env = this.env
-  return {
-    name: 'delegate_to_writer',
-    description: '...',
-    inputSchema: z.object({ notes: z.string(), brief: z.string() }),
-    execute: async ({ notes, brief }) => {
-      const writer = await getAgentByName(env.WriterAgent, `${userId}:writer`)
-      await writer.setOwner(userId, 'writer')
-      const result = await writer.runOnce({
-        input: `Brief: ${brief}\n\n## Notes\n\n${notes}`,
-      })
-      return { ok: true, text: result.text }
-    },
-  }
-}
+// awaited
+const result = await this.runAgentTool<AgentToolRunInput, AgentToolRunOutput>(
+  WriterAgent, { input: { input: brief, userId } }
+)
+// detached — onFinish is a METHOD NAME (schedule-style, survives eviction)
+const dispatch = await this.runAgentTool(WriterAgent, {
+  input: { input: brief, userId },
+  detached: { onFinish: 'onWriterFinished' },
+})
 ```
+
+**The child side is implemented once on `AutonomousAgent`** — the
+framework requires children to implement its `AgentToolChildAdapter`
+(`startAgentToolRun` / `cancelAgentToolRun` / `inspectAgentToolRun` /
+`getAgentToolChunks` / `tailAgentToolRun`), and the base class provides
+it, so **any** autonomous agent can be dispatched this way with zero
+per-agent code. Contract mechanics worth knowing before you customise:
+
+- `startAgentToolRun` must dispatch (under `keepAliveWhile`) and return
+  `status: 'running'` immediately — the parent awaits it before
+  branching on detached, so blocking there would serialise everything.
+- The child's SQLite row is the durable truth; awaited parents block on
+  `tailAgentToolRun`'s stream closing, then read the terminal row.
+- Detached `onFinish` handlers are delivered **at-least-once** (claim +
+  lease). They must be idempotent (the worked example uses a
+  deterministic notification id + `onConflictDoNothing`) and must
+  **throw on transient failure** — swallowing an error consumes the
+  delivery and loses the result forever.
+- Cancellation is cooperative: `cancelAgentToolRun` aborts the child's
+  decision loop via `RunOnceInput.abortSignal`; a tool already
+  mid-execute finishes.
+- Fibers back the durability: the child's run (and every `runOnce`)
+  executes inside `runFiber` with per-step checkpoints, so an eviction
+  mid-run is *detected* on the next wake (`onFiberRecovered`) and
+  terminalised instead of stranding forever.
 
 Cost shape: researcher uses Sonnet (research strategy benefits from
 flagship); writer uses Haiku (cheap prose generation). Each agent

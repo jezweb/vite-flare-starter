@@ -199,6 +199,21 @@ live 2026-07-17.
    Docs: `docs/AGENT_TOOLKIT.md` §Code Mode.
 5. **Fibers + agents-as-tools pilot (1 session):** rework researcher→writer
    on detached runs; fiber-checkpoint one long loop.
+   ✅ DONE 2026-07-18 — `AgentToolChildAdapter` implemented ONCE on
+   `AutonomousAgent` (the framework demands the 4-method contract or
+   rejects the child; implementing it on the base makes every autonomous
+   agent dispatchable). `delegate_to_writer` reworked onto
+   `this.runAgentTool(WriterAgent, ...)`: awaited default + `background:
+   true` detached with durable `onFinish: 'onWriterFinished'` →
+   idempotent notification delivery. `runOnce`'s LLM loop now runs inside
+   `runFiber` with per-step stash checkpoints; `onFiberRecovered`
+   finalises stranded `agent_runs` audit rows (previously stuck at
+   'started' forever after eviction) and stranded child-run rows. Both
+   paths live-verified on production (facets + `ctx.exports` work on
+   compat date 2026-04-01; class names survive the bundle). Key contract
+   facts + brains-trust outcomes:
+   `.jez/audits/2026-07-18-brains-trust-agents-as-tools.md`; pattern doc:
+   `docs/AGENTS.md` § Multi-agent handoff.
 6. **Hold reviews:** revisit Sessions + useAgentChat when Think/Sessions
    graduate from experimental, or at the next major chat-module rebuild.
 
