@@ -138,7 +138,9 @@ adminRoutes.get('/access-log', zValidator('query', accessLogQuerySchema), async 
       where: inArray(schema.user.id, userIds),
       columns: { id: true, name: true, email: true },
     })
-    users.forEach((u) => userMap.set(u.id, { name: u.name, email: u.email }))
+    users.forEach((u) => {
+      userMap.set(u.id, { name: u.name, email: u.email })
+    })
   }
 
   return c.json({
