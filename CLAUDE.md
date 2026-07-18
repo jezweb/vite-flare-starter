@@ -763,6 +763,20 @@ printf "http://localhost:5173,https://your-app.workers.dev" | npx wrangler secre
 pnpm run deploy
 ```
 
+**Two silent deploy gotchas** (#115 — neither produces an error):
+
+1. **`wrangler deploy` does not read your root `wrangler.jsonc`.** The
+   Vite plugin writes a redirect (`.wrangler/deploy/config.json`) to the
+   generated config in `dist/`, so a bare `wrangler deploy` ships the
+   config *from the last build*. Any `wrangler.jsonc` change (new
+   binding, `run_worker_first` edit) requires a rebuild first —
+   `pnpm run deploy` chains this; direct `wrangler deploy` is the trap.
+2. **A new Worker-served path outside `/api/*` must be added to
+   `assets.run_worker_first`** (then rebuilt, per gotcha 1). Otherwise
+   the assets layer answers first: POST → 405, GET → 200 with
+   index.html (SPA fallback) — neither error says "your route was never
+   reached". Applies to webhooks, proxies, SSR pages, mounted sub-apps.
+
 ---
 
 ## Commands

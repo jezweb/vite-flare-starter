@@ -31,13 +31,18 @@ export const securityHeaders = createMiddleware<{ Bindings: Env }>(async (c, nex
 
   // CSP only for HTML responses (not API JSON responses)
   if (isHtml && !isApi) {
+    // Zones with Cloudflare Web Analytics (RUM) auto-injection add a beacon
+    // script this CSP blocks — harmless but a permanent console error (#117).
+    // Set CSP_ALLOW_CF_INSIGHTS=true to allow it, or disable injection for
+    // this hostname in the zone's Analytics settings.
+    const allowInsights = c.env.CSP_ALLOW_CF_INSIGHTS === 'true'
     const csp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'", // unsafe-inline for Vite HMR in dev
+      `script-src 'self' 'unsafe-inline'${allowInsights ? ' https://static.cloudflareinsights.com' : ''}`, // unsafe-inline for Vite HMR in dev
       "style-src 'self' 'unsafe-inline'", // inline styles from components
       "img-src 'self' data: https: blob:", // https images + canvas/blob URLs (video frame capture)
       "font-src 'self' data:",
-      "connect-src 'self' https://accounts.google.com wss:", // Google OAuth + agent WebSockets
+      `connect-src 'self' https://accounts.google.com wss:${allowInsights ? ' https://cloudflareinsights.com' : ''}`, // Google OAuth + agent WebSockets
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",

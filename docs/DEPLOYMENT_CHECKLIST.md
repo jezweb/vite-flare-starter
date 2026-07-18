@@ -332,6 +332,7 @@ npx wrangler rollback
 | **Monitoring** | Uptime monitoring active | ☐ |
 | **Domain** | Custom domain configured | ☐ |
 | **Domain** | SSL certificate valid | ☐ |
+| **Domain** | Zone Web Analytics vs CSP checked (#117): if the zone auto-injects the RUM beacon, either disable injection for this hostname or set `CSP_ALLOW_CF_INSIGHTS=true` — otherwise every page logs a CSP violation | ☐ |
 
 ---
 

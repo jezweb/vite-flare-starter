@@ -188,6 +188,9 @@ export interface Env {
   SENTRY_DSN?: string
   SENTRY_ENVIRONMENT?: string
 
+  /** 'true' → CSP allows the Cloudflare Web Analytics beacon (zones with RUM auto-injection, #117). */
+  CSP_ALLOW_CF_INSIGHTS?: string
+
   // Reference MCP server. Disabled by default because the scratchpad
   // example is intentionally unauthenticated unless a fork adds OAuth.
   ENABLE_SCRATCHPAD_MCP?: string
@@ -502,16 +505,17 @@ app.post(
   }
 )
 
-// 404 handler for API routes
-app.notFound((c) => {
-  // Only handle 404s for /api/* routes
-  // Everything else falls through to static assets
-  if (c.req.path.startsWith('/api/')) {
-    return c.json({ error: 'Not Found' }, 404)
-  }
-  // Return undefined to let the runtime handle it (static assets)
-  return undefined as any
-})
+// 404 handler. Must return a real Response for EVERY path (#114): a
+// handler returning undefined is an error in Hono, so `c.notFound()`
+// from any page-path Worker route (proxy, SSR, mounted sub-app) would
+// land in onError as a 500. The assets fall-through never reaches this
+// handler for paths outside `run_worker_first`, so a plain 404 here
+// doesn't shadow static assets.
+app.notFound((c) =>
+  c.req.path.startsWith('/api/')
+    ? c.json({ error: 'Not Found' }, 404)
+    : c.text('Not Found', 404)
+)
 
 // Error handler
 app.onError((err, c) => {
