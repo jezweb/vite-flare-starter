@@ -127,7 +127,7 @@
     "react-leaflet": "^5.0.0",
     "react-markdown": "^10.1.0",
     "react-resizable-panels": "^4.11.2",
-    "react-router-dom": "^7.16.0",
+    "react-router": "8.2.0",
     "remark-gfm": "^4.0.1",
     "resend": "^6.12.4",
     "shiki": "^4.2.0",

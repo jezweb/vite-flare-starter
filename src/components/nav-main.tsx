@@ -9,7 +9,7 @@
  * "More" cluster so the sidebar leads with the ~6 primary destinations.
  */
 import { useEffect, useState } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router'
 import { CaretDown, CaretRight } from '@phosphor-icons/react'
 import {
   SidebarGroup,

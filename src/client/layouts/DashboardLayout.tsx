@@ -13,7 +13,7 @@
  * without touching this file's wiring. See src/components/ui/app-shell.tsx.
  */
 import { useEffect } from 'react'
-import { Outlet, useLocation } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router'
 import { AppShell } from '@/components/ui/app-shell'
 import { AppSidebar } from '@/components/app-sidebar'
 import { SiteHeader } from '@/components/site-header'

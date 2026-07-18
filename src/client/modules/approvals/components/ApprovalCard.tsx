@@ -14,7 +14,7 @@
  * disclosure.
  */
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { formatDistanceToNow } from 'date-fns'
 import { CheckCircle, XCircle, WarningCircle, Clock, CaretRight, Brain, ArrowUpRight, Lock } from '@phosphor-icons/react'

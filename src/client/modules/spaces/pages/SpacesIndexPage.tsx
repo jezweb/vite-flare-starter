@@ -6,7 +6,7 @@
  * launches the create modal.
  */
 import { useEffect, useState, useMemo } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router'
 import { Plus, PushPin, Users, Robot, Hash, Sparkle } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { useSpacesList, type SpaceSummary } from '../hooks/useSpaces'

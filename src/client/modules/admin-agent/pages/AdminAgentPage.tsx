@@ -11,7 +11,7 @@
  * same endpoint and bounce through in <100ms.
  */
 import { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { useMutation } from '@tanstack/react-query'
 import { ShieldCheck } from '@phosphor-icons/react'
 

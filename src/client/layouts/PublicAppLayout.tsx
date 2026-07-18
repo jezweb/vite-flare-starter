@@ -6,7 +6,7 @@
  * views. Minimal header + optional "sign in" banner + width-constrained main +
  * minimal footer. No sidebar.
  */
-import { Outlet, Link } from 'react-router-dom'
+import { Outlet, Link } from 'react-router'
 import { AppShell } from '@/components/ui/app-shell'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/client/components/theme-toggle'

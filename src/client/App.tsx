@@ -6,7 +6,7 @@ import {
   Navigate,
   useNavigate,
   useSearchParams,
-} from 'react-router-dom'
+} from 'react-router'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { ScrollToTop } from './components/shared/ScrollToTop'
 import { ErrorBoundary } from './components/shared/ErrorBoundary'

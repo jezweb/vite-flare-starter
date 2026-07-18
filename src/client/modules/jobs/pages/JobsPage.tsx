@@ -6,7 +6,7 @@
  * any job is in `running` or `queued`, then drops to 30s once everything
  * is settled.
  */
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Stack, Clock, CheckCircle, WarningCircle, XCircle, CircleNotch } from '@phosphor-icons/react'
 import { PageContainer } from '@/components/ui/page-container'

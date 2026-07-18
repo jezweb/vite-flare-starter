@@ -12,7 +12,7 @@
  * config-diff approval flow that skills use.
  */
 import { useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router'
 import { BookOpen, Plus, MagnifyingGlass, SquaresFour, List as ListIcon, Warning } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'

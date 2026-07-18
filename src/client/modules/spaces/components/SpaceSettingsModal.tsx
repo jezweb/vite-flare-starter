@@ -6,7 +6,7 @@
  * for consistency with Google Chat's full Settings panel.
  */
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { UserPlus, Robot, Trash, SignOut, Prohibit } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import {

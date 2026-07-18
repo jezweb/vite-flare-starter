@@ -7,7 +7,7 @@
  * takeover, approval UI) are composed inside the AI Elements layout.
  */
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
@@ -27,7 +27,7 @@ import {
   PromptInputActionAddScreenCapture,
 } from '../components/ScreenCaptureMenuItems'
 import { Plus, Chat, Chats, Download, ArrowDown, Paperclip, FileText, Folder, X, FileDashed, CaretLeft, ArrowUpRight } from '@phosphor-icons/react'
-import { Link as RouterLink } from 'react-router-dom'
+import { Link as RouterLink } from 'react-router'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 import {
   DropdownMenu,

@@ -7,7 +7,7 @@
  * that file. Search filters client-side.
  */
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { ArrowRight } from '@phosphor-icons/react'
 import { GLOSSARY_ENTRIES, type GlossaryEntry } from '@/shared/config/glossary'
 import { features } from '@/shared/config/features'

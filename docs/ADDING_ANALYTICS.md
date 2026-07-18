@@ -357,7 +357,7 @@ export function trackPageView(path: string) {
 }
 
 // Use in router
-import { useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router'
 import { useEffect } from 'react'
 
 export function usePageTracking() {

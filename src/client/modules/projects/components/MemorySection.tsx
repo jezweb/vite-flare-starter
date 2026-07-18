@@ -6,7 +6,7 @@
  */
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { Plus, Lock, Brain, CaretDown, CaretRight, Trash, PencilLine, ArrowUpRight } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'

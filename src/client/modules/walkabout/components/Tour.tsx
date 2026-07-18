@@ -15,7 +15,7 @@
  * mutes/unmutes for the rest of the tour.
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router'
 import { CaretLeft, CaretRight, Compass, Pause, Play, SpeakerHigh, SpeakerSlash, X } from '@phosphor-icons/react'
 import { TOUR_STEPS, markTour, tourSeen } from '../tour/steps'
 import { TOUR_CUES, type TourCue } from '../tour/cues.gen'

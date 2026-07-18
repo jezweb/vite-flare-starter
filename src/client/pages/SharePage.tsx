@@ -11,7 +11,7 @@
  * `entityType` here.
  */
 import * as React from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link } from 'react-router'
 import { LinkBreak } from '@phosphor-icons/react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'

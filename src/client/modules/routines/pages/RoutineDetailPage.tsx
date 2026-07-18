@@ -10,7 +10,7 @@
  * That's annoying but keeps slice 6 small; the form is already in
  * NewRoutinePage so a "duplicate to edit" workflow is one nav away.
  */
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router'
 import { formatDistanceToNow } from 'date-fns'
 import { Play, Trash, CheckCircle, XCircle, Warning, Clock, Pulse } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'

@@ -14,7 +14,7 @@
  * Hover/keyboard pattern follows shadcn DropdownMenu.
  */
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { DotsThree, PushPin, PushPinSlash, BellSlash, Bell, Link as LinkIcon, Check, SignOut, Trash, GearSix, Users } from '@phosphor-icons/react'
 import {
   DropdownMenu,

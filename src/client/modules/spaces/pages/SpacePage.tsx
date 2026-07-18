@@ -8,7 +8,7 @@
  * presence + new-message broadcast via WebSocket.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link } from 'react-router'
 import { CaretLeft, X, Hash, Chat, MagnifyingGlass, PushPin, Quotes as QuoteIcon, Users, Bell, BellSlash } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'

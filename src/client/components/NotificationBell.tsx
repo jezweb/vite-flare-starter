@@ -4,7 +4,7 @@
  * Displays a bell icon with unread count badge and dropdown with recent notifications.
  */
 
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,

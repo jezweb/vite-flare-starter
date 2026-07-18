@@ -19,7 +19,7 @@
  * accepts these — wire them through `pageSize` for the page size.
  */
 import { useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { Plus, FileText } from '@phosphor-icons/react'
 import type { ColumnDef } from '@tanstack/react-table'
 

@@ -10,7 +10,7 @@
  * appears inline (and in the WorkspacePanel).
  */
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Sparkle, MagnifyingGlass, Chat, CodeSimple, Image as ImageIcon, GitBranch, FileText } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'

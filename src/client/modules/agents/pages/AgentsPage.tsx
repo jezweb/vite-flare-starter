@@ -12,7 +12,7 @@
  */
 import { useState } from 'react'
 import { Robot, Plus, Sparkle } from '@phosphor-icons/react'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 
 import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'

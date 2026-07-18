@@ -11,7 +11,7 @@
  * extracted `ApprovalCard` component (`../components/ApprovalCard.tsx`).
  * One source of truth for both surfaces.
  */
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Tray } from '@phosphor-icons/react'
 

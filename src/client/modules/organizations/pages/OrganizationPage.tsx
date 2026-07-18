@@ -11,7 +11,7 @@
  * URL: /dashboard/organization?tab=members | settings
  */
 import { useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router'
 import { UserPlus, SignOut } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { toast } from 'sonner'

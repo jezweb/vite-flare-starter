@@ -11,7 +11,7 @@
  * map page — see ~/.claude/rules/leaflet-shadcn-zindex.md.
  */
 import { useRef, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router'
 import { Compass, Question, PaperPlaneTilt, Sparkle, X } from '@phosphor-icons/react'
 import { apiClient } from '@/client/lib/api-client'
 

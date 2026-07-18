@@ -3,7 +3,7 @@
  *
  * Adapted from shadcn dashboard-01 with our session, auth, and routes.
  */
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   DropdownMenu,

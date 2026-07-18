@@ -23,7 +23,7 @@
  */
 import { useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { Warning, Sparkle } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'

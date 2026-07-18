@@ -15,7 +15,7 @@
  *   { label: 'API Docs', href: '/wiki/engineering/api-docs' },
  * ]} />
  */
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router'
 import { CaretRight, House } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 

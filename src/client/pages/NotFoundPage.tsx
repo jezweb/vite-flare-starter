@@ -5,7 +5,7 @@
  * Keeps signed-in users inside the app shell via the dashboard route tree
  * instead of silently bouncing to the landing page.
  */
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { useSession } from '@/client/lib/auth'
 import { FileDashed, ArrowLeft, House } from '@phosphor-icons/react'

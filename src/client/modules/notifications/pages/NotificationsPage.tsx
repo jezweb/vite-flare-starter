@@ -6,7 +6,7 @@
  * can either peek at new items or come here for the full audit trail.
  */
 import { useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { formatDistanceToNow, format } from 'date-fns'
 import { Bell, Check, Checks, Info, Warning, WarningCircle, Tray } from '@phosphor-icons/react'

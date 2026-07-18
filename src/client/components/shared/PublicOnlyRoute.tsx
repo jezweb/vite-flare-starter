@@ -1,5 +1,5 @@
 import { useSession } from '@/client/lib/auth'
-import { Navigate, useLocation } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router'
 
 interface PublicOnlyRouteProps {
   children: React.ReactNode

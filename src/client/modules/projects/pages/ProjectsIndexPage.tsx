@@ -10,7 +10,7 @@
  * is reserved by rendering a single visible tab so the layout is stable.
  */
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Plus, Star, FolderOpen, Archive } from '@phosphor-icons/react'

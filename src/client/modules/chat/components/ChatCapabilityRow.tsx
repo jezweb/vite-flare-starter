@@ -17,7 +17,7 @@
  * jump straight to wiring up more capabilities.
  */
 import { useQuery } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { EnvelopeSimple, FolderOpen, Calendar, Plug, Sparkle } from '@phosphor-icons/react'
 import { CapabilityChip, CapabilityRow } from '@/components/ui/capability-chip'
 import { apiClient } from '@/client/lib/api-client'

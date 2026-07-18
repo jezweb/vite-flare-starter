@@ -10,7 +10,7 @@
  * users who want a blank canvas can still flip to the third tab.
  */
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { Sparkle, ArrowLeft } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import {

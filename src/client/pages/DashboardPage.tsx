@@ -14,7 +14,7 @@
  *   5. Capability tour (collapsed) — fork-onboarding reference
  */
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Time } from '@/components/ui/time'
 import { Brain, Wrench, Image, Video, MagnifyingGlass, FileText, GearSix, Shield, Sparkle, ArrowRight, CaretDown, CaretRight, CheckSquare, Pulse as ActivityIcon, Chat, Plug, CheckCircle, XCircle, Clock, Warning, Kanban, Users, Repeat } from '@phosphor-icons/react'

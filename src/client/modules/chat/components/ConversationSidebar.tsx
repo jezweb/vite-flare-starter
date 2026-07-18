@@ -3,7 +3,7 @@
  */
 import { formatRelative } from '@/client/lib/format-time'
 import { useState, useEffect, useDeferredValue, useMemo } from 'react'
-import { Link, useNavigate, useLocation, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useLocation, useParams, useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Plus, DotsThree, Pencil, Trash, MagnifyingGlass, CaretRight, Star, Folder, FolderPlus, FolderMinus } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'

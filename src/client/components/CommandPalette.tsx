@@ -17,7 +17,7 @@
  * Keyboard: Cmd+K (Mac) or Ctrl+K (Windows/Linux)
  */
 import { useState, useEffect, useCallback, useDeferredValue } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import {
   CommandDialog,

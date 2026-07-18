@@ -12,7 +12,7 @@
  * type="queue" → type="index" or "catalog" and replace ListRowGroup
  * with a Card grid.
  */
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { Plus, CaretRight, FileText } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { PageContainer } from '@/components/ui/page-container'

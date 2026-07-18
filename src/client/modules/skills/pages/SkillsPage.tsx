@@ -14,7 +14,7 @@
  * copy — the skills table flips `source: 'r2'`, and the R2 version wins.
  */
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { Upload, CodeSimple as GithubIcon, ArrowsClockwise, DotsThree, SquaresFour, List as ListIcon, Sparkle, MagnifyingGlass } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/client/components/EmptyState'

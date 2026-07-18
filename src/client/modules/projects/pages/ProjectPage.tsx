@@ -10,7 +10,7 @@
  * See `.jez/artifacts/projects-first-class-plan-2026-04-26.md` Phase 1 UI spec.
  */
 import { useState, useEffect, useCallback } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { ArrowLeft, Plus, Star, ShareNetwork, DotsThreeVertical, Archive, Trash, PencilSimple, Chat, PencilLine } from '@phosphor-icons/react'

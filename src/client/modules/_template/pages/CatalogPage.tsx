@@ -15,7 +15,7 @@
  * items", copy `TablePage.tsx` instead — uses shadcn Data Table.
  */
 import { Plus, FileText, SquaresFour, List as ListIcon } from '@phosphor-icons/react'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 
 import { Button } from '@/components/ui/button'
 import { PageContainer } from '@/components/ui/page-container'

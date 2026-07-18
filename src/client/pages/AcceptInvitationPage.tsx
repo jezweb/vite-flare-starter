@@ -18,7 +18,7 @@
  *   - other API errors → generic toast + retry button
  */
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router'
 import { CheckCircle, Warning, EnvelopeSimple } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'

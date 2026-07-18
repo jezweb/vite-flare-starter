@@ -28,7 +28,7 @@
  * this is fine at typical inbox sizes (<50).
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Tray, X, Check, XCircle, Eye } from '@phosphor-icons/react'

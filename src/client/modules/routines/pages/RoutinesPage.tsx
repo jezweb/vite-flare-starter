@@ -5,7 +5,7 @@
  * enabled toggle, last run + outcome. Click into the row to open the
  * detail page for runs / edit / fire-now.
  */
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { formatDistanceToNow } from 'date-fns'
 import { Pulse, CheckCircle, Clock, CircleNotch, Plus, Repeat, XCircle, Warning, PlugsConnected, Hand, Lightning } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'

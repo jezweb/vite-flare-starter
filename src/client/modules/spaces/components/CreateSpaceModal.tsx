@@ -9,7 +9,7 @@
  * Templates are config-driven — see `src/shared/config/space-templates.ts`.
  */
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { Hash, Sparkle, Kanban } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import {

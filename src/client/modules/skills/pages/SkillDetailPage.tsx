@@ -13,7 +13,7 @@
  * page so the detail surface owns its own destructive actions.
  */
 import { useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router'
 import { ArrowLeft, Trash } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 

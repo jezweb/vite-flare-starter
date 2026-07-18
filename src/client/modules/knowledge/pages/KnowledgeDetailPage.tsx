@@ -11,7 +11,7 @@
  * token count refreshes as you type (≈ length / 4).
  */
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router'
 import { ArrowLeft, FloppyDisk, Trash, CircleNotch, Warning } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'

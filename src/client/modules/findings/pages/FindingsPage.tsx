@@ -17,7 +17,7 @@
  * cross-agent; filter chips narrow by agent name.
  */
 import { useState, useMemo } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Lightbulb, BookOpen, Trash, CaretDown, CaretRight, Clock, ArrowUpRight, Sparkle, ArrowCounterClockwise } from '@phosphor-icons/react'

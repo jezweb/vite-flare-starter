@@ -12,7 +12,7 @@
  * The UI automatically shows/hides email form based on server config.
  */
 import { useState, useEffect, useMemo, FormEvent } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router'
 import {
   authClient,
   getLastUsedLoginMethod,

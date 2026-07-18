@@ -10,7 +10,7 @@
  * windows; in-flight items finish naturally.
  */
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { ArrowLeft, Stack, CheckCircle, WarningCircle, Clock, CircleNotch, XCircle, Square, CaretRight, CaretDown } from '@phosphor-icons/react'

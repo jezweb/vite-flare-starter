@@ -18,7 +18,7 @@
  *     starter's `appConfig.name` only if no org could be loaded.
  */
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { Buildings, Check, CaretUpDown, Plus, GearSix, UserPlus } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import {

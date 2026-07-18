@@ -5,7 +5,7 @@
  * ⚠️  SECURITY: Update VITE_APP_NAME and VITE_FOOTER_TEXT env vars
  * to rebrand for production (see src/shared/config/app.ts)
  */
-import { Outlet, Link } from 'react-router-dom'
+import { Outlet, Link } from 'react-router'
 import { AppShell } from '@/components/ui/app-shell'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/client/components/theme-toggle'

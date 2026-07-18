@@ -14,7 +14,7 @@
  * the Advanced disclosure.
  */
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router'
 import { ArrowLeft, CaretDown, CaretRight, Sparkle } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { useCreateRoutine } from '../hooks/useRoutines'
 import {
   AgentPicker,

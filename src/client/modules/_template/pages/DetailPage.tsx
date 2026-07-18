@@ -14,7 +14,7 @@
  *
  * Don't mix sub-patterns inside one detail page.
  */
-import { useParams } from 'react-router-dom'
+import { useParams } from 'react-router'
 import { DotsThreeVertical, Trash, PencilSimple } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'

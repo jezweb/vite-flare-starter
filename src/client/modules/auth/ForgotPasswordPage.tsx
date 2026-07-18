@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { EnvelopeSimple, ArrowLeft, CheckCircle } from '@phosphor-icons/react'
 import { authClient } from '@/client/lib/auth'
 import { Button } from '@/components/ui/button'
