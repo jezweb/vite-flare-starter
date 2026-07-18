@@ -28,6 +28,7 @@ import {
   AIChatAgent,
   type OnChatMessageOptions,
   type ChatResponseResult,
+  type ChatRecoveryConfig,
 } from '@cloudflare/ai-chat'
 import {
   streamText,
@@ -455,6 +456,43 @@ export class ChatAgent extends AIChatAgent<Env> {
    * post-hibernate turn.
    */
   override waitForMcpConnections = { timeout: 10_000 } as const
+
+  /**
+   * Durable-streaming recovery. A deploy, DO eviction, or isolate reset
+   * mid-turn resumes the interrupted turn (replaying the last request body)
+   * instead of stranding a dead spinner. Recovery re-runs flow back through
+   * `onChatMessage`, so the ownership + rate-limit checks re-apply.
+   *
+   * MUST be a class field (or constructor assignment) — the SDK evaluates
+   * recovery budgets on wake before `onStart()` runs, so config set any
+   * later silently falls back to defaults for the recovery that matters.
+   */
+  override chatRecovery: ChatRecoveryConfig = {
+    onExhausted: (ctx) => {
+      // Terminal give-up: the user saw the framework's terminal banner.
+      // One structured line so Workers Logs / `wrangler tail` can alert on
+      // it — the diagnostics-channel subscriber logs the interim attempts.
+      console.error(
+        JSON.stringify({
+          event: 'chat_recovery_exhausted',
+          agent: this.name,
+          incidentId: ctx.incidentId,
+          reason: ctx.reason,
+          attempts: ctx.attempt,
+          recoveryKind: ctx.recoveryKind,
+        })
+      )
+    },
+  }
+
+  /**
+   * Stall watchdog: if the model/transport stream goes silent for 3 minutes
+   * the turn aborts into recovery instead of parking forever on a hung
+   * provider. Measures the gap BETWEEN chunks (not total turn length), so
+   * keep it above the slowest legitimate inter-chunk gap — long tool calls
+   * (sandbox exec 30s, slow MCP servers) and non-streamed reasoning.
+   */
+  override chatStreamStallTimeoutMs = 180_000
 
   /**
    * Tracks whether we've already inserted the conversation row in D1.

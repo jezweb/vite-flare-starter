@@ -21,7 +21,7 @@ Agent (from agents SDK)              ← all stateful long-lived things
 │   (extends Agent directly)
 │
 ├── AIChatAgent (SDK class)          ← multi-session chat surface
-│   (NOT yet adopted by chat module — see the deferred Phase 0b refactor)
+│   └── ChatAgent                    ← worked: the chat module (shipped, #34)
 │
 ├── AutonomousAgent                  ← stateful AI with persona + memory + tools
 │   (in this starter)
@@ -536,15 +536,38 @@ the syntax.
 
 ## Observability
 
-The SDK emits structured events on schedule lifecycle (created /
-fired / retried / failed) into Workers Logs. No parallel D1 audit
-table — the SDK is the single source of truth. Forks that want
-permanent SQL audit can subscribe to the SDK's observability event
-stream and write to their own table.
+The SDK instruments every agent unconditionally and publishes
+structured events on Node **diagnostics channels** (`agents:chat`,
+`agents:schedule`, `agents:mcp`, `agents:fiber`, `agents:workflow`, …).
+Publishing to a channel with no subscriber is a no-op, so this costs
+nothing until something listens. Two consumers:
+
+1. **In-worker subscriber** — `server/lib/agent-diagnostics.ts`
+   (side-effect import in `server/index.ts`) subscribes to the
+   incident-shaped subset (recovery, failed, stalled, degraded,
+   repaired) and emits one JSON line per event, so `wrangler tail`
+   and Workers Logs surface chat-recovery incidents, stream stalls,
+   and schedule/MCP failures with zero per-agent code.
+2. **Tail Worker** — in production every published event is also
+   auto-forwarded via `event.diagnosticsChannelEvents`. A fork that
+   wants durable audit (D1 / Analytics Engine) attaches a Tail Worker
+   and needs no agent-side code at all.
 
 For pending schedules: query via `agent.getSchedules({type, timeRange})`
 over RPC. For execution history: filter Workers Logs by the agent
 class name in the structured payload.
+
+### Chat recovery (durable streaming)
+
+`ChatAgent` sets `chatRecovery` (plus a 3-minute stream-stall
+watchdog) as class fields — a deploy, eviction, or hung provider
+mid-turn resumes the interrupted turn instead of stranding a dead
+spinner. The framework bounds recovery with attempt/no-progress/work
+budgets and posts a terminal message if it gives up (`onExhausted`
+logs a `chat_recovery_exhausted` line for alerting). Two rules when
+touching this: config MUST stay a class field (budgets are evaluated
+on wake before `onStart()`), and remember recovery re-runs flow back
+through `onChatMessage`, so guards there must stay idempotent.
 
 ## Naming conventions
 
@@ -790,50 +813,39 @@ smaller curated catalogs (10-20 tools) where savings are marginal.
 Easy to add by threading the same prepareStep into runOnce; deferred
 until a fork has an autonomous agent with 30+ tools.
 
-## Cloudflare patterns we're NOT yet using
+## Platform stance (2026-07)
 
-From Matt Carey's "Every API Is a Tool for Agents" talk + general
-Cloudflare AI Engineer direction. None of these are blockers for
-the current architecture; flagging so we don't forget the design
-space exists.
+Verified live against the shipping SDKs (`agents` 0.17.x,
+`@cloudflare/ai-chat` 0.9.x, `@cloudflare/think` 0.13.x,
+`@cloudflare/codemode` 0.4.x). Full adoption assessment with the
+adopt / align / pilot / hold decision table:
+[`.jez/artifacts/agents-stack-embrace-2026-07-17.md`](../.jez/artifacts/agents-stack-embrace-2026-07-17.md).
 
-### Code Mode
+- **AI SDK stays on v6.** The entire Cloudflare agents line pins
+  `ai ^6`. Migrating this starter to AI SDK 7 ahead of the platform
+  is an ANTI-goal — chase nothing until `agents`/`ai-chat`/`think`
+  move together.
+- **AIChatAgent is not deprecated.** `@cloudflare/think` is a sibling
+  harness (server-owned loop, Actions ledger, channels), not a
+  replacement for the bring-your-own-inference `AIChatAgent` our chat
+  module is built on. Think is the PILOT path for a new agent class,
+  not a migration target for ChatAgent.
+- **Pin exact versions; treat every 0.x bump as breaking.** CI +
+  brains-trust gate on upgrades.
 
-**Idea**: instead of one tool per API endpoint, give the agent a
-typed TypeScript SDK and let it write code that calls the SDK in a
-sandboxed isolate. Cloudflare's REST API is 2.3M tokens; their
-typed SDK is ~1K tokens. 99.9% reduction in context cost.
+### Code Mode (`@cloudflare/codemode`)
 
-**When it'd matter for us**: products with many similar API
-operations (CRM with 50+ entity-CRUD variations, Atlassian-clone
-with issue + project + sprint + comment + attachment APIs). Less
-relevant when the tool count is bounded (<30) and operations are
-distinct.
+Now a real package (bundled inside `agents`): the model writes one
+JavaScript block composing many tool calls, executed in an isolated
+dynamic Worker (network blocked, credentials never enter the
+sandbox). Our stance is **pilot behind a flag, durable variant
+only**: the stateless `createCodeTool` silently DROPS
+approval-gated tools, and composed calls return a single result, so
+per-tool React renderers and telemetry can't fire. Right scope for
+us: the long-tail/shape-tier tools; bespoke-renderer tools stay
+direct.
 
-**What we'd need to build**: a typed SDK exposing app primitives
-(entities, agents, conversations, files, etc), an `eval_typescript`
-tool that runs in `@cloudflare/sandbox` isolates with the SDK in
-scope, response collection back to the agent. Architectural shift
-— roughly 2-3 days of focused work.
-
-**Reference**: Cloudflare's own implementation lives in their
-internal agent runtime; the public talk is the best summary.
-
-### Dynamic Workers as agent runtime
-
-**Idea**: agent runtime IS a sandboxed V8 isolate. Stateless agent
-loops with programmable guardrails, scales like Workers. Composes
-with Code Mode — the agent emits TS, we exec it in an isolate, the
-isolate is the agent's "body".
-
-**When it'd matter for us**: when agents need to run user-supplied
-or LLM-generated code beyond the tool catalog. Less critical for
-the "draft and queue for approval" pattern most of our worked
-examples follow.
-
-**What we have today**: `@cloudflare/sandbox` is wired for the
-`code` tool (run_python, run_js as user-callable tools). NOT used as
-the agent's own execution surface.
+## Adjacent patterns not yet adopted
 
 ### Stateless MCP by default
 
@@ -869,15 +881,18 @@ Requires Hono route introspection + a route-to-tool-schema converter.
 
 ## Future extensions (not yet shipped)
 
-- **Phase 0b** — refactor chat module onto `AIChatAgent` for state
-  sync + sub-agent routing
+- **`agents:skills` migration** — swap the skills registry loading
+  layer onto the SDK's SKILL.md-compatible sources (+`skills.r2()`),
+  gaining `run_skill_script`; keep our editor/AI-sparkle/config-diff
+  UI on top (adoption step 2)
+- **Think pilot** — one new agent class (messenger-facing or
+  AdminAgent v2) on `@cloudflare/think`
+- **Agents-as-tools / fibers pilot** — rework researcher→writer on
+  detached durable runs; fiber-checkpoint one long loop
 - **AgentMemory** binding (waitlist as of April 2026) — wire when GA;
   the `recallSemantic` hook is the slot
 - **AgentWorkflow** worked example for long pipelines
 - **A2A** endpoint adapter when the spec stabilises further
-- **`McpAgent`** worked example (your agent as an MCP server)
-- **Multi-agent handoff** — researcher + writer pattern via sub-agent
-  routing, designed against a real product use case
 
 ## References
 

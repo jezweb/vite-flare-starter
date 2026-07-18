@@ -1,3 +1,4 @@
+import './lib/agent-diagnostics' // side-effect: subscribe to agents SDK diagnostics channels
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'

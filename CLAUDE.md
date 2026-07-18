@@ -26,7 +26,7 @@ VITE_FEATURE_ACTIVITY=false
 
 | Module | Teaches | Key files |
 |---|---|---|
-| **chat** | `ChatAgent extends AIChatAgent` — DO-backed chat per (user, conv) pair. WebSocket transport, SQLite persistence, MCP, Tool Search, skills, memory, projects, telemetry, D1 projection for cross-module reads | `server/modules/chat/chat-agent.ts`, `server/modules/chat/routes.ts` (utility endpoints only) |
+| **chat** | `ChatAgent extends AIChatAgent` — DO-backed chat per (user, conv) pair. WebSocket transport, SQLite persistence, durable-stream recovery (`chatRecovery` + stall watchdog), MCP, Tool Search, skills, memory, projects, telemetry, D1 projection for cross-module reads | `server/modules/chat/chat-agent.ts`, `server/modules/chat/routes.ts` (utility endpoints only) |
 | **conversations** | Conversation persistence, ChatStorage interface (D1-backed, DO-ready) | `server/modules/conversations/storage.ts` |
 | **files** | R2 upload/download, multipart form handling, metadata in D1 | `server/modules/files/routes.ts` |
 | **activity** | Audit logging with pagination, entity history, stats aggregation | `server/modules/activity/routes.ts` |
@@ -400,6 +400,15 @@ SDK. **Don't extend raw `DurableObject` — use the SDK base.**
 
 Full architecture, decision matrix, naming conventions, and migration
 notes: [`docs/AGENTS.md`](./docs/AGENTS.md).
+
+**Platform stance (2026-07):** AI SDK stays on v6 — the whole
+Cloudflare agents line pins `ai ^6`, so migrating to AI SDK 7 ahead of
+the platform is an anti-goal. `AIChatAgent` is not deprecated
+(`@cloudflare/think` is a sibling harness, piloted separately). Chat
+turns are durably recoverable (`chatRecovery` + stall watchdog on
+ChatAgent); SDK diagnostics events surface via
+`server/lib/agent-diagnostics.ts`. Adoption roadmap:
+`.jez/artifacts/agents-stack-embrace-2026-07-17.md`.
 
 ---
 
