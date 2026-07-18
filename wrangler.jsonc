@@ -410,56 +410,28 @@
   // add a new one. Include every class in `new_sqlite_classes` the first
   // time it ships. Subsequent renames/deletes use `renamed_classes` /
   // `deleted_classes` on a new tag.
-  "migrations": [
-    {
-      "tag": "v1",
-      "new_sqlite_classes": ["VoiceInputExample"]
-    },
-    {
-      "tag": "v2",
-      "new_sqlite_classes": ["VideoInputExample"]
-    },
-    {
-      "tag": "v3",
-      "new_sqlite_classes": ["ReminderAgent"]
-    },
-    {
-      "tag": "v4",
-      "new_sqlite_classes": ["AssistantAgent"]
-    },
-    {
-      "tag": "v5",
-      "new_sqlite_classes": ["ResearcherAgent", "WriterAgent"]
-    },
-    {
-      "tag": "v6",
-      "new_sqlite_classes": ["ScratchpadMcpAgent"]
-    },
-    {
-      "tag": "v7",
-      "new_sqlite_classes": ["SweeperAgent"]
-    },
-    {
-      "tag": "v8",
-      "new_sqlite_classes": ["SpaceAgent"]
-    },
-    {
-      "tag": "v9",
-      "new_sqlite_classes": ["AdminAgent"]
-    },
-    {
-      "tag": "v10",
-      "new_sqlite_classes": ["ChatAgent"]
-    },
-    {
-      "tag": "v11",
-      "new_sqlite_classes": ["Sandbox"]
-    },
-    {
-      "tag": "v12",
-      "new_sqlite_classes": ["ThinkPilotAgent"]
-    }
-  ],
+  // Declarative DO class registration — replaces the legacy migrations
+  // array (ONE-WAY: once deployed with exports, subsequent deploys cannot
+  // return to migrations). Existing namespaces + data carry over with no
+  // data migration. All classes here were provisioned via
+  // new_sqlite_classes, hence storage: "sqlite" throughout.
+  // Adding a DO now = export the class from src/server/index.ts + one line
+  // here (+ a durable_objects.bindings entry to reach it from env).
+  "exports": {
+    "VoiceInputExample": { "type": "durable-object", "storage": "sqlite" },
+    "VideoInputExample": { "type": "durable-object", "storage": "sqlite" },
+    "ReminderAgent": { "type": "durable-object", "storage": "sqlite" },
+    "AssistantAgent": { "type": "durable-object", "storage": "sqlite" },
+    "ResearcherAgent": { "type": "durable-object", "storage": "sqlite" },
+    "WriterAgent": { "type": "durable-object", "storage": "sqlite" },
+    "ScratchpadMcpAgent": { "type": "durable-object", "storage": "sqlite" },
+    "SweeperAgent": { "type": "durable-object", "storage": "sqlite" },
+    "SpaceAgent": { "type": "durable-object", "storage": "sqlite" },
+    "AdminAgent": { "type": "durable-object", "storage": "sqlite" },
+    "ChatAgent": { "type": "durable-object", "storage": "sqlite" },
+    "Sandbox": { "type": "durable-object", "storage": "sqlite" },
+    "ThinkPilotAgent": { "type": "durable-object", "storage": "sqlite" }
+  },
 
   // Observability
   "observability": {

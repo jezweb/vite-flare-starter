@@ -17,7 +17,7 @@ pattern, so when the SDK ships the swap is a transport change, not a rewrite.
 | Voice | `@cloudflare/voice` with `withVoiceInput(Agent)` mixin + `useVoiceInput` React hook | Direct SDK use — `src/server/modules/voice/voice-agent.ts` + `VoiceInputExamplePage` |
 | Video | No SDK — Cloudflare Realtime SFU is the lower-level option | Handwritten primitives: `getUserMedia` → `<canvas>` sampled at N seconds → JPEG data URL → `useAgent` WS → DO `onMessage` → AI SDK `generateText` with vision model → broadcast caption |
 
-The 4-piece DO wiring (binding, migration, class export, `run_worker_first`)
+The 4-piece DO wiring (binding, `exports` map entry, class export, `run_worker_first`)
 is identical — only the transport differs. When Cloudflare ships a proper
 `@cloudflare/video` SDK with a `withVideoInput(Agent)` mixin, the DO class
 stays, the client hook swaps. See `src/server/modules/video/video-agent.ts`

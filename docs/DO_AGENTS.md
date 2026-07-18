@@ -53,7 +53,7 @@ export default {
 }
 ```
 
-### 3. wrangler.jsonc — binding + SQLite migration + /agents/* routing
+### 3. wrangler.jsonc — binding + declarative class export + /agents/* routing
 
 ```jsonc
 {
@@ -65,9 +65,11 @@ export default {
       { "name": "VoiceInputExample", "class_name": "VoiceInputExample" }
     ]
   },
-  "migrations": [
-    { "tag": "v1", "new_sqlite_classes": ["VoiceInputExample"] }
-  ]
+  // Declarative registration — replaces the legacy migrations array.
+  // ONE-WAY: once deployed with exports you can't go back to migrations.
+  "exports": {
+    "VoiceInputExample": { "type": "durable-object", "storage": "sqlite" }
+  }
 }
 ```
 
@@ -88,7 +90,7 @@ const { transcript, interimTranscript, audioLevel, start, stop, toggleMute } =
 |---|---|
 | Forgot `/agents/*` in `run_worker_first` | WS hits static assets → 404, DO never touched |
 | Forgot `export { VoiceInputExample }` from Worker entry | `wrangler deploy` errors "Durable Object class not found" |
-| Class in bindings but missing from `migrations.new_sqlite_classes` | Deploy ok, first request errors "DO storage not provisioned" |
+| Class in bindings but missing from the `exports` map | Deploy ok, first request errors "DO storage not provisioned" |
 | `useVoiceInput` `isListening` stays false during recording | Not a bug — only flips true once real audio flows. Use your own phase state for the status label. |
 | Browser WS URL wrong | Path is `/agents/{kebab-case-class-name}/{instance-name}` — SDK auto-converts the `agent:` prop to kebab-case |
 

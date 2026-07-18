@@ -75,7 +75,7 @@ Cloudflare runs 16 hosted MCP servers at `*.mcp.cloudflare.com/mcp`. These are *
 | `https://radar.mcp.cloudflare.com/mcp` | OAuth | Internet traffic insights, URL scanning |
 | `https://ai-gateway.mcp.cloudflare.com/mcp` | OAuth | Search AI Gateway logs |
 
-Plus 7 more (Builds, Logpush, AutoRAG, Audit Logs, DNS Analytics, DEX, CASB, GraphQL) — see [Cloudflare's MCP servers reference](https://developers.cloudflare.com/agents/model-context-protocol/mcp-servers-for-cloudflare/).
+Plus 7 more (Builds, Logpush, AutoRAG, Audit Logs, DNS Analytics, DEX, CASB, GraphQL) — see [Cloudflare's MCP servers reference](https://developers.cloudflare.com/agents/model-context-protocol/cloudflare/servers-for-cloudflare/).
 
 These aren't in the curated catalog because the *audience* of the catalog is end-users of forks (small businesses using Slack/Notion/Stripe), not developers managing CF accounts. If your fork is itself developer-facing (e.g., an internal devops tool), consider seeding these into your fork's `connector-catalog.ts`.
 
