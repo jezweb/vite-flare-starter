@@ -63,6 +63,7 @@ import {
   confluenceCreateRenderer,
 } from './atlassian'
 import { proposePatchRenderer } from './propose-patch'
+import { codeModeRenderer } from './code-mode'
 import { findToolsRenderer } from './tool-search'
 import { memoryRenderers } from './memory'
 import { skillsKnowledgeRenderers } from './skills-knowledge'
@@ -135,6 +136,8 @@ export const TOOL_RENDERERS: ToolRenderer[] = [
   proposePatchRenderer,
   // Tool Search — find_tools (the progressive tool disclosure entry point)
   findToolsRenderer,
+  // Code Mode pilot — code composition over the tool catalog (CODEMODE=true)
+  codeModeRenderer,
   // Memory — remember / recall / search_memory / list_all_memories / forget
   ...memoryRenderers,
   // Skills + Knowledge — load_skill, list_skills, knowledge_search, load_knowledge

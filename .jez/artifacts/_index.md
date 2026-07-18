@@ -102,4 +102,4 @@ The `design-review-*` chain pattern: latest is `active`, earlier ones carry
 | — | [Overnight Work Log — Remote Agent Continuation](overnight-log.md) | — |
 | — | [Spaces Phase 1 — Build Progress](spaces-build-progress.md) | — |
 
-_Last generated: 2026-07-17_
+_Last generated: 2026-07-18_

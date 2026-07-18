@@ -49,6 +49,7 @@
     "@better-auth/passkey": "^1.6.23",
     "@cloudflare/ai-chat": "0.9.3",
     "@cloudflare/ai-utils": "^1.0.1",
+    "@cloudflare/codemode": "0.4.3",
     "@cloudflare/kumo": "^2.8.0",
     "@cloudflare/sandbox": "^0.12.3",
     "@cloudflare/think": "^0.13.0",

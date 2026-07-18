@@ -932,6 +932,25 @@ export class ChatAgent extends AIChatAgent<Env> {
       }
       tools = { ...chatTools, ...mcpTools, ...userMcp.tools } as ToolSet
 
+      // Code Mode pilot (#113): one tool that composes many. Opt-in via
+      // CODEMODE=true — its description embeds type signatures for the
+      // exposed catalog, a per-turn cost forks must choose. Built from the
+      // assembled toolset so MCP tools compose too; added BEFORE the
+      // find_tools snapshot below so it's discoverable. Fail-open: a build
+      // error costs the tool, never the turn.
+      const codemodeEnv = this.env as unknown as { CODEMODE?: string; LOADER?: WorkerLoader }
+      if (
+        String(codemodeEnv.CODEMODE ?? '').toLowerCase() === 'true' &&
+        codemodeEnv.LOADER !== undefined
+      ) {
+        try {
+          const { buildCodeModeTool } = await import('./tools/code-mode')
+          tools['code_mode'] = buildCodeModeTool({ tools, loader: codemodeEnv.LOADER })
+        } catch (err) {
+          console.warn(JSON.stringify({ event: 'code_mode_build_failed', error: String(err) }))
+        }
+      }
+
       // Tool Search — inject `find_tools` and gate the rest behind it.
       const searchCatalog: SearchableTool[] = Object.entries(tools).map(([name, tool]) => ({
         name,

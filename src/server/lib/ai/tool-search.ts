@@ -63,6 +63,9 @@ export const CORE_TOOL_NAMES = new Set<string>([
   // Memory + scratch — agent shouldn't have to "discover" how to remember
   'recall',
   'remember',
+  // Code Mode pilot (only present when CODEMODE=true) — composing tools is
+  // an intent-independent capability like calculate, not a searchable domain
+  'code_mode',
 ])
 
 /**

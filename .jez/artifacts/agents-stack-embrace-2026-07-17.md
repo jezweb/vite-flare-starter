@@ -185,6 +185,18 @@ live 2026-07-17.
    stub alias exists.
 4. **Code Mode pilot (1 session, flagged):** durable runtime over the
    shape-tier long-tail; measure context savings vs `find_tools`.
+   ✅ DONE 2026-07-18 — `code_mode` chat tool on `@cloudflare/codemode`
+   0.4.3 (pinned), `DynamicWorkerExecutor` over the existing `LOADER`
+   binding, opt-in `CODEMODE=true`. Curated 22-tool read/compute
+   allowlist after the naive full-catalog version measured 98 tools /
+   69KB (~17K tok/turn) — curated: 13.7KB (~3.4K tok/turn). Two live
+   findings shipped as fixes: runCode THROWS on sandbox/zod errors
+   (killed the stream → wrapped into `{result:{error,hint}}` so the
+   model self-corrects, verified live), and models call `fn()` not
+   `fn({})` (description now mandates the input object — retries went
+   from 2 to 0). Durable `CodemodeRuntime` (ledger/pause/replay/rollback)
+   deliberately deferred to when side-effectful tools join the sandbox.
+   Docs: `docs/AGENT_TOOLKIT.md` §Code Mode.
 5. **Fibers + agents-as-tools pilot (1 session):** rework researcher→writer
    on detached runs; fiber-checkpoint one long loop.
 6. **Hold reviews:** revisit Sessions + useAgentChat when Think/Sessions

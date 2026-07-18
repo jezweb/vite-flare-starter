@@ -311,6 +311,44 @@ container path needs a live deploy): send "run python: print(2+2)" in
 chat, then "generate a docx summarising this conversation", and confirm
 the artifact appears under Files.
 
+## Code Mode — compose tools in one execution (`code_mode`, pilot)
+
+Pilot of `@cloudflare/codemode` (#113, adoption step 4). Instead of the
+model chaining N tool calls through N round-trips (each intermediate
+result entering its context), it writes ONE JavaScript async arrow
+function that calls catalog tools as `codemode.<tool>(...)` — the whole
+composition runs inside an isolated dynamic Worker (the same `LOADER`
+Worker Loader binding skills scripts use) and only the final return
+value reaches the transcript.
+
+**Opt-in**: `CODEMODE=true` (worker var or secret) — OFF by default
+because the tool's description embeds generated TypeScript signatures
+for the exposed catalog, a real per-turn cost. Measured live: the
+curated 22-tool set costs ~13.7KB (~3.4K tokens) per turn; the naive
+"expose everything" version hit 98 tools / 69KB (~17K tokens), which is
+why curation is the design, not an optimisation. `code_mode_built`
+structured logs report both numbers per deployment.
+
+**Security model** (runtime-enforced): `globalOutbound: null` blocks all
+network from generated code; tool calls cross back via Workers RPC so
+credentials never enter the sandbox; codemode's `filterTools`
+structurally drops every `needsApproval` tool (entity_create can never
+appear, even if allowlisted); our allowlist further restricts to the
+read/compute tier — see `ALLOWED_NAMES` in
+`server/modules/chat/tools/code-mode.ts`. MCP tools are deliberately
+excluded from v1.
+
+**Failure semantics**: codemode's `runCode` throws on sandbox errors
+(including zod rejection of a composed tool's args); the wrapper
+converts these to `{ result: { error, hint } }` tool output so the model
+self-corrects instead of the stream dying. Live-verified: model passed
+an empty search query → read the error → fixed its code → composed
+successfully on the next call.
+
+**Graduation path**: `CodemodeRuntime` (a DO with durable execution
+ledger, pause-on-approval, replay-based resume, rollback) — wire it when
+composing side-effectful tools; the read-mostly pilot doesn't need it.
+
 ## Sites — live previews from the sandbox (`site_serve` / `site_stop`)
 
 The capability tier above artifacts: an artifact is one self-contained
