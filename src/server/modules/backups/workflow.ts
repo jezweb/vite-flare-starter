@@ -27,11 +27,6 @@
  */
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from 'cloudflare:workers'
 import { NonRetryableError } from 'cloudflare:workflows'
-import type {
-  D1Database,
-  R2Bucket,
-  ReadableStream as WorkersReadableStream,
-} from '@cloudflare/workers-types'
 
 export interface BackupWorkflowEnv {
   DB: D1Database
@@ -179,9 +174,9 @@ export class D1BackupWorkflow extends WorkflowEntrypoint<BackupWorkflowEnv, unkn
         const stamp = event.timestamp.toISOString().replace(/[:]/g, '-').slice(0, 19)
         const suffix = bookmark.slice(-8).replace(/[^\w]/g, '')
         const objectKey = `${BACKUP_PREFIX}${stamp}-${suffix}.sql`
-        // lib.dom's ReadableStream vs workers-types' — same object at
-        // runtime in workerd, but the ambient fetch types disagree.
-        await this.env.FILES.put(objectKey, dump.body as unknown as WorkersReadableStream)
+        // lib.dom's ReadableStream vs the workers runtime's — same object
+        // at runtime in workerd, but the ambient fetch types disagree.
+        await this.env.FILES.put(objectKey, dump.body as unknown as ReadableStream)
         return objectKey
       }
     )) as string

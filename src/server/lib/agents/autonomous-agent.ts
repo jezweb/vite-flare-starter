@@ -84,7 +84,11 @@ import type {
 } from '@/shared/agent'
 import type { AgentMetadata } from '@/shared/agent/metadata'
 
-export interface AutonomousAgentEnv {
+// Extends the generated Cloudflare.Env (worker-configuration.d.ts, from
+// `wrangler types`) so subclass Envs satisfy the agents SDK's
+// `Agent<Env extends Cloudflare.Env>` constraint — required for
+// getAgentByName / runAgentTool stub typing to infer the subclass.
+export interface AutonomousAgentEnv extends Cloudflare.Env {
   AI: Ai
   DB: D1Database
   ANTHROPIC_API_KEY?: string
@@ -94,8 +98,6 @@ export interface AutonomousAgentEnv {
   MISTRAL_API_KEY?: string
   XAI_API_KEY?: string
   OPENROUTER_API_KEY?: string
-  /** Optional R2 bucket for R2-sourced skills. */
-  SKILLS?: R2Bucket
 }
 
 /**

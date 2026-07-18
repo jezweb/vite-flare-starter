@@ -8,7 +8,6 @@
  * refresh_token) the connection is marked `error` and the tool call
  * returns a friendly "re-authorize" message.
  */
-import type { D1Database } from '@cloudflare/workers-types'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq } from 'drizzle-orm'
 import { googleWorkspaceTokens } from './db/schema'

@@ -4,7 +4,6 @@
  * Every provider implements the same shape so the service can iterate
  * a priority list and optionally cascade through failover.
  */
-import type { D1Database } from '@cloudflare/workers-types'
 
 /**
  * Stable provider id. Persisted into `email_log.provider` for the

@@ -35,7 +35,7 @@ import { Agent } from 'agents'
 import { drizzle } from 'drizzle-orm/d1'
 import { userNotifications } from '@/server/modules/notifications/db/schema'
 
-interface Env {
+interface Env extends Cloudflare.Env {
   DB: D1Database
 }
 

@@ -12,7 +12,6 @@
  * rest mirror the Google default set (mail read/send, files read + write,
  * calendar read/write) so the tool surface lines up 1:1 with Google.
  */
-import type { D1Database } from '@cloudflare/workers-types'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq } from 'drizzle-orm'
 import { microsoftWorkspaceTokens } from './db/schema'

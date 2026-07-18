@@ -5,7 +5,7 @@
   // IMPORTANT: Remove account_id before committing to public repo
   // Set via CLOUDFLARE_ACCOUNT_ID env var or wrangler will prompt
   "account_id": "0460574641fdbb98159c98ebf593e2bd",
-  "compatibility_date": "2026-07-18",
+  "compatibility_date": "2026-07-10",
   "compatibility_flags": ["nodejs_compat_v2"],
 
   // Worker entry point (source file, NOT built file)

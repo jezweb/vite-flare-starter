@@ -38,10 +38,10 @@
     },
 
     // Cloudflare Workers Types
-    "types": ["@cloudflare/workers-types", "vite/client"]
+    "types": ["vite/client"]
   },
 
-  "include": ["src/**/*", "vite.config.ts", "wrangler.jsonc"],
+  "include": ["src/**/*", "vite.config.ts", "wrangler.jsonc", "worker-configuration.d.ts"],
 
   "exclude": ["node_modules", "dist", ".wrangler"]
 }

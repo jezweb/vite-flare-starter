@@ -18,7 +18,6 @@
  * `env.MIRROR_WORKFLOW.create()` from your own code.
  */
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from 'cloudflare:workers'
-import type { D1Database } from '@cloudflare/workers-types'
 import { listSourceRecords, type SourceRecord } from './source'
 
 interface MirrorWorkflowEnv {

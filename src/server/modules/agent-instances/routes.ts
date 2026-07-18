@@ -32,19 +32,11 @@ import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import { agentRuns } from '@/server/modules/agent-observability/db/schema'
 import { getAgentMetadata, listRegisteredAgents } from '@/server/lib/agents/registry'
 import type { AssistantAgent } from '@/server/modules/autonomous-agents/assistant-agent'
-import type { ResearcherAgent } from '@/server/modules/autonomous-agents/researcher-agent'
-import type { WriterAgent } from '@/server/modules/autonomous-agents/writer-agent'
-import type { SweeperAgent } from '@/server/modules/autonomous-agents/sweeper-agent'
-import type { AdminAgent } from '@/server/modules/autonomous-agents/admin-agent'
 
-interface AgentInstancesEnv {
-  AssistantAgent?: DurableObjectNamespace<AssistantAgent>
-  ResearcherAgent?: DurableObjectNamespace<ResearcherAgent>
-  WriterAgent?: DurableObjectNamespace<WriterAgent>
-  SweeperAgent?: DurableObjectNamespace<SweeperAgent>
-  AdminAgent?: DurableObjectNamespace<AdminAgent>
-  DB: D1Database
-}
+// DO namespaces + DB come from the generated Cloudflare.Env
+// (worker-configuration.d.ts) — redeclaring them optional would
+// conflict with the generated required types.
+interface AgentInstancesEnv extends Cloudflare.Env {}
 
 /**
  * Dispatch agentClass string → DurableObjectNamespace binding. Switch

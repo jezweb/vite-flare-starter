@@ -6,7 +6,6 @@
  */
 
 import { drizzle } from 'drizzle-orm/d1'
-import type { D1Database } from '@cloudflare/workers-types'
 import * as schema from '@/server/db/schema'
 import type { NotificationType } from './db/schema'
 

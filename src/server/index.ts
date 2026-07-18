@@ -4,7 +4,6 @@ import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
-import type { D1Database } from '@cloudflare/workers-types'
 import { createAuthFromEnv } from './modules/auth'
 import settingsRoutes from './modules/settings/routes'
 import onboardingRoutes from './modules/onboarding/routes'
@@ -118,7 +117,7 @@ import { AVATAR, APP_VERSION } from '@/shared/config/constants'
 import { listModels, DEFAULT_MODEL, getAvailableProviders, routeFor } from './lib/ai'
 
 // Define Cloudflare Workers environment bindings
-export interface Env {
+export interface Env extends Cloudflare.Env {
   // D1 Database
   DB: D1Database
 
@@ -126,36 +125,36 @@ export interface Env {
   AVATARS: R2Bucket
   FILES: R2Bucket
   /** Optional — for storing Claude Agent Skills uploaded via API */
-  SKILLS?: R2Bucket
+  SKILLS: R2Bucket
 
   // Workers AI
   AI: Ai
 
   // Cloudflare Images (resize, crop, background removal, format conversion)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  IMAGES?: any
+  IMAGES: any
 
   // Cloudflare Media Transformations (video resize, clip, frame/audio extraction)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  MEDIA?: any
+  MEDIA: any
 
   // Cloudflare Workflows — batch-tasks fan-out runner.
   // See src/server/modules/batch-tasks/workflows/process-batch.ts.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  BATCH_WORKFLOW?: any
+  BATCH_WORKFLOW: any
 
   // Cloudflare Workflows — D1 mirror sync (issue #90 reference pattern).
   // See src/server/modules/mirror/workflow.ts.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  MIRROR_WORKFLOW?: any
+  MIRROR_WORKFLOW: any
 
   // Cloudflare Workflows — daily D1 → R2 backup (docs/BACKUPS.md).
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  BACKUP_WORKFLOW?: any
+  BACKUP_WORKFLOW: any
   /** wrangler.jsonc d1_databases[0].database_id — needed by the backup workflow's export API call. */
-  D1_DATABASE_ID?: string
+  D1_DATABASE_ID: string
   /** Secret: API token with D1 read permission (backup export). */
-  D1_REST_API_TOKEN?: string
+  D1_REST_API_TOKEN: string
   /** Days of R2 backup retention (default 30). */
   BACKUP_RETENTION_DAYS?: string
   /** 'true' → daily backup via the cron guard (scheduled §8). */
@@ -169,15 +168,15 @@ export interface Env {
   EMAIL_API_KEY?: string
   EMAIL_FROM?: string
   APP_NAME?: string
-  NODE_ENV?: string
+  NODE_ENV: string
 
   // Email auth control - DISABLED BY DEFAULT (OAuth-only mode)
   // See CLAUDE.md for full auth configuration docs
   // Google OAuth domain restrictions: use Google Cloud Console, not these vars
   ENABLE_EMAIL_LOGIN?: string // Set to 'true' to allow email/password login (default: disabled)
   ENABLE_EMAIL_SIGNUP?: string // Set to 'true' to allow email signups (requires ENABLE_EMAIL_LOGIN=true)
-  ENABLE_MAGIC_LINK?: string // Set to 'true' for passwordless email sign-in links
-  ENABLE_PASSKEYS?: string // Set to 'true' for WebAuthn passkey sign-in
+  ENABLE_MAGIC_LINK: string // Set to 'true' for passwordless email sign-in links
+  ENABLE_PASSKEYS: string // Set to 'true' for WebAuthn passkey sign-in
 
   // Trusted origins for auth (comma-separated list)
   // Example: "http://localhost:5173,https://myapp.workers.dev,https://myapp.com"
@@ -213,7 +212,7 @@ export interface Env {
 
   // Browser Rendering (optional — enables browser_* agent tools)
   // Create token at https://dash.cloudflare.com/profile/api-tokens with "Browser Rendering - Edit" permission
-  CLOUDFLARE_ACCOUNT_ID?: string
+  CLOUDFLARE_ACCOUNT_ID: string
   CLOUDFLARE_API_TOKEN?: string
 
   // Web search provider (optional — enables web_search tool)
@@ -231,7 +230,7 @@ export interface Env {
    * SANDBOX container; also the substrate a Code Mode pilot would use.
    * Tools degrade gracefully when absent.
    */
-  LOADER?: WorkerLoader
+  LOADER: WorkerLoader
 }
 
 // Create Hono app with type-safe environment

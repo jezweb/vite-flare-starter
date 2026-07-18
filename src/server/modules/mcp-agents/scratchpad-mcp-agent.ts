@@ -40,7 +40,7 @@ import { McpAgent } from 'agents/mcp'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 
-interface Env {
+interface Env extends Cloudflare.Env {
   // McpAgent extends Agent which extends Server — bindings flow
   // through but no specific deps for this example.
 }

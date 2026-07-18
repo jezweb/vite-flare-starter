@@ -59,7 +59,6 @@
  */
 import { drizzle } from 'drizzle-orm/d1'
 import { inArray } from 'drizzle-orm'
-import type { D1Database } from '@cloudflare/workers-types'
 import { emailEvents, emailSuppressions } from './db/schema'
 
 /** The consumer only needs the database. */

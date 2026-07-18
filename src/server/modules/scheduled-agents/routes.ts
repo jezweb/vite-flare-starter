@@ -28,7 +28,7 @@ import { getAgentByName } from 'agents'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import type { ReminderAgent, ReminderPayload, ReminderInfo } from './reminder-agent'
 
-interface SchedulerEnv {
+interface SchedulerEnv extends Cloudflare.Env {
   ReminderAgent: DurableObjectNamespace<ReminderAgent>
 }
 

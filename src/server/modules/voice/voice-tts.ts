@@ -10,7 +10,6 @@
  * provider='elevenlabs' (or default to it) to use multilingual + voice
  * cloning. The Aura 2 default ships fork-day-one with no extra setup.
  */
-import type { Ai } from '@cloudflare/workers-types'
 
 export interface TtsEnv {
   AI: Ai

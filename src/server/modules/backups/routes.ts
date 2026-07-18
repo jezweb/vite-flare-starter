@@ -7,7 +7,6 @@
  *   GET  /api/backups/download/:key — stream one backup dump (admin)
  */
 import { Hono } from 'hono'
-import type { R2Bucket } from '@cloudflare/workers-types'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import { adminMiddleware } from '@/server/middleware/admin'
 import { BACKUP_PREFIX } from './workflow'

@@ -24,7 +24,7 @@ import type { AssistantAgent } from './assistant-agent'
 import type { ResearcherAgent } from './researcher-agent'
 import type { SweeperAgent } from './sweeper-agent'
 
-interface AssistantEnv {
+interface AssistantEnv extends Cloudflare.Env {
   AssistantAgent: DurableObjectNamespace<AssistantAgent>
   ResearcherAgent: DurableObjectNamespace<ResearcherAgent>
   SweeperAgent: DurableObjectNamespace<SweeperAgent>

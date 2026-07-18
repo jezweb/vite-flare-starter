@@ -9,7 +9,6 @@
  */
 
 import { drizzle } from 'drizzle-orm/d1'
-import type { D1Database } from '@cloudflare/workers-types'
 import type { Context } from 'hono'
 import { activityLogs, type ActivityAction } from './db/schema'
 

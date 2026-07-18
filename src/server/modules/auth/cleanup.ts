@@ -9,7 +9,6 @@
  */
 import { drizzle } from 'drizzle-orm/d1'
 import { sql } from 'drizzle-orm'
-import type { D1Database } from '@cloudflare/workers-types'
 import { session, verification } from './db/schema'
 
 export interface CleanupResult {

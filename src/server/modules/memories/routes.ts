@@ -29,7 +29,6 @@ import { projects } from '@/server/modules/projects/db/schema'
 import { conversations } from '@/server/modules/conversations/db/schema'
 import { user } from '@/server/modules/auth/db/schema'
 import { getOrgRole } from '@/server/modules/organizations/helpers'
-import type { D1Database } from '@cloudflare/workers-types'
 import { extractMemoryFromConversation } from './extract-job'
 import { applyExtractionResult } from './apply-updates'
 

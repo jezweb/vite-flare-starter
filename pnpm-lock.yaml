@@ -330,9 +330,6 @@ importers:
       '@cloudflare/vitest-pool-workers':
         specifier: ^0.18.5
         version: 0.18.5(@cloudflare/workers-types@4.20260603.1)(@vitest/runner@4.1.8)(@vitest/snapshot@4.1.8)(vitest@4.1.8)
-      '@cloudflare/workers-types':
-        specifier: ^4.20260603.1
-        version: 4.20260603.1
       '@hono/zod-validator':
         specifier: ^0.8.0
         version: 0.8.0(hono@4.12.30)(zod@4.4.3)

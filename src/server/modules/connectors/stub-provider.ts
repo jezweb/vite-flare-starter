@@ -15,7 +15,6 @@
  * same for each new provider — keeps the mental model consistent. This
  * file is the factory that makes that cheap.
  */
-import type { D1Database } from '@cloudflare/workers-types'
 import { escapeHtml } from '@/server/lib/escape-html'
 import { Hono } from 'hono'
 import { drizzle } from 'drizzle-orm/d1'

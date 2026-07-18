@@ -11,7 +11,6 @@
  *     `defaultEnabledTools` apply. That means first-time users don't have
  *     to click anything — they get the sensible read-only subset.
  */
-import type { D1Database } from '@cloudflare/workers-types'
 import { drizzle } from 'drizzle-orm/d1'
 import { and, eq } from 'drizzle-orm'
 import { userConnectorSettings } from './db/schema'

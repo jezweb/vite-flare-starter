@@ -11,7 +11,6 @@
  */
 import { drizzle } from 'drizzle-orm/d1'
 import { eq, and } from 'drizzle-orm'
-import type { D1Database } from '@cloudflare/workers-types'
 import { memories } from './db/schema'
 
 export interface MemoryIndexEntry {
