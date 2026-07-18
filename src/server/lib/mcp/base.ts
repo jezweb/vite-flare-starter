@@ -174,16 +174,12 @@ export interface JsonRpcResponse {
 
 /**
  * Convert Zod schema to JSON Schema for MCP tools/list response.
- * Uses the zod-to-json-schema library which handles Zod 3 + 4.
+ * Zod 4's native toJSONSchema; draft-7 matches what MCP clients expect.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function zodToJsonSchema(schema: z.ZodObject<any>): Record<string, any> {
-  // Use zod-to-json-schema which handles Zod 3 + 4. Dynamic import avoids
-  // top-level await; the lib is tiny and cached after first load.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-  const { zodToJsonSchema: convert } = require('zod-to-json-schema')
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return convert(schema as any, { target: 'jsonSchema7' }) as Record<string, any>
+  return z.toJSONSchema(schema, { target: 'draft-7' }) as Record<string, any>
 }
 
 /**

@@ -285,7 +285,7 @@ For agent toolkit + connector setup: `docs/AGENT_TOOLKIT.md`.
 - **Don't use `.amend` on commits** — create new commits; pre-commit hooks may have failed and amending modifies the wrong commit
 - **Don't use `git add .` or `-A`** without checking — sensitive files (.env, credentials) can sneak in
 - **Don't mock the database in tests** — use real D1 (see `~/.claude/rules/monday-import-gotchas.md`)
-- **Don't sync state mid-stream from `useChat`** — passing reactive `initialMessages` prop wipes in-flight messages; freeze a ref + adopt via `setMessages` only when local empty (see `.claude/rules/chat-usechat-initial-messages.md`)
+- **Don't fight the DO for chat history** — the ChatAgent DO's SQLite owns the transcript; keep `conversationId` in the URL (not React state) and treat `getInitialMessages` as a one-time seed for empty DOs, never a sync channel (see `.claude/rules/chat-usechat-initial-messages.md`)
 
 ### Useful commands
 

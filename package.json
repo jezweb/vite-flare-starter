@@ -138,10 +138,9 @@
     "use-stick-to-bottom": "^1.1.4",
     "vaul": "^1.1.2",
     "workers-ai-provider": "^3.3.1",
-    "zod": "^4.4.3",
-    "zod-to-json-schema": "^3.25.2"
+    "zod": "^4.4.3"
   },
-  "packageManager": "pnpm@9.0.0",
+  "packageManager": "pnpm@10.28.0",
   "devDependencies": {
     "@biomejs/biome": "^2.4.16",
     "@cloudflare/vite-plugin": "^1.45.0",
@@ -171,5 +170,8 @@
     "overrides": {
       "kysely": "0.28.17"
     }
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

@@ -1,46 +1,37 @@
-# useChat + reactive initialMessages breaks streaming
+# Chat message seeding — the DO is the source of truth
 
-## Core rule
+## Current architecture (post-`useAgentChat`)
 
-Do NOT pass a reactive `initialMessages` (or `messages`) prop to `@ai-sdk/react`'s `useAIChat` when the parent also fetches stored conversation messages on URL transitions. The SDK re-seeds state when the prop identity changes, which wipes in-flight streaming when `useConversationMessages(urlConversationId)` resolves mid-stream.
+`src/client/modules/chat/hooks/useChat.ts` wraps `@cloudflare/ai-chat/react`'s
+`useAgentChat`. Message history lives in the ChatAgent DO's SQLite; the client
+never owns it. Two seams keep that true — breaking either reintroduces the
+"transcript wipes mid-stream / remount loops forever" class of bug this rule
+used to document:
 
-**Why it matters**: the symptom is "user sends first message in a fresh `/chat`, URL updates to `/chat/:id`, and the transcript body stays on the empty `Good evening` state until full reload." The message IS persisted server-side. The conversation IS created. But the client UI never updates.
+1. **`conversationId` lives in the URL, not React state.** ChatPage mounts
+   only at `/dashboard/chat/:conversationId` (bare `/chat` redirects via
+   `NewChatRedirect`, which mints the UUID upfront). `useAgentChat` resolves
+   `use(initialMessagesPromise)` under Suspense — an id held in React state
+   resets on the suspense remount and loops the hook forever.
+2. **`getInitialMessages` is a one-time bridge, not a sync channel.** The SDK
+   calls it only when the DO's SQLite is empty (legacy D1-only conversations
+   seed the DO on first connect; thereafter the DO wins). Never feed it a
+   reactive query result expecting the transcript to follow — it won't, by
+   design.
 
-## The pattern (as implemented)
+## If tempted to...
 
-`src/client/modules/chat/hooks/useChat.ts`:
+| Tempted to | Instead |
+|---|---|
+| Hold `conversationId` in `useState` / component state | Keep it in the route; navigate to change conversations |
+| Push fetched messages into the chat after mount (`setMessages` sync) | Trust the DO; it already has them. Fix the DO/projection if it doesn't |
+| Reintroduce a reactive `initialMessages`/`messages` prop | `getInitialMessages` is the only seed path, and only for empty DOs |
 
-```ts
-// Freeze the initial seed at mount
-const seedRef = useRef(initialMessages)
+## History
 
-const chat = useAIChat({
-  messages: seedRef.current,   // stable reference — never reacts
-  messageMetadataSchema,
-  transport,
-  onToolCall,
-  onError,
-})
+Pre-2026-07 this file described a freeze-ref workaround for `@ai-sdk/react`'s
+reactive `initialMessages` prop wiping in-flight streams. That code path was
+retired when chat moved to `useAgentChat` + DO-authoritative storage; the
+workaround no longer exists in `useChat.ts`.
 
-// Adopt stored messages on navigation (not initial mount) ONLY when
-// chat.messages is empty — so we never overwrite a live stream.
-useEffect(() => {
-  if (!initialMessages || initialMessages.length === 0) return
-  if (chat.messages.length > 0) return
-  chat.setMessages(initialMessages)
-}, [initialMessages, chat])
-```
-
-## Anti-patterns to refuse
-
-| If tempted to... | Instead... |
-|------------------|------------|
-| Pass `useConversationMessages` result directly as `initialMessages` to `useAIChat` | Freeze a ref, adopt via `setMessages` with a "chat empty" guard |
-| Reset messages whenever the URL `conversationId` changes | Only adopt on navigation when local state is empty — let in-flight streams complete |
-| Debug "transcript blank after send" by adjusting `hasMessages = messages.length > 0 \|\| isLoading` | That's the M2 fix — it's not wrong, but it doesn't address this C1 race. Fix the underlying seed-reset. |
-
-## When to revisit
-
-If AI SDK publishes a version where passing `messages` prop behaves as "initial only" (not reactive), we can drop the freeze pattern. Until then, keep it.
-
-**Last updated**: 2026-04-22 (C1 critical fix in post-roadmap audit).
+**Last updated**: 2026-07-18 (rewritten for the useAgentChat architecture).

@@ -140,7 +140,7 @@ sendMessage({ text: 'Hello' })
 
 **Reference:** `src/server/lib/ai/agent.ts`, `src/server/modules/chat/routes.ts`
 
-**Critical:** The `useChat` wrapper uses refs for model/systemPrompt/conversationId to avoid stale-closure bugs, and freezes `initialMessages` at mount (adopts later loads via `chat.setMessages` only when `chat.messages.length === 0`). See `.claude/rules/chat-usechat-initial-messages.md` for the full gotcha.
+**Critical:** The `useChat` wrapper uses refs for model/projectId so `useAgentChat` never re-binds mid-stream, keeps `conversationId` in the URL (React state loops the hook's Suspense remount), and passes `getInitialMessages` only as a one-time bridge for legacy D1 conversations — the DO's SQLite owns the transcript. See `.claude/rules/chat-usechat-initial-messages.md`.
 
 ---
 
