@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { Input } from '@/components/ui/input'
@@ -507,7 +508,13 @@ export function ComponentsPage() {
               <CardTitle>Analytics kit</CardTitle>
               <CardDescription>
                 CF-dashboard shapes — StatCard with delta + sparkline, DashboardPanel,
-                BreakdownList. Compose these for data pages instead of raw Cards.
+                BreakdownList. Compose these for data pages instead of raw Cards. The
+                full kit (SegmentedBar, TimeRangePicker, RadialGauge, LogTail) is
+                composed into a complete surface at{' '}
+                <Link to="/dashboard/analytics-demo" className="underline underline-offset-2">
+                  Analytics demo
+                </Link>
+                .
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">

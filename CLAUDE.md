@@ -323,6 +323,14 @@ fork a whole layout file to change shape — compose `AppShell` differently:
 | **StatCard / StatGrid** | `components/ui/stat-grid.tsx` | KPI card row. v2 adds CF-style `delta` (directional % chip, neutral or `signal` tone) + `sparkline` bottom strip. |
 | **BreakdownList** | `components/ui/breakdown-list.tsx` | CF "Top N" shape: label + proportional bar + value. Optional `onSelect` for drill-down filters. |
 | **DashboardPanel** | `components/ui/dashboard-panel.tsx` | CF titled panel shell — recessed header strip with actions slot over a card body. Data panels only; prose stays on Card. |
+| **SegmentedBar + SeriesLegend** | `components/ui/segmented-bar.tsx` | 100%-stacked distribution bar (status codes / storage split) + dot-label-value legend. Pass the same array to both so colors align. |
+| **TimeRangePicker** | `components/ui/time-range-picker.tsx` | CF preset range control ("Last 7 days (GMT+10)") over Select. One control for every ranged page — no ad-hoc ToggleGroups. |
+| **RadialGauge** | `components/ui/radial-gauge.tsx` | Radial quota/budget circle, meter semantics, `warnAt` threshold tinting. Radial sibling of Meter. |
+| **LogTail** | `components/ui/log-tail.tsx` | wrangler-tail log viewer — level dots, dim timestamps, expandable detail, bottom-pinned `follow` mode. |
+
+**Worked example:** `/dashboard/analytics-demo` (Builder section) composes the
+whole analytics kit into a CF-style traffic dashboard on synthetic seeded
+data — copy the page, swap generators for queries.
 
 ### Choosing a layout for a list page
 

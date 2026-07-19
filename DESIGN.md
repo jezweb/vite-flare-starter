@@ -98,9 +98,12 @@ building new chrome.
 Analytics surfaces compose the CF-dashboard kit rather than raw cards:
 `DashboardPanel` (titled shell, recessed header strip, actions slot) +
 `StatGrid`/`StatCard` (KPI with delta chip + sparkline strip) +
-`BreakdownList` (top-N proportional bars) + `Sparkline` (inline SVG,
-`currentColor`, never ECharts). ECharts stays reserved for real
-time-axis charts on lazy routes.
+`BreakdownList` (top-N proportional bars) + `SegmentedBar`/`SeriesLegend`
+(whole-composition splits) + `TimeRangePicker` (preset ranges) +
+`RadialGauge` (quota circles) + `LogTail` (event streams) + `Sparkline`
+(inline SVG, `currentColor`, never ECharts). ECharts stays reserved for
+real time-axis charts on lazy routes. Worked example:
+`/dashboard/analytics-demo`.
 
 ## Do's and Don'ts
 

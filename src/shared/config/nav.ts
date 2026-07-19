@@ -19,7 +19,7 @@
  * @see src/client/lib/builder-mode.tsx for the Builder Mode toggle
  */
 import type { Icon } from '@phosphor-icons/react'
-import { House, Chat, Lightning, Plug, Microphone, Camera, Kanban, Users, Tray, Lightbulb, Repeat, PuzzlePiece, Palette, ChartBar, ShieldCheck, Robot, Stack, BookOpen } from '@phosphor-icons/react'
+import { House, Chat, Lightning, Plug, Microphone, Camera, Kanban, Users, Tray, Lightbulb, Repeat, PuzzlePiece, Palette, ChartBar, ChartLine, ShieldCheck, Robot, Stack, BookOpen } from '@phosphor-icons/react'
 
 export interface NavItem {
   /** Route path */
@@ -175,6 +175,7 @@ export const NAV_SECTIONS: NavSection[] = [
     builderOnly: true,
     items: [
       { to: '/dashboard/components', label: 'Components', icon: PuzzlePiece },
+      { to: '/dashboard/analytics-demo', label: 'Analytics demo', icon: ChartLine },
       { to: '/dashboard/style-guide', label: 'Style guide', icon: Palette },
       { to: '/dashboard/voice-example', label: 'Voice example', icon: Microphone, feature: 'voiceAgent', badge: 'Beta' },
       {

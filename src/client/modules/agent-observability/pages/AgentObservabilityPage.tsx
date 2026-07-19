@@ -31,7 +31,8 @@ import { DashboardPanel } from '@/components/ui/dashboard-panel'
 import { StatGrid } from '@/components/ui/stat-grid'
 import { EmptyState } from '@/client/components/EmptyState'
 import { Spinner } from '@/components/ui/spinner'
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { SegmentedBar, SeriesLegend } from '@/components/ui/segmented-bar'
+import { TimeRangePicker } from '@/components/ui/time-range-picker'
 import { formatAgentClass } from '@/shared/format/agent'
 
 type Range = '7d' | '14d' | '30d' | '90d'
@@ -146,18 +147,16 @@ export function AgentObservabilityPage() {
         title="Agent observability"
         subtitle="How much agent work happened and what it cost. Pulled from the agent_runs audit log."
         trailing={
-          <ToggleGroup
-            variant="outline"
-            size="sm"
-            value={[range]}
-            onValueChange={([v]) => v && setRange(v as Range)}
-            aria-label="Date range"
-          >
-            <ToggleGroupItem value="7d">7d</ToggleGroupItem>
-            <ToggleGroupItem value="14d">14d</ToggleGroupItem>
-            <ToggleGroupItem value="30d">30d</ToggleGroupItem>
-            <ToggleGroupItem value="90d">90d</ToggleGroupItem>
-          </ToggleGroup>
+          <TimeRangePicker
+            value={range}
+            onValueChange={(v) => setRange(v as Range)}
+            options={[
+              { value: '7d', label: 'Last 7 days' },
+              { value: '14d', label: 'Last 14 days' },
+              { value: '30d', label: 'Last 30 days' },
+              { value: '90d', label: 'Last 90 days' },
+            ]}
+          />
         }
       />
 
@@ -273,7 +272,30 @@ export function AgentObservabilityPage() {
                   No tool calls in this range yet.
                 </div>
               ) : (
-                <div className="overflow-x-auto">
+                <>
+                  {/* Success/error split across all tool calls in range —
+                      SegmentedBar + SeriesLegend distribution pair. */}
+                  {(() => {
+                    const totals = toolUsage.data.tools.reduce(
+                      (acc, t) => {
+                        acc.errors += t.errorCount
+                        acc.ok += Math.max(t.count - t.errorCount, 0)
+                        return acc
+                      },
+                      { ok: 0, errors: 0 }
+                    )
+                    const split = [
+                      { label: 'Succeeded', value: totals.ok, className: 'bg-chart-1' },
+                      { label: 'Errored', value: totals.errors, className: 'bg-destructive' },
+                    ]
+                    return (
+                      <div className="mb-4 space-y-2">
+                        <SeriesLegend items={split} />
+                        <SegmentedBar segments={split} />
+                      </div>
+                    )
+                  })()}
+                  <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b text-left text-xs uppercase tracking-wider text-muted-foreground">
@@ -316,7 +338,8 @@ export function AgentObservabilityPage() {
                       })}
                     </tbody>
                   </table>
-                </div>
+                  </div>
+                </>
               )}
             </>
           </DashboardPanel>

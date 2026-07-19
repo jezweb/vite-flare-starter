@@ -170,6 +170,9 @@ const ComponentsPage = lazy(() =>
 const StyleGuidePage = lazy(() =>
   import('./pages/StyleGuidePage').then((m) => ({ default: m.StyleGuidePage }))
 )
+const AnalyticsDemoPage = lazy(() =>
+  import('./pages/AnalyticsDemoPage').then((m) => ({ default: m.AnalyticsDemoPage }))
+)
 const HelpPage = lazy(() =>
   import('./modules/help/pages/HelpPage').then((m) => ({ default: m.HelpPage }))
 )
@@ -467,6 +470,7 @@ function App() {
 
                   {/* Component showcase for development reference */}
                   <Route path="components" element={<ComponentsPage />} />
+                  <Route path="analytics-demo" element={<AnalyticsDemoPage />} />
 
                   {/* Style guide for development */}
                   <Route path="style-guide" element={<StyleGuidePage />} />
