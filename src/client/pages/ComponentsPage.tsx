@@ -51,6 +51,10 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Banner } from '@/components/ui/banner'
 import { Meter } from '@/components/ui/meter'
 import { ClipboardText } from '@/components/ui/clipboard-text'
+import { Sparkline } from '@/components/ui/sparkline'
+import { StatGrid } from '@/components/ui/stat-grid'
+import { BreakdownList } from '@/components/ui/breakdown-list'
+import { DashboardPanel } from '@/components/ui/dashboard-panel'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
@@ -494,6 +498,69 @@ export function ComponentsPage() {
                 </p>
                 <ClipboardText label="Webhook URL" value="https://example.workers.dev/api/webhooks/agents/inbound" />
                 <ClipboardText label="API token" value="vfs_demo_2kX9mQp7vRw4tYz8" masked />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Analytics kit</CardTitle>
+              <CardDescription>
+                CF-dashboard shapes — StatCard with delta + sparkline, DashboardPanel,
+                BreakdownList. Compose these for data pages instead of raw Cards.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <StatGrid
+                items={[
+                  {
+                    label: 'Total requests',
+                    value: '360.9k',
+                    delta: 10,
+                    sparkline: [12, 18, 14, 22, 19, 28, 24, 31, 27, 38, 34, 41],
+                  },
+                  {
+                    label: 'Cache hit rate',
+                    value: '31.0%',
+                    delta: -1.9,
+                    deltaTone: 'signal',
+                    sparkline: [42, 38, 40, 35, 37, 33, 34, 31, 32, 30, 31, 31],
+                  },
+                ]}
+                className="sm:grid-cols-2"
+              />
+              <DashboardPanel
+                title="Requests by country"
+                actions={<span className="text-xs text-muted-foreground">Last 24 hours</span>}
+              >
+                <BreakdownList
+                  items={[
+                    { label: 'Australia', value: 106_170 },
+                    { label: 'Netherlands', value: 85_630 },
+                    { label: 'United States', value: 47_830 },
+                    { label: 'Brazil', value: 33_120 },
+                    { label: 'France', value: 21_240 },
+                  ]}
+                />
+              </DashboardPanel>
+              <div className="space-y-3 pt-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Sparkline — inline SVG, colors via currentColor
+                </p>
+                <div className="grid grid-cols-3 gap-4">
+                  <Sparkline data={[3, 5, 4, 8, 6, 9, 7, 11]} height={40} />
+                  <Sparkline
+                    data={[9, 7, 8, 5, 6, 4, 5, 2]}
+                    height={40}
+                    variant="line"
+                    className="text-destructive"
+                  />
+                  <Sparkline
+                    data={[4, 4, 5, 4, 6, 5, 7, 8]}
+                    height={40}
+                    className="text-success"
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>

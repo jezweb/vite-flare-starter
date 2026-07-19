@@ -21,6 +21,8 @@ import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
 import { PageFilters, PageFilterGroup } from '@/components/ui/page-filters'
 import { StatGrid } from '@/components/ui/stat-grid'
+import { BreakdownList } from '@/components/ui/breakdown-list'
+import { DashboardPanel } from '@/components/ui/dashboard-panel'
 import { PageLoading } from '@/client/components/PageState'
 import {
   ListRow,
@@ -51,18 +53,24 @@ const ACTION_ICONS: Record<Activity['action'], React.ElementType> = {
   convert: ArrowsLeftRight,
 }
 
+/**
+ * Semantic status tokens only (light-dark() handles both modes — no
+ * dark: variants). Actions group by meaning: additive → success,
+ * informational → info, destructive → destructive, caution → warning.
+ * The icon shape differentiates within a group.
+ */
 const ACTION_COLORS: Record<Activity['action'], string> = {
-  create: 'bg-green-500/10 dark:bg-green-500/15 text-green-600 dark:text-green-400',
-  update: 'bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400',
-  delete: 'bg-red-500/10 dark:bg-red-500/15 text-red-600 dark:text-red-400',
-  archive: 'bg-amber-500/10 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400',
-  restore: 'bg-purple-500/10 dark:bg-purple-500/15 text-purple-600 dark:text-purple-400',
-  import: 'bg-cyan-500/10 dark:bg-cyan-500/15 text-cyan-600 dark:text-cyan-400',
-  export: 'bg-orange-500/10 dark:bg-orange-500/15 text-orange-600 dark:text-orange-400',
-  assign: 'bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
-  unassign: 'bg-pink-500/10 dark:bg-pink-500/15 text-pink-600 dark:text-pink-400',
-  view: 'bg-slate-500/10 dark:bg-slate-500/20 text-slate-600 dark:text-slate-300',
-  convert: 'bg-indigo-500/10 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400',
+  create: 'bg-success/10 text-success',
+  update: 'bg-info/10 text-info',
+  delete: 'bg-destructive/10 text-destructive',
+  archive: 'bg-warning/10 text-warning',
+  restore: 'bg-success/10 text-success',
+  import: 'bg-info/10 text-info',
+  export: 'bg-warning/10 text-warning',
+  assign: 'bg-success/10 text-success',
+  unassign: 'bg-destructive/10 text-destructive',
+  view: 'bg-muted text-muted-foreground',
+  convert: 'bg-info/10 text-info',
 }
 
 function formatTime(dateString: string): string {
@@ -202,10 +210,55 @@ export function ActivityPage() {
         ]}
       />
 
+      {/* What-kind-of-activity breakdowns (already aggregated server-side;
+          previously unrendered). Action rows drill into the list filter. */}
+      {stats && Object.keys(stats.byAction).length > 0 && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <DashboardPanel
+            title="By action"
+            actions={<span className="text-xs text-muted-foreground">click to filter</span>}
+          >
+            <BreakdownList
+              items={Object.entries(stats.byAction)
+                .sort(([, a], [, b]) => b - a)
+                .slice(0, 8)
+                .map(([action, count]) => ({
+                  key: action,
+                  label: formatActionVerb(action as Activity['action']),
+                  value: count,
+                }))}
+              onSelect={(item) => {
+                setActionFilter(item.key ?? 'all')
+                setPage(1)
+              }}
+            />
+          </DashboardPanel>
+          <DashboardPanel title="By entity type">
+            <BreakdownList
+              items={Object.entries(stats.byEntityType)
+                .sort(([, a], [, b]) => b - a)
+                .slice(0, 8)
+                .map(([type, count]) => ({
+                  key: type,
+                  label: formatEntityType(type),
+                  value: count,
+                }))}
+            />
+          </DashboardPanel>
+        </div>
+      )}
+
       <PageFilters>
         <span />
         <PageFilterGroup>
-          <Select value={actionFilter} onValueChange={(v) => v != null && setActionFilter(v)}>
+          <Select
+            value={actionFilter}
+            onValueChange={(v) => {
+              if (v == null) return
+              setActionFilter(v)
+              setPage(1)
+            }}
+          >
             <SelectTrigger className="h-8 w-[170px]">
               <SelectValue placeholder="Filter by action" />
             </SelectTrigger>

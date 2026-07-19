@@ -319,6 +319,10 @@ fork a whole layout file to change shape — compose `AppShell` differently:
 | **Banner** | `components/ui/banner.tsx` | Full-width page-level notice (edge-to-edge chrome vs Alert's in-flow callout). Status-tint tokens, optional action/dismiss. |
 | **Meter** | `components/ui/meter.tsx` | Measured value in a known range (quota/storage/budget). Base UI Meter semantics + CF threshold idiom (warns near max). NOT a Progress. |
 | **ClipboardText** | `components/ui/clipboard-text.tsx` | Read-only copyable value (API keys, webhook URLs); optional `masked` reveal toggle. |
+| **Sparkline** | `components/ui/sparkline.tsx` | Tiny inline-SVG trend (line/area). Deliberately not ECharts — safe on non-lazy routes, colors via `currentColor`. |
+| **StatCard / StatGrid** | `components/ui/stat-grid.tsx` | KPI card row. v2 adds CF-style `delta` (directional % chip, neutral or `signal` tone) + `sparkline` bottom strip. |
+| **BreakdownList** | `components/ui/breakdown-list.tsx` | CF "Top N" shape: label + proportional bar + value. Optional `onSelect` for drill-down filters. |
+| **DashboardPanel** | `components/ui/dashboard-panel.tsx` | CF titled panel shell — recessed header strip with actions slot over a card body. Data panels only; prose stays on Card. |
 
 ### Choosing a layout for a list page
 

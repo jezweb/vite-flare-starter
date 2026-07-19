@@ -95,6 +95,13 @@ rest. Custom primitives live in `src/components/ui/` (Banner, Meter,
 ClipboardText, KanbanBoard, AppShell, PageHeader) — check there before
 building new chrome.
 
+Analytics surfaces compose the CF-dashboard kit rather than raw cards:
+`DashboardPanel` (titled shell, recessed header strip, actions slot) +
+`StatGrid`/`StatCard` (KPI with delta chip + sparkline strip) +
+`BreakdownList` (top-N proportional bars) + `Sparkline` (inline SVG,
+`currentColor`, never ECharts). ECharts stays reserved for real
+time-axis charts on lazy routes.
+
 ## Do's and Don'ts
 
 - **Do** use semantic tokens; **don't** hardcode hexes or palette classes.

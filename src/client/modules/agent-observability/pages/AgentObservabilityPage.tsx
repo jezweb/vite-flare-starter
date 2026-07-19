@@ -1,16 +1,17 @@
 /**
  * AgentObservabilityPage — `/dashboard/agent-observability`
  *
- * Surfaces the agent_runs audit log as charts + a recent-runs list.
- * Two charts on top:
- *   - Runs per agent class (bar) — answers "what's running?"
- *   - Cost per day (line+gradient) — answers "where's spend going?"
+ * Surfaces the agent_runs audit log, CF-dashboard style:
+ *   - KPI StatGrid (runs / cost) with range deltas + sparkline trends
+ *   - Runs per agent class (BreakdownList) — answers "what's running?"
+ *   - Cost per day (TimeseriesChart) — answers "where's spend going?"
  *
- * Charts are Kumo's ECharts wrappers (`@cloudflare/kumo/components/chart`):
- * TimeseriesChart for the time-axis cost chart, low-level Chart for the
- * categorical bar chart. Series colors come from our --chart-1..5 tokens,
- * resolved to canvas-safe hex via useChartTheme (src/client/lib/echarts.ts)
- * so light/dark and fork rebrands carry through.
+ * Only the time-axis cost chart uses ECharts (Kumo's TimeseriesChart);
+ * categorical breakdowns use the plain-DOM BreakdownList and KPI trends
+ * use the inline-SVG Sparkline, so ECharts stays confined to this lazy
+ * route. The chart's series color resolves from --chart-2 to canvas-safe
+ * hex via useChartTheme (src/client/lib/echarts.ts) so light/dark and
+ * fork rebrands carry through.
  *
  * For per-run drilldown: `GET /api/agent-observability/runs/:id`. The
  * Dashboard "Recent runs" panel shows the live tail (last 8). This
@@ -18,14 +19,16 @@
  */
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Chart, TimeseriesChart, type KumoChartOption } from '@cloudflare/kumo/components/chart'
-import { TrendUp, ChartBar, CurrencyDollar } from '@phosphor-icons/react'
+import { TimeseriesChart } from '@cloudflare/kumo/components/chart'
+import { ChartBar } from '@phosphor-icons/react'
 
 import { apiClient } from '@/client/lib/api-client'
 import { echarts, useChartTheme } from '@/client/lib/echarts'
 import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { BreakdownList } from '@/components/ui/breakdown-list'
+import { DashboardPanel } from '@/components/ui/dashboard-panel'
+import { StatGrid } from '@/components/ui/stat-grid'
 import { EmptyState } from '@/client/components/EmptyState'
 import { Spinner } from '@/components/ui/spinner'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
@@ -52,17 +55,36 @@ interface ToolUsageResponse {
   }>
 }
 
-/** Both charts render at the old ChartContainer height (h-64). */
+/** Cost chart renders at the old ChartContainer height (h-64). */
 const CHART_HEIGHT = 256
+
+/**
+ * Change across the range: second half vs first half of the daily
+ * series, compared as per-day AVERAGES so an odd-length range (7d →
+ * 3 vs 4 days) doesn't bias the delta. Undefined when the baseline
+ * half is empty (fresh accounts) — a delta against zero reads as
+ * noise, not signal.
+ */
+function halfOverHalfDelta(series: number[]): number | undefined {
+  if (series.length < 2) return undefined
+  const mid = Math.floor(series.length / 2)
+  const firstHalf = series.slice(0, mid)
+  const secondHalf = series.slice(mid)
+  const avg = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length
+  const first = avg(firstHalf)
+  const second = avg(secondHalf)
+  if (first <= 0) return undefined
+  return ((second - first) / first) * 100
+}
 
 export function AgentObservabilityPage() {
   const [range, setRange] = useState<Range>('7d')
 
-  // Canvas-safe colors resolved from theme tokens (re-resolve on mode flip).
+  // Canvas-safe color resolved from theme tokens (re-resolve on mode flip).
   const {
-    colors: [runsColor, costColor, axisTextColor],
+    colors: [costColor],
     isDarkMode,
-  } = useChartTheme('--chart-1', '--chart-2', '--muted-foreground')
+  } = useChartTheme('--chart-2')
 
   const stats = useQuery({
     queryKey: ['agent-observability', 'stats', range],
@@ -93,49 +115,11 @@ export function AgentObservabilityPage() {
   const totalRuns = runsByAgent.reduce((sum, r) => sum + r.count, 0)
   const totalCost = costByDay.reduce((sum, d) => sum + d.cost, 0)
 
-  // Runs-per-agent is categorical, so it uses the low-level Chart wrapper
-  // (TimeseriesChart is time-axis only). Tooltip is ECharts' HTML tooltip —
-  // DOM-rendered, so it can consume our kumo interop CSS vars directly.
-  const runsOptions = useMemo<KumoChartOption>(
-    () => ({
-      backgroundColor: 'transparent',
-      // ECharts 6 contains axis labels by default (containLabel is legacy).
-      grid: { left: 8, right: 12, top: 16, bottom: 0 },
-      xAxis: {
-        type: 'category',
-        data: runsByAgent.map((r) => r.label),
-        axisLine: { show: false },
-        axisTick: { show: false },
-        axisLabel: { fontSize: 11, interval: 0, rotate: 15, color: axisTextColor },
-      },
-      yAxis: {
-        type: 'value',
-        axisLabel: { fontSize: 11, color: axisTextColor },
-        splitLine: { lineStyle: { type: 'dashed', width: 1 } },
-      },
-      tooltip: {
-        trigger: 'axis',
-        axisPointer: { type: 'shadow' },
-        backgroundColor: 'var(--color-kumo-base)',
-        borderColor: 'var(--color-kumo-line)',
-        borderWidth: 1,
-        padding: 8,
-        textStyle: { color: 'var(--text-color-kumo-default)', fontSize: 13 },
-        extraCssText: 'border-radius: 0.5rem;',
-        valueFormatter: (value) => Number(value).toLocaleString(),
-      },
-      series: [
-        {
-          type: 'bar',
-          name: 'Runs',
-          data: runsByAgent.map((r) => r.count),
-          itemStyle: { color: runsColor, borderRadius: [4, 4, 0, 0] },
-          barMaxWidth: 48,
-        },
-      ],
-    }),
-    [runsByAgent, runsColor, axisTextColor]
-  )
+  // KPI trends derive from the same daily buckets as the cost chart.
+  const runsSeries = costByDay.map((d) => d.runs)
+  const costSeriesRaw = costByDay.map((d) => d.cost)
+  const runsDelta = halfOverHalfDelta(runsSeries)
+  const costDelta = halfOverHalfDelta(costSeriesRaw)
 
   // Dates arrive as YYYY-MM-DD day buckets. Anchor each bucket to LOCAL
   // midnight (not Date.parse's UTC) so Kumo's built-in tooltip header —
@@ -194,52 +178,48 @@ export function AgentObservabilityPage() {
         />
       ) : (
         <>
-          {/* Headline numbers — at-a-glance KPIs above the charts. */}
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Card>
-              <CardContent className="flex items-center gap-3 p-4">
-                <div className="flex size-10 items-center justify-center rounded-md bg-primary/10 text-primary">
-                  <TrendUp className="size-5" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Total runs</p>
-                  <p className="font-mono text-2xl tabular-nums">{totalRuns.toLocaleString()}</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="flex items-center gap-3 p-4">
-                <div className="flex size-10 items-center justify-center rounded-md bg-primary/10 text-primary">
-                  <CurrencyDollar className="size-5" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Total cost</p>
-                  <p className="font-mono text-2xl tabular-nums">${totalCost.toFixed(4)}</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          {/* Headline KPIs — CF-style: big number + range delta + trend
+              strip, all derived from the same daily buckets as the chart. */}
+          <StatGrid
+            items={[
+              {
+                label: 'Total runs',
+                value: totalRuns.toLocaleString(),
+                delta: runsDelta,
+                sub: runsDelta !== undefined ? 'vs first half of range' : undefined,
+                sparkline: runsSeries,
+              },
+              {
+                label: 'Total cost',
+                value: `$${totalCost.toFixed(4)}`,
+                delta: costDelta,
+                sub: costDelta !== undefined ? 'vs first half of range' : undefined,
+                sparkline: costSeriesRaw,
+              },
+            ]}
+            className="sm:grid-cols-2"
+          />
 
           <div className="grid gap-4 lg:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Runs per agent</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Chart
-                  echarts={echarts}
-                  options={runsOptions}
-                  isDarkMode={isDarkMode}
-                  height={CHART_HEIGHT}
-                />
-              </CardContent>
-            </Card>
+            <DashboardPanel
+              title="Runs per agent"
+              actions={
+                <span className="text-xs text-muted-foreground">
+                  {runsByAgent.length} agent{runsByAgent.length === 1 ? '' : 's'}
+                </span>
+              }
+            >
+              <BreakdownList
+                items={runsByAgent.map((r) => ({
+                  key: r.agentClass,
+                  label: r.label,
+                  value: r.count,
+                }))}
+              />
+            </DashboardPanel>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Cost per day</CardTitle>
-              </CardHeader>
-              <CardContent>
+            <DashboardPanel title="Cost per day">
+              <>
                 {costByDay.length === 0 ? (
                   <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
                     No cost data in this range.
@@ -263,26 +243,27 @@ export function AgentObservabilityPage() {
                     ariaDescription="Daily agent cost in US dollars over the selected date range"
                   />
                 )}
-              </CardContent>
-            </Card>
+              </>
+            </DashboardPanel>
           </div>
 
           {/* Per-tool usage — closes the chat-tools audit gap. Surfaces
               which tools actually fire so we can validate Phase A+B
               activation rates moved + spot dead tools. */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <ChartBar className="size-4" />
-                  Tool usage
-                </span>
-                <span className="text-xs font-normal text-muted-foreground">
-                  {toolUsage.data?.tools.length ?? 0} distinct tools fired
-                </span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+          <DashboardPanel
+            title={
+              <span className="flex items-center gap-2">
+                <ChartBar className="size-4" />
+                Tool usage
+              </span>
+            }
+            actions={
+              <span className="text-xs text-muted-foreground">
+                {toolUsage.data?.tools.length ?? 0} distinct tools fired
+              </span>
+            }
+          >
+            <>
               {toolUsage.isLoading ? (
                 <div className="flex h-32 items-center justify-center">
                   <Spinner />
@@ -325,7 +306,7 @@ export function AgentObservabilityPage() {
                               ) : null}
                             </td>
                             <td className="py-1.5 text-right tabular-nums text-muted-foreground">
-                              {t.totalCostUsd ? `$${t.totalCostUsd.toFixed(4)}` : '—'}
+                              {t.totalCostUsd != null ? `$${t.totalCostUsd.toFixed(4)}` : '—'}
                             </td>
                             <td className="py-1.5 text-right text-xs text-muted-foreground">
                               {ageDays === null ? '—' : ageDays === 0 ? 'today' : `${ageDays}d ago`}
@@ -337,8 +318,8 @@ export function AgentObservabilityPage() {
                   </table>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </>
+          </DashboardPanel>
         </>
       )}
     </PageContainer>
