@@ -18,6 +18,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { and, desc, eq, like, or } from 'drizzle-orm'
 import { Database, FilePlus, NotePencil, ListChecks, FileMagnifyingGlass } from '@phosphor-icons/react'
 import { entities } from '@/server/modules/entities/db/schema'
+import { logActivity } from '@/server/modules/activity/log'
 import type { ToolDefinition, AgentContext } from '@/shared/agent'
 
 interface EntityEnv {
@@ -123,6 +124,14 @@ export const entityCreateDefinition: ToolDefinition<
     })
     const [row] = await db.select().from(entities).where(eq(entities.id, id)).limit(1)
     if (!row) return { error: 'Insert succeeded but row not found' }
+    await logActivity(getDb(ctx)!, {
+      userId: ctx.userId,
+      action: 'create',
+      entityType: input.type,
+      entityId: id,
+      entityName: input.title,
+      metadata: { via: 'agent' },
+    })
     return serialiseRow(row)
   },
   render: { icon: FilePlus, displayName: 'Create Entity' },
@@ -176,6 +185,14 @@ export const entityUpdateDefinition: ToolDefinition<
     await db.update(entities).set(updates).where(eq(entities.id, id))
     const [row] = await db.select().from(entities).where(eq(entities.id, id)).limit(1)
     if (!row) return { error: 'Update succeeded but row vanished' }
+    await logActivity(getDb(ctx)!, {
+      userId: ctx.userId,
+      action: 'update',
+      entityType: existing.type,
+      entityId: id,
+      entityName: title ?? existing.title,
+      metadata: { via: 'agent' },
+    })
     return serialiseRow(row)
   },
   render: { icon: NotePencil, displayName: 'Update Entity' },

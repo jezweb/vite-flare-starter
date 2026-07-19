@@ -24,6 +24,7 @@ import { and, desc, eq, isNull, like, or, sql } from 'drizzle-orm'
 import { authMiddleware, type AuthContext } from '@/server/middleware/auth'
 import { getActiveOrg } from '@/server/modules/organizations/helpers'
 import { scopeUser, isCondition } from '@/server/lib/tenancy'
+import { logActivityFromContext } from '@/server/modules/activity/log'
 import { entities } from './db/schema'
 
 /**
@@ -118,6 +119,12 @@ app.post('/', zValidator('json', CreateSchema), async (c) => {
     ...(body.fields !== undefined && { fields: JSON.stringify(body.fields) }),
   })
   const [row] = await db.select().from(entities).where(eq(entities.id, id))
+  await logActivityFromContext(c, {
+    action: 'create',
+    entityType: body.type,
+    entityId: id,
+    entityName: body.title,
+  })
   return c.json(serialiseEntity(row!))
 })
 
@@ -183,6 +190,13 @@ app.patch('/:id', zValidator('json', UpdateSchema), async (c) => {
   }
   await db.update(entities).set(updates).where(eq(entities.id, id))
   const [row] = await db.select().from(entities).where(eq(entities.id, id))
+  await logActivityFromContext(c, {
+    action: 'update',
+    entityType: existing.type,
+    entityId: id,
+    entityName: body.title ?? existing.title,
+    metadata: { changedKeys: Object.keys(body) },
+  })
   return c.json(serialiseEntity(row!))
 })
 
@@ -204,6 +218,12 @@ app.delete('/:id', async (c) => {
     isCondition
   )
   await db.delete(entities).where(and(...delConditions))
+  await logActivityFromContext(c, {
+    action: 'delete',
+    entityType: existing.type,
+    entityId: id,
+    entityName: existing.title,
+  })
   return c.json({ success: true, id })
 })
 
