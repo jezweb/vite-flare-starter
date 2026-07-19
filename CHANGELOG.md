@@ -2,6 +2,78 @@
 
 All notable changes to `vite-flare-starter`.
 
+## v2.1.0 — 2026-07-19
+
+Three threads: the **agents-stack adoption** (Cloudflare `agents` SDK
+features embraced end-to-end), the **deliberate platform migrations**
+tracked in #109, and the **CF-dashboard display kit** — nine new UI
+primitives + a worked-example analytics dashboard so forks stop
+shipping default-shadcn dashboards.
+
+### Agents stack adoption (#113 steps 1–5)
+
+- **Durable chat recovery** — `chatRecovery` + stall watchdog on
+  ChatAgent; a dropped stream resumes instead of dying. SDK
+  diagnostics-channel events surface via `server/lib/agent-diagnostics.ts`.
+- **Skills interop** — the D1 skills registry mounts as an agents-SDK
+  `SkillSource`; skills can ship `scripts/` executed via Worker Loader
+  (JS, isolated) or the sandbox container (py/sh).
+- **Sites** — live multi-file site previews from the conversation
+  sandbox (`site_serve` → quick-tunnel URL → WorkspacePanel Sites tab).
+- **Think pilot** — `@cloudflare/think` evaluation surface behind
+  `VITE_FEATURE_THINK_PILOT`: durable Actions ledger, in-transcript
+  approvals, scheduled-task DSL. ChatAgent stays the production path.
+- **Code Mode pilot** — `code_mode` chat tool (`@cloudflare/codemode`):
+  the model writes ONE JS function composing a curated 22-tool
+  allowlist, run in an isolated dynamic Worker. Opt-in `CODEMODE=true`.
+- **Agents-as-tools + fibers** — `runAgentTool` child dispatch
+  implemented once on the AutonomousAgent base (awaited or detached
+  with durable at-least-once `onFinish`); `runOnce` fiber-checkpointed
+  so interrupted runs are detected and their audit rows finalised via
+  `onFiberRecovered`. Worked example: researcher→writer handoff.
+
+### Platform migrations (#109 — all live-verified)
+
+- **DO declarative `exports`** — the migrations array is retired; all 13
+  DO classes register via the top-level `exports` map. **One-way switch.**
+- **TypeScript 7.0.2** — Go-native tsc; repo type-check 15.8s → 2.7s (5.9×).
+- **React Router v8** — `react-router-dom` (terminal at 7.x) → `react-router`.
+- **`wrangler types` replaces `@cloudflare/workers-types`** — generated
+  `Cloudflare.Env` is the single source of binding truth; module Env
+  interfaces extend it.
+- **compatibility_date → 2026-07-10** (workerd-binary max; see UPGRADING
+  for the vitest coupling gotcha) · **biome 2.5.4**.
+
+### CF-dashboard display kit
+
+- Round 1: `Sparkline` (inline SVG, currentColor), `StatCard` v2
+  (delta chip + trend strip), `BreakdownList` (top-N bars),
+  `DashboardPanel` (titled panel shell).
+- Round 2: `SegmentedBar` + `SeriesLegend` (100%-stacked distribution),
+  `TimeRangePicker` ("Last 7 days (GMT+10)"), `RadialGauge` (quota ring,
+  meter semantics, threshold tinting), `LogTail` (wrangler-tail viewer).
+- **`/dashboard/analytics-demo`** (Builder) — the whole kit composed
+  into a CF-style traffic dashboard on seeded synthetic data; copy the
+  page, swap generators for queries.
+- Retrofits: Agent Observability (KPI trends, BreakdownList,
+  TimeRangePicker, success/error split), Activity (byAction/byEntityType
+  breakdown panels with drill-down filter).
+- Both rounds brains-trust-reviewed pre-commit
+  (`.jez/audits/2026-07-19-brains-trust-cf-display-kit*.md`).
+
+### Fixed
+
+- Entity CRUD (REST + agent tools) now writes `activity_logs` — the
+  Activity page no longer under-reports domain actions (#120).
+- Page-path 404s + CSP insights allowance (#114, #115, #117).
+- ActivityPage action colours moved off raw palette + `dark:` variants
+  onto semantic status tokens.
+
+### Added (tooling)
+
+- `pnpm test:session` — mint a headless test session → Playwright
+  storageState + curl Cookie line (#116); keep-aware test-auth cleanup.
+
 ## v2.0.0 — 2026-07-16
 
 The design reboot. One session, ~62 commits: every shadcn primitive

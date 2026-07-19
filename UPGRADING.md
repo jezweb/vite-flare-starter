@@ -11,6 +11,71 @@ decide about the rest at your own pace.
 
 ---
 
+## v2.1.0 — platform migrations + agents adoption (2026-07-19)
+
+Additive features (display kit, agents-as-tools, pilots) won't touch
+fork code. Five migrations will:
+
+### 1. `react-router-dom` → `react-router` (build break)
+
+The dep is gone (`react-router-dom` is terminal at 7.x). Every fork
+import needs the swap — it's mechanical:
+
+```bash
+grep -rl "from 'react-router-dom'" src | xargs sed -i '' "s/from 'react-router-dom'/from 'react-router'/g"
+```
+
+`BrowserRouter`, `Link`, `useNavigate` etc. all live in the main
+`react-router` export; only `RouterProvider` needs `react-router/dom`.
+
+### 2. `@cloudflare/workers-types` → generated `wrangler types` (build break)
+
+The package is removed. `pnpm type-check` now chains `wrangler types`
+(generates the gitignored `worker-configuration.d.ts`), and
+`tsconfig.json` includes it. In your fork:
+
+- Delete any `import type { … } from '@cloudflare/workers-types'` lines
+  — the runtime types are ambient now.
+- **Make every module-level `Env` interface `extends Cloudflare.Env`.**
+  This is the trap: without it, the agents SDK's
+  `Env extends Cloudflare.Env` generic constraint silently collapses
+  `getAgentByName`/`runAgentTool` stub inference to base `Agent` and you
+  get dozens of confusing type errors far from the cause.
+- If a generated binding member conflicts with a fork-optional one
+  (TS2430), match the generated optionality — the generated file wins.
+
+### 3. DO declarative `exports` — ONE-WAY (deploy behaviour)
+
+`wrangler.jsonc` replaces the `migrations` array with a top-level
+`"exports"` map. **Once you deploy with exports you cannot return to
+migrations.** Fork checklist:
+
+- Your own DO classes: add
+  `"YourClass": { "type": "durable-object", "storage": "sqlite" }`
+  (`new_classes`-era KV DOs use `"storage": "legacy-kv"`).
+- Keeping BOTH `migrations` and `exports` fails validation — the pull
+  will conflict on this block; take upstream's shape and fold your
+  classes in.
+- Data carries over automatically. `wrangler versions upload` (gradual
+  deployments) doesn't support exports yet — use plain `deploy`.
+
+### 4. compatibility_date 2026-07-10 + the workerd coupling
+
+Bumping further breaks `vitest-pool-workers` with
+`MiniflareCoreError [ERR_RUNTIME_FAILURE]`: the locally bundled workerd
+binary rejects dates newer than itself (production accepts them — the
+failure is local-only, which makes it confusing). Rule: compat date ≤
+your installed workerd version's date (`1.20260710.1` → `2026-07-10`).
+
+### 5. TypeScript 7 + biome 2.5.4 (low risk)
+
+`tsc` is now the Go-native compiler (~6× faster, zero new diagnostics
+here). If your fork added biome rules, run `npx biome migrate --write`
+once; the new `useIterableCallbackReturn` rule flags `forEach` arrows
+that implicitly return values — give them braces.
+
+---
+
 ## v2.0.1 — security batch (2026-07-17)
 
 Remaining #95 highs. One breaking change:

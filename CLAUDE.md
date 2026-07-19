@@ -1,7 +1,7 @@
 # CLAUDE.md — AI Developer Context
 
 **Project:** Vite Flare Starter
-**Version:** 2.0.0
+**Version:** 2.1.0
 **Purpose:** Pattern library and production-ready starter kit for Cloudflare Workers
 
 ---
