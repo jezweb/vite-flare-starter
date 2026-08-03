@@ -20,6 +20,7 @@
     "db:migrate:list:remote": "wrangler d1 migrations list vite-flare-starter-db --remote",
     "db:studio:local": "drizzle-kit studio",
     "db:seed": "npx tsx scripts/seed.ts",
+    "changelog:post": "node scripts/changelog-post.mjs",
     "models:refresh": "npx tsx scripts/refresh-models.ts",
     "test": "vitest run",
     "test:watch": "vitest",
