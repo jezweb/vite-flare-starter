@@ -24,7 +24,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import type { NavItem } from '@/shared/config/nav'
+import type { NavItem, ResolvedNavItem } from '@/shared/config/nav'
 
 /**
  * Kumo MenuBadge — dashed pill inline after a nav label ("Beta", "New";
@@ -39,9 +39,26 @@ function NavBadge({ children }: { children: React.ReactNode }) {
   )
 }
 
+/**
+ * Unseen marker for a nav item fed by a runtime `badgeSource` — a plain
+ * dot, not a count. It says "there is something here you haven't looked
+ * at" and nothing more, which is all a changelog warrants. Stays visible
+ * when the sidebar collapses to icons (that is exactly when the label is
+ * gone and the dot is the only signal left).
+ */
+function NavDot() {
+  return (
+    <span
+      className="ml-1 size-1.5 shrink-0 rounded-full bg-primary"
+      aria-label="unread"
+      role="status"
+    />
+  )
+}
+
 interface Props {
   label: string
-  items: NavItem[]
+  items: ResolvedNavItem[]
   /** If true, render the section as a Collapsible that starts closed. */
   defaultCollapsed?: boolean
 }
@@ -78,6 +95,7 @@ export function NavMain({ label, items, defaultCollapsed = false }: Props) {
               {item.icon && <item.icon />}
               <span>{item.label}</span>
               {item.badge && <NavBadge>{item.badge}</NavBadge>}
+              {item.dot && <NavDot />}
             </SidebarMenuButton>
           </SidebarMenuItem>
         )

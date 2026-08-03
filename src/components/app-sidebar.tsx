@@ -20,7 +20,8 @@ import { useSession } from '@/client/lib/auth'
 import { useBuilderMode } from '@/client/lib/builder-mode'
 import { features } from '@/shared/config/features'
 import { OrgSwitcher } from '@/client/modules/organizations/components/OrgSwitcher'
-import { NAV_SECTIONS, type NavItem } from '@/shared/config/nav'
+import { NAV_SECTIONS, applyBadges, type NavItem } from '@/shared/config/nav'
+import { useNavBadges } from '@/client/lib/nav-badges'
 
 function isVisible(
   item: Pick<NavItem, 'feature' | 'builderOnly' | 'minRole'>,
@@ -88,16 +89,17 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
   const { data: session } = useSession()
   const { isBuilder } = useBuilderMode()
   const userRole = (session?.user as { role?: string } | undefined)?.role ?? 'user'
+  const badges = useNavBadges()
 
   const visibleSections = React.useMemo(() => {
     const featureFlags = features as unknown as Record<string, boolean>
     return NAV_SECTIONS.filter((section) => !section.builderOnly || isBuilder)
       .map((section) => ({
         ...section,
-        items: filterItems(section.items, featureFlags, userRole, isBuilder),
+        items: applyBadges(filterItems(section.items, featureFlags, userRole, isBuilder), badges),
       }))
       .filter((section) => section.items.length > 0)
-  }, [userRole, isBuilder])
+  }, [userRole, isBuilder, badges])
 
   return (
     <Sidebar collapsible="icon" variant="inset" {...props}>

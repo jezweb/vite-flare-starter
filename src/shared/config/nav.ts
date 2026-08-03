@@ -19,7 +19,39 @@
  * @see src/client/lib/builder-mode.tsx for the Builder Mode toggle
  */
 import type { Icon } from '@phosphor-icons/react'
-import { House, Chat, Lightning, Plug, Microphone, Camera, Kanban, Users, Tray, Lightbulb, Repeat, PuzzlePiece, Palette, ChartBar, ChartLine, ShieldCheck, Robot, Stack, BookOpen } from '@phosphor-icons/react'
+import {
+  House,
+  Chat,
+  Lightning,
+  Plug,
+  Microphone,
+  Camera,
+  Kanban,
+  Users,
+  Tray,
+  Lightbulb,
+  Repeat,
+  PuzzlePiece,
+  Palette,
+  ChartBar,
+  ChartLine,
+  ShieldCheck,
+  Robot,
+  Stack,
+  BookOpen,
+  Megaphone,
+} from '@phosphor-icons/react'
+
+/**
+ * Runtime badge sources.
+ *
+ * A nav item can name a source here to get live state (an unseen dot, or
+ * being hidden when it has nothing to show) without this file becoming
+ * dynamic. The config stays plain serialisable data — the CommandPalette
+ * and forks both depend on that — and `src/client/lib/nav-badges.ts`
+ * resolves the name to a hook in the sidebar renderer.
+ */
+export type NavBadgeSource = 'updates'
 
 export interface NavItem {
   /** Route path */
@@ -28,6 +60,13 @@ export interface NavItem {
   label: string
   /** Phosphor icon component */
   icon: Icon
+  /**
+   * Names a runtime badge source (see NavBadgeSource). The renderer
+   * overlays a dot and may hide the item entirely — e.g. What's New
+   * hides itself until the first entry is published, so a fresh fork
+   * never shows an empty room.
+   */
+  badgeSource?: NavBadgeSource
   /** Only show if this feature flag is true (from features config) */
   feature?: string
   /** Minimum role required. Omit = visible to all roles. */
@@ -63,6 +102,46 @@ export interface NavChildItem {
   builderOnly?: boolean
   /** Small dashed pill after the label (e.g. "Beta", "New"). */
   badge?: string
+}
+
+/**
+ * A nav item after the sidebar has overlaid runtime badge state onto it.
+ * `dot` is never authored in NAV_SECTIONS — it only ever comes from a
+ * `badgeSource` resolver.
+ */
+export type ResolvedNavItem = NavItem & { dot?: boolean }
+
+/** Runtime state a `badgeSource` resolver can report for an item. */
+export interface NavBadgeState {
+  /** Show the unseen dot. */
+  dot?: boolean
+  /** Hide the item entirely — it has nothing worth navigating to. */
+  hidden?: boolean
+}
+
+/**
+ * Overlay runtime badge state onto the static config.
+ *
+ * Lives here rather than in the sidebar component so it stays a pure
+ * function over plain data — importable by tests without dragging the
+ * browser-side React tree in behind it.
+ *
+ * An item whose source reports `hidden` drops out; one reporting `dot`
+ * gets the unseen marker; items with no `badgeSource` pass through
+ * untouched. A source that is missing entirely falls OPEN (item shown),
+ * so a fork that deletes a resolver gets a working link rather than a
+ * silently unreachable route.
+ */
+export function applyBadges(
+  items: NavItem[],
+  badges: Record<string, NavBadgeState>
+): ResolvedNavItem[] {
+  return items.flatMap((item) => {
+    if (!item.badgeSource) return [item]
+    const state = badges[item.badgeSource]
+    if (state?.hidden) return []
+    return [{ ...item, dot: state?.dot === true }]
+  })
 }
 
 export interface NavSection {
@@ -118,6 +197,9 @@ export const NAV_SECTIONS: NavSection[] = [
       { to: '/dashboard/jobs', label: 'Batch jobs', icon: Stack, feature: 'batchTasks' },
       { to: '/dashboard/findings', label: 'Findings', icon: Lightbulb, feature: 'findings' },
       { to: '/dashboard/projects', label: 'Projects', icon: Kanban },
+      // Hides itself until the first release note is published — see
+      // NavBadgeSource. Nothing to configure in a fresh fork.
+      { to: '/dashboard/updates', label: "What's new", icon: Megaphone, badgeSource: 'updates' },
       { to: '/dashboard/spaces', label: 'Spaces', icon: Users, feature: 'spaces' },
       { to: '/dashboard/routines', label: 'Routines', icon: Repeat },
     ],
@@ -177,7 +259,13 @@ export const NAV_SECTIONS: NavSection[] = [
       { to: '/dashboard/components', label: 'Components', icon: PuzzlePiece },
       { to: '/dashboard/analytics-demo', label: 'Analytics demo', icon: ChartLine },
       { to: '/dashboard/style-guide', label: 'Style guide', icon: Palette },
-      { to: '/dashboard/voice-example', label: 'Voice example', icon: Microphone, feature: 'voiceAgent', badge: 'Beta' },
+      {
+        to: '/dashboard/voice-example',
+        label: 'Voice example',
+        icon: Microphone,
+        feature: 'voiceAgent',
+        badge: 'Beta',
+      },
       {
         to: '/dashboard/video-example',
         label: 'Video example',
@@ -186,7 +274,13 @@ export const NAV_SECTIONS: NavSection[] = [
         badge: 'Beta',
       },
       { to: '/dashboard/kanban-demo', label: 'Kanban demo', icon: Kanban, feature: 'kanbanDemo' },
-      { to: '/dashboard/think-pilot', label: 'Think pilot', icon: Robot, feature: 'thinkPilot', badge: 'Beta' },
+      {
+        to: '/dashboard/think-pilot',
+        label: 'Think pilot',
+        icon: Robot,
+        feature: 'thinkPilot',
+        badge: 'Beta',
+      },
     ],
   },
 ]
