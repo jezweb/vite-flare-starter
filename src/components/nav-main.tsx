@@ -42,14 +42,24 @@ function NavBadge({ children }: { children: React.ReactNode }) {
 /**
  * Unseen marker for a nav item fed by a runtime `badgeSource` — a plain
  * dot, not a count. It says "there is something here you haven't looked
- * at" and nothing more, which is all a changelog warrants. Stays visible
- * when the sidebar collapses to icons (that is exactly when the label is
- * gone and the dot is the only signal left).
+ * at" and nothing more, which is all a changelog warrants.
+ *
+ * Two constraints from SidebarMenuButton, both easy to trip over:
+ *
+ * 1. It renders as a `<div>`, NOT a `<span>`. The button carries
+ *    `[&>span:last-child]:truncate`, so a trailing span would take the
+ *    truncate for itself and leave a long label to overflow instead of
+ *    ellipsing.
+ * 2. It hides in icon-collapsed mode, like NavBadge does. The collapsed
+ *    button is `size-8` with `p-2` and `overflow-hidden` — a 16px icon
+ *    fills it, so a dot would simply be clipped. Collapsed sidebars
+ *    therefore show no unseen signal; the tooltip and the expanded
+ *    sidebar carry it.
  */
 function NavDot() {
   return (
-    <span
-      className="ml-1 size-1.5 shrink-0 rounded-full bg-primary"
+    <div
+      className="ml-1 size-1.5 shrink-0 rounded-full bg-primary group-data-[collapsible=icon]:hidden"
       aria-label="unread"
       role="status"
     />
