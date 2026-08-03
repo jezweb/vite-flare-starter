@@ -31,6 +31,7 @@ import { useAgentCatalog } from '@/client/modules/routines/hooks/useAgentCatalog
 import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
 import { useBuilderMode } from '@/client/lib/builder-mode'
+import { WhatsNewBanner } from '@/client/modules/updates/components/WhatsNewBanner'
 
 interface Approval {
   id: string
@@ -89,6 +90,10 @@ export function DashboardPage() {
       <div data-tour="home-welcome">
         <PageHeader title={greeting} subtitle={subtitle} docTitle="Home" />
       </div>
+
+      {/* Only ever rendered for an entry flagged `highlight`, and only
+          until dismissed — see WhatsNewBanner. */}
+      <WhatsNewBanner />
 
       <OnboardingChecklist />
 

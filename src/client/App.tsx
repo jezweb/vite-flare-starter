@@ -76,6 +76,9 @@ const ArtifactsPage = lazy(() =>
 const ActivityPage = lazy(() =>
   import('./modules/activity/pages/ActivityPage').then((m) => ({ default: m.ActivityPage }))
 )
+const UpdatesPage = lazy(() =>
+  import('./modules/updates/pages/UpdatesPage').then((m) => ({ default: m.UpdatesPage }))
+)
 const FilesPage = lazy(() =>
   import('./modules/files/pages/FilesPage').then((m) => ({ default: m.FilesPage }))
 )
@@ -344,6 +347,9 @@ function App() {
 
                   {/* Activity log */}
                   <Route path="activity" element={<ActivityPage />} />
+
+                  {/* What's New — release notes */}
+                  <Route path="updates" element={<UpdatesPage />} />
 
                   {/* Files */}
                   <Route path="files" element={<FilesPage />} />
