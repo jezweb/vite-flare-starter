@@ -182,6 +182,13 @@ never shows a client an empty "No updates yet" room. That is better than
 a feature flag, because it needs no configuration and it self-corrects
 the moment the first entry lands.
 
+One thing to get right: this endpoint is fetched by the sidebar, so it
+runs on every page in the app, and `/api/*` goes through `rateLimiter`
+(`src/server/index.ts:257`). Give it a generous TanStack Query
+`staleTime`, in the order of minutes. Release notes do not need to be
+fresh to the second, and a badge query that burns a user's rate limit
+budget would be an own goal.
+
 Writes use the existing **`adminMiddleware`** (`src/server/middleware/admin.ts`),
 which already does the env allowlist, the DB role check, and the
 `emailVerified` trap. Add `'updates:write'` and `'updates:read'` to
@@ -366,12 +373,13 @@ were already fixed.
 It shares a word with this proposal and nothing else. Bundling them
 would tie the changelog schema to the deploy pipeline for no benefit.
 
-It is worth doing on its own, and it is small: inject a `BUILD_ID` at
-build time, return it from a health route, poll on `visibilitychange`
-plus a slow interval, silently reload when the tab is backgrounded and
-idle, toast when it is not. The starter has no `/api/health` build id
-today, so that plumbing is genuinely new. It also already has `sonner`,
-so it would not need Crosbe's hand-built toast component.
+It is worth doing on its own, and it is smaller than it looks. The
+starter already has `/api/health` (`src/server/index.ts:260`), it just
+returns dependency checks and no version. So the work is: inject a
+`BUILD_ID` at build time, add it to that existing response, poll on
+`visibilitychange` plus a slow interval, silently reload when the tab is
+backgrounded and idle, toast when it is not. `sonner` is already a
+dependency, so it would not need Crosbe's hand-built toast component.
 
 Say the word and it gets its own proposal.
 
