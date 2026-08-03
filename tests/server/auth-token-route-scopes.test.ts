@@ -9,6 +9,17 @@ describe('API token route scopes', () => {
       'notifications:write',
     ])
     expect(getApiTokenRouteScopes('POST', '/api/chat/extract')).toEqual(['chat:write'])
+    expect(getApiTokenRouteScopes('GET', '/api/updates/entries')).toEqual(['updates:read'])
+    expect(getApiTokenRouteScopes('POST', '/api/updates/entries')).toEqual(['updates:write'])
+    expect(getApiTokenRouteScopes('PUT', '/api/updates/seen')).toEqual(['updates:write'])
+  })
+
+  it('keeps updates PATCH and DELETE session-only', () => {
+    // A deploy amends by re-POSTing the same releaseKey, so automation
+    // never needs an arbitrary entry id. A leaked deploy token therefore
+    // cannot rewrite or erase published history.
+    expect(getApiTokenRouteScopes('PATCH', '/api/updates/entries/abc')).toBeNull()
+    expect(getApiTokenRouteScopes('DELETE', '/api/updates/entries/abc')).toBeNull()
   })
 
   it('denies API token access for routes that have not been allow-listed', () => {
