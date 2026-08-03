@@ -29,11 +29,30 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from '@/components/ui/command'
-import { Moon, Sun, SignOut, GearSix, Chats, Kanban, Plus, Chat, Repeat, Plug, CheckSquare, Tray, Hash, FileMagnifyingGlass, Brain, Sparkle, ClockCounterClockwise } from '@phosphor-icons/react'
+import {
+  Moon,
+  Sun,
+  SignOut,
+  GearSix,
+  Chats,
+  Kanban,
+  Plus,
+  Chat,
+  Repeat,
+  Plug,
+  CheckSquare,
+  Tray,
+  Hash,
+  FileMagnifyingGlass,
+  Brain,
+  Sparkle,
+  ClockCounterClockwise,
+} from '@phosphor-icons/react'
 import { useTheme } from '@/client/components/theme-provider'
 import { authClient } from '@/client/lib/auth'
 import { apiClient } from '@/client/lib/api-client'
-import { NAV_SECTIONS } from '@/shared/config/nav'
+import { NAV_SECTIONS, applyBadges } from '@/shared/config/nav'
+import { useNavBadges } from '@/client/lib/nav-badges'
 import { features } from '@/shared/config/features'
 import { appConfig } from '@/shared/config/app'
 import { announceGlobalModalOpen, subscribeGlobalModal } from '@/client/lib/global-modals'
@@ -80,6 +99,12 @@ export function CommandPalette() {
   const deferredQuery = useDeferredValue(query)
   const navigate = useNavigate()
   const { theme, setTheme } = useTheme()
+
+  // Same runtime badge state the sidebar uses, so ⌘K cannot offer a
+  // destination the sidebar is deliberately hiding — on a fresh fork
+  // that would walk someone into an empty What's New page. Mounted under
+  // DashboardLayout, which is inside the root QueryClientProvider.
+  const navBadges = useNavBadges()
 
   // Conversation search — fires once the user has typed at least 2 chars.
   // Server endpoint already exists at GET /api/conversations/search?q=...
@@ -207,10 +232,12 @@ export function CommandPalette() {
   const NAV_DEDUP_BLOCKLIST = new Set(['/dashboard/inbox', '/dashboard/approvals'])
   const featureFlags = features as unknown as Record<string, boolean>
   const navItems = NAV_SECTIONS.flatMap((section) =>
-    section.items
-      .filter((item) => !item.feature || featureFlags[item.feature])
-      .filter((item) => !NAV_DEDUP_BLOCKLIST.has(item.to))
-      .map((item) => ({ ...item, section: section.label }))
+    applyBadges(
+      section.items
+        .filter((item) => !item.feature || featureFlags[item.feature])
+        .filter((item) => !NAV_DEDUP_BLOCKLIST.has(item.to)),
+      navBadges
+    ).map((item) => ({ ...item, section: section.label }))
   )
 
   return (
@@ -429,9 +456,7 @@ export function CommandPalette() {
               <CommandItem
                 value={`ask-ai ${deferredQuery}`}
                 onSelect={() =>
-                  runCommand(() =>
-                    navigate(`/dashboard/chat?new=1&q=${encodeURIComponent(query)}`)
-                  )
+                  runCommand(() => navigate(`/dashboard/chat?new=1&q=${encodeURIComponent(query)}`))
                 }
               >
                 <Sparkle className="mr-2 h-4 w-4" />
