@@ -31,6 +31,7 @@ VITE_FEATURE_ACTIVITY=false
 | **files** | R2 upload/download, multipart form handling, metadata in D1 | `server/modules/files/routes.ts` |
 | **activity** | Audit logging with pagination, entity history, stats aggregation | `server/modules/activity/routes.ts` |
 | **notifications** | In-app service, unread counts, bulk operations | `server/modules/notifications/routes.ts` |
+| **updates** | User-facing release notes ("What's New") — idempotent posts on `releaseKey` from the deploy path (`pnpm changelog:post`), quiet nav dot, and one dismissible banner for `highlight` entries only. Seen-state in `user_meta`, so it clears across devices. Nav item hides itself until the first entry is published. NOT `CHANGELOG.md` — that one is for fork maintainers, this one is for users | `server/modules/updates/routes.ts`, `client/modules/updates/README.md` |
 | **api-tokens** | Token generation, SHA-256 hashing, scope-based access | `server/modules/api-tokens/routes.ts` |
 | **feature-flags** | DB-backed **runtime** feature toggles, public/admin endpoints — a pattern to copy for your product's own flags. Deliberately separate from the build-time `VITE_FEATURE_*` module-visibility flags (`shared/config/features.ts`), which are the only layer the starter gates on. | `server/modules/feature-flags/routes.ts` |
 | **organization** | Single-row business settings with upsert | `server/modules/organization/routes.ts` |
@@ -369,7 +370,7 @@ for a worked example with bar + line charts.
   existing primitives' shape, NOT a config-blob component.
 - Document the use case + when-to-use in this table when it lands.
 
-This rule comes from `~/.claude/rules/trust-skills-not-elaborate-code.md`
+This rule comes from the `plan-and-build` skill
 applied to layouts: ship focused primitives, let pages compose them, only
 extract a generic component when 3+ pages prove the same shape.
 
@@ -459,7 +460,7 @@ sub-routine timers or to ingest external events into a specific agent.
 For the user-facing pattern of "watch X, emit findings", **start with a
 Routine**.
 
-The `~/.claude/rules/trust-skills-not-elaborate-code.md` user-global
+The the `plan-and-build` skill user-global
 rule applies: before designing a config DSL or rules engine for an AI
 feature, ask whether channels-as-tools + a markdown skill covers it.
 The answer is almost always yes.

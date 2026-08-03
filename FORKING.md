@@ -319,6 +319,24 @@ Make these updates to your fork's CLAUDE.md:
 3. Update author/maintainer information
 4. Remove or update GitHub links
 
+### Step 5.3: Decide about the What's New feed
+
+`/dashboard/updates` gives your app user-facing release notes, posted
+from your deploy path with `pnpm changelog:post`. It needs no setup:
+until you publish an entry the nav item does not render, so a fresh fork
+never shows an empty page.
+
+Keep it if you will actually write release notes — it is one command at
+deploy time, and it is the only place in the app that tells users
+anything changed. Drop it if your app has a single user who is also the
+person deploying it.
+
+To remove it: delete `src/server/modules/updates/` and
+`src/client/modules/updates/`, then the references in `App.tsx`,
+`nav.ts`, `src/server/db/schema.ts`, `src/server/index.ts`, and
+`<WhatsNewBanner />` in `DashboardPage.tsx`. Details in
+[`src/client/modules/updates/README.md`](./src/client/modules/updates/README.md).
+
 ---
 
 ## Part 6: Apply Database Migrations

@@ -11,6 +11,54 @@ decide about the rest at your own pace.
 
 ---
 
+## Unreleased — What's New feed (additive)
+
+Nothing breaks. The feature is inert in a fork that ignores it: with no
+entries published the nav item does not render and the routes sit
+unused. Three things to know if you *do* want it.
+
+### 1. Run the migration
+
+`20260803015122_changelog_entries.sql` adds one table. Timestamp
+prefix, so it will not collide with your own migrations:
+
+```bash
+pnpm db:migrate:remote
+```
+
+### 2. `src/shared/config/nav.ts` is the one likely conflict
+
+This is the file FORKING.md tells you to rewrite, so most forks have
+diverged and `git pull` will conflict here. Take **your** version and
+paste this item wherever it suits your sidebar:
+
+```ts
+{ to: '/dashboard/updates', label: "What's new", icon: Megaphone, badgeSource: 'updates' },
+```
+
+`Megaphone` comes from `@phosphor-icons/react`. `badgeSource` is new on
+`NavItem`: the config stays plain serialisable data, and
+`src/client/lib/nav-badges.ts` resolves the name to a hook inside the
+sidebar renderer. That indirection is deliberate — the CommandPalette
+reads `nav.ts` directly, so it must not grow hooks or components.
+
+If you skip the nav entry entirely, `/dashboard/updates` still works as
+a direct link.
+
+### 3. Posting entries needs an admin-owned token
+
+`pnpm changelog:post` wants `APP_URL` + `CHANGELOG_TOKEN`. The token
+needs the new `updates:write` scope **and** must belong to a user with
+the `admin` role — API tokens are deny-by-default in this starter, and
+`adminMiddleware` runs on top of the scope check. A token with the scope
+but a non-admin owner gets a 403, which is the intended behaviour, not a
+bug.
+
+Deliberately not wired into `pnpm deploy`: posting on every deploy fills
+the feed with entries nobody wrote well.
+
+---
+
 ## v2.1.0 — platform migrations + agents adoption (2026-07-19)
 
 Additive features (display kit, agents-as-tools, pilots) won't touch
