@@ -331,10 +331,21 @@ deploy time, and it is the only place in the app that tells users
 anything changed. Drop it if your app has a single user who is also the
 person deploying it.
 
-To remove it: delete `src/server/modules/updates/` and
-`src/client/modules/updates/`, then the references in `App.tsx`,
-`nav.ts`, `src/server/db/schema.ts`, `src/server/index.ts`, and
-`<WhatsNewBanner />` in `DashboardPage.tsx`. Details in
+**To turn it off:** `VITE_FEATURE_UPDATES=false`. Nav item and route go,
+code stays as reference. This is the option to reach for.
+
+**To delete it outright**, remove all of: `src/server/modules/updates/`,
+`src/client/modules/updates/`, **`src/client/lib/nav-badges.ts`**,
+`tests/shared/nav-badges.test.ts`, `tests/server/modules/updates/`,
+`scripts/changelog-post.mjs` (+ its `package.json` script), and the
+references in `App.tsx`, `nav.ts`, `app-sidebar.tsx`,
+`CommandPalette.tsx`, `src/server/db/schema.ts`, `src/server/index.ts`,
+and `<WhatsNewBanner />` in `DashboardPage.tsx`.
+
+`nav-badges.ts` and the two components that call it are the ones people
+miss — each imports into the deleted module, so skipping them fails the
+build. The leftover `updates:*` scope strings and feature flag are inert
+and can wait. Full list:
 [`src/client/modules/updates/README.md`](./src/client/modules/updates/README.md).
 
 ---

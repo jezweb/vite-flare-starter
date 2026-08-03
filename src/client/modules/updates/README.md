@@ -54,7 +54,7 @@ Three tiers, quietest first:
 | Unread entry with `highlight` | One dismissible banner on the dashboard home |
 
 Hiding is deliberately about a *successful* empty read. If the summary
-request fails the item stays visible: a transient rate-limit or network
+request fails the item stays visible: a transient network
 blip must not remove working navigation for the rest of the session.
 
 Two things the hiding does NOT cover, both fine and both worth knowing
@@ -92,9 +92,36 @@ past the newest published entry.
 
 ## Removing it from a fork
 
-Delete both module directories, the `/dashboard/updates` route in
-`App.tsx`, the nav entry in `src/shared/config/nav.ts`, the
-`changelogEntries` line in `src/server/db/schema.ts`, the `app.route`
-line in `src/server/index.ts`, and `<WhatsNewBanner />` in
-`DashboardPage.tsx`. Leave the table; an unused table costs nothing and
+Easier first option: set `VITE_FEATURE_UPDATES=false`. The nav item and
+the route disappear and the code stays as a reference, same as every
+other optional module.
+
+To delete it outright, remove **all** of these. The first four are the
+ones that break the build if you miss them, because each holds an import
+into the module you just deleted:
+
+- `src/server/modules/updates/`
+- `src/client/modules/updates/`
+- `src/client/lib/nav-badges.ts` — imports `useUpdatesSummary`; deleting
+  the module without this leaves a dangling import
+- `src/components/app-sidebar.tsx` — the `useNavBadges` import and its
+  two uses; and `src/client/components/CommandPalette.tsx` likewise
+- `tests/shared/nav-badges.test.ts` and `tests/server/modules/updates/`
+- `scripts/changelog-post.mjs` and the `changelog:post` script in
+  `package.json`
+- the `/dashboard/updates` route in `src/client/App.tsx`
+- the nav entry in `src/shared/config/nav.ts` (and `badgeSource` /
+  `NavBadgeSource` / `applyBadges` if nothing else uses them)
+- the `changelogEntries` export in `src/server/db/schema.ts`
+- the `app.route('/api/updates', …)` line and its import in
+  `src/server/index.ts`
+- `<WhatsNewBanner />` in `src/client/pages/DashboardPage.tsx`
+
+Harmless to leave behind: the `updates:*` entries in
+`src/shared/config/scopes.ts` and `API_TOKEN_ROUTE_SCOPES`, and the
+`updates` flag in `features.ts`. They are inert once the routes are gone
+— unused scope strings and a dead allowlist row, no import, no build
+error. Tidy them when convenient.
+
+Leave the `changelog_entries` table. An unused table costs nothing and
 dropping it needs a migration.
