@@ -12,6 +12,7 @@ import { PageContainer } from '@/components/ui/page-container'
 import { PageHeader } from '@/components/ui/page-header'
 import { PageLoading } from '@/client/components/PageState'
 import { EmptyState } from '@/client/components/EmptyState'
+import { ListRowGroup } from '@/components/ui/list-row'
 import { useSession } from '@/client/lib/auth'
 import { UpdateCard } from '../components/UpdateCard'
 import { UpdateEditor } from '../components/UpdateEditor'
@@ -96,7 +97,7 @@ export function UpdatesPage() {
       )}
 
       {!isLoading && entries.length > 0 && (
-        <div className="space-y-3">
+        <ListRowGroup>
           {entries.map((entry) => (
             <UpdateCard
               key={entry.id}
@@ -108,7 +109,7 @@ export function UpdatesPage() {
               }
             />
           ))}
-        </div>
+        </ListRowGroup>
       )}
     </PageContainer>
   )
