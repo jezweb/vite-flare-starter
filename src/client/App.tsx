@@ -1,12 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react'
-import {
-  BrowserRouter,
-  Routes,
-  Route,
-  Navigate,
-  useNavigate,
-  useSearchParams,
-} from 'react-router'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useSearchParams } from 'react-router'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { ScrollToTop } from './components/shared/ScrollToTop'
 import { ErrorBoundary } from './components/shared/ErrorBoundary'
@@ -15,7 +8,7 @@ import { ProtectedRoute } from './components/shared/ProtectedRoute'
 import { PublicOnlyRoute } from './components/shared/PublicOnlyRoute'
 import { ThemeURLHandler } from './components/ThemeURLHandler'
 import { BuilderModeProvider } from './lib/builder-mode'
-import { Microphone, Camera, Kanban, Robot } from '@phosphor-icons/react'
+import { Microphone, Camera, Kanban, Robot, Megaphone } from '@phosphor-icons/react'
 import { Spinner } from '@/components/ui/spinner'
 import { features } from '@/shared/config/features'
 import { EmptyState } from './components/EmptyState'
@@ -348,8 +341,24 @@ function App() {
                   {/* Activity log */}
                   <Route path="activity" element={<ActivityPage />} />
 
-                  {/* What's New — release notes */}
-                  <Route path="updates" element={<UpdatesPage />} />
+                  {/* What's New — user-facing release notes. On by
+                default; the nav item hides itself until the first entry
+                is published, so the flag is for forks that have decided
+                they will never write release notes at all. */}
+                  <Route
+                    path="updates"
+                    element={
+                      <FeatureGatedPage
+                        enabled={features.updates}
+                        icon={Megaphone}
+                        title="What's New is turned off"
+                        description="Release notes let a deploy leave your users a short note about what changed, posted with pnpm changelog:post. Turn it back on to use the page."
+                        envVar="VITE_FEATURE_UPDATES"
+                      >
+                        <UpdatesPage />
+                      </FeatureGatedPage>
+                    }
+                  />
 
                   {/* Files */}
                   <Route path="files" element={<FilesPage />} />

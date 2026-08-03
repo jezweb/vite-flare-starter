@@ -199,7 +199,13 @@ export const NAV_SECTIONS: NavSection[] = [
       { to: '/dashboard/projects', label: 'Projects', icon: Kanban },
       // Hides itself until the first release note is published — see
       // NavBadgeSource. Nothing to configure in a fresh fork.
-      { to: '/dashboard/updates', label: "What's new", icon: Megaphone, badgeSource: 'updates' },
+      {
+        to: '/dashboard/updates',
+        label: "What's new",
+        icon: Megaphone,
+        feature: 'updates',
+        badgeSource: 'updates',
+      },
       { to: '/dashboard/spaces', label: 'Spaces', icon: Users, feature: 'spaces' },
       { to: '/dashboard/routines', label: 'Routines', icon: Repeat },
     ],

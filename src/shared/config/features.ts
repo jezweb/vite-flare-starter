@@ -142,6 +142,16 @@ export const features = {
    */
   kanbanDemo: import.meta.env['VITE_FEATURE_KANBAN_DEMO'] === 'true',
 
+  /**
+   * What's New — user-facing release notes at /dashboard/updates.
+   *
+   * Default ON, but a fresh fork sees nothing until it publishes its
+   * first entry: the nav item hides itself while the feed is empty. So
+   * this flag is for forks that have decided they will never write
+   * release notes, not for hiding an empty page.
+   */
+  updates: isEnabled('VITE_FEATURE_UPDATES'),
+
   // ── UI Features ────────────────────────────────────────────────────────
 
   /** Theme/colour picker in preferences */
