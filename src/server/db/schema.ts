@@ -26,6 +26,9 @@ export {
   userNotificationsRelations,
 } from '@/server/modules/notifications/db/schema'
 
+// Updates module schemas ("What's New" release notes)
+export { changelogEntries } from '@/server/modules/updates/db/schema'
+
 // Files module schemas
 export { files } from '@/server/modules/files/db/schema'
 

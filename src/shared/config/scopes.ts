@@ -27,6 +27,12 @@ export const API_TOKEN_SCOPES = {
 
   // AI features
   'ai:use': 'Use AI features (generation, models)',
+
+  // What's New / release notes
+  'updates:read': 'Read release notes',
+  // Covers marking the feed as seen for any user; posting and editing
+  // entries additionally requires the token's owner to be an admin.
+  'updates:write': 'Mark release notes seen, and post them if you are an admin',
 } as const
 
 // Type for valid scope strings
@@ -39,6 +45,7 @@ export const ALL_SCOPES = Object.keys(API_TOKEN_SCOPES) as ApiTokenScope[]
 export const SCOPE_CATEGORIES = {
   'Profile & Settings': ['profile:read', 'profile:write', 'settings:read', 'settings:write'],
   'Activity & Notifications': ['activity:read', 'notifications:read', 'notifications:write'],
+  'Release notes': ['updates:read', 'updates:write'],
   'AI & Chat': ['chat:read', 'chat:write', 'ai:use'],
 } as const satisfies Record<string, readonly ApiTokenScope[]>
 

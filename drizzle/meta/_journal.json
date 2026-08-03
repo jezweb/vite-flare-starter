@@ -400,6 +400,13 @@
       "when": 1784274049967,
       "tag": "20260717074049_artifacts_versioned",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "6",
+      "when": 1785721882062,
+      "tag": "20260803015122_changelog_entries",
+      "breakpoints": true
     }
   ]
 }

@@ -80,6 +80,15 @@ const API_TOKEN_ROUTE_SCOPES: Array<{
     scopes: ['notifications:write'],
   },
   { method: 'DELETE', pattern: /^\/api\/notifications(?:\/.*)?$/, scopes: ['notifications:write'] },
+  // Release notes. The POST is the deploy-time path (see
+  // scripts/changelog-post.mjs); adminMiddleware still applies on top,
+  // so the token's OWNER must be an admin — the scope alone is not enough.
+  // PATCH and DELETE are deliberately absent: a deploy amends an entry by
+  // re-POSTing the same releaseKey, so a leaked deploy token cannot reach
+  // arbitrary entry ids to rewrite or erase published history.
+  { method: 'GET', pattern: /^\/api\/updates\/(?:entries|summary)\/?$/, scopes: ['updates:read'] },
+  { method: 'POST', pattern: /^\/api\/updates\/entries\/?$/, scopes: ['updates:write'] },
+  { method: 'PUT', pattern: /^\/api\/updates\/seen\/?$/, scopes: ['updates:write'] },
   { method: 'GET', pattern: /^\/api\/ai\/models\/?$/, scopes: ['ai:use'] },
   { method: 'POST', pattern: /^\/api\/ai\/test\/?$/, scopes: ['ai:use'] },
   { method: 'GET', pattern: /^\/api\/chat\/(?:usage|catalog)\/?$/, scopes: ['chat:write'] },

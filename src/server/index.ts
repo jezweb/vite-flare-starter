@@ -14,6 +14,7 @@ import organizationRoutes from './modules/organization/routes'
 import activityRoutes from './modules/activity/routes'
 import { featuresPublicRoutes, featuresAdminRoutes } from './modules/feature-flags/routes'
 import notificationsRoutes from './modules/notifications/routes'
+import updatesRoutes from './modules/updates/routes'
 import chatRoutes from './modules/chat/routes'
 import chatArtifactsRoutes from './modules/artifacts/routes'
 import audioRoutes from './modules/audio/routes'
@@ -365,6 +366,7 @@ app.route('/api/features', featuresPublicRoutes)
 app.route('/api/admin/feature-flags', featuresAdminRoutes)
 app.route('/api/admin', adminRoutes)
 app.route('/api/notifications', notificationsRoutes)
+app.route('/api/updates', updatesRoutes)
 app.route('/api/chat/artifacts', chatArtifactsRoutes)
 app.route('/api/chat', chatRoutes)
 app.route('/api/audio', audioRoutes)
