@@ -119,10 +119,11 @@ app.get(
 /**
  * GET /api/updates/summary
  *
- * Fetched by the sidebar, so it runs on every page in the app. Keep it
- * to these three cheap queries, and keep a multi-minute staleTime on the
- * client — /api/* is rate limited and release notes do not need to be
- * fresh to the second.
+ * Fetched by the sidebar and the command palette, so it runs on every
+ * page in the app. Keep it to these three cheap queries, and keep a
+ * multi-minute staleTime on the client — release notes do not need to be
+ * fresh to the second, and this is the one endpoint every navigation
+ * touches.
  *
  * `total` is what lets the nav item hide itself entirely on a fresh
  * fork, so a client never sees an empty "no updates yet" room.

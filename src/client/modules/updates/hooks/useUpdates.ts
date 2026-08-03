@@ -1,10 +1,15 @@
 /**
  * useUpdates — TanStack Query hooks for the What's New feed.
  *
- * The summary query is fetched by the sidebar, so it runs on every page
- * in the app and goes through the `/api/*` rate limiter. Hence the long
- * staleTime: release notes do not need to be fresh to the second, and a
- * badge query that burns a user's rate-limit budget would be an own goal.
+ * The summary query is fetched by the sidebar and the command palette, so
+ * it runs on every page in the app. Hence the long staleTime: release
+ * notes do not need to be fresh to the second, and re-fetching a badge
+ * count on every navigation is a round trip for nothing.
+ *
+ * (It is NOT rate limited. `rateLimiter` runs on `/api/*` but only acts
+ * on endpoints listed in its own config, and this one is not listed —
+ * see `server/middleware/rate-limit.ts`. The staleTime is about wasted
+ * requests, not about a budget.)
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/client/lib/api-client'
