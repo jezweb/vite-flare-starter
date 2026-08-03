@@ -1,8 +1,38 @@
 # What's New: a release-notes surface for the starter
 
-**Status:** proposal, nothing built
+**Status:** approved and built, 2026-08-03
 **Date:** 2026-08-03
 **Reference:** the Updates page Marcus built in `crosbe-ai`
+
+---
+
+## Correction, added after approval
+
+**Everything this document says about the Crosbe implementation describes
+a stale local checkout of `~/Documents/crosbe-ai`, not what is running in
+production.** The live version (Crosbe issue #1285) is newer in the two
+places that matter most here:
+
+- It **is a modal**, showing entries batched since you last looked. Jez's
+  memory of "a what's-new modal" was accurate for the live app; this
+  document's claim that the real implementation is only a page plus a
+  sidebar dot was wrong, and was an artefact of reading an old checkout.
+- Its seen-state is **a per-user watermark in KV**, RBAC-filtered
+  server-side. So the `localStorage` criticism below has already been
+  fixed upstream. Marcus's live system and this proposal arrived at the
+  same conclusion independently, which is the best kind of validation the
+  design could have had: server-side per-user seen-state is now doubly
+  justified, and it is what shipped.
+
+The per-entry defects called out under "What not to copy" were real in
+the checkout that was read. Treat them as reasons the files could not be
+pasted across as-is, **not** as a characterisation of Marcus's current
+work.
+
+Jez approved the shape below knowing the difference, so the built feature
+is page + dot + highlight banner and no modal. The disagreement with
+Crosbe is a deliberate product call about this starter's audience, not a
+correction of theirs.
 
 ---
 
@@ -21,12 +51,20 @@ Three calls up front:
    the rest of the time. That is the refinement over a plain dot, and it
    is the answer to "should it be a modal".
 
+   Note this is a **deliberate divergence from live Crosbe, which does
+   use a modal** (see the correction above). That is a defensible choice
+   for their app, where the audience is a known set of engaged users and
+   batching "everything since you last looked" into one interruption is
+   worth it. A starter is forked into client apps whose users did not ask
+   for our release notes, so the default should err quieter. A fork that
+   wants the modal can have it off the same `highlight` flag.
+
 2. **Ship the changelog half. Leave the feature-request voting board
    out.** Reasoning below, it is a real opinion and not a hedge.
 
-3. **Do not port the Crosbe files.** Three defects would come across
-   with them, and the UI violates the starter's own DESIGN.md. Detail in
-   "What not to copy".
+3. **Do not port the checked-out Crosbe files.** They violate the
+   starter's own DESIGN.md and the checkout carried three behavioural
+   defects. Detail in "What not to copy".
 
 Effort for the core: roughly **2 to 2.5 hours of Claude time**.
 
@@ -66,11 +104,13 @@ staff. What's New is a users' document. They are two documents with two
 audiences, and generating one from the other produces a bad version of
 both.
 
-Worth noting that Crosbe half-discovered this. Its `is_internal` flag
-exists because dev and infra entries were landing in the user-facing
-feed and had to be hidden after the fact. Better to keep the two
-documents separate by design than to build a filter for a mixture that
-should not exist.
+The checked-out Crosbe code half-discovered this: its `is_internal` flag
+exists because dev and infra entries were landing in the user-facing feed
+and had to be hidden after the fact. Better to keep the two documents
+separate by design than to build a filter for a mixture that should not
+exist. (Live Crosbe filters server-side by RBAC, which is a stronger
+version of the same instinct — the mixture is handled by *who is asking*
+rather than by a per-row flag.)
 
 So: **D1 is the source of truth**, with three ways in.
 
@@ -85,9 +125,10 @@ So: **D1 is the source of truth**, with three ways in.
 **The post must be idempotent.** Give the table a `releaseKey` unique
 column and have the deploy path pass something stable, for example the
 version tag or the commit sha. Re-running a deploy then updates the
-existing entry instead of adding a duplicate. Crosbe has no guard here
-at all, it is a plain `INSERT` against an autoincrement id, so a
-re-deploy silently double-posts.
+existing entry instead of adding a duplicate. The checked-out Crosbe code
+has no guard here at all, it is a plain `INSERT` against an autoincrement
+id, so a re-deploy silently double-posts. (Not checked against live
+Crosbe — assume nothing either way about whether they hit this.)
 
 ---
 
@@ -145,7 +186,7 @@ changelog_entries
   updatedAt     integer timestamp
 ```
 
-Deliberate differences from Crosbe:
+Deliberate differences from the checked-out Crosbe schema:
 
 - **`publishedAt` nullable instead of `is_internal`.** Draft versus
   published is the distinction that was actually wanted. An agent can
@@ -155,7 +196,7 @@ Deliberate differences from Crosbe:
 - **`highlight`** is what separates a quiet dot from a banner.
 - **`releaseKey`** for idempotency.
 - Text uuid primary key and timestamp integers, matching the rest of the
-  starter's tables rather than Crosbe's autoincrement ints.
+  starter's tables rather than the checkout's autoincrement ints.
 
 Register in the barrel at `src/server/db/schema.ts` (one export line),
 then `pnpm db:generate`. Migrations are timestamp-prefixed already, so
@@ -204,15 +245,23 @@ component. In a fork that is wrong in two places at once.
 Store it server-side in the existing `user_meta` table under the key
 `updates:last-seen`, value `{ lastSeenAt }`.
 
-Crosbe uses `localStorage`, which has three problems: the badge comes
-back on every device, it is lost on a cache clear, and, most
+The **stale checkout** used `localStorage`, which has three problems: the
+badge comes back on every device, it is lost on a cache clear, and, most
 importantly, `markChangelogSeen()` writes `new Date().toISOString()`
 rather than the newest entry the user actually saw. An entry published
 while the page is open gets marked seen without ever being rendered.
 Write the newest rendered entry's `publishedAt` instead.
 
-Also note `useHasNewChangelog()` reads `localStorage` during render
-rather than in an effect, so it is not reactive. Do not reproduce that.
+In that same checkout `useHasNewChangelog()` reads `localStorage` during
+render rather than in an effect, so it is not reactive. Do not reproduce
+that.
+
+**Live Crosbe has already moved past this** — it keeps a per-user
+watermark in KV, server-side. Two systems reaching the same answer from
+opposite directions is the strongest evidence available that server-side
+seen-state is the right call, so this section stands as designed. The
+only correction is to who gets the criticism: the `localStorage`
+approach, not Marcus's current code.
 
 ### Client
 
@@ -248,11 +297,17 @@ Three tiers, quietest first:
   overlay, not blocking, no backdrop. Dismiss marks seen. It appears
   once and never returns for that entry.
 
-The reason not to use a modal is that a modal spends the user's
-attention on our schedule instead of theirs, and it cannot tell a patch
-release from a real one. The `highlight` flag is what buys the right to
-interrupt, and because the author has to set it deliberately, it stays
-rare.
+The reason not to use a modal *by default* is that a modal spends the
+user's attention on our schedule instead of theirs, and it cannot tell a
+patch release from a real one. The `highlight` flag is what buys the
+right to interrupt, and because the author has to set it deliberately, it
+stays rare.
+
+That is a default, not a verdict on modals. Live Crosbe uses one and it
+suits them: a known, engaged audience, and one batched interruption
+beats a dot they might never notice. The calculus flips for a starter
+because a fork's users never opted into hearing from us. Same `highlight`
+flag would drive a modal in a fork that wants one.
 
 ### Nav badge plumbing, the one fiddly part
 
@@ -261,9 +316,10 @@ rare.
 as a Kumo MenuBadge, not a live value. A live dot needs the Sidebar
 renderer to overlay runtime state onto the config.
 
-Crosbe solved this by having the Sidebar call `useHasNewChangelog()` and
-attach a badge for the one path `/updates`. That works and is about six
-lines, but it hardcodes a route into the layout component.
+The checked-out Crosbe code solved this by having the Sidebar call
+`useHasNewChangelog()` and attach a badge for the one path `/updates`.
+That works and is about six lines, but it hardcodes a route into the
+layout component.
 
 Cleaner for a starter: add an optional `badgeSource?: 'updates'` to
 `NavItem`, and have the Sidebar resolve known sources through a small
@@ -276,27 +332,33 @@ deliberately rather than discovering it mid-build.
 
 ## What not to copy
 
-The Crosbe page cannot be pasted in. It conflicts with the starter's
+Everything in this section describes **the stale checkout** (see the
+correction at the top). It is the reason the estimate says "port" rather
+than "copy", and it would be true of any app's files, because these are
+house-style conflicts rather than faults.
+
+The checked-out page cannot be pasted in. It conflicts with the starter's
 DESIGN.md in three ways:
 
-- **Icons.** Crosbe imports `lucide-react`. The starter moved to
-  Phosphor at v2.0.0 and lucide is not a dependency.
-- **Colours.** Crosbe uses raw palette classes throughout, for example
+- **Icons.** It imports `lucide-react`. The starter moved to Phosphor at
+  v2.0.0 and lucide is not a dependency here.
+- **Colours.** It uses raw palette classes throughout, for example
   `bg-blue-500/10 text-blue-600 dark:text-blue-400`. DESIGN.md calls raw
   palette classes a smell and bans `dark:` colour variants outright,
   since every token declares both modes via `light-dark()`. Category
   pills should use the status tint tokens.
-- **Page anatomy.** Crosbe hand-rolls its header, tab bar, loading
-  spinner, and empty state. The starter has `PageHeader`,
-  `PageContainer`, `PageLoading` and `EmptyState` for exactly these, and
-  the module template enforces them.
+- **Page anatomy.** It hand-rolls its header, tab bar, loading spinner,
+  and empty state. The starter has `PageHeader`, `PageContainer`,
+  `PageLoading` and `EmptyState` for exactly these, and the module
+  template enforces them.
 
-Plus the three behavioural defects already noted: non-idempotent posts,
-seen-state written as "now", and a non-reactive localStorage read.
+Plus the three behavioural defects noted earlier: non-idempotent posts,
+seen-state written as "now", and a non-reactive localStorage read. The
+last two of those are already fixed in live Crosbe.
 
-None of this is a criticism of the Crosbe implementation, which is doing
-its job in its own app. It is the reason the estimate below says "port"
-rather than "copy".
+None of this is a criticism of Crosbe, which is doing its job in its own
+app against its own design system, and whose live version had solved the
+seen-state problem before this document was written.
 
 ---
 
@@ -365,7 +427,7 @@ Not "tests pass". The literal checks:
 
 ## The stale-bundle toast is a different feature
 
-`UpdateToast.tsx` in Crosbe is not part of this. It solves "the browser
+`UpdateToast.tsx` in the Crosbe checkout is not part of this. It solves "the browser
 is running an old bundle after a deploy", driven by a build id polled
 from `/api/health`, and its value is that users stop hitting bugs that
 were already fixed.
@@ -385,7 +447,17 @@ Say the word and it gets its own proposal.
 
 ---
 
-## Open questions
+## Open questions — all four answered, 2026-08-03
+
+Jez took every recommendation as written. For the record:
+
+1. **No voting board**, not even opt-in.
+2. **Banner only, no modal**, knowing live Crosbe uses a modal.
+3. **Feedback capture stays out**, as its own future proposal.
+4. **Deploy-path posting is agent judgement, never automatic** — so
+   `changelog:post` is deliberately not wired into `pnpm deploy`.
+
+The original wording follows.
 
 1. **Voting board: agreed to leave it out?** My recommendation is to
    skip it as a default and let a fork that genuinely wants one build it
