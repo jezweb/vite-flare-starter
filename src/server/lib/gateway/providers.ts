@@ -300,9 +300,9 @@ export const PROVIDER_REGISTRY: Record<ExternalProvider, ExternalProviderConfig>
         description: 'GPT-4o through OpenRouter',
       },
       {
-        id: 'anthropic/claude-sonnet-4.6',
-        name: 'Claude Sonnet 4.6 (via OpenRouter)',
-        contextWindow: 200000,
+        id: 'anthropic/claude-sonnet-5',
+        name: 'Claude Sonnet 5 (via OpenRouter)',
+        contextWindow: 1000000,
         maxOutputTokens: 64000,
         supportsStreaming: true,
         supportsVision: true,

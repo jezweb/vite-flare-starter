@@ -71,7 +71,7 @@ const StartBatchTaskInput = z.object({
     .string()
     .optional()
     .describe(
-      'Override the per-item model (default: anthropic/claude-sonnet-4.6). Use cheaper models for high-volume simple tasks.'
+      'Override the per-item model (default: anthropic/claude-sonnet-5). Use cheaper models for high-volume simple tasks.'
     ),
 })
 
@@ -92,7 +92,7 @@ const StartBatchTaskOutput = z.union([
   }),
 ])
 
-const DEFAULT_MODEL = 'anthropic/claude-sonnet-4.6'
+const DEFAULT_MODEL = 'anthropic/claude-sonnet-5'
 
 function getEnv(ctx: AgentContext): BatchTaskEnv | undefined {
   const env = ctx.env as Partial<BatchTaskEnv>

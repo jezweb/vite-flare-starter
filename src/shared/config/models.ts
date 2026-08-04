@@ -9,7 +9,7 @@
  *
  * Format:
  * - `@cf/...`  → free Cloudflare Workers AI (no API key required)
- * - `provider/model` (e.g. `anthropic/claude-sonnet-4.6`) → routed through
+ * - `provider/model` (e.g. `anthropic/claude-sonnet-5`) → routed through
  *   OpenRouter. Requires OPENROUTER_API_KEY secret.
  *
  * Browse the full catalogue at https://models.flared.au/ and just paste the
@@ -36,30 +36,32 @@ export const WORKERS_AI_MODELS = [
 export const OPENROUTER_MODELS = [
   // Anthropic
   'anthropic/claude-opus-4.8', // 1M ctx; $5/$25 per Mtok (4.6 retired from catalogue 2026-05)
-  'anthropic/claude-sonnet-4.6',
+  'anthropic/claude-sonnet-5', // 1M ctx; $2/$10 per Mtok intro to 2026-08-31 ($3/$15 after). Replaced sonnet-4.6 (dropped from catalogue 2026-07)
   'anthropic/claude-haiku-4.5',
 
   // OpenAI
-  'openai/gpt-5.4',
+  'openai/gpt-5.5', // 1M ctx; $5/$30 per Mtok. Replaced gpt-5.4 (dropped from catalogue 2026-07)
   'openai/gpt-5.4-mini',
 
   // Google
   'google/gemini-3.1-pro-preview',
   'google/gemini-3-flash-preview',
 
-  // DeepSeek — V4 dropped 2026-04-24, MIT license, 1M context.
-  // V3.2-speciale retired (deepseek-chat/reasoner endpoints sunset 2026-07-24).
-  'deepseek/deepseek-v4-pro', // 1.6T MoE, 49B active; $1.74/$3.48 per Mtok
-  'deepseek/deepseek-v4-flash', // 284B MoE, 13B active; $0.14/$0.28 per Mtok
+  // DeepSeek — both V4 IDs dropped from catalogue 2026-07; the dated 0731
+  // re-release is the only current V4. No V4-pro successor as of 2026-08.
+  'deepseek/deepseek-v4-flash-0731', // 1M ctx; $0.09/$0.18 per Mtok, reasoning tier
+
+  // Moonshot (OpenRouter route; Workers AI kimi-k2.6 stays the free default)
+  'moonshotai/kimi-k3', // 1M ctx; $3/$15 per Mtok — Kimi successor, added to catalogue 2026-07
 
   // Qwen
-  'qwen/qwen3.6-plus',
+  'qwen/qwen3.7-plus', // 1M ctx; $0.32/$1.28 per Mtok. Replaced qwen3.6-plus (dropped 2026-07)
 
   // Mistral
   'mistralai/mistral-large-2512',
 
   // xAI
-  'x-ai/grok-4.20', // 2M ctx; $1.25/$2.50 per Mtok — same price as grok-4.3, double the context
+  'x-ai/grok-4.5', // 500K ctx; $2/$6 per Mtok. Replaced grok-4.20 (dropped from catalogue 2026-07)
 
   // Z.AI
   'z-ai/glm-5',

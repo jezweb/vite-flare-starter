@@ -45,7 +45,7 @@ interface ReviewEnv {
 }
 
 const DEFAULT_WORKER = 'anthropic/claude-haiku-4.5'
-const DEFAULT_REVIEWER = 'anthropic/claude-sonnet-4.6'
+const DEFAULT_REVIEWER = 'anthropic/claude-sonnet-5'
 
 const VERDICT_REGEX = /^VERDICT:\s*(APPROVE|REVISE|REJECT)\s*[—\-]\s*(.+)$/m
 
