@@ -1,5 +1,13 @@
 # Pending work snapshot — 2026-04-20
 
+> **SUPERSEDED 2026-08-04** (viteflare-maint). Live state now lives in
+> `.jez/SESSION.md` (pass log) + GitHub issues. Disposition of this file's
+> items: M6/M7 re-verified still real → **#127**; model catalogue refresh →
+> done (PR #124, closes #121); CLAUDE.md doc sync + FORKING.md audit →
+> overtaken by the v2.0 reboot's doc overhaul (July); AI SDK v7 → explicit
+> anti-goal while the CF agents line pins ai ^6 (see CLAUDE.md platform
+> stance). Kept for audit only — don't work from this list.
+
 Captured for handoff to `ivy-vite-flare-starter`. State of the backlog at the moment the dedicated specialist takes over.
 
 ---

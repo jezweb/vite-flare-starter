@@ -13,6 +13,19 @@ Deploy only via `pnpm run deploy`. Week-one gate: non-trivial changes as PRs.
 
 ## Pass log (newest first)
 
+### 2026-08-04 ~23:15 AEST — heartbeat: stale handoff retired, M6/M7 → #127
+
+**Sensors:** clean — no reviews/comments/mail; app 200s.
+
+**Advanced:** the April handoff file (.jez/handoff/pending.md) — verified each
+claim against today's artefacts before dispositioning: M6/M7 (components
+showcase: no code snippets, Milkdown/DataTable undiscoverable) are STILL REAL
+after the v2.0 reboot (grepped ComponentsPage.tsx — 903 lines, zero matches)
+→ filed **#127**. Catalogue refresh done (PR #124). FORKING.md claim of
+staleness no longer true (maintained through v2.1.0 + Aug 3 — checked git log,
+not assumed). AI SDK v7 is now an explicit anti-goal. pending.md marked
+SUPERSEDED with disposition table; kept for audit.
+
 ### 2026-08-04 ~22:10 AEST — heartbeat: sensors clean, public surfaces verified
 
 **Sensors:** clean — no merges, no comments, no mail; app 200s.
