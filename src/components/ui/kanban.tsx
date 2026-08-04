@@ -12,7 +12,10 @@
  *   - how to recover from persistence errors (caller does optimistic
  *     update locally; primitive fires `onCardMove` once per completed
  *     move and re-derives from props — if the server rejects, restore
- *     the previous state in your TanStack Query mutation `onError`)
+ *     the previous state in your TanStack Query mutation `onError`).
+ *     The full mutation recipe — optimistic update, 409 optimistic-lock
+ *     revert for boards with concurrent/agent writers, invalidation —
+ *     is in docs/PATTERNS.md § "Kanban Optimistic Move (conflict-safe)".
  *
  * Ordering uses **fractional-index string keys** (`fractional-indexing`):
  * each card holds a `position` string; a move is ONE row update, never a

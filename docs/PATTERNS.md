@@ -105,6 +105,81 @@ export function useCreateYourData() {
 
 ---
 
+## Kanban Optimistic Move (conflict-safe)
+
+The `KanbanBoard` primitive fires `onCardMove` once per completed drag and
+re-derives from props — persistence and recovery are the consumer's job
+(see the header of `src/components/ui/kanban.tsx`). Every real consumer
+pairs it with this mutation shape. The subtle parts, in order: cancel
+in-flight queries **before** snapshotting (or a late response clobbers your
+optimistic write), revert from the snapshot in `onError`, and invalidate on
+settle either way.
+
+```typescript
+// Working baseline: src/client/modules/kanban-demo/hooks/useTaskEntities.ts (useMoveTask)
+export function useMoveCard() {
+  const queryClient = useQueryClient()
+  return useMutation<Card, Error, MoveInput, { prev?: BoardData }>({
+    mutationFn: ({ id, column, position, updatedAt }) =>
+      apiClient.patch<Card>(`/api/cards/${id}`, {
+        fields: { column, position },
+        // Optimistic-lock token — see "Concurrent writers" below.
+        expectedUpdatedAt: updatedAt,
+      }),
+    onMutate: async ({ id, column, position }) => {
+      await queryClient.cancelQueries({ queryKey: BOARD_KEY }) // BEFORE snapshot
+      const prev = queryClient.getQueryData<BoardData>(BOARD_KEY)
+      if (prev) {
+        queryClient.setQueryData<BoardData>(BOARD_KEY, {
+          ...prev,
+          cards: prev.cards.map((c) =>
+            c.id === id ? { ...c, fields: { ...c.fields, column, position } } : c
+          ),
+        })
+      }
+      return { prev }
+    },
+    onError: (err, _vars, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(BOARD_KEY, ctx.prev)
+      // ApiError is an interface, not a class — no instanceof; read .status
+      if ((err as Partial<ApiError>).status === 409) {
+        toast.error('Card changed since you loaded it — board refreshed, try again.')
+      }
+    },
+    onSettled: () => {
+      // Invalidate every key that renders this card (board list + detail views)
+      queryClient.invalidateQueries({ queryKey: BOARD_KEY })
+      queryClient.invalidateQueries({ queryKey: CARD_KEY })
+    },
+  })
+}
+```
+
+**Concurrent writers (agents moving cards too).** When a cron agent or
+another user moves cards as often as humans do, add an optimistic lock so
+a stale drag can't silently overwrite a newer move: send the `updatedAt`
+you rendered from as `expectedUpdatedAt`, and have the PATCH handler
+compare-and-409 before writing:
+
+```typescript
+// In your module's PATCH route — one extra guard before the update
+const row = await getCard(db, id)
+if (body.expectedUpdatedAt && row.updatedAt !== body.expectedUpdatedAt) {
+  return c.json({ error: 'Conflict: card changed since it was loaded' }, 409)
+}
+```
+
+The 409 branch in `onError` above then reverts the cache and tells the
+user. Without the token, last-write-wins — acceptable for single-user
+boards (the bundled `/api/entities` PATCH works this way), wrong for
+boards with agent writers.
+
+**Reference:** `src/client/modules/kanban-demo/hooks/useTaskEntities.ts`
+(baseline, no lock token — the demo's entities API is last-write-wins) ·
+`src/components/ui/kanban.tsx` header (the primitive's side of the contract)
+
+---
+
 ## AI Streaming Chat (ToolLoopAgent)
 
 ```typescript
