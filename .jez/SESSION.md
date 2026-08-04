@@ -13,6 +13,24 @@ Deploy only via `pnpm run deploy`. Week-one gate: non-trivial changes as PRs.
 
 ## Pass log (newest first)
 
+### 2026-08-04 ~15:15 AEST — heartbeat: sensors clean, advanced #119 → PR #123
+
+**Sensors:** app 200s; no new issues/alerts (dependabot still 14 — recomputes
+when PR #122 merges to main); PR #122 open, unreviewed (repo has no CI checks);
+no hq mail.
+
+**Advanced:** issue #119 (chat approval buttons dead under Workers AI). Fix as
+reported+verified by the issue author: SDK matches `approval.id`, not
+`toolCallId`; Workers AI decorates toolCallId so the lookup missed. Threaded
+`approvalId` through MessageRenderer → onToolApproval → ChatPage's
+`addToolApprovalResponse`. Same fix in ChatMessage.tsx — which is **dead code**
+(imported nowhere; MessageRenderer is the live renderer). → **PR #123**.
+Verified: 291/291 tests, type-check, lint (858 warnings pre-existing).
+NOT live-verified under a Workers AI model — needs TEST_AUTH_TOKEN (see For hq).
+
+**Follow-up candidates:** decide whether ChatMessage.tsx should be deleted
+(dead duplicate of MessageRenderer with drift risk — this bug existed in both).
+
 ### 2026-08-04 ~14:20 AEST — first session: baseline sweep + security PR
 
 **Sensors:**
