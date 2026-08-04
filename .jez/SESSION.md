@@ -13,6 +13,14 @@ Deploy only via `pnpm run deploy`. Week-one gate: non-trivial changes as PRs.
 
 ## Pass log (newest first)
 
+### 2026-08-05 ~00:05 AEST — heartbeat: sensors clean
+
+No merges, no comments, no mail; app 200s. Unblocked backlog is exhausted —
+everything remaining either awaits review (#122–#125), Docker/hq (#126),
+TEST_AUTH_TOKEN (authed walks/e2e), or Jez's design judgment (#85/#84/#83,
+#110/#63, #113). Not drafting more proposals while 7 items already sit
+unreviewed — that grows the pile, it doesn't shrink it. Stopping.
+
 ### 2026-08-04 ~23:15 AEST — heartbeat: stale handoff retired, M6/M7 → #127
 
 **Sensors:** clean — no reviews/comments/mail; app 200s.
