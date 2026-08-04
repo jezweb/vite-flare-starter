@@ -56,6 +56,9 @@ tests/e2e/state/
 
 # Personal session tracking
 SESSION.md
+# …except the standing maintenance pass log (viteflare-maint, 2026-08-04):
+# committed so the log survives session restarts, per maintenance doctrine
+!.jez/SESSION.md
 
 # Playwright CLI session captures (ephemeral page snapshots)
 .playwright-cli/
