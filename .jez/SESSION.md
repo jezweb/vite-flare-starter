@@ -13,6 +13,21 @@ Deploy only via `pnpm run deploy`. Week-one gate: non-trivial changes as PRs.
 
 ## Pass log (newest first)
 
+### 2026-08-04 ~18:10 AEST — heartbeat: sensors clean, verified live cron→routine path
+
+**Sensors:** app 200s; no new issues/alerts; 5 PRs open unreviewed
+(#122–#125 + #72); no mail; 75s tail = zero traffic, zero errors.
+
+**Verified (live behaviour):** the production scheduled() → routine sweeper
+pipeline. D1 evidence: the one enabled routine ("Daily summary of my emails",
+86400s cadence) fired on schedule this morning, last_outcome "ok",
+matching agent_runs row 4s later. Two other routines are disabled examples —
+one run/day is the expected volume. Cron path healthy; nothing to fix.
+
+**Notes:** D1 direct query via cloudflare MCP works well as a cron-health
+sensor (faster than waiting for a :15 fire in a tail window). routines table
+columns: base_interval / effective_interval / last_run_at / last_outcome.
+
 ### 2026-08-04 ~17:20 AEST — heartbeat: #118 documented → PR #125
 
 **Sensors:** app 200s; no new issues/alerts; four PRs open unreviewed
