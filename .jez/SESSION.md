@@ -13,6 +13,22 @@ Deploy only via `pnpm run deploy`. Week-one gate: non-trivial changes as PRs.
 
 ## Pass log (newest first)
 
+### 2026-08-04 ~22:10 AEST — heartbeat: sensors clean, public surfaces verified
+
+**Sensors:** clean — no merges, no comments, no mail; app 200s.
+
+**Verified (live behaviour):** the public worker-served surfaces on the
+deployed artefact, targeting the documented run_worker_first silent-trap:
+- /llms.txt → real worker markdown (NOT the index.html assets-layer trap) ✓
+- /api/features → 200, live runtime flags ✓
+- /share/:token → 200 SPA shell (correct; resolution is client-side) and
+  /api/share/<bogus> → uniform {"error":"Not found"} 404 as designed ✓
+- /api/share-tokens/* management → 401 unauthed ✓
+- /sign-up → 200 ✓
+
+Nothing to fix. Public-surface sweep now complete for the deployed version;
+authed surfaces still blocked on TEST_AUTH_TOKEN.
+
 ### 2026-08-04 ~21:15 AEST — heartbeat: fleet advisory drafted (special mission)
 
 **Sensors:** clean — app 200s, no reviews/comments/mail (latest activity is
