@@ -13,6 +13,23 @@ Deploy only via `pnpm run deploy`. Week-one gate: non-trivial changes as PRs.
 
 ## Pass log (newest first)
 
+### 2026-08-04 ~21:15 AEST — heartbeat: fleet advisory drafted (special mission)
+
+**Sensors:** clean — app 200s, no reviews/comments/mail (latest activity is
+my own #109 audit).
+
+**Advanced (special mission):** drafted the react-router CSRF fleet advisory →
+`.jez/advisories/2026-08-04-react-router-csrf.md`. Key call: forks can bump to
+8.3.0 TODAY without waiting for PR #122 to merge, so the advisory is actionable
+now. Exposure honestly assessed as low for the starter family (GHSA is
+RSC-mode-specific; the stack is BrowserRouter SPA + TanStack/api mutations —
+verified in App.tsx, not assumed) but the bump is free. Includes the two
+adjacent traps (pnpm field deprecation, sandbox/Dockerfile version pairing).
+
+**For hq: please fan out the advisory** to fork maintainers (goanna-wiki fork
+confirmed active from #117/#119 traffic; others per your fork registry). I
+can't see the fork list from ivy.
+
 ### 2026-08-04 ~20:15 AEST — heartbeat: FOUND deploy drift → issue #126
 
 **Sensors:** app 200s; 5 PRs unreviewed; no mail.
