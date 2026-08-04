@@ -3,7 +3,7 @@
   "version": "2.1.0",
   "private": true,
   "type": "module",
-  "description": "Production-ready AI agent starter kit for Cloudflare Workers — 53+ tools, skills, conversation persistence, multi-provider AI, and full AI SDK v6 patterns",
+  "description": "Production-ready AI agent starter kit for Cloudflare Workers \u2014 53+ tools, skills, conversation persistence, multi-provider AI, and full AI SDK v6 patterns",
   "author": "Jeremy Dawes (Jezweb)",
   "license": "MIT",
   "scripts": {
@@ -166,14 +166,6 @@
     "vite": "^8.2.0",
     "vitest": "^4.1.10",
     "wrangler": "^4.118.0"
-  },
-  "pnpm": {
-    "overrides": {
-      "kysely": "0.28.17",
-      "@modelcontextprotocol/sdk": "^1.30.0",
-      "undici@<6": "^6.28.0",
-      "undici@>=7 <7.29.0": "^7.29.0"
-    }
   },
   "engines": {
     "node": ">=22"
