@@ -13,6 +13,11 @@ Deploy only via `pnpm run deploy`. Week-one gate: non-trivial changes as PRs.
 
 ## Pass log (newest first)
 
+### 2026-08-05 ~08:05 AEST — heartbeat: sensors clean
+
+No changes — PRs unmoved, no new issue activity, app 200s. Next scheduled
+live check: confirm the daily routine fires again ~09:45 (yesterday 09:45 ok).
+
 ### 2026-08-05 ~07:05 AEST — heartbeat: sensors clean
 
 No changes overnight — PRs unmoved, no comments, app 200s.
