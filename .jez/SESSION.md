@@ -13,6 +13,10 @@ Deploy only via `pnpm run deploy`. Week-one gate: non-trivial changes as PRs.
 
 ## Pass log (newest first)
 
+### 2026-08-05 ~01:05 AEST — heartbeat: sensors clean
+
+No changes since 00:05 — PRs unmoved, app 200s. Same gating as previous pass.
+
 ### 2026-08-05 ~00:05 AEST — heartbeat: sensors clean
 
 No merges, no comments, no mail; app 200s. Unblocked backlog is exhausted —
