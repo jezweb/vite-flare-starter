@@ -13,6 +13,20 @@ Deploy only via `pnpm run deploy`. Week-one gate: non-trivial changes as PRs.
 
 ## Pass log (newest first)
 
+### 2026-08-04 ~19:10 AEST — heartbeat: #109 tracker audited, all items done
+
+**Sensors:** app 200s; dependabot still 14 (clears when #122 merges); 5 PRs
+unreviewed; no mail.
+
+**Advanced:** issue #109 (deliberate-migrations tracker). Audited all 9
+concrete items against the repo — every one is done (DO exports, workers-types
+dropped, TS7, RR8, pnpm pin+engines, biome, rewritten chat rule, docs links
+200, zod-to-json-schema gone). Posted the audit table as a comment;
+recommended close (watchlist items live in #35/#113 or are event-driven).
+Left open for Jez/hq to confirm — closing a tracker isn't mine to decide.
+compatibility_date bump flagged as deliberately-not-a-chore: behaviour change,
+should ride a verified deploy.
+
 ### 2026-08-04 ~18:10 AEST — heartbeat: sensors clean, verified live cron→routine path
 
 **Sensors:** app 200s; no new issues/alerts; 5 PRs open unreviewed
