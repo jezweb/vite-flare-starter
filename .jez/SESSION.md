@@ -13,6 +13,36 @@ Deploy only via `pnpm run deploy`. Week-one gate: non-trivial changes as PRs.
 
 ## Pass log (newest first)
 
+### 2026-08-04 ~16:30 AEST — heartbeat: #121 resolved → PR #124; PR #122 hardened
+
+**Sensors:** app 200s; no new issues; PRs #122/#123 still unreviewed (also
+pre-existing #72 from before this session); no mail.
+
+**Advanced:** issue #121 (stale model catalogue IDs) → **PR #124**. Refreshed
+snapshot (2026-08-04, 123 models), replaced all 6 stale OpenRouter IDs
+(sonnet-4.6→sonnet-5, gpt-5.4→gpt-5.5, both deepseek-v4→v4-flash-0731,
+qwen3.6→3.7-plus, grok-4.20→4.5), added kimi-k3. Scope grew beyond models.ts:
+five live defaults also pointed at the retired route (aliases, batch-task,
+with_review, admin/researcher agents, gateway OR entry) — all fixed.
+KEY DISTINCTION: gateway's direct-Anthropic `claude-sonnet-4-6` (dash format)
+kept — still active on the direct API per claude-api skill; only OpenRouter
+dropped it. doctor:models green, 291/291 tests.
+
+**Also:** discovered pnpm 10.28 deprecates the package.json `pnpm` field
+("overrides ignored" warning — they DID still apply, lockfile proves it, but
+a future pnpm drops them silently). Moved PR #122's overrides to
+pnpm-workspace.yaml (lockfile unchanged; audit now 1 moderate). Commented on
+the PR.
+
+**Trap for next pass:** `pnpm models:refresh` output includes the deprecation
+warning noise; and earlier installs' warnings were missed because output was
+tail-truncated — don't filter install output so aggressively.
+
+**Growing concern for hq:** three PRs now stacked unreviewed (#122 security,
+#123 bug fix, #124 catalogue). The week-one PR gate needs a reviewer in the
+loop or vulns sit unfixed on main. Flag to Jez/hq for either review or an
+early graduation call on low-risk change classes.
+
 ### 2026-08-04 ~15:15 AEST — heartbeat: sensors clean, advanced #119 → PR #123
 
 **Sensors:** app 200s; no new issues/alerts (dependabot still 14 — recomputes
