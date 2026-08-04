@@ -13,6 +13,26 @@ Deploy only via `pnpm run deploy`. Week-one gate: non-trivial changes as PRs.
 
 ## Pass log (newest first)
 
+### 2026-08-04 ~17:20 AEST — heartbeat: #118 documented → PR #125
+
+**Sensors:** app 200s; no new issues/alerts; four PRs open unreviewed
+(#122/#123/#124/#125 + pre-existing #72); no mail.
+
+**Advanced:** issue #118 (kanban optimistic-move recipe) → **PR #125**. Took
+the issue's own recommendation (docs, not an exported helper). New PATTERNS.md
+section "Kanban Optimistic Move (conflict-safe)": baseline lifted from the
+working kanban-demo useMoveTask hook, extended with the expectedUpdatedAt /
+409 optimistic-lock contract — marked as requiring server support, since the
+bundled /api/entities PATCH is last-write-wins (verified: no 409 anywhere in
+the entities module). Pointer added to kanban.tsx header. Caught my own draft
+bug before shipping: ApiError is an interface, so instanceof doesn't work —
+snippet uses (err as Partial<ApiError>).status.
+
+**Also:** extended the #121 stale-ID sweep to docs/ (earlier grep covered
+src+tests only) — 3 examples in PATTERNS.md/AGENTS.md fixed on the PR #124
+branch. Note: #124 and #125 both touch PATTERNS.md (non-overlapping hunks;
+merge order shouldn't matter).
+
 ### 2026-08-04 ~16:30 AEST — heartbeat: #121 resolved → PR #124; PR #122 hardened
 
 **Sensors:** app 200s; no new issues; PRs #122/#123 still unreviewed (also
