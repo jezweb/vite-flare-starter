@@ -26,6 +26,10 @@ interface ChatMessageProps {
   onRegenerate?: () => void
   onSendMessage?: (text: string) => void
   onToolApproval?: (params: {
+    /** The SDK matches approval responses on `approval.id`, NOT `toolCallId`.
+     * They coincide on most providers, but Workers AI decorates toolCallId
+     * (`functions.<name>:N::cf-wai-tool-call::<id>`) so the two diverge (#119). */
+    approvalId: string
     toolCallId: string
     toolName: string
     result: 'approve' | 'deny'
@@ -122,6 +126,11 @@ export const ChatMessage = memo(function ChatMessage({
                           args={(p['input'] as Record<string, unknown>) ?? {}}
                           onApprove={() =>
                             onToolApproval({
+                              // approval.id, not toolCallId — see #119
+                              approvalId: String(
+                                (p['approval'] as { id?: string } | undefined)?.id ??
+                                  p['toolCallId']
+                              ),
                               toolCallId: String(p['toolCallId']),
                               toolName,
                               result: 'approve',
@@ -129,6 +138,10 @@ export const ChatMessage = memo(function ChatMessage({
                           }
                           onDeny={() =>
                             onToolApproval({
+                              approvalId: String(
+                                (p['approval'] as { id?: string } | undefined)?.id ??
+                                  p['toolCallId']
+                              ),
                               toolCallId: String(p['toolCallId']),
                               toolName,
                               result: 'deny',
