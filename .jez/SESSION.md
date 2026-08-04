@@ -13,6 +13,31 @@ Deploy only via `pnpm run deploy`. Week-one gate: non-trivial changes as PRs.
 
 ## Pass log (newest first)
 
+### 2026-08-04 ~20:15 AEST — heartbeat: FOUND deploy drift → issue #126
+
+**Sensors:** app 200s; 5 PRs unreviewed; no mail.
+
+**Verified (live behaviour) — found a real one:** the deployed worker predates
+the entire updates/What's New module (main's last 15 commits, Aug 3). Proof:
+/api/notifications (index.ts:368) → 401 live, /api/updates (line 369) → 404.
+Plus one unapplied remote migration (changelog_entries). Filed **#126** with
+evidence + runbook.
+
+**Two operational constraints discovered (matter for ALL future deploys):**
+1. **Docker is not installed on ivy** — `pnpm run deploy` builds ./Dockerfile
+   (sandbox container) at deploy time, so ivy cannot deploy this app AT ALL
+   until Docker lands. This blocks the doctrine's deploy duties on this repo.
+2. wrangler needs `CLOUDFLARE_ACCOUNT_ID=0460574641fdbb98159c98ebf593e2bd`
+   (jeremy@jezweb.net) — multiple accounts on the token otherwise prompt.
+
+**Trap noted:** my baseline probe saw /api/updates 404 and I misread it as
+"module not mounted publicly" instead of chasing it — the artefacts-win rule
+applies to probes too. Cost: 6 hours of drift going unreported.
+
+**For hq (added):** #126 needs a Docker-capable machine (or Docker on ivy —
+~5 min install if Jez approves). Not urgent: live app healthy, feature simply
+not shipped.
+
 ### 2026-08-04 ~19:10 AEST — heartbeat: #109 tracker audited, all items done
 
 **Sensors:** app 200s; dependabot still 14 (clears when #122 merges); 5 PRs
