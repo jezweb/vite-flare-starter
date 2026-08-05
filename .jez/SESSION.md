@@ -13,6 +13,14 @@ Deploy only via `pnpm run deploy`. Week-one gate: non-trivial changes as PRs.
 
 ## Pass log (newest first)
 
+### 2026-08-06 ~02:05 AEST — heartbeat: sensors clean (01:05 pass skipped)
+
+Sensors clean — PRs unmoved, app 200s. Sidebar age → 36h.
+NOTE: the 01:05 pass was skipped entirely — the harness permission
+classifier was temporarily unavailable (blocks Bash/WebFetch/MCP in auto
+mode), so no sensor sweep or log commit was possible that hour. Recovered
+by this tick; nothing was missed (stack static, app healthy either side).
+
 ### 2026-08-06 ~00:05 AEST — heartbeat: sensors clean
 
 No changes — PRs unmoved, app 200s. Sidebar age → 34h.
