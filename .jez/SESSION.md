@@ -13,6 +13,15 @@ Deploy only via `pnpm run deploy`. Week-one gate: non-trivial changes as PRs.
 
 ## Pass log (newest first)
 
+### 2026-08-05 ~14:10 AEST — heartbeat: escalated PR review via herdr sidebar
+
+Sensors clean (PRs unmoved, app 200s). PR #122 (security) passed 24h
+unreviewed → raised the sidebar token from my pane (w1:p6):
+need="review: 4 PRs vite-flare-starter (#122 security) + #126 deploy decision",
+age="oldest 24h", TTL 3h. Verified via agent get (80-char silent truncation
+trap checked — 72 chars, intact). Will re-raise with updated $age each pass
+while unanswered, and CLEAR the token the moment review lands.
+
 ### 2026-08-05 ~13:05 AEST — heartbeat: sensors clean
 
 No changes — PRs unmoved, app 200s. PR #122 hits 24h unreviewed at ~14:11;
