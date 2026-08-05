@@ -13,6 +13,10 @@ Deploy only via `pnpm run deploy`. Week-one gate: non-trivial changes as PRs.
 
 ## Pass log (newest first)
 
+### 2026-08-05 ~16:05 AEST — heartbeat: sensors clean
+
+No changes — PRs unmoved, no comments, app 200s. Sidebar age → 26h.
+
 ### 2026-08-05 ~15:05 AEST — heartbeat: sensors clean
 
 No changes — PRs unmoved, app 200s. Sidebar token refreshed (age 25h).
