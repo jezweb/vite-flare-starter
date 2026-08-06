@@ -13,6 +13,12 @@ Deploy only via `pnpm run deploy`. Week-one gate: non-trivial changes as PRs.
 
 ## Pass log (newest first)
 
+### 2026-08-06 ~10:05 AEST — heartbeat: routine fire verified (day 3), sensors clean
+
+Daily routine fired ~10:02, outcome ok — third consecutive day. Fire time
+drifts later daily (09:45 → 09:46 → 10:02): interval-based scheduling swept
+each :15, expected not a fault. Otherwise no changes; sidebar age → 44h.
+
 ### 2026-08-06 ~09:05 AEST — heartbeat: sensors clean
 
 No changes — PRs unmoved, app 200s. Sidebar age → 43h.
