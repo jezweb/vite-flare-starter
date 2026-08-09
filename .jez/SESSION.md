@@ -13,6 +13,12 @@ Deploy only via `pnpm run deploy`. Week-one gate: non-trivial changes as PRs.
 
 ## Pass log (newest first)
 
+### 2026-08-09 ~11:05 AEST — heartbeat: routine fire verified (day 6), sensors clean
+
+Routine fired ~10:32 on the predicted 10:30 sweep, outcome ok — day 6.
+Otherwise no changes: PRs unmoved, app 200s. (Fleet-config pushed updated
+global rules this morning — no heartbeat impact.)
+
 ### 2026-08-09 ~10:05 AEST — heartbeat: sensors clean
 
 No changes — PRs unmoved, app 200s. Routine due ~10:30 sweep (drift model);
