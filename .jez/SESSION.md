@@ -13,6 +13,11 @@ Deploy only via `pnpm run deploy`. Week-one gate: non-trivial changes as PRs.
 
 ## Pass log (newest first)
 
+### 2026-08-10 ~07:05 AEST — heartbeat: sensors clean
+
+No changes — PRs unmoved, no comments, app 200s. Sidebar age → 6d.
+NOTE: session cron expires ~2026-08-11 (7-day limit) — recreate on warning.
+
 ### 2026-08-10 ~06:05 AEST — heartbeat: sensors clean
 
 No changes — PRs unmoved, app 200s.
