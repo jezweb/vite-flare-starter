@@ -13,6 +13,17 @@ Deploy only via `pnpm run deploy`. Week-one gate: non-trivial changes as PRs.
 
 ## Pass log (newest first)
 
+### 2026-08-11 ~14:10 AEST — heartbeat: cron recreated at 7-day expiry, sensors clean
+
+Session cron a45544b6 hit its 7-day auto-expiry (created Aug 4 14:04) —
+deleted and recreated as 305ea870 (same :43 hourly schedule, expires ~Aug 18;
+recreate again then). Sensors clean: PRs unmoved, app 200s, no mail.
+
+Observation for the record: the hourly heartbeat prompts in this pane arrive
+at :02 (external/hq-typed, per the hook timestamps), not :43 — so the pane
+heartbeat and the session cron are redundant belt-and-braces. Kept the cron
+anyway per doctrine (it is the survivor if the external :02 feed stops).
+
 ### 2026-08-11 ~13:05 AEST — heartbeat: sensors clean
 
 No changes — PRs unmoved, app 200s.
