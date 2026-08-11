@@ -13,6 +13,14 @@ Deploy only via `pnpm run deploy`. Week-one gate: non-trivial changes as PRs.
 
 ## Pass log (newest first)
 
+### 2026-08-11 ~14:50 AEST — heartbeat (cron-fired): sensors clean
+
+First fire of recreated cron 305ea870 (:43 + jitter) — confirms BOTH feeds
+now deliver: external :02 + session cron :43, so passes run twice hourly.
+Keeping both per doctrine (cron survives if the external feed stops); clean
+cron-fired ticks this close to a :02 pass get a one-line log only.
+Sensors clean: PRs unmoved, app 200s.
+
 ### 2026-08-11 ~14:10 AEST — heartbeat: cron recreated at 7-day expiry, sensors clean
 
 Session cron a45544b6 hit its 7-day auto-expiry (created Aug 4 14:04) —
