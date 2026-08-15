@@ -1,5 +1,7 @@
 # Design Brief
 
+> Process for filling this: [`DESIGNING.md`](./DESIGNING.md).
+
 > **This file ships unfilled, and that is the point.** An unfilled slot
 > below means the app is still wearing the placeholder theme. Fill every
 > slot from real material before building any product surface (see
