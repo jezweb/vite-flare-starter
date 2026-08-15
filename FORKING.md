@@ -38,6 +38,64 @@ Before starting:
 
 ---
 
+## Part 0: Brand Extraction
+
+The starter ships a **placeholder theme** (the Kumo-derived look in
+`src/index.css` and `DESIGN.md`). It is deliberately decent, and an
+internal tool may keep it, but keeping it must be a deliberate choice.
+The rule is: **never ship the placeholder without a deliberate choice**,
+not "always custom". Do this part before building any product surface.
+The fork/clone mechanics in Part 1 can come first; the product UI cannot.
+
+### Step 0.1: Gather real brand material
+
+- Fetch the client's real sites (current website, socials, print material
+  if they have it) and **screenshot them**.
+- Extract the palette (actual hex/oklch values from the material, not
+  "roughly blue"), the typography (display + body), and the register
+  (how the brand speaks: formal, warm, technical, playful).
+
+### Step 0.2: Fill in DESIGN_BRIEF.md
+
+Record everything in [`DESIGN_BRIEF.md`](./DESIGN_BRIEF.md) at the repo
+root: client, brand sources with URLs + screenshots, each palette colour
+with its provenance, display type, layout shape, component posture,
+voice/register, and one signature move. An unfilled slot in that file
+means the extraction isn't done.
+
+A palette swap on stock shadcn is still the generic app. **If the
+finished app would be recognisable as shadcn defaults at a glance, the
+design step isn't done: the library is the chassis, never the look.**
+
+If there is **no real material** (new brand, internal tool), design
+deliberately anyway: choose values, record why in the brief, and note
+"kept the neutral default" explicitly if that is the choice.
+
+### Step 0.3: Self-host the display font
+
+Download the chosen display font and serve it from `public/` with
+`@font-face` in `src/index.css`. No Google Fonts CDN link: it adds a
+third-party request and the placeholder look survives font fallback.
+
+### Step 0.4: Rewrite the token values
+
+Rewrite the values in `src/index.css` from the brief, **before any
+product surface is built**. Values are scaffolding; the structure
+(single source, `light-dark()`, semantic tokens, two border weights) is
+the contract and stays. See `.claude/rules/design-tokens.md`.
+
+### Step 0.5: Delete the theme presets
+
+The preset palettes in `src/lib/themes.ts` are demo-only. They apply
+inline CSS variables that **silently override index.css**, which is
+exactly the 2026-07 drift incident (themes.ts overrode index.css for two
+months before anyone noticed; see `.claude/rules/design-tokens.md`).
+Delete them at fork: strip the preset palettes from `themes.ts`, or
+remove the theme picker and the presets with it. Your re-tokened
+index.css must be the only source of truth.
+
+---
+
 ## Part 1: Fork and Initial Setup
 
 > **AI agents — read this first.** When the user says "fork the starter",
@@ -554,6 +612,8 @@ If you don't change these, attackers can identify your site uses this starter:
 
 After completing all steps, verify:
 
+- [ ] `DESIGN_BRIEF.md` is filled from real material (or records a deliberate choice to keep the neutral default)
+- [ ] `src/index.css` token values match the brief; theme presets deleted from `src/lib/themes.ts`
 - [ ] `wrangler.jsonc` has YOUR database_id (not the original)
 - [ ] `wrangler.jsonc` has YOUR bucket names
 - [ ] `wrangler.jsonc` has no `account_id` or has YOUR account_id

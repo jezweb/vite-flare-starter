@@ -15,6 +15,13 @@ import { appConfig } from '@/shared/config/app'
  *
  * Each theme has light and dark variants
  * Values are in HSL format (H S% L%)
+ *
+ * DEMO-ONLY PRESETS. These exist so the starter's theme picker has
+ * something to show. They apply inline CSS variables that silently
+ * override src/index.css (the 2026-07 drift incident: themes.ts
+ * overrode index.css for two months). Forks delete the presets at
+ * fork time so the re-tokened index.css is the only source of truth.
+ * See FORKING.md Part 0 (Step 0.5).
  */
 
 type ThemeColors = {

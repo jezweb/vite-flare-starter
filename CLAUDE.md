@@ -114,6 +114,8 @@ are good templates — copy that shape and triage stays under a minute.
 `TOKEN_PREFIX`, `index.html` title, favicon in `public/`. Set
 `VITE_GITHUB_URL=""` to hide GitHub links.
 
+**No product surface until [`DESIGN_BRIEF.md`](./DESIGN_BRIEF.md) is filled from real material; no material → design deliberately, never inherit the placeholder** ([`FORKING.md`](./FORKING.md) Part 0).
+
 ---
 
 ## Where to find things
