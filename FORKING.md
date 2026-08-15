@@ -63,6 +63,9 @@ with its provenance, display type, layout shape, component posture,
 voice/register, and one signature move. An unfilled slot in that file
 means the extraction isn't done.
 
+The step-by-step process that produces those answers is
+[`DESIGNING.md`](./DESIGNING.md).
+
 A palette swap on stock shadcn is still the generic app. **If the
 finished app would be recognisable as shadcn defaults at a glance, the
 design step isn't done: the library is the chassis, never the look.**
