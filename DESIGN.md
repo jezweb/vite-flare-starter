@@ -26,10 +26,14 @@ components:
 
 # Vite Flare Starter — Design
 
-> **Canonical source: `src/index.css`.** Every token there declares both
-> light and dark values via `light-dark()`. This file describes the
-> system for humans and coding agents; when the two disagree, the CSS
-> wins — update this file in the same commit as a token change.
+> **This is the placeholder language, superseded by
+> [`DESIGN_BRIEF.md`](./DESIGN_BRIEF.md) at fork.** It stays the
+> reference for the starter's default look; a fork extracts the client's
+> real brand and rewrites the token values (FORKING.md Part 0), keeping
+> the structure this file describes. Canonical source: `src/index.css`.
+> Every token there declares both light and dark values via
+> `light-dark()`; when this file and the CSS disagree, the CSS wins.
+> Update this file in the same commit as a token change.
 
 ## Overview (Brand & Style)
 

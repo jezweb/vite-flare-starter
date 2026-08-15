@@ -46,21 +46,25 @@
 }
 
 /* ── Design tokens ─────────────────────────────────────────────────────────
- * Kumo-derived design language (@cloudflare/kumo 2.8.0 theme values, adapted
- * onto shadcn variable names so every component picks them up unchanged).
+ * PLACEHOLDER THEME: replacing every value is the first act of a fork.
  *
- * Single source of truth: each token declares BOTH modes via light-dark();
- * there is deliberately no duplicated `.dark { … }` block to drift. The
- * theme-provider's `.dark` class only flips color-scheme (below).
+ * The values below are scaffolding (Kumo-derived, @cloudflare/kumo 2.8.0,
+ * adapted onto shadcn variable names so every component picks them up
+ * unchanged). A fork extracts the client's real brand and rewrites them
+ * all before building any product surface: see FORKING.md Part 0 and
+ * DESIGN_BRIEF.md.
  *
- * Structure (Kumo's surface hierarchy):
- *   canvas (page bg) → base (card) → elevated / recessed / tint
+ * The STRUCTURE is the contract and survives every fork:
+ *   single source of truth: each token declares BOTH modes via light-dark();
+ *   there is deliberately no duplicated `.dark { … }` block to drift (the
+ *   theme-provider's `.dark` class only flips color-scheme, below)
+ *   surface hierarchy: canvas (page bg) → base (card) → elevated / recessed / tint
  *   two border weights: --border ("line", alpha in light) + --hairline
  *   focus ring is NEUTRAL (near-black/near-white), not brand-coloured
- *   primary is blue — CF-style; orange stays a logo/brand accent only
  *
  * Preset/custom themes (src/lib/themes.ts) override these with inline vars;
- * the 'default' scheme applies none and uses exactly these values.
+ * the 'default' scheme applies none and uses exactly these values. The
+ * presets are demo-only and get deleted at fork (FORKING.md Part 0).
  */
 :root {
   color-scheme: light;
