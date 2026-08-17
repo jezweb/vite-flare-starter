@@ -13,6 +13,24 @@ Deploy only via `pnpm run deploy`. Week-one gate: non-trivial changes as PRs.
 
 ## Pass log (newest first)
 
+### 2026-08-17 ~22:55 AEST — combined catch-up: session was down Aug 14 23:00 → Aug 16 12:33, ticks queued to now
+
+**Gap coverage (one pass for ~70 queued ticks):**
+- **Session restart** killed the cron; recreated (23047aec, :43 hourly, expires
+  ~Aug 24). Sidebar token had TTL-expired days ago — re-raised, age 13d.
+- **Jez was active Aug 16 09:10–09:44:** merged #133 + #135 (deliberate-design-
+  at-fork docs: placeholder theme, brand extraction, DESIGN_BRIEF.md,
+  DESIGNING.md 7-step process). My stack (#122–#125 + #72) untouched — he
+  reviewed around it, so it is visible-but-deprioritised, not unseen.
+  Re-surfacing continues via sidebar only; no further channel escalation.
+- **App healthy across the gap:** / and auth-config 200; daily routine kept
+  firing unsupervised (last ~11:33 today, outcome ok — includes days with no
+  session watching). No new issues/comments; no mail.
+
+**Learned:** the pane heartbeat feed survives session suspension (queues and
+flushes), but the session cron does not — after any resume, CronList+recreate
+before anything else, per doctrine.
+
 ### 2026-08-14 ~21:50 AEST — heartbeat (cron): sensors clean
 
 PRs unmoved, app 200s.
