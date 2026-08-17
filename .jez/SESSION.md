@@ -13,6 +13,10 @@ Deploy only via `pnpm run deploy`. Week-one gate: non-trivial changes as PRs.
 
 ## Pass log (newest first)
 
+### 2026-08-17 ~23:50 AEST — heartbeat: sensors clean
+
+PRs unmoved, app 200s.
+
 ### 2026-08-17 ~22:55 AEST — combined catch-up: session was down Aug 14 23:00 → Aug 16 12:33, ticks queued to now
 
 **Gap coverage (one pass for ~70 queued ticks):**
