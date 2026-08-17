@@ -13,6 +13,10 @@ Deploy only via `pnpm run deploy`. Week-one gate: non-trivial changes as PRs.
 
 ## Pass log (newest first)
 
+### 2026-08-18 ~00:50 AEST — heartbeat: sensors clean
+
+PRs unmoved, app 200s.
+
 ### 2026-08-17 ~23:50 AEST — heartbeat: sensors clean
 
 PRs unmoved, app 200s.
