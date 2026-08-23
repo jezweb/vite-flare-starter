@@ -90,12 +90,12 @@ export class AdminAgent extends AutonomousAgent<Env, AutonomousAgentState> {
     // worth the marginal cost. Forks can override via setState if they
     // want Haiku for cost.
     //
-    // Catalogue/OpenRouter id format uses a DOT (`claude-sonnet-4.6`).
+    // Catalogue/OpenRouter id format uses a DOT (`claude-sonnet-5`).
     // The dash form (`4-6`) is only the direct-Anthropic SDK spelling, which
     // resolveModel derives via regex on the direct path. On the default
     // OpenRouter-only deployment the dash form is forwarded verbatim and 404s
     // ("model not found"), so keep the dotted catalogue id here.
-    modelId: 'anthropic/claude-sonnet-4.6',
+    modelId: 'anthropic/claude-sonnet-5',
   }
 
   protected override async getToolDefinitions(): Promise<ToolDefinition<unknown, unknown>[]> {

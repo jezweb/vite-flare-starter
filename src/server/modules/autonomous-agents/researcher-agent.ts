@@ -91,7 +91,7 @@ export class ResearcherAgent extends AutonomousAgent<Env, AutonomousAgentState> 
     persona: RESEARCHER_PERSONA,
     // Flagship for research strategy + grounding. Writer downshifts
     // to Haiku for the composition step. Cost stays bounded.
-    modelId: 'anthropic/claude-sonnet-4.6',
+    modelId: 'anthropic/claude-sonnet-5',
   }
 
   protected override async getToolDefinitions(): Promise<ToolDefinition<unknown, unknown>[]> {
