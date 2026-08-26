@@ -41,6 +41,10 @@ interface Props {
   /** Edit a user message and regenerate from that point. */
   onEdit?: (messageId: string, newText: string) => void
   onToolApproval?: (params: {
+    /** The SDK matches approval responses on `approval.id`, NOT `toolCallId`.
+     * They coincide on most providers, but Workers AI decorates toolCallId
+     * (`functions.<name>:N::cf-wai-tool-call::<id>`) so the two diverge (#119). */
+    approvalId: string
     toolCallId: string
     toolName: string
     result: 'approve' | 'deny'
@@ -297,6 +301,10 @@ function MessageBody({
   isLast?: boolean
   onSendMessage?: (text: string) => void
   onToolApproval?: (params: {
+    /** The SDK matches approval responses on `approval.id`, NOT `toolCallId`.
+     * They coincide on most providers, but Workers AI decorates toolCallId
+     * (`functions.<name>:N::cf-wai-tool-call::<id>`) so the two diverge (#119). */
+    approvalId: string
     toolCallId: string
     toolName: string
     result: 'approve' | 'deny'
@@ -476,6 +484,11 @@ function MessageBody({
 
           // 4a. Tool approval requested — our custom approval UI
           if (state === 'approval-requested' && onToolApproval) {
+            // approval.id is what addToolApprovalResponse matches on; fall back
+            // to toolCallId for providers where the SDK sets them equal (#119)
+            const approvalId = String(
+              (p['approval'] as { id?: string } | undefined)?.id ?? p['toolCallId']
+            )
             return (
               <ToolApproval
                 key={i}
@@ -483,13 +496,19 @@ function MessageBody({
                 args={(p['input'] as Record<string, unknown>) ?? {}}
                 onApprove={() =>
                   onToolApproval({
+                    approvalId,
                     toolCallId: String(p['toolCallId']),
                     toolName,
                     result: 'approve',
                   })
                 }
                 onDeny={() =>
-                  onToolApproval({ toolCallId: String(p['toolCallId']), toolName, result: 'deny' })
+                  onToolApproval({
+                    approvalId,
+                    toolCallId: String(p['toolCallId']),
+                    toolName,
+                    result: 'deny',
+                  })
                 }
               />
             )

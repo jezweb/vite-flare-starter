@@ -403,14 +403,18 @@ function ChatPageInner({ userId }: { userId: string }) {
 
   const handleToolApproval = useCallback(
     ({
-      toolCallId,
+      approvalId,
       result,
     }: {
+      approvalId: string
       toolCallId: string
       toolName: string
       result: 'approve' | 'deny'
     }) => {
-      addToolApprovalResponse({ id: toolCallId, approved: result === 'approve' })
+      // Must be approval.id, not toolCallId — the SDK's
+      // addToolApprovalResponse matches on the part's approval.id, and
+      // Workers AI decorates toolCallId so the two diverge there (#119)
+      addToolApprovalResponse({ id: approvalId, approved: result === 'approve' })
     },
     [addToolApprovalResponse]
   )
