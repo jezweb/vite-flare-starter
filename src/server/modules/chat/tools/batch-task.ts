@@ -71,7 +71,7 @@ const StartBatchTaskInput = z.object({
     .string()
     .optional()
     .describe(
-      'Override the per-item model (default: anthropic/claude-sonnet-4.6). Use cheaper models for high-volume simple tasks.'
+      'Override the per-item model (default: anthropic/claude-sonnet-5). Use cheaper models for high-volume simple tasks.'
     ),
 })
 
@@ -92,7 +92,7 @@ const StartBatchTaskOutput = z.union([
   }),
 ])
 
-const DEFAULT_MODEL = 'anthropic/claude-sonnet-4.6'
+const DEFAULT_MODEL = 'anthropic/claude-sonnet-5'
 
 function getEnv(ctx: AgentContext): BatchTaskEnv | undefined {
   const env = ctx.env as Partial<BatchTaskEnv>
@@ -156,7 +156,7 @@ export const startBatchTaskDefinition: ToolDefinition<
 > = {
   name: 'start_batch_task',
   description:
-    'Run an AI task across many items in parallel — a durable batch / fan-out / swarm job. Use when the user wants the SAME operation applied to a list of files, URLs, or text snippets — e.g. "for each of these 50 PDFs, extract the invoice number", "summarise each of these articles", "classify these 100 support tickets". Returns a job id immediately; the user watches progress at /dashboard/jobs/:id.\n\nTriggers: phrases like "for each", "do this for all of", "batch process", "swarm", "parallel", "in bulk". Don\'t use for one-off operations on a single item.\n\nDefaults to Sonnet 4.6 per item. For 6+ items the user is asked to approve before the job starts.',
+    'Run an AI task across many items in parallel — a durable batch / fan-out / swarm job. Use when the user wants the SAME operation applied to a list of files, URLs, or text snippets — e.g. "for each of these 50 PDFs, extract the invoice number", "summarise each of these articles", "classify these 100 support tickets". Returns a job id immediately; the user watches progress at /dashboard/jobs/:id.\n\nTriggers: phrases like "for each", "do this for all of", "batch process", "swarm", "parallel", "in bulk". Don\'t use for one-off operations on a single item.\n\nDefaults to Sonnet 5 per item. For 6+ items the user is asked to approve before the job starts.',
   inputSchema: StartBatchTaskInput,
   outputSchema: StartBatchTaskOutput,
   isAvailable,

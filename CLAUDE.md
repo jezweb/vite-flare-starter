@@ -500,7 +500,7 @@ reading source"*. Anywhere you'd say "click Skip", that's a UX bug.
 
 ## AI Module
 
-20 curated models across 9 providers. Edit `src/shared/config/models.ts`.
+19 curated models across 9 providers. Edit `src/shared/config/models.ts`.
 Metadata comes from a bundled snapshot of [models.flared.au](https://models.flared.au)
 + [ai.flared.au](https://ai.flared.au). `pnpm models:refresh` to update.
 
@@ -511,10 +511,10 @@ the live catalogue. Re-run after any Workers AI release announcement.
 | Source | Models | Keys |
 |---|---|---|
 | **Workers AI** (free) | Kimi K2.6 (default), Gemma 4 26B, GLM 4.7 Flash, GLM 5.2, QwQ 32B, GPT-OSS 120b, GPT-OSS 20b | none |
-| **Anthropic** | Claude Opus 4.8, Sonnet 4.6, Haiku 4.5 | via OpenRouter |
-| **OpenAI** | GPT-5.4, GPT-5.4 mini | via OpenRouter |
+| **Anthropic** | Claude Opus 5, Sonnet 5, Haiku 4.5 | via OpenRouter |
+| **OpenAI** | GPT-5.5, GPT-5.4 mini | via OpenRouter |
 | **Google** | Gemini 3.1 Pro, Gemini 3 Flash | via OpenRouter |
-| **DeepSeek / Qwen / Mistral / xAI / Z.AI** | V4 Pro, V4 Flash, 3.6 Plus, Large 3 2512, Grok 4.20, GLM 5 | via OpenRouter |
+| **DeepSeek / Qwen / Mistral / xAI / Z.AI** | V3.2, Qwen3.7 Plus, Large 3 2512, Grok 4.6, GLM 5 | via OpenRouter |
 
 One `OPENROUTER_API_KEY` unlocks everything non-Workers-AI. Direct-provider
 SDKs (`@ai-sdk/anthropic`, `@ai-sdk/openai`, `@ai-sdk/google`) remain as

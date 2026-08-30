@@ -28,7 +28,7 @@ export const batchJobs = sqliteTable(
     instruction: text('instruction').notNull(),
     /** Loose categorisation for filtering; the agent picks one of these. */
     taskKind: text('task_kind').notNull(), // 'extract' | 'transform' | 'classify' | 'summarise' | 'free'
-    /** Model id used for every item (e.g. 'anthropic/claude-sonnet-4.6'). */
+    /** Model id used for every item (e.g. 'anthropic/claude-sonnet-5'). */
     model: text('model').notNull(),
     /** queued | running | completed | failed | cancelled */
     status: text('status').notNull().default('queued'),

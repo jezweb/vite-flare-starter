@@ -263,10 +263,10 @@ One `resolveModel()` call picks the right provider from the model string.
 
 ```typescript
 resolveModel(env, '@cf/moonshotai/kimi-k2.6')        // Workers AI — free
-resolveModel(env, 'claude-sonnet-4-6')                // Anthropic
+resolveModel(env, 'claude-sonnet-5')                  // Anthropic
 resolveModel(env, 'gpt-5.4-mini')                     // OpenAI
 resolveModel(env, 'gemini-3.1-pro')                   // Google
-resolveModel(env, 'openrouter/deepseek/deepseek-v4-flash') // OpenRouter
+resolveModel(env, 'openrouter/deepseek/deepseek-v3.2') // OpenRouter
 ```
 
 Model catalogue is a bundled snapshot from [models.flared.au](https://models.flared.au). Refresh with `pnpm models:refresh`.
