@@ -132,7 +132,7 @@ return createAgentUIStreamResponse({
 import { useChat } from '@/client/modules/chat/hooks/useChat'
 
 const { messages, sendMessage, isLoading } = useChat({
-  model: 'anthropic/claude-sonnet-4.6',
+  model: 'anthropic/claude-sonnet-5',
   conversationId: urlConversationId,
 })
 sendMessage({ text: 'Hello' })

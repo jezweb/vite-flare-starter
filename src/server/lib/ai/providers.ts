@@ -180,8 +180,9 @@ export async function resolveModelForUser(
  */
 function tryDirectFromPrefix(env: ProviderEnv, modelId: string) {
   if (modelId.startsWith('anthropic/') && env.ANTHROPIC_API_KEY) {
-    // Catalogue IDs use OpenRouter's dot format (`claude-sonnet-4.6`).
-    // Anthropic's direct API rejects dots — it wants dashes (`claude-sonnet-4-6`).
+    // Catalogue IDs use OpenRouter's dot format (`claude-haiku-4.5`).
+    // Anthropic's direct API rejects dots — it wants dashes (`claude-haiku-4-5`).
+    // Dotless ids (`claude-sonnet-5`) pass through unchanged, which is correct.
     // Translate on the direct path; OpenRouter route still receives the
     // dotted form unchanged. See gh #58.
     const sub = modelId.slice('anthropic/'.length)

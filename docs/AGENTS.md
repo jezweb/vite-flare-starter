@@ -305,7 +305,7 @@ formatting rules, domain context, and guardrails. Skills like
 ```typescript
 const result = await agent.runOnce({
   input: 'What's on my calendar tomorrow?',
-  model: 'anthropic/claude-sonnet-4.6',  // optional override
+  model: 'anthropic/claude-sonnet-5',    // optional override
   maxSteps: 5,                           // tool-call cap
 })
 // → { text, usage: {inputTokens, outputTokens}, steps }
@@ -324,7 +324,7 @@ export class MyAssistant extends AutonomousAgent<Env, AutonomousAgentState> {
   initialState = {
     ...AutonomousAgent.defaultInitialState(),
     persona: 'You are a research helper for...',
-    modelId: 'anthropic/claude-sonnet-4.6',
+    modelId: 'anthropic/claude-sonnet-5',
   }
 
   // Tool catalog. Default is []. Reuse the chat module's tool

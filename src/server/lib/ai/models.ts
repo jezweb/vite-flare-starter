@@ -8,7 +8,7 @@
  *
  * Model IDs:
  * - `@cf/...`   → Workers AI (free, no key)
- * - `provider/model` (e.g. `anthropic/claude-sonnet-4.6`) → OpenRouter
+ * - `provider/model` (e.g. `anthropic/claude-sonnet-5`) → OpenRouter
  *   (requires OPENROUTER_API_KEY)
  */
 import type { ModelId, ModelConfig, ModelTier } from './types'
@@ -147,16 +147,16 @@ export const ALIAS_TO_MODEL_ID: Record<string, ModelId> = {
   gemma: '@cf/google/gemma-4-26b-a4b-it',
   glm: '@cf/zai-org/glm-4.7-flash',
   qwq: '@cf/qwen/qwq-32b',
-  opus: 'anthropic/claude-opus-4.8',
-  sonnet: 'anthropic/claude-sonnet-4.6',
+  opus: 'anthropic/claude-opus-5',
+  sonnet: 'anthropic/claude-sonnet-5',
   haiku: 'anthropic/claude-haiku-4.5',
-  gpt: 'openai/gpt-5.4',
+  gpt: 'openai/gpt-5.5',
   'gpt-mini': 'openai/gpt-5.4-mini',
   gemini: 'google/gemini-3.1-pro-preview',
   'gemini-flash': 'google/gemini-3-flash-preview',
-  deepseek: 'deepseek/deepseek-v4-pro',
-  qwen: 'qwen/qwen3.6-plus',
-  grok: 'x-ai/grok-4.20',
+  deepseek: 'deepseek/deepseek-v3.2',
+  qwen: 'qwen/qwen3.7-plus',
+  grok: 'x-ai/grok-4.6',
   mistral: 'mistralai/mistral-large-2512',
 }
 
