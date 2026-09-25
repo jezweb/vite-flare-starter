@@ -3,13 +3,15 @@
 
 # Artifacts index
 
-92 dated artefacts, newest first. Chronology is grep-able from the
+94 dated artefacts, newest first. Chronology is grep-able from the
 filenames (`<topic>-YYYY-MM-DD.md`); this table adds title + status at a glance.
 The `design-review-*` chain pattern: latest is `active`, earlier ones carry
 `supersedes:` pointers and stay for audit.
 
 | Date | Artifact | Status |
 |------|----------|--------|
+| 2026-09-25 | [Monthly Model Catalogue Refresh — 2026-09-25](model-catalogue-refresh-2026-09-25.md) | active |
+| 2026-08-25 | [Model Catalogue Refresh — 2026-08-25](model-catalogue-refresh-2026-08-25.md) | active |
 | 2026-07-25 | [Monthly Model Catalogue Refresh — 2026-07-25](model-catalogue-refresh-2026-07-25.md) | active |
 | 2026-07-17 | [Fully embracing the CF agents stack — research + adoption assessment](agents-stack-embrace-2026-07-17.md) | active |
 | 2026-07-16 | [Generalised features review — issues × ecosystem — 2026-07-16](generalised-features-review-2026-07-16.md) | active |
@@ -103,4 +105,4 @@ The `design-review-*` chain pattern: latest is `active`, earlier ones carry
 | — | [Overnight Work Log — Remote Agent Continuation](overnight-log.md) | — |
 | — | [Spaces Phase 1 — Build Progress](spaces-build-progress.md) | — |
 
-_Last generated: 2026-07-25_
+_Last generated: 2026-09-25_
