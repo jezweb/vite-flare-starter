@@ -98,3 +98,7 @@ assets/**/*.webm
 
 # Runtime lock — never tracked
 .claude/scheduled_tasks.lock
+
+# Agent working knowledge stays local; it is not part of the public starter (26 Sep 2026).
+# This supersedes the !.jez/SESSION.md exception and the per-path .jez rules above.
+.jez/
