@@ -10,7 +10,7 @@
 #
 # Docker must be running locally when you `pnpm run deploy` — wrangler builds
 # and pushes this image to Cloudflare's registry on deploy.
-FROM docker.io/cloudflare/sandbox:0.12.3-python
+FROM docker.io/cloudflare/sandbox:0.12.4-python
 
 # Document generation (generate_document tool): Word / Excel / PowerPoint.
 # Bare `pip` isn't on PATH in this image — use `python3 -m pip` (pip3 also works).
